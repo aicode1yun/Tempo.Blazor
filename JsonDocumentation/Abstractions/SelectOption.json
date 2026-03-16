@@ -1,0 +1,46 @@
+{
+  "itemName": "SelectOption<TValue>",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Simple key-value option for select dropdowns. Used by TmSelect and other selection components.",
+  "typeParameters": [
+    {
+      "name": "TValue",
+      "description": "Type of the option value."
+    }
+  ],
+  "properties": [
+    {
+      "name": "Value",
+      "type": "TValue",
+      "isRequired": true,
+      "description": "The option value."
+    },
+    {
+      "name": "Text",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display text for the option."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether this option is disabled."
+    },
+    {
+      "name": "Group",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional group name for grouping options."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Creating options",
+      "code": "var options = new List<SelectOption<int>>\n{\n    new() { Value = 1, Text = \"Option 1\" },\n    new() { Value = 2, Text = \"Option 2\" },\n    new() { Value = 3, Text = \"Option 3\", Disabled = true },\n    new() { Value = 4, Text = \"Option 4\", Group = \"Group A\" },\n    new() { Value = 5, Text = \"Option 5\", Group = \"Group A\" }\n};\n\n<TmSelect @bind-Value=\"selectedValue\" Options=\"@options\" />"
+    }
+  ]
+}

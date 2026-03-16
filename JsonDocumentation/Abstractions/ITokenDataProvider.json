@@ -1,0 +1,54 @@
+{
+  "itemName": "ITokenDataProvider",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Data provider for token/tag autocomplete functionality. Provides items based on user input for components like TmTagPicker.",
+  "methods": [
+    {
+      "name": "GetItemsAsync",
+      "returnType": "Task<IReadOnlyList<IToken>>",
+      "description": "Retrieves tokens matching the search text.",
+      "parameters": [
+        {
+          "name": "searchText",
+          "type": "string",
+          "description": "User's search input."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "CreateTokenAsync",
+      "returnType": "Task<IToken?>",
+      "description": "Creates a new token from user input (for 'create new' functionality).",
+      "parameters": [
+        {
+          "name": "text",
+          "type": "string",
+          "description": "Text entered by user."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmTagPicker"
+  ],
+  "examples": [
+    {
+      "title": "Tag provider implementation",
+      "code": "public class TagTokenProvider : ITokenDataProvider\n{\n    private readonly ITagService _tagService;\n\n    public TagTokenProvider(ITagService tagService)\n    {\n        _tagService = tagService;\n    }\n\n    public async Task<IReadOnlyList<IToken>> GetItemsAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var tags = await _tagService.SearchAsync(searchText, ct);\n        return tags.Select(t => new Token { Id = t.Id, Name = t.Name }).ToList();\n    }\n\n    public async Task<IToken?> CreateTokenAsync(\n        string text, CancellationToken ct = default)\n    {\n        var tag = await _tagService.CreateAsync(text, ct);\n        return new Token { Id = tag.Id, Name = tag.Name };\n    }\n}"
+    }
+  ]
+}

@@ -1,0 +1,77 @@
+{
+  "itemName": "DataTableView",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a saved view configuration for TmDataTable. Includes column visibility, sorting, and filter settings.",
+  "properties": [
+    {
+      "name": "Id",
+      "type": "string",
+      "isRequired": true,
+      "description": "Unique identifier of the view."
+    },
+    {
+      "name": "Name",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display name of the view."
+    },
+    {
+      "name": "IsDefault",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether this is the default view."
+    },
+    {
+      "name": "IsPublic",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether the view is shared with other users."
+    },
+    {
+      "name": "ColumnSettings",
+      "type": "IReadOnlyList<ColumnViewSetting>",
+      "isRequired": false,
+      "description": "Column visibility and order settings."
+    },
+    {
+      "name": "SortColumn",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Default sort column."
+    },
+    {
+      "name": "SortDescending",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Default sort direction."
+    },
+    {
+      "name": "Filters",
+      "type": "IReadOnlyList<FilterDefinition>",
+      "isRequired": false,
+      "description": "Saved filter conditions."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "25",
+      "description": "Default page size."
+    }
+  ],
+  "usedInComponents": [
+    "TmDataTable",
+    "TmViewManager"
+  ],
+  "examples": [
+    {
+      "title": "Creating a view",
+      "code": "var view = new DataTableView\n{\n    Id = \"active-users\",\n    Name = \"Active Users\",\n    IsDefault = true,\n    ColumnSettings = new()\n    {\n        new() { ColumnName = \"Name\", IsVisible = true, Order = 1 },\n        new() { ColumnName = \"Email\", IsVisible = true, Order = 2 },\n        new() { ColumnName = \"Phone\", IsVisible = false }\n    },\n    SortColumn = \"Name\",\n    SortDescending = false,\n    Filters = new()\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" }\n    },\n    PageSize = 50\n};"
+    }
+  ]
+}

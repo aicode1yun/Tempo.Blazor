@@ -51,6 +51,18 @@
     "tm-attachment-delete",
     "tm-attachment-upload-progress"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IFileAttachmentProvider",
+      "description": "Provider for file upload and attachment management",
+      "parameter": "Provider"
+    },
+    {
+      "name": "IFileAttachment",
+      "description": "Interface representing a file attachment",
+      "usedIn": "File list"
+    }
+  ],
   "examples": [
     {
       "title": "Attachment manager with data provider",

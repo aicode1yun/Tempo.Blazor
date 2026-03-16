@@ -45,6 +45,7 @@ class Program
         }
 
         var componentsDir = Path.Combine(baseDir, "Components");
+        var abstractionsDir = Path.Combine(baseDir, "Abstractions");
         var gettingStartedFile = Path.Combine(baseDir, "gettingStarted.json");
         var libraryExamplesFile = Path.Combine(baseDir, "libraryExamples.json");
 
@@ -93,40 +94,94 @@ class Program
             }
         }
 
-        // 3. Read libraryExamples.json
+        // 3. Read all abstractions JSON files (if directory exists)
+        var abstractions = new JsonArray();
+        if (Directory.Exists(abstractionsDir))
+        {
+            var abstractionFiles = Directory.GetFiles(abstractionsDir, "*.json")
+                .OrderBy(f => Path.GetFileNameWithoutExtension(f), StringComparer.OrdinalIgnoreCase)
+                .ToList();
+
+            Console.WriteLine($"Found {abstractionFiles.Count} abstraction files in: {abstractionsDir}");
+
+            foreach (var file in abstractionFiles)
+            {
+                var abstractionJson = JsonNode.Parse(File.ReadAllText(file));
+                if (abstractionJson != null)
+                {
+                    abstractions.Add(abstractionJson);
+                    Console.WriteLine($"  + {Path.GetFileNameWithoutExtension(file)}");
+                }
+            }
+        }
+        else
+        {
+            Console.WriteLine($"Abstractions directory not found: {abstractionsDir} (skipping)");
+        }
+
+        // 4. Read libraryExamples.json
         Console.WriteLine($"Reading: {libraryExamplesFile}");
         var libraryExamplesRoot = JsonNode.Parse(File.ReadAllText(libraryExamplesFile));
         var libraryExamples = libraryExamplesRoot?["examples"]?.DeepClone() ?? new JsonArray();
 
-        // 4. Compose final JSON
-        var output = new JsonObject
+        // 5. Determine output paths
+        string outputPath;
+        string abstractionsOutputPath;
+        if (args.Length > 1 && !args[1].StartsWith("--"))
+        {
+            outputPath = Path.GetFullPath(args[1]);
+            abstractionsOutputPath = Path.Combine(
+                Path.GetDirectoryName(outputPath) ?? baseDir,
+                "tempo-blazor-abstractions.json");
+        }
+        else
+        {
+            outputPath = Path.Combine(baseDir, "..", "tempo-blazor-documentation.json");
+            outputPath = Path.GetFullPath(outputPath);
+            abstractionsOutputPath = Path.Combine(baseDir, "..", "tempo-blazor-abstractions.json");
+            abstractionsOutputPath = Path.GetFullPath(abstractionsOutputPath);
+        }
+
+        // 6. Compose and write main documentation JSON (components only)
+        var mainOutput = new JsonObject
         {
             ["gettingStarted"] = gettingStarted?.DeepClone(),
             ["items"] = items,
             ["libraryExamples"] = libraryExamples
         };
 
-        // 5. Determine output path
-        string outputPath;
-        if (args.Length > 1)
-        {
-            outputPath = Path.GetFullPath(args[1]);
-        }
-        else
-        {
-            outputPath = Path.Combine(baseDir, "..", "tempo-blazor-documentation.json");
-            outputPath = Path.GetFullPath(outputPath);
-        }
-
-        // 6. Write output
-        var json = output.ToJsonString(jsonOptions);
-        File.WriteAllText(outputPath, json);
+        var mainJson = mainOutput.ToJsonString(jsonOptions);
+        File.WriteAllText(outputPath, mainJson);
 
         Console.WriteLine();
         Console.WriteLine($"Generated: {outputPath}");
         Console.WriteLine($"  Components: {items.Count}");
         Console.WriteLine($"  Library examples: {libraryExamples.AsArray().Count}");
-        Console.WriteLine($"  File size: {json.Length:N0} bytes");
+        Console.WriteLine($"  File size: {mainJson.Length:N0} bytes");
+
+        // 7. Write abstractions JSON (if any abstractions exist)
+        if (abstractions.Count > 0)
+        {
+            var abstractionsOutput = new JsonObject
+            {
+                ["gettingStarted"] = new JsonObject
+                {
+                    ["title"] = "Tempo.Blazor.Abstractions",
+                    ["description"] = "Interfaces and models for Tempo.Blazor components. These abstractions have zero UI dependencies and can be safely referenced from API or service projects.",
+                    ["namespace"] = "Tempo.Blazor.Interfaces, Tempo.Blazor.Models, Tempo.Blazor.Localization",
+                    ["installation"] = "dotnet add package Tempo.Blazor.Abstractions"
+                },
+                ["items"] = abstractions
+            };
+
+            var abstractionsJson = abstractionsOutput.ToJsonString(jsonOptions);
+            File.WriteAllText(abstractionsOutputPath, abstractionsJson);
+
+            Console.WriteLine();
+            Console.WriteLine($"Generated: {abstractionsOutputPath}");
+            Console.WriteLine($"  Abstractions: {abstractions.Count}");
+            Console.WriteLine($"  File size: {abstractionsJson.Length:N0} bytes");
+        }
 
         return 0;
     }

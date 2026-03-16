@@ -115,6 +115,23 @@
     "tm-filterable-dropdown-error",
     "tm-filterable-dropdown-disabled"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IDropdownDataProvider<TItem>",
+      "description": "Server-side data provider for fetching items dynamically",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "DropdownSearchRequest",
+      "description": "Request parameters passed to the data provider",
+      "usedIn": "IDropdownDataProvider.GetItemsAsync"
+    },
+    {
+      "name": "DropdownDataResult<TItem>",
+      "description": "Result returned by the data provider",
+      "usedIn": "IDropdownDataProvider.GetItemsAsync"
+    }
+  ],
   "examples": [
     {
       "title": "Client-side filterable dropdown",

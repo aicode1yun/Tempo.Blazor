@@ -155,6 +155,13 @@
       "description": "Shows a clear-all button. Default: true."
     },
     {
+      "name": "ShowConfirmButton",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Shows a confirmation button in the dropdown footer to close the popup. Default: false."
+    },
+    {
       "name": "ShowCheckBox",
       "type": "bool",
       "isRequired": false,
@@ -257,9 +264,27 @@
     "tm-multiselect__group-header",
     "tm-multiselect__header",
     "tm-multiselect__footer",
+    "tm-multiselect__confirm-btn",
     "tm-multiselect__loading",
     "tm-multiselect__empty",
     "tm-multiselect__error"
+  ],
+  "usedAbstractions": [
+    {
+      "name": "IDropdownDataProvider<TItem>",
+      "description": "Server-side data provider for fetching items dynamically",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "DropdownSearchRequest",
+      "description": "Request parameters passed to the data provider",
+      "usedIn": "IDropdownDataProvider.GetItemsAsync"
+    },
+    {
+      "name": "DropdownDataResult<TItem>",
+      "description": "Result returned by the data provider",
+      "usedIn": "IDropdownDataProvider.GetItemsAsync"
+    }
   ],
   "examples": [
     {
@@ -273,6 +298,10 @@
     {
       "title": "Server-side data provider with grouping",
       "code": "<TmMultiSelect TItem=\"ProductDto\" TValue=\"int\" @bind-Values=\"productIds\" DataProvider=\"@productProvider\" DisplayField=\"@(p => p.Name)\" ValueField=\"@(p => p.Id)\" GroupField=\"@(p => p.Category)\" AllowFiltering=\"true\" Label=\"Products\" />"
+    },
+    {
+      "title": "Checkbox mode with confirm button",
+      "code": "<TmMultiSelect TItem=\"SelectOption<string>\" TValue=\"string\" @bind-Values=\"selectedValues\" Items=\"@options\" DisplayField=\"@(o => o.Label)\" ValueField=\"@(o => o.Value)\" Mode=\"MultiSelectMode.CheckBox\" ShowSelectAll=\"true\" ShowConfirmButton=\"true\" Label=\"Technologies\" />"
     }
   ]
 }

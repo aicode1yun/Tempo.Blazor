@@ -201,9 +201,20 @@
                 }
             </div>
 
-            @if (FooterTemplate is not null)
+            @if (FooterTemplate is not null || ShowConfirmButton)
             {
-                <div class="tm-multiselect__footer">@FooterTemplate</div>
+                <div class="tm-multiselect__footer">
+                    @FooterTemplate
+                    @if (ShowConfirmButton)
+                    {
+                        <button type="button"
+                                class="tm-multiselect__confirm-btn"
+                                @onclick:stopPropagation="true"
+                                @onclick="ConfirmSelectionAsync">
+                            @Loc["TmMultiSelect_ConfirmButton"]
+                        </button>
+                    }
+                </div>
             }
         </div>
     }

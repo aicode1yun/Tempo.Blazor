@@ -1,0 +1,61 @@
+{
+  "itemName": "ITmLocalizer",
+  "kind": "Interface",
+  "category": "Localization",
+  "namespace": "Tempo.Blazor.Localization",
+  "description": "Localization service interface for Tempo.Blazor components. Provides translated strings based on resource keys. The library includes default implementations for English and Czech.",
+  "methods": [
+    {
+      "name": "GetString",
+      "returnType": "string",
+      "description": "Gets the localized string for the specified key.",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string",
+          "description": "Resource key to look up."
+        }
+      ]
+    },
+    {
+      "name": "GetString",
+      "returnType": "string",
+      "description": "Gets the localized string with format arguments.",
+      "parameters": [
+        {
+          "name": "key",
+          "type": "string",
+          "description": "Resource key to look up."
+        },
+        {
+          "name": "args",
+          "type": "params object?[]",
+          "description": "Format arguments."
+        }
+      ]
+    },
+    {
+      "name": "CurrentCulture",
+      "returnType": "CultureInfo",
+      "description": "Gets the current culture.",
+      "isProperty": true
+    }
+  ],
+  "usedInComponents": [
+    "All Tempo.Blazor components"
+  ],
+  "examples": [
+    {
+      "title": "Custom localizer implementation",
+      "code": "public class CustomLocalizer : ITmLocalizer\n{\n    private readonly IStringLocalizer<Resources> _localizer;\n\n    public CustomLocalizer(IStringLocalizer<Resources> localizer)\n    {\n        _localizer = localizer;\n    }\n\n    public string GetString(string key) => _localizer[key];\n\n    public string GetString(string key, params object?[] args) => \n        string.Format(_localizer[key], args);\n\n    public CultureInfo CurrentCulture => CultureInfo.CurrentUICulture;\n}"
+    },
+    {
+      "title": "Registration",
+      "code": "// Program.cs\nbuilder.Services.AddSingleton<ITmLocalizer, CustomLocalizer>();\n\n// Or use built-in\nbuilder.Services.AddTempoBlazor(); // Registers default localizer"
+    },
+    {
+      "title": "Usage in component",
+      "code": "@inject ITmLocalizer Loc\n\n<button>@Loc[\"TmButton_Submit\"]</button>"
+    }
+  ]
+}

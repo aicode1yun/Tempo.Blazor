@@ -1,0 +1,65 @@
+{
+  "itemName": "DataTableQuery",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Query parameters for IDataTableDataProvider<T>. Contains pagination, sorting, filtering, and search settings for data table operations.",
+  "properties": [
+    {
+      "name": "Page",
+      "type": "int",
+      "isRequired": false,
+      "default": "1",
+      "description": "1-based page number."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "25",
+      "description": "Number of items per page."
+    },
+    {
+      "name": "SortColumn",
+      "type": "string?",
+      "isRequired": false,
+      "default": "null",
+      "description": "Column name to sort by."
+    },
+    {
+      "name": "SortDescending",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "True for descending sort order."
+    },
+    {
+      "name": "SearchText",
+      "type": "string?",
+      "isRequired": false,
+      "default": "null",
+      "description": "Global search text across all searchable columns."
+    },
+    {
+      "name": "Filters",
+      "type": "IReadOnlyList<FilterDefinition>",
+      "isRequired": false,
+      "description": "Column-specific filters."
+    },
+    {
+      "name": "GroupByColumns",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "description": "Columns to group by (if server-side grouping is supported)."
+    }
+  ],
+  "usedIn": [
+    "IDataTableDataProvider<TItem>"
+  ],
+  "examples": [
+    {
+      "title": "Building a query",
+      "code": "var query = new DataTableQuery\n{\n    Page = 1,\n    PageSize = 50,\n    SortColumn = \"LastName\",\n    SortDescending = false,\n    SearchText = \"smith\",\n    Filters = new List<FilterDefinition>\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" },\n        new() { Column = \"Age\", Operator = \"gt\", Value = 18 }\n    }\n};"
+    }
+  ]
+}

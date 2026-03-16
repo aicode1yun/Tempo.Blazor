@@ -63,6 +63,13 @@
     "tm-sidebar-badge",
     "tm-sidebar-footer"
   ],
+  "usedAbstractions": [
+    {
+      "name": "SidebarNavItem",
+      "description": "Model representing a navigation item in the sidebar",
+      "parameter": "Items"
+    }
+  ],
   "examples": [
     {
       "title": "Basic sidebar with navigation items",

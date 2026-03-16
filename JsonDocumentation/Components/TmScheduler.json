@@ -156,6 +156,13 @@
     "tm-scheduler-context-menu-item--danger",
     "tm-scheduler-context-menu-divider"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IScheduleDataProvider",
+      "description": "Data provider for calendar events and resources",
+      "parameter": "DataProvider"
+    }
+  ],
   "examples": [
     {
       "title": "Basic month view with static events",

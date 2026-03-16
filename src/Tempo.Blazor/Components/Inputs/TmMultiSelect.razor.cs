@@ -99,6 +99,9 @@ public partial class TmMultiSelect<TItem, TValue>
     /// <summary>Shows a clear-all button. Default: true.</summary>
     [Parameter] public bool ShowClearButton { get; set; } = true;
 
+    /// <summary>Shows a confirmation button in the dropdown footer to close the popup. Default: false.</summary>
+    [Parameter] public bool ShowConfirmButton { get; set; }
+
     /// <summary>Shows checkboxes next to items.</summary>
     [Parameter] public bool ShowCheckBox { get; set; }
 
@@ -311,6 +314,12 @@ public partial class TmMultiSelect<TItem, TValue>
     }
 
     private Task DeselectAllAsync() => ClearAllAsync();
+
+    private async Task ConfirmSelectionAsync()
+    {
+        _isOpen = false;
+        await OnClose.InvokeAsync();
+    }
 
     // ── Filtering ────────────────────────────────────────────────
 

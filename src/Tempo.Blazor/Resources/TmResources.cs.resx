@@ -123,6 +123,7 @@
   <data name="TmMultiSelect_ClearAll" xml:space="preserve"><value>Vymazat výběr</value></data>
   <data name="TmMultiSelect_SelectedCount" xml:space="preserve"><value>{0} vybráno</value></data>
   <data name="TmMultiSelect_RemoveItem" xml:space="preserve"><value>Odebrat {0}</value></data>
+  <data name="TmMultiSelect_ConfirmButton" xml:space="preserve"><value>Hotovo</value></data>
 
   <!-- ═══════════════ TmFileDropZone ═══════════════ -->
   <data name="TmFileDropZone_DragDrop" xml:space="preserve"><value>Přetáhněte soubory sem</value></data>

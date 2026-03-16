@@ -57,6 +57,18 @@
     "tm-gallery-item-img",
     "tm-gallery-item-title"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IImageGalleryDataProvider",
+      "description": "Data provider for fetching gallery images with pagination",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "IGalleryImage",
+      "description": "Interface representing a gallery image",
+      "usedIn": "IImageGalleryDataProvider"
+    }
+  ],
   "examples": [
     {
       "title": "Basic gallery",

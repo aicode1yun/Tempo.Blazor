@@ -1,0 +1,37 @@
+{
+  "itemName": "IMentionDataProvider",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Data provider for @mention functionality in rich text editors. Provides user suggestions when user types '@'.",
+  "methods": [
+    {
+      "name": "GetUsersAsync",
+      "returnType": "Task<IReadOnlyList<IMentionUser>>",
+      "description": "Retrieves users matching the search text for mentions.",
+      "parameters": [
+        {
+          "name": "searchText",
+          "type": "string",
+          "description": "Text after '@' symbol."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmRichEditorFull",
+    "TmRichEditorSimple"
+  ],
+  "examples": [
+    {
+      "title": "User mention provider",
+      "code": "public class UserMentionProvider : IMentionDataProvider\n{\n    private readonly IUserService _userService;\n\n    public UserMentionProvider(IUserService userService)\n    {\n        _userService = userService;\n    }\n\n    public async Task<IReadOnlyList<IMentionUser>> GetUsersAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var users = await _userService.SearchAsync(searchText, 10, ct);\n        return users.Select(u => new MentionUser\n        {\n            Id = u.Id,\n            Name = u.FullName,\n            AvatarUrl = u.AvatarUrl\n        }).ToList();\n    }\n}"
+    }
+  ]
+}

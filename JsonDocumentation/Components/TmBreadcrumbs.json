@@ -43,6 +43,13 @@
     "tm-breadcrumb-text",
     "tm-breadcrumb-separator"
   ],
+  "usedAbstractions": [
+    {
+      "name": "BreadcrumbItem",
+      "description": "Model representing a single breadcrumb item",
+      "parameter": "Items"
+    }
+  ],
   "examples": [
     {
       "title": "Basic breadcrumbs with links",

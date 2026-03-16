@@ -1,0 +1,79 @@
+{
+  "itemName": "DynamicFieldDefinition",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Defines a field for dynamic form rendering. Used by TmDynamicFormRenderer to generate forms from configuration.",
+  "properties": [
+    {
+      "name": "Name",
+      "type": "string",
+      "isRequired": true,
+      "description": "Field identifier (property name)."
+    },
+    {
+      "name": "Label",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display label for the field."
+    },
+    {
+      "name": "FieldType",
+      "type": "DynamicFieldType",
+      "isRequired": true,
+      "description": "Type of input (Text, Number, Date, Select, etc.)."
+    },
+    {
+      "name": "IsRequired",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether the field is required."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text."
+    },
+    {
+      "name": "HelpText",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Help text displayed below the field."
+    },
+    {
+      "name": "Options",
+      "type": "IReadOnlyList<SelectOption<string>>?",
+      "isRequired": false,
+      "description": "Options for Select, Radio, MultiSelect field types."
+    },
+    {
+      "name": "ValidationRules",
+      "type": "IReadOnlyList<ValidationRule>?",
+      "isRequired": false,
+      "description": "Validation rules for the field."
+    },
+    {
+      "name": "VisibleWhen",
+      "type": "FieldCondition?",
+      "isRequired": false,
+      "description": "Conditional visibility rule."
+    },
+    {
+      "name": "DefaultValue",
+      "type": "object?",
+      "isRequired": false,
+      "description": "Default value for the field."
+    }
+  ],
+  "usedInComponents": [
+    "TmDynamicFormRenderer"
+  ],
+  "examples": [
+    {
+      "title": "Dynamic form definition",
+      "code": "var fields = new List<DynamicFieldDefinition>\n{\n    new()\n    {\n        Name = \"FirstName\",\n        Label = \"First Name\",\n        FieldType = DynamicFieldType.Text,\n        IsRequired = true,\n        Placeholder = \"Enter first name\"\n    },\n    new()\n    {\n        Name = \"Email\",\n        Label = \"Email\",\n        FieldType = DynamicFieldType.Email,\n        IsRequired = true,\n        ValidationRules = new()\n        {\n            new() { RuleType = \"email\", ErrorMessage = \"Invalid email\" }\n        }\n    },\n    new()\n    {\n        Name = \"Role\",\n        Label = \"Role\",\n        FieldType = DynamicFieldType.Select,\n        Options = new()\n        {\n            new() { Value = \"user\", Text = \"User\" },\n            new() { Value = \"admin\", Text = \"Administrator\" }\n        }\n    },\n    new()\n    {\n        Name = \"Department\",\n        Label = \"Department\",\n        FieldType = DynamicFieldType.Text,\n        VisibleWhen = new()\n        {\n            Field = \"Role\",\n            Operator = \"eq\",\n            Value = \"admin\"\n        }\n    }\n};\n\n<TmDynamicFormRenderer Fields=\"@fields\" Model=\"@model\" />"
+    }
+  ]
+}

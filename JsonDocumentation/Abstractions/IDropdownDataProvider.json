@@ -1,0 +1,47 @@
+{
+  "itemName": "IDropdownDataProvider<TItem>",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Server-side data provider for dropdown components (TmFilterableDropdown, TmMultiSelect). Implement this interface to provide paginated, searchable items from any data source (API, database, etc.).",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "The item type returned by the provider."
+    }
+  ],
+  "methods": [
+    {
+      "name": "GetItemsAsync",
+      "returnType": "Task<DropdownDataResult<TItem>>",
+      "description": "Retrieves items matching the search criteria.",
+      "parameters": [
+        {
+          "name": "request",
+          "type": "DropdownSearchRequest",
+          "description": "Search parameters including text, pagination, and excluded IDs."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmFilterableDropdown",
+    "TmMultiSelect"
+  ],
+  "examples": [
+    {
+      "title": "Basic implementation",
+      "code": "public class UsersDropdownProvider : IDropdownDataProvider<UserDto>\n{\n    public async Task<DropdownDataResult<UserDto>> GetItemsAsync(\n        DropdownSearchRequest request, CancellationToken ct = default)\n    {\n        var result = await _api.SearchUsersAsync(\n            request.SearchText, \n            request.Page, \n            request.PageSize, \n            ct);\n        \n        return DropdownDataResult<UserDto>.WithItems(\n            result.Items, \n            result.TotalCount);\n    }\n}"
+    },
+    {
+      "title": "Usage in component",
+      "code": "<TmMultiSelect TItem=\"UserDto\" TValue=\"int\"\n               DataProvider=\"@_userProvider\"\n               DisplayField=\"@(u => u.Name)\"\n               ValueField=\"@(u => u.Id)\"\n               @bind-Values=\"_selectedUserIds\" />\n\n@code {\n    private UsersDropdownProvider _userProvider = new();\n    private List<int> _selectedUserIds = new();\n}"
+    }
+  ]
+}

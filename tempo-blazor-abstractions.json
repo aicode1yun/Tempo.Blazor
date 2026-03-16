@@ -1,0 +1,1212 @@
+{
+  "gettingStarted": {
+    "title": "Tempo.Blazor.Abstractions",
+    "description": "Interfaces and models for Tempo.Blazor components. These abstractions have zero UI dependencies and can be safely referenced from API or service projects.",
+    "namespace": "Tempo.Blazor.Interfaces, Tempo.Blazor.Models, Tempo.Blazor.Localization",
+    "installation": "dotnet add package Tempo.Blazor.Abstractions"
+  },
+  "items": [
+    {
+      "itemName": "BreadcrumbItem",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Represents a single item in a breadcrumb navigation. Used by TmBreadcrumbs component.",
+      "properties": [
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display text for the breadcrumb item."
+        },
+        {
+          "name": "Href",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional URL for navigation. If null, the item is displayed as text only."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional icon name to display before the text."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Creating breadcrumb items",
+          "code": "var breadcrumbs = new List<BreadcrumbItem>\n{\n    new() { Text = \"Home\", Href = \"/\", Icon = \"home\" },\n    new() { Text = \"Products\", Href = \"/products\" },\n    new() { Text = \"Details\" } // Current page (no link)\n};\n\n<TmBreadcrumbs Items=\"@breadcrumbs\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "DataTableQuery",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Query parameters for IDataTableDataProvider<T>. Contains pagination, sorting, filtering, and search settings for data table operations.",
+      "properties": [
+        {
+          "name": "Page",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "1-based page number."
+        },
+        {
+          "name": "PageSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "25",
+          "description": "Number of items per page."
+        },
+        {
+          "name": "SortColumn",
+          "type": "string?",
+          "isRequired": false,
+          "default": "null",
+          "description": "Column name to sort by."
+        },
+        {
+          "name": "SortDescending",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "True for descending sort order."
+        },
+        {
+          "name": "SearchText",
+          "type": "string?",
+          "isRequired": false,
+          "default": "null",
+          "description": "Global search text across all searchable columns."
+        },
+        {
+          "name": "Filters",
+          "type": "IReadOnlyList<FilterDefinition>",
+          "isRequired": false,
+          "description": "Column-specific filters."
+        },
+        {
+          "name": "GroupByColumns",
+          "type": "IReadOnlyList<string>",
+          "isRequired": false,
+          "description": "Columns to group by (if server-side grouping is supported)."
+        }
+      ],
+      "usedIn": [
+        "IDataTableDataProvider<TItem>"
+      ],
+      "examples": [
+        {
+          "title": "Building a query",
+          "code": "var query = new DataTableQuery\n{\n    Page = 1,\n    PageSize = 50,\n    SortColumn = \"LastName\",\n    SortDescending = false,\n    SearchText = \"smith\",\n    Filters = new List<FilterDefinition>\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" },\n        new() { Column = \"Age\", Operator = \"gt\", Value = 18 }\n    }\n};"
+        }
+      ]
+    },
+    {
+      "itemName": "DataTableView",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Represents a saved view configuration for TmDataTable. Includes column visibility, sorting, and filter settings.",
+      "properties": [
+        {
+          "name": "Id",
+          "type": "string",
+          "isRequired": true,
+          "description": "Unique identifier of the view."
+        },
+        {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display name of the view."
+        },
+        {
+          "name": "IsDefault",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether this is the default view."
+        },
+        {
+          "name": "IsPublic",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether the view is shared with other users."
+        },
+        {
+          "name": "ColumnSettings",
+          "type": "IReadOnlyList<ColumnViewSetting>",
+          "isRequired": false,
+          "description": "Column visibility and order settings."
+        },
+        {
+          "name": "SortColumn",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Default sort column."
+        },
+        {
+          "name": "SortDescending",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Default sort direction."
+        },
+        {
+          "name": "Filters",
+          "type": "IReadOnlyList<FilterDefinition>",
+          "isRequired": false,
+          "description": "Saved filter conditions."
+        },
+        {
+          "name": "PageSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "25",
+          "description": "Default page size."
+        }
+      ],
+      "usedInComponents": [
+        "TmDataTable",
+        "TmViewManager"
+      ],
+      "examples": [
+        {
+          "title": "Creating a view",
+          "code": "var view = new DataTableView\n{\n    Id = \"active-users\",\n    Name = \"Active Users\",\n    IsDefault = true,\n    ColumnSettings = new()\n    {\n        new() { ColumnName = \"Name\", IsVisible = true, Order = 1 },\n        new() { ColumnName = \"Email\", IsVisible = true, Order = 2 },\n        new() { ColumnName = \"Phone\", IsVisible = false }\n    },\n    SortColumn = \"Name\",\n    SortDescending = false,\n    Filters = new()\n    {\n        new() { Column = \"Status\", Operator = \"eq\", Value = \"Active\" }\n    },\n    PageSize = 50\n};"
+        }
+      ]
+    },
+    {
+      "itemName": "DropdownDataResult<TItem>",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Result returned by IDropdownDataProvider<T>.GetItemsAsync(). Contains the items for the current page and total count for pagination.",
+      "typeParameters": [
+        {
+          "name": "TItem",
+          "description": "The item type."
+        }
+      ],
+      "properties": [
+        {
+          "name": "Items",
+          "type": "IReadOnlyList<TItem>",
+          "isRequired": false,
+          "default": "Array.Empty<TItem>()",
+          "description": "The items for the current page."
+        },
+        {
+          "name": "TotalCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "0",
+          "description": "Total count of matching items across all pages."
+        },
+        {
+          "name": "HasMore",
+          "type": "bool",
+          "isRequired": false,
+          "description": "True if there are more items beyond the current page (computed property)."
+        }
+      ],
+      "staticMethods": [
+        {
+          "name": "Empty",
+          "returnType": "DropdownDataResult<TItem>",
+          "description": "Creates an empty result (no items found)."
+        },
+        {
+          "name": "WithItems",
+          "returnType": "DropdownDataResult<TItem>",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IReadOnlyList<TItem>"
+            },
+            {
+              "name": "totalCount",
+              "type": "int"
+            }
+          ],
+          "description": "Creates a result with items and total count."
+        },
+        {
+          "name": "WithAllItems",
+          "returnType": "DropdownDataResult<TItem>",
+          "parameters": [
+            {
+              "name": "items",
+              "type": "IReadOnlyList<TItem>"
+            }
+          ],
+          "description": "Creates a result where all items fit in one page (no further pagination)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Returning results from provider",
+          "code": "public async Task<DropdownDataResult<UserDto>> GetItemsAsync(\n    DropdownSearchRequest request, CancellationToken ct)\n{\n    var query = _db.Users\n        .Where(u => u.Name.Contains(request.SearchText))\n        .Skip((request.Page - 1) * request.PageSize)\n        .Take(request.PageSize);\n\n    var total = await query.CountAsync(ct);\n    var items = await query.ToListAsync(ct);\n\n    return DropdownDataResult<UserDto>.WithItems(items, total);\n}"
+        },
+        {
+          "title": "Empty result",
+          "code": "if (string.IsNullOrWhiteSpace(request.SearchText))\n{\n    return DropdownDataResult<UserDto>.Empty();\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "DropdownSearchRequest",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Request parameters passed to IDropdownDataProvider<T>.GetItemsAsync(). Contains search text, pagination settings, and exclusion filters.",
+      "properties": [
+        {
+          "name": "SearchText",
+          "type": "string",
+          "isRequired": false,
+          "default": "string.Empty",
+          "description": "The user's current search/filter text. Empty string means no filter."
+        },
+        {
+          "name": "Page",
+          "type": "int",
+          "isRequired": false,
+          "default": "1",
+          "description": "1-based page number for pagination."
+        },
+        {
+          "name": "PageSize",
+          "type": "int",
+          "isRequired": false,
+          "default": "50",
+          "description": "Maximum items to return per page."
+        },
+        {
+          "name": "ExcludedIds",
+          "type": "IReadOnlyCollection<string>",
+          "isRequired": false,
+          "default": "Array.Empty<string>()",
+          "description": "Item IDs to exclude from results (e.g., already-selected items in multi-select)."
+        },
+        {
+          "name": "CancellationToken",
+          "type": "CancellationToken",
+          "isRequired": false,
+          "default": "default",
+          "description": "Cancellation token for async operations."
+        }
+      ],
+      "usedIn": [
+        "IDropdownDataProvider<TItem>"
+      ],
+      "examples": [
+        {
+          "title": "Creating a request",
+          "code": "var request = new DropdownSearchRequest\n{\n    SearchText = \"john\",\n    Page = 1,\n    PageSize = 20,\n    ExcludedIds = new[] { \"123\", \"456\" }\n};"
+        }
+      ]
+    },
+    {
+      "itemName": "DynamicFieldDefinition",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Defines a field for dynamic form rendering. Used by TmDynamicFormRenderer to generate forms from configuration.",
+      "properties": [
+        {
+          "name": "Name",
+          "type": "string",
+          "isRequired": true,
+          "description": "Field identifier (property name)."
+        },
+        {
+          "name": "Label",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display label for the field."
+        },
+        {
+          "name": "FieldType",
+          "type": "DynamicFieldType",
+          "isRequired": true,
+          "description": "Type of input (Text, Number, Date, Select, etc.)."
+        },
+        {
+          "name": "IsRequired",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether the field is required."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Placeholder text."
+        },
+        {
+          "name": "HelpText",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Help text displayed below the field."
+        },
+        {
+          "name": "Options",
+          "type": "IReadOnlyList<SelectOption<string>>?",
+          "isRequired": false,
+          "description": "Options for Select, Radio, MultiSelect field types."
+        },
+        {
+          "name": "ValidationRules",
+          "type": "IReadOnlyList<ValidationRule>?",
+          "isRequired": false,
+          "description": "Validation rules for the field."
+        },
+        {
+          "name": "VisibleWhen",
+          "type": "FieldCondition?",
+          "isRequired": false,
+          "description": "Conditional visibility rule."
+        },
+        {
+          "name": "DefaultValue",
+          "type": "object?",
+          "isRequired": false,
+          "description": "Default value for the field."
+        }
+      ],
+      "usedInComponents": [
+        "TmDynamicFormRenderer"
+      ],
+      "examples": [
+        {
+          "title": "Dynamic form definition",
+          "code": "var fields = new List<DynamicFieldDefinition>\n{\n    new()\n    {\n        Name = \"FirstName\",\n        Label = \"First Name\",\n        FieldType = DynamicFieldType.Text,\n        IsRequired = true,\n        Placeholder = \"Enter first name\"\n    },\n    new()\n    {\n        Name = \"Email\",\n        Label = \"Email\",\n        FieldType = DynamicFieldType.Email,\n        IsRequired = true,\n        ValidationRules = new()\n        {\n            new() { RuleType = \"email\", ErrorMessage = \"Invalid email\" }\n        }\n    },\n    new()\n    {\n        Name = \"Role\",\n        Label = \"Role\",\n        FieldType = DynamicFieldType.Select,\n        Options = new()\n        {\n            new() { Value = \"user\", Text = \"User\" },\n            new() { Value = \"admin\", Text = \"Administrator\" }\n        }\n    },\n    new()\n    {\n        Name = \"Department\",\n        Label = \"Department\",\n        FieldType = DynamicFieldType.Text,\n        VisibleWhen = new()\n        {\n            Field = \"Role\",\n            Operator = \"eq\",\n            Value = \"admin\"\n        }\n    }\n};\n\n<TmDynamicFormRenderer Fields=\"@fields\" Model=\"@model\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "FilterDefinition",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Defines a single filter condition for DataTableQuery. Specifies column, operator, and value for filtering.",
+      "properties": [
+        {
+          "name": "Column",
+          "type": "string",
+          "isRequired": true,
+          "description": "Column name to filter on."
+        },
+        {
+          "name": "Operator",
+          "type": "string",
+          "isRequired": true,
+          "description": "Filter operator. Common values: 'eq' (equals), 'ne' (not equals), 'gt' (greater than), 'gte' (greater than or equal), 'lt' (less than), 'lte' (less than or equal), 'contains', 'startswith', 'endswith', 'in'."
+        },
+        {
+          "name": "Value",
+          "type": "object?",
+          "isRequired": false,
+          "description": "Filter value. Type depends on the column and operator."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Common filters",
+          "code": "// Equals\nvar statusFilter = new FilterDefinition\n{\n    Column = \"Status\",\n    Operator = \"eq\",\n    Value = \"Active\"\n};\n\n// Contains (text search)\nvar nameFilter = new FilterDefinition\n{\n    Column = \"Name\",\n    Operator = \"contains\",\n    Value = \"john\"\n};\n\n// Greater than\nvar ageFilter = new FilterDefinition\n{\n    Column = \"Age\",\n    Operator = \"gt\",\n    Value = 18\n};\n\n// In list\nvar categoryFilter = new FilterDefinition\n{\n    Column = \"Category\",\n    Operator = \"in\",\n    Value = new[] { \"A\", \"B\", \"C\" }\n};"
+        }
+      ]
+    },
+    {
+      "itemName": "IDashboardProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Provider interface for dashboard widget data and persistence. Manages widget configuration and data fetching.",
+      "methods": [
+        {
+          "name": "GetWidgetsAsync",
+          "returnType": "Task<IReadOnlyList<DashboardWidget>>",
+          "description": "Retrieves all widgets for the current dashboard.",
+          "parameters": [
+            {
+              "name": "dashboardId",
+              "type": "string",
+              "description": "Unique identifier of the dashboard."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "SaveLayoutAsync",
+          "returnType": "Task<bool>",
+          "description": "Saves the current widget layout.",
+          "parameters": [
+            {
+              "name": "dashboardId",
+              "type": "string",
+              "description": "Unique identifier of the dashboard."
+            },
+            {
+              "name": "widgets",
+              "type": "IEnumerable<DashboardWidget>",
+              "description": "Widget configurations to save."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "GetAvailableWidgetTypesAsync",
+          "returnType": "Task<IReadOnlyList<WidgetTypeDefinition>>",
+          "description": "Gets all available widget types that can be added to the dashboard.",
+          "parameters": [
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmDashboard",
+        "TmWidgetSelector"
+      ],
+      "examples": [
+        {
+          "title": "Dashboard provider",
+          "code": "public class DashboardProvider : IDashboardProvider\n{\n    private readonly IDashboardService _service;\n\n    public async Task<IReadOnlyList<DashboardWidget>> GetWidgetsAsync(\n        string dashboardId, CancellationToken ct = default)\n    {\n        return await _service.GetWidgetsAsync(dashboardId, ct);\n    }\n\n    public async Task<bool> SaveLayoutAsync(string dashboardId, \n        IEnumerable<DashboardWidget> widgets, CancellationToken ct = default)\n    {\n        return await _service.SaveLayoutAsync(dashboardId, widgets, ct);\n    }\n\n    public async Task<IReadOnlyList<WidgetTypeDefinition>> GetAvailableWidgetTypesAsync(\n        CancellationToken ct = default)\n    {\n        return await _service.GetWidgetTypesAsync(ct);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IDataTableDataProvider<TItem>",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Server-side (or async) data provider for TmDataTable. Implement this interface to power sorting, filtering, and pagination from an API or database. For in-memory scenarios, use InMemoryDataProvider<TItem> from Tempo.Blazor.",
+      "typeParameters": [
+        {
+          "name": "TItem",
+          "description": "The item type returned by the provider."
+        }
+      ],
+      "methods": [
+        {
+          "name": "GetDataAsync",
+          "returnType": "Task<PagedResult<TItem>>",
+          "description": "Fetches a page of data applying the given query (sort, filter, search, page).",
+          "parameters": [
+            {
+              "name": "query",
+              "type": "DataTableQuery",
+              "description": "Query parameters including pagination, sorting, and filtering."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "GetGroupedDataAsync",
+          "returnType": "Task<GroupedPagedResult<TItem>?>",
+          "description": "Fetches grouped data from the server with per-group pagination. Called when DataTableQuery.GroupByColumns is non-empty. Default implementation returns null, which causes the component to fall back to client-side grouping via GetDataAsync.",
+          "isOptional": true,
+          "parameters": [
+            {
+              "name": "query",
+              "type": "DataTableQuery",
+              "description": "Query parameters including grouping configuration."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmDataTable"
+      ],
+      "examples": [
+        {
+          "title": "API-based implementation",
+          "code": "public class ApiDataProvider<T> : IDataTableDataProvider<T>\n{\n    private readonly IApiClient _api;\n    private readonly string _endpoint;\n\n    public ApiDataProvider(IApiClient api, string endpoint)\n    {\n        _api = api;\n        _endpoint = endpoint;\n    }\n\n    public async Task<PagedResult<T>> GetDataAsync(\n        DataTableQuery query, CancellationToken ct = default)\n    {\n        return await _api.GetPagedAsync<T>(_endpoint, query, ct);\n    }\n}"
+        },
+        {
+          "title": "Usage in DataTable",
+          "code": "<TmDataTable TItem=\"ProductDto\" DataProvider=\"@_productProvider\">\n    <TmDataTableColumn Field=\"@(p => p.Name)\" Title=\"Name\" />\n    <TmDataTableColumn Field=\"@(p => p.Price)\" Title=\"Price\" />\n</TmDataTable>\n\n@code {\n    private IDataTableDataProvider<ProductDto> _productProvider = \n        new ApiDataProvider<ProductDto>(_api, \"/api/products\");\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IDropdownDataProvider<TItem>",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Server-side data provider for dropdown components (TmFilterableDropdown, TmMultiSelect). Implement this interface to provide paginated, searchable items from any data source (API, database, etc.).",
+      "typeParameters": [
+        {
+          "name": "TItem",
+          "description": "The item type returned by the provider."
+        }
+      ],
+      "methods": [
+        {
+          "name": "GetItemsAsync",
+          "returnType": "Task<DropdownDataResult<TItem>>",
+          "description": "Retrieves items matching the search criteria.",
+          "parameters": [
+            {
+              "name": "request",
+              "type": "DropdownSearchRequest",
+              "description": "Search parameters including text, pagination, and excluded IDs."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmFilterableDropdown",
+        "TmMultiSelect"
+      ],
+      "examples": [
+        {
+          "title": "Basic implementation",
+          "code": "public class UsersDropdownProvider : IDropdownDataProvider<UserDto>\n{\n    public async Task<DropdownDataResult<UserDto>> GetItemsAsync(\n        DropdownSearchRequest request, CancellationToken ct = default)\n    {\n        var result = await _api.SearchUsersAsync(\n            request.SearchText, \n            request.Page, \n            request.PageSize, \n            ct);\n        \n        return DropdownDataResult<UserDto>.WithItems(\n            result.Items, \n            result.TotalCount);\n    }\n}"
+        },
+        {
+          "title": "Usage in component",
+          "code": "<TmMultiSelect TItem=\"UserDto\" TValue=\"int\"\n               DataProvider=\"@_userProvider\"\n               DisplayField=\"@(u => u.Name)\"\n               ValueField=\"@(u => u.Id)\"\n               @bind-Values=\"_selectedUserIds\" />\n\n@code {\n    private UsersDropdownProvider _userProvider = new();\n    private List<int> _selectedUserIds = new();\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IFileAttachmentProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Provider interface for file upload and attachment management. Handles chunked uploads, progress tracking, and file operations.",
+      "methods": [
+        {
+          "name": "UploadChunkAsync",
+          "returnType": "Task<FileChunkResult>",
+          "description": "Uploads a single chunk of a file.",
+          "parameters": [
+            {
+              "name": "chunk",
+              "type": "FileChunkData",
+              "description": "Chunk data including file ID, chunk index, and binary data."
+            },
+            {
+              "name": "progress",
+              "type": "IProgress<double>",
+              "description": "Progress reporter for upload status."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "DeleteAsync",
+          "returnType": "Task<bool>",
+          "description": "Deletes a previously uploaded file.",
+          "parameters": [
+            {
+              "name": "fileId",
+              "type": "string",
+              "description": "ID of the file to delete."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "GetDownloadUrlAsync",
+          "returnType": "Task<string?>",
+          "description": "Gets a temporary download URL for a file.",
+          "parameters": [
+            {
+              "name": "fileId",
+              "type": "string",
+              "description": "ID of the file."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmAttachmentManager",
+        "TmFileDropZone",
+        "TmActivityAttachments"
+      ],
+      "examples": [
+        {
+          "title": "Azure Blob provider",
+          "code": "public class AzureBlobAttachmentProvider : IFileAttachmentProvider\n{\n    private readonly BlobContainerClient _containerClient;\n\n    public async Task<FileChunkResult> UploadChunkAsync(\n        FileChunkData chunk, \n        IProgress<double> progress, \n        CancellationToken ct = default)\n    {\n        // Handle chunked upload to Azure Blob Storage\n        var blobClient = _containerClient.GetBlobClient(chunk.FileId);\n        // ... implementation\n        return new FileChunkResult { Success = true };\n    }\n\n    public async Task<bool> DeleteAsync(string fileId, CancellationToken ct = default)\n    {\n        var blobClient = _containerClient.GetBlobClient(fileId);\n        return await blobClient.DeleteIfExistsAsync(ct);\n    }\n\n    public async Task<string?> GetDownloadUrlAsync(string fileId, CancellationToken ct = default)\n    {\n        var blobClient = _containerClient.GetBlobClient(fileId);\n        return blobClient.GenerateSasUri(BlobSasPermissions.Read, \n            DateTimeOffset.UtcNow.AddHours(1)).ToString();\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IIconProvider",
+      "kind": "Interface",
+      "category": "Icons",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Provider interface for custom icon systems. Implement to integrate external icon libraries (FontAwesome, Material Icons, etc.) with Tempo.Blazor components.",
+      "methods": [
+        {
+          "name": "GetIconSvg",
+          "returnType": "string?",
+          "description": "Returns SVG markup for the specified icon name.",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "description": "Icon name/identifier."
+            },
+            {
+              "name": "cssClass",
+              "type": "string?",
+              "description": "Optional CSS class to add to the SVG element.",
+              "defaultValue": "null"
+            }
+          ]
+        },
+        {
+          "name": "HasIcon",
+          "returnType": "bool",
+          "description": "Checks if the provider has the specified icon.",
+          "parameters": [
+            {
+              "name": "name",
+              "type": "string",
+              "description": "Icon name/identifier."
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmIcon",
+        "All components using icons"
+      ],
+      "examples": [
+        {
+          "title": "FontAwesome provider",
+          "code": "public class FontAwesomeProvider : IIconProvider\n{\n    public string? GetIconSvg(string name, string? cssClass = null)\n    {\n        // Return FontAwesome SVG or null to fall back to other providers\n        return name switch\n        {\n            \"user\" => \"<svg class=\\\"\" + cssClass + \"\\\" ...>...</svg>\",\n            \"search\" => \"<svg class=\\\"\" + cssClass + \"\\\" ...>...</svg>\",\n            _ => null\n        };\n    }\n\n    public bool HasIcon(string name) => \n        name is \"user\" or \"search\" or \"home\";\n}"
+        },
+        {
+          "title": "Registration",
+          "code": "// Program.cs\nIconRegistry.RegisterProvider(new FontAwesomeProvider());\n\n// Or register individual icons\nIconRegistry.Register(\"custom-logo\", \"<svg>...</svg>\");"
+        }
+      ]
+    },
+    {
+      "itemName": "IImageGalleryDataProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Data provider for image gallery components. Supports pagination and search for large image collections.",
+      "methods": [
+        {
+          "name": "GetImagesAsync",
+          "returnType": "Task<PagedResult<IGalleryImage>>",
+          "description": "Retrieves a page of images.",
+          "parameters": [
+            {
+              "name": "page",
+              "type": "int",
+              "description": "Page number (1-based)."
+            },
+            {
+              "name": "pageSize",
+              "type": "int",
+              "description": "Number of images per page."
+            },
+            {
+              "name": "searchText",
+              "type": "string?",
+              "description": "Optional search/filter text.",
+              "defaultValue": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmImageGallery"
+      ],
+      "examples": [
+        {
+          "title": "Gallery provider implementation",
+          "code": "public class GalleryDataProvider : IImageGalleryDataProvider\n{\n    private readonly IImageService _imageService;\n\n    public async Task<PagedResult<IGalleryImage>> GetImagesAsync(\n        int page, int pageSize, string? searchText = null, \n        CancellationToken ct = default)\n    {\n        var result = await _imageService.GetImagesAsync(\n            page, pageSize, searchText, ct);\n        \n        return new PagedResult<IGalleryImage>\n        {\n            Items = result.Items.Select(i => new GalleryImage\n            {\n                Id = i.Id,\n                ThumbnailUrl = i.ThumbnailUrl,\n                FullSizeUrl = i.FullSizeUrl,\n                Title = i.Title,\n                Description = i.Description\n            }).ToList(),\n            TotalCount = result.TotalCount\n        };\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IMentionDataProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Data provider for @mention functionality in rich text editors. Provides user suggestions when user types '@'.",
+      "methods": [
+        {
+          "name": "GetUsersAsync",
+          "returnType": "Task<IReadOnlyList<IMentionUser>>",
+          "description": "Retrieves users matching the search text for mentions.",
+          "parameters": [
+            {
+              "name": "searchText",
+              "type": "string",
+              "description": "Text after '@' symbol."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmRichEditorFull",
+        "TmRichEditorSimple"
+      ],
+      "examples": [
+        {
+          "title": "User mention provider",
+          "code": "public class UserMentionProvider : IMentionDataProvider\n{\n    private readonly IUserService _userService;\n\n    public UserMentionProvider(IUserService userService)\n    {\n        _userService = userService;\n    }\n\n    public async Task<IReadOnlyList<IMentionUser>> GetUsersAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var users = await _userService.SearchAsync(searchText, 10, ct);\n        return users.Select(u => new MentionUser\n        {\n            Id = u.Id,\n            Name = u.FullName,\n            AvatarUrl = u.AvatarUrl\n        }).ToList();\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "IScheduleDataProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Data provider for scheduler/calendar components. Handles events, resources, and recurring appointments.",
+      "methods": [
+        {
+          "name": "GetEventsAsync",
+          "returnType": "Task<IReadOnlyList<SchedulerEvent>>",
+          "description": "Retrieves events within a date range.",
+          "parameters": [
+            {
+              "name": "start",
+              "type": "DateTime",
+              "description": "Start of the date range."
+            },
+            {
+              "name": "end",
+              "type": "DateTime",
+              "description": "End of the date range."
+            },
+            {
+              "name": "resourceIds",
+              "type": "IReadOnlyList<string>?",
+              "description": "Optional filter by resource IDs.",
+              "defaultValue": "null"
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "GetResourcesAsync",
+          "returnType": "Task<IReadOnlyList<SchedulerResource>>",
+          "description": "Retrieves available resources (rooms, people, equipment).",
+          "parameters": [
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "CreateEventAsync",
+          "returnType": "Task<SchedulerEvent?>",
+          "description": "Creates a new event.",
+          "parameters": [
+            {
+              "name": "eventData",
+              "type": "SchedulerEvent",
+              "description": "Event data to create."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "UpdateEventAsync",
+          "returnType": "Task<bool>",
+          "description": "Updates an existing event.",
+          "parameters": [
+            {
+              "name": "eventData",
+              "type": "SchedulerEvent",
+              "description": "Updated event data."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "DeleteEventAsync",
+          "returnType": "Task<bool>",
+          "description": "Deletes an event.",
+          "parameters": [
+            {
+              "name": "eventId",
+              "type": "string",
+              "description": "ID of the event to delete."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmScheduler",
+        "TmSchedulerDayView",
+        "TmSchedulerWeekView",
+        "TmSchedulerMonthView"
+      ],
+      "examples": [
+        {
+          "title": "Schedule provider",
+          "code": "public class ScheduleDataProvider : IScheduleDataProvider\n{\n    private readonly ICalendarService _calendar;\n\n    public async Task<IReadOnlyList<SchedulerEvent>> GetEventsAsync(\n        DateTime start, DateTime end, \n        IReadOnlyList<string>? resourceIds = null,\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetEventsAsync(start, end, resourceIds, ct);\n    }\n\n    public async Task<IReadOnlyList<SchedulerResource>> GetResourcesAsync(\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetResourcesAsync(ct);\n    }\n\n    public async Task<SchedulerEvent?> CreateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.CreateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> UpdateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.UpdateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> DeleteEventAsync(\n        string eventId, CancellationToken ct = default)\n    {\n        return await _calendar.DeleteEventAsync(eventId, ct);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "ITmLocalizer",
+      "kind": "Interface",
+      "category": "Localization",
+      "namespace": "Tempo.Blazor.Localization",
+      "description": "Localization service interface for Tempo.Blazor components. Provides translated strings based on resource keys. The library includes default implementations for English and Czech.",
+      "methods": [
+        {
+          "name": "GetString",
+          "returnType": "string",
+          "description": "Gets the localized string for the specified key.",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "description": "Resource key to look up."
+            }
+          ]
+        },
+        {
+          "name": "GetString",
+          "returnType": "string",
+          "description": "Gets the localized string with format arguments.",
+          "parameters": [
+            {
+              "name": "key",
+              "type": "string",
+              "description": "Resource key to look up."
+            },
+            {
+              "name": "args",
+              "type": "params object?[]",
+              "description": "Format arguments."
+            }
+          ]
+        },
+        {
+          "name": "CurrentCulture",
+          "returnType": "CultureInfo",
+          "description": "Gets the current culture.",
+          "isProperty": true
+        }
+      ],
+      "usedInComponents": [
+        "All Tempo.Blazor components"
+      ],
+      "examples": [
+        {
+          "title": "Custom localizer implementation",
+          "code": "public class CustomLocalizer : ITmLocalizer\n{\n    private readonly IStringLocalizer<Resources> _localizer;\n\n    public CustomLocalizer(IStringLocalizer<Resources> localizer)\n    {\n        _localizer = localizer;\n    }\n\n    public string GetString(string key) => _localizer[key];\n\n    public string GetString(string key, params object?[] args) => \n        string.Format(_localizer[key], args);\n\n    public CultureInfo CurrentCulture => CultureInfo.CurrentUICulture;\n}"
+        },
+        {
+          "title": "Registration",
+          "code": "// Program.cs\nbuilder.Services.AddSingleton<ITmLocalizer, CustomLocalizer>();\n\n// Or use built-in\nbuilder.Services.AddTempoBlazor(); // Registers default localizer"
+        },
+        {
+          "title": "Usage in component",
+          "code": "@inject ITmLocalizer Loc\n\n<button>@Loc[\"TmButton_Submit\"]</button>"
+        }
+      ]
+    },
+    {
+      "itemName": "ITokenDataProvider",
+      "kind": "Interface",
+      "category": "DataProviders",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Data provider for token/tag autocomplete functionality. Provides items based on user input for components like TmTagPicker.",
+      "methods": [
+        {
+          "name": "GetItemsAsync",
+          "returnType": "Task<IReadOnlyList<IToken>>",
+          "description": "Retrieves tokens matching the search text.",
+          "parameters": [
+            {
+              "name": "searchText",
+              "type": "string",
+              "description": "User's search input."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        },
+        {
+          "name": "CreateTokenAsync",
+          "returnType": "Task<IToken?>",
+          "description": "Creates a new token from user input (for 'create new' functionality).",
+          "parameters": [
+            {
+              "name": "text",
+              "type": "string",
+              "description": "Text entered by user."
+            },
+            {
+              "name": "ct",
+              "type": "CancellationToken",
+              "description": "Cancellation token.",
+              "defaultValue": "default"
+            }
+          ]
+        }
+      ],
+      "usedInComponents": [
+        "TmTagPicker"
+      ],
+      "examples": [
+        {
+          "title": "Tag provider implementation",
+          "code": "public class TagTokenProvider : ITokenDataProvider\n{\n    private readonly ITagService _tagService;\n\n    public TagTokenProvider(ITagService tagService)\n    {\n        _tagService = tagService;\n    }\n\n    public async Task<IReadOnlyList<IToken>> GetItemsAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var tags = await _tagService.SearchAsync(searchText, ct);\n        return tags.Select(t => new Token { Id = t.Id, Name = t.Name }).ToList();\n    }\n\n    public async Task<IToken?> CreateTokenAsync(\n        string text, CancellationToken ct = default)\n    {\n        var tag = await _tagService.CreateAsync(text, ct);\n        return new Token { Id = tag.Id, Name = tag.Name };\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "PagedResult<TItem>",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Generic paged result container used by data providers. Contains items for the current page and total count.",
+      "typeParameters": [
+        {
+          "name": "TItem",
+          "description": "The item type."
+        }
+      ],
+      "properties": [
+        {
+          "name": "Items",
+          "type": "IReadOnlyList<TItem>",
+          "isRequired": false,
+          "default": "Array.Empty<TItem>()",
+          "description": "Items for the current page."
+        },
+        {
+          "name": "TotalCount",
+          "type": "int",
+          "isRequired": false,
+          "default": "0",
+          "description": "Total count of items across all pages."
+        },
+        {
+          "name": "PageCount",
+          "type": "int",
+          "isRequired": false,
+          "description": "Total number of pages (computed from TotalCount and page size)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Creating a paged result",
+          "code": "var items = await query\n    .Skip((page - 1) * pageSize)\n    .Take(pageSize)\n    .ToListAsync();\n\nvar total = await query.CountAsync();\n\nreturn new PagedResult<ProductDto>\n{\n    Items = items,\n    TotalCount = total\n};"
+        }
+      ]
+    },
+    {
+      "itemName": "SelectOption<TValue>",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Simple key-value option for select dropdowns. Used by TmSelect and other selection components.",
+      "typeParameters": [
+        {
+          "name": "TValue",
+          "description": "Type of the option value."
+        }
+      ],
+      "properties": [
+        {
+          "name": "Value",
+          "type": "TValue",
+          "isRequired": true,
+          "description": "The option value."
+        },
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display text for the option."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Whether this option is disabled."
+        },
+        {
+          "name": "Group",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional group name for grouping options."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Creating options",
+          "code": "var options = new List<SelectOption<int>>\n{\n    new() { Value = 1, Text = \"Option 1\" },\n    new() { Value = 2, Text = \"Option 2\" },\n    new() { Value = 3, Text = \"Option 3\", Disabled = true },\n    new() { Value = 4, Text = \"Option 4\", Group = \"Group A\" },\n    new() { Value = 5, Text = \"Option 5\", Group = \"Group A\" }\n};\n\n<TmSelect @bind-Value=\"selectedValue\" Options=\"@options\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "SidebarNavItem",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Navigation item for sidebar menu. Supports nested items for hierarchical navigation.",
+      "properties": [
+        {
+          "name": "Id",
+          "type": "string",
+          "isRequired": true,
+          "description": "Unique identifier for the item."
+        },
+        {
+          "name": "Text",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display text for the item."
+        },
+        {
+          "name": "Href",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Navigation URL. If null, the item acts as a expandable parent."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional icon name."
+        },
+        {
+          "name": "Children",
+          "type": "IReadOnlyList<SidebarNavItem>?",
+          "isRequired": false,
+          "description": "Nested child items for sub-menus."
+        },
+        {
+          "name": "IsVisible",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "Whether the item is visible."
+        },
+        {
+          "name": "Badge",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional badge text (e.g., notification count)."
+        },
+        {
+          "name": "BadgeColor",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Badge color variant (primary, success, warning, danger)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Navigation structure",
+          "code": "var navItems = new List<SidebarNavItem>\n{\n    new()\n    {\n        Id = \"dashboard\",\n        Text = \"Dashboard\",\n        Icon = \"dashboard\",\n        Href = \"/\"\n    },\n    new()\n    {\n        Id = \"products\",\n        Text = \"Products\",\n        Icon = \"box\",\n        Children = new()\n        {\n            new() { Id = \"list\", Text = \"List\", Href = \"/products\" },\n            new() { Id = \"categories\", Text = \"Categories\", Href = \"/categories\" }\n        }\n    },\n    new()\n    {\n        Id = \"messages\",\n        Text = \"Messages\",\n        Icon = \"mail\",\n        Href = \"/messages\",\n        Badge = \"3\",\n        BadgeColor = \"danger\"\n    }\n};\n\n<TmSidebar Items=\"@navItems\" />"
+        }
+      ]
+    }
+  ]
+}

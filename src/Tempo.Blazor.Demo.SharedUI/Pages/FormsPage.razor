@@ -94,6 +94,7 @@
                            Items="_fruitOptions"
                            DisplayField="@(o => o.Label)"
                            ValueField="@(o => o.Value)"
+                           ShowConfirmButton="true"
                            @bind-Values="_selectedFruits"
                            Placeholder="Select fruits..." />
             @if (_selectedFruits.Count > 0)
@@ -106,7 +107,7 @@
             }
         </div>
         <div class="showcase-card">
-            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">CheckBox Mode</h3>
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">CheckBox Mode with Confirm</h3>
             <TmMultiSelect TItem="SelectOption<string>" TValue="string"
                            Label="Technologies"
                            Items="_techOptions"
@@ -114,6 +115,7 @@
                            ValueField="@(o => o.Value)"
                            Mode="MultiSelectMode.CheckBox"
                            ShowSelectAll="true"
+                           ShowConfirmButton="true"
                            @bind-Values="_selectedTech"
                            Placeholder="Select technologies..." />
         </div>
@@ -128,6 +130,7 @@
                            ValueField="@(o => o.Value)"
                            Mode="MultiSelectMode.Delimiter"
                            ShowCheckBox="true"
+                           ShowConfirmButton="true"
                            @bind-Values="_selectedDelimiter"
                            Placeholder="Select items..." />
         </div>
@@ -140,6 +143,7 @@
                            ValueField="@(o => o.Value)"
                            MaxSelectionCount="2"
                            ShowCheckBox="true"
+                           ShowConfirmButton="true"
                            @bind-Values="_selectedMax"
                            HelpText="You can select at most 2 items." />
         </div>

@@ -52,6 +52,18 @@
     "tm-dynamic-form__required",
     "tm-dynamic-form__help"
   ],
+  "usedAbstractions": [
+    {
+      "name": "DynamicFieldDefinition",
+      "description": "Defines a field for dynamic form rendering",
+      "parameter": "Fields"
+    },
+    {
+      "name": "DynamicFieldType",
+      "description": "Enum defining available field types",
+      "usedIn": "DynamicFieldDefinition.FieldType"
+    }
+  ],
   "examples": [
     {
       "title": "Two-column dynamic form",

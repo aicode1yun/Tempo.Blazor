@@ -2,7 +2,7 @@
   "itemName": "TmSelect",
   "kind": "Component",
   "category": "Inputs",
-  "description": "Generic dropdown select component supporting typed options (string, int, Guid), label, placeholder, error/help text, and manual option rendering via ChildContent.",
+  "description": "Generic dropdown select component supporting typed options (string, int, Guid), label, placeholder, error/help text, disabled state, and manual option rendering via ChildContent. Uses native HTML <select> element with automatic value conversion.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Inputs",
     "@using Tempo.Blazor.Models"
@@ -12,13 +12,13 @@
       "name": "Value",
       "type": "TValue?",
       "isRequired": false,
-      "description": "Selected value."
+      "description": "Selected value. Supports two-way binding via @bind-Value."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<TValue?>",
       "isRequired": false,
-      "description": "Fires when the selection changes."
+      "description": "Fires when the selection changes. Used automatically with @bind-Value."
     },
     {
       "name": "Label",
@@ -30,13 +30,13 @@
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Placeholder option shown when no value is selected."
+      "description": "Placeholder option shown when no value is selected. Rendered as a disabled <option>."
     },
     {
       "name": "Error",
       "type": "string?",
       "isRequired": false,
-      "description": "Validation error message."
+      "description": "Validation error message. When set, adds tm-select-error class and shows error text below."
     },
     {
       "name": "HelpText",
@@ -49,25 +49,31 @@
       "type": "string",
       "isRequired": false,
       "default": "Guid.NewGuid().ToString(\"n\")[..8]",
-      "description": "HTML id attribute."
+      "description": "HTML id attribute. Auto-generated if not provided."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Additional CSS class(es)."
+      "description": "Additional CSS class(es) for the root wrapper element."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Disables the select."
+      "description": "Disables the select element."
     },
     {
       "name": "Options",
       "type": "IReadOnlyList<SelectOption<TValue>>?",
       "isRequired": false,
-      "description": "Typed option list. When provided, &lt;option&gt; elements are generated automatically."
+      "description": "Typed option list. When provided, <option> elements are generated automatically. Each SelectOption has Value, Label, and optional IsDisabled."
+    },
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Manual <option> elements. Use when you need full control over option rendering instead of using Options parameter."
     }
   ],
   "cssClasses": [
@@ -83,12 +89,48 @@
   ],
   "examples": [
     {
-      "title": "Select with typed options",
-      "code": "<TmSelect TValue=\"string\" @bind-Value=\"selectedCountry\" Label=\"Country\" Placeholder=\"Choose a country\" Options=\"@countryOptions\" />"
+      "title": "Basic select with string options and two-way binding",
+      "code": "@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Models\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedCountry\"\n          Label=\"Country\"\n          Placeholder=\"Choose a country\"\n          Options=\"@_countryOptions\" />\n\n<p>Selected: @_selectedCountry</p>\n\n@code {\n    private string? _selectedCountry;\n\n    private List<SelectOption<string>> _countryOptions =\n    [\n        new(\"CZ\", \"Czech Republic\"),\n        new(\"SK\", \"Slovakia\"),\n        new(\"DE\", \"Germany\"),\n        new(\"AT\", \"Austria\")\n    ];\n}"
     },
     {
-      "title": "Select with error",
-      "code": "<TmSelect TValue=\"int\" @bind-Value=\"selectedId\" Label=\"Category\" Error=\"Please select a category\" Options=\"@categoryOptions\" />"
+      "title": "Pre-selecting a value (setting initial selection)",
+      "code": "@* Set Value or the bound variable to pre-select an option.\n   The value must match one of the SelectOption.Value values. *@\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedRole\"\n          Label=\"Role\"\n          Options=\"@_roleOptions\" />\n\n@code {\n    // Pre-selected to \"editor\" on load\n    private string? _selectedRole = \"editor\";\n\n    private List<SelectOption<string>> _roleOptions =\n    [\n        new(\"admin\", \"Administrator\"),\n        new(\"editor\", \"Editor\"),\n        new(\"viewer\", \"Viewer\")\n    ];\n}"
+    },
+    {
+      "title": "Select with integer value type",
+      "code": "<TmSelect TValue=\"int\"\n          @bind-Value=\"_selectedCategoryId\"\n          Label=\"Category\"\n          Placeholder=\"Select category\"\n          Options=\"@_categoryOptions\" />\n\n@code {\n    private int _selectedCategoryId;\n\n    private List<SelectOption<int>> _categoryOptions =\n    [\n        new(1, \"Electronics\"),\n        new(2, \"Books\"),\n        new(3, \"Clothing\"),\n        new(4, \"Sports\")\n    ];\n}"
+    },
+    {
+      "title": "Select with Guid value type",
+      "code": "<TmSelect TValue=\"Guid\"\n          @bind-Value=\"_selectedTenantId\"\n          Label=\"Tenant\"\n          Placeholder=\"Select tenant\"\n          Options=\"@_tenantOptions\" />\n\n@code {\n    private Guid _selectedTenantId;\n    private List<SelectOption<Guid>> _tenantOptions = [];\n\n    protected override void OnInitialized()\n    {\n        _tenantOptions =\n        [\n            new(Guid.Parse(\"a1b2c3d4-0000-0000-0000-000000000001\"), \"Tenant Alpha\"),\n            new(Guid.Parse(\"a1b2c3d4-0000-0000-0000-000000000002\"), \"Tenant Beta\")\n        ];\n    }\n}"
+    },
+    {
+      "title": "Select with disabled options",
+      "code": "<TmSelect TValue=\"string\"\n          @bind-Value=\"_selected\"\n          Label=\"Subscription Plan\"\n          Options=\"@_planOptions\" />\n\n@code {\n    private string? _selected;\n\n    private List<SelectOption<string>> _planOptions =\n    [\n        new(\"free\", \"Free\"),\n        new(\"pro\", \"Pro\"),\n        new(\"enterprise\", \"Enterprise\", isDisabled: true)  // User cannot select this\n    ];\n}"
+    },
+    {
+      "title": "Select with validation error and help text",
+      "code": "@* Error takes priority over HelpText — when Error is set, HelpText is hidden. *@\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedDepartment\"\n          Label=\"Department\"\n          Placeholder=\"Select department\"\n          Error=\"@_error\"\n          HelpText=\"Choose your primary department\"\n          Options=\"@_departments\" />\n\n<button @onclick=\"Validate\">Submit</button>\n\n@code {\n    private string? _selectedDepartment;\n    private string? _error;\n\n    private List<SelectOption<string>> _departments =\n    [\n        new(\"IT\", \"IT\"),\n        new(\"HR\", \"Human Resources\"),\n        new(\"FIN\", \"Finance\")\n    ];\n\n    private void Validate()\n    {\n        _error = string.IsNullOrEmpty(_selectedDepartment)\n            ? \"Please select a department\"\n            : null;\n    }\n}"
+    },
+    {
+      "title": "Manual option rendering via ChildContent",
+      "code": "@* Use ChildContent when you need full control over <option> elements\n   instead of using the Options parameter. *@\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedPriority\"\n          Label=\"Priority\">\n    <option value=\"\" disabled selected>-- Select priority --</option>\n    <option value=\"low\">🟢 Low</option>\n    <option value=\"medium\">🟡 Medium</option>\n    <option value=\"high\">🔴 High</option>\n    <option value=\"critical\" disabled>⛔ Critical (admin only)</option>\n</TmSelect>\n\n@code {\n    private string? _selectedPriority;\n}"
+    },
+    {
+      "title": "Loading options from API on page load",
+      "code": "@using Tempo.Blazor.Components.Inputs\n@using Tempo.Blazor.Models\n@inject HttpClient Http\n\n<TmSelect TValue=\"int\"\n          @bind-Value=\"_selectedProjectId\"\n          Label=\"Project\"\n          Placeholder=\"Select project\"\n          Disabled=\"@_isLoading\"\n          Options=\"@_projectOptions\" />\n\n@code {\n    private int _selectedProjectId;\n    private List<SelectOption<int>> _projectOptions = [];\n    private bool _isLoading = true;\n\n    protected override async Task OnInitializedAsync()\n    {\n        var projects = await Http.GetFromJsonAsync<List<ProjectDto>>(\"/api/projects\");\n        _projectOptions = projects?.Select(p => new SelectOption<int>(p.Id, p.Name)).ToList() ?? [];\n        _isLoading = false;\n    }\n}"
+    },
+    {
+      "title": "Programmatic value change and reacting to selection",
+      "code": "<TmSelect TValue=\"string\"\n          Value=\"@_selected\"\n          ValueChanged=\"OnSelectionChanged\"\n          Label=\"Status\"\n          Options=\"@_statusOptions\" />\n\n<button @onclick=\"() => _selected = &quot;active&quot;\">Set Active</button>\n<button @onclick=\"() => _selected = null\">Clear</button>\n\n@code {\n    private string? _selected;\n\n    private List<SelectOption<string>> _statusOptions =\n    [\n        new(\"active\", \"Active\"),\n        new(\"inactive\", \"Inactive\"),\n        new(\"archived\", \"Archived\")\n    ];\n\n    private async Task OnSelectionChanged(string? newValue)\n    {\n        _selected = newValue;\n        // React to the change — e.g. reload dependent data\n        Console.WriteLine($\"Status changed to: {newValue}\");\n    }\n}"
+    },
+    {
+      "title": "Cascading selects (dependent dropdowns)",
+      "code": "@* Second select depends on the first. When country changes,\n   city options are reloaded. *@\n\n<TmSelect TValue=\"string\"\n          Value=\"@_selectedCountry\"\n          ValueChanged=\"OnCountryChanged\"\n          Label=\"Country\"\n          Placeholder=\"Select country\"\n          Options=\"@_countries\" />\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedCity\"\n          Label=\"City\"\n          Placeholder=\"Select city\"\n          Disabled=\"@(string.IsNullOrEmpty(_selectedCountry))\"\n          Options=\"@_cities\" />\n\n@code {\n    private string? _selectedCountry;\n    private string? _selectedCity;\n    private List<SelectOption<string>> _countries =\n    [\n        new(\"CZ\", \"Czech Republic\"),\n        new(\"SK\", \"Slovakia\")\n    ];\n    private List<SelectOption<string>> _cities = [];\n\n    private async Task OnCountryChanged(string? country)\n    {\n        _selectedCountry = country;\n        _selectedCity = null; // Reset city when country changes\n\n        _cities = country switch\n        {\n            \"CZ\" => [new(\"PRG\", \"Prague\"), new(\"BRN\", \"Brno\")],\n            \"SK\" => [new(\"BA\", \"Bratislava\"), new(\"KE\", \"Košice\")],\n            _ => []\n        };\n    }\n}"
+    },
+    {
+      "title": "Disabled select",
+      "code": "<TmSelect TValue=\"string\"\n          Value=\"@(\"readonly-value\")\"\n          Label=\"Locked Field\"\n          Disabled=\"true\"\n          Options=\"@(new List<SelectOption<string>> { new(\"readonly-value\", \"Cannot change this\") })\" />"
     }
   ]
 }

@@ -56,6 +56,18 @@
     "tm-tag-dot",
     "tm-tag-create-option"
   ],
+  "usedAbstractions": [
+    {
+      "name": "ITokenDataProvider",
+      "description": "Data provider for token/tag autocomplete functionality",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "IToken",
+      "description": "Interface representing a token/tag item",
+      "usedIn": "ITokenDataProvider"
+    }
+  ],
   "examples": [
     {
       "title": "Basic tag picker",

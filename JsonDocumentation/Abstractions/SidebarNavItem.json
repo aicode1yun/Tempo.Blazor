@@ -1,0 +1,64 @@
+{
+  "itemName": "SidebarNavItem",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Navigation item for sidebar menu. Supports nested items for hierarchical navigation.",
+  "properties": [
+    {
+      "name": "Id",
+      "type": "string",
+      "isRequired": true,
+      "description": "Unique identifier for the item."
+    },
+    {
+      "name": "Text",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display text for the item."
+    },
+    {
+      "name": "Href",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Navigation URL. If null, the item acts as a expandable parent."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional icon name."
+    },
+    {
+      "name": "Children",
+      "type": "IReadOnlyList<SidebarNavItem>?",
+      "isRequired": false,
+      "description": "Nested child items for sub-menus."
+    },
+    {
+      "name": "IsVisible",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the item is visible."
+    },
+    {
+      "name": "Badge",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional badge text (e.g., notification count)."
+    },
+    {
+      "name": "BadgeColor",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Badge color variant (primary, success, warning, danger)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Navigation structure",
+      "code": "var navItems = new List<SidebarNavItem>\n{\n    new()\n    {\n        Id = \"dashboard\",\n        Text = \"Dashboard\",\n        Icon = \"dashboard\",\n        Href = \"/\"\n    },\n    new()\n    {\n        Id = \"products\",\n        Text = \"Products\",\n        Icon = \"box\",\n        Children = new()\n        {\n            new() { Id = \"list\", Text = \"List\", Href = \"/products\" },\n            new() { Id = \"categories\", Text = \"Categories\", Href = \"/categories\" }\n        }\n    },\n    new()\n    {\n        Id = \"messages\",\n        Text = \"Messages\",\n        Icon = \"mail\",\n        Href = \"/messages\",\n        Badge = \"3\",\n        BadgeColor = \"danger\"\n    }\n};\n\n<TmSidebar Items=\"@navItems\" />"
+    }
+  ]
+}

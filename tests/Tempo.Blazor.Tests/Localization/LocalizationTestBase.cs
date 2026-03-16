@@ -225,6 +225,12 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDateTimeRangePicker_Clear"]           = "Clear range",
         ["TmDateTimeRangePicker_ValidationError"] = "End must be after start",
 
+        // TmMultiSelect
+        ["TmMultiSelect_ConfirmButton"] = "Done",
+
+        // TmMultiSelect
+        ["TmMultiSelect_ConfirmButton"] = "Hotovo",
+
         // TmFilterBuilder operators
         ["TmFilter_Contains"]      = "contains",
         ["TmFilter_NotContains"]   = "does not contain",

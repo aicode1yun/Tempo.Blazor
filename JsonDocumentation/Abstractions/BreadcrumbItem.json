@@ -1,0 +1,33 @@
+{
+  "itemName": "BreadcrumbItem",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Represents a single item in a breadcrumb navigation. Used by TmBreadcrumbs component.",
+  "properties": [
+    {
+      "name": "Text",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display text for the breadcrumb item."
+    },
+    {
+      "name": "Href",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional URL for navigation. If null, the item is displayed as text only."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional icon name to display before the text."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Creating breadcrumb items",
+      "code": "var breadcrumbs = new List<BreadcrumbItem>\n{\n    new() { Text = \"Home\", Href = \"/\", Icon = \"home\" },\n    new() { Text = \"Products\", Href = \"/products\" },\n    new() { Text = \"Details\" } // Current page (no link)\n};\n\n<TmBreadcrumbs Items=\"@breadcrumbs\" />"
+    }
+  ]
+}

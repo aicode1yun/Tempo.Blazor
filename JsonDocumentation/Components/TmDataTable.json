@@ -227,6 +227,33 @@
     "tm-data-table-group-pagination",
     "tm-pagination-compact"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IDataTableDataProvider<TItem>",
+      "description": "Server-side data provider for fetching paginated, sorted, and filtered data",
+      "parameter": "DataProvider"
+    },
+    {
+      "name": "DataTableQuery",
+      "description": "Query parameters passed to the data provider (pagination, sorting, filtering)",
+      "usedIn": "IDataTableDataProvider.GetDataAsync"
+    },
+    {
+      "name": "PagedResult<TItem>",
+      "description": "Result returned by the data provider",
+      "usedIn": "IDataTableDataProvider.GetDataAsync"
+    },
+    {
+      "name": "FilterDefinition",
+      "description": "Individual filter condition used in DataTableQuery.Filters",
+      "usedIn": "DataTableQuery.Filters"
+    },
+    {
+      "name": "DataTableView",
+      "description": "Saved view configuration for column visibility, sorting, and filters",
+      "usedIn": "ViewManager"
+    }
+  ],
   "examples": [
     {
       "title": "Basic data table with columns",

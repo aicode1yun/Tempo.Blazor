@@ -1,0 +1,117 @@
+{
+  "itemName": "IScheduleDataProvider",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Data provider for scheduler/calendar components. Handles events, resources, and recurring appointments.",
+  "methods": [
+    {
+      "name": "GetEventsAsync",
+      "returnType": "Task<IReadOnlyList<SchedulerEvent>>",
+      "description": "Retrieves events within a date range.",
+      "parameters": [
+        {
+          "name": "start",
+          "type": "DateTime",
+          "description": "Start of the date range."
+        },
+        {
+          "name": "end",
+          "type": "DateTime",
+          "description": "End of the date range."
+        },
+        {
+          "name": "resourceIds",
+          "type": "IReadOnlyList<string>?",
+          "description": "Optional filter by resource IDs.",
+          "defaultValue": "null"
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetResourcesAsync",
+      "returnType": "Task<IReadOnlyList<SchedulerResource>>",
+      "description": "Retrieves available resources (rooms, people, equipment).",
+      "parameters": [
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "CreateEventAsync",
+      "returnType": "Task<SchedulerEvent?>",
+      "description": "Creates a new event.",
+      "parameters": [
+        {
+          "name": "eventData",
+          "type": "SchedulerEvent",
+          "description": "Event data to create."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "UpdateEventAsync",
+      "returnType": "Task<bool>",
+      "description": "Updates an existing event.",
+      "parameters": [
+        {
+          "name": "eventData",
+          "type": "SchedulerEvent",
+          "description": "Updated event data."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "DeleteEventAsync",
+      "returnType": "Task<bool>",
+      "description": "Deletes an event.",
+      "parameters": [
+        {
+          "name": "eventId",
+          "type": "string",
+          "description": "ID of the event to delete."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmScheduler",
+    "TmSchedulerDayView",
+    "TmSchedulerWeekView",
+    "TmSchedulerMonthView"
+  ],
+  "examples": [
+    {
+      "title": "Schedule provider",
+      "code": "public class ScheduleDataProvider : IScheduleDataProvider\n{\n    private readonly ICalendarService _calendar;\n\n    public async Task<IReadOnlyList<SchedulerEvent>> GetEventsAsync(\n        DateTime start, DateTime end, \n        IReadOnlyList<string>? resourceIds = null,\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetEventsAsync(start, end, resourceIds, ct);\n    }\n\n    public async Task<IReadOnlyList<SchedulerResource>> GetResourcesAsync(\n        CancellationToken ct = default)\n    {\n        return await _calendar.GetResourcesAsync(ct);\n    }\n\n    public async Task<SchedulerEvent?> CreateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.CreateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> UpdateEventAsync(\n        SchedulerEvent eventData, CancellationToken ct = default)\n    {\n        return await _calendar.UpdateEventAsync(eventData, ct);\n    }\n\n    public async Task<bool> DeleteEventAsync(\n        string eventId, CancellationToken ct = default)\n    {\n        return await _calendar.DeleteEventAsync(eventId, ct);\n    }\n}"
+    }
+  ]
+}

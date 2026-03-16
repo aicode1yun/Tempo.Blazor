@@ -1,0 +1,69 @@
+{
+  "itemName": "DropdownDataResult<TItem>",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Result returned by IDropdownDataProvider<T>.GetItemsAsync(). Contains the items for the current page and total count for pagination.",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "The item type."
+    }
+  ],
+  "properties": [
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<TItem>",
+      "isRequired": false,
+      "default": "Array.Empty<TItem>()",
+      "description": "The items for the current page."
+    },
+    {
+      "name": "TotalCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "Total count of matching items across all pages."
+    },
+    {
+      "name": "HasMore",
+      "type": "bool",
+      "isRequired": false,
+      "description": "True if there are more items beyond the current page (computed property)."
+    }
+  ],
+  "staticMethods": [
+    {
+      "name": "Empty",
+      "returnType": "DropdownDataResult<TItem>",
+      "description": "Creates an empty result (no items found)."
+    },
+    {
+      "name": "WithItems",
+      "returnType": "DropdownDataResult<TItem>",
+      "parameters": [
+        { "name": "items", "type": "IReadOnlyList<TItem>" },
+        { "name": "totalCount", "type": "int" }
+      ],
+      "description": "Creates a result with items and total count."
+    },
+    {
+      "name": "WithAllItems",
+      "returnType": "DropdownDataResult<TItem>",
+      "parameters": [
+        { "name": "items", "type": "IReadOnlyList<TItem>" }
+      ],
+      "description": "Creates a result where all items fit in one page (no further pagination)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Returning results from provider",
+      "code": "public async Task<DropdownDataResult<UserDto>> GetItemsAsync(\n    DropdownSearchRequest request, CancellationToken ct)\n{\n    var query = _db.Users\n        .Where(u => u.Name.Contains(request.SearchText))\n        .Skip((request.Page - 1) * request.PageSize)\n        .Take(request.PageSize);\n\n    var total = await query.CountAsync(ct);\n    var items = await query.ToListAsync(ct);\n\n    return DropdownDataResult<UserDto>.WithItems(items, total);\n}"
+    },
+    {
+      "title": "Empty result",
+      "code": "if (string.IsNullOrWhiteSpace(request.SearchText))\n{\n    return DropdownDataResult<UserDto>.Empty();\n}"
+    }
+  ]
+}

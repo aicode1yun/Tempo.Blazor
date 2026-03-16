@@ -1,0 +1,65 @@
+{
+  "itemName": "IDataTableDataProvider<TItem>",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Server-side (or async) data provider for TmDataTable. Implement this interface to power sorting, filtering, and pagination from an API or database. For in-memory scenarios, use InMemoryDataProvider<TItem> from Tempo.Blazor.",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "The item type returned by the provider."
+    }
+  ],
+  "methods": [
+    {
+      "name": "GetDataAsync",
+      "returnType": "Task<PagedResult<TItem>>",
+      "description": "Fetches a page of data applying the given query (sort, filter, search, page).",
+      "parameters": [
+        {
+          "name": "query",
+          "type": "DataTableQuery",
+          "description": "Query parameters including pagination, sorting, and filtering."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetGroupedDataAsync",
+      "returnType": "Task<GroupedPagedResult<TItem>?>",
+      "description": "Fetches grouped data from the server with per-group pagination. Called when DataTableQuery.GroupByColumns is non-empty. Default implementation returns null, which causes the component to fall back to client-side grouping via GetDataAsync.",
+      "isOptional": true,
+      "parameters": [
+        {
+          "name": "query",
+          "type": "DataTableQuery",
+          "description": "Query parameters including grouping configuration."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmDataTable"
+  ],
+  "examples": [
+    {
+      "title": "API-based implementation",
+      "code": "public class ApiDataProvider<T> : IDataTableDataProvider<T>\n{\n    private readonly IApiClient _api;\n    private readonly string _endpoint;\n\n    public ApiDataProvider(IApiClient api, string endpoint)\n    {\n        _api = api;\n        _endpoint = endpoint;\n    }\n\n    public async Task<PagedResult<T>> GetDataAsync(\n        DataTableQuery query, CancellationToken ct = default)\n    {\n        return await _api.GetPagedAsync<T>(_endpoint, query, ct);\n    }\n}"
+    },
+    {
+      "title": "Usage in DataTable",
+      "code": "<TmDataTable TItem=\"ProductDto\" DataProvider=\"@_productProvider\">\n    <TmDataTableColumn Field=\"@(p => p.Name)\" Title=\"Name\" />\n    <TmDataTableColumn Field=\"@(p => p.Price)\" Title=\"Price\" />\n</TmDataTable>\n\n@code {\n    private IDataTableDataProvider<ProductDto> _productProvider = \n        new ApiDataProvider<ProductDto>(_api, \"/api/products\");\n}"
+    }
+  ]
+}

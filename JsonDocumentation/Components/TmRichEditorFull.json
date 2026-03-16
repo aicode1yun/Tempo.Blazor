@@ -129,6 +129,34 @@
     "tm-mention",
     "tm-token"
   ],
+  "publicMethods": [
+    {
+      "name": "RefreshTokensAsync",
+      "returnType": "Task",
+      "description": "Refreshes the token list from the provider. Calls Refresh() on the TokenProvider to invalidate its cache, then reloads tokens. Call this after creating or updating tokens so the autocomplete dropdown reflects the changes."
+    },
+    {
+      "name": "InsertTokenAsync",
+      "returnType": "Task",
+      "parameters": [
+        { "name": "key", "type": "string" },
+        { "name": "displayName", "type": "string?", "default": "null" }
+      ],
+      "description": "Programmatically inserts a token chip into the editor. Call this from the parent component after a token is created via dialog."
+    }
+  ],
+  "usedAbstractions": [
+    {
+      "name": "IMentionDataProvider",
+      "description": "Data provider for @mention functionality",
+      "parameter": "MentionProvider"
+    },
+    {
+      "name": "IMentionUser",
+      "description": "Interface representing a user for mentions",
+      "usedIn": "IMentionDataProvider"
+    }
+  ],
   "examples": [
     {
       "title": "Basic rich editor with two-way binding",

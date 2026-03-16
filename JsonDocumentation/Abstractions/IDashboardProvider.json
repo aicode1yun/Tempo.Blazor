@@ -1,0 +1,73 @@
+{
+  "itemName": "IDashboardProvider",
+  "kind": "Interface",
+  "category": "DataProviders",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Provider interface for dashboard widget data and persistence. Manages widget configuration and data fetching.",
+  "methods": [
+    {
+      "name": "GetWidgetsAsync",
+      "returnType": "Task<IReadOnlyList<DashboardWidget>>",
+      "description": "Retrieves all widgets for the current dashboard.",
+      "parameters": [
+        {
+          "name": "dashboardId",
+          "type": "string",
+          "description": "Unique identifier of the dashboard."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "SaveLayoutAsync",
+      "returnType": "Task<bool>",
+      "description": "Saves the current widget layout.",
+      "parameters": [
+        {
+          "name": "dashboardId",
+          "type": "string",
+          "description": "Unique identifier of the dashboard."
+        },
+        {
+          "name": "widgets",
+          "type": "IEnumerable<DashboardWidget>",
+          "description": "Widget configurations to save."
+        },
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    },
+    {
+      "name": "GetAvailableWidgetTypesAsync",
+      "returnType": "Task<IReadOnlyList<WidgetTypeDefinition>>",
+      "description": "Gets all available widget types that can be added to the dashboard.",
+      "parameters": [
+        {
+          "name": "ct",
+          "type": "CancellationToken",
+          "description": "Cancellation token.",
+          "defaultValue": "default"
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmDashboard",
+    "TmWidgetSelector"
+  ],
+  "examples": [
+    {
+      "title": "Dashboard provider",
+      "code": "public class DashboardProvider : IDashboardProvider\n{\n    private readonly IDashboardService _service;\n\n    public async Task<IReadOnlyList<DashboardWidget>> GetWidgetsAsync(\n        string dashboardId, CancellationToken ct = default)\n    {\n        return await _service.GetWidgetsAsync(dashboardId, ct);\n    }\n\n    public async Task<bool> SaveLayoutAsync(string dashboardId, \n        IEnumerable<DashboardWidget> widgets, CancellationToken ct = default)\n    {\n        return await _service.SaveLayoutAsync(dashboardId, widgets, ct);\n    }\n\n    public async Task<IReadOnlyList<WidgetTypeDefinition>> GetAvailableWidgetTypesAsync(\n        CancellationToken ct = default)\n    {\n        return await _service.GetWidgetTypesAsync(ct);\n    }\n}"
+    }
+  ]
+}

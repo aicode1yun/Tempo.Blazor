@@ -1,0 +1,33 @@
+{
+  "itemName": "FilterDefinition",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Defines a single filter condition for DataTableQuery. Specifies column, operator, and value for filtering.",
+  "properties": [
+    {
+      "name": "Column",
+      "type": "string",
+      "isRequired": true,
+      "description": "Column name to filter on."
+    },
+    {
+      "name": "Operator",
+      "type": "string",
+      "isRequired": true,
+      "description": "Filter operator. Common values: 'eq' (equals), 'ne' (not equals), 'gt' (greater than), 'gte' (greater than or equal), 'lt' (less than), 'lte' (less than or equal), 'contains', 'startswith', 'endswith', 'in'."
+    },
+    {
+      "name": "Value",
+      "type": "object?",
+      "isRequired": false,
+      "description": "Filter value. Type depends on the column and operator."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Common filters",
+      "code": "// Equals\nvar statusFilter = new FilterDefinition\n{\n    Column = \"Status\",\n    Operator = \"eq\",\n    Value = \"Active\"\n};\n\n// Contains (text search)\nvar nameFilter = new FilterDefinition\n{\n    Column = \"Name\",\n    Operator = \"contains\",\n    Value = \"john\"\n};\n\n// Greater than\nvar ageFilter = new FilterDefinition\n{\n    Column = \"Age\",\n    Operator = \"gt\",\n    Value = 18\n};\n\n// In list\nvar categoryFilter = new FilterDefinition\n{\n    Column = \"Category\",\n    Operator = \"in\",\n    Value = new[] { \"A\", \"B\", \"C\" }\n};"
+    }
+  ]
+}

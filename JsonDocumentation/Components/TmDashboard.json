@@ -79,6 +79,13 @@
     "tm-widget-resize-se",
     "tm-widget-drop-preview"
   ],
+  "usedAbstractions": [
+    {
+      "name": "IDashboardProvider",
+      "description": "Provider for dashboard widget data and persistence",
+      "parameter": "Provider"
+    }
+  ],
   "examples": [
     {
       "title": "Basic dashboard with provider",

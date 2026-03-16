@@ -1,0 +1,53 @@
+{
+  "itemName": "IIconProvider",
+  "kind": "Interface",
+  "category": "Icons",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Provider interface for custom icon systems. Implement to integrate external icon libraries (FontAwesome, Material Icons, etc.) with Tempo.Blazor components.",
+  "methods": [
+    {
+      "name": "GetIconSvg",
+      "returnType": "string?",
+      "description": "Returns SVG markup for the specified icon name.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Icon name/identifier."
+        },
+        {
+          "name": "cssClass",
+          "type": "string?",
+          "description": "Optional CSS class to add to the SVG element.",
+          "defaultValue": "null"
+        }
+      ]
+    },
+    {
+      "name": "HasIcon",
+      "returnType": "bool",
+      "description": "Checks if the provider has the specified icon.",
+      "parameters": [
+        {
+          "name": "name",
+          "type": "string",
+          "description": "Icon name/identifier."
+        }
+      ]
+    }
+  ],
+  "usedInComponents": [
+    "TmIcon",
+    "All components using icons"
+  ],
+  "examples": [
+    {
+      "title": "FontAwesome provider",
+      "code": "public class FontAwesomeProvider : IIconProvider\n{\n    public string? GetIconSvg(string name, string? cssClass = null)\n    {\n        // Return FontAwesome SVG or null to fall back to other providers\n        return name switch\n        {\n            \"user\" => \"<svg class=\\\"\" + cssClass + \"\\\" ...>...</svg>\",\n            \"search\" => \"<svg class=\\\"\" + cssClass + \"\\\" ...>...</svg>\",\n            _ => null\n        };\n    }\n\n    public bool HasIcon(string name) => \n        name is \"user\" or \"search\" or \"home\";\n}"
+    },
+    {
+      "title": "Registration",
+      "code": "// Program.cs\nIconRegistry.RegisterProvider(new FontAwesomeProvider());\n\n// Or register individual icons\nIconRegistry.Register(\"custom-logo\", \"<svg>...</svg>\");"
+    }
+  ]
+}

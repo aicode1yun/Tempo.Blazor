@@ -1,0 +1,53 @@
+{
+  "itemName": "DropdownSearchRequest",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Request parameters passed to IDropdownDataProvider<T>.GetItemsAsync(). Contains search text, pagination settings, and exclusion filters.",
+  "properties": [
+    {
+      "name": "SearchText",
+      "type": "string",
+      "isRequired": false,
+      "default": "string.Empty",
+      "description": "The user's current search/filter text. Empty string means no filter."
+    },
+    {
+      "name": "Page",
+      "type": "int",
+      "isRequired": false,
+      "default": "1",
+      "description": "1-based page number for pagination."
+    },
+    {
+      "name": "PageSize",
+      "type": "int",
+      "isRequired": false,
+      "default": "50",
+      "description": "Maximum items to return per page."
+    },
+    {
+      "name": "ExcludedIds",
+      "type": "IReadOnlyCollection<string>",
+      "isRequired": false,
+      "default": "Array.Empty<string>()",
+      "description": "Item IDs to exclude from results (e.g., already-selected items in multi-select)."
+    },
+    {
+      "name": "CancellationToken",
+      "type": "CancellationToken",
+      "isRequired": false,
+      "default": "default",
+      "description": "Cancellation token for async operations."
+    }
+  ],
+  "usedIn": [
+    "IDropdownDataProvider<TItem>"
+  ],
+  "examples": [
+    {
+      "title": "Creating a request",
+      "code": "var request = new DropdownSearchRequest\n{\n    SearchText = \"john\",\n    Page = 1,\n    PageSize = 20,\n    ExcludedIds = new[] { \"123\", \"456\" }\n};"
+    }
+  ]
+}

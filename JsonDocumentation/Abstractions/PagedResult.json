@@ -1,0 +1,41 @@
+{
+  "itemName": "PagedResult<TItem>",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Generic paged result container used by data providers. Contains items for the current page and total count.",
+  "typeParameters": [
+    {
+      "name": "TItem",
+      "description": "The item type."
+    }
+  ],
+  "properties": [
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<TItem>",
+      "isRequired": false,
+      "default": "Array.Empty<TItem>()",
+      "description": "Items for the current page."
+    },
+    {
+      "name": "TotalCount",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "Total count of items across all pages."
+    },
+    {
+      "name": "PageCount",
+      "type": "int",
+      "isRequired": false,
+      "description": "Total number of pages (computed from TotalCount and page size)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Creating a paged result",
+      "code": "var items = await query\n    .Skip((page - 1) * pageSize)\n    .Take(pageSize)\n    .ToListAsync();\n\nvar total = await query.CountAsync();\n\nreturn new PagedResult<ProductDto>\n{\n    Items = items,\n    TotalCount = total\n};"
+    }
+  ]
+}

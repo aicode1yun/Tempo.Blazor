@@ -146,6 +146,8 @@
     box-shadow: var(--tm-shadow-lg);
     display: flex;
     flex-direction: column;
+    box-sizing: border-box;
+    max-width: 100%;
 }
 
 /* ── Filter input ────────────────────────────────────── */
@@ -201,7 +203,33 @@
     font-size: var(--tm-font-size-xs);
 }
 .tm-multiselect__header { border-bottom: 1px solid var(--tm-border-color); }
-.tm-multiselect__footer { border-top: 1px solid var(--tm-border-color); }
+.tm-multiselect__footer {
+    border-top: 1px solid var(--tm-border-color);
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+/* ── Confirm Button ──────────────────────────────────── */
+.tm-multiselect__confirm-btn {
+    padding: var(--tm-space-1) var(--tm-space-3);
+    background: var(--tm-color-primary);
+    color: white;
+    border: none;
+    border-radius: var(--tm-radius-md);
+    font-size: var(--tm-font-size-sm);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color var(--tm-transition-fast);
+}
+.tm-multiselect__confirm-btn:hover {
+    background: var(--tm-color-primary-600);
+}
+.tm-multiselect__confirm-btn:focus {
+    outline: none;
+    box-shadow: var(--tm-shadow-focus);
+}
 
 /* ── Individual option ───────────────────────────────── */
 .tm-multiselect__option {
