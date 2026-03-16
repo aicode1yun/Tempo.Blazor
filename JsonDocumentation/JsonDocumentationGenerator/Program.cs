@@ -169,7 +169,10 @@ class Program
                     ["title"] = "Tempo.Blazor.Abstractions",
                     ["description"] = "Interfaces and models for Tempo.Blazor components. These abstractions have zero UI dependencies and can be safely referenced from API or service projects.",
                     ["namespace"] = "Tempo.Blazor.Interfaces, Tempo.Blazor.Models, Tempo.Blazor.Localization",
-                    ["installation"] = "dotnet add package Tempo.Blazor.Abstractions"
+                    ["installation"] = new JsonObject
+                {
+                    ["nuget"] = new JsonArray { "dotnet add package Tempo.Blazor.Abstractions" }
+                }
                 },
                 ["items"] = abstractions
             };
