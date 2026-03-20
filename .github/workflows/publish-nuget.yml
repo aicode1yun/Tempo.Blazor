@@ -14,7 +14,6 @@ on:
         default: ''
 
 env:
-  DOTNET_VERSION: '10.0.x'
   # GitHub Packages NuGet source
   NUGET_SOURCE: 'https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json'
 
@@ -25,43 +24,16 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
+      - name: Setup .NET SDKs
         uses: actions/setup-dotnet@v4
         with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
 
       - name: Restore dependencies
         run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
-
-      - name: Test
-        run: dotnet test --no-build --configuration Release --verbosity normal
-
-  publish:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    # Publikujeme jen při push na main/master, tagu, nebo ručním spuštění
-    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
-    permissions:
-      packages: write
-      contents: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v4
-
-      - name: Setup .NET ${{ env.DOTNET_VERSION }}
-        uses: actions/setup-dotnet@v4
-        with:
-          dotnet-version: ${{ env.DOTNET_VERSION }}
-
-      - name: Restore dependencies
-        run: dotnet restore
-
-      - name: Build
-        run: dotnet build --no-restore --configuration Release
 
       # Nastavíme verzi podle tagu nebo inputu
       - name: Set version
@@ -87,23 +59,83 @@ jobs:
             echo "Using CI version: 1.0.0-ci-$TIMESTAMP"
           fi
 
+      - name: Build
+        run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Publikujeme jen při push na main/master, tagu, nebo ručním spuštění
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    permissions:
+      packages: write
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Nastavíme verzi podle tagu nebo inputu
+      - name: Set version
+        id: version
+        run: |
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v ]]; then
+            # Z tagu v1.2.3 uděláme verzi 1.2.3
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using version from tag: $VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.version_suffix }}" ]; then
+            # Ruční spuštění bez suffixu = release verze
+            echo "VERSION=1.0.0" >> $GITHUB_OUTPUT
+            echo "Using release version: 1.0.0"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version_suffix }}" ]; then
+            # Suffix pro prerelease verze (např. 1.0.0-beta1)
+            echo "VERSION=1.0.0-${{ github.event.inputs.version_suffix }}" >> $GITHUB_OUTPUT
+            echo "Using version with suffix: 1.0.0-${{ github.event.inputs.version_suffix }}"
+          else
+            # Pro main/master push použijeme timestamp jako prerelease
+            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+            echo "VERSION=1.0.0-ci-$TIMESTAMP" >> $GITHUB_OUTPUT
+            echo "Using CI version: 1.0.0-ci-$TIMESTAMP"
+          fi
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
+
       - name: Build packages
         run: |
           dotnet pack src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj \
             --configuration Release \
             --no-restore \
+            --no-build \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --output ./packages
 
           dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj \
             --configuration Release \
             --no-restore \
+            --no-build \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --output ./packages
 
           dotnet pack src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj \
             --configuration Release \
             --no-restore \
+            --no-build \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --output ./packages
 
