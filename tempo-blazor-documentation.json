@@ -8939,46 +8939,77 @@
       "itemName": "TmTagPicker",
       "kind": "Component",
       "category": "Tags",
-      "description": "Tag selection component displaying selected tags as colored chips with a dropdown for adding more. Supports inline search, tag creation, and disabled state.",
+      "description": "Tag selection component displaying selected tags as colored chips with a dropdown for adding more. Supports inline search with filtering, optional inline tag creation via OnCreateTag callback, and disabled state.",
       "requiredImports": [
-        "@using Tempo.Blazor.Components.Tags"
+        "@using Tempo.Blazor.Components.Tags",
+        "@using Tempo.Blazor.Interfaces"
       ],
       "parameters": [
         {
           "name": "AllTags",
           "type": "IEnumerable<ITag>?",
           "isRequired": false,
-          "description": "All tags available for selection."
+          "description": "All tags available for selection. The dropdown filters this list against already-selected tags and the current search text."
         },
         {
           "name": "SelectedTags",
           "type": "IEnumerable<ITag>?",
           "isRequired": false,
-          "description": "Currently selected tags."
+          "description": "Currently selected tags, rendered as colored chips."
         },
         {
           "name": "OnTagsChanged",
           "type": "EventCallback<IEnumerable<ITag>>",
           "isRequired": false,
-          "description": "Fires when the selection changes, passing the updated list."
+          "description": "Fires when the selection changes (tag added or removed), passing the full updated list. The caller is responsible for updating SelectedTags."
         },
         {
           "name": "AllowCreate",
           "type": "bool",
           "isRequired": false,
-          "description": "When true, shows an option to create a new tag inline."
+          "description": "When true, shows a search input and a 'Vytvořit' option at the bottom of the dropdown whenever the typed name does not already exist in AllTags. Requires OnCreateTag to be wired up to actually persist the new tag."
+        },
+        {
+          "name": "OnCreateTag",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Fires when the user clicks the inline 'Vytvořit' option, passing the typed tag name. The callback is responsible for creating the tag, adding it to AllTags, and optionally pre-selecting it. Used only when AllowCreate=\"true\"."
         },
         {
           "name": "Disabled",
           "type": "bool",
           "isRequired": false,
-          "description": "Disables the tag picker."
+          "description": "Disables all interaction — hides the trigger button and chip remove buttons."
         },
         {
           "name": "Class",
           "type": "string?",
           "isRequired": false,
-          "description": "Additional CSS class for the root element."
+          "description": "Additional CSS class appended to the root element."
+        }
+      ],
+      "interfaces": [
+        {
+          "name": "ITag",
+          "namespace": "Tempo.Blazor.Interfaces",
+          "description": "Represents a single tag. Implement this interface on your domain/DTO class to use it with TmTagPicker.",
+          "members": [
+            {
+              "name": "Id",
+              "type": "string",
+              "description": "Unique identifier used to compare tags and avoid duplicates."
+            },
+            {
+              "name": "Name",
+              "type": "string",
+              "description": "Display name shown in the chip and dropdown option."
+            },
+            {
+              "name": "Color",
+              "type": "string",
+              "description": "CSS color value for the tag badge, e.g. \"#3b82f6\" or \"var(--tm-color-primary)\"."
+            }
+          ]
         }
       ],
       "cssClasses": [
@@ -8993,30 +9024,19 @@
         "tm-tag-dot",
         "tm-tag-create-option"
       ],
-      "usedAbstractions": [
-        {
-          "name": "ITokenDataProvider",
-          "description": "Data provider for token/tag autocomplete functionality",
-          "parameter": "DataProvider"
-        },
-        {
-          "name": "IToken",
-          "description": "Interface representing a token/tag item",
-          "usedIn": "ITokenDataProvider"
-        }
-      ],
       "examples": [
         {
           "title": "Basic tag picker",
-          "code": "<TmTagPicker AllTags=\"@_allTags\" SelectedTags=\"@_selectedTags\" OnTagsChanged=\"@(tags => _selectedTags = tags.ToList())\" />"
+          "code": "<TmTagPicker AllTags=\"@_allTags\"\n             SelectedTags=\"@_selectedTags\"\n             OnTagsChanged=\"@(tags => _selectedTags = tags.ToList())\" />"
         },
         {
-          "title": "Tag picker with inline creation",
-          "code": "<TmTagPicker AllTags=\"@_allTags\" SelectedTags=\"@_selectedTags\" OnTagsChanged=\"@HandleTagsChanged\" AllowCreate=\"true\" />"
+          "title": "Tag picker with inline creation — complete page example",
+          "description": "Full example showing ITag implementation, state management, and OnCreateTag handler that creates and immediately selects the new tag.",
+          "code": "@page \"/demo/tags\"\n@using Tempo.Blazor.Components.Tags\n@using Tempo.Blazor.Interfaces\n\n<TmTagPicker AllTags=\"@_allTags\"\n             SelectedTags=\"@_selectedTags\"\n             OnTagsChanged=\"@HandleTagsChanged\"\n             AllowCreate=\"true\"\n             OnCreateTag=\"@HandleCreateTag\" />\n\n@code {\n    // --- ITag implementation ---\n    private record AppTag(string Id, string Name, string Color) : ITag;\n\n    // --- State ---\n    private List<ITag> _allTags = new()\n    {\n        new AppTag(\"t1\", \"Bug\",     \"#ef4444\"),\n        new AppTag(\"t2\", \"Feature\", \"#3b82f6\"),\n        new AppTag(\"t3\", \"Docs\",    \"#10b981\"),\n    };\n\n    private List<ITag> _selectedTags = new();\n\n    // --- Handlers ---\n    private void HandleTagsChanged(IEnumerable<ITag> updated)\n        => _selectedTags = updated.ToList();\n\n    private void HandleCreateTag(string name)\n    {\n        // Generate a new unique tag (in a real app persist to the server first)\n        var newTag = new AppTag(\n            Id:    Guid.NewGuid().ToString(),\n            Name:  name,\n            Color: \"#8b5cf6\");\n\n        // Make it available in the dropdown for future use\n        _allTags.Add(newTag);\n\n        // Immediately select the newly created tag\n        _selectedTags.Add(newTag);\n    }\n}"
         },
         {
-          "title": "Disabled tag picker",
-          "code": "<TmTagPicker AllTags=\"@_allTags\" SelectedTags=\"@_selectedTags\" Disabled=\"true\" />"
+          "title": "Disabled tag picker (read-only display)",
+          "code": "<TmTagPicker AllTags=\"@_allTags\"\n             SelectedTags=\"@_selectedTags\"\n             Disabled=\"true\" />"
         }
       ]
     },

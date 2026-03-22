@@ -70,6 +70,9 @@
     /// <summary>When true, shows an option to create a new tag inline.</summary>
     [Parameter] public bool AllowCreate { get; set; }
 
+    /// <summary>Fires when the user requests creation of a new tag, passing the tag name.</summary>
+    [Parameter] public EventCallback<string> OnCreateTag { get; set; }
+
     /// <summary>Disables the tag picker.</summary>
     [Parameter] public bool Disabled { get; set; }
 
@@ -84,7 +87,9 @@
 
     private IEnumerable<ITag> AvailableTags =>
         (AllTags ?? Enumerable.Empty<ITag>())
-            .Where(t => !SelectedTagSet.Any(s => s.Id == t.Id));
+            .Where(t => !SelectedTagSet.Any(s => s.Id == t.Id))
+            .Where(t => string.IsNullOrWhiteSpace(_searchText)
+                        || t.Name.Contains(_searchText, StringComparison.OrdinalIgnoreCase));
 
     private bool TagExists(string name) =>
         (AllTags ?? Enumerable.Empty<ITag>())
@@ -105,5 +110,13 @@
         return OnTagsChanged.InvokeAsync(updated);
     }
 
-    private Task CreateTagAsync() => Task.CompletedTask;
+    private async Task CreateTagAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return;
+
+        await OnCreateTag.InvokeAsync(_searchText);
+        _searchText = string.Empty;
+        _isOpen = false;
+    }
 }

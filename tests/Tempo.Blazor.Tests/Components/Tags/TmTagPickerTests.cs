@@ -104,4 +104,67 @@ public class TmTagPickerTests : LocalizationTestBase
 
         cut.FindAll(".tm-tag-create-option").Should().NotBeEmpty();
     }
+
+    [Fact]
+    public void TmTagPicker_AllowCreate_DoesNotShow_CreateOption_WhenTagExists()
+    {
+        var cut = RenderComponent<TmTagPicker>(p => p
+            .Add(c => c.AllTags, AllTags)
+            .Add(c => c.SelectedTags, new List<ITag>())
+            .Add(c => c.AllowCreate, true));
+
+        cut.Find(".tm-tag-picker-trigger").Click();
+        cut.Find(".tm-tag-picker-search").Input("Bug");
+
+        cut.FindAll(".tm-tag-create-option").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TmTagPicker_AllowCreate_ClickCreate_Fires_OnCreateTag()
+    {
+        string? createdName = null;
+        var cut = RenderComponent<TmTagPicker>(p => p
+            .Add(c => c.AllTags, AllTags)
+            .Add(c => c.SelectedTags, new List<ITag>())
+            .Add(c => c.AllowCreate, true)
+            .Add(c => c.OnCreateTag,
+                EventCallback.Factory.Create<string>(this, name => createdName = name)));
+
+        cut.Find(".tm-tag-picker-trigger").Click();
+        cut.Find(".tm-tag-picker-search").Input("NewTag");
+        cut.Find(".tm-tag-create-option").Click();
+
+        createdName.Should().Be("NewTag");
+    }
+
+    [Fact]
+    public void TmTagPicker_AllowCreate_ClickCreate_ClosesDropdown()
+    {
+        var cut = RenderComponent<TmTagPicker>(p => p
+            .Add(c => c.AllTags, AllTags)
+            .Add(c => c.SelectedTags, new List<ITag>())
+            .Add(c => c.AllowCreate, true)
+            .Add(c => c.OnCreateTag, EventCallback.Factory.Create<string>(this, _ => { })));
+
+        cut.Find(".tm-tag-picker-trigger").Click();
+        cut.Find(".tm-tag-picker-search").Input("NewTag");
+        cut.Find(".tm-tag-create-option").Click();
+
+        cut.FindAll(".tm-tag-picker-dropdown").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TmTagPicker_SearchText_FiltersAvailableTags()
+    {
+        var cut = RenderComponent<TmTagPicker>(p => p
+            .Add(c => c.AllTags, AllTags)
+            .Add(c => c.SelectedTags, new List<ITag>())
+            .Add(c => c.AllowCreate, true));
+
+        cut.Find(".tm-tag-picker-trigger").Click();
+        cut.Find(".tm-tag-picker-search").Input("Bug");
+
+        cut.FindAll(".tm-tag-option").Should().HaveCount(1);
+        cut.Find(".tm-tag-option").TextContent.Should().Contain("Bug");
+    }
 }
