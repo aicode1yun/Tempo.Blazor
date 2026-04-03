@@ -1,0 +1,114 @@
+{
+  "itemName": "TmCascadingSelect",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A pair of dependent select dropdowns where the child options are loaded asynchronously based on the selected parent value. When the parent changes, the child value is automatically reset and LoadChildOptionsAsync is called. The child select is disabled while the parent is empty or children are loading. Fully generic — TParent and TChild can be any type supported by TmSelect.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs",
+    "@using Tempo.Blazor.Models"
+  ],
+  "parameters": [
+    {
+      "name": "ParentValue",
+      "type": "TParent?",
+      "isRequired": false,
+      "description": "Currently selected parent value."
+    },
+    {
+      "name": "ParentValueChanged",
+      "type": "EventCallback<TParent?>",
+      "isRequired": false,
+      "description": "Fires when the parent selection changes."
+    },
+    {
+      "name": "ParentOptions",
+      "type": "IReadOnlyList<SelectOption<TParent>>?",
+      "isRequired": false,
+      "description": "Static list of parent options rendered in the parent select."
+    },
+    {
+      "name": "ParentLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label for the parent select."
+    },
+    {
+      "name": "ParentPlaceholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text for the parent select."
+    },
+    {
+      "name": "ParentError",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Validation error message for the parent select."
+    },
+    {
+      "name": "ChildValue",
+      "type": "TChild?",
+      "isRequired": false,
+      "description": "Currently selected child value."
+    },
+    {
+      "name": "ChildValueChanged",
+      "type": "EventCallback<TChild?>",
+      "isRequired": false,
+      "description": "Fires when the child selection changes."
+    },
+    {
+      "name": "LoadChildOptionsAsync",
+      "type": "Func<TParent?, Task<IReadOnlyList<SelectOption<TChild>>>>",
+      "isRequired": true,
+      "description": "Required async callback that returns child options for the given parent value. Called whenever the parent changes."
+    },
+    {
+      "name": "ChildLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label for the child select."
+    },
+    {
+      "name": "ChildPlaceholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text for the child select when no child is selected."
+    },
+    {
+      "name": "ChildError",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Validation error message for the child select."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Disables both selects."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the root element."
+    }
+  ],
+  "cssClasses": [
+    "tm-cascading-select"
+  ],
+  "examples": [
+    {
+      "title": "Region → City (async data)",
+      "code": "<TmCascadingSelect TParent=\"string\" TChild=\"string\"\n    ParentLabel=\"Region\"\n    ChildLabel=\"City\"\n    ParentOptions=\"@_regionOptions\"\n    ParentPlaceholder=\"Select region...\"\n    ChildPlaceholder=\"Select city...\"\n    @bind-ParentValue=\"_region\"\n    @bind-ChildValue=\"_city\"\n    LoadChildOptionsAsync=\"LoadCitiesAsync\" />\n\n@code {\n    private string? _region;\n    private string? _city;\n\n    private async Task<IReadOnlyList<SelectOption<string>>> LoadCitiesAsync(string? region)\n    {\n        if (region is null) return [];\n        var cities = await _locationService.GetCitiesAsync(region);\n        return cities.Select(c => new SelectOption<string>(c.Id, c.Name)).ToList();\n    }\n}"
+    },
+    {
+      "title": "Category → Subcategory with int keys",
+      "code": "<TmCascadingSelect TParent=\"int\" TChild=\"int\"\n    ParentLabel=\"Category\"\n    ChildLabel=\"Subcategory\"\n    ParentOptions=\"@_categoryOptions\"\n    @bind-ParentValue=\"_categoryId\"\n    @bind-ChildValue=\"_subcategoryId\"\n    LoadChildOptionsAsync=\"LoadSubcategoriesAsync\" />"
+    },
+    {
+      "title": "Disabled state",
+      "code": "<TmCascadingSelect TParent=\"string\" TChild=\"string\"\n    ParentOptions=\"@_regionOptions\"\n    LoadChildOptionsAsync=\"LoadCitiesAsync\"\n    Disabled=\"true\" />"
+    }
+  ]
+}

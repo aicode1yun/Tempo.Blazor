@@ -1,0 +1,90 @@
+@namespace Tempo.Blazor.Components.Feedback
+@implements IDisposable
+
+<div class="tm-autosave tm-autosave--@_status.ToString().ToLowerInvariant() @Class" @attributes="AdditionalAttributes">
+    <span class="tm-autosave__dot" aria-hidden="true"></span>
+    <span class="tm-autosave__text">@StatusText</span>
+</div>
+
+@code {
+    /// <summary>Whether the auto-save timer is active. When set to false the timer is stopped.</summary>
+    [Parameter] public bool IsEnabled { get; set; } = true;
+
+    /// <summary>Interval in seconds between automatic save attempts. Defaults to 60.</summary>
+    [Parameter] public int AutoSaveIntervalSeconds { get; set; } = 60;
+
+    /// <summary>Callback invoked when the auto-save timer fires and there are unsaved changes.</summary>
+    [Parameter] public EventCallback OnSave { get; set; }
+
+    /// <summary>Additional CSS class.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private AutoSaveStatus _status = AutoSaveStatus.Saved;
+    private Timer? _timer;
+
+    private string StatusText => _status switch
+    {
+        AutoSaveStatus.Saving  => Loc["TmAutoSaveIndicator_Saving"],
+        AutoSaveStatus.Unsaved => Loc["TmAutoSaveIndicator_Unsaved"],
+        _                      => Loc["TmAutoSaveIndicator_Saved"]
+    };
+
+    protected override void OnInitialized()
+    {
+        if (IsEnabled)
+            StartTimer();
+    }
+
+    protected override void OnParametersSet()
+    {
+        if (IsEnabled && _timer is null)
+            StartTimer();
+        else if (!IsEnabled)
+            StopTimer();
+    }
+
+    /// <summary>Marks the indicator as having unsaved changes. Call this whenever the form data changes.</summary>
+    public void MarkUnsaved()
+    {
+        _status = AutoSaveStatus.Unsaved;
+        InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Marks the indicator as saved. Call this after a successful manual save.</summary>
+    public void MarkSaved()
+    {
+        _status = AutoSaveStatus.Saved;
+        InvokeAsync(StateHasChanged);
+    }
+
+    private void StartTimer()
+    {
+        var interval = TimeSpan.FromSeconds(AutoSaveIntervalSeconds > 0 ? AutoSaveIntervalSeconds : 60);
+        _timer = new Timer(OnTimerElapsed, null, interval, interval);
+    }
+
+    private void StopTimer()
+    {
+        _timer?.Dispose();
+        _timer = null;
+    }
+
+    private async void OnTimerElapsed(object? state)
+    {
+        if (_status != AutoSaveStatus.Unsaved) return;
+
+        _status = AutoSaveStatus.Saving;
+        await InvokeAsync(StateHasChanged);
+
+        await OnSave.InvokeAsync();
+
+        _status = AutoSaveStatus.Saved;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose() => StopTimer();
+
+    private enum AutoSaveStatus { Saved, Saving, Unsaved }
+}

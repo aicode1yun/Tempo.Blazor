@@ -166,6 +166,17 @@
   <data name="TmTagEditorDialog_Name" xml:space="preserve"><value>Název štítku</value></data>
   <data name="TmTagEditorDialog_Color" xml:space="preserve"><value>Barva</value></data>
 
+  <!-- ═══════════════ TmCurrencyInput ═══════════════ -->
+  <data name="TmCurrencyInput_Amount" xml:space="preserve"><value>Částka</value></data>
+  <data name="TmCurrencyInput_Currency" xml:space="preserve"><value>Měna</value></data>
+  <data name="TmCurrencyInput_AmountConverted" xml:space="preserve"><value>Částka (převedená)</value></data>
+  <data name="TmCurrencyInput_ManualRate" xml:space="preserve"><value>Ruční kurz</value></data>
+
+  <!-- ═══════════════ TmAutoSaveIndicator ═══════════════ -->
+  <data name="TmAutoSaveIndicator_Saved" xml:space="preserve"><value>Uloženo</value></data>
+  <data name="TmAutoSaveIndicator_Saving" xml:space="preserve"><value>Ukládám...</value></data>
+  <data name="TmAutoSaveIndicator_Unsaved" xml:space="preserve"><value>Neuložené změny</value></data>
+
   <!-- ═══════════════ TmCommandPalette ═══════════════ -->
   <data name="TmCommandPalette_Placeholder" xml:space="preserve"><value>Zadejte příkaz nebo hledejte...</value></data>
   <data name="TmCommandPalette_NoResults" xml:space="preserve"><value>Žádné příkazy nenalezeny</value></data>

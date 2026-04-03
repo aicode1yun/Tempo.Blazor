@@ -1,0 +1,142 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Models
+@typeparam TParent
+@typeparam TChild
+
+<div class="tm-cascading-select @Class" @attributes="AdditionalAttributes">
+
+    @* Parent select *@
+    <TmSelect TValue="TParent"
+              Label="@ParentLabel"
+              Options="@ParentOptions"
+              Value="@ParentValue"
+              ValueChanged="HandleParentChangedAsync"
+              Placeholder="@ParentPlaceholder"
+              Disabled="@Disabled"
+              Error="@ParentError" />
+
+    @* Child select *@
+    <TmSelect TValue="TChild"
+              Label="@ChildLabel"
+              Options="@_childOptions"
+              Value="@ChildValue"
+              ValueChanged="HandleChildChangedAsync"
+              Placeholder="@(_loadingChildren ? Loc["Tm_Loading"] : ChildPlaceholder)"
+              Disabled="@(Disabled || ParentValue is null || _loadingChildren)"
+              Error="@ChildError" />
+
+</div>
+
+@code {
+    // ── Parent ─────────────────────────────────────────────────────────────────
+
+    /// <summary>Currently selected parent value.</summary>
+    [Parameter] public TParent? ParentValue { get; set; }
+
+    /// <summary>Fires when the parent selection changes.</summary>
+    [Parameter] public EventCallback<TParent?> ParentValueChanged { get; set; }
+
+    /// <summary>Static list of parent options.</summary>
+    [Parameter] public IReadOnlyList<SelectOption<TParent>>? ParentOptions { get; set; }
+
+    /// <summary>Label for the parent select.</summary>
+    [Parameter] public string? ParentLabel { get; set; }
+
+    /// <summary>Placeholder for the parent select.</summary>
+    [Parameter] public string? ParentPlaceholder { get; set; }
+
+    /// <summary>Validation error for the parent select.</summary>
+    [Parameter] public string? ParentError { get; set; }
+
+    // ── Child ──────────────────────────────────────────────────────────────────
+
+    /// <summary>Currently selected child value.</summary>
+    [Parameter] public TChild? ChildValue { get; set; }
+
+    /// <summary>Fires when the child selection changes.</summary>
+    [Parameter] public EventCallback<TChild?> ChildValueChanged { get; set; }
+
+    /// <summary>
+    /// Async callback that loads child options based on the selected parent.
+    /// Receives the current ParentValue (may be null when parent is cleared).
+    /// </summary>
+    [Parameter, EditorRequired]
+    public Func<TParent?, Task<IReadOnlyList<SelectOption<TChild>>>> LoadChildOptionsAsync { get; set; } = default!;
+
+    /// <summary>Label for the child select.</summary>
+    [Parameter] public string? ChildLabel { get; set; }
+
+    /// <summary>Placeholder for the child select when a parent is selected.</summary>
+    [Parameter] public string? ChildPlaceholder { get; set; }
+
+    /// <summary>Validation error for the child select.</summary>
+    [Parameter] public string? ChildError { get; set; }
+
+    // ── Shared ─────────────────────────────────────────────────────────────────
+
+    /// <summary>Disables both selects.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Additional CSS class applied to the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Private state ──────────────────────────────────────────────────────────
+
+    private IReadOnlyList<SelectOption<TChild>> _childOptions = [];
+    private bool _loadingChildren;
+    private TParent? _previousParent;
+
+    protected override async Task OnParametersSetAsync()
+    {
+        // React to externally changed ParentValue (e.g. form reset)
+        if (!EqualityComparer<TParent>.Default.Equals(_previousParent, ParentValue))
+        {
+            _previousParent = ParentValue;
+            await ReloadChildrenAsync(clearChild: false);
+        }
+    }
+
+    private async Task HandleParentChangedAsync(TParent? value)
+    {
+        ParentValue = value;
+        _previousParent = value;
+        await ParentValueChanged.InvokeAsync(value);
+
+        // Clear child whenever parent changes
+        ChildValue = default;
+        await ChildValueChanged.InvokeAsync(default);
+
+        await ReloadChildrenAsync(clearChild: false);
+    }
+
+    private async Task HandleChildChangedAsync(TChild? value)
+    {
+        ChildValue = value;
+        await ChildValueChanged.InvokeAsync(value);
+    }
+
+    private async Task ReloadChildrenAsync(bool clearChild)
+    {
+        if (ParentValue is null)
+        {
+            _childOptions = [];
+            return;
+        }
+
+        _loadingChildren = true;
+        StateHasChanged();
+
+        try
+        {
+            _childOptions = await LoadChildOptionsAsync(ParentValue);
+        }
+        finally
+        {
+            _loadingChildren = false;
+            StateHasChanged();
+        }
+    }
+}

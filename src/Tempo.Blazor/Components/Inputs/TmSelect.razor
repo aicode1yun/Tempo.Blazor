@@ -86,14 +86,18 @@
     {
         var raw = e.Value?.ToString();
         TValue? value = default;
-        if (raw is not null)
+        if (!string.IsNullOrEmpty(raw))
         {
-            if (typeof(TValue) == typeof(string))
+            var targetType = Nullable.GetUnderlyingType(typeof(TValue)) ?? typeof(TValue);
+
+            if (targetType == typeof(string))
                 value = (TValue?)(object?)raw;
-            else if (typeof(TValue) == typeof(int) && int.TryParse(raw, out var i))
+            else if (targetType == typeof(int) && int.TryParse(raw, out var i))
                 value = (TValue?)(object?)i;
-            else if (typeof(TValue) == typeof(Guid) && Guid.TryParse(raw, out var g))
+            else if (targetType == typeof(Guid) && Guid.TryParse(raw, out var g))
                 value = (TValue?)(object?)g;
+            else if (targetType.IsEnum && Enum.TryParse(targetType, raw, out var en))
+                value = (TValue?)en;
         }
         await ValueChanged.InvokeAsync(value);
     }

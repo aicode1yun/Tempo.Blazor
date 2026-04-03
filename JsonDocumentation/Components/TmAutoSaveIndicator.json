@@ -1,0 +1,69 @@
+{
+  "itemName": "TmAutoSaveIndicator",
+  "kind": "Component",
+  "category": "Feedback",
+  "description": "Inline status indicator that shows whether a form has unsaved changes, is currently saving, or has been saved. Supports an optional auto-save timer that fires a callback after a configurable interval when unsaved changes are present. Exposes MarkUnsaved() and MarkSaved() methods for manual control.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Feedback"
+  ],
+  "parameters": [
+    {
+      "name": "IsEnabled",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "When false, the auto-save timer is stopped and no automatic saves are triggered."
+    },
+    {
+      "name": "AutoSaveIntervalSeconds",
+      "type": "int",
+      "isRequired": false,
+      "default": "60",
+      "description": "Interval in seconds between automatic save attempts. Only applies when IsEnabled is true."
+    },
+    {
+      "name": "OnSave",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Callback invoked by the auto-save timer when unsaved changes are present. Use this to persist data."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class."
+    }
+  ],
+  "publicMethods": [
+    {
+      "name": "MarkUnsaved()",
+      "description": "Transitions the indicator to the Unsaved state. Call this whenever the user modifies form data."
+    },
+    {
+      "name": "MarkSaved()",
+      "description": "Transitions the indicator to the Saved state. Call this after a successful manual save."
+    }
+  ],
+  "cssClasses": [
+    "tm-autosave",
+    "tm-autosave--saved",
+    "tm-autosave--saving",
+    "tm-autosave--unsaved",
+    "tm-autosave__dot",
+    "tm-autosave__text"
+  ],
+  "examples": [
+    {
+      "title": "Basic usage with auto-save",
+      "code": "<TmAutoSaveIndicator @ref=\"_autoSave\" OnSave=\"HandleAutoSave\" />\n\n@code {\n    private TmAutoSaveIndicator _autoSave = default!;\n\n    private async Task HandleAutoSave()\n    {\n        await SaveFormAsync();\n    }\n\n    private void OnFormChanged()\n    {\n        _autoSave.MarkUnsaved();\n    }\n}"
+    },
+    {
+      "title": "Custom interval (30 seconds)",
+      "code": "<TmAutoSaveIndicator @ref=\"_autoSave\"\n    AutoSaveIntervalSeconds=\"30\"\n    OnSave=\"HandleAutoSave\" />"
+    },
+    {
+      "title": "Disabled (indicator only, no timer)",
+      "code": "<TmAutoSaveIndicator @ref=\"_autoSave\" IsEnabled=\"false\" />"
+    }
+  ]
+}

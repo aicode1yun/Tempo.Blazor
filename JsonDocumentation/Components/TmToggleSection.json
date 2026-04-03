@@ -1,0 +1,89 @@
+{
+  "itemName": "TmToggleSection",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "Boolean radio-button toggle (Yes / No) that conditionally reveals a content section when the value is true. Useful for form fields where selecting 'Yes' expands additional input fields. Labels are fully localizable and the component supports a null (unset) initial state.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "bool?",
+      "isRequired": false,
+      "default": "null",
+      "description": "Current toggle value. True = Yes selected, False = No selected, null = nothing selected."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<bool?>",
+      "isRequired": false,
+      "description": "Fires when the user selects Yes or No."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label rendered above the radio buttons and used as the radiogroup aria-label."
+    },
+    {
+      "name": "TrueLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override text for the Yes option. Defaults to the localized 'Yes' string."
+    },
+    {
+      "name": "FalseLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override text for the No option. Defaults to the localized 'No' string."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "When true, both radio buttons are disabled."
+    },
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "Content rendered in the expanded section below the toggle. Only visible when Value is true."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the root element."
+    }
+  ],
+  "cssClasses": [
+    "tm-toggle-section",
+    "tm-toggle-section__header",
+    "tm-toggle-section__label",
+    "tm-toggle-section__radios",
+    "tm-toggle-section__radio",
+    "tm-toggle-section__radio--active",
+    "tm-toggle-section__input",
+    "tm-toggle-section__content"
+  ],
+  "examples": [
+    {
+      "title": "Basic Yes/No toggle without content",
+      "code": "<TmToggleSection Label=\"Do you have a VAT number?\" @bind-Value=\"_hasVat\" />"
+    },
+    {
+      "title": "Toggle with expandable child content",
+      "code": "<TmToggleSection Label=\"Do you have a VAT number?\" @bind-Value=\"_hasVat\">\n    <TmTextInput Label=\"VAT Number\" @bind-Value=\"_vatNumber\" />\n</TmToggleSection>"
+    },
+    {
+      "title": "Custom option labels",
+      "code": "<TmToggleSection Label=\"Recurring payment?\"\n    TrueLabel=\"Monthly\"\n    FalseLabel=\"One-time\"\n    @bind-Value=\"_isRecurring\" />"
+    },
+    {
+      "title": "Read-only state",
+      "code": "<TmToggleSection Label=\"Active?\" Value=\"true\" ReadOnly=\"true\" />"
+    }
+  ]
+}

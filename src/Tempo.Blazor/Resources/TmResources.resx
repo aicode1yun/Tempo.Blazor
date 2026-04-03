@@ -166,6 +166,17 @@
   <data name="TmTagEditorDialog_Name" xml:space="preserve"><value>Tag name</value></data>
   <data name="TmTagEditorDialog_Color" xml:space="preserve"><value>Color</value></data>
 
+  <!-- ═══════════════ TmCurrencyInput ═══════════════ -->
+  <data name="TmCurrencyInput_Amount" xml:space="preserve"><value>Amount</value></data>
+  <data name="TmCurrencyInput_Currency" xml:space="preserve"><value>Currency</value></data>
+  <data name="TmCurrencyInput_AmountConverted" xml:space="preserve"><value>Amount (converted)</value></data>
+  <data name="TmCurrencyInput_ManualRate" xml:space="preserve"><value>Manual exchange rate</value></data>
+
+  <!-- ═══════════════ TmAutoSaveIndicator ═══════════════ -->
+  <data name="TmAutoSaveIndicator_Saved" xml:space="preserve"><value>Saved</value></data>
+  <data name="TmAutoSaveIndicator_Saving" xml:space="preserve"><value>Saving...</value></data>
+  <data name="TmAutoSaveIndicator_Unsaved" xml:space="preserve"><value>Unsaved changes</value></data>
+
   <!-- ═══════════════ TmCommandPalette ═══════════════ -->
   <data name="TmCommandPalette_Placeholder" xml:space="preserve"><value>Type a command or search...</value></data>
   <data name="TmCommandPalette_NoResults" xml:space="preserve"><value>No commands found</value></data>

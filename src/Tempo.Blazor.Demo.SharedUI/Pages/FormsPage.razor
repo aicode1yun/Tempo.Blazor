@@ -83,6 +83,42 @@
     </div>
 </section>
 
+<!-- Cascading Select -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Cascading Select</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Component</span>
+    </div>
+
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Region → City (simulated async)</h3>
+            <TmCascadingSelect TParent="string" TChild="string"
+                               ParentLabel="Region"
+                               ChildLabel="City"
+                               ParentOptions="@_cascadeRegions"
+                               ParentPlaceholder="Select region..."
+                               ChildPlaceholder="Select city..."
+                               @bind-ParentValue="_cascadeRegion"
+                               @bind-ChildValue="_cascadeCity"
+                               LoadChildOptionsAsync="LoadCitiesAsync" />
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                Region: <strong>@(_cascadeRegion ?? "–")</strong> &nbsp; City: <strong>@(_cascadeCity ?? "–")</strong>
+            </p>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Disabled</h3>
+            <TmCascadingSelect TParent="string" TChild="string"
+                               ParentLabel="Region"
+                               ChildLabel="City"
+                               ParentOptions="@_cascadeRegions"
+                               LoadChildOptionsAsync="LoadCitiesAsync"
+                               Disabled="true" />
+        </div>
+    </div>
+</section>
+
 <!-- Multi Select -->
 <section class="demo-section">
     <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Multi Select</h2>
@@ -449,6 +485,95 @@
     </div>
 </section>
 
+<!-- Currency Input -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Currency Input</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Component</span>
+    </div>
+
+    <div class="space-y-6">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic — amount + currency</h3>
+            <TmCurrencyInput Currencies="@_demoCurrencies"
+                             @bind-Amount="_currAmount"
+                             @bind-Currency="_currCurrency" />
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                Amount: <strong>@(_currAmount?.ToString("N2") ?? "–")</strong> &nbsp; Currency: <strong>@(_currCurrency ?? "–")</strong>
+            </p>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With async conversion (simulated)</h3>
+            <TmCurrencyInput Currencies="@_demoCurrencies"
+                             @bind-Amount="_currAmount2"
+                             @bind-Currency="_currCurrency2"
+                             @bind-ConvertedAmount="_currConverted2"
+                             ConvertAsync="SimulateConvertAsync"
+                             ConvertedLabel="Amount (CZK)" />
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">
+                Converted: <strong>@(_currConverted2?.ToString("N2") ?? "–") CZK</strong>
+            </p>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With manual rate override</h3>
+            <TmCurrencyInput Currencies="@_demoCurrencies"
+                             @bind-Amount="_currAmount3"
+                             @bind-Currency="_currCurrency3"
+                             @bind-ConvertedAmount="_currConverted3"
+                             @bind-ManualRate="_currManualRate3"
+                             ConvertAsync="SimulateConvertAsync"
+                             ConvertedLabel="Amount (CZK)"
+                             ShowManualRate="true" />
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Read-only</h3>
+            <TmCurrencyInput Currencies="@_demoCurrencies"
+                             Amount="1500"
+                             Currency="EUR"
+                             ReadOnly="true" />
+        </div>
+    </div>
+</section>
+
+<!-- Toggle Section -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Toggle Section</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Component</span>
+    </div>
+
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic Yes / No</h3>
+            <TmToggleSection Label="Do you have a VAT number?" @bind-Value="_toggleVat" />
+            <p class="text-xs text-slate-500 dark:text-slate-400 mt-3">Value: <strong>@(_toggleVat?.ToString() ?? "null")</strong></p>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With expandable content</h3>
+            <TmToggleSection Label="Do you have a VAT number?" @bind-Value="_toggleVatExpand">
+                <TmTextInput Label="VAT Number" Placeholder="CZ12345678" @bind-Value="_vatNumber" />
+            </TmToggleSection>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Custom option labels</h3>
+            <TmToggleSection Label="Payment frequency"
+                             TrueLabel="Monthly"
+                             FalseLabel="One-time"
+                             @bind-Value="_toggleFrequency" />
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Read-only</h3>
+            <TmToggleSection Label="Active subscription?" Value="true" ReadOnly="true" />
+        </div>
+    </div>
+</section>
+
 <!-- Form Validation Message -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -624,6 +749,72 @@
         public string Email { get; set; } = string.Empty;
         public string Phone { get; set; } = string.Empty;
     }
+
+    // CascadingSelect demo
+    private static readonly IReadOnlyList<SelectOption<string>> _cascadeRegions = new List<SelectOption<string>>
+    {
+        new("bohemia", "Bohemia"),
+        new("moravia", "Moravia"),
+        new("silesia", "Silesia"),
+    };
+
+    private static readonly Dictionary<string, List<SelectOption<string>>> _cascadeCities = new()
+    {
+        ["bohemia"] = [new("prague", "Prague"), new("pilsen", "Pilsen"), new("ceske-budejovice", "České Budějovice")],
+        ["moravia"] = [new("brno", "Brno"), new("olomouc", "Olomouc"), new("zlin", "Zlín")],
+        ["silesia"] = [new("ostrava", "Ostrava"), new("opava", "Opava"), new("karvina", "Karviná")],
+    };
+
+    private string? _cascadeRegion;
+    private string? _cascadeCity;
+
+    private async Task<IReadOnlyList<SelectOption<string>>> LoadCitiesAsync(string? region)
+    {
+        await Task.Delay(300); // simulate network
+        if (region is null || !_cascadeCities.TryGetValue(region, out var cities)) return [];
+        return cities;
+    }
+
+    // CurrencyInput demo
+    private static readonly IReadOnlyList<SelectOption<string>> _demoCurrencies = new List<SelectOption<string>>
+    {
+        new("USD", "USD – US Dollar"),
+        new("EUR", "EUR – Euro"),
+        new("GBP", "GBP – British Pound"),
+        new("CZK", "CZK – Czech Koruna"),
+        new("CHF", "CHF – Swiss Franc"),
+    };
+
+    private decimal? _currAmount;
+    private string? _currCurrency;
+
+    private decimal? _currAmount2;
+    private string? _currCurrency2;
+    private decimal? _currConverted2;
+
+    private decimal? _currAmount3;
+    private string? _currCurrency3;
+    private decimal? _currConverted3;
+    private decimal? _currManualRate3;
+
+    private static readonly Dictionary<string, decimal> _demoRates = new()
+    {
+        { "USD", 23.10m }, { "EUR", 25.40m }, { "GBP", 29.80m }, { "CZK", 1m }, { "CHF", 25.90m },
+    };
+
+    private async Task<decimal?> SimulateConvertAsync(decimal amount, string currency)
+    {
+        await Task.Delay(400); // simulate network
+        return _demoRates.TryGetValue(currency, out var rate)
+            ? Math.Round(amount * rate, 2)
+            : null;
+    }
+
+    // ToggleSection demo
+    private bool? _toggleVat;
+    private bool? _toggleVatExpand;
+    private string? _vatNumber;
+    private bool? _toggleFrequency;
 
     private List<SelectOption<string>> _roleOptions = new()
     {

@@ -1,0 +1,144 @@
+{
+  "itemName": "TmCurrencyInput",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "Grouped currency input combining a decimal amount field, a currency select, and an optional read-only converted-amount field. Conversion is opt-in via the ConvertAsync callback — when null, the converted column is hidden. Supports a manual exchange rate override and full read-only mode. All labels are localizable.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs",
+    "@using Tempo.Blazor.Models"
+  ],
+  "parameters": [
+    {
+      "name": "Amount",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "The entered amount value."
+    },
+    {
+      "name": "AmountChanged",
+      "type": "EventCallback<decimal?>",
+      "isRequired": false,
+      "description": "Fires when the amount changes."
+    },
+    {
+      "name": "Currency",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Selected currency code (e.g. \"USD\")."
+    },
+    {
+      "name": "CurrencyChanged",
+      "type": "EventCallback<string?>",
+      "isRequired": false,
+      "description": "Fires when the selected currency changes."
+    },
+    {
+      "name": "ConvertedAmount",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Result of the conversion. Bind to receive updates."
+    },
+    {
+      "name": "ConvertedAmountChanged",
+      "type": "EventCallback<decimal?>",
+      "isRequired": false,
+      "description": "Fires when the converted amount is recalculated."
+    },
+    {
+      "name": "ManualRate",
+      "type": "decimal?",
+      "isRequired": false,
+      "description": "Manual exchange rate. When set and ShowManualRate is true, overrides the ConvertAsync callback."
+    },
+    {
+      "name": "ManualRateChanged",
+      "type": "EventCallback<decimal?>",
+      "isRequired": false,
+      "description": "Fires when the manual rate changes."
+    },
+    {
+      "name": "Currencies",
+      "type": "IReadOnlyList<SelectOption<string>>?",
+      "isRequired": false,
+      "description": "List of currency options shown in the currency select."
+    },
+    {
+      "name": "ConvertAsync",
+      "type": "Func<decimal, string, Task<decimal?>>?",
+      "isRequired": false,
+      "default": "null",
+      "description": "Async callback invoked to convert Amount to another unit. Receives (amount, currencyCode). When null, the converted amount column is hidden."
+    },
+    {
+      "name": "ShowManualRate",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "When true and ConvertAsync is provided, shows a manual exchange rate input. The manual rate takes precedence over the ConvertAsync callback."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Makes all fields read-only."
+    },
+    {
+      "name": "AmountLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override label for the amount field. Defaults to the localized 'Amount' string."
+    },
+    {
+      "name": "CurrencyLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override label for the currency select. Defaults to the localized 'Currency' string."
+    },
+    {
+      "name": "ConvertedLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override label for the converted amount field. Defaults to the localized 'Amount (converted)' string."
+    },
+    {
+      "name": "ManualRateLabel",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Override label for the manual rate field. Defaults to the localized 'Manual exchange rate' string."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the root element."
+    }
+  ],
+  "cssClasses": [
+    "tm-currency-input",
+    "tm-currency-input__row",
+    "tm-currency-input__amount",
+    "tm-currency-input__currency",
+    "tm-currency-input__converted",
+    "tm-currency-input__manual-rate",
+    "tm-currency-input__spinner"
+  ],
+  "examples": [
+    {
+      "title": "Basic — amount + currency only",
+      "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\" />"
+    },
+    {
+      "title": "With async conversion",
+      "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\"\n    @bind-ConvertedAmount=\"_converted\"\n    ConvertAsync=\"ConvertToCzkAsync\"\n    ConvertedLabel=\"Amount (CZK)\" />\n\n@code {\n    private async Task<decimal?> ConvertToCzkAsync(decimal amount, string currency)\n    {\n        var rate = await _rateService.GetRateAsync(currency, \"CZK\");\n        return rate is null ? null : Math.Round(amount * rate.Value, 2);\n    }\n}"
+    },
+    {
+      "title": "With manual rate override",
+      "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\"\n    @bind-ConvertedAmount=\"_converted\"\n    @bind-ManualRate=\"_manualRate\"\n    ConvertAsync=\"ConvertToCzkAsync\"\n    ShowManualRate=\"true\" />"
+    },
+    {
+      "title": "Read-only display",
+      "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    Amount=\"1500\"\n    Currency=\"EUR\"\n    ReadOnly=\"true\" />"
+    }
+  ]
+}

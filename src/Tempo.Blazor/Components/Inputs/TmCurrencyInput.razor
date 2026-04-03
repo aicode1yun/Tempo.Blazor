@@ -1,0 +1,257 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Models
+
+<div class="tm-currency-input @Class" @attributes="AdditionalAttributes">
+    <div class="tm-currency-input__row">
+
+        <div class="tm-currency-input__amount">
+            <div class="tm-input-wrapper">
+                @if (!string.IsNullOrEmpty(ResolvedAmountLabel))
+                {
+                    <label class="tm-input-label">@ResolvedAmountLabel</label>
+                }
+                <input type="text"
+                       class="tm-input @(ReadOnly ? "tm-input--readonly" : "")"
+                       value="@_amountText"
+                       placeholder="0.00"
+                       readonly="@ReadOnly"
+                       @onchange="HandleAmountChangeAsync"
+                       @onblur="HandleAmountBlurAsync" />
+            </div>
+        </div>
+
+        <div class="tm-currency-input__currency">
+            <TmSelect TValue="string"
+                      Label="@ResolvedCurrencyLabel"
+                      Options="@Currencies"
+                      Value="@Currency"
+                      ValueChanged="HandleCurrencyChangedAsync"
+                      Disabled="@ReadOnly"
+                      Placeholder="–" />
+        </div>
+
+        @if (ConvertAsync is not null)
+        {
+            <div class="tm-currency-input__converted">
+                <div class="tm-input-wrapper">
+                    @if (!string.IsNullOrEmpty(ResolvedConvertedLabel))
+                    {
+                        <label class="tm-input-label">@ResolvedConvertedLabel</label>
+                    }
+                    <div class="tm-input-container">
+                        <input type="text"
+                               class="tm-input tm-input--readonly"
+                               value="@_convertedText"
+                               readonly />
+                        @if (_converting)
+                        {
+                            <div class="tm-input-right-icon">
+                                <svg class="tm-currency-input__spinner" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" width="14" height="14">
+                                    <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83" />
+                                </svg>
+                            </div>
+                        }
+                    </div>
+                </div>
+            </div>
+        }
+
+    </div>
+
+    @if (ShowManualRate && ConvertAsync is not null)
+    {
+        <div class="tm-currency-input__manual-rate">
+            <div class="tm-input-wrapper">
+                @if (!string.IsNullOrEmpty(ResolvedManualRateLabel))
+                {
+                    <label class="tm-input-label">@ResolvedManualRateLabel</label>
+                }
+                <input type="text"
+                       class="tm-input @(ReadOnly ? "tm-input--readonly" : "")"
+                       value="@_manualRateText"
+                       readonly="@ReadOnly"
+                       @onchange="HandleManualRateChangeAsync"
+                       @onblur="HandleManualRateBlurAsync" />
+            </div>
+        </div>
+    }
+</div>
+
+@code {
+    // ── Bindable values ────────────────────────────────────────────────────────
+
+    /// <summary>The entered amount.</summary>
+    [Parameter] public decimal? Amount { get; set; }
+    /// <summary>Fires when Amount changes.</summary>
+    [Parameter] public EventCallback<decimal?> AmountChanged { get; set; }
+
+    /// <summary>Selected currency code (e.g. "USD").</summary>
+    [Parameter] public string? Currency { get; set; }
+    /// <summary>Fires when Currency changes.</summary>
+    [Parameter] public EventCallback<string?> CurrencyChanged { get; set; }
+
+    /// <summary>Result of the conversion. Bind this to receive updates from the component.</summary>
+    [Parameter] public decimal? ConvertedAmount { get; set; }
+    /// <summary>Fires when ConvertedAmount changes.</summary>
+    [Parameter] public EventCallback<decimal?> ConvertedAmountChanged { get; set; }
+
+    /// <summary>Manual exchange rate override.</summary>
+    [Parameter] public decimal? ManualRate { get; set; }
+    /// <summary>Fires when ManualRate changes.</summary>
+    [Parameter] public EventCallback<decimal?> ManualRateChanged { get; set; }
+
+    // ── Data ───────────────────────────────────────────────────────────────────
+
+    /// <summary>Available currency options shown in the select.</summary>
+    [Parameter] public IReadOnlyList<SelectOption<string>>? Currencies { get; set; }
+
+    // ── Callbacks ──────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Optional async callback for converting Amount to another currency.
+    /// Receives (amount, currencyCode) and returns the converted value.
+    /// When null, the converted amount column is hidden entirely.
+    /// </summary>
+    [Parameter] public Func<decimal, string, Task<decimal?>>? ConvertAsync { get; set; }
+
+    // ── Display options ────────────────────────────────────────────────────────
+
+    /// <summary>Show the manual exchange rate input. Only meaningful when ConvertAsync is provided.</summary>
+    [Parameter] public bool ShowManualRate { get; set; }
+
+    /// <summary>Makes all fields read-only.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    // ── Label overrides ────────────────────────────────────────────────────────
+
+    /// <summary>Override label for the amount field.</summary>
+    [Parameter] public string? AmountLabel { get; set; }
+    /// <summary>Override label for the currency select.</summary>
+    [Parameter] public string? CurrencyLabel { get; set; }
+    /// <summary>Override label for the converted amount field.</summary>
+    [Parameter] public string? ConvertedLabel { get; set; }
+    /// <summary>Override label for the manual rate field.</summary>
+    [Parameter] public string? ManualRateLabel { get; set; }
+
+    // ── Styling ────────────────────────────────────────────────────────────────
+
+    /// <summary>Additional CSS class.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Private state ──────────────────────────────────────────────────────────
+
+    private string? _amountText;
+    private string? _convertedText;
+    private string? _manualRateText;
+    private bool _converting;
+
+    private string ResolvedAmountLabel    => AmountLabel    ?? Loc["TmCurrencyInput_Amount"];
+    private string ResolvedCurrencyLabel  => CurrencyLabel  ?? Loc["TmCurrencyInput_Currency"];
+    private string ResolvedConvertedLabel => ConvertedLabel ?? Loc["TmCurrencyInput_AmountConverted"];
+    private string ResolvedManualRateLabel => ManualRateLabel ?? Loc["TmCurrencyInput_ManualRate"];
+
+    protected override void OnParametersSet()
+    {
+        _amountText      = FormatDecimal(Amount);
+        _convertedText   = FormatDecimal(ConvertedAmount);
+        _manualRateText  = FormatDecimal(ManualRate);
+    }
+
+    // ── Handlers ───────────────────────────────────────────────────────────────
+
+    private async Task HandleAmountChangeAsync(ChangeEventArgs e)
+    {
+        var parsed = ParseDecimal(e.Value?.ToString());
+        Amount = parsed;
+        _amountText = FormatDecimal(parsed);
+        await AmountChanged.InvokeAsync(parsed);
+        await TriggerConversionAsync();
+    }
+
+    private Task HandleAmountBlurAsync()
+    {
+        _amountText = FormatDecimal(Amount);
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleCurrencyChangedAsync(string? value)
+    {
+        Currency = value;
+        await CurrencyChanged.InvokeAsync(value);
+        await TriggerConversionAsync();
+    }
+
+    private async Task HandleManualRateChangeAsync(ChangeEventArgs e)
+    {
+        var parsed = ParseDecimal(e.Value?.ToString());
+        ManualRate = parsed;
+        _manualRateText = FormatDecimal(parsed);
+        await ManualRateChanged.InvokeAsync(parsed);
+        await TriggerConversionAsync();
+    }
+
+    private Task HandleManualRateBlurAsync()
+    {
+        _manualRateText = FormatDecimal(ManualRate);
+        return Task.CompletedTask;
+    }
+
+    // ── Conversion ─────────────────────────────────────────────────────────────
+
+    private async Task TriggerConversionAsync()
+    {
+        if (ConvertAsync is null) return;
+        if (!Amount.HasValue || string.IsNullOrEmpty(Currency))
+        {
+            await SetConvertedAsync(null);
+            return;
+        }
+
+        // If a manual rate is provided, use it directly without calling ConvertAsync
+        if (ShowManualRate && ManualRate.HasValue && ManualRate.Value > 0)
+        {
+            await SetConvertedAsync(Math.Round(Amount.Value * ManualRate.Value, 2));
+            return;
+        }
+
+        _converting = true;
+        StateHasChanged();
+
+        try
+        {
+            var result = await ConvertAsync(Amount.Value, Currency);
+            await SetConvertedAsync(result);
+        }
+        finally
+        {
+            _converting = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SetConvertedAsync(decimal? value)
+    {
+        ConvertedAmount = value;
+        _convertedText = FormatDecimal(value);
+        await ConvertedAmountChanged.InvokeAsync(value);
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private static string? FormatDecimal(decimal? value) =>
+        value.HasValue ? value.Value.ToString("N2") : null;
+
+    private static decimal? ParseDecimal(string? raw)
+    {
+        if (string.IsNullOrWhiteSpace(raw)) return null;
+        // Strip thousands separators before parsing
+        var normalized = raw.Replace(" ", "").Replace("\u00a0", "");
+        return decimal.TryParse(normalized,
+            System.Globalization.NumberStyles.Number,
+            System.Globalization.CultureInfo.InvariantCulture, out var d)
+            ? d
+            : null;
+    }
+}

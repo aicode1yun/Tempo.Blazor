@@ -1,0 +1,73 @@
+@namespace Tempo.Blazor.Components.Inputs
+
+<div class="tm-toggle-section @Class" @attributes="AdditionalAttributes">
+    <div class="tm-toggle-section__header">
+        @if (!string.IsNullOrEmpty(Label))
+        {
+            <span class="tm-toggle-section__label">@Label</span>
+        }
+        <div class="tm-toggle-section__radios" role="radiogroup" aria-label="@Label">
+            <label class="tm-toggle-section__radio @(Value == true ? "tm-toggle-section__radio--active" : "")">
+                <input type="radio"
+                       name="@_groupName"
+                       class="tm-toggle-section__input"
+                       checked="@(Value == true)"
+                       disabled="@ReadOnly"
+                       @onchange="@(() => HandleChangeAsync(true))" />
+                @(TrueLabel ?? Loc["Tm_Yes"])
+            </label>
+            <label class="tm-toggle-section__radio @(Value == false ? "tm-toggle-section__radio--active" : "")">
+                <input type="radio"
+                       name="@_groupName"
+                       class="tm-toggle-section__input"
+                       checked="@(Value == false)"
+                       disabled="@ReadOnly"
+                       @onchange="@(() => HandleChangeAsync(false))" />
+                @(FalseLabel ?? Loc["Tm_No"])
+            </label>
+        </div>
+    </div>
+
+    @if (Value == true && ChildContent is not null)
+    {
+        <div class="tm-toggle-section__content">
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    /// <summary>Current value. True = Yes, False = No, null = unset.</summary>
+    [Parameter] public bool? Value { get; set; }
+
+    /// <summary>Fires when the value changes.</summary>
+    [Parameter] public EventCallback<bool?> ValueChanged { get; set; }
+
+    /// <summary>Label shown above the radio buttons.</summary>
+    [Parameter] public string? Label { get; set; }
+
+    /// <summary>Override label for the True (Yes) option.</summary>
+    [Parameter] public string? TrueLabel { get; set; }
+
+    /// <summary>Override label for the False (No) option.</summary>
+    [Parameter] public string? FalseLabel { get; set; }
+
+    /// <summary>When true, the radio buttons are disabled.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Content rendered below the toggle when Value is true.</summary>
+    [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    /// <summary>Additional CSS class.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private readonly string _groupName = $"tms_{Guid.NewGuid():N}";
+
+    private async Task HandleChangeAsync(bool value)
+    {
+        Value = value;
+        await ValueChanged.InvokeAsync(value);
+    }
+}
