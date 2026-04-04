@@ -1,0 +1,58 @@
+{
+  "itemName": "IToken",
+  "kind": "Interface",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a token/variable that can be inserted into TmRichEditor via the {{ trigger. Implement this interface to provide tokens with optional visual metadata (Icon, ColorClass, TypeLabel) that control how the chip is rendered in the editor and shown in the autocomplete dropdown.",
+  "properties": [
+    {
+      "name": "Key",
+      "type": "string",
+      "description": "Unique key for the token used as its identifier in the editor HTML (e.g. \"user.email\", \"company.name\")."
+    },
+    {
+      "name": "DisplayName",
+      "type": "string",
+      "description": "Human-readable name shown in the autocomplete list and rendered inside the {{ }} chip in the editor."
+    },
+    {
+      "name": "Description",
+      "type": "string?",
+      "description": "Optional longer description shown below the key in the autocomplete dropdown and in hover preview args."
+    },
+    {
+      "name": "Category",
+      "type": "string?",
+      "description": "Optional category used for grouping tokens in the autocomplete dropdown (e.g. \"User\", \"System\")."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "description": "Optional icon shown next to the token in the dropdown and included in OnTokenHover args. Can be an emoji (e.g. \"🔒\") or a CSS icon class name."
+    },
+    {
+      "name": "ColorClass",
+      "type": "string?",
+      "description": "Optional CSS class added to the token chip element in the editor for visual distinction. Built-in variants: \"token-secret\" (red), \"token-url\" (blue), \"token-number\" (green). Custom classes are also supported."
+    },
+    {
+      "name": "TypeLabel",
+      "type": "string?",
+      "description": "Optional short type label shown as a badge in the dropdown and included in OnTokenHover args (e.g. \"Secret\", \"URL\", \"Number\")."
+    }
+  ],
+  "usedInComponents": [
+    "TmRichEditorFull",
+    "TmRichEditorSimple"
+  ],
+  "examples": [
+    {
+      "title": "Basic IToken implementation",
+      "code": "public class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
+    },
+    {
+      "title": "Tokens with visual metadata for different types",
+      "code": "var tokens = new List<MyToken>\n{\n    new() {\n        Key = \"user.email\",\n        DisplayName = \"User Email\",\n        Description = \"The authenticated user's email address\",\n        Category = \"User\",\n        Icon = \"📧\",\n        TypeLabel = \"Email\",\n        ColorClass = \"token-url\"\n    },\n    new() {\n        Key = \"api.secret\",\n        DisplayName = \"API Secret\",\n        Description = \"Secret API key — handle with care\",\n        Category = \"System\",\n        Icon = \"🔒\",\n        TypeLabel = \"Secret\",\n        ColorClass = \"token-secret\"\n    },\n    new() {\n        Key = \"order.total\",\n        DisplayName = \"Order Total\",\n        Description = \"Total amount of the current order\",\n        Category = \"Order\",\n        Icon = \"💰\",\n        TypeLabel = \"Number\",\n        ColorClass = \"token-number\"\n    }\n};"
+    }
+  ]
+}

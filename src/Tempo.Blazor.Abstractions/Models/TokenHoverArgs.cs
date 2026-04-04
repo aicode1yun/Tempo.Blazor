@@ -5,43 +5,44 @@ namespace Tempo.Blazor.Models;
 /// Contains token metadata and the bounding rect of the chip element in client (viewport) coordinates,
 /// so the application can position its own tooltip relative to the chip.
 /// </summary>
-public record TokenHoverArgs(
+public sealed class TokenHoverArgs
+{
     /// <summary>Unique key of the hovered token (e.g. "user.email").</summary>
-    string Key,
+    public string Key { get; init; } = string.Empty;
 
     /// <summary>Display name of the token (e.g. "User Email").</summary>
-    string DisplayName,
+    public string DisplayName { get; init; } = string.Empty;
 
     /// <summary>Optional description of the token.</summary>
-    string? Description,
+    public string? Description { get; init; }
 
     /// <summary>Optional category of the token.</summary>
-    string? Category,
+    public string? Category { get; init; }
 
     /// <summary>Optional icon (emoji or CSS class).</summary>
-    string? Icon,
+    public string? Icon { get; init; }
 
     /// <summary>Optional CSS color class applied to the chip.</summary>
-    string? ColorClass,
+    public string? ColorClass { get; init; }
 
     /// <summary>Optional type label (e.g. "Secret", "URL").</summary>
-    string? TypeLabel,
+    public string? TypeLabel { get; init; }
 
     /// <summary>Left edge of the token chip in client (viewport) coordinates (px).</summary>
-    double RectLeft,
+    public double RectLeft { get; init; }
 
     /// <summary>Top edge of the token chip in client (viewport) coordinates (px).</summary>
-    double RectTop,
+    public double RectTop { get; init; }
 
     /// <summary>Right edge of the token chip in client (viewport) coordinates (px).</summary>
-    double RectRight,
+    public double RectRight { get; init; }
 
     /// <summary>Bottom edge of the token chip in client (viewport) coordinates (px).</summary>
-    double RectBottom,
+    public double RectBottom { get; init; }
 
     /// <summary>Width of the token chip (px).</summary>
-    double RectWidth,
+    public double RectWidth { get; init; }
 
     /// <summary>Height of the token chip (px).</summary>
-    double RectHeight
-);
+    public double RectHeight { get; init; }
+}

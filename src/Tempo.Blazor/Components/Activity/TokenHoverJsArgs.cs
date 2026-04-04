@@ -4,7 +4,7 @@ namespace Tempo.Blazor.Components.Activity;
 /// Internal DTO deserialized from the JS hover event object.
 /// Property names match the camelCase keys sent by <c>tmRichEditor.initTokenHoverPreview</c>.
 /// </summary>
-internal sealed class TokenHoverJsArgs
+public sealed class TokenHoverJsArgs
 {
     public string Key { get; set; } = string.Empty;
     public string DisplayName { get; set; } = string.Empty;

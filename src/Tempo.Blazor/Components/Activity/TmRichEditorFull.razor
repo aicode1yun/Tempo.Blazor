@@ -870,11 +870,21 @@
     public async Task OnTokenHoverEnter(TokenHoverJsArgs args)
     {
         if (!OnTokenHover.HasDelegate) return;
-        var hoverArgs = new TokenHoverArgs(
-            args.Key, args.DisplayName, args.Description, null,
-            args.Icon, args.ColorClass, args.TypeLabel,
-            args.RectLeft, args.RectTop, args.RectRight, args.RectBottom,
-            args.RectWidth, args.RectHeight);
+        var hoverArgs = new TokenHoverArgs
+        {
+            Key = args.Key,
+            DisplayName = args.DisplayName,
+            Description = args.Description,
+            Icon = args.Icon,
+            ColorClass = args.ColorClass,
+            TypeLabel = args.TypeLabel,
+            RectLeft = args.RectLeft,
+            RectTop = args.RectTop,
+            RectRight = args.RectRight,
+            RectBottom = args.RectBottom,
+            RectWidth = args.RectWidth,
+            RectHeight = args.RectHeight
+        };
         await OnTokenHover.InvokeAsync(hoverArgs);
     }
 

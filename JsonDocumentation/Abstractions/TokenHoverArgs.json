@@ -1,0 +1,84 @@
+{
+  "itemName": "TokenHoverArgs",
+  "kind": "Record",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Event arguments passed to the OnTokenHover callback of TmRichEditorFull and TmRichEditorSimple when the user hovers over a token chip. Contains the full token metadata and the chip's bounding rect in client (viewport) coordinates so the application can position its own tooltip.",
+  "properties": [
+    {
+      "name": "Key",
+      "type": "string",
+      "description": "Unique key of the hovered token (e.g. \"user.email\")."
+    },
+    {
+      "name": "DisplayName",
+      "type": "string",
+      "description": "Display name of the token (e.g. \"User Email\")."
+    },
+    {
+      "name": "Description",
+      "type": "string?",
+      "description": "Optional description of the token."
+    },
+    {
+      "name": "Category",
+      "type": "string?",
+      "description": "Optional category of the token."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "description": "Optional icon (emoji or CSS class) from the token's IToken.Icon property."
+    },
+    {
+      "name": "ColorClass",
+      "type": "string?",
+      "description": "Optional CSS color class applied to the chip (e.g. \"token-secret\")."
+    },
+    {
+      "name": "TypeLabel",
+      "type": "string?",
+      "description": "Optional short type label (e.g. \"Secret\", \"URL\", \"Number\")."
+    },
+    {
+      "name": "RectLeft",
+      "type": "double",
+      "description": "Left edge of the token chip in client (viewport) coordinates (px). Equivalent to getBoundingClientRect().left."
+    },
+    {
+      "name": "RectTop",
+      "type": "double",
+      "description": "Top edge of the token chip in client (viewport) coordinates (px)."
+    },
+    {
+      "name": "RectRight",
+      "type": "double",
+      "description": "Right edge of the token chip in client (viewport) coordinates (px)."
+    },
+    {
+      "name": "RectBottom",
+      "type": "double",
+      "description": "Bottom edge of the token chip in client (viewport) coordinates (px). Use this as the tooltip's top offset to position it just below the chip."
+    },
+    {
+      "name": "RectWidth",
+      "type": "double",
+      "description": "Width of the token chip (px)."
+    },
+    {
+      "name": "RectHeight",
+      "type": "double",
+      "description": "Height of the token chip (px)."
+    }
+  ],
+  "usedInComponents": [
+    "TmRichEditorFull",
+    "TmRichEditorSimple"
+  ],
+  "examples": [
+    {
+      "title": "Showing a custom tooltip on token hover",
+      "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  TokenProvider=\"@_tokenProvider\"\n                  OnTokenHover=\"ShowTooltip\"\n                  OnTokenHoverEnd=\"HideTooltip\" />\n\n@if (_hover != null)\n{\n    <div class=\"token-tooltip\"\n         style=\"position:fixed;\n                left:@(_hover.RectLeft)px;\n                top:@(_hover.RectBottom + 6)px;\">\n        @if (_hover.Icon != null) { <span>@_hover.Icon</span> }\n        <strong>@_hover.DisplayName</strong>\n        @if (_hover.TypeLabel != null) { <span class=\"badge\">@_hover.TypeLabel</span> }\n        <code>{{@_hover.Key}}</code>\n        @if (_hover.Description != null) { <p>@_hover.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hover;\n\n    private void ShowTooltip(TokenHoverArgs args)\n    {\n        _hover = args;\n        StateHasChanged();\n    }\n\n    private void HideTooltip()\n    {\n        _hover = null;\n        StateHasChanged();\n    }\n}"
+    }
+  ]
+}
