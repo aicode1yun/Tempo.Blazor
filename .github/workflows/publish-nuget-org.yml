@@ -71,9 +71,8 @@ jobs:
     # Publikujeme jen při push na main/master, tagu, nebo ručním spuštění
     if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
     
-    # DŮLEŽITÉ PRO TRUSTED PUBLISHING: OIDC token je potřeba pro autentizaci
     permissions:
-      id-token: write  # Required for Trusted Publishing (OIDC)
+      id-token: write  # Povinné pro Trusted Publishing (OIDC)
       contents: read
 
     steps:
@@ -148,18 +147,22 @@ jobs:
       - name: List packages
         run: ls -la ./packages
 
-      # Publikujeme balíčky na NuGet.org pomocí Trusted Publishing (OIDC)
-      - name: Get NuGet API token via OIDC
+      - name: Get NuGet API token via Trusted Publishing (OIDC)
         id: nuget-token
         run: |
-          # 1. Získáme OIDC token z GitHub Actions s audience pro nuget.org
-          OIDC_TOKEN=$(curl -s -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=nuget.org" | jq -r '.value')
+          # Získáme OIDC token z GitHub Actions s audience "nuget.org"
+          OIDC_TOKEN=$(curl -s \
+            -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=nuget.org" \
+            | jq -r '.value')
           echo "::add-mask::$OIDC_TOKEN"
-          # 2. Vyměníme OIDC token za dočasný NuGet API token
-          NUGET_TOKEN=$(curl -s -X POST "https://www.nuget.org/api/v1/authentication/authenticate" \
+
+          # Vyměníme OIDC token za dočasný NuGet API token
+          NUGET_TOKEN=$(curl -s -X POST \
+            "https://www.nuget.org/api/v1/authentication/authenticate" \
             -H "Content-Type: application/json" \
-            -d "{\"oidcToken\": \"$OIDC_TOKEN\"}" | jq -r '.token')
+            -d "{\"oidcToken\": \"$OIDC_TOKEN\"}" \
+            | jq -r '.token')
           echo "::add-mask::$NUGET_TOKEN"
           echo "NUGET_TOKEN=$NUGET_TOKEN" >> $GITHUB_OUTPUT
 
