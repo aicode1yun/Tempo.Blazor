@@ -2,7 +2,7 @@
   "itemName": "TmRichEditorFull",
   "kind": "Component",
   "category": "Activity",
-  "description": "Full-featured rich text editor with a comprehensive toolbar supporting headings (H1-H4), text formatting (bold, italic, underline, strikethrough, subscript, superscript), lists (ordered, unordered, task), indentation, links, images, tables, videos, code blocks, blockquotes, horizontal rules, text/highlight colors, emojis, find & replace, @mentions, and {{token}} variable insertion. Provides word count and character limit tracking.",
+  "description": "Full-featured rich text editor with a comprehensive toolbar supporting headings (H1-H4), text formatting (bold, italic, underline, strikethrough, subscript, superscript), lists (ordered, unordered, task), indentation, links, images, tables, videos, code blocks, blockquotes, horizontal rules, text/highlight colors, emojis, find & replace, @mentions, and {{token}} variable insertion. Provides word count and character limit tracking. Token chips support visual differentiation via Icon, ColorClass, and TypeLabel. Hover over a token chip fires OnTokenHover so the application can display its own tooltip.",
   "requiredImports": [
     "@using Tempo.Blazor.Components.Activity"
   ],
@@ -11,103 +11,140 @@
       "name": "Value",
       "type": "string",
       "isRequired": false,
-      "default": "Empty"
+      "default": "Empty",
+      "description": "HTML content of the editor. Use @bind-Value for two-way binding."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired whenever the editor content changes."
     },
     {
       "name": "Placeholder",
       "type": "string?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Placeholder text shown when the editor is empty."
     },
     {
       "name": "Height",
       "type": "string?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "CSS height of the editor (e.g. \"400px\", \"50vh\"). If null, the editor grows with content."
     },
     {
       "name": "MaxLength",
       "type": "int",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Maximum number of characters. When exceeded, the character counter turns red. 0 means unlimited."
     },
     {
       "name": "ShowWordCount",
       "type": "bool",
       "isRequired": false,
-      "default": "true"
+      "default": "true",
+      "description": "Whether to show word and character count in the editor footer."
     },
     {
       "name": "SupportsMentions",
       "type": "bool",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Enables @mention autocomplete. Requires MentionProvider."
     },
     {
       "name": "MentionProvider",
       "type": "IMentionDataProvider?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Data provider for @mention user search."
     },
     {
       "name": "SupportsImages",
       "type": "bool",
       "isRequired": false,
-      "default": "true"
+      "default": "true",
+      "description": "Whether the image toolbar button and image dialog are available."
     },
     {
       "name": "SupportsTables",
       "type": "bool",
       "isRequired": false,
-      "default": "true"
+      "default": "true",
+      "description": "Whether the table toolbar button and table dialog are available."
     },
     {
       "name": "SupportsCodeBlocks",
       "type": "bool",
       "isRequired": false,
-      "default": "true"
+      "default": "true",
+      "description": "Whether the code block toolbar button is available."
     },
     {
       "name": "SupportsBlockquotes",
       "type": "bool",
       "isRequired": false,
-      "default": "true"
+      "default": "true",
+      "description": "Whether the blockquote toolbar button is available."
     },
     {
       "name": "SupportsTokens",
       "type": "bool",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Enables the {{token}} variable insertion toolbar button. Requires TokenProvider."
     },
     {
       "name": "TokenProvider",
       "type": "ITokenDataProvider?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Data provider for token/variable search and autocomplete. Setting this implicitly enables token support."
     },
     {
       "name": "TokenTrigger",
       "type": "string",
       "isRequired": false,
-      "default": "\"{{\""
+      "default": "\"{{\"",
+      "description": "Character sequence that opens the token autocomplete dropdown while typing."
     },
     {
       "name": "OnTokenCreateRequested",
       "type": "EventCallback<string?>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired when the user clicks 'Create new' in the token dropdown. Parameter is the current query text (pre-filled name). Call InsertTokenAsync after the token is created."
     },
     {
       "name": "OnTokenInserted",
       "type": "EventCallback<IToken>",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Fired after a token chip is inserted into the editor content."
+    },
+    {
+      "name": "OnTokenHover",
+      "type": "EventCallback<TokenHoverArgs>",
+      "isRequired": false,
+      "description": "Fired when the user hovers over a token chip in the editor. TokenHoverArgs contains full token metadata (Key, DisplayName, Description, Icon, TypeLabel, ColorClass) plus the chip's bounding rect in client (viewport) coordinates (RectLeft, RectTop, RectRight, RectBottom, RectWidth, RectHeight). Use this to show your own tooltip positioned relative to the chip. Only fires when TokenProvider is set and this callback is registered."
+    },
+    {
+      "name": "OnTokenHoverEnd",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Fired when the user moves the cursor away from a token chip. Use this to hide the tooltip shown via OnTokenHover."
     },
     {
       "name": "IsDisabled",
       "type": "bool",
-      "isRequired": false
+      "isRequired": false,
+      "description": "When true, the editor is read-only and visually dimmed."
     },
     {
       "name": "Class",
       "type": "string?",
-      "isRequired": false
+      "isRequired": false,
+      "description": "Additional CSS class applied to the root element."
+    },
+    {
+      "name": "AdditionalAttributes",
+      "type": "Dictionary<string, object>?",
+      "isRequired": false,
+      "description": "Arbitrary HTML attributes splatted onto the root element."
     }
   ],
   "cssClasses": [
@@ -127,7 +164,11 @@
     "tm-rte-color-picker",
     "tm-rte-emoji-picker",
     "tm-mention",
-    "tm-token"
+    "tm-token",
+    "tm-token-chip-icon",
+    "token-secret",
+    "token-url",
+    "token-number"
   ],
   "publicMethods": [
     {
@@ -139,21 +180,36 @@
       "name": "InsertTokenAsync",
       "returnType": "Task",
       "parameters": [
-        { "name": "key", "type": "string" },
-        { "name": "displayName", "type": "string?", "default": "null" }
+        { "name": "key", "type": "string", "description": "Unique token key." },
+        { "name": "displayName", "type": "string?", "default": "null", "description": "Text shown in the chip. Falls back to key if null." }
       ],
-      "description": "Programmatically inserts a token chip into the editor. Call this from the parent component after a token is created via dialog."
+      "description": "Programmatically inserts a token chip into the editor at the current cursor position. Typically called from the parent component after the user creates a new token via OnTokenCreateRequested."
     }
   ],
   "usedAbstractions": [
     {
+      "name": "ITokenDataProvider",
+      "description": "Data provider for {{token}} variable autocomplete.",
+      "parameter": "TokenProvider"
+    },
+    {
+      "name": "IToken",
+      "description": "Interface representing a token/variable. Implement it to carry Icon, ColorClass, and TypeLabel for visual chip differentiation.",
+      "usedIn": "ITokenDataProvider, OnTokenInserted, OnTokenHover"
+    },
+    {
+      "name": "TokenHoverArgs",
+      "description": "Event args passed to OnTokenHover. Contains token metadata and the chip's client bounding rect for tooltip positioning.",
+      "parameter": "OnTokenHover"
+    },
+    {
       "name": "IMentionDataProvider",
-      "description": "Data provider for @mention functionality",
+      "description": "Data provider for @mention user search.",
       "parameter": "MentionProvider"
     },
     {
       "name": "IMentionUser",
-      "description": "Interface representing a user for mentions",
+      "description": "Interface representing a user for @mentions.",
       "usedIn": "IMentionDataProvider"
     }
   ],
@@ -165,6 +221,14 @@
     {
       "title": "Editor with mentions and tokens",
       "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  SupportsMentions=\"true\"\n                  MentionProvider=\"@mentionProvider\"\n                  SupportsTokens=\"true\"\n                  TokenProvider=\"@tokenProvider\"\n                  OnTokenCreateRequested=\"HandleCreateToken\"\n                  OnTokenInserted=\"HandleTokenInserted\"\n                  MaxLength=\"5000\"\n                  ShowWordCount=\"true\" />"
+    },
+    {
+      "title": "Token hover preview (application-controlled tooltip)",
+      "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  TokenProvider=\"@tokenProvider\"\n                  OnTokenHover=\"ShowTokenTooltip\"\n                  OnTokenHoverEnd=\"HideTokenTooltip\" />\n\n@if (_hoveredToken != null)\n{\n    <div class=\"my-tooltip\"\n         style=\"position:fixed; left:@(_hoveredToken.RectLeft)px; top:@(_hoveredToken.RectBottom + 6)px\">\n        @if (_hoveredToken.Icon != null) { <span>@_hoveredToken.Icon</span> }\n        <strong>@_hoveredToken.DisplayName</strong>\n        @if (_hoveredToken.TypeLabel != null) { <em>@_hoveredToken.TypeLabel</em> }\n        @if (_hoveredToken.Description != null) { <p>@_hoveredToken.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hoveredToken;\n\n    private void ShowTokenTooltip(TokenHoverArgs args)\n    {\n        _hoveredToken = args;\n        StateHasChanged();\n    }\n\n    private void HideTokenTooltip()\n    {\n        _hoveredToken = null;\n        StateHasChanged();\n    }\n}"
+    },
+    {
+      "title": "Token provider with visual metadata (Icon, ColorClass, TypeLabel)",
+      "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    public bool SupportsCreation => true;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        var tokens = new List<MyToken>\n        {\n            new() { Key = \"user.email\",    DisplayName = \"User Email\",    Icon = \"📧\", TypeLabel = \"Email\",  ColorClass = \"token-url\" },\n            new() { Key = \"api.secret\",    DisplayName = \"API Secret\",    Icon = \"🔒\", TypeLabel = \"Secret\", ColorClass = \"token-secret\" },\n            new() { Key = \"order.total\",   DisplayName = \"Order Total\",   Icon = \"💰\", TypeLabel = \"Number\", ColorClass = \"token-number\" },\n        };\n        return Task.FromResult(\n            tokens.Where(t => t.Key.Contains(query, StringComparison.OrdinalIgnoreCase)\n                            || t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))\n                  .Cast<IToken>());\n    }\n\n    public void Refresh() { }\n}\n\npublic class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
     },
     {
       "title": "Disabled editor",

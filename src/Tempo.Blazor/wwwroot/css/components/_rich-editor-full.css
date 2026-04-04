@@ -260,6 +260,46 @@
   border-color: var(--tm-color-warning-800, #92400e);
 }
 
+/* Token chip icon (emoji/icon before display text) */
+.tm-rich-editor-full .tm-rte-editor-content .tm-token .tm-token-chip-icon {
+  margin-right: 3px;
+  font-style: normal;
+}
+
+/* Token color class variants */
+.tm-rich-editor-full .tm-rte-editor-content .tm-token.token-secret {
+  background: var(--tm-color-danger-100, #fee2e2);
+  color: var(--tm-color-danger-700, #b91c1c);
+  border-color: var(--tm-color-danger-200, #fecaca);
+}
+.dark .tm-rich-editor-full .tm-rte-editor-content .tm-token.token-secret {
+  background: var(--tm-color-danger-900, #7f1d1d);
+  color: var(--tm-color-danger-300, #fca5a5);
+  border-color: var(--tm-color-danger-800, #991b1b);
+}
+
+.tm-rich-editor-full .tm-rte-editor-content .tm-token.token-url {
+  background: var(--tm-color-info-100, #dbeafe);
+  color: var(--tm-color-info-700, #1d4ed8);
+  border-color: var(--tm-color-info-200, #bfdbfe);
+}
+.dark .tm-rich-editor-full .tm-rte-editor-content .tm-token.token-url {
+  background: var(--tm-color-info-900, #1e3a8a);
+  color: var(--tm-color-info-300, #93c5fd);
+  border-color: var(--tm-color-info-800, #1e40af);
+}
+
+.tm-rich-editor-full .tm-rte-editor-content .tm-token.token-number {
+  background: var(--tm-color-success-100, #dcfce7);
+  color: var(--tm-color-success-700, #15803d);
+  border-color: var(--tm-color-success-200, #bbf7d0);
+}
+.dark .tm-rich-editor-full .tm-rte-editor-content .tm-token.token-number {
+  background: var(--tm-color-success-900, #14532d);
+  color: var(--tm-color-success-300, #86efac);
+  border-color: var(--tm-color-success-800, #166534);
+}
+
 /* Table styles */
 .tm-rich-editor-full .tm-rte-editor-content table {
   width: 100%;

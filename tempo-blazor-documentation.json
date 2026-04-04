@@ -1217,6 +1217,75 @@
       ]
     },
     {
+      "itemName": "TmAutoSaveIndicator",
+      "kind": "Component",
+      "category": "Feedback",
+      "description": "Inline status indicator that shows whether a form has unsaved changes, is currently saving, or has been saved. Supports an optional auto-save timer that fires a callback after a configurable interval when unsaved changes are present. Exposes MarkUnsaved() and MarkSaved() methods for manual control.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Feedback"
+      ],
+      "parameters": [
+        {
+          "name": "IsEnabled",
+          "type": "bool",
+          "isRequired": false,
+          "default": "true",
+          "description": "When false, the auto-save timer is stopped and no automatic saves are triggered."
+        },
+        {
+          "name": "AutoSaveIntervalSeconds",
+          "type": "int",
+          "isRequired": false,
+          "default": "60",
+          "description": "Interval in seconds between automatic save attempts. Only applies when IsEnabled is true."
+        },
+        {
+          "name": "OnSave",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Callback invoked by the auto-save timer when unsaved changes are present. Use this to persist data."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class."
+        }
+      ],
+      "publicMethods": [
+        {
+          "name": "MarkUnsaved()",
+          "description": "Transitions the indicator to the Unsaved state. Call this whenever the user modifies form data."
+        },
+        {
+          "name": "MarkSaved()",
+          "description": "Transitions the indicator to the Saved state. Call this after a successful manual save."
+        }
+      ],
+      "cssClasses": [
+        "tm-autosave",
+        "tm-autosave--saved",
+        "tm-autosave--saving",
+        "tm-autosave--unsaved",
+        "tm-autosave__dot",
+        "tm-autosave__text"
+      ],
+      "examples": [
+        {
+          "title": "Basic usage with auto-save",
+          "code": "<TmAutoSaveIndicator @ref=\"_autoSave\" OnSave=\"HandleAutoSave\" />\n\n@code {\n    private TmAutoSaveIndicator _autoSave = default!;\n\n    private async Task HandleAutoSave()\n    {\n        await SaveFormAsync();\n    }\n\n    private void OnFormChanged()\n    {\n        _autoSave.MarkUnsaved();\n    }\n}"
+        },
+        {
+          "title": "Custom interval (30 seconds)",
+          "code": "<TmAutoSaveIndicator @ref=\"_autoSave\"\n    AutoSaveIntervalSeconds=\"30\"\n    OnSave=\"HandleAutoSave\" />"
+        },
+        {
+          "title": "Disabled (indicator only, no timer)",
+          "code": "<TmAutoSaveIndicator @ref=\"_autoSave\" IsEnabled=\"false\" />"
+        }
+      ]
+    },
+    {
       "itemName": "TmAvatar",
       "kind": "Component",
       "category": "Avatars",
@@ -1913,6 +1982,120 @@
       ]
     },
     {
+      "itemName": "TmCascadingSelect",
+      "kind": "Component",
+      "category": "Inputs",
+      "description": "A pair of dependent select dropdowns where the child options are loaded asynchronously based on the selected parent value. When the parent changes, the child value is automatically reset and LoadChildOptionsAsync is called. The child select is disabled while the parent is empty or children are loading. Fully generic — TParent and TChild can be any type supported by TmSelect.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Inputs",
+        "@using Tempo.Blazor.Models"
+      ],
+      "parameters": [
+        {
+          "name": "ParentValue",
+          "type": "TParent?",
+          "isRequired": false,
+          "description": "Currently selected parent value."
+        },
+        {
+          "name": "ParentValueChanged",
+          "type": "EventCallback<TParent?>",
+          "isRequired": false,
+          "description": "Fires when the parent selection changes."
+        },
+        {
+          "name": "ParentOptions",
+          "type": "IReadOnlyList<SelectOption<TParent>>?",
+          "isRequired": false,
+          "description": "Static list of parent options rendered in the parent select."
+        },
+        {
+          "name": "ParentLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label for the parent select."
+        },
+        {
+          "name": "ParentPlaceholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Placeholder text for the parent select."
+        },
+        {
+          "name": "ParentError",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Validation error message for the parent select."
+        },
+        {
+          "name": "ChildValue",
+          "type": "TChild?",
+          "isRequired": false,
+          "description": "Currently selected child value."
+        },
+        {
+          "name": "ChildValueChanged",
+          "type": "EventCallback<TChild?>",
+          "isRequired": false,
+          "description": "Fires when the child selection changes."
+        },
+        {
+          "name": "LoadChildOptionsAsync",
+          "type": "Func<TParent?, Task<IReadOnlyList<SelectOption<TChild>>>>",
+          "isRequired": true,
+          "description": "Required async callback that returns child options for the given parent value. Called whenever the parent changes."
+        },
+        {
+          "name": "ChildLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label for the child select."
+        },
+        {
+          "name": "ChildPlaceholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Placeholder text for the child select when no child is selected."
+        },
+        {
+          "name": "ChildError",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Validation error message for the child select."
+        },
+        {
+          "name": "Disabled",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Disables both selects."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root element."
+        }
+      ],
+      "cssClasses": [
+        "tm-cascading-select"
+      ],
+      "examples": [
+        {
+          "title": "Region → City (async data)",
+          "code": "<TmCascadingSelect TParent=\"string\" TChild=\"string\"\n    ParentLabel=\"Region\"\n    ChildLabel=\"City\"\n    ParentOptions=\"@_regionOptions\"\n    ParentPlaceholder=\"Select region...\"\n    ChildPlaceholder=\"Select city...\"\n    @bind-ParentValue=\"_region\"\n    @bind-ChildValue=\"_city\"\n    LoadChildOptionsAsync=\"LoadCitiesAsync\" />\n\n@code {\n    private string? _region;\n    private string? _city;\n\n    private async Task<IReadOnlyList<SelectOption<string>>> LoadCitiesAsync(string? region)\n    {\n        if (region is null) return [];\n        var cities = await _locationService.GetCitiesAsync(region);\n        return cities.Select(c => new SelectOption<string>(c.Id, c.Name)).ToList();\n    }\n}"
+        },
+        {
+          "title": "Category → Subcategory with int keys",
+          "code": "<TmCascadingSelect TParent=\"int\" TChild=\"int\"\n    ParentLabel=\"Category\"\n    ChildLabel=\"Subcategory\"\n    ParentOptions=\"@_categoryOptions\"\n    @bind-ParentValue=\"_categoryId\"\n    @bind-ChildValue=\"_subcategoryId\"\n    LoadChildOptionsAsync=\"LoadSubcategoriesAsync\" />"
+        },
+        {
+          "title": "Disabled state",
+          "code": "<TmCascadingSelect TParent=\"string\" TChild=\"string\"\n    ParentOptions=\"@_regionOptions\"\n    LoadChildOptionsAsync=\"LoadCitiesAsync\"\n    Disabled=\"true\" />"
+        }
+      ]
+    },
+    {
       "itemName": "TmChangeDiff",
       "kind": "Component",
       "category": "Data Display",
@@ -2549,6 +2732,150 @@
         {
           "title": "Copy button with custom class",
           "code": "<TmCopyButton Text=\"@generatedCode\" Class=\"my-custom-class\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmCurrencyInput",
+      "kind": "Component",
+      "category": "Inputs",
+      "description": "Grouped currency input combining a decimal amount field, a currency select, and an optional read-only converted-amount field. Conversion is opt-in via the ConvertAsync callback — when null, the converted column is hidden. Supports a manual exchange rate override and full read-only mode. All labels are localizable.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Inputs",
+        "@using Tempo.Blazor.Models"
+      ],
+      "parameters": [
+        {
+          "name": "Amount",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "The entered amount value."
+        },
+        {
+          "name": "AmountChanged",
+          "type": "EventCallback<decimal?>",
+          "isRequired": false,
+          "description": "Fires when the amount changes."
+        },
+        {
+          "name": "Currency",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Selected currency code (e.g. \"USD\")."
+        },
+        {
+          "name": "CurrencyChanged",
+          "type": "EventCallback<string?>",
+          "isRequired": false,
+          "description": "Fires when the selected currency changes."
+        },
+        {
+          "name": "ConvertedAmount",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "Result of the conversion. Bind to receive updates."
+        },
+        {
+          "name": "ConvertedAmountChanged",
+          "type": "EventCallback<decimal?>",
+          "isRequired": false,
+          "description": "Fires when the converted amount is recalculated."
+        },
+        {
+          "name": "ManualRate",
+          "type": "decimal?",
+          "isRequired": false,
+          "description": "Manual exchange rate. When set and ShowManualRate is true, overrides the ConvertAsync callback."
+        },
+        {
+          "name": "ManualRateChanged",
+          "type": "EventCallback<decimal?>",
+          "isRequired": false,
+          "description": "Fires when the manual rate changes."
+        },
+        {
+          "name": "Currencies",
+          "type": "IReadOnlyList<SelectOption<string>>?",
+          "isRequired": false,
+          "description": "List of currency options shown in the currency select."
+        },
+        {
+          "name": "ConvertAsync",
+          "type": "Func<decimal, string, Task<decimal?>>?",
+          "isRequired": false,
+          "default": "null",
+          "description": "Async callback invoked to convert Amount to another unit. Receives (amount, currencyCode). When null, the converted amount column is hidden."
+        },
+        {
+          "name": "ShowManualRate",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "When true and ConvertAsync is provided, shows a manual exchange rate input. The manual rate takes precedence over the ConvertAsync callback."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "Makes all fields read-only."
+        },
+        {
+          "name": "AmountLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override label for the amount field. Defaults to the localized 'Amount' string."
+        },
+        {
+          "name": "CurrencyLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override label for the currency select. Defaults to the localized 'Currency' string."
+        },
+        {
+          "name": "ConvertedLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override label for the converted amount field. Defaults to the localized 'Amount (converted)' string."
+        },
+        {
+          "name": "ManualRateLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override label for the manual rate field. Defaults to the localized 'Manual exchange rate' string."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root element."
+        }
+      ],
+      "cssClasses": [
+        "tm-currency-input",
+        "tm-currency-input__row",
+        "tm-currency-input__amount",
+        "tm-currency-input__currency",
+        "tm-currency-input__converted",
+        "tm-currency-input__manual-rate",
+        "tm-currency-input__spinner"
+      ],
+      "examples": [
+        {
+          "title": "Basic — amount + currency only",
+          "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\" />"
+        },
+        {
+          "title": "With async conversion",
+          "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\"\n    @bind-ConvertedAmount=\"_converted\"\n    ConvertAsync=\"ConvertToCzkAsync\"\n    ConvertedLabel=\"Amount (CZK)\" />\n\n@code {\n    private async Task<decimal?> ConvertToCzkAsync(decimal amount, string currency)\n    {\n        var rate = await _rateService.GetRateAsync(currency, \"CZK\");\n        return rate is null ? null : Math.Round(amount * rate.Value, 2);\n    }\n}"
+        },
+        {
+          "title": "With manual rate override",
+          "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    @bind-Amount=\"_amount\"\n    @bind-Currency=\"_currency\"\n    @bind-ConvertedAmount=\"_converted\"\n    @bind-ManualRate=\"_manualRate\"\n    ConvertAsync=\"ConvertToCzkAsync\"\n    ShowManualRate=\"true\" />"
+        },
+        {
+          "title": "Read-only display",
+          "code": "<TmCurrencyInput Currencies=\"@_currencies\"\n    Amount=\"1500\"\n    Currency=\"EUR\"\n    ReadOnly=\"true\" />"
         }
       ]
     },
@@ -7004,7 +7331,7 @@
       "itemName": "TmRichEditorFull",
       "kind": "Component",
       "category": "Activity",
-      "description": "Full-featured rich text editor with a comprehensive toolbar supporting headings (H1-H4), text formatting (bold, italic, underline, strikethrough, subscript, superscript), lists (ordered, unordered, task), indentation, links, images, tables, videos, code blocks, blockquotes, horizontal rules, text/highlight colors, emojis, find & replace, @mentions, and {{token}} variable insertion. Provides word count and character limit tracking.",
+      "description": "Full-featured rich text editor with a comprehensive toolbar supporting headings (H1-H4), text formatting (bold, italic, underline, strikethrough, subscript, superscript), lists (ordered, unordered, task), indentation, links, images, tables, videos, code blocks, blockquotes, horizontal rules, text/highlight colors, emojis, find & replace, @mentions, and {{token}} variable insertion. Provides word count and character limit tracking. Token chips support visual differentiation via Icon, ColorClass, and TypeLabel. Hover over a token chip fires OnTokenHover so the application can display its own tooltip.",
       "requiredImports": [
         "@using Tempo.Blazor.Components.Activity"
       ],
@@ -7013,103 +7340,140 @@
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty"
+          "default": "Empty",
+          "description": "HTML content of the editor. Use @bind-Value for two-way binding."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired whenever the editor content changes."
         },
         {
           "name": "Placeholder",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Placeholder text shown when the editor is empty."
         },
         {
           "name": "Height",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "CSS height of the editor (e.g. \"400px\", \"50vh\"). If null, the editor grows with content."
         },
         {
           "name": "MaxLength",
           "type": "int",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Maximum number of characters. When exceeded, the character counter turns red. 0 means unlimited."
         },
         {
           "name": "ShowWordCount",
           "type": "bool",
           "isRequired": false,
-          "default": "true"
+          "default": "true",
+          "description": "Whether to show word and character count in the editor footer."
         },
         {
           "name": "SupportsMentions",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Enables @mention autocomplete. Requires MentionProvider."
         },
         {
           "name": "MentionProvider",
           "type": "IMentionDataProvider?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Data provider for @mention user search."
         },
         {
           "name": "SupportsImages",
           "type": "bool",
           "isRequired": false,
-          "default": "true"
+          "default": "true",
+          "description": "Whether the image toolbar button and image dialog are available."
         },
         {
           "name": "SupportsTables",
           "type": "bool",
           "isRequired": false,
-          "default": "true"
+          "default": "true",
+          "description": "Whether the table toolbar button and table dialog are available."
         },
         {
           "name": "SupportsCodeBlocks",
           "type": "bool",
           "isRequired": false,
-          "default": "true"
+          "default": "true",
+          "description": "Whether the code block toolbar button is available."
         },
         {
           "name": "SupportsBlockquotes",
           "type": "bool",
           "isRequired": false,
-          "default": "true"
+          "default": "true",
+          "description": "Whether the blockquote toolbar button is available."
         },
         {
           "name": "SupportsTokens",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Enables the {{token}} variable insertion toolbar button. Requires TokenProvider."
         },
         {
           "name": "TokenProvider",
           "type": "ITokenDataProvider?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Data provider for token/variable search and autocomplete. Setting this implicitly enables token support."
         },
         {
           "name": "TokenTrigger",
           "type": "string",
           "isRequired": false,
-          "default": "\"{{\""
+          "default": "\"{{\"",
+          "description": "Character sequence that opens the token autocomplete dropdown while typing."
         },
         {
           "name": "OnTokenCreateRequested",
           "type": "EventCallback<string?>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when the user clicks 'Create new' in the token dropdown. Parameter is the current query text (pre-filled name). Call InsertTokenAsync after the token is created."
         },
         {
           "name": "OnTokenInserted",
           "type": "EventCallback<IToken>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired after a token chip is inserted into the editor content."
+        },
+        {
+          "name": "OnTokenHover",
+          "type": "EventCallback<TokenHoverArgs>",
+          "isRequired": false,
+          "description": "Fired when the user hovers over a token chip in the editor. TokenHoverArgs contains full token metadata (Key, DisplayName, Description, Icon, TypeLabel, ColorClass) plus the chip's bounding rect in client (viewport) coordinates (RectLeft, RectTop, RectRight, RectBottom, RectWidth, RectHeight). Use this to show your own tooltip positioned relative to the chip. Only fires when TokenProvider is set and this callback is registered."
+        },
+        {
+          "name": "OnTokenHoverEnd",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the user moves the cursor away from a token chip. Use this to hide the tooltip shown via OnTokenHover."
         },
         {
           "name": "IsDisabled",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "When true, the editor is read-only and visually dimmed."
         },
         {
           "name": "Class",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root element."
+        },
+        {
+          "name": "AdditionalAttributes",
+          "type": "Dictionary<string, object>?",
+          "isRequired": false,
+          "description": "Arbitrary HTML attributes splatted onto the root element."
         }
       ],
       "cssClasses": [
@@ -7129,7 +7493,11 @@
         "tm-rte-color-picker",
         "tm-rte-emoji-picker",
         "tm-mention",
-        "tm-token"
+        "tm-token",
+        "tm-token-chip-icon",
+        "token-secret",
+        "token-url",
+        "token-number"
       ],
       "publicMethods": [
         {
@@ -7143,26 +7511,43 @@
           "parameters": [
             {
               "name": "key",
-              "type": "string"
+              "type": "string",
+              "description": "Unique token key."
             },
             {
               "name": "displayName",
               "type": "string?",
-              "default": "null"
+              "default": "null",
+              "description": "Text shown in the chip. Falls back to key if null."
             }
           ],
-          "description": "Programmatically inserts a token chip into the editor. Call this from the parent component after a token is created via dialog."
+          "description": "Programmatically inserts a token chip into the editor at the current cursor position. Typically called from the parent component after the user creates a new token via OnTokenCreateRequested."
         }
       ],
       "usedAbstractions": [
         {
+          "name": "ITokenDataProvider",
+          "description": "Data provider for {{token}} variable autocomplete.",
+          "parameter": "TokenProvider"
+        },
+        {
+          "name": "IToken",
+          "description": "Interface representing a token/variable. Implement it to carry Icon, ColorClass, and TypeLabel for visual chip differentiation.",
+          "usedIn": "ITokenDataProvider, OnTokenInserted, OnTokenHover"
+        },
+        {
+          "name": "TokenHoverArgs",
+          "description": "Event args passed to OnTokenHover. Contains token metadata and the chip's client bounding rect for tooltip positioning.",
+          "parameter": "OnTokenHover"
+        },
+        {
           "name": "IMentionDataProvider",
-          "description": "Data provider for @mention functionality",
+          "description": "Data provider for @mention user search.",
           "parameter": "MentionProvider"
         },
         {
           "name": "IMentionUser",
-          "description": "Interface representing a user for mentions",
+          "description": "Interface representing a user for @mentions.",
           "usedIn": "IMentionDataProvider"
         }
       ],
@@ -7176,6 +7561,14 @@
           "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  SupportsMentions=\"true\"\n                  MentionProvider=\"@mentionProvider\"\n                  SupportsTokens=\"true\"\n                  TokenProvider=\"@tokenProvider\"\n                  OnTokenCreateRequested=\"HandleCreateToken\"\n                  OnTokenInserted=\"HandleTokenInserted\"\n                  MaxLength=\"5000\"\n                  ShowWordCount=\"true\" />"
         },
         {
+          "title": "Token hover preview (application-controlled tooltip)",
+          "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  TokenProvider=\"@tokenProvider\"\n                  OnTokenHover=\"ShowTokenTooltip\"\n                  OnTokenHoverEnd=\"HideTokenTooltip\" />\n\n@if (_hoveredToken != null)\n{\n    <div class=\"my-tooltip\"\n         style=\"position:fixed; left:@(_hoveredToken.RectLeft)px; top:@(_hoveredToken.RectBottom + 6)px\">\n        @if (_hoveredToken.Icon != null) { <span>@_hoveredToken.Icon</span> }\n        <strong>@_hoveredToken.DisplayName</strong>\n        @if (_hoveredToken.TypeLabel != null) { <em>@_hoveredToken.TypeLabel</em> }\n        @if (_hoveredToken.Description != null) { <p>@_hoveredToken.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hoveredToken;\n\n    private void ShowTokenTooltip(TokenHoverArgs args)\n    {\n        _hoveredToken = args;\n        StateHasChanged();\n    }\n\n    private void HideTokenTooltip()\n    {\n        _hoveredToken = null;\n        StateHasChanged();\n    }\n}"
+        },
+        {
+          "title": "Token provider with visual metadata (Icon, ColorClass, TypeLabel)",
+          "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    public bool SupportsCreation => true;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        var tokens = new List<MyToken>\n        {\n            new() { Key = \"user.email\",    DisplayName = \"User Email\",    Icon = \"\uD83D\uDCE7\", TypeLabel = \"Email\",  ColorClass = \"token-url\" },\n            new() { Key = \"api.secret\",    DisplayName = \"API Secret\",    Icon = \"\uD83D\uDD12\", TypeLabel = \"Secret\", ColorClass = \"token-secret\" },\n            new() { Key = \"order.total\",   DisplayName = \"Order Total\",   Icon = \"\uD83D\uDCB0\", TypeLabel = \"Number\", ColorClass = \"token-number\" },\n        };\n        return Task.FromResult(\n            tokens.Where(t => t.Key.Contains(query, StringComparison.OrdinalIgnoreCase)\n                            || t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))\n                  .Cast<IToken>());\n    }\n\n    public void Refresh() { }\n}\n\npublic class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
+        },
+        {
           "title": "Disabled editor",
           "code": "<TmRichEditorFull Value=\"@readOnlyContent\" IsDisabled=\"true\" />"
         }
@@ -7185,7 +7578,7 @@
       "itemName": "TmRichEditorSimple",
       "kind": "Component",
       "category": "Activity",
-      "description": "Lightweight rich text editor with a simplified toolbar offering basic formatting (bold, italic, underline), lists (ordered, unordered, task), links, emojis, @mentions, and {{token}} variable insertion. Supports Ctrl+Enter submit, character limit, and focus styling. Ideal for comments and inline editing.",
+      "description": "Lightweight rich text editor with a simplified toolbar offering basic formatting (bold, italic, underline), lists (ordered, unordered, task), links, emojis, @mentions, and {{token}} variable insertion. Supports Ctrl+Enter submit, character limit, and focus styling. Token chips support visual differentiation via Icon, ColorClass, and TypeLabel. Hover over a token chip fires OnTokenHover so the application can display its own tooltip. Ideal for comments and inline editing.",
       "requiredImports": [
         "@using Tempo.Blazor.Components.Activity"
       ],
@@ -7194,73 +7587,99 @@
           "name": "Value",
           "type": "string",
           "isRequired": false,
-          "default": "Empty"
+          "default": "Empty",
+          "description": "HTML content of the editor. Use @bind-Value for two-way binding."
         },
         {
           "name": "ValueChanged",
           "type": "EventCallback<string>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired whenever the editor content changes."
         },
         {
           "name": "Placeholder",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Placeholder text shown when the editor is empty."
         },
         {
           "name": "MaxLength",
           "type": "int",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Maximum number of characters. When exceeded, the character counter turns red. 0 means unlimited."
         },
         {
           "name": "SupportsMentions",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Enables @mention autocomplete. Requires MentionProvider."
         },
         {
           "name": "MentionProvider",
           "type": "IMentionDataProvider?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Data provider for @mention user search."
         },
         {
           "name": "SupportsTokens",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Enables the {{token}} variable insertion button. Requires TokenProvider."
         },
         {
           "name": "TokenProvider",
           "type": "ITokenDataProvider?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Data provider for token/variable search and autocomplete. Setting this implicitly enables token support."
         },
         {
           "name": "TokenTrigger",
           "type": "string",
           "isRequired": false,
-          "default": "\"{{\""
+          "default": "\"{{\"",
+          "description": "Character sequence that opens the token autocomplete dropdown while typing."
         },
         {
           "name": "OnTokenCreateRequested",
           "type": "EventCallback<string?>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when the user clicks 'Create new' in the token dropdown. Parameter is the current query text. Call InsertTokenAsync after the token is created."
         },
         {
           "name": "OnTokenInserted",
           "type": "EventCallback<IToken>",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired after a token chip is inserted into the editor content."
+        },
+        {
+          "name": "OnTokenHover",
+          "type": "EventCallback<TokenHoverArgs>",
+          "isRequired": false,
+          "description": "Fired when the user hovers over a token chip in the editor. TokenHoverArgs contains full token metadata (Key, DisplayName, Description, Icon, TypeLabel, ColorClass) plus the chip's bounding rect in client (viewport) coordinates (RectLeft, RectTop, RectRight, RectBottom, RectWidth, RectHeight). Use this to show your own tooltip positioned relative to the chip. Only fires when TokenProvider is set and this callback is registered."
+        },
+        {
+          "name": "OnTokenHoverEnd",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Fired when the user moves the cursor away from a token chip. Use this to hide the tooltip shown via OnTokenHover."
         },
         {
           "name": "IsDisabled",
           "type": "bool",
-          "isRequired": false
+          "isRequired": false,
+          "description": "When true, the editor is read-only and visually dimmed."
         },
         {
           "name": "OnSubmit",
           "type": "EventCallback",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Fired when the user presses Ctrl+Enter (or Cmd+Enter on Mac) inside the editor."
         },
         {
           "name": "Class",
           "type": "string?",
-          "isRequired": false
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root element."
         }
       ],
       "cssClasses": [
@@ -7274,7 +7693,12 @@
         "tm-rte-char-count",
         "tm-rte-char-count-over",
         "tm-rte-toolbar",
-        "tm-rte-toolbar-simple"
+        "tm-rte-toolbar-simple",
+        "tm-token",
+        "tm-token-chip-icon",
+        "token-secret",
+        "token-url",
+        "token-number"
       ],
       "publicMethods": [
         {
@@ -7288,15 +7712,44 @@
           "parameters": [
             {
               "name": "key",
-              "type": "string"
+              "type": "string",
+              "description": "Unique token key."
             },
             {
               "name": "displayName",
               "type": "string?",
-              "default": "null"
+              "default": "null",
+              "description": "Text shown in the chip. Falls back to key if null."
             }
           ],
-          "description": "Programmatically inserts a token chip into the editor. Call this from the parent component after a token is created via dialog."
+          "description": "Programmatically inserts a token chip into the editor at the current cursor position. Typically called after the user creates a new token via OnTokenCreateRequested."
+        }
+      ],
+      "usedAbstractions": [
+        {
+          "name": "ITokenDataProvider",
+          "description": "Data provider for {{token}} variable autocomplete.",
+          "parameter": "TokenProvider"
+        },
+        {
+          "name": "IToken",
+          "description": "Interface representing a token/variable. Implement it to carry Icon, ColorClass, and TypeLabel for visual chip differentiation.",
+          "usedIn": "ITokenDataProvider, OnTokenInserted, OnTokenHover"
+        },
+        {
+          "name": "TokenHoverArgs",
+          "description": "Event args passed to OnTokenHover. Contains token metadata and the chip's client bounding rect for tooltip positioning.",
+          "parameter": "OnTokenHover"
+        },
+        {
+          "name": "IMentionDataProvider",
+          "description": "Data provider for @mention user search.",
+          "parameter": "MentionProvider"
+        },
+        {
+          "name": "IMentionUser",
+          "description": "Interface representing a user for @mentions.",
+          "usedIn": "IMentionDataProvider"
         }
       ],
       "examples": [
@@ -7311,6 +7764,10 @@
         {
           "title": "With token support",
           "code": "<TmRichEditorSimple @bind-Value=\"_template\"\n                    SupportsTokens=\"true\"\n                    TokenProvider=\"@tokenProvider\"\n                    TokenTrigger=\"{{\"\n                    OnTokenInserted=\"HandleTokenInserted\" />"
+        },
+        {
+          "title": "Token hover preview (application-controlled tooltip)",
+          "code": "<TmRichEditorSimple @bind-Value=\"_content\"\n                    TokenProvider=\"@tokenProvider\"\n                    OnTokenHover=\"ShowTokenTooltip\"\n                    OnTokenHoverEnd=\"HideTokenTooltip\" />\n\n@if (_hoveredToken != null)\n{\n    <div class=\"my-tooltip\"\n         style=\"position:fixed; left:@(_hoveredToken.RectLeft)px; top:@(_hoveredToken.RectBottom + 6)px\">\n        @if (_hoveredToken.Icon != null) { <span>@_hoveredToken.Icon</span> }\n        <strong>@_hoveredToken.DisplayName</strong>\n        @if (_hoveredToken.TypeLabel != null) { <em>@_hoveredToken.TypeLabel</em> }\n        @if (_hoveredToken.Description != null) { <p>@_hoveredToken.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hoveredToken;\n\n    private void ShowTokenTooltip(TokenHoverArgs args)\n    {\n        _hoveredToken = args;\n        StateHasChanged();\n    }\n\n    private void HideTokenTooltip()\n    {\n        _hoveredToken = null;\n        StateHasChanged();\n    }\n}"
         }
       ]
     },
@@ -9715,6 +10172,95 @@
         {
           "title": "Disabled toggle",
           "code": "<TmToggle @bind-Value=\"darkMode\" Label=\"Dark mode\" Disabled=\"true\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TmToggleSection",
+      "kind": "Component",
+      "category": "Inputs",
+      "description": "Boolean radio-button toggle (Yes / No) that conditionally reveals a content section when the value is true. Useful for form fields where selecting 'Yes' expands additional input fields. Labels are fully localizable and the component supports a null (unset) initial state.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Inputs"
+      ],
+      "parameters": [
+        {
+          "name": "Value",
+          "type": "bool?",
+          "isRequired": false,
+          "default": "null",
+          "description": "Current toggle value. True = Yes selected, False = No selected, null = nothing selected."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<bool?>",
+          "isRequired": false,
+          "description": "Fires when the user selects Yes or No."
+        },
+        {
+          "name": "Label",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Label rendered above the radio buttons and used as the radiogroup aria-label."
+        },
+        {
+          "name": "TrueLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override text for the Yes option. Defaults to the localized 'Yes' string."
+        },
+        {
+          "name": "FalseLabel",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Override text for the No option. Defaults to the localized 'No' string."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "default": "false",
+          "description": "When true, both radio buttons are disabled."
+        },
+        {
+          "name": "ChildContent",
+          "type": "RenderFragment?",
+          "isRequired": false,
+          "description": "Content rendered in the expanded section below the toggle. Only visible when Value is true."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root element."
+        }
+      ],
+      "cssClasses": [
+        "tm-toggle-section",
+        "tm-toggle-section__header",
+        "tm-toggle-section__label",
+        "tm-toggle-section__radios",
+        "tm-toggle-section__radio",
+        "tm-toggle-section__radio--active",
+        "tm-toggle-section__input",
+        "tm-toggle-section__content"
+      ],
+      "examples": [
+        {
+          "title": "Basic Yes/No toggle without content",
+          "code": "<TmToggleSection Label=\"Do you have a VAT number?\" @bind-Value=\"_hasVat\" />"
+        },
+        {
+          "title": "Toggle with expandable child content",
+          "code": "<TmToggleSection Label=\"Do you have a VAT number?\" @bind-Value=\"_hasVat\">\n    <TmTextInput Label=\"VAT Number\" @bind-Value=\"_vatNumber\" />\n</TmToggleSection>"
+        },
+        {
+          "title": "Custom option labels",
+          "code": "<TmToggleSection Label=\"Recurring payment?\"\n    TrueLabel=\"Monthly\"\n    FalseLabel=\"One-time\"\n    @bind-Value=\"_isRecurring\" />"
+        },
+        {
+          "title": "Read-only state",
+          "code": "<TmToggleSection Label=\"Active?\" Value=\"true\" ReadOnly=\"true\" />"
         }
       ]
     },

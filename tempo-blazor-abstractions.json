@@ -1008,6 +1008,64 @@
       ]
     },
     {
+      "itemName": "IToken",
+      "kind": "Interface",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Represents a token/variable that can be inserted into TmRichEditor via the {{ trigger. Implement this interface to provide tokens with optional visual metadata (Icon, ColorClass, TypeLabel) that control how the chip is rendered in the editor and shown in the autocomplete dropdown.",
+      "properties": [
+        {
+          "name": "Key",
+          "type": "string",
+          "description": "Unique key for the token used as its identifier in the editor HTML (e.g. \"user.email\", \"company.name\")."
+        },
+        {
+          "name": "DisplayName",
+          "type": "string",
+          "description": "Human-readable name shown in the autocomplete list and rendered inside the {{ }} chip in the editor."
+        },
+        {
+          "name": "Description",
+          "type": "string?",
+          "description": "Optional longer description shown below the key in the autocomplete dropdown and in hover preview args."
+        },
+        {
+          "name": "Category",
+          "type": "string?",
+          "description": "Optional category used for grouping tokens in the autocomplete dropdown (e.g. \"User\", \"System\")."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "description": "Optional icon shown next to the token in the dropdown and included in OnTokenHover args. Can be an emoji (e.g. \"\uD83D\uDD12\") or a CSS icon class name."
+        },
+        {
+          "name": "ColorClass",
+          "type": "string?",
+          "description": "Optional CSS class added to the token chip element in the editor for visual distinction. Built-in variants: \"token-secret\" (red), \"token-url\" (blue), \"token-number\" (green). Custom classes are also supported."
+        },
+        {
+          "name": "TypeLabel",
+          "type": "string?",
+          "description": "Optional short type label shown as a badge in the dropdown and included in OnTokenHover args (e.g. \"Secret\", \"URL\", \"Number\")."
+        }
+      ],
+      "usedInComponents": [
+        "TmRichEditorFull",
+        "TmRichEditorSimple"
+      ],
+      "examples": [
+        {
+          "title": "Basic IToken implementation",
+          "code": "public class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
+        },
+        {
+          "title": "Tokens with visual metadata for different types",
+          "code": "var tokens = new List<MyToken>\n{\n    new() {\n        Key = \"user.email\",\n        DisplayName = \"User Email\",\n        Description = \"The authenticated user's email address\",\n        Category = \"User\",\n        Icon = \"\uD83D\uDCE7\",\n        TypeLabel = \"Email\",\n        ColorClass = \"token-url\"\n    },\n    new() {\n        Key = \"api.secret\",\n        DisplayName = \"API Secret\",\n        Description = \"Secret API key — handle with care\",\n        Category = \"System\",\n        Icon = \"\uD83D\uDD12\",\n        TypeLabel = \"Secret\",\n        ColorClass = \"token-secret\"\n    },\n    new() {\n        Key = \"order.total\",\n        DisplayName = \"Order Total\",\n        Description = \"Total amount of the current order\",\n        Category = \"Order\",\n        Icon = \"\uD83D\uDCB0\",\n        TypeLabel = \"Number\",\n        ColorClass = \"token-number\"\n    }\n};"
+        }
+      ]
+    },
+    {
       "itemName": "ITokenDataProvider",
       "kind": "Interface",
       "category": "DataProviders",
@@ -1209,6 +1267,90 @@
         {
           "title": "Navigation structure",
           "code": "var navItems = new List<SidebarNavItem>\n{\n    new()\n    {\n        Id = \"dashboard\",\n        Text = \"Dashboard\",\n        Icon = \"dashboard\",\n        Href = \"/\"\n    },\n    new()\n    {\n        Id = \"products\",\n        Text = \"Products\",\n        Icon = \"box\",\n        Children = new()\n        {\n            new() { Id = \"list\", Text = \"List\", Href = \"/products\" },\n            new() { Id = \"categories\", Text = \"Categories\", Href = \"/categories\" }\n        }\n    },\n    new()\n    {\n        Id = \"messages\",\n        Text = \"Messages\",\n        Icon = \"mail\",\n        Href = \"/messages\",\n        Badge = \"3\",\n        BadgeColor = \"danger\"\n    }\n};\n\n<TmSidebar Items=\"@navItems\" />"
+        }
+      ]
+    },
+    {
+      "itemName": "TokenHoverArgs",
+      "kind": "Record",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Event arguments passed to the OnTokenHover callback of TmRichEditorFull and TmRichEditorSimple when the user hovers over a token chip. Contains the full token metadata and the chip's bounding rect in client (viewport) coordinates so the application can position its own tooltip.",
+      "properties": [
+        {
+          "name": "Key",
+          "type": "string",
+          "description": "Unique key of the hovered token (e.g. \"user.email\")."
+        },
+        {
+          "name": "DisplayName",
+          "type": "string",
+          "description": "Display name of the token (e.g. \"User Email\")."
+        },
+        {
+          "name": "Description",
+          "type": "string?",
+          "description": "Optional description of the token."
+        },
+        {
+          "name": "Category",
+          "type": "string?",
+          "description": "Optional category of the token."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "description": "Optional icon (emoji or CSS class) from the token's IToken.Icon property."
+        },
+        {
+          "name": "ColorClass",
+          "type": "string?",
+          "description": "Optional CSS color class applied to the chip (e.g. \"token-secret\")."
+        },
+        {
+          "name": "TypeLabel",
+          "type": "string?",
+          "description": "Optional short type label (e.g. \"Secret\", \"URL\", \"Number\")."
+        },
+        {
+          "name": "RectLeft",
+          "type": "double",
+          "description": "Left edge of the token chip in client (viewport) coordinates (px). Equivalent to getBoundingClientRect().left."
+        },
+        {
+          "name": "RectTop",
+          "type": "double",
+          "description": "Top edge of the token chip in client (viewport) coordinates (px)."
+        },
+        {
+          "name": "RectRight",
+          "type": "double",
+          "description": "Right edge of the token chip in client (viewport) coordinates (px)."
+        },
+        {
+          "name": "RectBottom",
+          "type": "double",
+          "description": "Bottom edge of the token chip in client (viewport) coordinates (px). Use this as the tooltip's top offset to position it just below the chip."
+        },
+        {
+          "name": "RectWidth",
+          "type": "double",
+          "description": "Width of the token chip (px)."
+        },
+        {
+          "name": "RectHeight",
+          "type": "double",
+          "description": "Height of the token chip (px)."
+        }
+      ],
+      "usedInComponents": [
+        "TmRichEditorFull",
+        "TmRichEditorSimple"
+      ],
+      "examples": [
+        {
+          "title": "Showing a custom tooltip on token hover",
+          "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  TokenProvider=\"@_tokenProvider\"\n                  OnTokenHover=\"ShowTooltip\"\n                  OnTokenHoverEnd=\"HideTooltip\" />\n\n@if (_hover != null)\n{\n    <div class=\"token-tooltip\"\n         style=\"position:fixed;\n                left:@(_hover.RectLeft)px;\n                top:@(_hover.RectBottom + 6)px;\">\n        @if (_hover.Icon != null) { <span>@_hover.Icon</span> }\n        <strong>@_hover.DisplayName</strong>\n        @if (_hover.TypeLabel != null) { <span class=\"badge\">@_hover.TypeLabel</span> }\n        <code>{{@_hover.Key}}</code>\n        @if (_hover.Description != null) { <p>@_hover.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hover;\n\n    private void ShowTooltip(TokenHoverArgs args)\n    {\n        _hover = args;\n        StateHasChanged();\n    }\n\n    private void HideTooltip()\n    {\n        _hover = null;\n        StateHasChanged();\n    }\n}"
         }
       ]
     }

@@ -26,6 +26,10 @@
                              @onclick:stopPropagation
                              @onmouseenter="() => OnMouseEnter(idx)"
                              @onmousedown:preventDefault>
+                            @if (!string.IsNullOrEmpty(token.Icon))
+                            {
+                                <span class="tm-rte-token-icon">@token.Icon</span>
+                            }
                             <div class="tm-rte-token-info">
                                 <div class="tm-rte-token-key">{{@token.Key}}</div>
                                 @if (!string.IsNullOrEmpty(token.Description))
@@ -33,6 +37,10 @@
                                     <div class="tm-rte-token-description">@token.Description</div>
                                 }
                             </div>
+                            @if (!string.IsNullOrEmpty(token.TypeLabel))
+                            {
+                                <span class="tm-rte-token-type-label">@token.TypeLabel</span>
+                            }
                         </div>
                         flatIndex++;
                     }
@@ -47,6 +55,10 @@
                          @onclick:stopPropagation
                          @onmouseenter="() => OnMouseEnter(index)"
                          @onmousedown:preventDefault>
+                        @if (!string.IsNullOrEmpty(token.Icon))
+                        {
+                            <span class="tm-rte-token-icon">@token.Icon</span>
+                        }
                         <div class="tm-rte-token-info">
                             <div class="tm-rte-token-key">{{@token.Key}}</div>
                             @if (!string.IsNullOrEmpty(token.Description))
@@ -54,6 +66,10 @@
                                 <div class="tm-rte-token-description">@token.Description</div>
                             }
                         </div>
+                        @if (!string.IsNullOrEmpty(token.TypeLabel))
+                        {
+                            <span class="tm-rte-token-type-label">@token.TypeLabel</span>
+                        }
                         @if (!string.IsNullOrEmpty(token.Category))
                         {
                             <span class="tm-rte-token-category">@token.Category</span>

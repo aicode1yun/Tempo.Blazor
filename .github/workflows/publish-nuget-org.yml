@@ -147,32 +147,15 @@ jobs:
       - name: List packages
         run: ls -la ./packages
 
-      - name: Get NuGet API token via Trusted Publishing (OIDC)
-        id: nuget-token
+      - name: Get OIDC token
+        id: oidc
         run: |
-          # Získáme OIDC token
-          OIDC_RAW=$(curl -s \
+          OIDC_TOKEN=$(curl -s \
             -H "Authorization: bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" \
-            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=nuget.org")
-          echo "=== OIDC raw response ==="
-          echo "$OIDC_RAW"
-          echo "========================="
-
-          OIDC_TOKEN=$(echo "$OIDC_RAW" | jq -r '.value')
+            "${ACTIONS_ID_TOKEN_REQUEST_URL}&audience=nuget.org" \
+            | jq -r '.value')
           echo "::add-mask::$OIDC_TOKEN"
-
-          # Vyměníme za NuGet API token
-          NUGET_RAW=$(curl -s -X POST \
-            "https://www.nuget.org/api/v1/authentication/authenticate" \
-            -H "Content-Type: application/json" \
-            -d "{\"oidcToken\": \"$OIDC_TOKEN\"}")
-          echo "=== NuGet auth raw response ==="
-          echo "$NUGET_RAW"
-          echo "==============================="
-
-          NUGET_TOKEN=$(echo "$NUGET_RAW" | jq -r '.token')
-          echo "::add-mask::$NUGET_TOKEN"
-          echo "NUGET_TOKEN=$NUGET_TOKEN" >> $GITHUB_OUTPUT
+          echo "OIDC_TOKEN=$OIDC_TOKEN" >> $GITHUB_OUTPUT
 
       - name: Push packages to NuGet.org
         run: |
@@ -180,7 +163,7 @@ jobs:
             echo "Publishing $pkg to NuGet.org..."
             dotnet nuget push "$pkg" \
               --source "https://api.nuget.org/v3/index.json" \
-              --api-key "${{ steps.nuget-token.outputs.NUGET_TOKEN }}" \
+              --api-key "${{ steps.oidc.outputs.OIDC_TOKEN }}" \
               --skip-duplicate
           done
 

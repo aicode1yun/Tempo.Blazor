@@ -133,6 +133,20 @@
     [Parameter] public EventCallback<IToken> OnTokenInserted { get; set; }
 
     /// <summary>
+    /// Callback when the user hovers over a token chip in the editor.
+    /// Receives <see cref="TokenHoverArgs"/> with full token metadata and the chip's bounding rect
+    /// in client (viewport) coordinates, so the application can position its own tooltip.
+    /// Only fires when <see cref="TokenProvider"/> is set.
+    /// </summary>
+    [Parameter] public EventCallback<TokenHoverArgs> OnTokenHover { get; set; }
+
+    /// <summary>
+    /// Callback when the user moves the cursor away from a token chip.
+    /// Use this to hide the tooltip shown in response to <see cref="OnTokenHover"/>.
+    /// </summary>
+    [Parameter] public EventCallback OnTokenHoverEnd { get; set; }
+
+    /// <summary>
     /// Whether the editor is disabled.
     /// </summary>
     [Parameter] public bool IsDisabled { get; set; }
@@ -194,6 +208,10 @@
                     await JS.InvokeVoidAsync("tmRichEditor.setHtml", _editorRef, Value);
                 }
                 await JS.InvokeVoidAsync("tmRichEditor.initKeyboardShortcuts", _editorRef);
+                if (TokenProvider != null && (OnTokenHover.HasDelegate || OnTokenHoverEnd.HasDelegate))
+                {
+                    await JS.InvokeVoidAsync("tmRichEditor.initTokenHoverPreview", _editorRef, _dotNetRef);
+                }
                 _isInitialized = true;
             }
             catch { /* JS not available in tests / SSR */ }
@@ -562,7 +580,10 @@
             Key = t.Key,
             DisplayName = t.DisplayName,
             Description = t.Description,
-            Category = t.Category
+            Category = t.Category,
+            Icon = t.Icon,
+            ColorClass = t.ColorClass,
+            TypeLabel = t.TypeLabel
         }).ToList();
         _isLoadingTokens = false;
         await InvokeAsync(StateHasChanged);
@@ -630,11 +651,11 @@
             _isInsertingToken = true;
             if (viaTrigger)
             {
-                await JS.InvokeVoidAsync("tmRichEditor.replaceTokenTrigger", _editorRef, token.Key, token.DisplayName);
+                await JS.InvokeVoidAsync("tmRichEditor.replaceTokenTrigger", _editorRef, token.Key, token.DisplayName, BuildTokenMeta(token));
             }
             else
             {
-                await JS.InvokeVoidAsync("tmRichEditor.insertToken", _editorRef, token.Key, token.DisplayName);
+                await JS.InvokeVoidAsync("tmRichEditor.insertToken", _editorRef, token.Key, token.DisplayName, BuildTokenMeta(token));
             }
             // Sync HTML value (HandleInput and OnAfterRenderAsync are blocked by _isInsertingToken)
             var html = await JS.InvokeAsync<string>("tmRichEditor.getHtml", _editorRef);
@@ -649,6 +670,27 @@
         }
 
         await OnTokenInserted.InvokeAsync(CreateTokenFromItem(token));
+    }
+
+    /// <summary>Called from JS when the user moves the mouse over a token chip.</summary>
+    [JSInvokable]
+    public async Task OnTokenHoverEnter(TokenHoverJsArgs args)
+    {
+        if (!OnTokenHover.HasDelegate) return;
+        var hoverArgs = new TokenHoverArgs(
+            args.Key, args.DisplayName, args.Description, null,
+            args.Icon, args.ColorClass, args.TypeLabel,
+            args.RectLeft, args.RectTop, args.RectRight, args.RectBottom,
+            args.RectWidth, args.RectHeight);
+        await OnTokenHover.InvokeAsync(hoverArgs);
+    }
+
+    /// <summary>Called from JS when the user moves the mouse away from a token chip.</summary>
+    [JSInvokable]
+    public async Task OnTokenHoverLeave()
+    {
+        if (OnTokenHoverEnd.HasDelegate)
+            await OnTokenHoverEnd.InvokeAsync();
     }
 
     private async Task OnTokenCreateFromDropdown(string? query)
@@ -734,7 +776,18 @@
         Key = item.Key,
         DisplayName = item.DisplayName,
         Description = item.Description,
-        Category = item.Category
+        Category = item.Category,
+        Icon = item.Icon,
+        ColorClass = item.ColorClass,
+        TypeLabel = item.TypeLabel
+    };
+
+    private static object BuildTokenMeta(TokenItem token) => new
+    {
+        description = token.Description,
+        icon = token.Icon,
+        colorClass = token.ColorClass,
+        typeLabel = token.TypeLabel
     };
 
     private class TokenProxy : Tempo.Blazor.Interfaces.IToken
@@ -743,6 +796,9 @@
         public string DisplayName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Category { get; set; }
+        public string? Icon { get; set; }
+        public string? ColorClass { get; set; }
+        public string? TypeLabel { get; set; }
     }
 
     /// <summary>
@@ -826,7 +882,10 @@
             Key = t.Key,
             DisplayName = t.DisplayName,
             Description = t.Description,
-            Category = t.Category
+            Category = t.Category,
+            Icon = t.Icon,
+            ColorClass = t.ColorClass,
+            TypeLabel = t.TypeLabel
         }).ToList();
         _showTokenDropdown = true;
         _tokenHighlightedIndex = 0;

@@ -131,3 +131,23 @@
   font-weight: var(--tm-font-weight-bold);
   flex-shrink: 0;
 }
+
+/* Icon shown before token key in dropdown item */
+.tm-rte-token-icon {
+  flex-shrink: 0;
+  font-size: 1em;
+  line-height: 1;
+  user-select: none;
+}
+
+/* Type label badge (e.g. "Secret", "URL") */
+.tm-rte-token-type-label {
+  flex-shrink: 0;
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-color-primary);
+  background: var(--tm-color-primary-subtle, rgba(99,102,241,0.1));
+  padding: 1px var(--tm-space-2);
+  border-radius: var(--tm-radius-full);
+  white-space: nowrap;
+}
+

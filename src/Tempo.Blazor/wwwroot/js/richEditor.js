@@ -553,8 +553,9 @@ window.tmRichEditor = {
      * @param {HTMLElement} element - The editor element
      * @param {string} key - The token key (e.g. "user.email")
      * @param {string} displayName - The display name (e.g. "User Email")
+     * @param {object} [meta] - Optional metadata: { description, icon, colorClass, typeLabel }
      */
-    insertToken: function (element, key, displayName) {
+    insertToken: function (element, key, displayName, meta) {
         // Restore saved cursor position first (e.g. after dialog closed)
         if (element && this._savedCursorPosition) {
             this.restoreCursorPosition(element);
@@ -564,11 +565,7 @@ window.tmRichEditor = {
             this._ensureFocus();
         }
 
-        const tokenSpan = document.createElement('span');
-        tokenSpan.className = 'tm-token';
-        tokenSpan.setAttribute('data-token-key', key);
-        tokenSpan.contentEditable = 'false';
-        tokenSpan.textContent = `{{${displayName}}}`;
+        const tokenSpan = this._createTokenSpan(key, displayName, meta);
 
         const selection = window.getSelection();
         if (selection.rangeCount > 0) {
@@ -591,8 +588,9 @@ window.tmRichEditor = {
      * @param {HTMLElement} element - The editor element
      * @param {string} key - The token key
      * @param {string} displayName - The display name
+     * @param {object} [meta] - Optional metadata: { description, icon, colorClass, typeLabel }
      */
-    replaceTokenTrigger: function (element, key, displayName) {
+    replaceTokenTrigger: function (element, key, displayName, meta) {
         if (!element) return;
         element.focus();
 
@@ -634,11 +632,7 @@ window.tmRichEditor = {
             deleteRange.deleteContents();
 
             // Create token element via DOM (not execCommand which can break out of parent divs)
-            const tokenSpan = document.createElement('span');
-            tokenSpan.className = 'tm-token';
-            tokenSpan.setAttribute('data-token-key', key);
-            tokenSpan.contentEditable = 'false';
-            tokenSpan.textContent = `{{${displayName}}}`;
+            const tokenSpan = this._createTokenSpan(key, displayName, meta);
 
             // Insert at the deletion point
             const insertRange = document.createRange();
@@ -782,6 +776,90 @@ window.tmRichEditor = {
     },
 
     /**
+     * Create a token <span> chip with optional metadata stored as data attributes.
+     * @param {string} key
+     * @param {string} displayName
+     * @param {object} [meta] - { description, icon, colorClass, typeLabel }
+     * @returns {HTMLSpanElement}
+     */
+    _createTokenSpan: function (key, displayName, meta) {
+        const span = document.createElement('span');
+        span.className = 'tm-token';
+        if (meta && meta.colorClass) {
+            span.classList.add(meta.colorClass);
+        }
+        span.setAttribute('data-token-key', key);
+        span.setAttribute('data-token-display', displayName);
+        if (meta) {
+            if (meta.description) span.setAttribute('data-token-description', meta.description);
+            if (meta.icon) span.setAttribute('data-token-icon', meta.icon);
+            if (meta.typeLabel) span.setAttribute('data-token-type-label', meta.typeLabel);
+        }
+        span.contentEditable = 'false';
+
+        // Build visible chip: optional icon + display text
+        if (meta && meta.icon) {
+            const iconSpan = document.createElement('span');
+            iconSpan.className = 'tm-token-chip-icon';
+            iconSpan.textContent = meta.icon;
+            span.appendChild(iconSpan);
+            span.appendChild(document.createTextNode(`{{${displayName}}}`));
+        } else {
+            span.textContent = `{{${displayName}}}`;
+        }
+
+        return span;
+    },
+
+    /**
+     * Initialize token hover callbacks on an editor element.
+     * On mouseenter over a .tm-token chip, calls dotNetRef.invokeMethodAsync('OnTokenHoverEnter', args).
+     * On mouseleave, calls dotNetRef.invokeMethodAsync('OnTokenHoverLeave').
+     * The Blazor component is responsible for rendering any tooltip/preview.
+     * @param {HTMLElement} element - The editor element
+     * @param {DotNetObjectReference} dotNetRef - Reference to the Blazor component
+     */
+    initTokenHoverPreview: function (element, dotNetRef) {
+        if (!element || element._tmTokenHoverHandler) return;
+
+        const showHandler = (e) => {
+            const token = e.target.closest('.tm-token');
+            if (!token) return;
+
+            const rect = token.getBoundingClientRect();
+            const args = {
+                key: token.getAttribute('data-token-key') || '',
+                displayName: token.getAttribute('data-token-display') || '',
+                description: token.getAttribute('data-token-description') || null,
+                icon: token.getAttribute('data-token-icon') || null,
+                colorClass: token.getAttribute('data-token-color-class') || null,
+                typeLabel: token.getAttribute('data-token-type-label') || null,
+                rectLeft: rect.left,
+                rectTop: rect.top,
+                rectRight: rect.right,
+                rectBottom: rect.bottom,
+                rectWidth: rect.width,
+                rectHeight: rect.height
+            };
+
+            dotNetRef.invokeMethodAsync('OnTokenHoverEnter', args).catch(() => {});
+        };
+
+        const hideHandler = (e) => {
+            const token = e.target.closest('.tm-token');
+            if (!token) return;
+            // Only fire leave when moving away from the token chip itself
+            if (!token.contains(e.relatedTarget)) {
+                dotNetRef.invokeMethodAsync('OnTokenHoverLeave').catch(() => {});
+            }
+        };
+
+        element.addEventListener('mouseover', showHandler);
+        element.addEventListener('mouseout', hideHandler);
+        element._tmTokenHoverHandler = { show: showHandler, hide: hideHandler };
+    },
+
+    /**
      * Clean up an editor element (remove event listeners)
      * @param {HTMLElement} element - The editor element
      */
@@ -790,6 +868,11 @@ window.tmRichEditor = {
         if (element._tmKeydownHandler) {
             element.removeEventListener('keydown', element._tmKeydownHandler);
             delete element._tmKeydownHandler;
+        }
+        if (element._tmTokenHoverHandler) {
+            element.removeEventListener('mouseover', element._tmTokenHoverHandler.show);
+            element.removeEventListener('mouseout', element._tmTokenHoverHandler.hide);
+            delete element._tmTokenHoverHandler;
         }
     }
 };
