@@ -1,0 +1,166 @@
+name: Publish NuGet Packages to NuGet.org
+
+on:
+  push:
+    branches: [main, master]
+    tags: ['v*']
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+    inputs:
+      version_suffix:
+        description: 'Version suffix (např. beta1, preview2). Ponechej prázdné pro release.'
+        required: false
+        default: ''
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Načteme základní verzi z csproj a nastavíme finální verzi
+      - name: Set version
+        id: version
+        run: |
+          # Načteme verzi z Tempo.Blazor.csproj
+          BASE_VERSION=$(grep -oP '(?<=<Version>)[^<]+' src/Tempo.Blazor/Tempo.Blazor.csproj)
+          echo "Base version from csproj: $BASE_VERSION"
+          
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v ]]; then
+            # Z tagu v1.2.3 uděláme verzi 1.2.3
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using version from tag: $VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.version_suffix }}" ]; then
+            # Ruční spuštění bez suffixu = použijeme verzi z csproj
+            echo "VERSION=$BASE_VERSION" >> $GITHUB_OUTPUT
+            echo "Using release version from csproj: $BASE_VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version_suffix }}" ]; then
+            # Suffix pro prerelease verze (např. 1.0.0-beta1)
+            echo "VERSION=$BASE_VERSION-${{ github.event.inputs.version_suffix }}" >> $GITHUB_OUTPUT
+            echo "Using version with suffix: $BASE_VERSION-${{ github.event.inputs.version_suffix }}"
+          else
+            # Pro main/master push použijeme timestamp jako prerelease
+            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+            echo "VERSION=$BASE_VERSION-ci-$TIMESTAMP" >> $GITHUB_OUTPUT
+            echo "Using CI version: $BASE_VERSION-ci-$TIMESTAMP"
+          fi
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
+
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal
+
+  publish:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    # Publikujeme jen při push na main/master, tagu, nebo ručním spuštění
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    
+    # DŮLEŽITÉ PRO TRUSTED PUBLISHING: OIDC token je potřeba pro autentizaci
+    permissions:
+      id-token: write  # Required for Trusted Publishing (OIDC)
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET SDKs
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: |
+            8.0.x
+            9.0.x
+            10.0.x
+
+      - name: Restore dependencies
+        run: dotnet restore
+
+      # Načteme základní verzi z csproj a nastavíme finální verzi
+      - name: Set version
+        id: version
+        run: |
+          # Načteme verzi z Tempo.Blazor.csproj
+          BASE_VERSION=$(grep -oP '(?<=<Version>)[^<]+' src/Tempo.Blazor/Tempo.Blazor.csproj)
+          echo "Base version from csproj: $BASE_VERSION"
+          
+          if [[ "${{ github.ref }}" =~ ^refs/tags/v ]]; then
+            # Z tagu v1.2.3 uděláme verzi 1.2.3
+            VERSION=${GITHUB_REF#refs/tags/v}
+            echo "VERSION=$VERSION" >> $GITHUB_OUTPUT
+            echo "Using version from tag: $VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -z "${{ github.event.inputs.version_suffix }}" ]; then
+            # Ruční spuštění bez suffixu = použijeme verzi z csproj
+            echo "VERSION=$BASE_VERSION" >> $GITHUB_OUTPUT
+            echo "Using release version from csproj: $BASE_VERSION"
+          elif [ "${{ github.event_name }}" = "workflow_dispatch" ] && [ -n "${{ github.event.inputs.version_suffix }}" ]; then
+            # Suffix pro prerelease verze (např. 1.0.0-beta1)
+            echo "VERSION=$BASE_VERSION-${{ github.event.inputs.version_suffix }}" >> $GITHUB_OUTPUT
+            echo "Using version with suffix: $BASE_VERSION-${{ github.event.inputs.version_suffix }}"
+          else
+            # Pro main/master push použijeme timestamp jako prerelease
+            TIMESTAMP=$(date +'%Y%m%d%H%M%S')
+            echo "VERSION=$BASE_VERSION-ci-$TIMESTAMP" >> $GITHUB_OUTPUT
+            echo "Using CI version: $BASE_VERSION-ci-$TIMESTAMP"
+          fi
+
+      - name: Build
+        run: dotnet build --no-restore --configuration Release -p:Version=${{ steps.version.outputs.VERSION }}
+
+      - name: Build packages
+        run: |
+          dotnet pack src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj \
+            --configuration Release \
+            --no-restore \
+            --no-build \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            --output ./packages
+
+          dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj \
+            --configuration Release \
+            --no-restore \
+            --no-build \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            --output ./packages
+
+          dotnet pack src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj \
+            --configuration Release \
+            --no-restore \
+            --no-build \
+            -p:Version=${{ steps.version.outputs.VERSION }} \
+            --output ./packages
+
+      - name: List packages
+        run: ls -la ./packages
+
+      # Publikujeme balíčky na NuGet.org pomocí Trusted Publishing (OIDC)
+      - name: Push packages to NuGet.org
+        run: |
+          for pkg in ./packages/*.nupkg; do
+            echo "Publishing $pkg to NuGet.org..."
+            dotnet nuget push "$pkg" \
+              --source "https://api.nuget.org/v3/index.json" \
+              --api-key "${{ secrets.NUGET_API_KEY }}" \
+              --skip-duplicate
+          done
+
+      - name: Upload packages as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nuget-packages
+          path: ./packages/*.nupkg
