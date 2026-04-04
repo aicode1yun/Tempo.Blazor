@@ -5,9 +5,16 @@ namespace Tempo.Blazor.Components.Feedback;
 /// </summary>
 public enum AlertSeverity
 {
+    /// <summary>Informational message (blue).</summary>
     Info,
+
+    /// <summary>Success message (green).</summary>
     Success,
+
+    /// <summary>Warning message (yellow/amber).</summary>
     Warning,
+
+    /// <summary>Error message (red).</summary>
     Error
 }
 

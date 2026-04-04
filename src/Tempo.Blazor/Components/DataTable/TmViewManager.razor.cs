@@ -6,6 +6,10 @@ using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.DataTable;
 
+/// <summary>
+/// Manages saved views for data tables, allowing users to save, load, and apply
+/// column configurations, filters, and grouping settings.
+/// </summary>
 public partial class TmViewManager : ComponentBase
 {
     /// <summary>Data provider for views.</summary>
@@ -70,6 +74,7 @@ public partial class TmViewManager : ComponentBase
 
     private bool _dataLoaded;
 
+    /// <summary>Initializes the view manager and loads saved views.</summary>
     protected override async Task OnInitializedAsync()
     {
         if (_dataLoaded) return;
@@ -307,7 +312,10 @@ public partial class TmViewManager : ComponentBase
 /// <summary>Information about an available column.</summary>
 public class ViewColumnInfo
 {
+    /// <summary>Unique identifier for the column.</summary>
     public string Key { get; set; } = "";
+    /// <summary>Display title of the column.</summary>
     public string Title { get; set; } = "";
+    /// <summary>Whether the column is visible by default.</summary>
     public bool Visible { get; set; } = true;
 }

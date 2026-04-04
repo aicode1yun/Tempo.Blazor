@@ -3,10 +3,15 @@ namespace Tempo.Blazor.Components.Charts;
 /// <summary>Chart type.</summary>
 public enum ChartType
 {
+    /// <summary>Vertical bar chart.</summary>
     Bar,
+    /// <summary>Line chart.</summary>
     Line,
+    /// <summary>Pie chart.</summary>
     Pie,
+    /// <summary>Donut chart.</summary>
     Donut,
+    /// <summary>Horizontal bar chart.</summary>
     HorizontalBar
 }
 

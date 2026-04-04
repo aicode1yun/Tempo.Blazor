@@ -5,6 +5,10 @@ using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.Inputs;
 
+/// <summary>
+/// A multi-select dropdown component supporting both client-side and server-side data.
+/// Allows users to select multiple values with search and filtering capabilities.
+/// </summary>
 public partial class TmMultiSelect<TItem, TValue>
 {
     // ── Data Binding ──────────────────────────────────────────────

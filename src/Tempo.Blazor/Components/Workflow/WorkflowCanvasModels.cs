@@ -3,8 +3,11 @@ namespace Tempo.Blazor.Components.Workflow;
 /// <summary>State type in the workflow canvas.</summary>
 public enum CanvasStateType
 {
+    /// <summary>Initial state where workflow starts.</summary>
     Initial,
+    /// <summary>Intermediate state in the workflow.</summary>
     Intermediate,
+    /// <summary>Final state where workflow ends.</summary>
     Final
 }
 

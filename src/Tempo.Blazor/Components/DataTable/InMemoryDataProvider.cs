@@ -23,6 +23,10 @@ public sealed class InMemoryDataProvider<TItem> : IDataTableDataProvider<TItem>
         _accessors = accessors;
     }
 
+    /// <summary>Retrieves paginated data based on the query parameters including filters, search, sort, and pagination.</summary>
+    /// <param name="query">The query parameters for filtering, sorting, and pagination.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>A paged result containing the filtered and paginated items.</returns>
     public Task<PagedResult<TItem>> GetDataAsync(DataTableQuery query, CancellationToken ct = default)
     {
         IEnumerable<TItem> items = _source;

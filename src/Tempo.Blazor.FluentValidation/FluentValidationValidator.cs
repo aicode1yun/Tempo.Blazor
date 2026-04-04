@@ -17,6 +17,9 @@ public class FluentValidationValidator : ComponentBase, IDisposable
 
     private ValidationMessageStore? _messageStore;
 
+    /// <summary>
+    /// Initializes the validator and subscribes to EditContext validation events.
+    /// </summary>
     protected override void OnInitialized()
     {
         if (CurrentEditContext is null)
@@ -91,6 +94,9 @@ public class FluentValidationValidator : ComponentBase, IDisposable
         return ServiceProvider.GetService(validatorType) as IValidator;
     }
 
+    /// <summary>
+    /// Unsubscribes from EditContext validation events and releases resources.
+    /// </summary>
     public void Dispose()
     {
         if (CurrentEditContext is not null)

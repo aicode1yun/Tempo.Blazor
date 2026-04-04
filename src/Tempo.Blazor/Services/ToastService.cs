@@ -7,11 +7,17 @@ namespace Tempo.Blazor.Services;
 /// </summary>
 public sealed record ToastInstance
 {
+    /// <summary>Unique identifier for the toast.</summary>
     public string Id { get; init; } = Guid.NewGuid().ToString("N")[..8];
+    /// <summary>Severity level of the toast (Info, Success, Warning, Error).</summary>
     public ToastSeverity Severity { get; init; }
+    /// <summary>Message content of the toast.</summary>
     public string Message { get; init; } = string.Empty;
+    /// <summary>Optional title for the toast.</summary>
     public string? Title { get; init; }
+    /// <summary>Duration in milliseconds before auto-dismiss. Default is 5000ms.</summary>
     public int Duration { get; init; } = 5000;
+    /// <summary>Timestamp when the toast was created.</summary>
     public DateTime CreatedAt { get; init; } = DateTime.UtcNow;
 }
 

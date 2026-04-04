@@ -7,6 +7,10 @@ using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Components.DataTable;
 
+/// <summary>
+/// A fully-featured data table component with support for sorting, filtering, pagination,
+/// selection, grouping, and view management. Supports both client-side and server-side data.
+/// </summary>
 public partial class TmDataTable<TItem>
 {
     // ── Column registry ──────────────────────────────────────────
@@ -175,6 +179,7 @@ public partial class TmDataTable<TItem>
 
     private bool _dataLoaded;
 
+    /// <summary>Initializes the table with default page size and loads initial data.</summary>
     protected override async Task OnInitializedAsync()
     {
         if (_dataLoaded) return;
@@ -189,6 +194,7 @@ public partial class TmDataTable<TItem>
         _dataLoaded = true;
     }
 
+    /// <summary>Re-applies filters when Items collection reference changes in client-side mode.</summary>
     protected override Task OnParametersSetAsync()
     {
         // Re-apply when Items collection reference changes in client-side mode

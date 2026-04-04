@@ -12,6 +12,7 @@ public class InMemoryWidgetRegistry : IWidgetRegistry
     private readonly Dictionary<string, WidgetDefinition> _widgets = new();
     private readonly List<WidgetCategory> _categories = WidgetCategories.All.ToList();
 
+    /// <summary>Initializes a new instance and registers default widgets.</summary>
     public InMemoryWidgetRegistry()
     {
         RegisterDefaultWidgets();
@@ -266,26 +267,38 @@ public class InMemoryWidgetRegistry : IWidgetRegistry
         });
     }
 
+    /// <summary>Registers a new widget definition.</summary>
+    /// <param name="widget">The widget definition to register.</param>
     public void RegisterWidget(WidgetDefinition widget)
     {
         _widgets[widget.Id] = widget;
     }
 
+    /// <summary>Gets all registered widgets.</summary>
+    /// <returns>Collection of all widget definitions ordered by name.</returns>
     public IEnumerable<WidgetDefinition> GetAllWidgets()
     {
         return _widgets.Values.OrderBy(w => w.Name);
     }
 
+    /// <summary>Gets a specific widget by ID.</summary>
+    /// <param name="widgetId">The widget identifier.</param>
+    /// <returns>The widget definition or null if not found.</returns>
     public WidgetDefinition? GetWidget(string widgetId)
     {
         return _widgets.TryGetValue(widgetId, out var widget) ? widget : null;
     }
 
+    /// <summary>Gets all widgets in a specific category.</summary>
+    /// <param name="category">The category identifier.</param>
+    /// <returns>Collection of widget definitions in the category ordered by name.</returns>
     public IEnumerable<WidgetDefinition> GetWidgetsByCategory(string category)
     {
         return _widgets.Values.Where(w => w.Category == category).OrderBy(w => w.Name);
     }
 
+    /// <summary>Gets all categories that have at least one widget.</summary>
+    /// <returns>Collection of widget categories.</returns>
     public IEnumerable<WidgetCategory> GetCategories()
     {
         return _categories.Where(c => GetWidgetsByCategory(c.Id).Any());

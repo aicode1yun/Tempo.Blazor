@@ -3,17 +3,31 @@ namespace Tempo.Blazor.Components.Feedback;
 /// <summary>Toast notification severity level.</summary>
 public enum ToastSeverity
 {
+    /// <summary>Informational toast (blue).</summary>
     Info,
+
+    /// <summary>Success toast (green).</summary>
     Success,
+
+    /// <summary>Warning toast (yellow/amber).</summary>
     Warning,
+
+    /// <summary>Error toast (red).</summary>
     Error
 }
 
 /// <summary>Position of the toast container on screen.</summary>
 public enum ToastPosition
 {
+    /// <summary>Top-right corner of the screen.</summary>
     TopRight,
+
+    /// <summary>Top-left corner of the screen.</summary>
     TopLeft,
+
+    /// <summary>Bottom-right corner of the screen.</summary>
     BottomRight,
+
+    /// <summary>Bottom-left corner of the screen.</summary>
     BottomLeft
 }

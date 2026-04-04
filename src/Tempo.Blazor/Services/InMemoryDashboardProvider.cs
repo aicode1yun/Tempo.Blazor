@@ -13,6 +13,7 @@ public class InMemoryDashboardProvider : IDashboardProvider
     private readonly Dictionary<string, DashboardConfig> _dashboards = new();
     private readonly Dictionary<string, string> _defaultDashboards = new(); // userId -> dashboardId
 
+    /// <summary>Initializes a new instance with default dashboard configuration.</summary>
     public InMemoryDashboardProvider()
     {
         // Create default dashboard
@@ -57,6 +58,10 @@ public class InMemoryDashboardProvider : IDashboardProvider
         _defaultDashboards["system"] = defaultDashboard.Id;
     }
 
+    /// <summary>Retrieves all dashboards for a user or system dashboards.</summary>
+    /// <param name="userId">Optional user ID to filter dashboards.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Collection of dashboard configurations.</returns>
     public Task<IEnumerable<DashboardConfig>> GetDashboardsAsync(string? userId = null, CancellationToken ct = default)
     {
         var dashboards = _dashboards.Values
@@ -67,12 +72,20 @@ public class InMemoryDashboardProvider : IDashboardProvider
         return Task.FromResult<IEnumerable<DashboardConfig>>(dashboards);
     }
 
+    /// <summary>Retrieves a specific dashboard by ID.</summary>
+    /// <param name="dashboardId">The dashboard identifier.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The dashboard configuration or null if not found.</returns>
     public Task<DashboardConfig?> GetDashboardAsync(string dashboardId, CancellationToken ct = default)
     {
         _dashboards.TryGetValue(dashboardId, out var dashboard);
         return Task.FromResult(dashboard);
     }
 
+    /// <summary>Retrieves the default dashboard for a user.</summary>
+    /// <param name="userId">Optional user ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The default dashboard configuration or null.</returns>
     public Task<DashboardConfig?> GetDefaultDashboardAsync(string? userId = null, CancellationToken ct = default)
     {
         if (!string.IsNullOrEmpty(userId) && _defaultDashboards.TryGetValue(userId, out var defaultId))
@@ -86,6 +99,10 @@ public class InMemoryDashboardProvider : IDashboardProvider
         return Task.FromResult(defaultDashboard);
     }
 
+    /// <summary>Saves or updates a dashboard configuration.</summary>
+    /// <param name="dashboard">The dashboard to save.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>The saved dashboard configuration.</returns>
     public Task<DashboardConfig> SaveDashboardAsync(DashboardConfig dashboard, CancellationToken ct = default)
     {
         if (string.IsNullOrEmpty(dashboard.Id))
@@ -99,6 +116,10 @@ public class InMemoryDashboardProvider : IDashboardProvider
         return Task.FromResult(dashboard);
     }
 
+    /// <summary>Deletes a dashboard by ID.</summary>
+    /// <param name="dashboardId">The dashboard identifier to delete.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Completed task.</returns>
     public Task DeleteDashboardAsync(string dashboardId, CancellationToken ct = default)
     {
         _dashboards.Remove(dashboardId);
@@ -113,6 +134,11 @@ public class InMemoryDashboardProvider : IDashboardProvider
         return Task.CompletedTask;
     }
 
+    /// <summary>Sets a dashboard as default for a user.</summary>
+    /// <param name="dashboardId">The dashboard identifier to set as default.</param>
+    /// <param name="userId">Optional user ID.</param>
+    /// <param name="ct">Cancellation token.</param>
+    /// <returns>Completed task.</returns>
     public Task SetDefaultDashboardAsync(string dashboardId, string? userId = null, CancellationToken ct = default)
     {
         var user = userId ?? "anonymous";
