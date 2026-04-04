@@ -544,6 +544,9 @@
         public string DisplayName => _token.DisplayName;
         public string? Description => _token.Description;
         public string? Category => _token.Category;
+        public string? Icon => null;
+        public string? ColorClass => null;
+        public string? TypeLabel => null;
     }
 
     /// <summary>
@@ -626,6 +629,9 @@
         private record FlatToken(string Key, string DisplayName, string? Description) : IToken
         {
             public string? Category => null;
+            public string? Icon => null;
+            public string? ColorClass => null;
+            public string? TypeLabel => null;
         }
     }
 }

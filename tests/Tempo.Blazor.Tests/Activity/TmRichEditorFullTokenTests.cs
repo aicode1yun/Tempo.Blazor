@@ -39,6 +39,9 @@ public class TmRichEditorFullTokenTests : LocalizationTestBase
         public string DisplayName { get; set; } = string.Empty;
         public string? Description { get; set; }
         public string? Category { get; set; }
+        public string? Icon { get; set; }
+        public string? ColorClass { get; set; }
+        public string? TypeLabel { get; set; }
     }
 
     [Fact]
