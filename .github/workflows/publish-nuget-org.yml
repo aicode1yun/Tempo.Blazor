@@ -149,7 +149,7 @@ jobs:
         run: ls -la ./packages
 
       # Publikujeme balíčky na NuGet.org pomocí Trusted Publishing (OIDC)
-     - name: Get OIDC token
+      - name: Get OIDC token
         id: oidc
         run: |
           OIDC_TOKEN=$(curl -s -X POST "$ACTIONS_ID_TOKEN_REQUEST_URL" -H "Authorization: Bearer $ACTIONS_ID_TOKEN_REQUEST_TOKEN" | jq -r '.token')
