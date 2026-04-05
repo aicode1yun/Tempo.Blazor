@@ -31,9 +31,9 @@
         _                      => Loc["TmAutoSaveIndicator_Saved"]
     };
 
-    protected override void OnInitialized()
+    protected override void OnAfterRender(bool firstRender)
     {
-        if (IsEnabled)
+        if (firstRender && IsEnabled)
             StartTimer();
     }
 

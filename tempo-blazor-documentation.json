@@ -4795,7 +4795,7 @@
       "itemName": "TmFormField",
       "kind": "Component",
       "category": "Forms",
-      "description": "Generic form field wrapper providing a label (with optional required marker), help text, error message display, and a slot for any form control. Applies error styling when an error message is set.",
+      "description": "Generic form field wrapper providing a label (with optional required marker), help text, error message display, and a slot for any form control. Supports automatic EditContext validation via the ValidationFor parameter — when inside an EditForm, errors from the validation system appear automatically. Applies error styling whenever an error is active (from ErrorMessage or EditContext).",
       "requiredImports": [
         "@using Tempo.Blazor.Components.Forms"
       ],
@@ -4822,7 +4822,13 @@
           "name": "ErrorMessage",
           "type": "string?",
           "isRequired": false,
-          "description": "Validation error message shown below the field in red."
+          "description": "Explicit validation error message shown below the field in red. Takes precedence over EditContext validation errors when both are present."
+        },
+        {
+          "name": "ValidationFor",
+          "type": "Expression<Func<object>>?",
+          "isRequired": false,
+          "description": "Lambda expression identifying the model field to track for EditContext validation errors (e.g. @(() => model.Name)). Requires a parent EditForm with a validator."
         },
         {
           "name": "For",
@@ -4843,6 +4849,13 @@
           "description": "When true, the field is disabled."
         }
       ],
+      "cascadingParameters": [
+        {
+          "name": "EditContext",
+          "type": "EditContext?",
+          "description": "Automatically received from a parent EditForm. Required for ValidationFor to work."
+        }
+      ],
       "cssClasses": [
         "tm-form-field",
         "tm-form-field--error",
@@ -4859,9 +4872,22 @@
           "code": "<TmFormField Label=\"Username\" Required=\"true\" HelpText=\"Must be at least 3 characters.\" For=\"username\">\n    <input id=\"username\" type=\"text\" @bind=\"model.Username\" />\n</TmFormField>"
         },
         {
-          "title": "Form field with error message",
+          "title": "Form field with explicit error message",
           "code": "<TmFormField Label=\"Email\" Required=\"true\" ErrorMessage=\"@emailError\">\n    <input type=\"email\" @bind=\"model.Email\" />\n</TmFormField>"
+        },
+        {
+          "title": "Form field with automatic EditContext validation",
+          "code": "<EditForm Model=\"@_model\" OnValidSubmit=\"HandleSubmit\">\n    <DataAnnotationsValidator />\n\n    <TmFormField Label=\"Name\" Required=\"true\" ValidationFor=\"@(() => _model.Name)\" For=\"name\">\n        <TmTextInput id=\"name\" @bind-Value=\"_model.Name\" />\n    </TmFormField>\n\n    <TmFormField Label=\"Age\" Required=\"true\" ValidationFor=\"@(() => _model.Age)\">\n        <TmNumberInput @bind-Value=\"_model.Age\" Min=\"0\" Max=\"150\" />\n    </TmFormField>\n\n    <TmButton Type=\"ButtonType.Submit\">Save</TmButton>\n</EditForm>"
+        },
+        {
+          "title": "Form field with FluentValidation and automatic errors",
+          "code": "<EditForm Model=\"@_model\" OnValidSubmit=\"HandleSubmit\">\n    <FluentValidationValidator />\n\n    <TmFormField Label=\"Department\" Required=\"true\" ValidationFor=\"@(() => _model.Department)\">\n        <TmSelect TValue=\"string\" @bind-Value=\"_model.Department\"\n            Options=\"@_departmentOptions\" Placeholder=\"Select department\" />\n    </TmFormField>\n</EditForm>"
         }
+      ],
+      "notes": [
+        "ValidationFor and ErrorMessage can coexist — ErrorMessage always takes precedence when non-empty.",
+        "Without ValidationFor the component behaves identically to the original version — fully backward compatible.",
+        "Uses Expression<Func<object>> (same as TmFormValidationMessage) so no type parameter is needed at the call site."
       ]
     },
     {

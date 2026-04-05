@@ -1,6 +1,9 @@
 @namespace Tempo.Blazor.Components.Forms
+@using Microsoft.AspNetCore.Components.Forms
+@using System.Linq.Expressions
+@implements IDisposable
 
-<div class="tm-form-field @(!string.IsNullOrEmpty(ErrorMessage) ? "tm-form-field--error" : string.Empty) @(Disabled ? "tm-form-field-disabled" : "") @Class" @attributes="AdditionalAttributes">
+<div class="tm-form-field @(!string.IsNullOrEmpty(EffectiveErrorMessage) ? "tm-form-field--error" : string.Empty) @(Disabled ? "tm-form-field-disabled" : "") @Class" @attributes="AdditionalAttributes">
     @if (!string.IsNullOrEmpty(Label))
     {
         <label class="tm-form-field-label" for="@For">
@@ -16,18 +19,21 @@
         @ChildContent
     </div>
 
-    @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(ErrorMessage))
+    @if (!string.IsNullOrEmpty(HelpText) && string.IsNullOrEmpty(EffectiveErrorMessage))
     {
         <p class="tm-form-field-help">@HelpText</p>
     }
 
-    @if (!string.IsNullOrEmpty(ErrorMessage))
+    @if (!string.IsNullOrEmpty(EffectiveErrorMessage))
     {
-        <p class="tm-form-field-error" role="alert">@ErrorMessage</p>
+        <p class="tm-form-field-error" role="alert">@EffectiveErrorMessage</p>
     }
 </div>
 
 @code {
+    /// <summary>Cascading EditContext from the parent EditForm.</summary>
+    [CascadingParameter] private EditContext? EditContext { get; set; }
+
     /// <summary>Label text displayed above the field.</summary>
     [Parameter] public string? Label { get; set; }
 
@@ -37,8 +43,11 @@
     /// <summary>Helper text shown below the field when there is no error.</summary>
     [Parameter] public string? HelpText { get; set; }
 
-    /// <summary>Validation error message shown below the field in red.</summary>
+    /// <summary>Explicit validation error message shown below the field in red. Takes precedence over EditContext validation.</summary>
     [Parameter] public string? ErrorMessage { get; set; }
+
+    /// <summary>Expression identifying the model field to track for EditContext validation errors.</summary>
+    [Parameter] public Expression<Func<object>>? ValidationFor { get; set; }
 
     /// <summary>Input(s) wrapped by this field.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
@@ -54,4 +63,43 @@
 
     /// <summary>Additional HTML attributes for the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private FieldIdentifier _fieldIdentifier;
+    private string? _validationError;
+
+    private string? EffectiveErrorMessage => !string.IsNullOrEmpty(ErrorMessage)
+        ? ErrorMessage
+        : _validationError;
+
+    protected override void OnParametersSet()
+    {
+        if (ValidationFor is not null)
+        {
+            _fieldIdentifier = FieldIdentifier.Create(ValidationFor);
+        }
+    }
+
+    protected override void OnInitialized()
+    {
+        if (EditContext is not null)
+        {
+            EditContext.OnValidationStateChanged += HandleValidationStateChanged;
+        }
+    }
+
+    private void HandleValidationStateChanged(object? sender, ValidationStateChangedEventArgs e)
+    {
+        _validationError = ValidationFor is not null
+            ? EditContext?.GetValidationMessages(_fieldIdentifier).FirstOrDefault()
+            : null;
+        InvokeAsync(StateHasChanged);
+    }
+
+    public void Dispose()
+    {
+        if (EditContext is not null)
+        {
+            EditContext.OnValidationStateChanged -= HandleValidationStateChanged;
+        }
+    }
 }
