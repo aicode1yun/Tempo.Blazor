@@ -5,7 +5,7 @@ Comprehensive Blazor component library with 100+ components for building modern 
 Key features:
 - Full-featured form controls, data tables, pickers, charts, scheduler, kanban, and workflow designer
 - FluentValidation integration via `Tempo.Blazor.FluentValidation`
-- Built-in localization (English / Czech) with override support
+- Built-in localization (English / French / Czech) with override support
 - CSS design system based on custom properties with dark mode
 - Injectable `ToastService` and `ThemeService` registered automatically
 - Lightweight abstractions package (`Tempo.Blazor.Abstractions`) for use in API/service projects without UI dependencies
