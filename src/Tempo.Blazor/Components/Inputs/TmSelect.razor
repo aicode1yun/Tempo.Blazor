@@ -14,13 +14,13 @@
                 @onchange="HandleChangeAsync">
             @if (!string.IsNullOrEmpty(Placeholder))
             {
-                <option value="" disabled selected>@Placeholder</option>
+                <option value="" disabled selected="@(Value is null || Value.Equals(default(TValue)))">@Placeholder</option>
             }
             @if (Options is not null)
             {
                 @foreach (var opt in Options)
                 {
-                    <option value="@opt.Value" disabled="@opt.IsDisabled">@opt.Label</option>
+                    <option value="@opt.Value" disabled="@opt.IsDisabled" selected="@IsSelected(opt.Value)">@opt.Label</option>
                 }
             }
             @ChildContent
@@ -78,6 +78,9 @@
 
     /// <summary>&lt;option&gt; elements for the select.</summary>
     [Parameter] public RenderFragment? ChildContent { get; set; }
+
+    private bool IsSelected(TValue? optValue) =>
+        EqualityComparer<TValue?>.Default.Equals(optValue, Value);
 
     private string SelectCssClass =>
         $"tm-select{(string.IsNullOrEmpty(Error) ? "" : " tm-select-error")}{(Disabled ? " tm-select-disabled" : "")}";
