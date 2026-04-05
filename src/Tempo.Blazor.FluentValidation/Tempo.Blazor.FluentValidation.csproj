@@ -15,6 +15,9 @@
     <Description>FluentValidation integration for Tempo.Blazor component library. Provides FluentValidationValidator component for EditForm and assembly scanning for validator registration.</Description>
     <PackageTags>blazor;fluentvalidation;validation;forms</PackageTags>
     <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <PackageProjectUrl>https://github.com/ptyll/Tempo.Blazor</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/ptyll/Tempo.Blazor</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
     <PackageReadmeFile>README.md</PackageReadmeFile>
   </PropertyGroup>
