@@ -1,0 +1,232 @@
+@page "/test-suite-manager"
+@using Tempo.Blazor.Demo.SharedUI.Pages.TestSuiteManager
+
+<PageTitle>Test Suite Manager – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Test Suite Manager</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Drag &amp; drop test cases between suites. Select cases using checkboxes, then drag them onto a suite in the tree.
+    </p>
+</div>
+
+<!-- Hint banner -->
+<div class="p-4 mb-6 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl">
+    <div class="flex items-start space-x-3">
+        <svg class="w-5 h-5 text-blue-600 dark:text-blue-400 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <div class="text-sm text-blue-800 dark:text-blue-200 space-y-1">
+            <p><strong>How to use:</strong></p>
+            <ol class="list-decimal list-inside space-y-0.5 text-xs text-blue-700 dark:text-blue-300">
+                <li>Click a suite in the tree on the left to load its test cases.</li>
+                <li>Select one or more test cases using checkboxes, then drag them onto a suite to move them.</li>
+                <li>Drag a suite node onto another suite to reparent it.</li>
+                <li>Drag a suite node onto the "Drop here to make root" zone to promote it to root level.</li>
+            </ol>
+        </div>
+    </div>
+</div>
+
+<!-- Main layout -->
+<div class="tsm-layout">
+
+    <!-- Left: Tree panel -->
+    <div class="tsm-tree-panel">
+        <div class="tsm-panel-header tsm-tree-header">
+            <span class="tsm-panel-title">Test Suites</span>
+            <div class="flex items-center gap-2">
+                <span class="tsm-suite-count">@_store.GetRootSuites().Count root suites</span>
+                <!-- Mobile toggle -->
+                <button type="button" class="tsm-tree-toggle" @onclick="() => _treeOpen = !_treeOpen"
+                        aria-expanded="@_treeOpen" aria-label="Toggle suite tree">
+                    <svg class="w-4 h-4 tsm-tree-toggle-icon @(_treeOpen ? "tsm-tree-toggle-icon--open" : "")"
+                         fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                    </svg>
+                </button>
+            </div>
+        </div>
+        <div class="tsm-tree-body @(_treeOpen ? "tsm-tree-body--open" : "")">
+            <TmTreeView TKey="string"
+                        Nodes="_rootSuites"
+                        AllowDrop="true"
+                        AllowNodeDrag="true"
+                        OnNodeSelect="HandleSuiteSelect"
+                        OnItemsDrop="HandleItemsDrop"
+                        OnNodeMove="HandleNodeMove" />
+        </div>
+    </div>
+
+    <!-- Right: Test cases panel -->
+    <div class="tsm-cases-panel">
+        <div class="tsm-panel-header">
+            <div class="flex items-center gap-3">
+                <span class="tsm-panel-title">
+                    @if (_selectedSuite is not null)
+                    {
+                        @_selectedSuite.Label
+                    }
+                    else
+                    {
+                        <span class="text-slate-400 dark:text-slate-500 font-normal text-sm">Select a suite</span>
+                    }
+                </span>
+                @if (_selectedIds.Count > 0)
+                {
+                    <span class="tsm-selection-badge">@_selectedIds.Count selected</span>
+                }
+            </div>
+            @if (_selectedSuite is not null && _selectedIds.Count > 0)
+            {
+                <span class="tsm-drag-hint">
+                    <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M7 16V4m0 0L3 8m4-4l4 4M17 8v12m0 0l4-4m-4 4l-4-4" />
+                    </svg>
+                    Drag onto a suite to move
+                </span>
+            }
+        </div>
+
+        @if (_selectedSuite is null)
+        {
+            <div class="tsm-empty-hint">
+                <svg class="w-12 h-12 text-slate-300 dark:text-slate-600 mb-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                          d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+                </svg>
+                <p>Select a test suite from the tree to view its test cases.</p>
+            </div>
+        }
+        else
+        {
+            <TmMultiViewList TItem="TestCase"
+                             Items="_testCases"
+                             ViewContext="test-suite-cases"
+                             IdField="tc => tc.Id"
+                             TitleField="tc => tc.Title"
+                             SubTitleField="tc => tc.SubTitle"
+                             StatusLabelField="tc => tc.StatusLabel"
+                             StatusColorField="tc => tc.StatusColor"
+                             DateField="tc => tc.Date"
+                             AllowSelection="true"
+                             AllowDrag="true"
+                             @bind-SelectedIds="_selectedIds"
+                             ShowSearch="true"
+                             ShowViewSwitcher="true"
+                             EmptyTitle="No test cases in this suite"
+                             ViewProvider="null" />
+        }
+    </div>
+</div>
+
+@if (_lastMoveMessage is not null)
+{
+    <div class="tsm-move-toast">
+        <svg class="w-4 h-4 text-green-600 dark:text-green-400 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+        </svg>
+        <span>@_lastMoveMessage</span>
+    </div>
+}
+
+@code {
+    private readonly TestSuiteDataStore _store = new();
+
+    private IReadOnlyList<ITreeNode<string>> _rootSuites = [];
+    private TestSuite? _selectedSuite;
+    private IReadOnlyList<TestCase> _testCases = [];
+    private HashSet<string> _selectedIds = [];
+    private string? _lastMoveMessage;
+    private System.Threading.CancellationTokenSource? _toastCts;
+    private bool _treeOpen = true; // mobile accordion state
+
+    protected override void OnInitialized()
+    {
+        _rootSuites = _store.GetRootSuites().Cast<ITreeNode<string>>().ToList();
+    }
+
+    private void HandleSuiteSelect(ITreeNode<string> node)
+    {
+        _selectedSuite = _store.GetRootSuites()
+            .SelectMany(FlattenSuites)
+            .FirstOrDefault(s => s.Id == node.Id);
+
+        _testCases = _selectedSuite is not null
+            ? _store.GetTestCases(_selectedSuite.Id)
+            : [];
+
+        _selectedIds = [];
+    }
+
+    private async Task HandleItemsDrop(TreeDropEventArgs<string> args)
+    {
+        if (args.DraggedIds.Count == 0) return;
+
+        var targetId = args.TargetNode.Id;
+        var targetLabel = args.TargetNode.Label;
+        var count = args.DraggedIds.Count;
+
+        _store.MoveTestCases(args.DraggedIds, targetId);
+
+        // Reload current suite's cases (some may have left or arrived)
+        if (_selectedSuite is not null)
+            _testCases = _store.GetTestCases(_selectedSuite.Id);
+
+        // Clear selection
+        _selectedIds = [];
+
+        // Show feedback toast
+        await ShowMoveToastAsync($"Moved {count} test case{(count == 1 ? "" : "s")} to \"{targetLabel}\".");
+    }
+
+    private async Task ShowMoveToastAsync(string message)
+    {
+        _toastCts?.Cancel();
+        _toastCts = new System.Threading.CancellationTokenSource();
+        var token = _toastCts.Token;
+
+        _lastMoveMessage = message;
+        StateHasChanged();
+
+        try
+        {
+            await Task.Delay(3000, token);
+            _lastMoveMessage = null;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
+    }
+
+    private async Task HandleNodeMove(TreeNodeMoveEventArgs<string> args)
+    {
+        var movedLabel = args.MovedNode.Label;
+        var parentLabel = args.NewParent?.Label;
+
+        _store.MoveSuite(args.MovedNode.Id, args.NewParent?.Id);
+
+        // Reload tree
+        _rootSuites = _store.GetRootSuites().Cast<ITreeNode<string>>().ToList();
+
+        // If the moved suite was selected, keep it selected but reload cases
+        if (_selectedSuite?.Id == args.MovedNode.Id)
+            _testCases = _store.GetTestCases(_selectedSuite.Id);
+
+        var msg = parentLabel is not null
+            ? $"Moved \"{movedLabel}\" under \"{parentLabel}\"."
+            : $"Promoted \"{movedLabel}\" to root.";
+        await ShowMoveToastAsync(msg);
+    }
+
+    private static IEnumerable<TestSuite> FlattenSuites(ITreeNode<string> node)
+    {
+        if (node is TestSuite suite)
+            yield return suite;
+
+        foreach (var child in node.Children)
+            foreach (var flat in FlattenSuites(child))
+                yield return flat;
+    }
+}

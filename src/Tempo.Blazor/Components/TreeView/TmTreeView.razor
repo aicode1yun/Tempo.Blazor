@@ -1,18 +1,43 @@
 @namespace Tempo.Blazor.Components.TreeView
 @typeparam TKey
 @using Tempo.Blazor.Interfaces
+@using Tempo.Blazor.Models
 @using Tempo.Blazor.Components.Feedback
+@using Tempo.Blazor.Services
 @using Microsoft.AspNetCore.Components.Web
+@inject DragDropService DragDrop
 
 <div class="tm-tree-view">
     @foreach (var node in Nodes ?? Enumerable.Empty<ITreeNode<TKey>>())
     {
         @RenderNode(node, 0)
     }
+
+    @* Root drop zone — visible only while a tree node is being dragged *@
+    @if (AllowNodeDrag && _draggedNodeId is not null)
+    {
+        <div class="tm-tree-root-drop @(_rootDropActive ? "tm-tree-root-drop--active" : "")"
+             @ondragover:preventDefault
+             @ondragover="HandleRootDragOver"
+             @ondragleave="HandleRootDragLeave"
+             @ondrop="HandleRootDropAsync">
+            <svg class="tm-tree-root-drop-icon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" />
+            </svg>
+            <span>Drop here to make root</span>
+        </div>
+    }
 </div>
 
 @code {
     private readonly HashSet<object?> _expanded = new();
+    private object? _dropTargetId;
+
+    // Node drag state
+    private object? _draggedNodeId;
+    private ITreeNode<TKey>? _draggedNode;
+    private bool _rootDropActive;
 
     /// <summary>Root nodes of the tree.</summary>
     [Parameter] public IEnumerable<ITreeNode<TKey>>? Nodes { get; set; }
@@ -23,6 +48,26 @@
     /// <summary>Fires when a tree node is expanded or collapsed.</summary>
     [Parameter] public EventCallback<ITreeNode<TKey>> OnNodeExpand { get; set; }
 
+    /// <summary>When true, tree nodes accept drops from external drag sources (e.g. TmMultiViewList).</summary>
+    [Parameter] public bool AllowDrop { get; set; }
+
+    /// <summary>
+    /// Fires when external items are dropped onto a node.
+    /// The dragged IDs are read from <see cref="DragDropService.DraggedIds"/>.
+    /// </summary>
+    [Parameter] public EventCallback<TreeDropEventArgs<TKey>> OnItemsDrop { get; set; }
+
+    /// <summary>When true, tree nodes themselves can be dragged to reparent them.</summary>
+    [Parameter] public bool AllowNodeDrag { get; set; }
+
+    /// <summary>
+    /// Fires when a tree node is dropped onto another node or the root drop zone.
+    /// <see cref="TreeNodeMoveEventArgs{TKey}.NewParent"/> is <c>null</c> when dropped on the root zone.
+    /// </summary>
+    [Parameter] public EventCallback<TreeNodeMoveEventArgs<TKey>> OnNodeMove { get; set; }
+
+    // ── Expand ────────────────────────────────────────────────────
+
     private void ToggleExpand(ITreeNode<TKey> node)
     {
         var key = (object?)node.Id;
@@ -31,14 +76,160 @@
         StateHasChanged();
     }
 
+    // ── Node drag (source) ────────────────────────────────────────
+
+    private void HandleNodeDragStart(ITreeNode<TKey> node)
+    {
+        _draggedNodeId = (object?)node.Id;
+        _draggedNode = node;
+        DragDrop.StartDrag([(node.Id?.ToString() ?? "")], DragSource.TreeView);
+        StateHasChanged();
+    }
+
+    private void HandleNodeDragEnd()
+    {
+        _draggedNodeId = null;
+        _draggedNode = null;
+        _rootDropActive = false;
+        DragDrop.EndDrag();
+        StateHasChanged();
+    }
+
+    // ── Drop on node ──────────────────────────────────────────────
+
+    private void HandleDragOver(ITreeNode<TKey> node)
+    {
+        var key = (object?)node.Id;
+        if (_dropTargetId?.Equals(key) != true)
+        {
+            _dropTargetId = key;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleDragLeave(ITreeNode<TKey> node)
+    {
+        if (_dropTargetId?.Equals((object?)node.Id) == true)
+        {
+            _dropTargetId = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleDropAsync(ITreeNode<TKey> node)
+    {
+        _dropTargetId = null;
+
+        if (DragDrop.Source == DragSource.TreeView)
+        {
+            // Node reparent — ignore drop onto self
+            if (_draggedNode is not null &&
+                !EqualityComparer<TKey>.Default.Equals(_draggedNode.Id, node.Id))
+            {
+                var moved = _draggedNode;
+                _draggedNode = null;
+                _draggedNodeId = null;
+                DragDrop.EndDrag();
+                await OnNodeMove.InvokeAsync(new TreeNodeMoveEventArgs<TKey>
+                {
+                    MovedNode = moved,
+                    NewParent = node,
+                });
+            }
+        }
+        else
+        {
+            // External drop (e.g. from TmMultiViewList)
+            var ids = DragDrop.DraggedIds;
+            if (ids is null || ids.Count == 0) return;
+
+            await OnItemsDrop.InvokeAsync(new TreeDropEventArgs<TKey>
+            {
+                TargetNode = node,
+                DraggedIds = ids,
+            });
+        }
+    }
+
+    // ── Drop on root zone ─────────────────────────────────────────
+
+    private void HandleRootDragOver()
+    {
+        if (!_rootDropActive)
+        {
+            _rootDropActive = true;
+            StateHasChanged();
+        }
+    }
+
+    private void HandleRootDragLeave()
+    {
+        if (_rootDropActive)
+        {
+            _rootDropActive = false;
+            StateHasChanged();
+        }
+    }
+
+    private async Task HandleRootDropAsync()
+    {
+        _rootDropActive = false;
+
+        if (_draggedNode is null) return;
+
+        var moved = _draggedNode;
+        _draggedNode = null;
+        _draggedNodeId = null;
+        DragDrop.EndDrag();
+
+        await OnNodeMove.InvokeAsync(new TreeNodeMoveEventArgs<TKey>
+        {
+            MovedNode = moved,
+            NewParent = null,
+        });
+    }
+
+    // ── Rendering ─────────────────────────────────────────────────
+
     private RenderFragment RenderNode(ITreeNode<TKey> node, int depth) => b =>
     {
         int seq = 0;
+        var key = (object?)node.Id;
+        var isDropTarget = (AllowDrop || AllowNodeDrag) && _dropTargetId?.Equals(key) == true;
+        var isDragging   = AllowNodeDrag && _draggedNodeId?.Equals(key) == true;
 
         b.OpenElement(seq++, "div");
-        b.AddAttribute(seq++, "class", "tm-tree-node");
 
-        // Expand toggle button (non-leaf nodes only)
+        var cls = "tm-tree-node";
+        if (isDropTarget) cls += " tm-tree-node--drop-target";
+        if (isDragging)   cls += " tm-tree-node--dragging";
+        b.AddAttribute(seq++, "class", cls);
+
+        // Node drag source attributes
+        if (AllowNodeDrag)
+        {
+            b.AddAttribute(seq++, "draggable", "true");
+            b.AddAttribute(seq++, "ondragstart",
+                EventCallback.Factory.Create<DragEventArgs>(this, () => HandleNodeDragStart(node)));
+            b.AddAttribute(seq++, "ondragend",
+                EventCallback.Factory.Create<DragEventArgs>(this, HandleNodeDragEnd));
+        }
+
+        // Drop target attributes (external drops OR node reparent drops)
+        if (AllowDrop || AllowNodeDrag)
+        {
+            b.AddEventPreventDefaultAttribute(seq++, "ondragover", true);
+            b.AddAttribute(seq++, "ondragover",
+                EventCallback.Factory.Create<DragEventArgs>(this, () => HandleDragOver(node)));
+
+            b.AddAttribute(seq++, "ondragleave",
+                EventCallback.Factory.Create<DragEventArgs>(this, () => HandleDragLeave(node)));
+
+            b.AddAttribute(seq++, "ondrop",
+                EventCallback.Factory.Create<DragEventArgs>(this, () => HandleDropAsync(node)));
+        }
+
+        // Expand toggle (non-leaf nodes only)
         if (!node.IsLeaf)
         {
             b.OpenElement(seq++, "button");
@@ -49,7 +240,7 @@
             b.CloseElement();
         }
 
-        // Node label (clickable)
+        // Node label
         b.OpenElement(seq++, "span");
         b.AddAttribute(seq++, "class", "tm-tree-node-label");
         b.AddAttribute(seq++, "onclick",

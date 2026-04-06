@@ -49,6 +49,9 @@ public static class ServiceCollectionExtensions
         // ToastService — Scoped (each circuit/tab gets its own toast queue)
         services.TryAddScoped<ToastService>();
 
+        // DragDropService — Scoped (carries dragged IDs between sibling components)
+        services.TryAddScoped<DragDropService>();
+
         return services;
     }
 }

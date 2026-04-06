@@ -186,6 +186,61 @@
       ]
     },
     {
+      "itemName": "DragDropService",
+      "kind": "Class",
+      "category": "Services",
+      "namespace": "Tempo.Blazor.Services",
+      "description": "Scoped service that carries dragged item IDs between sibling components. Registered automatically by AddTempoBlazor(). Enables TmMultiViewList (as drag source) and TmTreeView (as drop target) to share drag state without a direct parent-child relationship.",
+      "properties": [
+        {
+          "name": "DraggedIds",
+          "type": "IReadOnlyList<string>?",
+          "description": "IDs of items currently being dragged. Null when no drag is in progress."
+        },
+        {
+          "name": "Source",
+          "type": "DragSource?",
+          "description": "Which component started the current drag. Null when not dragging."
+        },
+        {
+          "name": "IsDragging",
+          "type": "bool",
+          "description": "True while a drag operation is active."
+        }
+      ],
+      "methods": [
+        {
+          "name": "StartDrag",
+          "parameters": [
+            {
+              "name": "ids",
+              "type": "IEnumerable<string>"
+            },
+            {
+              "name": "source",
+              "type": "DragSource",
+              "default": "MultiViewList"
+            }
+          ],
+          "description": "Called by the drag source when dragging starts."
+        },
+        {
+          "name": "EndDrag",
+          "description": "Called by the drag source when dragging ends (drop or cancel). Clears DraggedIds and Source."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Registration (done automatically by AddTempoBlazor)",
+          "code": "// In Program.cs — already included when you call:\nbuilder.Services.AddTempoBlazor();\n\n// Registers DragDropService as Scoped automatically."
+        },
+        {
+          "title": "Reading drag state in a custom drop target",
+          "code": "@inject DragDropService DragDrop\n\n@if (DragDrop.IsDragging && DragDrop.Source == DragSource.MultiViewList)\n{\n    <div class=\"my-drop-zone\" @ondrop=\"HandleDrop\" @ondragover:preventDefault>\n        Drop here\n    </div>\n}\n\n@code {\n    private void HandleDrop()\n    {\n        var ids = DragDrop.DraggedIds ?? [];\n        // process ids...\n        DragDrop.EndDrag();\n    }\n}"
+        }
+      ]
+    },
+    {
       "itemName": "DropdownDataResult<TItem>",
       "kind": "Class",
       "category": "Models",
@@ -1120,6 +1175,67 @@
       ]
     },
     {
+      "itemName": "ITreeNode<TKey>",
+      "kind": "Interface",
+      "category": "Interfaces",
+      "namespace": "Tempo.Blazor.Interfaces",
+      "description": "Represents a node in TmTreeView. Implement this interface to supply hierarchical data. Supports lazy loading via the IsLoading flag.",
+      "typeParameters": [
+        {
+          "name": "TKey",
+          "description": "The type of the node identifier. Typically string or Guid."
+        }
+      ],
+      "properties": [
+        {
+          "name": "Id",
+          "type": "TKey",
+          "isRequired": true,
+          "description": "Unique identifier for this node."
+        },
+        {
+          "name": "Label",
+          "type": "string",
+          "isRequired": true,
+          "description": "Display label rendered in the tree."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Optional icon name from IconNames constants."
+        },
+        {
+          "name": "IsLeaf",
+          "type": "bool",
+          "isRequired": true,
+          "description": "True if this node has no children and cannot be expanded."
+        },
+        {
+          "name": "IsLoading",
+          "type": "bool",
+          "isRequired": true,
+          "description": "True if children are currently being loaded. TmTreeView shows a spinner."
+        },
+        {
+          "name": "Children",
+          "type": "IReadOnlyList<ITreeNode<TKey>>",
+          "isRequired": true,
+          "description": "Child nodes. Return an empty list when IsLeaf is true or children have not yet been loaded."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Minimal ITreeNode implementation using a record",
+          "code": "public record FolderNode(\n    string Id,\n    string Label,\n    string? Icon,\n    bool IsLeaf,\n    bool IsLoading,\n    IReadOnlyList<ITreeNode<string>> Children\n) : ITreeNode<string>;"
+        },
+        {
+          "title": "Mutable class implementation with lazy-load support",
+          "code": "public class FolderNode : ITreeNode<Guid>\n{\n    public Guid Id { get; init; }\n    public string Label { get; init; } = default!;\n    public string? Icon { get; init; }\n    public bool IsLeaf { get; set; }\n    public bool IsLoading { get; set; }\n\n    private readonly List<ITreeNode<Guid>> _children = [];\n    public IReadOnlyList<ITreeNode<Guid>> Children => _children;\n\n    public void AddChild(FolderNode child) => _children.Add(child);\n}\n\n// When OnNodeExpand fires, set IsLoading = true, load children, then set IsLoading = false."
+        }
+      ]
+    },
+    {
       "itemName": "PagedResult<TItem>",
       "kind": "Class",
       "category": "Models",
@@ -1351,6 +1467,73 @@
         {
           "title": "Showing a custom tooltip on token hover",
           "code": "<TmRichEditorFull @bind-Value=\"_content\"\n                  TokenProvider=\"@_tokenProvider\"\n                  OnTokenHover=\"ShowTooltip\"\n                  OnTokenHoverEnd=\"HideTooltip\" />\n\n@if (_hover != null)\n{\n    <div class=\"token-tooltip\"\n         style=\"position:fixed;\n                left:@(_hover.RectLeft)px;\n                top:@(_hover.RectBottom + 6)px;\">\n        @if (_hover.Icon != null) { <span>@_hover.Icon</span> }\n        <strong>@_hover.DisplayName</strong>\n        @if (_hover.TypeLabel != null) { <span class=\"badge\">@_hover.TypeLabel</span> }\n        <code>{{@_hover.Key}}</code>\n        @if (_hover.Description != null) { <p>@_hover.Description</p> }\n    </div>\n}\n\n@code {\n    private TokenHoverArgs? _hover;\n\n    private void ShowTooltip(TokenHoverArgs args)\n    {\n        _hover = args;\n        StateHasChanged();\n    }\n\n    private void HideTooltip()\n    {\n        _hover = null;\n        StateHasChanged();\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TreeDropEventArgs<TKey>",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Event arguments raised when items are dropped onto a TmTreeView node from an external drag source (e.g. TmMultiViewList). Passed to OnItemsDrop.",
+      "typeParameters": [
+        {
+          "name": "TKey",
+          "description": "The type of the tree node identifier."
+        }
+      ],
+      "properties": [
+        {
+          "name": "TargetNode",
+          "type": "ITreeNode<TKey>",
+          "isRequired": true,
+          "description": "The node onto which the items were dropped."
+        },
+        {
+          "name": "DraggedIds",
+          "type": "IReadOnlyList<string>",
+          "isRequired": false,
+          "default": "[]",
+          "description": "IDs of the dragged items, as supplied by DragDropService."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Handling an external drop onto a tree node",
+          "code": "private async Task HandleItemsDrop(TreeDropEventArgs<string> args)\n{\n    // args.TargetNode — the node the items were dropped onto\n    // args.DraggedIds — IDs selected in TmMultiViewList\n    await MoveItemsAsync(args.DraggedIds, args.TargetNode.Id);\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TreeNodeMoveEventArgs<TKey>",
+      "kind": "Class",
+      "category": "Models",
+      "namespace": "Tempo.Blazor.Models",
+      "description": "Event arguments raised when a TmTreeView node is dragged onto another node or the root drop zone. Passed to OnNodeMove. NewParent is null when the node should become a root node.",
+      "typeParameters": [
+        {
+          "name": "TKey",
+          "description": "The type of the tree node identifier."
+        }
+      ],
+      "properties": [
+        {
+          "name": "MovedNode",
+          "type": "ITreeNode<TKey>",
+          "isRequired": true,
+          "description": "The node that was dragged."
+        },
+        {
+          "name": "NewParent",
+          "type": "ITreeNode<TKey>?",
+          "isRequired": false,
+          "description": "The node onto which MovedNode was dropped, becoming its new parent. Null when the node was dropped on the root drop zone and should become a root-level node."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Reparenting a node in response to OnNodeMove",
+          "code": "private async Task HandleNodeMove(TreeNodeMoveEventArgs<string> args)\n{\n    // Reparent under new parent, or promote to root if NewParent is null\n    await _store.MoveSuiteAsync(args.MovedNode.Id, args.NewParent?.Id);\n\n    // Reload the tree so the new structure is reflected\n    _rootNodes = await _store.GetRootNodesAsync();\n}"
         }
       ]
     }

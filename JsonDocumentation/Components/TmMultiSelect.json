@@ -158,7 +158,6 @@
       "name": "ShowConfirmButton",
       "type": "bool",
       "isRequired": false,
-      "default": "false",
       "description": "Shows a confirmation button in the dropdown footer to close the popup. Default: false."
     },
     {

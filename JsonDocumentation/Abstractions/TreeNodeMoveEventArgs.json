@@ -1,0 +1,33 @@
+{
+  "itemName": "TreeNodeMoveEventArgs<TKey>",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Event arguments raised when a TmTreeView node is dragged onto another node or the root drop zone. Passed to OnNodeMove. NewParent is null when the node should become a root node.",
+  "typeParameters": [
+    {
+      "name": "TKey",
+      "description": "The type of the tree node identifier."
+    }
+  ],
+  "properties": [
+    {
+      "name": "MovedNode",
+      "type": "ITreeNode<TKey>",
+      "isRequired": true,
+      "description": "The node that was dragged."
+    },
+    {
+      "name": "NewParent",
+      "type": "ITreeNode<TKey>?",
+      "isRequired": false,
+      "description": "The node onto which MovedNode was dropped, becoming its new parent. Null when the node was dropped on the root drop zone and should become a root-level node."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Reparenting a node in response to OnNodeMove",
+      "code": "private async Task HandleNodeMove(TreeNodeMoveEventArgs<string> args)\n{\n    // Reparent under new parent, or promote to root if NewParent is null\n    await _store.MoveSuiteAsync(args.MovedNode.Id, args.NewParent?.Id);\n\n    // Reload the tree so the new structure is reflected\n    _rootNodes = await _store.GetRootNodesAsync();\n}"
+    }
+  ]
+}

@@ -1,0 +1,34 @@
+{
+  "itemName": "TreeDropEventArgs<TKey>",
+  "kind": "Class",
+  "category": "Models",
+  "namespace": "Tempo.Blazor.Models",
+  "description": "Event arguments raised when items are dropped onto a TmTreeView node from an external drag source (e.g. TmMultiViewList). Passed to OnItemsDrop.",
+  "typeParameters": [
+    {
+      "name": "TKey",
+      "description": "The type of the tree node identifier."
+    }
+  ],
+  "properties": [
+    {
+      "name": "TargetNode",
+      "type": "ITreeNode<TKey>",
+      "isRequired": true,
+      "description": "The node onto which the items were dropped."
+    },
+    {
+      "name": "DraggedIds",
+      "type": "IReadOnlyList<string>",
+      "isRequired": false,
+      "default": "[]",
+      "description": "IDs of the dragged items, as supplied by DragDropService."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Handling an external drop onto a tree node",
+      "code": "private async Task HandleItemsDrop(TreeDropEventArgs<string> args)\n{\n    // args.TargetNode — the node the items were dropped onto\n    // args.DraggedIds — IDs selected in TmMultiViewList\n    await MoveItemsAsync(args.DraggedIds, args.TargetNode.Id);\n}"
+    }
+  ]
+}

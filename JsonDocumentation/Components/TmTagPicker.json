@@ -12,43 +12,43 @@
       "name": "AllTags",
       "type": "IEnumerable<ITag>?",
       "isRequired": false,
-      "description": "All tags available for selection. The dropdown filters this list against already-selected tags and the current search text."
+      "description": "All tags available for selection."
     },
     {
       "name": "SelectedTags",
       "type": "IEnumerable<ITag>?",
       "isRequired": false,
-      "description": "Currently selected tags, rendered as colored chips."
+      "description": "Currently selected tags."
     },
     {
       "name": "OnTagsChanged",
       "type": "EventCallback<IEnumerable<ITag>>",
       "isRequired": false,
-      "description": "Fires when the selection changes (tag added or removed), passing the full updated list. The caller is responsible for updating SelectedTags."
+      "description": "Fires when the selection changes, passing the updated list."
     },
     {
       "name": "AllowCreate",
       "type": "bool",
       "isRequired": false,
-      "description": "When true, shows a search input and a 'Vytvořit' option at the bottom of the dropdown whenever the typed name does not already exist in AllTags. Requires OnCreateTag to be wired up to actually persist the new tag."
+      "description": "When true, shows an option to create a new tag inline."
     },
     {
       "name": "OnCreateTag",
       "type": "EventCallback<string>",
       "isRequired": false,
-      "description": "Fires when the user clicks the inline 'Vytvořit' option, passing the typed tag name. The callback is responsible for creating the tag, adding it to AllTags, and optionally pre-selecting it. Used only when AllowCreate=\"true\"."
+      "description": "Fires when the user requests creation of a new tag, passing the tag name."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Disables all interaction — hides the trigger button and chip remove buttons."
+      "description": "Disables the tag picker."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Additional CSS class appended to the root element."
+      "description": "Additional CSS class for the root element."
     }
   ],
   "interfaces": [

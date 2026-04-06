@@ -11,140 +11,113 @@
       "name": "Value",
       "type": "string",
       "isRequired": false,
-      "default": "Empty",
-      "description": "HTML content of the editor. Use @bind-Value for two-way binding."
+      "default": "Empty"
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string>",
-      "isRequired": false,
-      "description": "Fired whenever the editor content changes."
+      "isRequired": false
     },
     {
       "name": "Placeholder",
       "type": "string?",
-      "isRequired": false,
-      "description": "Placeholder text shown when the editor is empty."
+      "isRequired": false
     },
     {
       "name": "Height",
       "type": "string?",
-      "isRequired": false,
-      "description": "CSS height of the editor (e.g. \"400px\", \"50vh\"). If null, the editor grows with content."
+      "isRequired": false
     },
     {
       "name": "MaxLength",
       "type": "int",
-      "isRequired": false,
-      "description": "Maximum number of characters. When exceeded, the character counter turns red. 0 means unlimited."
+      "isRequired": false
     },
     {
       "name": "ShowWordCount",
       "type": "bool",
       "isRequired": false,
-      "default": "true",
-      "description": "Whether to show word and character count in the editor footer."
+      "default": "true"
     },
     {
       "name": "SupportsMentions",
       "type": "bool",
-      "isRequired": false,
-      "description": "Enables @mention autocomplete. Requires MentionProvider."
+      "isRequired": false
     },
     {
       "name": "MentionProvider",
       "type": "IMentionDataProvider?",
-      "isRequired": false,
-      "description": "Data provider for @mention user search."
+      "isRequired": false
     },
     {
       "name": "SupportsImages",
       "type": "bool",
       "isRequired": false,
-      "default": "true",
-      "description": "Whether the image toolbar button and image dialog are available."
+      "default": "true"
     },
     {
       "name": "SupportsTables",
       "type": "bool",
       "isRequired": false,
-      "default": "true",
-      "description": "Whether the table toolbar button and table dialog are available."
+      "default": "true"
     },
     {
       "name": "SupportsCodeBlocks",
       "type": "bool",
       "isRequired": false,
-      "default": "true",
-      "description": "Whether the code block toolbar button is available."
+      "default": "true"
     },
     {
       "name": "SupportsBlockquotes",
       "type": "bool",
       "isRequired": false,
-      "default": "true",
-      "description": "Whether the blockquote toolbar button is available."
+      "default": "true"
     },
     {
       "name": "SupportsTokens",
       "type": "bool",
-      "isRequired": false,
-      "description": "Enables the {{token}} variable insertion toolbar button. Requires TokenProvider."
+      "isRequired": false
     },
     {
       "name": "TokenProvider",
       "type": "ITokenDataProvider?",
-      "isRequired": false,
-      "description": "Data provider for token/variable search and autocomplete. Setting this implicitly enables token support."
+      "isRequired": false
     },
     {
       "name": "TokenTrigger",
       "type": "string",
       "isRequired": false,
-      "default": "\"{{\"",
-      "description": "Character sequence that opens the token autocomplete dropdown while typing."
+      "default": "\"{{\""
     },
     {
       "name": "OnTokenCreateRequested",
       "type": "EventCallback<string?>",
-      "isRequired": false,
-      "description": "Fired when the user clicks 'Create new' in the token dropdown. Parameter is the current query text (pre-filled name). Call InsertTokenAsync after the token is created."
+      "isRequired": false
     },
     {
       "name": "OnTokenInserted",
       "type": "EventCallback<IToken>",
-      "isRequired": false,
-      "description": "Fired after a token chip is inserted into the editor content."
+      "isRequired": false
     },
     {
       "name": "OnTokenHover",
       "type": "EventCallback<TokenHoverArgs>",
-      "isRequired": false,
-      "description": "Fired when the user hovers over a token chip in the editor. TokenHoverArgs contains full token metadata (Key, DisplayName, Description, Icon, TypeLabel, ColorClass) plus the chip's bounding rect in client (viewport) coordinates (RectLeft, RectTop, RectRight, RectBottom, RectWidth, RectHeight). Use this to show your own tooltip positioned relative to the chip. Only fires when TokenProvider is set and this callback is registered."
+      "isRequired": false
     },
     {
       "name": "OnTokenHoverEnd",
       "type": "EventCallback",
-      "isRequired": false,
-      "description": "Fired when the user moves the cursor away from a token chip. Use this to hide the tooltip shown via OnTokenHover."
+      "isRequired": false
     },
     {
       "name": "IsDisabled",
       "type": "bool",
-      "isRequired": false,
-      "description": "When true, the editor is read-only and visually dimmed."
+      "isRequired": false
     },
     {
       "name": "Class",
       "type": "string?",
-      "isRequired": false,
-      "description": "Additional CSS class applied to the root element."
-    },
-    {
-      "name": "AdditionalAttributes",
-      "type": "Dictionary<string, object>?",
-      "isRequired": false,
-      "description": "Arbitrary HTML attributes splatted onto the root element."
+      "isRequired": false
     }
   ],
   "cssClasses": [
@@ -180,8 +153,17 @@
       "name": "InsertTokenAsync",
       "returnType": "Task",
       "parameters": [
-        { "name": "key", "type": "string", "description": "Unique token key." },
-        { "name": "displayName", "type": "string?", "default": "null", "description": "Text shown in the chip. Falls back to key if null." }
+        {
+          "name": "key",
+          "type": "string",
+          "description": "Unique token key."
+        },
+        {
+          "name": "displayName",
+          "type": "string?",
+          "default": "null",
+          "description": "Text shown in the chip. Falls back to key if null."
+        }
       ],
       "description": "Programmatically inserts a token chip into the editor at the current cursor position. Typically called from the parent component after the user creates a new token via OnTokenCreateRequested."
     }
@@ -228,7 +210,7 @@
     },
     {
       "title": "Token provider with visual metadata (Icon, ColorClass, TypeLabel)",
-      "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    public bool SupportsCreation => true;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        var tokens = new List<MyToken>\n        {\n            new() { Key = \"user.email\",    DisplayName = \"User Email\",    Icon = \"📧\", TypeLabel = \"Email\",  ColorClass = \"token-url\" },\n            new() { Key = \"api.secret\",    DisplayName = \"API Secret\",    Icon = \"🔒\", TypeLabel = \"Secret\", ColorClass = \"token-secret\" },\n            new() { Key = \"order.total\",   DisplayName = \"Order Total\",   Icon = \"💰\", TypeLabel = \"Number\", ColorClass = \"token-number\" },\n        };\n        return Task.FromResult(\n            tokens.Where(t => t.Key.Contains(query, StringComparison.OrdinalIgnoreCase)\n                            || t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))\n                  .Cast<IToken>());\n    }\n\n    public void Refresh() { }\n}\n\npublic class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
+      "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    public bool SupportsCreation => true;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        var tokens = new List<MyToken>\n        {\n            new() { Key = \"user.email\",    DisplayName = \"User Email\",    Icon = \"\uD83D\uDCE7\", TypeLabel = \"Email\",  ColorClass = \"token-url\" },\n            new() { Key = \"api.secret\",    DisplayName = \"API Secret\",    Icon = \"\uD83D\uDD12\", TypeLabel = \"Secret\", ColorClass = \"token-secret\" },\n            new() { Key = \"order.total\",   DisplayName = \"Order Total\",   Icon = \"\uD83D\uDCB0\", TypeLabel = \"Number\", ColorClass = \"token-number\" },\n        };\n        return Task.FromResult(\n            tokens.Where(t => t.Key.Contains(query, StringComparison.OrdinalIgnoreCase)\n                            || t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase))\n                  .Cast<IToken>());\n    }\n\n    public void Refresh() { }\n}\n\npublic class MyToken : IToken\n{\n    public string Key { get; set; } = string.Empty;\n    public string DisplayName { get; set; } = string.Empty;\n    public string? Description { get; set; }\n    public string? Category { get; set; }\n    public string? Icon { get; set; }\n    public string? ColorClass { get; set; }\n    public string? TypeLabel { get; set; }\n}"
     },
     {
       "title": "Disabled editor",

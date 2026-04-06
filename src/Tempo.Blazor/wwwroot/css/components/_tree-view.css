@@ -42,3 +42,71 @@
 .tm-tree-node-label:hover {
   background: var(--tm-color-gray-100);
 }
+
+/* ── Node drag source ────────────────────────────────────────── */
+
+.tm-tree-node[draggable="true"] {
+  cursor: grab;
+}
+
+.tm-tree-node--dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+/* ── Drop target ─────────────────────────────────────────────── */
+
+.tm-tree-node--drop-target {
+  background: var(--tm-color-primary-subtle);
+  border-radius: var(--tm-radius-sm);
+  outline: 2px dashed var(--tm-color-primary);
+  outline-offset: -2px;
+}
+
+/* ── Root drop zone ──────────────────────────────────────────── */
+
+.tm-tree-root-drop {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  margin-top: var(--tm-space-3);
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border: 2px dashed var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  color: var(--tm-text-secondary);
+  font-size: var(--tm-font-size-xs);
+  transition: border-color var(--tm-transition-fast), background var(--tm-transition-fast), color var(--tm-transition-fast);
+  user-select: none;
+}
+
+.tm-tree-root-drop-icon {
+  width: 1rem;
+  height: 1rem;
+  flex-shrink: 0;
+}
+
+.tm-tree-root-drop--active {
+  border-color: var(--tm-color-primary);
+  background: var(--tm-color-primary-subtle);
+  color: var(--tm-color-primary);
+}
+
+/* Dark mode: label hover + expand button */
+[data-theme="dark"] .tm-tree-node-label:hover,
+.tm-dark .tm-tree-node-label:hover {
+  background: var(--tm-bg-muted);
+}
+
+[data-theme="dark"] .tm-tree-expand:hover,
+.tm-dark .tm-tree-expand:hover {
+  background: var(--tm-bg-muted);
+  color: var(--tm-text-primary);
+}
+
+/* Dark mode drop target — already uses design tokens so automatic,
+   but add a slightly stronger outline for visibility on dark surfaces */
+[data-theme="dark"] .tm-tree-node--drop-target,
+.tm-dark .tm-tree-node--drop-target {
+  background: rgba(59, 130, 246, 0.15);
+  outline-color: var(--tm-color-primary);
+}

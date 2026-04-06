@@ -6,6 +6,7 @@
 @using Tempo.Blazor.Components.DataTable
 @using Tempo.Blazor.Components.Inputs
 @using Tempo.Blazor.Services
+@inject DragDropService DragDrop
 
 <div class="tm-multi-view-list @Class" @attributes="AdditionalAttributes">
 
@@ -116,6 +117,15 @@
                 <table class="tm-mvl-table">
                     <thead>
                         <tr>
+                            @if (AllowSelection)
+                            {
+                                <th class="tm-mvl-col-select">
+                                    <input type="checkbox"
+                                           class="tm-mvl-checkbox"
+                                           checked="@AreAllVisibleSelected()"
+                                           @onchange="_ => ToggleSelectAllAsync()" />
+                                </th>
+                            }
                             @if (_visibleColumns.Contains(ColumnKeys.Title)) { <th>@Loc["TmMvl_ColTitle"]</th> }
                             @if (_visibleColumns.Contains(ColumnKeys.SubTitle)) { <th>@Loc["TmMvl_ColSubTitle"]</th> }
                             @if (_visibleColumns.Contains(ColumnKeys.Status)) { <th>@Loc["TmMvl_ColStatus"]</th> }
@@ -316,6 +326,35 @@
     /// <summary>Additional HTML attributes to apply to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    // ── Parameters: selection ────────────────────────────────────
+
+    /// <summary>When true, shows checkboxes and enables multi-select mode.</summary>
+    [Parameter] public bool AllowSelection { get; set; }
+
+    /// <summary>Currently selected item IDs. Two-way bindable.</summary>
+    [Parameter] public HashSet<string>? SelectedIds { get; set; }
+
+    /// <summary>Fires when the selection changes.</summary>
+    [Parameter] public EventCallback<HashSet<string>> SelectedIdsChanged { get; set; }
+
+    /// <summary>
+    /// Maps an item to its selection ID. Falls back to <see cref="IdField"/>,
+    /// then to <see cref="IMultiViewListItem.Id"/>.
+    /// </summary>
+    [Parameter] public Func<TItem, string>? SelectionIdField { get; set; }
+
+    // ── Parameters: drag source ──────────────────────────────────
+
+    /// <summary>
+    /// When true, items can be dragged. Works best together with <see cref="AllowSelection"/>:
+    /// dragging a selected item drags all selected items; dragging an unselected item drags
+    /// only that one item.
+    /// </summary>
+    [Parameter] public bool AllowDrag { get; set; }
+
+    /// <summary>Fires when a drag operation starts. Receives the items being dragged.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<TItem>> OnDragStart { get; set; }
+
     // ── View Manager Parameters ───────────────────────────────────
 
     /// <summary>
@@ -369,6 +408,7 @@
     // ── State ─────────────────────────────────────────────────────
     private ListViewMode _viewMode = ListViewMode.Table;
     private string _searchText = string.Empty;
+    private HashSet<string> _selectedIds = [];
     private List<ActiveFilter> _externalFilters = [];
     private string? _activeViewId;
     private HashSet<string> _visibleColumns = [ColumnKeys.Title, ColumnKeys.SubTitle, ColumnKeys.Status, ColumnKeys.Date];
@@ -450,6 +490,98 @@
     private DateTimeOffset? GetDate(TItem item) =>
         DateField is not null ? DateField(item) :
         item is IMultiViewListItem mvl ? mvl.Date : null;
+
+    // ── Selection ─────────────────────────────────────────────────
+
+    private string? GetSelectionId(TItem item) =>
+        SelectionIdField is not null ? SelectionIdField(item) :
+        IdField is not null ? IdField(item) :
+        item is IMultiViewListItem mvl ? mvl.Id : null;
+
+    private bool IsSelected(TItem item) =>
+        GetSelectionId(item) is { } id && _selectedIds.Contains(id);
+
+    private async Task ToggleSelectionAsync(TItem item)
+    {
+        var id = GetSelectionId(item);
+        if (id is null) return;
+
+        if (!_selectedIds.Remove(id))
+            _selectedIds.Add(id);
+
+        await SelectedIdsChanged.InvokeAsync(_selectedIds);
+    }
+
+    private async Task ToggleSelectAllAsync()
+    {
+        var visibleIds = (FilteredItems ?? [])
+            .Select(GetSelectionId)
+            .Where(id => id is not null)
+            .Cast<string>()
+            .ToList();
+
+        if (visibleIds.All(id => _selectedIds.Contains(id)))
+        {
+            foreach (var id in visibleIds)
+                _selectedIds.Remove(id);
+        }
+        else
+        {
+            foreach (var id in visibleIds)
+                _selectedIds.Add(id);
+        }
+
+        await SelectedIdsChanged.InvokeAsync(_selectedIds);
+    }
+
+    private bool AreAllVisibleSelected()
+    {
+        var items = FilteredItems;
+        if (items is null || items.Count == 0) return false;
+        return items.All(IsSelected);
+    }
+
+    // ── Drag source ───────────────────────────────────────────────
+
+    private List<TItem> _draggedItems = [];
+
+    private bool IsDragging(TItem item) =>
+        AllowDrag && _draggedItems.Contains(item);
+
+    private async Task HandleDragStartAsync(TItem item)
+    {
+        // If the item is already selected, drag all selected items.
+        // Otherwise drag only the single touched item (no selection change).
+        var id = GetSelectionId(item);
+        List<TItem> allItems = FilteredItems ?? _serverItems;
+
+        if (id is not null && _selectedIds.Contains(id))
+        {
+            _draggedItems = allItems
+                .Where(i => GetSelectionId(i) is { } sid && _selectedIds.Contains(sid))
+                .ToList();
+        }
+        else
+        {
+            _draggedItems = [item];
+        }
+
+        var dragIds = _draggedItems
+            .Select(GetSelectionId)
+            .Where(i => i is not null)
+            .Cast<string>();
+
+        DragDrop.StartDrag(dragIds);
+        await OnDragStart.InvokeAsync(_draggedItems);
+        StateHasChanged();
+    }
+
+    private void HandleDragEnd()
+    {
+        _draggedItems = [];
+        DragDrop.EndDrag();
+        StateHasChanged();
+    }
 
     // ── Filter logic ─────────────────────────────────────────────
 
@@ -543,9 +675,22 @@
         _dataLoaded = true;
     }
 
+    private ListViewMode _lastViewModeParam = ListViewMode.Table;
+
     protected override void OnParametersSet()
     {
-        _viewMode = ViewMode;
+        // Only sync _viewMode from the parameter when the parameter actually changes.
+        // Without this guard, every StateHasChanged() call (e.g. checkbox toggle) would
+        // re-run OnParametersSet and reset the view to the default Table value.
+        if (ViewMode != _lastViewModeParam)
+        {
+            _viewMode = ViewMode;
+            _lastViewModeParam = ViewMode;
+        }
+
+        // Sync externally supplied SelectedIds into internal state
+        if (SelectedIds is not null)
+            _selectedIds = SelectedIds;
     }
 
     // ── Server-side data loading ─────────────────────────────────
@@ -852,7 +997,24 @@
 
     private RenderFragment RenderTableDataRow(TItem item) => __builder =>
     {
-        <tr class="tm-mvl-row" tabindex="0" @onclick="() => OnItemClick.InvokeAsync(item)" @onkeydown="e => HandleItemKeyDownAsync(e, item)">
+        var selected = AllowSelection && IsSelected(item);
+        var dragging = IsDragging(item);
+        <tr class="tm-mvl-row @(selected ? "tm-mvl-row--selected" : "") @(dragging ? "tm-mvl-item--dragging" : "")"
+            tabindex="0"
+            draggable="@(AllowDrag ? "true" : "false")"
+            @onclick="() => OnItemClick.InvokeAsync(item)"
+            @onkeydown="e => HandleItemKeyDownAsync(e, item)"
+            @ondragstart="() => HandleDragStartAsync(item)"
+            @ondragend="HandleDragEnd">
+            @if (AllowSelection)
+            {
+                <td class="tm-mvl-col-select" @onclick:stopPropagation>
+                    <input type="checkbox"
+                           class="tm-mvl-checkbox"
+                           checked="@selected"
+                           @onchange="_ => ToggleSelectionAsync(item)" />
+                </td>
+            }
             @if (TableRowTemplate is not null)
             {
                 @TableRowTemplate(item)
@@ -963,19 +1125,52 @@
 
     private RenderFragment RenderCardItem(TItem item) => __builder =>
     {
-        <div class="tm-mvl-card" role="button" tabindex="0" @onclick="() => OnItemClick.InvokeAsync(item)" @onkeydown="e => HandleItemKeyDownAsync(e, item)">
+        var selected = AllowSelection && IsSelected(item);
+        var dragging = IsDragging(item);
+        <div class="tm-mvl-card @(selected ? "tm-mvl-card--selected" : "") @(dragging ? "tm-mvl-item--dragging" : "")"
+             role="button" tabindex="0"
+             draggable="@(AllowDrag ? "true" : "false")"
+             @onclick="() => OnItemClick.InvokeAsync(item)"
+             @onkeydown="e => HandleItemKeyDownAsync(e, item)"
+             @ondragstart="() => HandleDragStartAsync(item)"
+             @ondragend="HandleDragEnd">
             @if (CardTemplate is not null)
             {
+                @if (AllowSelection)
+                {
+                    <div class="tm-mvl-card-select-row" @onclick:stopPropagation>
+                        <input type="checkbox"
+                               class="tm-mvl-checkbox"
+                               checked="@selected"
+                               @onchange="_ => ToggleSelectionAsync(item)" />
+                    </div>
+                }
                 @CardTemplate(item)
             }
             else
             {
-                @if (!string.IsNullOrEmpty(GetAvatarUrl(item)))
+                @if (AllowSelection)
+                {
+                    <div class="tm-mvl-card-select-row" @onclick:stopPropagation>
+                        <input type="checkbox"
+                               class="tm-mvl-checkbox"
+                               checked="@selected"
+                               @onchange="_ => ToggleSelectionAsync(item)" />
+                        @if (!string.IsNullOrEmpty(GetTitle(item)))
+                        {
+                            <div class="tm-mvl-card-title">@GetTitle(item)</div>
+                        }
+                    </div>
+                }
+                else if (!string.IsNullOrEmpty(GetAvatarUrl(item)))
                 {
                     <img class="tm-mvl-card-avatar" src="@GetAvatarUrl(item)" alt="" />
                 }
                 <div class="tm-mvl-card-body">
-                    <div class="tm-mvl-card-title">@GetTitle(item)</div>
+                    @if (!AllowSelection)
+                    {
+                        <div class="tm-mvl-card-title">@GetTitle(item)</div>
+                    }
                     @if (!string.IsNullOrEmpty(GetSubTitle(item)))
                     {
                         <div class="tm-mvl-card-subtitle">@GetSubTitle(item)</div>
@@ -993,7 +1188,24 @@
 
     private RenderFragment RenderListItem(TItem item) => __builder =>
     {
-        <li class="tm-mvl-list-item" tabindex="0" @onclick="() => OnItemClick.InvokeAsync(item)" @onkeydown="e => HandleItemKeyDownAsync(e, item)">
+        var selected = AllowSelection && IsSelected(item);
+        var dragging = IsDragging(item);
+        <li class="tm-mvl-list-item @(selected ? "tm-mvl-list-item--selected" : "") @(dragging ? "tm-mvl-item--dragging" : "")"
+            tabindex="0"
+            draggable="@(AllowDrag ? "true" : "false")"
+            @onclick="() => OnItemClick.InvokeAsync(item)"
+            @onkeydown="e => HandleItemKeyDownAsync(e, item)"
+            @ondragstart="() => HandleDragStartAsync(item)"
+            @ondragend="HandleDragEnd">
+            @if (AllowSelection)
+            {
+                <div class="tm-mvl-list-select" @onclick:stopPropagation>
+                    <input type="checkbox"
+                           class="tm-mvl-checkbox"
+                           checked="@selected"
+                           @onchange="_ => ToggleSelectionAsync(item)" />
+                </div>
+            }
             @if (ListItemTemplate is not null)
             {
                 @ListItemTemplate(item)

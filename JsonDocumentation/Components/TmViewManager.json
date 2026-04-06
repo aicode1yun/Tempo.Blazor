@@ -55,8 +55,7 @@
     {
       "name": "DisplayResolver",
       "type": "Func<string, string?, string?>?",
-      "isRequired": false,
-      "description": "Universal display resolver for field labels and enum filter values. Typically passed from parent TmDataTable or TmMultiViewList. Flows to FilterBuilder."
+      "isRequired": false
     },
     {
       "name": "CanCreateTenantViews",

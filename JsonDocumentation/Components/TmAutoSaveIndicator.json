@@ -12,20 +12,20 @@
       "type": "bool",
       "isRequired": false,
       "default": "true",
-      "description": "When false, the auto-save timer is stopped and no automatic saves are triggered."
+      "description": "Whether the auto-save timer is active. When set to false the timer is stopped."
     },
     {
       "name": "AutoSaveIntervalSeconds",
       "type": "int",
       "isRequired": false,
       "default": "60",
-      "description": "Interval in seconds between automatic save attempts. Only applies when IsEnabled is true."
+      "description": "Interval in seconds between automatic save attempts. Defaults to 60."
     },
     {
       "name": "OnSave",
       "type": "EventCallback",
       "isRequired": false,
-      "description": "Callback invoked by the auto-save timer when unsaved changes are present. Use this to persist data."
+      "description": "Callback invoked when the auto-save timer fires and there are unsaved changes."
     },
     {
       "name": "Class",

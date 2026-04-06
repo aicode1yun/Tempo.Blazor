@@ -316,3 +316,211 @@ input, textarea, select {
         display: none !important;
     }
 }
+
+/* ── Test Suite Manager ─────────────────────────────────────── */
+
+/* Two-column grid: fixed 280px tree + flex list */
+.tsm-layout {
+    display: grid;
+    grid-template-columns: 280px 1fr;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* On small screens stack vertically */
+@media (max-width: 768px) {
+    .tsm-layout {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* Panels */
+.tsm-tree-panel,
+.tsm-cases-panel {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.75rem;
+    overflow: hidden;
+}
+
+.dark .tsm-tree-panel,
+.dark .tsm-cases-panel {
+    background: #1e293b;
+    border-color: #334155;
+}
+
+/* Panel header bar */
+.tsm-panel-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.875rem 1rem;
+    border-bottom: 1px solid #e2e8f0;
+    background: #f8fafc;
+}
+
+.dark .tsm-panel-header {
+    border-color: #334155;
+    background: #0f172a;
+}
+
+.tsm-panel-title {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #1e293b;
+}
+
+.dark .tsm-panel-title {
+    color: #f1f5f9;
+}
+
+.tsm-suite-count {
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+/* ── Responsive tree accordion (mobile) ──────────────────────── */
+
+/* Toggle button — only visible on mobile */
+.tsm-tree-toggle {
+    display: none;
+    align-items: center;
+    justify-content: center;
+    width: 1.75rem;
+    height: 1.75rem;
+    padding: 0;
+    border: 1px solid #e2e8f0;
+    border-radius: 0.375rem;
+    background: transparent;
+    color: #64748b;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tsm-tree-toggle:hover {
+    background: #f1f5f9;
+    color: #1e293b;
+}
+
+.dark .tsm-tree-toggle {
+    border-color: #334155;
+    color: #94a3b8;
+}
+
+.dark .tsm-tree-toggle:hover {
+    background: #334155;
+    color: #f1f5f9;
+}
+
+.tsm-tree-toggle-icon {
+    transition: transform 0.2s ease;
+}
+
+.tsm-tree-toggle-icon--open {
+    transform: rotate(180deg);
+}
+
+/* Tree body — collapsible on mobile */
+.tsm-tree-body {
+    padding: 0.75rem;
+}
+
+@media (max-width: 768px) {
+    .tsm-tree-toggle {
+        display: inline-flex;
+    }
+
+    /* Collapsed by default on mobile — height:0 + overflow:hidden */
+    .tsm-tree-body {
+        display: none;
+    }
+
+    .tsm-tree-body--open {
+        display: block;
+    }
+}
+
+/* ── Selection & drag hints ──────────────────────────────────── */
+
+/* Purple badge showing how many items are selected */
+.tsm-selection-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.125rem 0.625rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    background: #ede9fe;
+    color: #7c3aed;
+}
+
+.dark .tsm-selection-badge {
+    background: rgba(124, 58, 237, 0.2);
+    color: #a78bfa;
+}
+
+/* "Drag onto a suite to move" hint */
+.tsm-drag-hint {
+    display: flex;
+    align-items: center;
+    gap: 0.375rem;
+    font-size: 0.75rem;
+    color: #94a3b8;
+}
+
+.dark .tsm-drag-hint {
+    color: #64748b;
+}
+
+/* ── Cases panel ─────────────────────────────────────────────── */
+
+/* Remove double border/radius from MVL inside the panel */
+.tsm-cases-panel .tm-multi-view-list {
+    border: none;
+    border-radius: 0;
+    background: transparent;
+}
+
+/* Empty state when no suite is selected */
+.tsm-empty-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    color: #94a3b8;
+    font-size: 0.875rem;
+    text-align: center;
+}
+
+.dark .tsm-empty-hint {
+    color: #475569;
+}
+
+/* ── Move toast ──────────────────────────────────────────────── */
+
+.tsm-move-toast {
+    position: fixed;
+    bottom: 1.5rem;
+    right: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 0.75rem 1.25rem;
+    background: #ffffff;
+    border: 1px solid #d1fae5;
+    border-radius: 0.5rem;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05);
+    font-size: 0.875rem;
+    color: #065f46;
+    z-index: 50;
+    animation: fadeIn 0.2s ease-out;
+}
+
+.dark .tsm-move-toast {
+    background: #064e3b;
+    border-color: #065f46;
+    color: #6ee7b7;
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.4), 0 4px 6px -2px rgba(0,0,0,0.2);
+}

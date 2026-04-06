@@ -24,13 +24,42 @@
       "type": "EventCallback<ITreeNode<TKey>>",
       "isRequired": false,
       "description": "Fires when a tree node is expanded or collapsed."
+    },
+    {
+      "name": "AllowDrop",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, tree nodes accept drops from external drag sources (e.g. TmMultiViewList)."
+    },
+    {
+      "name": "OnItemsDrop",
+      "type": "EventCallback<TreeDropEventArgs<TKey>>",
+      "isRequired": false,
+      "description": "Fires when external items (e.g. from TmMultiViewList) are dropped onto a tree node. Provides the target node and dragged IDs."
+    },
+    {
+      "name": "AllowNodeDrag",
+      "type": "bool",
+      "isRequired": false,
+      "description": "When true, tree nodes themselves can be dragged to reparent them within the tree."
+    },
+    {
+      "name": "OnNodeMove",
+      "type": "EventCallback<TreeNodeMoveEventArgs<TKey>>",
+      "isRequired": false,
+      "description": "Fires when a node is dropped onto another node or the root drop zone. NewParent is null when the node is promoted to root level."
     }
   ],
   "cssClasses": [
     "tm-tree-view",
     "tm-tree-node",
     "tm-tree-expand",
-    "tm-tree-node-label"
+    "tm-tree-node-label",
+    "tm-tree-node--dragging",
+    "tm-tree-node--drop-target",
+    "tm-tree-root-drop",
+    "tm-tree-root-drop--active",
+    "tm-tree-root-drop-icon"
   ],
   "examples": [
     {
@@ -40,6 +69,18 @@
     {
       "title": "Tree with expand callback for lazy loading",
       "code": "<TmTreeView TKey=\"Guid\" Nodes=\"@_folderTree\" OnNodeSelect=\"@HandleSelect\" OnNodeExpand=\"@LoadChildren\" />"
+    },
+    {
+      "title": "Tree accepting drops from TmMultiViewList",
+      "code": "<TmTreeView TKey=\"string\"\n            Nodes=\"@_suites\"\n            AllowDrop=\"true\"\n            OnItemsDrop=\"HandleItemsDrop\" />\n\n@code {\n    private async Task HandleItemsDrop(TreeDropEventArgs<string> args)\n    {\n        // args.TargetNode — the node that was dropped onto\n        // args.DraggedIds — IDs of the dragged items\n        await MoveItemsToSuiteAsync(args.DraggedIds, args.TargetNode.Id);\n    }\n}"
+    },
+    {
+      "title": "Tree with node drag-and-drop to reparent nodes",
+      "code": "<TmTreeView TKey=\"string\"\n            Nodes=\"@_suites\"\n            AllowNodeDrag=\"true\"\n            OnNodeMove=\"HandleNodeMove\" />\n\n@code {\n    private async Task HandleNodeMove(TreeNodeMoveEventArgs<string> args)\n    {\n        // args.MovedNode  — the node that was dragged\n        // args.NewParent  — null when promoted to root\n        await ReparentAsync(args.MovedNode.Id, args.NewParent?.Id);\n        _suites = await LoadTreeAsync();\n    }\n}"
+    },
+    {
+      "title": "Tree with both AllowDrop and AllowNodeDrag (Test Suite Manager pattern)",
+      "code": "<TmTreeView TKey=\"string\"\n            Nodes=\"@_suites\"\n            AllowDrop=\"true\"\n            AllowNodeDrag=\"true\"\n            OnNodeSelect=\"HandleSuiteSelect\"\n            OnItemsDrop=\"HandleItemsDrop\"\n            OnNodeMove=\"HandleNodeMove\" />"
     }
   ]
 }

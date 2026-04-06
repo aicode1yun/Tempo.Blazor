@@ -88,7 +88,7 @@ public class TmAttachmentManagerTests : LocalizationTestBase
         public Task DeleteAttachmentAsync(string attachmentId, CancellationToken ct = default)
             => Task.CompletedTask;
 
-        public Task<string> UploadChunkAsync(FileChunkData chunk, CancellationToken ct = default)
-            => Task.FromResult(Guid.NewGuid().ToString());
+        public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken ct = default)
+            => Task.FromResult<string?>(Guid.NewGuid().ToString());
     }
 }

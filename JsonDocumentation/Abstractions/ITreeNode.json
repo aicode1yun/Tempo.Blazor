@@ -1,0 +1,61 @@
+{
+  "itemName": "ITreeNode<TKey>",
+  "kind": "Interface",
+  "category": "Interfaces",
+  "namespace": "Tempo.Blazor.Interfaces",
+  "description": "Represents a node in TmTreeView. Implement this interface to supply hierarchical data. Supports lazy loading via the IsLoading flag.",
+  "typeParameters": [
+    {
+      "name": "TKey",
+      "description": "The type of the node identifier. Typically string or Guid."
+    }
+  ],
+  "properties": [
+    {
+      "name": "Id",
+      "type": "TKey",
+      "isRequired": true,
+      "description": "Unique identifier for this node."
+    },
+    {
+      "name": "Label",
+      "type": "string",
+      "isRequired": true,
+      "description": "Display label rendered in the tree."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional icon name from IconNames constants."
+    },
+    {
+      "name": "IsLeaf",
+      "type": "bool",
+      "isRequired": true,
+      "description": "True if this node has no children and cannot be expanded."
+    },
+    {
+      "name": "IsLoading",
+      "type": "bool",
+      "isRequired": true,
+      "description": "True if children are currently being loaded. TmTreeView shows a spinner."
+    },
+    {
+      "name": "Children",
+      "type": "IReadOnlyList<ITreeNode<TKey>>",
+      "isRequired": true,
+      "description": "Child nodes. Return an empty list when IsLeaf is true or children have not yet been loaded."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Minimal ITreeNode implementation using a record",
+      "code": "public record FolderNode(\n    string Id,\n    string Label,\n    string? Icon,\n    bool IsLeaf,\n    bool IsLoading,\n    IReadOnlyList<ITreeNode<string>> Children\n) : ITreeNode<string>;"
+    },
+    {
+      "title": "Mutable class implementation with lazy-load support",
+      "code": "public class FolderNode : ITreeNode<Guid>\n{\n    public Guid Id { get; init; }\n    public string Label { get; init; } = default!;\n    public string? Icon { get; init; }\n    public bool IsLeaf { get; set; }\n    public bool IsLoading { get; set; }\n\n    private readonly List<ITreeNode<Guid>> _children = [];\n    public IReadOnlyList<ITreeNode<Guid>> Children => _children;\n\n    public void AddChild(FolderNode child) => _children.Add(child);\n}\n\n// When OnNodeExpand fires, set IsLoading = true, load children, then set IsLoading = false."
+    }
+  ]
+}

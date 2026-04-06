@@ -24,7 +24,7 @@
       "name": "ParentOptions",
       "type": "IReadOnlyList<SelectOption<TParent>>?",
       "isRequired": false,
-      "description": "Static list of parent options rendered in the parent select."
+      "description": "Static list of parent options."
     },
     {
       "name": "ParentLabel",
@@ -36,13 +36,13 @@
       "name": "ParentPlaceholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Placeholder text for the parent select."
+      "description": "Placeholder for the parent select."
     },
     {
       "name": "ParentError",
       "type": "string?",
       "isRequired": false,
-      "description": "Validation error message for the parent select."
+      "description": "Validation error for the parent select."
     },
     {
       "name": "ChildValue",
@@ -57,12 +57,6 @@
       "description": "Fires when the child selection changes."
     },
     {
-      "name": "LoadChildOptionsAsync",
-      "type": "Func<TParent?, Task<IReadOnlyList<SelectOption<TChild>>>>",
-      "isRequired": true,
-      "description": "Required async callback that returns child options for the given parent value. Called whenever the parent changes."
-    },
-    {
       "name": "ChildLabel",
       "type": "string?",
       "isRequired": false,
@@ -72,19 +66,18 @@
       "name": "ChildPlaceholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Placeholder text for the child select when no child is selected."
+      "description": "Placeholder for the child select when a parent is selected."
     },
     {
       "name": "ChildError",
       "type": "string?",
       "isRequired": false,
-      "description": "Validation error message for the child select."
+      "description": "Validation error for the child select."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "default": "false",
       "description": "Disables both selects."
     },
     {

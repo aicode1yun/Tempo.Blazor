@@ -1,6 +1,7 @@
 using Bunit;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Localization;
+using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Localization;
 
@@ -16,6 +17,7 @@ public abstract class LocalizationTestBase : TestContext
     protected LocalizationTestBase()
     {
         Services.AddSingleton<ITmLocalizer>(BuildEnglishLocalizer());
+        Services.AddScoped<DragDropService>();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
 

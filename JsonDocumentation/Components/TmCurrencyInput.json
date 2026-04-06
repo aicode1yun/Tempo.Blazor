@@ -12,13 +12,13 @@
       "name": "Amount",
       "type": "decimal?",
       "isRequired": false,
-      "description": "The entered amount value."
+      "description": "The entered amount."
     },
     {
       "name": "AmountChanged",
       "type": "EventCallback<decimal?>",
       "isRequired": false,
-      "description": "Fires when the amount changes."
+      "description": "Fires when Amount changes."
     },
     {
       "name": "Currency",
@@ -30,88 +30,84 @@
       "name": "CurrencyChanged",
       "type": "EventCallback<string?>",
       "isRequired": false,
-      "description": "Fires when the selected currency changes."
+      "description": "Fires when Currency changes."
     },
     {
       "name": "ConvertedAmount",
       "type": "decimal?",
       "isRequired": false,
-      "description": "Result of the conversion. Bind to receive updates."
+      "description": "Result of the conversion. Bind this to receive updates from the component."
     },
     {
       "name": "ConvertedAmountChanged",
       "type": "EventCallback<decimal?>",
       "isRequired": false,
-      "description": "Fires when the converted amount is recalculated."
+      "description": "Fires when ConvertedAmount changes."
     },
     {
       "name": "ManualRate",
       "type": "decimal?",
       "isRequired": false,
-      "description": "Manual exchange rate. When set and ShowManualRate is true, overrides the ConvertAsync callback."
+      "description": "Manual exchange rate override."
     },
     {
       "name": "ManualRateChanged",
       "type": "EventCallback<decimal?>",
       "isRequired": false,
-      "description": "Fires when the manual rate changes."
+      "description": "Fires when ManualRate changes."
     },
     {
       "name": "Currencies",
       "type": "IReadOnlyList<SelectOption<string>>?",
       "isRequired": false,
-      "description": "List of currency options shown in the currency select."
+      "description": "Available currency options shown in the select."
     },
     {
       "name": "ConvertAsync",
       "type": "Func<decimal, string, Task<decimal?>>?",
-      "isRequired": false,
-      "default": "null",
-      "description": "Async callback invoked to convert Amount to another unit. Receives (amount, currencyCode). When null, the converted amount column is hidden."
+      "isRequired": false
     },
     {
       "name": "ShowManualRate",
       "type": "bool",
       "isRequired": false,
-      "default": "false",
-      "description": "When true and ConvertAsync is provided, shows a manual exchange rate input. The manual rate takes precedence over the ConvertAsync callback."
+      "description": "Show the manual exchange rate input. Only meaningful when ConvertAsync is provided."
     },
     {
       "name": "ReadOnly",
       "type": "bool",
       "isRequired": false,
-      "default": "false",
       "description": "Makes all fields read-only."
     },
     {
       "name": "AmountLabel",
       "type": "string?",
       "isRequired": false,
-      "description": "Override label for the amount field. Defaults to the localized 'Amount' string."
+      "description": "Override label for the amount field."
     },
     {
       "name": "CurrencyLabel",
       "type": "string?",
       "isRequired": false,
-      "description": "Override label for the currency select. Defaults to the localized 'Currency' string."
+      "description": "Override label for the currency select."
     },
     {
       "name": "ConvertedLabel",
       "type": "string?",
       "isRequired": false,
-      "description": "Override label for the converted amount field. Defaults to the localized 'Amount (converted)' string."
+      "description": "Override label for the converted amount field."
     },
     {
       "name": "ManualRateLabel",
       "type": "string?",
       "isRequired": false,
-      "description": "Override label for the manual rate field. Defaults to the localized 'Manual exchange rate' string."
+      "description": "Override label for the manual rate field."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Additional CSS class applied to the root element."
+      "description": "Additional CSS class."
     }
   ],
   "cssClasses": [

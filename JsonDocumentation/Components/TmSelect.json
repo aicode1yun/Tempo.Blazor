@@ -12,13 +12,13 @@
       "name": "Value",
       "type": "TValue?",
       "isRequired": false,
-      "description": "Selected value. Supports two-way binding via @bind-Value."
+      "description": "Selected value."
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<TValue?>",
       "isRequired": false,
-      "description": "Fires when the selection changes. Used automatically with @bind-Value."
+      "description": "Fires when the selection changes."
     },
     {
       "name": "Label",
@@ -30,13 +30,13 @@
       "name": "Placeholder",
       "type": "string?",
       "isRequired": false,
-      "description": "Placeholder option shown when no value is selected. Rendered as a disabled <option>."
+      "description": "Placeholder option shown when no value is selected."
     },
     {
       "name": "Error",
       "type": "string?",
       "isRequired": false,
-      "description": "Validation error message. When set, adds tm-select-error class and shows error text below."
+      "description": "Validation error message."
     },
     {
       "name": "HelpText",
@@ -49,31 +49,25 @@
       "type": "string",
       "isRequired": false,
       "default": "Guid.NewGuid().ToString(\"n\")[..8]",
-      "description": "HTML id attribute. Auto-generated if not provided."
+      "description": "HTML id attribute."
     },
     {
       "name": "Class",
       "type": "string?",
       "isRequired": false,
-      "description": "Additional CSS class(es) for the root wrapper element."
+      "description": "Additional CSS class(es)."
     },
     {
       "name": "Disabled",
       "type": "bool",
       "isRequired": false,
-      "description": "Disables the select element."
+      "description": "Disables the select."
     },
     {
       "name": "Options",
       "type": "IReadOnlyList<SelectOption<TValue>>?",
       "isRequired": false,
-      "description": "Typed option list. When provided, <option> elements are generated automatically. Each SelectOption has Value, Label, and optional IsDisabled."
-    },
-    {
-      "name": "ChildContent",
-      "type": "RenderFragment?",
-      "isRequired": false,
-      "description": "Manual <option> elements. Use when you need full control over option rendering instead of using Options parameter."
+      "description": "Typed option list. When provided, &lt;option&gt; elements are generated automatically."
     }
   ],
   "cssClasses": [
@@ -114,7 +108,7 @@
     },
     {
       "title": "Manual option rendering via ChildContent",
-      "code": "@* Use ChildContent when you need full control over <option> elements\n   instead of using the Options parameter. *@\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedPriority\"\n          Label=\"Priority\">\n    <option value=\"\" disabled selected>-- Select priority --</option>\n    <option value=\"low\">🟢 Low</option>\n    <option value=\"medium\">🟡 Medium</option>\n    <option value=\"high\">🔴 High</option>\n    <option value=\"critical\" disabled>⛔ Critical (admin only)</option>\n</TmSelect>\n\n@code {\n    private string? _selectedPriority;\n}"
+      "code": "@* Use ChildContent when you need full control over <option> elements\n   instead of using the Options parameter. *@\n\n<TmSelect TValue=\"string\"\n          @bind-Value=\"_selectedPriority\"\n          Label=\"Priority\">\n    <option value=\"\" disabled selected>-- Select priority --</option>\n    <option value=\"low\">\uD83D\uDFE2 Low</option>\n    <option value=\"medium\">\uD83D\uDFE1 Medium</option>\n    <option value=\"high\">\uD83D\uDD34 High</option>\n    <option value=\"critical\" disabled>⛔ Critical (admin only)</option>\n</TmSelect>\n\n@code {\n    private string? _selectedPriority;\n}"
     },
     {
       "title": "Loading options from API on page load",

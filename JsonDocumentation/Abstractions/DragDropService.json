@@ -1,0 +1,48 @@
+{
+  "itemName": "DragDropService",
+  "kind": "Class",
+  "category": "Services",
+  "namespace": "Tempo.Blazor.Services",
+  "description": "Scoped service that carries dragged item IDs between sibling components. Registered automatically by AddTempoBlazor(). Enables TmMultiViewList (as drag source) and TmTreeView (as drop target) to share drag state without a direct parent-child relationship.",
+  "properties": [
+    {
+      "name": "DraggedIds",
+      "type": "IReadOnlyList<string>?",
+      "description": "IDs of items currently being dragged. Null when no drag is in progress."
+    },
+    {
+      "name": "Source",
+      "type": "DragSource?",
+      "description": "Which component started the current drag. Null when not dragging."
+    },
+    {
+      "name": "IsDragging",
+      "type": "bool",
+      "description": "True while a drag operation is active."
+    }
+  ],
+  "methods": [
+    {
+      "name": "StartDrag",
+      "parameters": [
+        { "name": "ids", "type": "IEnumerable<string>" },
+        { "name": "source", "type": "DragSource", "default": "MultiViewList" }
+      ],
+      "description": "Called by the drag source when dragging starts."
+    },
+    {
+      "name": "EndDrag",
+      "description": "Called by the drag source when dragging ends (drop or cancel). Clears DraggedIds and Source."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Registration (done automatically by AddTempoBlazor)",
+      "code": "// In Program.cs — already included when you call:\nbuilder.Services.AddTempoBlazor();\n\n// Registers DragDropService as Scoped automatically."
+    },
+    {
+      "title": "Reading drag state in a custom drop target",
+      "code": "@inject DragDropService DragDrop\n\n@if (DragDrop.IsDragging && DragDrop.Source == DragSource.MultiViewList)\n{\n    <div class=\"my-drop-zone\" @ondrop=\"HandleDrop\" @ondragover:preventDefault>\n        Drop here\n    </div>\n}\n\n@code {\n    private void HandleDrop()\n    {\n        var ids = DragDrop.DraggedIds ?? [];\n        // process ids...\n        DragDrop.EndDrag();\n    }\n}"
+    }
+  ]
+}

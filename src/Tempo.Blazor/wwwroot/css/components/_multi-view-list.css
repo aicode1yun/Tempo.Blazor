@@ -356,3 +356,97 @@
 .tm-mvl-virtual-scroll {
   overflow-y: auto;
 }
+
+/* ── Multi-select ───────────────────────────────────────────── */
+
+/* Checkbox cell in table */
+.tm-mvl-col-select {
+  width: 2.5rem;
+  padding-left: var(--tm-space-3) !important;
+}
+
+/* Generic checkbox style used across all views */
+.tm-mvl-checkbox {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
+  accent-color: var(--tm-color-primary);
+}
+
+/* Table row selected */
+.tm-mvl-row--selected {
+  background: var(--tm-color-primary-subtle) !important;
+}
+.tm-mvl-row--selected td {
+  border-bottom-color: var(--tm-color-primary-subtle);
+}
+
+/* Card selected */
+.tm-mvl-card--selected {
+  border-color: var(--tm-color-primary) !important;
+  background: var(--tm-color-primary-subtle) !important;
+}
+
+/* Checkbox + title flex row at the top of a card (selection mode) */
+.tm-mvl-card-select-row {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  margin-bottom: var(--tm-space-2);
+}
+
+.tm-mvl-card-select-row .tm-mvl-card-title {
+  margin: 0;
+  flex: 1;
+  min-width: 0;
+}
+
+/* List item selected */
+.tm-mvl-list-item--selected {
+  background: var(--tm-color-primary-subtle) !important;
+}
+
+/* List item checkbox wrapper */
+.tm-mvl-list-select {
+  display: flex;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+/* ── Dark mode: selection states ────────────────────────────── */
+
+[data-theme="dark"] .tm-mvl-row--selected,
+.tm-dark .tm-mvl-row--selected {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+[data-theme="dark"] .tm-mvl-row--selected td,
+.tm-dark .tm-mvl-row--selected td {
+  border-bottom-color: rgba(59, 130, 246, 0.15);
+}
+
+[data-theme="dark"] .tm-mvl-card--selected,
+.tm-dark .tm-mvl-card--selected {
+  border-color: var(--tm-color-primary) !important;
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+[data-theme="dark"] .tm-mvl-list-item--selected,
+.tm-dark .tm-mvl-list-item--selected {
+  background: rgba(59, 130, 246, 0.15) !important;
+}
+
+/* ── Drag source ────────────────────────────────────────────── */
+
+/* Applied to the element(s) being dragged */
+.tm-mvl-item--dragging {
+  opacity: 0.4;
+  cursor: grabbing;
+}
+
+/* Show grab cursor on draggable items */
+.tm-mvl-row[draggable="true"],
+.tm-mvl-card[draggable="true"],
+.tm-mvl-list-item[draggable="true"] {
+  cursor: grab;
+}

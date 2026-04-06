@@ -21,6 +21,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tempo.Blazor\Tempo.Blazor.csproj" />
+    <ProjectReference Include="..\..\src\Tempo.Blazor.Demo.SharedUI\Tempo.Blazor.Demo.SharedUI.csproj" />
   </ItemGroup>
 
   <ItemGroup>

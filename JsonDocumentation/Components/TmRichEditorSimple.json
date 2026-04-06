@@ -11,99 +11,83 @@
       "name": "Value",
       "type": "string",
       "isRequired": false,
-      "default": "Empty",
-      "description": "HTML content of the editor. Use @bind-Value for two-way binding."
+      "default": "Empty"
     },
     {
       "name": "ValueChanged",
       "type": "EventCallback<string>",
-      "isRequired": false,
-      "description": "Fired whenever the editor content changes."
+      "isRequired": false
     },
     {
       "name": "Placeholder",
       "type": "string?",
-      "isRequired": false,
-      "description": "Placeholder text shown when the editor is empty."
+      "isRequired": false
     },
     {
       "name": "MaxLength",
       "type": "int",
-      "isRequired": false,
-      "description": "Maximum number of characters. When exceeded, the character counter turns red. 0 means unlimited."
+      "isRequired": false
     },
     {
       "name": "SupportsMentions",
       "type": "bool",
-      "isRequired": false,
-      "description": "Enables @mention autocomplete. Requires MentionProvider."
+      "isRequired": false
     },
     {
       "name": "MentionProvider",
       "type": "IMentionDataProvider?",
-      "isRequired": false,
-      "description": "Data provider for @mention user search."
+      "isRequired": false
     },
     {
       "name": "SupportsTokens",
       "type": "bool",
-      "isRequired": false,
-      "description": "Enables the {{token}} variable insertion button. Requires TokenProvider."
+      "isRequired": false
     },
     {
       "name": "TokenProvider",
       "type": "ITokenDataProvider?",
-      "isRequired": false,
-      "description": "Data provider for token/variable search and autocomplete. Setting this implicitly enables token support."
+      "isRequired": false
     },
     {
       "name": "TokenTrigger",
       "type": "string",
       "isRequired": false,
-      "default": "\"{{\"",
-      "description": "Character sequence that opens the token autocomplete dropdown while typing."
+      "default": "\"{{\""
     },
     {
       "name": "OnTokenCreateRequested",
       "type": "EventCallback<string?>",
-      "isRequired": false,
-      "description": "Fired when the user clicks 'Create new' in the token dropdown. Parameter is the current query text. Call InsertTokenAsync after the token is created."
+      "isRequired": false
     },
     {
       "name": "OnTokenInserted",
       "type": "EventCallback<IToken>",
-      "isRequired": false,
-      "description": "Fired after a token chip is inserted into the editor content."
+      "isRequired": false
     },
     {
       "name": "OnTokenHover",
       "type": "EventCallback<TokenHoverArgs>",
-      "isRequired": false,
-      "description": "Fired when the user hovers over a token chip in the editor. TokenHoverArgs contains full token metadata (Key, DisplayName, Description, Icon, TypeLabel, ColorClass) plus the chip's bounding rect in client (viewport) coordinates (RectLeft, RectTop, RectRight, RectBottom, RectWidth, RectHeight). Use this to show your own tooltip positioned relative to the chip. Only fires when TokenProvider is set and this callback is registered."
+      "isRequired": false
     },
     {
       "name": "OnTokenHoverEnd",
       "type": "EventCallback",
-      "isRequired": false,
-      "description": "Fired when the user moves the cursor away from a token chip. Use this to hide the tooltip shown via OnTokenHover."
+      "isRequired": false
     },
     {
       "name": "IsDisabled",
       "type": "bool",
-      "isRequired": false,
-      "description": "When true, the editor is read-only and visually dimmed."
+      "isRequired": false
     },
     {
       "name": "OnSubmit",
       "type": "EventCallback",
-      "isRequired": false,
-      "description": "Fired when the user presses Ctrl+Enter (or Cmd+Enter on Mac) inside the editor."
+      "isRequired": false
     },
     {
       "name": "Class",
       "type": "string?",
-      "isRequired": false,
-      "description": "Additional CSS class applied to the root element."
+      "isRequired": false
     }
   ],
   "cssClasses": [
@@ -134,8 +118,17 @@
       "name": "InsertTokenAsync",
       "returnType": "Task",
       "parameters": [
-        { "name": "key", "type": "string", "description": "Unique token key." },
-        { "name": "displayName", "type": "string?", "default": "null", "description": "Text shown in the chip. Falls back to key if null." }
+        {
+          "name": "key",
+          "type": "string",
+          "description": "Unique token key."
+        },
+        {
+          "name": "displayName",
+          "type": "string?",
+          "default": "null",
+          "description": "Text shown in the chip. Falls back to key if null."
+        }
       ],
       "description": "Programmatically inserts a token chip into the editor at the current cursor position. Typically called after the user creates a new token via OnTokenCreateRequested."
     }

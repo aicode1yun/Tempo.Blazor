@@ -29,13 +29,13 @@
       "name": "ErrorMessage",
       "type": "string?",
       "isRequired": false,
-      "description": "Explicit validation error message shown below the field in red. Takes precedence over EditContext validation errors when both are present."
+      "description": "Explicit validation error message shown below the field in red. Takes precedence over EditContext validation."
     },
     {
       "name": "ValidationFor",
       "type": "Expression<Func<object>>?",
       "isRequired": false,
-      "description": "Lambda expression identifying the model field to track for EditContext validation errors (e.g. @(() => model.Name)). Requires a parent EditForm with a validator."
+      "description": "Expression identifying the model field to track for EditContext validation errors."
     },
     {
       "name": "For",
