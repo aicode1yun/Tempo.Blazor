@@ -133,7 +133,6 @@ jobs:
           dotnet pack src/Tempo.Blazor/Tempo.Blazor.csproj \
             --configuration Release \
             --no-restore \
-            --no-build \
             -p:Version=${{ steps.version.outputs.VERSION }} \
             --output ./packages
 
