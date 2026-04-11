@@ -231,6 +231,8 @@
   <data name="TmRichEditor_Code" xml:space="preserve"><value>Blok kódu</value></data>
   <data name="TmRichEditor_Blockquote" xml:space="preserve"><value>Citace</value></data>
   <data name="TmRichEditor_HorizontalRule" xml:space="preserve"><value>Vodorovná čára</value></data>
+  <data name="TmMarkdownEditor_InlineCode" xml:space="preserve"><value>Inline kód</value></data>
+  <data name="TmMarkdownEditor_CodeBlock" xml:space="preserve"><value>Blok kódu</value></data>
   <data name="TmRichEditor_TextColor" xml:space="preserve"><value>Barva textu</value></data>
   <data name="TmRichEditor_Highlight" xml:space="preserve"><value>Zvýraznění</value></data>
   <data name="TmRichEditor_Image" xml:space="preserve"><value>Obrázek</value></data>

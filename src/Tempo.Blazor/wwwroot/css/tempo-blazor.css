@@ -113,6 +113,7 @@
 @import "components/_editor-toolbar.css";
 @import "components/_rich-editor-simple.css";
 @import "components/_rich-editor-full.css";
+@import "components/_markdown-editor.css";
 @import "components/_link-dialog.css";
 @import "components/_image-dialog.css";
 @import "components/_table-dialog.css";

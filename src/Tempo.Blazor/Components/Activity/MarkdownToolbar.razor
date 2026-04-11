@@ -1,0 +1,167 @@
+@namespace Tempo.Blazor.Components.Activity
+@inject ITmLocalizer Loc
+
+<div class="tm-mde-toolbar @(IsDisabled ? "tm-mde-toolbar-disabled" : "")"
+     role="toolbar"
+     aria-label="Markdown editor toolbar">
+
+    @* ── Headings ─────────────────────────────────────────────────────── *@
+    <button class="tm-mde-btn @(IsActive("h1") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Heading1"]"
+            aria-label="@Loc["TmRichEditor_Heading1"]"
+            aria-pressed="@IsActive("h1").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("h1"))">
+        H1
+    </button>
+    <button class="tm-mde-btn @(IsActive("h2") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Heading2"]"
+            aria-label="@Loc["TmRichEditor_Heading2"]"
+            aria-pressed="@IsActive("h2").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("h2"))">
+        H2
+    </button>
+    <button class="tm-mde-btn @(IsActive("h3") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Heading3"]"
+            aria-label="@Loc["TmRichEditor_Heading3"]"
+            aria-pressed="@IsActive("h3").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("h3"))">
+        H3
+    </button>
+
+    <span class="tm-mde-separator" aria-hidden="true"></span>
+
+    @* ── Inline formatting ────────────────────────────────────────────── *@
+    <button class="tm-mde-btn @(IsActive("bold") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Bold"]"
+            aria-label="@Loc["TmRichEditor_Bold"]"
+            aria-pressed="@IsActive("bold").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("bold"))">
+        <strong>B</strong>
+    </button>
+    <button class="tm-mde-btn @(IsActive("italic") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Italic"]"
+            aria-label="@Loc["TmRichEditor_Italic"]"
+            aria-pressed="@IsActive("italic").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("italic"))">
+        <em>I</em>
+    </button>
+    <button class="tm-mde-btn @(IsActive("strikethrough") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Strikethrough"]"
+            aria-label="@Loc["TmRichEditor_Strikethrough"]"
+            aria-pressed="@IsActive("strikethrough").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("strikethrough"))">
+        <s>S</s>
+    </button>
+    <button class="tm-mde-btn tm-mde-btn-mono @(IsActive("code") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmMarkdownEditor_InlineCode"]"
+            aria-label="@Loc["TmMarkdownEditor_InlineCode"]"
+            aria-pressed="@IsActive("code").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("code"))">
+        &lt;/&gt;
+    </button>
+
+    <span class="tm-mde-separator" aria-hidden="true"></span>
+
+    @* ── Lists ────────────────────────────────────────────────────────── *@
+    <button class="tm-mde-btn @(IsActive("ul") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_UnorderedList"]"
+            aria-label="@Loc["TmRichEditor_UnorderedList"]"
+            aria-pressed="@IsActive("ul").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("ul"))">
+        ≡
+    </button>
+    <button class="tm-mde-btn @(IsActive("ol") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_OrderedList"]"
+            aria-label="@Loc["TmRichEditor_OrderedList"]"
+            aria-pressed="@IsActive("ol").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("ol"))">
+        1.
+    </button>
+
+    <span class="tm-mde-separator" aria-hidden="true"></span>
+
+    @* ── Block elements ───────────────────────────────────────────────── *@
+    <button class="tm-mde-btn @(IsActive("blockquote") ? "tm-mde-btn-active" : "")"
+            type="button"
+            title="@Loc["TmRichEditor_Blockquote"]"
+            aria-label="@Loc["TmRichEditor_Blockquote"]"
+            aria-pressed="@IsActive("blockquote").ToString().ToLowerInvariant()"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("blockquote"))">
+        ❝
+    </button>
+    <button class="tm-mde-btn tm-mde-btn-mono"
+            type="button"
+            title="@Loc["TmMarkdownEditor_CodeBlock"]"
+            aria-label="@Loc["TmMarkdownEditor_CodeBlock"]"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("codeblock"))">
+        ```
+    </button>
+
+    <span class="tm-mde-separator" aria-hidden="true"></span>
+
+    @* ── Link ─────────────────────────────────────────────────────────── *@
+    <button class="tm-mde-btn"
+            type="button"
+            title="@Loc["TmRichEditor_Link"] (Ctrl+K)"
+            aria-label="@Loc["TmRichEditor_Link"]"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("link"))">
+        <svg class="tm-mde-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M6.5 9.5a3.5 3.5 0 0 0 5 0l2-2a3.5 3.5 0 0 0-5-5L7 4" />
+            <path d="M9.5 6.5a3.5 3.5 0 0 0-5 0l-2 2a3.5 3.5 0 0 0 5 5L9 12" />
+        </svg>
+    </button>
+
+    @* ── Horizontal rule ──────────────────────────────────────────────── *@
+    <button class="tm-mde-btn"
+            type="button"
+            title="@Loc["TmRichEditor_HorizontalRule"]"
+            aria-label="@Loc["TmRichEditor_HorizontalRule"]"
+            disabled="@IsDisabled"
+            @onclick="@(() => OnFormat.InvokeAsync("hr"))">
+        <svg class="tm-mde-btn-icon" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" aria-hidden="true">
+            <line x1="2" y1="8" x2="14" y2="8" />
+            <line x1="2" y1="4" x2="5" y2="4" />
+            <line x1="11" y1="4" x2="14" y2="4" />
+            <line x1="2" y1="12" x2="5" y2="12" />
+            <line x1="11" y1="12" x2="14" y2="12" />
+        </svg>
+    </button>
+
+</div>
+
+@code {
+    /// <summary>Whether the toolbar is disabled.</summary>
+    [Parameter] public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// List of currently active format names returned by
+    /// <c>tmMarkdownEditor.getActiveFormats()</c> (e.g. "bold", "h2", "ul").
+    /// </summary>
+    [Parameter] public List<string> ActiveFormats { get; set; } = new();
+
+    /// <summary>Callback fired when a toolbar button is clicked. Argument is the format name.</summary>
+    [Parameter] public EventCallback<string> OnFormat { get; set; }
+
+    private bool IsActive(string format) => ActiveFormats.Contains(format);
+}

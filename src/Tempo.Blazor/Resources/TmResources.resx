@@ -231,6 +231,8 @@
   <data name="TmRichEditor_Code" xml:space="preserve"><value>Code block</value></data>
   <data name="TmRichEditor_Blockquote" xml:space="preserve"><value>Blockquote</value></data>
   <data name="TmRichEditor_HorizontalRule" xml:space="preserve"><value>Horizontal line</value></data>
+  <data name="TmMarkdownEditor_InlineCode" xml:space="preserve"><value>Inline code</value></data>
+  <data name="TmMarkdownEditor_CodeBlock" xml:space="preserve"><value>Code block</value></data>
   <data name="TmRichEditor_TextColor" xml:space="preserve"><value>Text color</value></data>
   <data name="TmRichEditor_Highlight" xml:space="preserve"><value>Highlight</value></data>
   <data name="TmRichEditor_Image" xml:space="preserve"><value>Image</value></data>

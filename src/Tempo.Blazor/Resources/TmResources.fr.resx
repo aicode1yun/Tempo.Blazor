@@ -633,6 +633,8 @@
   <data name="TmRichEditor_HorizontalRule" xml:space="preserve">
     <value>Ligne horizontale</value>
   </data>
+  <data name="TmMarkdownEditor_InlineCode" xml:space="preserve"><value>Code en ligne</value></data>
+  <data name="TmMarkdownEditor_CodeBlock" xml:space="preserve"><value>Bloc de code</value></data>
   <data name="TmRichEditor_TextColor" xml:space="preserve">
     <value>Couleur du texte</value>
   </data>

@@ -5852,6 +5852,182 @@
       ]
     },
     {
+      "itemName": "TmMarkdownEditor",
+      "kind": "Component",
+      "category": "Activity",
+      "description": "Block-based WYSIWYG markdown editor (Notion-inspired). The user edits rich formatted content — bold, italic, headings, lists, links, code — with no markdown syntax ever visible. The Value parameter is a raw Markdown string (input and output). Internally each paragraph, heading, or list item is a separate block div; inline formatting uses real semantic HTML elements (<b>, <em>, <s>, <code>, <a>). Supports Ctrl+Enter submit, character limit, link dialog, and keyboard shortcuts (Ctrl+B, Ctrl+I, Ctrl+K).",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Activity"
+      ],
+      "parameters": [
+        {
+          "name": "Value",
+          "type": "string",
+          "isRequired": false,
+          "default": "Empty",
+          "description": "The markdown content of the editor. Bind this to get/set raw markdown — no HTML."
+        },
+        {
+          "name": "ValueChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Callback fired whenever the markdown content changes."
+        },
+        {
+          "name": "Placeholder",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Placeholder text displayed when the editor is empty."
+        },
+        {
+          "name": "MaxLength",
+          "type": "int",
+          "isRequired": false,
+          "default": "0",
+          "description": "Maximum number of characters allowed. 0 = unlimited. Shows a character counter in the footer when set."
+        },
+        {
+          "name": "IsDisabled",
+          "type": "bool",
+          "isRequired": false,
+          "description": "Disables the editor and the entire toolbar."
+        },
+        {
+          "name": "OnSubmit",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Callback fired when the user presses Ctrl+Enter or calls Submit(). Only fires when content is non-empty and within MaxLength."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the root container element."
+        },
+        {
+          "name": "AdditionalAttributes",
+          "type": "Dictionary<string, object>?",
+          "isRequired": false,
+          "description": "Additional HTML attributes applied to the root container via @attributes splatting."
+        }
+      ],
+      "cssClasses": [
+        "tm-markdown-editor",
+        "tm-mde-focused",
+        "tm-mde-disabled",
+        "tm-mde-toolbar",
+        "tm-mde-toolbar-disabled",
+        "tm-mde-btn",
+        "tm-mde-btn-active",
+        "tm-mde-btn-mono",
+        "tm-mde-btn-icon",
+        "tm-mde-separator",
+        "tm-mde-content-wrapper",
+        "tm-mde-content",
+        "tm-mde-placeholder",
+        "tm-mde-footer",
+        "tm-mde-char-count",
+        "tm-mde-char-count-over",
+        "tm-b"
+      ],
+      "publicMethods": [
+        {
+          "name": "GetMarkdown",
+          "returnType": "string",
+          "description": "Returns the current raw markdown string. Equivalent to reading the Value parameter."
+        },
+        {
+          "name": "Clear",
+          "returnType": "Task",
+          "description": "Clears all editor content, resets the character count, and fires ValueChanged with an empty string."
+        },
+        {
+          "name": "Submit",
+          "returnType": "Task",
+          "description": "Programmatically submits the current content (same as pressing Ctrl+Enter). Fires OnSubmit only when content is non-empty and within MaxLength."
+        }
+      ],
+      "supportedFormats": {
+        "inline": [
+          {
+            "name": "Bold",
+            "shortcut": "Ctrl+B",
+            "markdown": "**text**"
+          },
+          {
+            "name": "Italic",
+            "shortcut": "Ctrl+I",
+            "markdown": "_text_"
+          },
+          {
+            "name": "Strikethrough",
+            "markdown": "~~text~~"
+          },
+          {
+            "name": "Inline code",
+            "markdown": "`code`"
+          },
+          {
+            "name": "Link",
+            "shortcut": "Ctrl+K",
+            "markdown": "[label](url)"
+          }
+        ],
+        "block": [
+          {
+            "name": "Heading 1",
+            "markdown": "# "
+          },
+          {
+            "name": "Heading 2",
+            "markdown": "## "
+          },
+          {
+            "name": "Heading 3",
+            "markdown": "### "
+          },
+          {
+            "name": "Bullet list",
+            "markdown": "- "
+          },
+          {
+            "name": "Ordered list",
+            "markdown": "1. "
+          },
+          {
+            "name": "Blockquote",
+            "markdown": "> "
+          },
+          {
+            "name": "Code fence",
+            "markdown": "```\\n...\\n```"
+          },
+          {
+            "name": "Horizontal rule",
+            "markdown": "---"
+          }
+        ]
+      },
+      "examples": [
+        {
+          "title": "Basic usage — bind Value to get raw markdown",
+          "code": "<TmMarkdownEditor @bind-Value=\"_markdown\" Placeholder=\"Write something...\" />\n\n@* Live preview *@\n<pre>@_markdown</pre>\n\n@code {\n    private string _markdown = string.Empty;\n}"
+        },
+        {
+          "title": "With submit callback and character limit",
+          "code": "<TmMarkdownEditor @bind-Value=\"_comment\"\n                  Placeholder=\"Add a comment...\"\n                  MaxLength=\"1000\"\n                  OnSubmit=\"HandleSubmit\" />\n\n@code {\n    private string _comment = string.Empty;\n\n    private async Task HandleSubmit()\n    {\n        await SaveComment(_comment);\n        _comment = string.Empty;\n    }\n}"
+        },
+        {
+          "title": "Disabled with pre-filled content",
+          "code": "<TmMarkdownEditor Value=\"@_readonlyContent\" IsDisabled=\"true\" />\n\n@code {\n    private string _readonlyContent = \"# Hello\\n\\nThis is **read-only** content.\";\n}"
+        },
+        {
+          "title": "Programmatic clear after submit",
+          "code": "<TmMarkdownEditor @ref=\"_editor\"\n                  @bind-Value=\"_text\"\n                  OnSubmit=\"HandleSubmit\" />\n\n@code {\n    private TmMarkdownEditor _editor = default!;\n    private string _text = string.Empty;\n\n    private async Task HandleSubmit()\n    {\n        await SaveAsync(_text);\n        await _editor.Clear();\n    }\n}"
+        }
+      ]
+    },
+    {
       "itemName": "TmModal",
       "kind": "Component",
       "category": "Feedback",

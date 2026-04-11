@@ -1,0 +1,351 @@
+@namespace Tempo.Blazor.Components.Activity
+@inject IJSRuntime JS
+@implements IAsyncDisposable
+
+<div class="tm-markdown-editor @(_isFocused ? "tm-mde-focused" : "") @(IsDisabled ? "tm-mde-disabled" : "") @(Class ?? "")"
+     @attributes="AdditionalAttributes">
+
+    <MarkdownToolbar
+        IsDisabled="@IsDisabled"
+        ActiveFormats="@_activeFormats"
+        OnFormat="@HandleFormat" />
+
+    <div class="tm-mde-content-wrapper">
+        <div class="tm-mde-content"
+             @ref="_editorRef"
+             contenteditable="@(!IsDisabled ? "true" : "false")"
+             @oninput="@HandleInput"
+             @onfocus="@HandleFocus"
+             @onblur="@HandleBlur"
+             @onkeydown="@HandleKeyDown"
+             @onkeydown:preventDefault="@_suppressKeyDown"
+             spellcheck="true"
+             data-placeholder="@Placeholder">
+        </div>
+
+        @if (_isEmpty && !string.IsNullOrEmpty(Placeholder))
+        {
+            <div class="tm-mde-placeholder">@Placeholder</div>
+        }
+    </div>
+
+    @if (MaxLength > 0)
+    {
+        <div class="tm-mde-footer">
+            <span class="tm-mde-char-count @(IsOverLimit ? "tm-mde-char-count-over" : "")">
+                @_charCount / @MaxLength
+            </span>
+        </div>
+    }
+
+    @if (_showLinkDialog)
+    {
+        <LinkDialog
+            IsVisible="true"
+            PreselectedText="@_linkPreselectedText"
+            OnConfirm="@OnLinkConfirm"
+            OnCancel="@OnLinkCancel" />
+    }
+</div>
+
+@code {
+    /// <summary>
+    /// The markdown content of the editor. Binding this parameter gives you raw markdown — no HTML.
+    /// </summary>
+    [Parameter] public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Callback fired whenever the markdown content changes.
+    /// </summary>
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>
+    /// Placeholder text displayed when the editor is empty.
+    /// </summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>
+    /// Maximum number of characters allowed. 0 = unlimited.
+    /// </summary>
+    [Parameter] public int MaxLength { get; set; }
+
+    /// <summary>
+    /// Disables the editor and toolbar.
+    /// </summary>
+    [Parameter] public bool IsDisabled { get; set; }
+
+    /// <summary>
+    /// Callback fired when the user submits content with Ctrl+Enter.
+    /// </summary>
+    [Parameter] public EventCallback OnSubmit { get; set; }
+
+    /// <summary>
+    /// Additional CSS class applied to the root container.
+    /// </summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>
+    /// Additional HTML attributes applied to the root container.
+    /// </summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    // ── Private state ──────────────────────────────────────────────────────────
+
+    private ElementReference _editorRef;
+    private List<string> _activeFormats = new();
+    private bool _isFocused;
+    private bool _isEmpty = true;
+    private int _charCount;
+    private bool _showLinkDialog;
+    private string? _linkPreselectedText;
+    private bool _suppressKeyDown;
+    private bool _isInitialized;
+    private bool _isUpdatingFromJs;     // guards OnAfterRenderAsync sync loop
+    private string _lastSyncedValue = string.Empty;
+
+    private bool IsOverLimit => MaxLength > 0 && _charCount > MaxLength;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        UpdateEmptyState();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try
+            {
+                if (!string.IsNullOrEmpty(Value))
+                {
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.setValue", _editorRef, Value);
+                }
+                await JS.InvokeVoidAsync("tmMarkdownEditor.init", _editorRef);
+                _lastSyncedValue = Value;
+                _isInitialized = true;
+            }
+            catch { /* JS not available in SSR / tests */ }
+        }
+        else if (_isInitialized && !_isUpdatingFromJs)
+        {
+            // Sync externally-changed Value into the editor DOM
+            if (Value != _lastSyncedValue)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.setValue", _editorRef, Value ?? "");
+                    _lastSyncedValue = Value;
+                }
+                catch { }
+            }
+        }
+    }
+
+    // ── Input handling ─────────────────────────────────────────────────────────
+
+    private async Task HandleInput()
+    {
+        _isUpdatingFromJs = true;
+        try
+        {
+            var markdown = await JS.InvokeAsync<string>("tmMarkdownEditor.getValue", _editorRef);
+            Value = markdown ?? string.Empty;
+            _lastSyncedValue = Value;
+            UpdateEmptyState();
+            await ValueChanged.InvokeAsync(Value);
+
+            // Update toolbar active-format indicators
+            await UpdateActiveFormatsAsync();
+
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { /* JS not available in SSR / tests */ }
+        finally
+        {
+            _isUpdatingFromJs = false;
+        }
+    }
+
+    // ── Focus / blur ───────────────────────────────────────────────────────────
+
+    private void HandleFocus()
+    {
+        _isFocused = true;
+    }
+
+    private void HandleBlur()
+    {
+        _isFocused = false;
+    }
+
+    // ── Keyboard ───────────────────────────────────────────────────────────────
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        _suppressKeyDown = false;
+
+        if (e.CtrlKey && e.Key == "Enter")
+        {
+            _suppressKeyDown = true;
+            await Submit();
+        }
+    }
+
+    // ── Format dispatch ────────────────────────────────────────────────────────
+
+    private async Task HandleFormat(string format)
+    {
+        if (IsDisabled) return;
+
+        try
+        {
+            switch (format)
+            {
+                // Inline formats — toggle on/off
+                case "bold":
+                case "italic":
+                case "strikethrough":
+                case "code":
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.toggleFormat", _editorRef, format);
+                    break;
+
+                // Block types — toggle (same type → paragraph)
+                case "h1":
+                case "h2":
+                case "h3":
+                case "ul":
+                case "ol":
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.setBlockType", _editorRef, format);
+                    break;
+                case "blockquote":
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.setBlockType", _editorRef, "bq");
+                    break;
+
+                // Block inserts
+                case "codeblock":
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.insertCodeBlock", _editorRef);
+                    break;
+                case "hr":
+                    await JS.InvokeVoidAsync("tmMarkdownEditor.insertHr", _editorRef);
+                    break;
+
+                // Link — open dialog, capture selected text as preset
+                case "link":
+                    _linkPreselectedText = await JS.InvokeAsync<string>("tmMarkdownEditor.getSelectedText", _editorRef);
+                    _showLinkDialog = true;
+                    await InvokeAsync(StateHasChanged);
+                    return; // skip value sync below — dialog handles it
+            }
+
+            await SyncValueFromEditorAsync();
+        }
+        catch { /* JS not available in SSR / tests */ }
+    }
+
+    // ── Link dialog ────────────────────────────────────────────────────────────
+
+    private async Task OnLinkConfirm((string Url, string Text) link)
+    {
+        _showLinkDialog = false;
+        try
+        {
+            await JS.InvokeVoidAsync("tmMarkdownEditor.insertLink", _editorRef, link.Url, link.Text);
+            await SyncValueFromEditorAsync();
+        }
+        catch { }
+    }
+
+    private void OnLinkCancel()
+    {
+        _showLinkDialog = false;
+    }
+
+    // ── Value sync helper ──────────────────────────────────────────────────────
+
+    private async Task SyncValueFromEditorAsync()
+    {
+        _isUpdatingFromJs = true;
+        try
+        {
+            var markdown = await JS.InvokeAsync<string>("tmMarkdownEditor.getValue", _editorRef);
+            Value = markdown ?? string.Empty;
+            _lastSyncedValue = Value;
+            UpdateEmptyState();
+            await ValueChanged.InvokeAsync(Value);
+            await UpdateActiveFormatsAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+        catch { }
+        finally
+        {
+            _isUpdatingFromJs = false;
+        }
+    }
+
+    private async Task UpdateActiveFormatsAsync()
+    {
+        try
+        {
+            var formats = await JS.InvokeAsync<string[]?>("tmMarkdownEditor.getActiveFormats", _editorRef);
+            _activeFormats = formats?.ToList() ?? new List<string>();
+        }
+        catch { }
+    }
+
+    // ── Empty state / char count ───────────────────────────────────────────────
+
+    private void UpdateEmptyState()
+    {
+        _isEmpty = string.IsNullOrWhiteSpace(Value);
+        _charCount = Value?.Length ?? 0;
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
+
+    /// <summary>
+    /// Returns the current markdown value.
+    /// </summary>
+    public string GetMarkdown() => Value ?? string.Empty;
+
+    /// <summary>
+    /// Clears the editor content.
+    /// </summary>
+    public async Task Clear()
+    {
+        Value = string.Empty;
+        _lastSyncedValue = string.Empty;
+        try
+        {
+            await JS.InvokeVoidAsync("tmMarkdownEditor.setValue", _editorRef, "");
+        }
+        catch { }
+        UpdateEmptyState();
+        _activeFormats.Clear();
+        await ValueChanged.InvokeAsync(Value);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>
+    /// Programmatically submits the current content (same as Ctrl+Enter).
+    /// Only fires OnSubmit when content is non-empty and within MaxLength.
+    /// </summary>
+    public async Task Submit()
+    {
+        if (!string.IsNullOrWhiteSpace(Value) && !IsOverLimit)
+        {
+            await OnSubmit.InvokeAsync();
+        }
+    }
+
+    // ── IAsyncDisposable ───────────────────────────────────────────────────────
+
+    public async ValueTask DisposeAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmMarkdownEditor.destroy", _editorRef); }
+        catch (JSDisconnectedException) { }
+        catch (InvalidOperationException) { }
+        catch (TaskCanceledException) { }
+    }
+}
