@@ -150,4 +150,58 @@ public class WireframePropertiesPanelTests
         TmWireframePropertiesPanel.GetDisplayValue([el1, el2], "label", prop)
             .Should().Be("First");
     }
+
+    // ── New property types (Phase 4 coverage) ─────────────────────────────────
+
+    [Fact]
+    public void GetDisplayValue_ReturnsEnumString()
+    {
+        var el   = WithProp(MakeEl(), "variant", "primary");
+        var prop = Prop("variant", PropType.Enum, options: ["primary", "secondary"]);
+        TmWireframePropertiesPanel.GetDisplayValue([el], "variant", prop)
+            .Should().Be("primary");
+    }
+
+    [Fact]
+    public void GetDisplayValue_ReturnsDoubleAsString()
+    {
+        var el   = WithProp(MakeEl(), "opacity", 0.75);
+        var prop = Prop("opacity", PropType.Double);
+        TmWireframePropertiesPanel.GetDisplayValue([el], "opacity", prop)
+            .Should().Be("0.75");
+    }
+
+    [Fact]
+    public void GetDisplayValue_ReturnsColorString()
+    {
+        var el   = WithProp(MakeEl(), "color", "#ff5722");
+        var prop = Prop("color", PropType.Color);
+        TmWireframePropertiesPanel.GetDisplayValue([el], "color", prop)
+            .Should().Be("#ff5722");
+    }
+
+    [Fact]
+    public void GetDisplayValue_ReturnsIconString()
+    {
+        var el   = WithProp(MakeEl(), "icon", "check-circle");
+        var prop = Prop("icon", PropType.Icon);
+        TmWireframePropertiesPanel.GetDisplayValue([el], "icon", prop)
+            .Should().Be("check-circle");
+    }
+
+    [Fact]
+    public void IsMixedValue_TrueForDifferentEnumValues()
+    {
+        var el1 = WithProp(MakeEl(), "variant", "primary");
+        var el2 = WithProp(MakeEl(), "variant", "secondary");
+        TmWireframePropertiesPanel.IsMixedValue([el1, el2], "variant").Should().BeTrue();
+    }
+
+    [Fact]
+    public void IsMixedValue_TrueForDifferentDoubleValues()
+    {
+        var el1 = WithProp(MakeEl(), "opacity", 0.5);
+        var el2 = WithProp(MakeEl(), "opacity", 0.75);
+        TmWireframePropertiesPanel.IsMixedValue([el1, el2], "opacity").Should().BeTrue();
+    }
 }

@@ -21,16 +21,22 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     public IEnumerable<WireframeComponentDef> GetDefinitions()
     {
         foreach (var d in Buttons()) yield return d;
+        foreach (var d in Avatars()) yield return d;
         foreach (var d in Inputs()) yield return d;
+        foreach (var d in Tags()) yield return d;
         foreach (var d in Pickers()) yield return d;
+        foreach (var d in Dropdowns()) yield return d;
         foreach (var d in DataDisplay()) yield return d;
         foreach (var d in DataTable()) yield return d;
         foreach (var d in Feedback()) yield return d;
+        foreach (var d in Notifications()) yield return d;
         foreach (var d in Navigation()) yield return d;
         foreach (var d in Layout()) yield return d;
+        foreach (var d in Toolbar()) yield return d;
         foreach (var d in Forms()) yield return d;
         foreach (var d in Files()) yield return d;
         foreach (var d in Charts()) yield return d;
+        foreach (var d in Workflow()) yield return d;
         foreach (var d in Complex()) yield return d;
     }
 
@@ -127,7 +133,14 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var label    = el.Props.GetString("label", "Button");
                 var variant  = el.Props.GetString("variant", "primary");
                 var disabled = el.Props.GetBool("disabled");
+                var loading  = el.Props.GetBool("loading");
+                var block    = el.Props.GetBool("block");
+                var icon     = el.Props.GetString("icon");
+                var iconRight= el.Props.GetBool("iconRight");
+                var loadingText = el.Props.GetString("loadingText", "");
                 var (font, rx) = SizeScale(el.Props.GetString("size", "md"));
+                var w = block ? Math.Max(el.W, 120) : el.W;
+                var h = el.H;
                 var (fill, border, textColor) = variant switch
                 {
                     "primary"   => (FillAccent, "#93c5fd", ColorText),
@@ -138,12 +151,26 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     _           => (Fill,       Border,    ColorText),   // secondary / default
                 };
                 var sb = new StringBuilder();
-                if (disabled) sb.Append($"<g opacity='0.45'>");
-                sb.Append(Rect(0, 0, el.W, el.H, fill, border, rx));
+                if (disabled || loading) sb.Append("<g opacity='" + (disabled ? "0.45" : "0.7") + "'>");
+                sb.Append(Rect(0, 0, w, h, fill, border, rx));
                 if (variant == "link")
-                    sb.Append($"<line x1='8' y1='{F(el.H - 4)}' x2='{F(el.W - 8)}' y2='{F(el.H - 4)}' stroke='{Accent}' stroke-width='1'/>");
-                sb.Append(TextCentred(label, el.W, el.H, font, textColor, "500"));
-                if (disabled) sb.Append("</g>");
+                    sb.Append($"<line x1='8' y1='{F(h - 4)}' x2='{F(w - 8)}' y2='{F(h - 4)}' stroke='{Accent}' stroke-width='1'/>");
+                var displayText = loading && !string.IsNullOrEmpty(loadingText) ? loadingText : label;
+                var textX = w / 2;
+                var hasIcon = !string.IsNullOrEmpty(icon);
+                var iconOffset = hasIcon ? 10 : 0;
+                if (loading)
+                {
+                    sb.Append(Icon("spinner", w / 2 - (displayText.Length * font * 0.3) - 10 - iconOffset, h / 2, 12));
+                }
+                else if (hasIcon)
+                {
+                    var icoX = iconRight ? w / 2 + (displayText.Length * font * 0.3) + 10 : w / 2 - (displayText.Length * font * 0.3) - 10;
+                    sb.Append(Icon(icon, icoX, h / 2, 12));
+                    textX = iconRight ? w / 2 - 10 : w / 2 + 10;
+                }
+                sb.Append(Text(displayText, textX, h / 2, font, textColor, "middle", "500"));
+                if (disabled || loading) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -152,8 +179,12 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     opts: ["primary","secondary","ghost","danger","outline","link","default"], cat: "Appearance"),
                 Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg"], cat: "Appearance"),
                 Prop("icon", "Icon", PropType.Icon, cat: "Content"),
+                Prop("iconRight", "Icon Right", PropType.Bool, false, cat: "Appearance"),
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
                 Prop("loading", "Loading", PropType.Bool, false, cat: "Behavior"),
+                Prop("loadingText", "Loading Text", PropType.String, "", cat: "Content"),
+                Prop("block", "Block", PropType.Bool, false, cat: "Appearance"),
+                Prop("type", "Type", PropType.Enum, "button", opts: ["button","submit","reset"], cat: "Behavior"),
             ],
             sizePresets: ButtonSizes);
 
@@ -204,6 +235,92 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    // AVATARS
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatAvatars = "Avatars";
+
+    private static IEnumerable<WireframeComponentDef> Avatars()
+    {
+        yield return Def("TmAvatar", CatAvatars, "Avatar", "user", 40, 40,
+            (el, b) =>
+            {
+                var size = el.Props.GetString("size", "md");
+                var shape = el.Props.GetString("shape", "circle");
+                var color = el.Props.GetString("color", "gray");
+                var name = el.Props.GetString("name", "AB");
+                var sb = new StringBuilder();
+                var dim = size switch { "xs" => 24.0, "sm" => 32.0, "lg" => 48.0, "xl" => 56.0, "xxl" => 64.0, _ => 40.0 };
+                var rx = shape == "square" ? 6.0 : dim / 2;
+                var fill = color switch
+                {
+                    "blue" => "#dbeafe",
+                    "green" => "#dcfce7",
+                    "purple" => "#f3e8ff",
+                    "red" => "#fee2e2",
+                    "yellow" => "#fef9c3",
+                    _ => "#e5e7eb"
+                };
+                var textColor = color switch
+                {
+                    "blue" => "#2563eb",
+                    "green" => "#16a34a",
+                    "purple" => "#9333ea",
+                    "red" => "#dc2626",
+                    "yellow" => "#ca8a04",
+                    _ => "#6b7280"
+                };
+                sb.Append($"<rect x='0' y='0' width='{F(dim)}' height='{F(dim)}' rx='{F(rx)}' fill='{fill}' stroke='{Border}' stroke-width='1'></rect>");
+                sb.Append(Text(name, dim / 2, dim / 2, dim * 0.35, textColor, "middle"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("name", "Name", PropType.String, "AB", cat: "Content"),
+                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg","xl","xxl"], cat: "Appearance"),
+                Prop("shape", "Shape", PropType.Enum, "circle", opts: ["circle","square"], cat: "Appearance"),
+                Prop("color", "Color", PropType.Enum, "gray", opts: ["gray","blue","green","purple","red","yellow"], cat: "Appearance"),
+            ],
+            sizePresets: new Dictionary<string, (double, double)>
+            {
+                ["xs"] = (24, 24),
+                ["sm"] = (32, 32),
+                ["md"] = (40, 40),
+                ["lg"] = (48, 48),
+                ["xl"] = (56, 56),
+                ["xxl"] = (64, 64),
+            });
+
+        yield return Def("TmAvatarGroup", CatAvatars, "Avatar Group", "users", 120, 40,
+            (el, b) =>
+            {
+                var count = el.Props.GetInt("count", 3);
+                var max = el.Props.GetInt("max", 3);
+                var size = el.Props.GetString("size", "md");
+                var dim = size switch { "xs" => 24.0, "sm" => 32.0, "lg" => 48.0, "xl" => 56.0, "xxl" => 64.0, _ => 40.0 };
+                var overlap = dim * 0.35;
+                var sb = new StringBuilder();
+                var visible = Math.Min(count, max);
+                for (var i = 0; i < visible; i++)
+                {
+                    var x = i * (dim - overlap);
+                    sb.Append($"<circle cx='{F(x + dim / 2)}' cy='{F(dim / 2)}' r='{F(dim / 2)}' fill='{FillDark}' stroke='white' stroke-width='2'></circle>");
+                    sb.Append(Text(((char)('A' + i)).ToString(), x + dim / 2, dim / 2, dim * 0.35, ColorText, "middle"));
+                }
+                if (count > max)
+                {
+                    var x = visible * (dim - overlap);
+                    sb.Append($"<circle cx='{F(x + dim / 2)}' cy='{F(dim / 2)}' r='{F(dim / 2)}' fill='{ColorMuted}' stroke='white' stroke-width='2'></circle>");
+                    sb.Append(Text($"+{count - max}", x + dim / 2, dim / 2, dim * 0.28, "white", "middle"));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("count", "Count", PropType.Int, 3, cat: "State"),
+                Prop("max", "Max", PropType.Int, 3, cat: "Appearance"),
+                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg","xl","xxl"], cat: "Appearance"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     // INPUTS
     // ══════════════════════════════════════════════════════════════════════════
     private const string CatInputs = "Inputs";
@@ -218,11 +335,44 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var req = el.Props.GetBool("required");
                 var dis = el.Props.GetBool("disabled");
                 var ro  = el.Props.GetBool("readOnly");
-                Svg(b, InputField(el.W, 36, lbl, ph, req, disabled: dis, readOnly: ro));
+                var type = el.Props.GetString("type", "text");
+                var maxLength = el.Props.GetInt("maxLength", 0);
+                var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
+                if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
+                var rectFill = dis ? FillDark : Fill;
+                var rectBorder = ro ? "none" : Border;
+                sb.Append(Rect(0, 0, el.W, 36, rectFill, rectBorder));
+                if (ro)
+                    sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='36' fill='none' stroke='{Border}' stroke-width='1' stroke-dasharray='4 2' rx='3'></rect>");
+                var placeholderText = type switch
+                {
+                    "password" => "••••••",
+                    "email" => "name@example.com",
+                    "tel" => "+1 234 567 890",
+                    "url" => "https://example.com",
+                    _ => ph
+                };
+                var textX = 8.0;
+                if (type == "password")
+                {
+                    sb.Append(Icon("lock", el.W - 18, 18, 14));
+                }
+                else if (type == "email")
+                {
+                    sb.Append(Text("@", el.W - 18, 18, 12, ColorMuted, "middle"));
+                }
+                sb.Append(Text(placeholderText, textX, 18, 10, ColorLight));
+                if (maxLength > 0)
+                    sb.Append(Text($"0/{maxLength}", el.W - 8, 18, 9, ColorLight, "end"));
+                if (dis) sb.Append("</g>");
+                Svg(b, sb.ToString());
             },
             [
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
                 Prop("placeholder", "Placeholder", PropType.String, "Enter text...", cat: "Content"),
+                Prop("type", "Type", PropType.Enum, "text", opts: ["text","password","email","tel","url"], cat: "Behavior"),
+                Prop("maxLength", "Max Length", PropType.Int, 0, cat: "Behavior"),
                 Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
                 Prop("readOnly", "Read Only", PropType.Bool, false, cat: "Behavior"),
@@ -235,12 +385,18 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var ph = el.Props.GetString("placeholder", "Enter text...");
                 var req = el.Props.GetBool("required");
                 var dis = el.Props.GetBool("disabled");
+                var autoGrow = el.Props.GetBool("autoGrow", false);
                 var h = el.H - 16;
                 var sb = new StringBuilder();
                 if (dis) sb.Append("<g opacity='0.45'>");
                 if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
                 sb.Append(Rect(0, 0, el.W, h, dis ? FillDark : Fill, Border));
                 sb.Append(Text(ph, 8, 16, 10, ColorLight));
+                if (autoGrow)
+                {
+                    sb.Append($"<line x1='{F(el.W - 16)}' y1='{F(h - 4)}' x2='{F(el.W - 4)}' y2='{F(h - 16)}' stroke='{ColorLight}' stroke-width='1.5' stroke-linecap='round'></line>");
+                    sb.Append($"<line x1='{F(el.W - 10)}' y1='{F(h - 4)}' x2='{F(el.W - 4)}' y2='{F(h - 10)}' stroke='{ColorLight}' stroke-width='1.5' stroke-linecap='round'></line>");
+                }
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
@@ -248,6 +404,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
                 Prop("placeholder", "Placeholder", PropType.String, "Enter text...", cat: "Content"),
                 Prop("rows", "Rows", PropType.Int, 3, cat: "Appearance"),
+                Prop("autoGrow", "Auto Grow", PropType.Bool, false, cat: "Behavior"),
                 Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
             ]);
@@ -320,11 +477,14 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Checkbox");
                 var chk = el.Props.GetBool("checked");
+                var indeterminate = el.Props.GetBool("indeterminate");
                 var dis = el.Props.GetBool("disabled");
                 var sb = new StringBuilder();
                 if (dis) sb.Append("<g opacity='0.45'>");
-                sb.Append(Rect(0, 0, 16, 16, chk ? FillAccent : Fill, chk ? "#93c5fd" : Border, 3));
-                if (chk) sb.Append(Icon("check", 8, 8, 10));
+                var isChecked = chk && !indeterminate;
+                sb.Append(Rect(0, 0, 16, 16, isChecked ? FillAccent : Fill, isChecked ? "#93c5fd" : Border, 3));
+                if (isChecked) sb.Append(Icon("check", 8, 8, 10));
+                else if (indeterminate) sb.Append(HLine(4, 12, 8, Accent));
                 sb.Append(Text(lbl, 22, 8, 11));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
@@ -332,6 +492,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("label", "Label", PropType.String, "Checkbox", cat: "Content"),
                 Prop("checked", "Checked", PropType.Bool, false, cat: "State"),
+                Prop("indeterminate", "Indeterminate", PropType.Bool, false, cat: "State"),
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
             ]);
 
@@ -428,11 +589,36 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var ph = el.Props.GetString("placeholder", "Select option...");
                 var req = el.Props.GetBool("required");
                 var dis = el.Props.GetBool("disabled");
-                Svg(b, InputField(el.W, 36, lbl, ph, req, hasChevron: true, disabled: dis));
+                var multiple = el.Props.GetBool("multiple", false);
+                var clearable = el.Props.GetBool("clearable", false);
+                var h = 36.0;
+                var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
+                if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
+                sb.Append(Rect(0, 0, el.W, h, dis ? FillDark : Fill, Border));
+                if (multiple)
+                {
+                    sb.Append(Pill(6, 8, 50, 20, FillAccent, "#93c5fd"));
+                    sb.Append(Text("Item 1", 11, 18, 9, Accent));
+                    sb.Append(Icon("x", 50, 18, 8));
+                    sb.Append(Text("+2", 64, 18, 9, ColorMuted));
+                    sb.Append(ChevronDown(el.W - 16, h / 2 - 4));
+                }
+                else
+                {
+                    sb.Append(Text(ph, 8, h / 2, 10, ColorLight));
+                    if (clearable)
+                        sb.Append(Icon("x", el.W - 22, h / 2, 10));
+                    sb.Append(ChevronDown(el.W - (clearable ? 34 : 16), h / 2 - 4));
+                }
+                if (dis) sb.Append("</g>");
+                Svg(b, sb.ToString());
             },
             [
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
                 Prop("placeholder", "Placeholder", PropType.String, "Select option...", cat: "Content"),
+                Prop("multiple", "Multiple", PropType.Bool, false, cat: "Behavior"),
+                Prop("clearable", "Clearable", PropType.Bool, false, cat: "Behavior"),
                 Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
             ]);
@@ -531,6 +717,72 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("label", "Label", PropType.String, "Expression", cat: "Content"),
                 Prop("placeholder", "Placeholder", PropType.String, "{expression}", cat: "Content"),
             ]);
+
+        yield return Def("TmPasswordStrengthIndicator", CatInputs, "Password Strength", "shield", 240, 48,
+            (el, b) =>
+            {
+                var strength = el.Props.GetInt("strength", 3);
+                strength = Math.Clamp(strength, 0, 5);
+                var sb = new StringBuilder();
+                var colors = new[] { "#ef4444", "#f97316", "#eab308", "#84cc16", "#22c55e", "#16a34a" };
+                var fill = colors[strength];
+                var label = strength switch { 0 or 1 => "Very weak", 2 => "Weak", 3 => "Medium", 4 => "Strong", _ => "Very strong" };
+                sb.Append(Rect(0, 0, el.W, 8, FillDark, "none", 4));
+                var fillW = el.W * (strength / 5.0);
+                sb.Append($"<rect x='0' y='0' width='{F(fillW)}' height='8' rx='4' fill='{fill}'></rect>");
+                sb.Append(Text(label, 0, 24, 11, fill, "start", "500"));
+                sb.Append(Text("Use 8+ chars with letters and numbers", 0, 38, 10, ColorMuted, "start"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("strength", "Strength", PropType.Int, 3, cat: "State"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TAGS
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatTags = "Tags";
+
+    private static IEnumerable<WireframeComponentDef> Tags()
+    {
+        yield return Def("TmTagPicker", CatTags, "Tag Picker", "tag", 240, 40,
+            (el, b) =>
+            {
+                var tags = el.Props.GetStringList("tags");
+                if (tags.Length == 0) tags = ["Tag 1", "Tag 2"];
+                var allowCreate = el.Props.GetBool("allowCreate", false);
+                var disabled = el.Props.GetBool("disabled");
+                var h = allowCreate ? 70.0 : 40.0;
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                var x = 0.0;
+                foreach (var tag in tags.Take(4))
+                {
+                    var tw = tag.Length * 6.5 + 24;
+                    sb.Append(Pill(x, 8, tw, 24, FillAccent, "#93c5fd"));
+                    sb.Append(Text(tag, x + 10, 20, 10, Accent));
+                    sb.Append(Text("×", x + tw - 10, 20, 10, ColorMuted, "middle"));
+                    x += tw + 6;
+                }
+                if (!disabled)
+                {
+                    sb.Append(Pill(x, 8, 28, 24, FillDark, Border));
+                    sb.Append(Text("+", x + 14, 20, 12, ColorText, "middle"));
+                }
+                if (allowCreate && !disabled)
+                {
+                    sb.Append(Rect(0, 36, el.W, 26, Fill, Border));
+                    sb.Append(Text("Create new tag...", 8, 49, 10, ColorLight));
+                }
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("tags", "Tags", PropType.StringList, cat: "Content"),
+                Prop("allowCreate", "Allow Create", PropType.Bool, false, cat: "Behavior"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+            ]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -546,16 +798,20 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 {
                     var lbl = el.Props.GetString("label", defaultLabel);
                     var req = el.Props.GetBool("required");
+                    var format = el.Props.GetString("format", "dd.mm.yyyy");
                     var h = 36.0;
                     var sb = new StringBuilder();
                     if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
                     sb.Append(Rect(0, 0, el.W, h));
-                    sb.Append(Text("dd.mm.yyyy", 8, h / 2, 10, ColorLight));
+                    sb.Append(Text(format, 8, h / 2, 10, ColorLight));
                     sb.Append(Icon(icon, el.W - 18, h / 2, h * 0.5));
                     Svg(b, sb.ToString());
                 },
                 [
                     Prop("label", "Label", PropType.String, defaultLabel, cat: "Content"),
+                    Prop("format", "Format", PropType.String, "dd.mm.yyyy", cat: "Appearance"),
+                    Prop("min", "Min", PropType.String, "", cat: "Behavior"),
+                    Prop("max", "Max", PropType.String, "", cat: "Behavior"),
                     Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
                     Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
                 ]);
@@ -649,6 +905,136 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
             ]);
+
+        yield return Def("TmCalendarView", CatPickers, "Calendar View", "calendar", 280, 260,
+            (el, b) =>
+            {
+                var month = el.Props.GetString("month", "January");
+                var year = el.Props.GetInt("year", 2025);
+                var selectedDay = el.Props.GetInt("selectedDay", 15);
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
+                sb.Append(Rect(0, 0, el.W, 36, FillDark, "none", 8));
+                sb.Append(HLine(0, el.W, 36));
+                sb.Append(Text($"{month} {year}", el.W / 2, 18, 12, ColorText, "middle", "500"));
+                sb.Append(Text("‹", 20, 18, 14, ColorMuted, "middle"));
+                sb.Append(Text("›", el.W - 20, 18, 14, ColorMuted, "middle"));
+                var days = new[] { "Mo", "Tu", "We", "Th", "Fr", "Sa", "Su" };
+                var cellW = el.W / 7;
+                for (var i = 0; i < 7; i++)
+                {
+                    sb.Append(Text(days[i], i * cellW + cellW / 2, 52, 9, ColorMuted, "middle"));
+                }
+                for (var r = 0; r < 6; r++)
+                {
+                    for (var c = 0; c < 7; c++)
+                    {
+                        var day = r * 7 + c + 1;
+                        if (day > 31) break;
+                        var cx = c * cellW + cellW / 2;
+                        var cy = 68 + r * 30;
+                        if (day == selectedDay)
+                            sb.Append(Pill(cx - 14, cy - 10, 28, 20, FillAccent, "#93c5fd"));
+                        sb.Append(Text(day.ToString(), cx, cy, 10, day == selectedDay ? Accent : ColorText, "middle"));
+                    }
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("month", "Month", PropType.String, "January", cat: "Content"),
+                Prop("year", "Year", PropType.Int, 2025, cat: "Content"),
+                Prop("selectedDay", "Selected Day", PropType.Int, 15, cat: "State"),
+            ]);
+
+        yield return Def("TmCalendarGrid", CatPickers, "Calendar Grid", "grid", 240, 200,
+            (el, b) =>
+            {
+                var month = el.Props.GetString("month", "January");
+                var year = el.Props.GetInt("year", 2025);
+                var sb = new StringBuilder();
+                sb.Append(Text($"{month} {year}", el.W / 2, 10, 11, ColorText, "middle", "500"));
+                var cellW = el.W / 7;
+                var days = new[] { "M", "T", "W", "T", "F", "S", "S" };
+                for (var i = 0; i < 7; i++)
+                    sb.Append(Text(days[i], i * cellW + cellW / 2, 28, 9, ColorMuted, "middle"));
+                for (var r = 0; r < 6; r++)
+                {
+                    sb.Append(HLine(0, el.W, 40 + r * 26));
+                    for (var c = 0; c < 7; c++)
+                    {
+                        var day = r * 7 + c + 1;
+                        if (day > 31) break;
+                        var cx = c * cellW + cellW / 2;
+                        var cy = 52 + r * 26;
+                        sb.Append(Text(day.ToString(), cx, cy, 10, ColorText, "middle"));
+                    }
+                }
+                sb.Append(HLine(0, el.W, el.H));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("month", "Month", PropType.String, "January", cat: "Content"),
+                Prop("year", "Year", PropType.Int, 2025, cat: "Content"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // DROPDOWNS
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatDropdowns = "Dropdowns";
+
+    private static IEnumerable<WireframeComponentDef> Dropdowns()
+    {
+        yield return Def("TmDropdown", CatDropdowns, "Dropdown", "chevron-down", 160, 36,
+            (el, b) =>
+            {
+                var text = el.Props.GetString("text", "Options");
+                var icon = el.Props.GetString("icon");
+                var disabled = el.Props.GetBool("disabled");
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
+                var textX = 12.0;
+                if (!string.IsNullOrEmpty(icon))
+                {
+                    sb.Append(Icon(icon, 16, el.H / 2, 14));
+                    textX = 32;
+                }
+                sb.Append(Text(text, textX, el.H / 2, 11, ColorText, "start"));
+                sb.Append(ChevronDown(el.W - 18, el.H / 2 - 4));
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("text", "Text", PropType.String, "Options", cat: "Content"),
+                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+            ]);
+
+        yield return Def("TmDropdownItem", CatDropdowns, "Dropdown Item", "menu", 160, 32,
+            (el, b) =>
+            {
+                var label = el.Props.GetString("label", "Item");
+                var icon = el.Props.GetString("icon");
+                var disabled = el.Props.GetBool("disabled");
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                sb.Append(Rect(0, 0, el.W, el.H, "none", "none", 0));
+                var textX = 12.0;
+                if (!string.IsNullOrEmpty(icon))
+                {
+                    sb.Append(Icon(icon, 16, el.H / 2, 14));
+                    textX = 36;
+                }
+                sb.Append(Text(label, textX, el.H / 2, 11, ColorText, "start"));
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("label", "Label", PropType.String, "Item", cat: "Content"),
+                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+            ]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -664,14 +1050,27 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var title      = el.Props.GetString("title", "Card Title");
                 var showHeader = el.Props.GetBool("showHeader", true);
                 var showFooter = el.Props.GetBool("showFooter", false);
+                var variant    = el.Props.GetString("variant", "default");
+                var headerIcon = el.Props.GetString("headerIcon");
                 var sb = new StringBuilder();
-                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
+                var cardFill = variant == "outlined" ? "none" : Fill;
+                var cardBorder = variant == "elevated" ? Border : (variant == "outlined" ? BorderStrong : Border);
+                var cardStrokeWidth = variant == "outlined" ? 1.5 : 1;
+                sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(el.H)}' rx='8' fill='{cardFill}' stroke='{cardBorder}' stroke-width='{F(cardStrokeWidth)}'></rect>");
+                if (variant == "elevated")
+                    sb.Append($"<rect x='2' y='2' width='{F(el.W - 4)}' height='{F(el.H - 4)}' rx='7' fill='none' stroke='{FillDark}' stroke-width='0.5' opacity='0.5'></rect>");
                 if (showHeader)
                 {
                     sb.Append(Rect(0, 0, el.W, 40, FillDark, "none", 8));
                     sb.Append(Rect(0, 32, el.W, 8, FillDark, "none", 0));
                     sb.Append(HLine(0, el.W, 40));
-                    sb.Append(Text(title, 12, 20, 12, ColorText, "start", "500"));
+                    var titleX = 12.0;
+                    if (!string.IsNullOrEmpty(headerIcon))
+                    {
+                        sb.Append(Icon(headerIcon, 24, 20, 14));
+                        titleX = 38.0;
+                    }
+                    sb.Append(Text(title, titleX, 20, 12, ColorText, "start", "500"));
                 }
                 if (showFooter)
                 {
@@ -699,6 +1098,8 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("title", "Title", PropType.String, "Card Title", cat: "Content"),
                 Prop("showHeader", "Show Header", PropType.Bool, true, cat: "Appearance"),
                 Prop("showFooter", "Show Footer", PropType.Bool, false, cat: "Appearance"),
+                Prop("variant", "Variant", PropType.Enum, "default", opts: ["default","elevated","outlined"], cat: "Appearance"),
+                Prop("headerIcon", "Header Icon", PropType.Icon, cat: "Content"),
                 Prop("primaryActionLabel", "Primary Action Label", PropType.String, "Save", cat: "Content"),
                 Prop("secondaryActionLabel", "Secondary Action Label", PropType.String, "Cancel", cat: "Content"),
                 Prop("showPrimaryAction", "Show Primary Action", PropType.Bool, true, cat: "Appearance"),
@@ -811,6 +1212,28 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("chips", "Chips", PropType.StringList, cat: "Content"),
             ]);
 
+        yield return Def("TmFilterChip", CatDataDisplay, "Filter Chip", "filter", 120, 28,
+            (el, b) =>
+            {
+                var lbl = el.Props.GetString("label", "Filter");
+                var active = el.Props.GetBool("active", true);
+                var removable = el.Props.GetBool("removable", true);
+                var sb = new StringBuilder();
+                var fill = active ? FillAccent : FillDark;
+                var border = active ? "#93c5fd" : Border;
+                var textColor = active ? Accent : ColorText;
+                sb.Append(Pill(0, 0, el.W, el.H, fill, border));
+                sb.Append(Icon("filter", 14, el.H / 2, 10));
+                sb.Append(Text(lbl, 28, el.H / 2, 10, textColor));
+                if (removable) sb.Append(Icon("x", el.W - 10, el.H / 2, 8));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("label", "Label", PropType.String, "Filter", cat: "Content"),
+                Prop("active", "Active", PropType.Bool, true, cat: "State"),
+                Prop("removable", "Removable", PropType.Bool, true, cat: "Behavior"),
+            ]);
+
         yield return Def("TmAccordion", CatDataDisplay, "Accordion", "chevrons-down", 280, 120,
             (el, b) =>
             {
@@ -851,6 +1274,26 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("title", "Title", PropType.String, "No data", cat: "Content"),
                 Prop("description", "Description", PropType.String, "There is nothing to display here.", cat: "Content"),
                 Prop("actionLabel", "Action Label", PropType.String, "Add item", cat: "Content"),
+            ]);
+
+        yield return Def("TmChangeDiff", CatDataDisplay, "Change Diff", "git-commit", 400, 120,
+            (el, b) =>
+            {
+                var oldValue = el.Props.GetString("oldValue", "Old value");
+                var newValue = el.Props.GetString("newValue", "New value");
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
+                // Old
+                sb.Append(Rect(8, 8, el.W / 2 - 12, el.H - 16, "#fee2e2", "#fca5a5", 4));
+                sb.Append(Text("- " + oldValue, 16, el.H / 2, 10, "#dc2626"));
+                // New
+                sb.Append(Rect(el.W / 2 + 4, 8, el.W / 2 - 12, el.H - 16, "#dcfce7", "#86efac", 4));
+                sb.Append(Text("+ " + newValue, el.W / 2 + 12, el.H / 2, 10, "#16a34a"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("oldValue", "Old Value", PropType.String, "Old value", cat: "Content"),
+                Prop("newValue", "New Value", PropType.String, "New value", cat: "Content"),
             ]);
 
         yield return Def("TmKanbanBoard", CatDataDisplay, "Kanban Board", "columns", 480, 320,
@@ -922,19 +1365,26 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "");
+                var emptyTitle = el.Props.GetString("emptyTitle", "");
                 var cols = el.Props.GetStringList("columns");
                 if (cols.Length == 0) cols = ["Column 1", "Column 2", "Column 3", "Column 4"];
                 var rows = el.Props.GetInt("rows", 5);
                 var showSearch = el.Props.GetBool("showSearch", true);
                 var showPagination = el.Props.GetBool("showPagination", true);
+                var scrollMode = el.Props.GetString("scrollMode", "pagination");
                 var showBulkActions = el.Props.GetBool("showBulkActions", false);
                 var bulkActions = el.Props.GetStringList("bulkActions");
                 if (bulkActions.Length == 0) bulkActions = ["Delete", "Export"];
+                var selectable = el.Props.GetBool("selectable", false);
+                var showColumnPicker = el.Props.GetBool("showColumnPicker", false);
+                var showGrouping = el.Props.GetBool("showGrouping", false);
+                var showFilters = el.Props.GetBool("showFilters", false);
+                var isEmpty = rows == 0 && !string.IsNullOrEmpty(emptyTitle);
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
 
                 var top = 0.0;
-                if (!string.IsNullOrEmpty(title) || showSearch)
+                if (!string.IsNullOrEmpty(title) || showSearch || showColumnPicker)
                 {
                     sb.Append(Rect(0, 0, el.W, 40, FillDark, "none", 4));
                     sb.Append(HLine(0, el.W, 40));
@@ -942,6 +1392,11 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                         sb.Append(Text(title, 12, 20, 12, ColorText, "start", "500"));
                     if (showSearch)
                         sb.Append(InputField(160, 26, "", "Search...", hasIcon: true));
+                    if (showColumnPicker)
+                    {
+                        sb.Append(Rect(el.W - 110, 7, 100, 26, Fill, Border, 4));
+                        sb.Append(Text("Columns ▾", el.W - 60, 20, 10, ColorMuted, "middle"));
+                    }
                     top = 40;
                 }
 
@@ -962,46 +1417,93 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     top += barH;
                 }
 
-                var paginH = showPagination ? 36.0 : 0;
+                var paginH = (showPagination && scrollMode == "pagination") ? 36.0 : 0;
                 var tableH = el.H - top - paginH;
-                var colW = el.W / cols.Length;
-                var rowH = tableH / (rows + 1);
+                var checkboxW = selectable ? 36.0 : 0;
+                var contentW = el.W - checkboxW;
+                var colW = contentW / cols.Length;
+                var rowH = tableH / (rows + 1 + (showFilters ? 1 : 0));
+
+                // Grouping row
+                if (showGrouping)
+                {
+                    sb.Append(Rect(0, top, el.W, rowH, FillAccent, "none", 0));
+                    sb.Append(HLine(0, el.W, top + rowH));
+                    sb.Append(Text("▾ Group by: Category", 8, top + rowH / 2, 10, Accent, "start", "500"));
+                    top += rowH;
+                }
 
                 // Header
                 sb.Append(Rect(0, top, el.W, rowH, FillDark, "none", 0));
                 sb.Append(HLine(0, el.W, top + rowH));
+                var colOffset = selectable ? checkboxW : 0;
+                if (selectable)
+                    sb.Append(Rect(10, top + rowH / 2 - 6, 12, 12, FillDark, Border, 2));
                 for (var c = 0; c < cols.Length; c++)
-                    sb.Append(Text(cols[c], c * colW + 8, top + rowH / 2, 10, ColorMuted, "start", "500"));
+                    sb.Append(Text(cols[c], colOffset + c * colW + 8, top + rowH / 2, 10, ColorMuted, "start", "500"));
+
+                // Filter row
+                if (showFilters)
+                {
+                    var fr = top + rowH;
+                    sb.Append(HLine(0, el.W, fr + rowH));
+                    for (var c = 0; c < cols.Length; c++)
+                    {
+                        if (c > 0 || selectable) sb.Append(VLine(colOffset + c * colW, fr, fr + rowH));
+                        sb.Append(Rect(colOffset + c * colW + 8, fr + 6, colW - 16, rowH - 12, Fill, Border, 3));
+                    }
+                    if (selectable)
+                        sb.Append(VLine(checkboxW, fr, fr + rowH));
+                    top += rowH;
+                }
 
                 // Rows
                 for (var r = 0; r < rows; r++)
                 {
                     var ry = top + rowH * (r + 1);
                     sb.Append(HLine(0, el.W, ry + rowH));
+                    if (selectable)
+                        sb.Append(Rect(10, ry + rowH / 2 - 6, 12, 12, FillDark, Border, 2));
                     for (var c = 0; c < cols.Length; c++)
                     {
-                        if (c > 0) sb.Append(VLine(c * colW, ry, ry + rowH));
-                        sb.Append(Rect(c * colW + 6, ry + rowH / 2 - 4, colW * 0.65, 8, FillDark, "none", 2));
+                        if (c > 0 || selectable) sb.Append(VLine(colOffset + c * colW, ry, ry + rowH));
+                        sb.Append(Rect(colOffset + c * colW + 6, ry + rowH / 2 - 4, colW * 0.65, 8, FillDark, "none", 2));
                     }
                 }
 
+                if (isEmpty)
+                {
+                    sb.Append(Text(emptyTitle, el.W / 2, top + tableH / 2 - 8, 12, ColorMuted, "middle", "500"));
+                    sb.Append(Text("No data available", el.W / 2, top + tableH / 2 + 10, 10, ColorLight, "middle"));
+                }
+
                 // Pagination
-                if (showPagination)
+                if (showPagination && scrollMode == "pagination")
                 {
                     sb.Append(HLine(0, el.W, el.H - paginH));
                     sb.Append(Text("← 1  2  3  4  5  →", el.W / 2, el.H - paginH / 2, 10, ColorMuted, "middle"));
+                }
+                else if (scrollMode == "virtualized")
+                {
+                    sb.Append(Text("↕ Virtualized", el.W - 50, el.H - 12, 9, ColorLight, "middle"));
                 }
 
                 Svg(b, sb.ToString());
             },
             [
                 Prop("title", "Title", PropType.String, "", cat: "Content"),
+                Prop("emptyTitle", "Empty Title", PropType.String, "", cat: "Content"),
                 Prop("columns", "Columns", PropType.StringList, cat: "Content"),
                 Prop("rows", "Rows", PropType.Int, 5, cat: "Appearance"),
                 Prop("showSearch", "Show Search", PropType.Bool, true, cat: "Appearance"),
                 Prop("showPagination", "Show Pagination", PropType.Bool, true, cat: "Appearance"),
+                Prop("scrollMode", "Scroll Mode", PropType.Enum, "pagination", opts: ["pagination","virtualized","none"], cat: "Appearance"),
                 Prop("showBulkActions", "Show Bulk Actions", PropType.Bool, false, cat: "Appearance"),
                 Prop("bulkActions", "Bulk Actions", PropType.StringList, cat: "Content"),
+                Prop("selectable", "Selectable", PropType.Bool, false, cat: "Appearance"),
+                Prop("showColumnPicker", "Show Column Picker", PropType.Bool, false, cat: "Appearance"),
+                Prop("showGrouping", "Show Grouping", PropType.Bool, false, cat: "Appearance"),
+                Prop("showFilters", "Show Filters", PropType.Bool, false, cat: "Appearance"),
             ]);
 
         yield return Def("TmPagination", CatDataTable, "Pagination", "more-horizontal", 240, 36,
@@ -1037,6 +1539,72 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("selectedCount", "Selected Count", PropType.Int, 3, cat: "State"),
             ]);
+
+        yield return Def("TmColumnFilter", CatDataTable, "Column Filter", "filter", 180, 120,
+            (el, b) =>
+            {
+                var columnName = el.Props.GetString("columnName", "Name");
+                var filterType = el.Props.GetString("filterType", "text");
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
+                sb.Append(Rect(0, 0, el.W, 28, FillDark, "none", 6));
+                sb.Append(HLine(0, el.W, 28));
+                sb.Append(Text($"Filter: {columnName}", 8, 14, 10, ColorText, "start", "500"));
+                sb.Append(Rect(8, 36, el.W - 16, 28, Fill, Border, 4));
+                sb.Append(Text(filterType == "select" ? "Select..." : "Contains...", 14, 50, 10, ColorLight));
+                sb.Append(Rect(8, el.H - 34, 76, 24, FillAccent, "#93c5fd", 4));
+                sb.Append(Text("Apply", 46, el.H - 22, 9, Accent, "middle"));
+                sb.Append(Rect(96, el.H - 34, 76, 24, Fill, Border, 4));
+                sb.Append(Text("Clear", 134, el.H - 22, 9, ColorMuted, "middle"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("columnName", "Column Name", PropType.String, "Name", cat: "Content"),
+                Prop("filterType", "Filter Type", PropType.Enum, "text", opts: ["text","select","date","number"], cat: "Appearance"),
+            ]);
+
+        yield return Def("TmColumnPicker", CatDataTable, "Column Picker", "columns", 160, 160,
+            (el, b) =>
+            {
+                var columns = el.Props.GetStringList("columns");
+                if (columns.Length == 0) columns = ["ID", "Name", "Email", "Status"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
+                sb.Append(Rect(0, 0, el.W, 26, FillDark, "none", 6));
+                sb.Append(HLine(0, el.W, 26));
+                sb.Append(Text("Columns", 8, 13, 10, ColorText, "start", "500"));
+                for (var i = 0; i < columns.Length && i < 5; i++)
+                {
+                    var y = 32 + i * 24;
+                    sb.Append(Rect(8, y, 12, 12, FillDark, Border, 2));
+                    sb.Append(Text(columns[i], 26, y + 6, 10, ColorText));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("columns", "Columns", PropType.StringList, cat: "Content"),
+            ]);
+
+        yield return Def("TmViewManager", CatDataTable, "View Manager", "save", 200, 40,
+            (el, b) =>
+            {
+                var viewName = el.Props.GetString("viewName", "Default view");
+                var showSave = el.Props.GetBool("showSaveButton", true);
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, 130, el.H, Fill, Border, 4));
+                sb.Append(Text(viewName, 10, el.H / 2, 10, ColorText));
+                sb.Append(Text("▾", 118, el.H / 2, 10, ColorMuted, "middle"));
+                if (showSave)
+                {
+                    sb.Append(Rect(138, 4, 60, 32, FillAccent, "#93c5fd", 4));
+                    sb.Append(Text("Save", 168, el.H / 2, 10, Accent, "middle"));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("viewName", "View Name", PropType.String, "Default view", cat: "Content"),
+                Prop("showSaveButton", "Show Save Button", PropType.Bool, true, cat: "Appearance"),
+            ]);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1050,7 +1618,11 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             (el, b) =>
             {
                 var msg = el.Props.GetString("message", "This is an alert message.");
+                var title = el.Props.GetString("title");
                 var variant = el.Props.GetString("variant", "info");
+                var visualVariant = el.Props.GetString("visualVariant", "soft");
+                var iconOverride = el.Props.GetString("icon");
+                var h = string.IsNullOrEmpty(title) ? 56.0 : 72.0;
                 var fill = variant switch
                 {
                     "success" => "#dcfce7", "warning" => "#fef9c3",
@@ -1061,16 +1633,48 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     "success" => "#86efac", "warning" => "#fde047",
                     "danger" or "error" => "#fca5a5", _ => "#93c5fd"
                 };
+                var strong = variant switch
+                {
+                    "success" => "#16a34a", "warning" => "#ca8a04",
+                    "danger" or "error" => "#dc2626", _ => Accent
+                };
                 var sb = new StringBuilder();
-                sb.Append(Rect(0, 0, el.W, el.H, fill, border, 6));
-                sb.Append(Text("ⓘ", 14, el.H / 2, 14, BorderStrong, "middle"));
-                sb.Append(Text(msg, 30, el.H / 2, 11));
+                if (visualVariant == "filled")
+                {
+                    fill = strong;
+                    border = strong;
+                }
+                else if (visualVariant == "outlined")
+                {
+                    fill = "none";
+                }
+                var textColor = visualVariant == "filled" ? "white" : ColorText;
+                var iconColor = visualVariant == "filled" ? "white" : strong;
+                sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(h)}' rx='6' fill='{fill}' stroke='{border}' stroke-width='{F(visualVariant == "outlined" ? 1.5 : 1)}'></rect>");
+                if (visualVariant == "filled")
+                    sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(h)}' rx='6' fill='{strong}' opacity='0.15'></rect>");
+                var icon = !string.IsNullOrEmpty(iconOverride) ? iconOverride : (variant == "success" ? "check" : (variant == "danger" ? "alert-circle" : "info"));
+                sb.Append(Icon(icon, 18, h / 2, 16));
+                // Recolor icon by drawing a colored circle behind or overlay? We'll just use generic icon + colored text for simplicity
+                if (!string.IsNullOrEmpty(title))
+                {
+                    sb.Append(Text(title, 38, 22, 12, textColor, "start", "600"));
+                    sb.Append(Text(msg, 38, 46, 10, visualVariant == "filled" ? "rgba(255,255,255,0.9)" : ColorMuted));
+                }
+                else
+                {
+                    sb.Append(Text(msg, 38, h / 2, 11, textColor));
+                }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("message", "Message", PropType.String, "This is an alert message.", cat: "Content"),
+                Prop("title", "Title", PropType.String, "", cat: "Content"),
                 Prop("variant", "Variant", PropType.Enum, "info",
                     opts: ["info","success","warning","danger"], cat: "Appearance"),
+                Prop("visualVariant", "Visual Variant", PropType.Enum, "soft",
+                    opts: ["soft","filled","outlined"], cat: "Appearance"),
+                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
                 Prop("dismissible", "Dismissible", PropType.Bool, true, cat: "Behavior"),
             ]);
 
@@ -1222,6 +1826,32 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     opts: ["top","bottom","left","right"], cat: "Appearance"),
             ]);
 
+        yield return Def("TmToastContainer", CatFeedback, "Toast Container", "bell", 320, 120,
+            (el, b) =>
+            {
+                var position = el.Props.GetString("position", "topRight");
+                var maxVisible = el.Props.GetInt("maxVisible", 3);
+                var sb = new StringBuilder();
+                var toastH = 36.0;
+                var gap = 8.0;
+                var visible = Math.Min(maxVisible, 3);
+                for (var i = 0; i < visible; i++)
+                {
+                    var y = i * (toastH + gap);
+                    sb.Append(Rect(0, y, el.W, toastH, Fill, Border, 6, 1.5));
+                    sb.Append(Icon("info", 16, y + toastH / 2, 14));
+                    sb.Append(Text($"Toast message {i + 1}", 32, y + toastH / 2, 11));
+                    sb.Append(Icon("x", el.W - 16, y + toastH / 2, 12));
+                    sb.Append($"<rect x='0' y='{F(y + toastH - 3)}' width='{F(el.W)}' height='3' rx='0' fill='{FillAccent}'></rect>");
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("position", "Position", PropType.Enum, "topRight",
+                    opts: ["topRight","topLeft","bottomRight","bottomLeft"], cat: "Appearance"),
+                Prop("maxVisible", "Max Visible", PropType.Int, 3, cat: "Appearance"),
+            ]);
+
         yield return Def("TmProgressBar", CatFeedback, "Progress Bar", "bar-chart-2", 240, 16,
             (el, b) =>
             {
@@ -1360,6 +1990,38 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("state", "State", PropType.Enum, "saved",
                     opts: ["saving","saved","error"], cat: "State"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // NOTIFICATIONS
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatNotifications = "Notifications";
+
+    private static IEnumerable<WireframeComponentDef> Notifications()
+    {
+        yield return Def("TmNotificationBell", CatNotifications, "Notification Bell", "bell", 48, 48,
+            (el, b) =>
+            {
+                var unreadCount = el.Props.GetInt("unreadCount", 3);
+                var disabled = el.Props.GetBool("disabled");
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                sb.Append(Rect(0, 0, el.W, el.H, "none", "none", 0));
+                sb.Append(Icon("bell", el.W / 2, el.H / 2, 20));
+                if (unreadCount > 0)
+                {
+                    var badgeText = unreadCount > 9 ? "9+" : unreadCount.ToString();
+                    var badgeW = badgeText.Length == 1 ? 16 : 20;
+                    sb.Append(Pill(el.W - badgeW - 4, 4, badgeW, 16, "#ef4444", "none"));
+                    sb.Append(Text(badgeText, el.W - badgeW / 2 - 4, 12, 9, "white", "middle", "600"));
+                }
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("unreadCount", "Unread Count", PropType.Int, 3, cat: "State"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
             ]);
     }
 
@@ -1581,6 +2243,94 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("placeholder", "Placeholder", PropType.String, "Type a command...", cat: "Content"),
             ]);
+
+        yield return Def("TmKeyboardShortcutsHelp", CatLayout, "Keyboard Shortcuts", "command", 360, 280,
+            (el, b) =>
+            {
+                var shortcuts = el.Props.GetStringList("shortcuts");
+                if (shortcuts.Length == 0) shortcuts = ["Ctrl+S → Save", "Ctrl+K → Command Palette", "Esc → Close", "? → Help"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8, 1.5));
+                sb.Append(Rect(0, 0, el.W, 40, FillDark, "none", 8));
+                sb.Append(HLine(0, el.W, 40));
+                sb.Append(Text("Keyboard shortcuts", 14, 20, 12, ColorText, "start", "500"));
+                sb.Append(Icon("x", el.W - 16, 20, 12));
+                for (var i = 0; i < shortcuts.Length && i < 6; i++)
+                {
+                    var parts = shortcuts[i].Split(" → ");
+                    var key = parts.Length > 0 ? parts[0] : shortcuts[i];
+                    var desc = parts.Length > 1 ? parts[1] : "";
+                    var y = 56 + i * 34;
+                    sb.Append(Rect(14, y, 60, 22, FillDark, Border, 4));
+                    sb.Append(Text(key, 44, y + 11, 9, ColorText, "middle", "500"));
+                    sb.Append(Text(desc, 84, y + 11, 10, ColorMuted));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("shortcuts", "Shortcuts", PropType.StringList, cat: "Content"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // TOOLBAR
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatToolbar = "Toolbar";
+
+    private static IEnumerable<WireframeComponentDef> Toolbar()
+    {
+        yield return Def("TmToolbar", CatToolbar, "Toolbar", "minus", 600, 48,
+            (el, b) =>
+            {
+                var title = el.Props.GetString("title", "");
+                var sticky = el.Props.GetBool("sticky", false);
+                var sb = new StringBuilder();
+                if (sticky) sb.Append(Rect(0, 0, el.W, 2, Accent, "none", 0));
+                sb.Append(Rect(0, sticky ? 2 : 0, el.W, el.H - (sticky ? 2 : 0), Fill, Border, 0));
+                if (!string.IsNullOrEmpty(title))
+                    sb.Append(Text(title, 12, el.H / 2, 13, ColorText, "start", "600"));
+                sb.Append(Rect(el.W - 140, 10, 60, 28, FillAccent, "#93c5fd", 4));
+                sb.Append(Text("Action", el.W - 110, el.H / 2, 10, Accent, "middle"));
+                sb.Append(Rect(el.W - 72, 10, 60, 28, Fill, Border, 4));
+                sb.Append(Text("Cancel", el.W - 42, el.H / 2, 10, ColorMuted, "middle"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("title", "Title", PropType.String, "", cat: "Content"),
+                Prop("sticky", "Sticky", PropType.Bool, false, cat: "Appearance"),
+            ]);
+
+        yield return Def("TmToolbarButton", CatToolbar, "Toolbar Button", "square", 80, 32,
+            (el, b) =>
+            {
+                var label = el.Props.GetString("label", "Action");
+                var icon = el.Props.GetString("icon");
+                var disabled = el.Props.GetBool("disabled");
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                sb.Append(Rect(0, 0, el.W, el.H, "none", "none", 4));
+                var textX = el.W / 2;
+                if (!string.IsNullOrEmpty(icon))
+                {
+                    sb.Append(Icon(icon, 12, el.H / 2, 14));
+                    textX = el.W / 2 + 8;
+                }
+                sb.Append(Text(label, textX, el.H / 2, 11, ColorText, "middle"));
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("label", "Label", PropType.String, "Action", cat: "Content"),
+                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+            ]);
+
+        yield return Def("TmToolbarDivider", CatToolbar, "Toolbar Divider", "minus", 1, 32,
+            (el, b) =>
+            {
+                Svg(b, VLine(el.W / 2, 4, el.H - 4, Border));
+            },
+            []);
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1630,11 +2380,37 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Label");
                 var req = el.Props.GetBool("required");
-                Svg(b, InputField(el.W, 36, lbl, "Enter value...", req));
+                var disabled = el.Props.GetBool("disabled");
+                var help = el.Props.GetString("helpText");
+                var err = el.Props.GetString("errorMessage");
+                var hasError = !string.IsNullOrEmpty(err);
+                var h = 36.0;
+                var extraY = 0.0;
+                var sb = new StringBuilder();
+                sb.Append(InputField(el.W, h, lbl, "Enter value...", req, disabled: disabled));
+                if (hasError)
+                {
+                    sb.Append(Text(err, 0, h + 14, 10, "#dc2626"));
+                    extraY += 18;
+                }
+                else if (!string.IsNullOrEmpty(help))
+                {
+                    sb.Append(Text(help, 0, h + 14, 10, ColorLight));
+                    extraY += 18;
+                }
+                if (hasError)
+                {
+                    // Red border overlay
+                    sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(h)}' rx='4' fill='none' stroke='#fca5a5' stroke-width='1.5'></rect>");
+                }
+                Svg(b, sb.ToString());
             },
             [
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
                 Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+                Prop("helpText", "Help Text", PropType.String, "", cat: "Content"),
+                Prop("errorMessage", "Error Message", PropType.String, "", cat: "Content"),
             ]);
 
         yield return Def("TmInlineEdit", CatForms, "Inline Edit", "edit", 200, 28,
@@ -1683,6 +2459,51 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             },
             [
                 Prop("fieldCount", "Field Count", PropType.Int, 4, cat: "Appearance"),
+            ]);
+
+        yield return Def("TmValidatedField", CatForms, "Validated Field", "check-circle", 280, 64,
+            (el, b) =>
+            {
+                var lbl = el.Props.GetString("label", "Label");
+                var req = el.Props.GetBool("required");
+                var valid = el.Props.GetBool("valid", true);
+                var msg = el.Props.GetString("validationMessage", "");
+                var sb = new StringBuilder();
+                sb.Append(InputField(el.W - 28, 36, lbl, "Enter value...", req));
+                var iconName = valid ? "check" : "x";
+                var iconColor = valid ? "#16a34a" : "#dc2626";
+                sb.Append(Icon(iconName, el.W - 14, 18, 14));
+                // Recolor icon circle by adding a small colored dot behind (simplified)
+                if (!string.IsNullOrEmpty(msg))
+                    sb.Append(Text(msg, 0, 52, 10, iconColor));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
+                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
+                Prop("valid", "Valid", PropType.Bool, true, cat: "State"),
+                Prop("validationMessage", "Validation Message", PropType.String, "", cat: "Content"),
+            ]);
+
+        yield return Def("TmFormValidationMessage", CatForms, "Validation Message", "alert-circle", 280, 24,
+            (el, b) =>
+            {
+                var msg = el.Props.GetString("message", "Validation message");
+                var severity = el.Props.GetString("severity", "error");
+                var (color, icon) = severity switch
+                {
+                    "warning" => ("#ca8a04", "alert-circle"),
+                    "info" => (Accent, "info"),
+                    _ => ("#dc2626", "x"),
+                };
+                var sb = new StringBuilder();
+                sb.Append(Icon(icon, 10, el.H / 2, 12));
+                sb.Append(Text(msg, 26, el.H / 2, 10, color));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("message", "Message", PropType.String, "Validation message", cat: "Content"),
+                Prop("severity", "Severity", PropType.Enum, "error", opts: ["error","warning","info"], cat: "Appearance"),
             ]);
     }
 
@@ -1747,19 +2568,23 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var type = el.Props.GetString("type", "bar");
                 var title = el.Props.GetString("title", "Chart Title");
                 var dataPoints = el.Props.GetInt("dataPoints", 6);
+                var showLegend = el.Props.GetBool("showLegend", false);
+                var showGrid = el.Props.GetBool("showGrid", false);
+                var horizontal = el.Props.GetBool("horizontal", false);
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
                 sb.Append(Text(title, el.W / 2, 16, 12, ColorText, "middle", "500"));
+                var legendH = showLegend ? 24.0 : 0;
                 var chartX = 32.0; var chartY = 28.0;
                 var chartW = el.W - chartX - 8;
-                var chartH = el.H - chartY - 24;
+                var chartH = el.H - chartY - 24 - legendH;
+                var fills = new[] { FillAccent, FillDark, "#fef9c3", "#dcfce7", "#fee2e2" };
 
                 if (type == "pie" || type == "donut")
                 {
                     var cx = el.W / 2; var cy = chartY + chartH / 2;
                     var r = Math.Min(chartW, chartH) / 2 - 8;
                     var angles = new[] { 0.0, 72, 144, 216, 288, 360 };
-                    var fills = new[] { FillAccent, FillDark, "#fef9c3", "#dcfce7", "#fee2e2" };
                     for (var i = 0; i < Math.Min(dataPoints, 5); i++)
                     {
                         var a1 = angles[i] * Math.PI / 180;
@@ -1777,6 +2602,11 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     // Axes
                     sb.Append(VLine(chartX, chartY, chartY + chartH));
                     sb.Append(HLine(chartX, chartX + chartW, chartY + chartH));
+                    if (showGrid)
+                    {
+                        for (var g = 1; g <= 4; g++)
+                            sb.Append(HLine(chartX, chartX + chartW, chartY + chartH * g / 5, FillDark));
+                    }
                     var heights = new[] { 0.6, 0.8, 0.4, 0.9, 0.5, 0.7, 0.85 };
                     var pts = new List<string>();
                     for (var i = 0; i < dataPoints; i++)
@@ -1791,14 +2621,47 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 {
                     sb.Append(VLine(chartX, chartY, chartY + chartH));
                     sb.Append(HLine(chartX, chartX + chartW, chartY + chartH));
-                    var heights = new[] { 0.6, 0.8, 0.4, 0.9, 0.5, 0.7 };
-                    var barW = chartW / dataPoints * 0.65;
-                    var gap = chartW / dataPoints;
-                    for (var i = 0; i < dataPoints; i++)
+                    if (showGrid)
                     {
-                        var bh = heights[i % heights.Length] * chartH;
-                        var bx = chartX + i * gap + gap * 0.175;
-                        sb.Append(Rect(bx, chartY + chartH - bh, barW, bh, FillAccent, "#93c5fd", 2));
+                        for (var g = 1; g <= 4; g++)
+                        {
+                            if (horizontal)
+                                sb.Append(VLine(chartX + chartW * g / 5, chartY, chartY + chartH, FillDark));
+                            else
+                                sb.Append(HLine(chartX, chartX + chartW, chartY + chartH * g / 5, FillDark));
+                        }
+                    }
+                    var heights = new[] { 0.6, 0.8, 0.4, 0.9, 0.5, 0.7 };
+                    if (horizontal)
+                    {
+                        var barH = chartH / dataPoints * 0.65;
+                        var gap = chartH / dataPoints;
+                        for (var i = 0; i < dataPoints; i++)
+                        {
+                            var bw = heights[i % heights.Length] * chartW;
+                            var by = chartY + i * gap + gap * 0.175;
+                            sb.Append(Rect(chartX, by, bw, barH, FillAccent, "#93c5fd", 2));
+                        }
+                    }
+                    else
+                    {
+                        var barW = chartW / dataPoints * 0.65;
+                        var gap = chartW / dataPoints;
+                        for (var i = 0; i < dataPoints; i++)
+                        {
+                            var bh = heights[i % heights.Length] * chartH;
+                            var bx = chartX + i * gap + gap * 0.175;
+                            sb.Append(Rect(bx, chartY + chartH - bh, barW, bh, FillAccent, "#93c5fd", 2));
+                        }
+                    }
+                }
+                if (showLegend)
+                {
+                    var lx = el.W / 2 - (dataPoints * 36) / 2;
+                    for (var i = 0; i < Math.Min(dataPoints, 5); i++)
+                    {
+                        sb.Append(Rect(lx + i * 36, el.H - 20, 10, 10, fills[i % fills.Length], Border, 2));
+                        sb.Append(Text($"L{i + 1}", lx + i * 36 + 14, el.H - 15, 8, ColorMuted));
                     }
                 }
                 Svg(b, sb.ToString());
@@ -1808,6 +2671,86 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("type", "Type", PropType.Enum, "bar",
                     opts: ["bar","line","pie","donut"], cat: "Appearance"),
                 Prop("dataPoints", "Data Points", PropType.Int, 6, cat: "Appearance"),
+                Prop("showLegend", "Show Legend", PropType.Bool, false, cat: "Appearance"),
+                Prop("showGrid", "Show Grid", PropType.Bool, false, cat: "Appearance"),
+                Prop("horizontal", "Horizontal", PropType.Bool, false, cat: "Appearance"),
+            ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // WORKFLOW
+    // ══════════════════════════════════════════════════════════════════════════
+    private const string CatWorkflow = "Workflow";
+
+    private static IEnumerable<WireframeComponentDef> Workflow()
+    {
+        yield return Def("TmWorkflowToolbox", CatWorkflow, "Workflow Toolbox", "sidebar", 160, 280,
+            (el, b) =>
+            {
+                var nodes = el.Props.GetStringList("nodes");
+                if (nodes.Length == 0) nodes = ["Start", "Task", "Decision", "End"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, FillDark, Border, 4));
+                sb.Append(Text("Toolbox", el.W / 2, 14, 10, ColorText, "middle", "500"));
+                sb.Append(HLine(0, el.W, 26));
+                for (var i = 0; i < nodes.Length && i < 6; i++)
+                {
+                    var y = 32 + i * 38;
+                    sb.Append(Rect(8, y, el.W - 16, 32, Fill, Border, 4));
+                    sb.Append(Text(nodes[i], el.W / 2, y + 16, 10, ColorText, "middle"));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("nodes", "Nodes", PropType.StringList, cat: "Content"),
+            ]);
+
+        yield return Def("TmWorkflowPropertiesPanel", CatWorkflow, "Properties Panel", "sliders", 220, 300,
+            (el, b) =>
+            {
+                var title = el.Props.GetString("title", "Properties");
+                var nodeType = el.Props.GetString("nodeType", "Task");
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 4));
+                sb.Append(Rect(0, 0, el.W, 36, FillDark, "none", 4));
+                sb.Append(HLine(0, el.W, 36));
+                sb.Append(Text(title, 10, 18, 11, ColorText, "start", "500"));
+                sb.Append(Text(nodeType, el.W - 10, 18, 9, ColorMuted, "end"));
+                var props = new[] { "Name", "Description", "Assignee", "Due Date" };
+                for (var i = 0; i < props.Length; i++)
+                {
+                    var y = 48 + i * 48;
+                    sb.Append(Text(props[i], 10, y + 8, 9, ColorMuted));
+                    sb.Append(Rect(10, y + 14, el.W - 20, 28, Fill, Border, 3));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("title", "Title", PropType.String, "Properties", cat: "Content"),
+                Prop("nodeType", "Node Type", PropType.String, "Task", cat: "Content"),
+            ]);
+
+        yield return Def("TmWorkflowMinimap", CatWorkflow, "Workflow Minimap", "map", 160, 120,
+            (el, b) =>
+            {
+                var scale = el.Props.GetDouble("scale", 0.2);
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, FillDark, Border, 4));
+                // Dotted grid background
+                for (var gy = 8; gy < el.H; gy += 12)
+                    for (var gx = 8; gx < el.W; gx += 12)
+                        sb.Append($"<circle cx='{F(gx)}' cy='{F(gy)}' r='1' fill='{Border}'></circle>");
+                // Minimap viewport
+                var vw = el.W * 0.5;
+                var vh = el.H * 0.5;
+                sb.Append(Rect(el.W / 2 - vw / 2, el.H / 2 - vh / 2, vw, vh, "none", Accent, 2));
+                // Tiny nodes
+                sb.Append(Rect(20, 20, 24, 16, FillAccent, Border, 2));
+                sb.Append(Rect(el.W - 50, el.H - 40, 24, 16, Fill, Border, 2));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("scale", "Scale", PropType.Double, 0.2, cat: "Appearance"),
             ]);
     }
 
@@ -1823,20 +2766,50 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var items = el.Props.GetStringList("items");
                 if (items.Length == 0) items = ["Event 1", "Event 2", "Event 3", "Event 4"];
+                var orientation = el.Props.GetString("orientation", "vertical");
+                var alternate = el.Props.GetBool("alternate", false);
+                var isHorizontal = orientation == "horizontal";
                 var sb = new StringBuilder();
-                var rowH = el.H / items.Length;
-                sb.Append(VLine(20, 0, el.H, FillDark));
-                for (var i = 0; i < items.Length; i++)
+                if (isHorizontal)
                 {
-                    var cy = i * rowH + rowH / 2;
-                    sb.Append($"<circle cx='20' cy='{F(cy)}' r='6' fill='{(i == 0 ? FillAccent : FillDark)}' stroke='{(i == 0 ? "#93c5fd" : Border)}' stroke-width='1.5'></circle>");
-                    sb.Append(Text(items[i], 36, cy, 11));
-                    sb.Append(Text($"Day {i + 1}", el.W - 10, cy, 9, ColorLight, "end"));
+                    var stepW = el.W / items.Length;
+                    sb.Append(HLine(0, el.W, el.H / 2, FillDark));
+                    for (var i = 0; i < items.Length; i++)
+                    {
+                        var cx = i * stepW + stepW / 2;
+                        sb.Append($"<circle cx='{F(cx)}' cy='{F(el.H / 2)}' r='6' fill='{(i == 0 ? FillAccent : FillDark)}' stroke='{(i == 0 ? "#93c5fd" : Border)}' stroke-width='1.5'></circle>");
+                        var textY = alternate && i % 2 == 1 ? el.H / 2 + 20 : el.H / 2 - 10;
+                        sb.Append(Text(items[i], cx, textY, 10, ColorText, "middle"));
+                        sb.Append(Text($"T{i + 1}", cx, textY + (alternate && i % 2 == 1 ? -24 : 14), 9, ColorLight, "middle"));
+                    }
+                }
+                else
+                {
+                    var rowH = el.H / items.Length;
+                    var lineX = alternate ? el.W / 2 : 20;
+                    sb.Append(VLine(lineX, 0, el.H, FillDark));
+                    for (var i = 0; i < items.Length; i++)
+                    {
+                        var cy = i * rowH + rowH / 2;
+                        sb.Append($"<circle cx='{F(lineX)}' cy='{F(cy)}' r='6' fill='{(i == 0 ? FillAccent : FillDark)}' stroke='{(i == 0 ? "#93c5fd" : Border)}' stroke-width='1.5'></circle>");
+                        if (alternate && i % 2 == 1)
+                        {
+                            sb.Append(Text(items[i], lineX - 14, cy, 10, ColorText, "end"));
+                            sb.Append(Text($"Day {i + 1}", lineX - 14, cy - 14, 9, ColorLight, "end"));
+                        }
+                        else
+                        {
+                            sb.Append(Text(items[i], lineX + 14, cy, 10, ColorText));
+                            sb.Append(Text($"Day {i + 1}", el.W - 10, cy, 9, ColorLight, "end"));
+                        }
+                    }
                 }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("items", "Items", PropType.StringList, cat: "Content"),
+                Prop("orientation", "Orientation", PropType.Enum, "vertical", opts: ["vertical","horizontal"], cat: "Appearance"),
+                Prop("alternate", "Alternate", PropType.Bool, false, cat: "Appearance"),
             ]);
 
         yield return Def("TmStepper", CatComplex, "Stepper", "list", 500, 56,
@@ -1845,27 +2818,51 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var steps = el.Props.GetStringList("steps");
                 if (steps.Length == 0) steps = ["Step 1", "Step 2", "Step 3", "Step 4"];
                 var activeStep = el.Props.GetInt("activeStep", 1);
-                var stepW = el.W / steps.Length;
+                var orientation = el.Props.GetString("orientation", "horizontal");
+                var isVertical = orientation == "vertical";
                 var sb = new StringBuilder();
-                for (var i = 0; i < steps.Length; i++)
+                if (isVertical)
                 {
-                    var cx = i * stepW + stepW / 2;
-                    var isDone = i < activeStep;
-                    var isActive = i == activeStep;
-                    var fill = isDone ? FillAccent : isActive ? Fill : FillDark;
-                    var border2 = isDone || isActive ? "#93c5fd" : Border;
-                    sb.Append($"<circle cx='{F(cx)}' cy='20' r='12' fill='{fill}' stroke='{border2}' stroke-width='{(isActive ? "2" : "1.5")}'></circle>");
-                    sb.Append(Text(isDone ? "✓" : (i + 1).ToString(), cx, 20, 10,
-                        isDone ? Accent : isActive ?  ColorText : ColorLight, "middle"));
-                    sb.Append(Text(steps[i], cx, 42, 9, isActive ?  ColorText : ColorMuted, "middle"));
-                    if (i < steps.Length - 1)
-                        sb.Append(HLine(cx + 14, (i + 1) * stepW + stepW / 2 - 14, 20, isDone ? "#93c5fd" : Border));
+                    var stepH = el.H / steps.Length;
+                    for (var i = 0; i < steps.Length; i++)
+                    {
+                        var cy = i * stepH + stepH / 2;
+                        var isDone = i < activeStep;
+                        var isActive = i == activeStep;
+                        var fill = isDone ? FillAccent : isActive ? Fill : FillDark;
+                        var border2 = isDone || isActive ? "#93c5fd" : Border;
+                        sb.Append($"<circle cx='20' cy='{F(cy)}' r='12' fill='{fill}' stroke='{border2}' stroke-width='{(isActive ? "2" : "1.5")}'></circle>");
+                        sb.Append(Text(isDone ? "✓" : (i + 1).ToString(), 20, cy, 10,
+                            isDone ? Accent : isActive ? ColorText : ColorLight, "middle"));
+                        sb.Append(Text(steps[i], 40, cy, 9, isActive ? ColorText : ColorMuted));
+                        if (i < steps.Length - 1)
+                            sb.Append(VLine(20, cy + 14, (i + 1) * stepH + stepH / 2 - 14, isDone ? "#93c5fd" : Border));
+                    }
+                }
+                else
+                {
+                    var stepW = el.W / steps.Length;
+                    for (var i = 0; i < steps.Length; i++)
+                    {
+                        var cx = i * stepW + stepW / 2;
+                        var isDone = i < activeStep;
+                        var isActive = i == activeStep;
+                        var fill = isDone ? FillAccent : isActive ? Fill : FillDark;
+                        var border2 = isDone || isActive ? "#93c5fd" : Border;
+                        sb.Append($"<circle cx='{F(cx)}' cy='20' r='12' fill='{fill}' stroke='{border2}' stroke-width='{(isActive ? "2" : "1.5")}'></circle>");
+                        sb.Append(Text(isDone ? "✓" : (i + 1).ToString(), cx, 20, 10,
+                            isDone ? Accent : isActive ? ColorText : ColorLight, "middle"));
+                        sb.Append(Text(steps[i], cx, 42, 9, isActive ? ColorText : ColorMuted, "middle"));
+                        if (i < steps.Length - 1)
+                            sb.Append(HLine(cx + 14, (i + 1) * stepW + stepW / 2 - 14, 20, isDone ? "#93c5fd" : Border));
+                    }
                 }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("steps", "Steps", PropType.StringList, cat: "Content"),
                 Prop("activeStep", "Active Step Index", PropType.Int, 1, cat: "State"),
+                Prop("orientation", "Orientation", PropType.Enum, "horizontal", opts: ["horizontal","vertical"], cat: "Appearance"),
             ]);
 
         yield return Def("TmScheduler", CatComplex, "Scheduler", "calendar", 700, 400,
@@ -2073,24 +3070,46 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var cols = el.Props.GetInt("columns", 3);
                 var rows = el.Props.GetInt("rows", 2);
+                var editable = el.Props.GetBool("editable", false);
+                var showAddWidget = el.Props.GetBool("showAddWidget", false);
                 var gap = 8.0;
                 var cellW = (el.W - gap * (cols + 1)) / cols;
                 var cellH = (el.H - gap * (rows + 1)) / rows;
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, FillDark, Border, 6));
-                for (var r = 0; r < rows; r++)
-                    for (var c = 0; c < cols; c++)
+                var totalWidgets = rows * cols;
+                if (showAddWidget) totalWidgets -= 1;
+                for (var i = 0; i < totalWidgets; i++)
+                {
+                    var r = i / cols;
+                    var c = i % cols;
+                    var wx = gap + c * (cellW + gap);
+                    var wy = gap + r * (cellH + gap);
+                    sb.Append(Rect(wx, wy, cellW, cellH, Fill, Border, 6));
+                    sb.Append(Text($"Widget {i + 1}", wx + cellW / 2, wy + 16, 10, ColorMuted, "middle"));
+                    if (editable)
                     {
-                        var wx = gap + c * (cellW + gap);
-                        var wy = gap + r * (cellH + gap);
-                        sb.Append(Rect(wx, wy, cellW, cellH, Fill, Border, 6));
-                        sb.Append(Text($"Widget {r * cols + c + 1}", wx + cellW / 2, wy + 16, 10, ColorMuted, "middle"));
+                        sb.Append(Rect(wx + cellW - 18, wy + 4, 14, 14, FillDark, Border, 2));
+                        sb.Append(Text("×", wx + cellW - 11, wy + 11, 8, ColorMuted, "middle"));
                     }
+                }
+                if (showAddWidget)
+                {
+                    var lastR = (totalWidgets) / cols;
+                    var lastC = (totalWidgets) % cols;
+                    var wx = gap + lastC * (cellW + gap);
+                    var wy = gap + lastR * (cellH + gap);
+                    sb.Append(DashedRect(cellW, cellH, 6));
+                    sb.Append($"<g transform='translate({F(wx)},{F(wy)})'>{DashedRect(cellW, cellH, 6)}</g>");
+                    sb.Append(Text("+ Add widget", wx + cellW / 2, wy + cellH / 2, 10, ColorMuted, "middle"));
+                }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("columns", "Columns", PropType.Int, 3, cat: "Appearance"),
                 Prop("rows", "Rows", PropType.Int, 2, cat: "Appearance"),
+                Prop("editable", "Editable", PropType.Bool, false, cat: "Behavior"),
+                Prop("showAddWidget", "Show Add Widget", PropType.Bool, false, cat: "Appearance"),
             ]);
 
         yield return Def("TmMarkdownEditor", CatComplex, "Markdown Editor", "edit", 500, 300,
@@ -2171,15 +3190,31 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var cols = el.Props.GetInt("columns", 3);
                 var count = el.Props.GetInt("itemCount", 6);
+                var layout = el.Props.GetString("layout", "grid");
                 var gap = 6.0;
                 var cellW = (el.W - gap * (cols + 1)) / cols;
-                var cellH = cellW * 0.75;
                 var sb = new StringBuilder();
+                var masonryHeights = new[] { 0.9, 1.3, 0.75, 1.1, 0.85, 1.2 };
+                var currentY = new double[cols];
+                for (var c = 0; c < cols; c++) currentY[c] = gap;
                 for (var i = 0; i < count; i++)
                 {
-                    var c = i % cols; var r = i / cols;
+                    var c = layout == "masonry" ? Array.IndexOf(currentY, currentY.Min()) : i % cols;
                     var ix = gap + c * (cellW + gap);
-                    var iy = gap + r * (cellH + gap);
+                    double iy;
+                    double cellH;
+                    if (layout == "masonry")
+                    {
+                        cellH = cellW * masonryHeights[i % masonryHeights.Length];
+                        iy = currentY[c];
+                        currentY[c] += cellH + gap;
+                    }
+                    else
+                    {
+                        var r = i / cols;
+                        cellH = cellW * 0.75;
+                        iy = gap + r * (cellH + gap);
+                    }
                     if (iy + cellH > el.H) break;
                     sb.Append(Rect(ix, iy, cellW, cellH, FillDark, Border, 4));
                     sb.Append(Icon("image", ix + cellW / 2, iy + cellH / 2, Math.Min(cellW, cellH) * 0.45));
@@ -2189,6 +3224,40 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             [
                 Prop("columns", "Columns", PropType.Int, 3, cat: "Appearance"),
                 Prop("itemCount", "Item Count", PropType.Int, 6, cat: "Appearance"),
+                Prop("layout", "Layout", PropType.Enum, "grid", opts: ["grid","masonry"], cat: "Appearance"),
+            ]);
+
+        yield return Def("TmLightbox", CatComplex, "Lightbox", "image", 600, 400,
+            (el, b) =>
+            {
+                var imageCount = el.Props.GetInt("imageCount", 8);
+                var currentIndex = el.Props.GetInt("currentIndex", 1);
+                var sb = new StringBuilder();
+                sb.Append($"<rect width='{F(el.W)}' height='{F(el.H)}' fill='rgba(0,0,0,0.85)'></rect>");
+                // Main image placeholder
+                sb.Append(Rect(el.W / 2 - 200, el.H / 2 - 140, 400, 280, FillDark, Border, 6));
+                sb.Append(Icon("image", el.W / 2, el.H / 2, 64));
+                // Nav arrows
+                sb.Append(Text("‹", 30, el.H / 2, 28, "white", "middle"));
+                sb.Append(Text("›", el.W - 30, el.H / 2, 28, "white", "middle"));
+                // Counter
+                sb.Append(Text($"{currentIndex} / {imageCount}", el.W / 2, 30, 12, "white", "middle"));
+                // Thumbnail strip
+                var thumbW = 48.0; var thumbGap = 8.0;
+                var visible = Math.Min(imageCount, 7);
+                var stripW = visible * thumbW + (visible - 1) * thumbGap;
+                var stripX = (el.W - stripW) / 2;
+                for (var i = 0; i < visible; i++)
+                {
+                    var tx = stripX + i * (thumbW + thumbGap);
+                    var isCurrent = i + 1 == currentIndex;
+                    sb.Append(Rect(tx, el.H - 70, thumbW, 48, isCurrent ? FillAccent : FillDark, isCurrent ? "#93c5fd" : Border, 4));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("imageCount", "Image Count", PropType.Int, 8, cat: "Content"),
+                Prop("currentIndex", "Current Index", PropType.Int, 1, cat: "State"),
             ]);
 
         yield return Def("TmImportWizard", CatComplex, "Import Wizard", "upload", 560, 360,

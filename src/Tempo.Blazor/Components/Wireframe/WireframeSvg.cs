@@ -106,6 +106,9 @@ internal static class WireframeSvg
                 $"<rect x='{F(cx - r)}' y='{F(cy - r)}' width='{F(size)}' height='{F(size)}' rx='2' fill='{FillDark}' stroke='{Border}'></rect>" +
                 $"<circle cx='{F(cx - r * 0.3)}' cy='{F(cy - r * 0.3)}' r='{F(r * 0.25)}' fill='{ColorMuted}'></circle>" +
                 $"<polyline points='{F(cx - r)},{F(cy + r * 0.3)} {F(cx - r * 0.2)},{F(cy - r * 0.2)} {F(cx + r * 0.4)},{F(cy + r * 0.4)} {F(cx + r * 0.7)},{F(cy)} {F(cx + r)},{F(cy + r)}' fill='none' stroke='{ColorMuted}' stroke-width='1'></polyline>",
+            "lock" =>
+                $"<rect x='{F(cx - r * 0.6)}' y='{F(cy - r * 0.2)}' width='{F(r * 1.2)}' height='{F(r)}' rx='2' fill='none' stroke='{BorderStrong}' stroke-width='1.5'></rect>" +
+                $"<circle cx='{F(cx)}' cy='{F(cy - r * 0.3)}' r='{F(r * 0.25)}' fill='none' stroke='{BorderStrong}' stroke-width='1.5'></circle>",
             "user" or "avatar" =>
                 $"<circle cx='{F(cx)}' cy='{F(cy - r * 0.2)}' r='{F(r * 0.45)}' fill='{FillDark}' stroke='{Border}' stroke-width='1'></circle>" +
                 $"<path d='M{F(cx - r)},{F(cy + r)} a{F(r)},{F(r * 0.5)} 0 0 1 {F(r * 2)},0' fill='{FillDark}' stroke='{Border}' stroke-width='1'></path>",
