@@ -1,0 +1,192 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using System.Globalization
+@using System.Text.Json
+@using Tempo.Blazor.Components.Wireframe.Models
+
+<div class="tm-wd-props @Class">
+
+    @* ── Nothing selected ─────────────────────────────────────────────────── *@
+    @if (!_elements.Any())
+    {
+        <div class="tm-wd-props__empty">
+            <span class="tm-wd-props__empty-icon">◻</span>
+            <span>Select an element to edit its properties.</span>
+        </div>
+    }
+    else
+    {
+
+    @* ── Header ───────────────────────────────────────────────────────────── *@
+    <div class="tm-wd-props__header">
+        @if (_isMulti)
+        {
+            <span class="tm-wd-props__type-badge">@_elements.Count elements</span>
+            <span class="tm-wd-props__subtitle">
+                @(_sameType ? _elements[0].Type : "Mixed types")
+            </span>
+        }
+        else
+        {
+            <span class="tm-wd-props__type-badge">@_elements[0].Type</span>
+            <span class="tm-wd-props__subtitle">@(_def?.DisplayName ?? _elements[0].Type)</span>
+        }
+    </div>
+
+    @* ── Element section (Type read-only, ZIndex) ─────────────────────────── *@
+    <details class="tm-wd-props__section" open>
+        <summary class="tm-wd-props__section-header">Element</summary>
+        <div class="tm-wd-props__section-body">
+            @if (!_isMulti)
+            {
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">Type</label>
+                    <input class="tm-wd-props__input tm-wd-props__input--readonly"
+                           value="@_elements[0].Type" readonly />
+                </div>
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">Z-Index</label>
+                    <input class="tm-wd-props__input"
+                           type="number" step="1"
+                           value="@_elements[0].ZIndex"
+                           @oninput="@(e => OnZIndexChanged(e))" />
+                </div>
+            }
+            else
+            {
+                <div class="tm-wd-props__field">
+                    <label class="tm-wd-props__label">Types</label>
+                    <input class="tm-wd-props__input tm-wd-props__input--readonly"
+                           value="@string.Join(", ", _elements.Select(e => e.Type).Distinct())"
+                           readonly />
+                </div>
+            }
+        </div>
+    </details>
+
+    @* ── Layout section (X, Y, W, H) ──────────────────────────────────────── *@
+    <details class="tm-wd-props__section" open>
+        <summary class="tm-wd-props__section-header">Layout</summary>
+        <div class="tm-wd-props__section-body tm-wd-props__section-body--grid2">
+            @RenderLayoutField("X", _layoutX, "x", "0")
+            @RenderLayoutField("Y", _layoutY, "y", "0")
+            @RenderLayoutField("W", _layoutW, "w", "—")
+            @RenderLayoutField("H", _layoutH, "h", "—")
+        </div>
+    </details>
+
+    @* ── Per-category prop sections ────────────────────────────────────────── *@
+    @foreach (var cat in _propCategories)
+    {
+        var propsInCat = GetPropsForCategory(cat);
+        if (!propsInCat.Any()) continue;
+
+        <details class="tm-wd-props__section" open>
+            <summary class="tm-wd-props__section-header">@cat</summary>
+            <div class="tm-wd-props__section-body">
+                @foreach (var prop in propsInCat)
+                {
+                    var isMixed  = _isMulti && IsMixedValue(prop.Name);
+                    var hasError = _validationErrors.ContainsKey(prop.Name);
+                    var valStr   = GetDisplayValue(prop.Name, prop);
+
+                    <div class="tm-wd-props__field @(hasError ? "tm-wd-props__field--error" : "")">
+                        <label class="tm-wd-props__label">
+                            @prop.DisplayName
+                            @if (prop.IsRequired) { <span class="tm-wd-props__required">*</span> }
+                        </label>
+
+                        @switch (prop.Type)
+                        {
+                            case PropType.Bool:
+                                <label class="tm-wd-props__toggle">
+                                    <input type="checkbox"
+                                           checked="@(valStr == "true")"
+                                           indeterminate="@isMixed"
+                                           @onchange="@(e => OnBoolPropChanged(prop.Name, e))" />
+                                    <span class="tm-wd-props__toggle-track"></span>
+                                </label>
+                                break;
+
+                            case PropType.Enum when prop.Options is { Length: > 0 }:
+                                <select class="tm-wd-props__select @(isMixed ? "tm-wd-props__input--mixed" : "")"
+                                        value="@(isMixed ? "" : valStr)"
+                                        @onchange="@(e => OnStringPropChanged(prop.Name, e))">
+                                    @if (isMixed)
+                                    {
+                                        <option value="" disabled>— Mixed —</option>
+                                    }
+                                    @foreach (var opt in prop.Options)
+                                    {
+                                        <option value="@opt">@opt</option>
+                                    }
+                                </select>
+                                break;
+
+                            case PropType.Color:
+                                <div class="tm-wd-props__color-row">
+                                    <input type="color"
+                                           class="tm-wd-props__color-swatch"
+                                           value="@(isMixed ? "#000000" : valStr)"
+                                           @onchange="@(e => OnStringPropChanged(prop.Name, e))" />
+                                    <input type="text"
+                                           class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
+                                           placeholder="@(isMixed ? "Mixed" : "#rrggbb")"
+                                           value="@(isMixed ? "" : valStr)"
+                                           @oninput="@(e => OnStringPropChanged(prop.Name, e))" />
+                                </div>
+                                break;
+
+                            case PropType.Int:
+                            case PropType.Double:
+                                <input type="number"
+                                       class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
+                                       step="@(prop.Type == PropType.Int ? "1" : "0.01")"
+                                       placeholder="@(isMixed ? "Mixed" : "")"
+                                       value="@(isMixed ? "" : valStr)"
+                                       @oninput="@(e => OnNumberPropChanged(prop.Name, prop.Type, e))" />
+                                break;
+
+                            case PropType.StringList:
+                                <input type="text"
+                                       class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
+                                       placeholder="@(isMixed ? "Mixed" : "comma, separated")"
+                                       value="@(isMixed ? "" : valStr)"
+                                       @oninput="@(e => OnStringListPropChanged(prop.Name, e))" />
+                                break;
+
+                            default: @* String, Icon, Object, unknown *@
+                                <input type="text"
+                                       class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
+                                       placeholder="@(isMixed ? "Mixed" : (prop.Default?.ToString() ?? ""))"
+                                       value="@(isMixed ? "" : valStr)"
+                                       @oninput="@(e => OnStringPropChanged(prop.Name, e, prop.ValidationRegex))" />
+                                break;
+                        }
+
+                        @if (hasError)
+                        {
+                            <span class="tm-wd-props__error-msg">@_validationErrors[prop.Name]</span>
+                        }
+                    </div>
+                }
+            </div>
+        </details>
+    }
+
+    } @* end else (elements selected) *@
+
+</div>
+
+@* ── Layout field helper (local RenderFragment factory) ───────────────────── *@
+@code {
+    private RenderFragment RenderLayoutField(string label, string? value, string fieldKey, string placeholder) =>
+        @<div class="tm-wd-props__field">
+            <label class="tm-wd-props__label">@label</label>
+            <input type="number"
+                   class="tm-wd-props__input @(value == MixedMarker ? "tm-wd-props__input--mixed" : "")"
+                   step="1"
+                   placeholder="@(value == MixedMarker ? "Mixed" : placeholder)"
+                   value="@(value == MixedMarker ? "" : value)"
+                   @oninput="@(e => OnLayoutChanged(fieldKey, e))" />
+        </div>;
+}

@@ -1,0 +1,311 @@
+using Bunit;
+using Microsoft.AspNetCore.Components.Rendering;
+using Microsoft.Extensions.DependencyInjection;
+using Tempo.Blazor.Components.Wireframe;
+using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Wireframe;
+
+/// <summary>
+/// bUnit tests for TmWireframeToolbox.
+/// Registers a populated WireframeComponentRegistry so the toolbox has components to display.
+/// </summary>
+public class TmWireframeToolboxTests : LocalizationTestBase
+{
+    private static WireframeComponentDef MakeDef(string type, string category,
+        bool isBuiltIn = true, string? displayName = null)
+        => new()
+        {
+            Type        = type,
+            DisplayName = displayName ?? type,
+            Category    = category,
+            DefaultWidth  = 120,
+            DefaultHeight = 36,
+            IsBuiltIn   = isBuiltIn,
+            Props       = [],
+            RenderSvg   = (_, _) => { }
+        };
+
+    private WireframeComponentRegistry BuildRegistry(params WireframeComponentDef[] defs)
+    {
+        var registry = new WireframeComponentRegistry();
+        foreach (var d in defs)
+            registry.RegisterDefinition(d);
+        return registry;
+    }
+
+    // ── Container renders ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_RendersContainer()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Toolbox_RendersSearchInput()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find("input[type=\"search\"]").Should().NotBeNull();
+    }
+
+    // ── Items render ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_RendersItemForEachComponent()
+    {
+        var registry = BuildRegistry(
+            MakeDef("TmButton",    "Buttons"),
+            MakeDef("TmTextInput", "Inputs"),
+            MakeDef("TmSelect",    "Inputs"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.FindAll(".tm-wd-toolbox__item").Should().HaveCount(3);
+    }
+
+    [Fact]
+    public void Toolbox_ItemHasDraggableAttribute()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+        var item = cut.Find(".tm-wd-toolbox__item");
+
+        item.GetAttribute("draggable").Should().Be("true");
+    }
+
+    [Fact]
+    public void Toolbox_ItemHasDataComponentTypeAttribute()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+        var item = cut.Find(".tm-wd-toolbox__item");
+
+        item.GetAttribute("data-component-type").Should().Be("TmButton");
+    }
+
+    [Fact]
+    public void Toolbox_ItemDisplaysName()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons", displayName: "Button"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox__item-name").TextContent.Should().Be("Button");
+    }
+
+    [Fact]
+    public void Toolbox_RendersCategory()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox__category-name").TextContent.Should().Be("Buttons");
+    }
+
+    // ── Search filter ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_SearchFilter_HidesNonMatchingItems()
+    {
+        var registry = BuildRegistry(
+            MakeDef("TmButton",    "Buttons", displayName: "Button"),
+            MakeDef("TmTextInput", "Inputs",  displayName: "Text Input"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find("input[type=\"search\"]").Input("Button");
+
+        cut.FindAll(".tm-wd-toolbox__item").Should().HaveCount(1);
+        cut.Find(".tm-wd-toolbox__item-name").TextContent.Should().Contain("Button");
+    }
+
+    [Fact]
+    public void Toolbox_SearchFilter_EmptySearch_ShowsAll()
+    {
+        var registry = BuildRegistry(
+            MakeDef("TmButton",    "Buttons"),
+            MakeDef("TmTextInput", "Inputs"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find("input[type=\"search\"]").Input("X");
+        cut.Find("input[type=\"search\"]").Input("");
+
+        cut.FindAll(".tm-wd-toolbox__item").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Toolbox_SearchFilter_NoMatches_ShowsEmptyState()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find("input[type=\"search\"]").Input("xyzzy_no_match");
+
+        cut.Find(".tm-wd-toolbox__empty").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Toolbox_SearchFilter_MatchesOnCategory()
+    {
+        var registry = BuildRegistry(
+            MakeDef("TmButton", "Buttons"),
+            MakeDef("TmCard",   "Layout"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find("input[type=\"search\"]").Input("Layout");
+
+        cut.FindAll(".tm-wd-toolbox__item").Should().HaveCount(1);
+        cut.Find(".tm-wd-toolbox__item").GetAttribute("data-component-type").Should().Be("TmCard");
+    }
+
+    // ── Filter tabs (only shown when custom components exist) ──────────────────
+
+    [Fact]
+    public void Toolbox_FilterTabs_NotShownWithOnlyBuiltIns()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons", isBuiltIn: true));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.FindAll(".tm-wd-toolbox__filters").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Toolbox_FilterTabs_ShownWhenCustomExists()
+    {
+        var registry = BuildRegistry(
+            MakeDef("TmButton",   "Buttons",  isBuiltIn: true),
+            MakeDef("HeroSection","Custom",   isBuiltIn: false));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox__filters").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Toolbox_CustomComponent_ShowsBadge()
+    {
+        var registry = BuildRegistry(
+            MakeDef("HeroSection", "Custom", isBuiltIn: false));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox__item-badge--custom").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Toolbox_BuiltInComponent_NoBadge()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons", isBuiltIn: true));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.FindAll(".tm-wd-toolbox__item-badge--custom").Should().BeEmpty();
+    }
+
+    // ── Keyboard activation ────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_EnterKeyOnItem_FiresOnComponentActivated()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        string? activated = null;
+        var cut = RenderComponent<TmWireframeToolbox>(p => p
+            .Add(x => x.OnComponentActivated, t => activated = t));
+
+        cut.Find(".tm-wd-toolbox__item")
+           .KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Enter" });
+
+        activated.Should().Be("TmButton");
+    }
+
+    [Fact]
+    public void Toolbox_SpaceKeyOnItem_FiresOnComponentActivated()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        string? activated = null;
+        var cut = RenderComponent<TmWireframeToolbox>(p => p
+            .Add(x => x.OnComponentActivated, t => activated = t));
+
+        cut.Find(".tm-wd-toolbox__item")
+           .KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = " " });
+
+        activated.Should().Be("TmButton");
+    }
+
+    [Fact]
+    public void Toolbox_OtherKeyOnItem_DoesNotFireCallback()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        string? activated = null;
+        var cut = RenderComponent<TmWireframeToolbox>(p => p
+            .Add(x => x.OnComponentActivated, t => activated = t));
+
+        cut.Find(".tm-wd-toolbox__item")
+           .KeyDown(new Microsoft.AspNetCore.Components.Web.KeyboardEventArgs { Key = "Tab" });
+
+        activated.Should().BeNull();
+    }
+
+    // ── Class parameter ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_ClassParameter_AppliedToWrapper()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>(p => p.Add(x => x.Class, "my-class"));
+
+        cut.Find(".tm-wd-toolbox").ClassList.Should().Contain("my-class");
+    }
+
+    // ── SVG preview ────────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Toolbox_ItemPreview_ContainsSvg()
+    {
+        var registry = BuildRegistry(MakeDef("TmButton", "Buttons"));
+        Services.AddSingleton(registry);
+
+        var cut = RenderComponent<TmWireframeToolbox>();
+
+        cut.Find(".tm-wd-toolbox__item-preview svg").Should().NotBeNull();
+    }
+}

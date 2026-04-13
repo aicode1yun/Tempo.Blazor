@@ -1,0 +1,87 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Rendering
+@using Tempo.Blazor.Components.Wireframe.Models
+
+<div class="tm-wd-canvas-wrap @Class" tabindex="0" @ref="_wrapRef">
+    <svg @ref="_svgRef"
+         id="@_svgId"
+         class="tm-wd-canvas__svg"
+         viewBox="@_viewBox"
+         xmlns="http://www.w3.org/2000/svg"
+         style="width:100%;height:100%;display:block;overflow:hidden;"
+         aria-label="Wireframe canvas">
+
+        <defs>
+            @if (ShowGrid)
+            {
+                <pattern id="@_gridSmallId" width="@_gs" height="@_gs"
+                         patternUnits="userSpaceOnUse">
+                    <path d="M @_gs 0 L 0 0 0 @_gs"
+                          fill="none" stroke="#e5e7eb" stroke-width="0.5"/>
+                </pattern>
+                <pattern id="@_gridLargeId" width="@_gl" height="@_gl"
+                         patternUnits="userSpaceOnUse">
+                    <rect width="@_gl" height="@_gl"
+                          fill="url(#@_gridSmallId)"/>
+                    <path d="M @_gl 0 L 0 0 0 @_gl"
+                          fill="none" stroke="#d1d5db" stroke-width="1"/>
+                </pattern>
+            }
+        </defs>
+
+        @* Canvas background + grid *@
+        <rect x="0" y="0"
+              width="@(Document?.Width ?? 1200)" height="@(Document?.Height ?? 800)"
+              fill="white" stroke="#d1d5db" stroke-width="1" rx="4"/>
+        @if (ShowGrid)
+        {
+            <rect x="0" y="0"
+                  width="@(Document?.Width ?? 1200)" height="@(Document?.Height ?? 800)"
+                  fill="url(#@_gridLargeId)"
+                  pointer-events="none"/>
+        }
+
+        @* Elements *@
+        @if (Document is not null)
+        {
+            @foreach (var el in Document.Elements.OrderBy(e => e.ZIndex))
+            {
+                var def    = _registry.GetDef(el.Type);
+                var transX = el.X.ToString("0.##", CultureInfo.InvariantCulture);
+                var transY = el.Y.ToString("0.##", CultureInfo.InvariantCulture);
+                var w      = el.W.ToString("0.##", CultureInfo.InvariantCulture);
+                var h      = el.H.ToString("0.##", CultureInfo.InvariantCulture);
+
+                <g data-el-id="@el.Id"
+                   data-type="@el.Type"
+                   data-w="@w"
+                   data-h="@h"
+                   transform="translate(@transX, @transY)"
+                   style="@(ReadOnly ? "cursor:default" : "cursor:move")">
+
+                    @* Inner SVG viewport so element coords stay local (0,0) *@
+                    <svg width="@w" height="@h"
+                         viewBox="0 0 @w @h"
+                         overflow="visible">
+                        @if (def is not null)
+                        {
+                            @((RenderTreeBuilder __b) => def.RenderSvg(el, __b))
+                        }
+                        else
+                        {
+                            @* Fallback: unknown component placeholder – emitted as markup to avoid Razor <text> conflict *@
+                            @((Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __fb) =>
+                            {
+                                __fb.AddMarkupContent(0,
+                                    $"<rect width='{w}' height='{h}' rx='4' fill='#f9fafb' stroke='#9ca3af' stroke-width='1' stroke-dasharray='6 3'></rect>" +
+                                    $"<text x='4' y='14' font-size='10' fill='#6b7280' font-family='ui-sans-serif,system-ui'>{WireframeSvg.Escape(el.Type)}</text>");
+                            })
+                        }
+                    </svg>
+                </g>
+            }
+        }
+
+    </svg>
+</div>

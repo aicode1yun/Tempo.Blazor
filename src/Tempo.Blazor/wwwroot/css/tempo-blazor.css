@@ -125,6 +125,7 @@
 /* 14. Charts */
 @import "components/_chart.css";
 @import "components/_workflow-designer.css";
+@import "components/_wireframe-editor.css";
 
 /* 15. Navigation & Views */
 @import "components/_tree-view.css";

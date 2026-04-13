@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.Services;
 
@@ -16,11 +17,19 @@ public static class ServiceCollectionExtensions
     ///   <item><description><see cref="ITmLocalizer"/>: Singleton (stateless, thread-safe, backed by .resx)</description></item>
     ///   <item><description><see cref="ThemeService"/>: Scoped (per-circuit in Server mode, per-tab in WASM)</description></item>
     ///   <item><description><see cref="ToastService"/>: Scoped (per-circuit in Server mode, per-tab in WASM)</description></item>
+    ///   <item><description><see cref="WireframeComponentRegistry"/>: Singleton, pre-loaded with <see cref="BuiltInWireframeComponentProvider"/></description></item>
     /// </list>
     ///
     /// Add this call to your Blazor Program.cs:
     /// <code>
     /// builder.Services.AddTempoBlazor();
+    /// </code>
+    ///
+    /// To add custom wireframe components, call <see cref="AddWireframeComponentProvider{T}"/>
+    /// after <c>AddTempoBlazor()</c>:
+    /// <code>
+    /// builder.Services.AddTempoBlazor();
+    /// builder.Services.AddWireframeComponentProvider&lt;MyCustomProvider&gt;();
     /// </code>
     ///
     /// To override the built-in localization with your own strings, register
@@ -52,6 +61,54 @@ public static class ServiceCollectionExtensions
         // DragDropService — Scoped (carries dragged IDs between sibling components)
         services.TryAddScoped<DragDropService>();
 
+        // ── Wireframe editor ──────────────────────────────────────────────────
+        // WireframeCommandStack is NOT registered here – it is created by
+        // TmWireframeEditor and cascaded to children so that multiple editor
+        // instances on the same page each have an isolated undo/redo history.
+
+        // Register built-in component provider so the registry can be populated.
+        services.TryAddSingleton<IWireframeComponentProvider, BuiltInWireframeComponentProvider>();
+
+        // Registry is a singleton that collects all registered providers.
+        // It is populated lazily on first resolve by the factory below.
+        services.TryAddSingleton<WireframeComponentRegistry>(sp =>
+        {
+            var registry  = new WireframeComponentRegistry();
+            var providers = sp.GetServices<IWireframeComponentProvider>();
+            foreach (var provider in providers.OrderBy(p => p.Priority))
+                registry.RegisterProvider(provider);
+            return registry;
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a custom <see cref="IWireframeComponentProvider"/> so its component
+    /// definitions appear in <see cref="WireframeComponentRegistry"/> and are shown in
+    /// the <c>TmWireframeToolbox</c>.
+    ///
+    /// Call this <em>after</em> <see cref="AddTempoBlazor"/>:
+    /// <code>
+    /// builder.Services.AddTempoBlazor();
+    /// builder.Services.AddWireframeComponentProvider&lt;MarketingComponentProvider&gt;();
+    /// </code>
+    ///
+    /// When the custom provider registers the same <see cref="WireframeComponentDef.ComponentType"/>
+    /// as the built-in provider, the one with the higher
+    /// <see cref="IWireframeComponentProvider.Priority"/> wins (built-in uses priority 0;
+    /// set a higher value to override).
+    /// </summary>
+    /// <typeparam name="T">Concrete provider type to register.</typeparam>
+    public static IServiceCollection AddWireframeComponentProvider<T>(
+        this IServiceCollection services)
+        where T : class, IWireframeComponentProvider
+    {
+        // Register the concrete type so it can also be resolved directly if needed.
+        services.TryAddSingleton<T>();
+        // Register as IWireframeComponentProvider so GetServices<IWireframeComponentProvider>
+        // picks it up inside the WireframeComponentRegistry factory.
+        services.AddSingleton<IWireframeComponentProvider>(sp => sp.GetRequiredService<T>());
         return services;
     }
 }

@@ -1,0 +1,994 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmWireframeEditor – full wireframe design tool
+   Covers: editor shell, toolbar, canvas, toolbox, properties
+   panel, minimap, and JS-rendered selection/rubber-band overlays.
+
+   BEM-style prefix: tm-wd-*
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Shared design tokens (local fallbacks for standalone use) ── */
+
+:root {
+  --tm-wd-font:          ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --tm-wd-font-mono:     ui-monospace, "Cascadia Code", monospace;
+  --tm-wd-radius-sm:     3px;
+  --tm-wd-radius:        4px;
+  --tm-wd-radius-lg:     6px;
+
+  /* Wireframe palette – intentionally flat, no shadows */
+  --tm-wd-bg-surface:    #ffffff;
+  --tm-wd-bg-subtle:     #f9fafb;
+  --tm-wd-bg-muted:      #f3f4f6;
+  --tm-wd-border:        #d1d5db;
+  --tm-wd-border-focus:  #3b82f6;
+  --tm-wd-text:          #374151;
+  --tm-wd-text-muted:    #6b7280;
+  --tm-wd-text-light:    #9ca3af;
+  --tm-wd-accent:        #3b82f6;
+  --tm-wd-accent-subtle: #dbeafe;
+  --tm-wd-danger:        #ef4444;
+  --tm-wd-danger-subtle: #fee2e2;
+
+  /* Toolbar */
+  --tm-wd-toolbar-h:     42px;
+  --tm-wd-toolbar-bg:    #ffffff;
+
+  /* Side panels */
+  --tm-wd-toolbox-w:     220px;
+  --tm-wd-props-w:       280px;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   1. EDITOR SHELL
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  min-height: 500px;
+  font-family: var(--tm-wd-font);
+  font-size: 13px;
+  color: var(--tm-wd-text);
+  background: var(--tm-wd-bg-muted);
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius-lg);
+  overflow: hidden;
+}
+
+.tm-wd-editor__body {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   2. TOOLBAR
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  height: var(--tm-wd-toolbar-h);
+  padding: 0 8px;
+  background: var(--tm-wd-toolbar-bg);
+  border-bottom: 1px solid var(--tm-wd-border);
+  flex-shrink: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+.tm-wd-editor__title {
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--tm-wd-radius);
+  background: transparent;
+  font-family: var(--tm-wd-font);
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--tm-wd-text);
+  min-width: 0;
+  max-width: 220px;
+  transition: border-color 0.15s;
+}
+
+.tm-wd-editor__title:hover:not(:disabled) {
+  border-color: var(--tm-wd-border);
+}
+
+.tm-wd-editor__title:focus {
+  outline: none;
+  border-color: var(--tm-wd-border-focus);
+  background: var(--tm-wd-bg-surface);
+}
+
+.tm-wd-editor__title:disabled {
+  color: var(--tm-wd-text-muted);
+  cursor: default;
+}
+
+.tm-wd-editor__toolbar-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--tm-wd-border);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+.tm-wd-editor__toolbar-spacer {
+  flex: 1;
+}
+
+/* ── Toolbar button ── */
+
+.tm-wd-editor__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 26px;
+  min-width: 26px;
+  padding: 0 6px;
+  border: 1px solid transparent;
+  border-radius: var(--tm-wd-radius);
+  background: transparent;
+  font-family: var(--tm-wd-font);
+  font-size: 13px;
+  color: var(--tm-wd-text);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.1s, border-color 0.1s, color 0.1s;
+  user-select: none;
+}
+
+.tm-wd-editor__btn:hover:not(:disabled) {
+  background: var(--tm-wd-bg-muted);
+  border-color: var(--tm-wd-border);
+}
+
+.tm-wd-editor__btn:active:not(:disabled) {
+  background: #e5e7eb;
+}
+
+.tm-wd-editor__btn:disabled {
+  color: var(--tm-wd-text-light);
+  cursor: not-allowed;
+}
+
+.tm-wd-editor__btn--active {
+  background: var(--tm-wd-accent-subtle);
+  border-color: var(--tm-wd-accent);
+  color: var(--tm-wd-accent);
+}
+
+.tm-wd-editor__btn--text {
+  padding: 0 8px;
+  min-width: auto;
+}
+
+.tm-wd-editor__btn--icon {
+  font-size: 15px;
+  padding: 0;
+}
+
+/* ── Zoom label ── */
+
+.tm-wd-editor__zoom-label {
+  display: inline-block;
+  min-width: 40px;
+  text-align: center;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  color: var(--tm-wd-text-muted);
+  user-select: none;
+}
+
+/* ── Canvas size inline editor ── */
+
+.tm-wd-editor__btn--canvas-size {
+  font-variant-numeric: tabular-nums;
+  color: var(--tm-wd-text-muted);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.tm-wd-editor__canvas-size-input {
+  width: 52px;
+  padding: 2px 4px;
+  border: 1px solid var(--tm-wd-border);
+  border-radius: 4px;
+  background: var(--tm-wd-fill);
+  color: var(--tm-wd-text);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  outline: none;
+}
+
+.tm-wd-editor__canvas-size-input:focus {
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 2px rgba(59,130,246,0.2);
+}
+
+.tm-wd-editor__canvas-size-sep {
+  font-size: 12px;
+  color: var(--tm-wd-text-muted);
+  padding: 0 2px;
+  user-select: none;
+}
+
+/* ── Export dropdown ── */
+
+.tm-wd-editor__dropdown-wrap {
+  position: relative;
+}
+
+.tm-wd-editor__dropdown {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  z-index: 200;
+  min-width: 130px;
+  background: var(--tm-wd-bg-surface);
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  overflow: hidden;
+}
+
+.tm-wd-editor__dropdown-item {
+  display: block;
+  width: 100%;
+  padding: 7px 12px;
+  border: none;
+  background: transparent;
+  font-family: var(--tm-wd-font);
+  font-size: 13px;
+  color: var(--tm-wd-text);
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.1s;
+}
+
+.tm-wd-editor__dropdown-item:hover {
+  background: var(--tm-wd-bg-muted);
+}
+
+/* ── Import file input (hidden, triggered via label) ── */
+
+.tm-wd-editor__file-input {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+  clip: rect(0 0 0 0);
+  pointer-events: none;
+}
+
+/* ── Import error banner ── */
+
+.tm-wd-editor__error-banner {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  background: var(--tm-wd-danger-subtle);
+  border-bottom: 1px solid #fca5a5;
+  font-size: 13px;
+  color: #991b1b;
+  flex-shrink: 0;
+}
+
+.tm-wd-editor__error-close {
+  margin-left: auto;
+  border: none;
+  background: transparent;
+  color: #991b1b;
+  cursor: pointer;
+  font-size: 14px;
+  padding: 0 4px;
+  border-radius: var(--tm-wd-radius-sm);
+}
+
+.tm-wd-editor__error-close:hover {
+  background: #fecaca;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   3. TOOLBOX PANEL (left)
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__toolbox-wrap {
+  width: var(--tm-wd-toolbox-w);
+  flex-shrink: 0;
+  border-right: 1px solid var(--tm-wd-border);
+  background: var(--tm-wd-bg-surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tm-wd-toolbox {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* ── Search bar ── */
+
+.tm-wd-toolbox__search {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px;
+  border-bottom: 1px solid var(--tm-wd-border);
+  flex-shrink: 0;
+}
+
+.tm-wd-toolbox__search-input {
+  flex: 1;
+  height: 26px;
+  padding: 0 8px;
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  background: var(--tm-wd-bg-muted);
+  font-family: var(--tm-wd-font);
+  font-size: 12px;
+  color: var(--tm-wd-text);
+  min-width: 0;
+  transition: border-color 0.15s, background 0.15s;
+}
+
+.tm-wd-toolbox__search-input:focus {
+  outline: none;
+  border-color: var(--tm-wd-border-focus);
+  background: var(--tm-wd-bg-surface);
+}
+
+.tm-wd-toolbox__search-clear {
+  width: 22px;
+  height: 22px;
+  border: none;
+  border-radius: var(--tm-wd-radius-sm);
+  background: transparent;
+  color: var(--tm-wd-text-muted);
+  font-size: 14px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.1s;
+}
+
+.tm-wd-toolbox__search-clear:hover {
+  background: var(--tm-wd-bg-muted);
+  color: var(--tm-wd-text);
+}
+
+/* ── Filter tabs ── */
+
+.tm-wd-toolbox__filters {
+  display: flex;
+  gap: 2px;
+  padding: 6px 8px 4px;
+  border-bottom: 1px solid var(--tm-wd-border);
+  flex-shrink: 0;
+}
+
+.tm-wd-toolbox__filter-btn {
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid transparent;
+  border-radius: var(--tm-wd-radius-sm);
+  background: transparent;
+  font-family: var(--tm-wd-font);
+  font-size: 11px;
+  color: var(--tm-wd-text-muted);
+  cursor: pointer;
+  transition: background 0.1s, color 0.1s, border-color 0.1s;
+}
+
+.tm-wd-toolbox__filter-btn:hover {
+  background: var(--tm-wd-bg-muted);
+  color: var(--tm-wd-text);
+}
+
+.tm-wd-toolbox__filter-btn--active {
+  background: var(--tm-wd-accent-subtle);
+  border-color: var(--tm-wd-accent);
+  color: var(--tm-wd-accent);
+}
+
+/* ── Scrollable component list ── */
+
+.tm-wd-toolbox__list {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 4px 0;
+}
+
+/* ── Category (native <details>) ── */
+
+.tm-wd-toolbox__category {
+  border-bottom: 1px solid var(--tm-wd-border);
+}
+
+.tm-wd-toolbox__category:last-child {
+  border-bottom: none;
+}
+
+.tm-wd-toolbox__category-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  list-style: none;
+  cursor: pointer;
+  user-select: none;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tm-wd-text-muted);
+  transition: background 0.1s;
+}
+
+.tm-wd-toolbox__category-header:hover {
+  background: var(--tm-wd-bg-muted);
+}
+
+/* Remove native triangle, add our own via ::before */
+.tm-wd-toolbox__category-header::-webkit-details-marker { display: none; }
+
+.tm-wd-toolbox__category-header::before {
+  content: "▶";
+  font-size: 8px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.tm-wd-toolbox__category[open] > .tm-wd-toolbox__category-header::before {
+  transform: rotate(90deg);
+}
+
+.tm-wd-toolbox__category-name {
+  flex: 1;
+}
+
+.tm-wd-toolbox__category-count {
+  font-size: 10px;
+  color: var(--tm-wd-text-light);
+  font-weight: 400;
+}
+
+.tm-wd-toolbox__category-items {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 4px;
+  padding: 4px 6px 8px;
+}
+
+/* ── Component item ── */
+
+.tm-wd-toolbox__item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 4px;
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  background: var(--tm-wd-bg-surface);
+  cursor: grab;
+  position: relative;
+  transition: border-color 0.1s, background 0.1s, box-shadow 0.1s;
+  user-select: none;
+}
+
+.tm-wd-toolbox__item:hover {
+  border-color: var(--tm-wd-accent);
+  background: var(--tm-wd-bg-subtle);
+  box-shadow: 0 1px 4px rgba(59,130,246,0.1);
+}
+
+.tm-wd-toolbox__item:focus-visible {
+  outline: 2px solid var(--tm-wd-accent);
+  outline-offset: 1px;
+}
+
+.tm-wd-toolbox__item:active {
+  cursor: grabbing;
+  background: var(--tm-wd-accent-subtle);
+}
+
+.tm-wd-toolbox__item-preview {
+  display: block;
+  width: 56px;
+  height: 32px;
+  overflow: visible;
+  pointer-events: none;
+}
+
+.tm-wd-toolbox__item-name {
+  font-size: 10px;
+  color: var(--tm-wd-text-muted);
+  text-align: center;
+  line-height: 1.2;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-wd-toolbox__item-badge {
+  position: absolute;
+  top: 2px;
+  right: 3px;
+  font-size: 8px;
+  font-weight: 700;
+  line-height: 1;
+  padding: 1px 3px;
+  border-radius: 2px;
+  background: var(--tm-wd-bg-muted);
+  color: var(--tm-wd-text-light);
+}
+
+.tm-wd-toolbox__item-badge--custom {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+/* ── Empty state ── */
+
+.tm-wd-toolbox__empty {
+  padding: 24px 16px;
+  text-align: center;
+  color: var(--tm-wd-text-light);
+  font-size: 12px;
+  font-style: italic;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   4. CANVAS AREA
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__canvas-wrap {
+  position: relative;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--tm-wd-bg-muted);
+}
+
+.tm-wd-canvas-wrap {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  overflow: hidden;
+  outline: none;
+}
+
+.tm-wd-canvas__svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+  cursor: default;
+  /* prevent text selection during rubber-band drag */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+/* ── JS-rendered selection overlay ── */
+
+.tm-wd-selection {
+  pointer-events: none;
+}
+
+/* ── JS-rendered resize handles ── */
+
+.tm-wd-handle {
+  cursor: pointer;
+}
+
+/* ── JS-rendered rubber band ── */
+
+.tm-wd-rubber {
+  pointer-events: none;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   5. PROPERTIES PANEL (right)
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__props-wrap {
+  width: var(--tm-wd-props-w);
+  flex-shrink: 0;
+  border-left: 1px solid var(--tm-wd-border);
+  background: var(--tm-wd-bg-surface);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.tm-wd-props {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+/* ── Empty state ── */
+
+.tm-wd-props__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  height: 100%;
+  color: var(--tm-wd-text-light);
+  font-size: 13px;
+  padding: 24px;
+  text-align: center;
+}
+
+.tm-wd-props__empty-icon {
+  font-size: 28px;
+  opacity: 0.4;
+}
+
+/* ── Header ── */
+
+.tm-wd-props__header {
+  padding: 10px 12px 8px;
+  border-bottom: 1px solid var(--tm-wd-border);
+  flex-shrink: 0;
+}
+
+.tm-wd-props__type-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: 10px;
+  background: var(--tm-wd-accent-subtle);
+  color: var(--tm-wd-accent);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  margin-bottom: 3px;
+}
+
+.tm-wd-props__subtitle {
+  display: block;
+  font-size: 12px;
+  color: var(--tm-wd-text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ── Collapsible section (native <details>) ── */
+
+.tm-wd-props__section {
+  border-bottom: 1px solid var(--tm-wd-border);
+}
+
+.tm-wd-props__section:last-child {
+  border-bottom: none;
+}
+
+.tm-wd-props__section-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 7px 10px;
+  list-style: none;
+  cursor: pointer;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--tm-wd-text-muted);
+  user-select: none;
+  transition: background 0.1s;
+}
+
+.tm-wd-props__section-header:hover {
+  background: var(--tm-wd-bg-muted);
+}
+
+.tm-wd-props__section-header::-webkit-details-marker { display: none; }
+
+.tm-wd-props__section-header::before {
+  content: "▶";
+  font-size: 8px;
+  transition: transform 0.15s;
+  flex-shrink: 0;
+}
+
+.tm-wd-props__section[open] > .tm-wd-props__section-header::before {
+  transform: rotate(90deg);
+}
+
+.tm-wd-props__section-body {
+  padding: 6px 10px 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.tm-wd-props__section-body--grid2 {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── Field ── */
+
+.tm-wd-props__field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.tm-wd-props__field--error .tm-wd-props__input,
+.tm-wd-props__field--error .tm-wd-props__select {
+  border-color: var(--tm-wd-danger) !important;
+}
+
+.tm-wd-props__label {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--tm-wd-text-muted);
+  user-select: none;
+}
+
+.tm-wd-props__required {
+  color: var(--tm-wd-danger);
+  font-weight: 700;
+  font-size: 12px;
+  line-height: 1;
+}
+
+/* ── Inputs ── */
+
+.tm-wd-props__input,
+.tm-wd-props__select {
+  width: 100%;
+  height: 26px;
+  padding: 0 7px;
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  background: var(--tm-wd-bg-muted);
+  font-family: var(--tm-wd-font);
+  font-size: 12px;
+  color: var(--tm-wd-text);
+  transition: border-color 0.15s, background 0.15s;
+  box-sizing: border-box;
+}
+
+.tm-wd-props__input:focus,
+.tm-wd-props__select:focus {
+  outline: none;
+  border-color: var(--tm-wd-border-focus);
+  background: var(--tm-wd-bg-surface);
+}
+
+.tm-wd-props__input--readonly {
+  background: var(--tm-wd-bg-muted);
+  color: var(--tm-wd-text-muted);
+  cursor: default;
+}
+
+.tm-wd-props__input--mixed::placeholder {
+  color: var(--tm-wd-text-muted);
+  font-style: italic;
+}
+
+.tm-wd-props__input--error {
+  border-color: var(--tm-wd-danger);
+}
+
+.tm-wd-props__error-msg {
+  font-size: 10px;
+  color: var(--tm-wd-danger);
+  line-height: 1.3;
+}
+
+/* ── Boolean toggle ── */
+
+.tm-wd-props__toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  user-select: none;
+}
+
+.tm-wd-props__toggle input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
+}
+
+.tm-wd-props__toggle-track {
+  display: inline-block;
+  width: 32px;
+  height: 18px;
+  border-radius: 9px;
+  background: var(--tm-wd-border);
+  position: relative;
+  transition: background 0.2s;
+  flex-shrink: 0;
+}
+
+.tm-wd-props__toggle-track::after {
+  content: "";
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.2);
+  transition: transform 0.2s;
+}
+
+.tm-wd-props__toggle input:checked ~ .tm-wd-props__toggle-track {
+  background: var(--tm-wd-accent);
+}
+
+.tm-wd-props__toggle input:checked ~ .tm-wd-props__toggle-track::after {
+  transform: translateX(14px);
+}
+
+.tm-wd-props__toggle input:indeterminate ~ .tm-wd-props__toggle-track {
+  background: var(--tm-wd-text-light);
+}
+
+/* ── Color row ── */
+
+.tm-wd-props__color-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.tm-wd-props__color-swatch {
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  padding: 1px;
+  cursor: pointer;
+  flex-shrink: 0;
+  background: none;
+}
+
+.tm-wd-props__color-swatch::-webkit-color-swatch-wrapper { padding: 0; }
+.tm-wd-props__color-swatch::-webkit-color-swatch {
+  border: none;
+  border-radius: 2px;
+}
+
+.tm-wd-props__color-row .tm-wd-props__input {
+  flex: 1;
+  min-width: 0;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   6. MINIMAP
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__minimap-wrap {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  z-index: 10;
+}
+
+.tm-wd-minimap {
+  border: 1px solid var(--tm-wd-border);
+  border-radius: var(--tm-wd-radius);
+  background: var(--tm-wd-bg-surface);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+  overflow: hidden;
+  opacity: 0.9;
+  transition: opacity 0.15s;
+}
+
+.tm-wd-minimap:hover {
+  opacity: 1;
+}
+
+.tm-wd-minimap__svg {
+  display: block;
+}
+
+.tm-wd-minimap__viewport {
+  /* Cursor is set inline in Razor; SVG pointer-events handled via JS */
+}
+
+.tm-wd-minimap__empty {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--tm-wd-text-light);
+  font-style: italic;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   7. SCROLLBARS (thin, matching the design)
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-toolbox__list::-webkit-scrollbar,
+.tm-wd-props::-webkit-scrollbar {
+  width: 5px;
+}
+
+.tm-wd-toolbox__list::-webkit-scrollbar-track,
+.tm-wd-props::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tm-wd-toolbox__list::-webkit-scrollbar-thumb,
+.tm-wd-props::-webkit-scrollbar-thumb {
+  background: var(--tm-wd-border);
+  border-radius: 3px;
+}
+
+.tm-wd-toolbox__list::-webkit-scrollbar-thumb:hover,
+.tm-wd-props::-webkit-scrollbar-thumb:hover {
+  background: var(--tm-wd-text-light);
+}
+
+/* ════════════════════════════════════════════════════════════════
+   8. DARK MODE
+   ════════════════════════════════════════════════════════════════ */
+
+[data-theme="dark"] .tm-wd-editor,
+.tm-dark .tm-wd-editor {
+  --tm-wd-bg-surface:    #1e293b;
+  --tm-wd-bg-subtle:     #1e293b;
+  --tm-wd-bg-muted:      #0f172a;
+  --tm-wd-border:        #334155;
+  --tm-wd-border-focus:  #60a5fa;
+  --tm-wd-text:          #e2e8f0;
+  --tm-wd-text-muted:    #94a3b8;
+  --tm-wd-text-light:    #64748b;
+  --tm-wd-accent:        #60a5fa;
+  --tm-wd-accent-subtle: rgba(59,130,246,0.15);
+  --tm-wd-toolbar-bg:    #1e293b;
+  --tm-wd-danger-subtle: rgba(239,68,68,0.15);
+}
+
+/* Invert wireframe SVG fills for dark mode */
+[data-theme="dark"] .tm-wd-canvas-wrap .tm-wd-canvas__svg rect[fill="white"],
+.tm-dark .tm-wd-canvas-wrap .tm-wd-canvas__svg rect[fill="white"] {
+  fill: #1e293b;
+}
+
+/* ════════════════════════════════════════════════════════════════
+   9. FOCUS-VISIBLE (keyboard accessibility)
+   ════════════════════════════════════════════════════════════════ */
+
+.tm-wd-editor__btn:focus-visible,
+.tm-wd-toolbox__filter-btn:focus-visible,
+.tm-wd-toolbox__search-input:focus-visible,
+.tm-wd-props__input:focus-visible,
+.tm-wd-props__select:focus-visible {
+  outline: 2px solid var(--tm-wd-border-focus);
+  outline-offset: 1px;
+}

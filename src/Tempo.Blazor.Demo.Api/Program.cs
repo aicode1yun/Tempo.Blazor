@@ -22,6 +22,7 @@ builder.Services.AddSingleton<MockViewStore>();
 builder.Services.AddSingleton<MockDropdownStore>();
 builder.Services.AddSingleton<MockScheduleStore>();
 builder.Services.AddSingleton<MockTokenStore>();
+builder.Services.AddSingleton<MockWireframeStore>();
 
 var app = builder.Build();
 
@@ -37,6 +38,7 @@ app.MapDropdownEndpoints();
 app.MapScheduleEndpoints();
 app.MapImportExportEndpoints();
 app.MapTokenEndpoints();
+app.MapWireframeEndpoints();
 
 app.Run();
 

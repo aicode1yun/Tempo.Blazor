@@ -1,0 +1,48 @@
+using System.Text.Json;
+
+namespace Tempo.Blazor.Components.Wireframe.Models;
+
+/// <summary>
+/// A single UI element placed on the wireframe canvas.
+/// The <see cref="Type"/> matches a registered <c>WireframeComponentDef.Type</c>
+/// (e.g. "TmButton", "TmDataTable" or a custom component type).
+/// </summary>
+public sealed class WireframeElement
+{
+    /// <summary>Unique identifier (short Guid, e.g. "a3f8c21b").</summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
+
+    /// <summary>
+    /// Component type identifier – must match a registered WireframeComponentDef.
+    /// Examples: "TmButton", "TmTextInput", "MyCustomCard".
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+
+    /// <summary>X position of the element's top-left corner in pixels.</summary>
+    public double X { get; set; }
+
+    /// <summary>Y position of the element's top-left corner in pixels.</summary>
+    public double Y { get; set; }
+
+    /// <summary>Width in pixels.</summary>
+    public double W { get; set; } = 120;
+
+    /// <summary>Height in pixels.</summary>
+    public double H { get; set; } = 36;
+
+    /// <summary>
+    /// Component properties keyed by camelCase prop name.
+    /// Values are stored as <see cref="JsonElement"/> to support any JSON type
+    /// (string, number, bool, array, object).
+    /// </summary>
+    public Dictionary<string, JsonElement> Props { get; set; } = [];
+
+    /// <summary>Stacking order. Higher value = rendered on top.</summary>
+    public int ZIndex { get; set; }
+
+    /// <summary>Optional group identifier for grouping elements together.</summary>
+    public string? GroupId { get; set; }
+
+    /// <summary>Reserved for future collaborative editing – who has this element locked.</summary>
+    public string? LockedBy { get; set; }
+}

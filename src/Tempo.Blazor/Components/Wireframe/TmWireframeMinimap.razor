@@ -1,0 +1,79 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Components.Wireframe.Models
+@using System.Globalization
+
+@* ── TmWireframeMinimap ──────────────────────────────────────────────────────
+   A small SVG overview of the canvas. Shows simplified bounding boxes of all
+   elements and a viewport rectangle that reflects the current pan/zoom state.
+
+   The minimap scales the document coordinate space into a fixed pixel area while
+   preserving the canvas aspect ratio. Clicking anywhere navigates the main canvas
+   to that position; dragging the viewport rect pans the canvas.
+   ─────────────────────────────────────────────────────────────────────────── *@
+
+<div class="tm-wd-minimap @Class"
+     style="width:@(Width)px"
+     @ref="_container">
+
+    @if (Document is not null)
+    {
+        var scale = ComputeScale();
+        var mapH  = (int)Math.Round(Document.Height * scale);
+
+        <svg @ref="_svg"
+             class="tm-wd-minimap__svg"
+             width="@Width"
+             height="@mapH"
+             viewBox="0 0 @F(Document.Width) @F(Document.Height)"
+             xmlns="http://www.w3.org/2000/svg"
+             @onmousedown="OnSvgMouseDown"
+             @onmousemove="OnSvgMouseMove"
+             @onmouseup="OnSvgMouseUp"
+             @onmouseleave="OnSvgMouseLeave">
+
+            @* ── Canvas background ───────────────────────────────────────── *@
+            <rect x="0" y="0"
+                  width="@F(Document.Width)"
+                  height="@F(Document.Height)"
+                  fill="#f9fafb" stroke="#e5e7eb" stroke-width="1" />
+
+            @* ── Element boxes ───────────────────────────────────────────── *@
+            @foreach (var el in Document.Elements.OrderBy(e => e.ZIndex))
+            {
+                var isSelected = SelectedIds.Contains(el.Id);
+                <rect x="@F(el.X)" y="@F(el.Y)"
+                      width="@F(Math.Max(1, el.W))"
+                      height="@F(Math.Max(1, el.H))"
+                      fill="@(isSelected ? "#dbeafe" : "#e5e7eb")"
+                      stroke="@(isSelected ? "#3b82f6" : "#9ca3af")"
+                      stroke-width="@(isSelected ? "2" : "1")"
+                      rx="1" />
+            }
+
+            @* ── Viewport rectangle ──────────────────────────────────────── *@
+            @if (_viewportRect is { } vp)
+            {
+                <rect x="@F(vp.X)"
+                      y="@F(vp.Y)"
+                      width="@F(Math.Max(1, vp.W))"
+                      height="@F(Math.Max(1, vp.H))"
+                      fill="rgba(59,130,246,0.08)"
+                      stroke="#3b82f6"
+                      stroke-width="@F(1.5 / scale)"
+                      stroke-dasharray="@F(4 / scale) @F(3 / scale)"
+                      rx="1"
+                      class="tm-wd-minimap__viewport"
+                      style="cursor:move" />
+            }
+        </svg>
+    }
+    else
+    {
+        <div class="tm-wd-minimap__empty">No document</div>
+    }
+</div>
+
+@code {
+    private static string F(double v) =>
+        v.ToString("0.##", CultureInfo.InvariantCulture);
+}

@@ -1,0 +1,234 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Components.Wireframe.Models
+@using Microsoft.AspNetCore.Components.Forms
+
+@* ── TmWireframeEditor ──────────────────────────────────────────────────────
+   Top-level wireframe editor. Composes Toolbox + Canvas + Properties Panel +
+   optional Minimap and Toolbar. Creates and owns the WireframeCommandStack and
+   exposes it to all child components via CascadingValue.
+   ─────────────────────────────────────────────────────────────────────────── *@
+
+<CascadingValue Value="_commandStack" IsFixed="false">
+
+<div class="tm-wd-editor @Class">
+
+    @* ── Toolbar ─────────────────────────────────────────────────────────── *@
+    @if (ShowToolbar)
+    {
+        <div class="tm-wd-editor__toolbar" role="toolbar" aria-label="Wireframe editor toolbar">
+
+            @* Title *@
+            <input class="tm-wd-editor__title"
+                   type="text"
+                   value="@_document?.Title"
+                   placeholder="Untitled wireframe"
+                   aria-label="Document title"
+                   @onchange="OnTitleChanged"
+                   disabled="@ReadOnly"
+                   title="Document title" />
+
+            @* Tool mode: Select / Pan *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolMode == "select" ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="Select tool (V)"
+                    aria-pressed="@(_toolMode == "select")"
+                    title="Select tool (V)"
+                    disabled="@ReadOnly"
+                    @onclick='() => SetToolMode("select")'>
+                ↖
+            </button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolMode == "pan" ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="Pan tool (H)"
+                    aria-pressed="@(_toolMode == "pan")"
+                    title="Pan tool (H) — or hold Space"
+                    @onclick='() => SetToolMode("pan")'>
+                ✋
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Undo / Redo *@
+            <button class="tm-wd-editor__btn"
+                    aria-label="Undo @_commandStack.NextUndoName"
+                    title="Undo (@_commandStack.NextUndoName)"
+                    disabled="@(!_commandStack.CanUndo || ReadOnly)"
+                    @onclick="OnUndoClicked">
+                ↩
+            </button>
+            <button class="tm-wd-editor__btn"
+                    aria-label="Redo @_commandStack.NextRedoName"
+                    title="Redo (@_commandStack.NextRedoName)"
+                    disabled="@(!_commandStack.CanRedo || ReadOnly)"
+                    @onclick="OnRedoClicked">
+                ↪
+            </button>
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Zoom *@
+            <button class="tm-wd-editor__btn" aria-label="Zoom out" title="Zoom out" @onclick="ZoomOut">−</button>
+            <span class="tm-wd-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom level @_zoomLabel">@_zoomLabel</span>
+            <button class="tm-wd-editor__btn" aria-label="Zoom in"  title="Zoom in"  @onclick="ZoomIn">+</button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--text" aria-label="Fit canvas to view" title="Fit to view" @onclick="FitToView">Fit</button>
+
+            @* Canvas size *@
+            @if (_canvasSizeEditing)
+            {
+                <input class="tm-wd-editor__canvas-size-input"
+                       type="number" min="100" max="9999" step="1"
+                       aria-label="Canvas width"
+                       value="@_canvasWInput"
+                       @oninput="e => _canvasWInput = e.Value?.ToString() ?? _canvasWInput" />
+                <span class="tm-wd-editor__canvas-size-sep">×</span>
+                <input class="tm-wd-editor__canvas-size-input"
+                       type="number" min="100" max="9999" step="1"
+                       aria-label="Canvas height"
+                       value="@_canvasHInput"
+                       @oninput="e => _canvasHInput = e.Value?.ToString() ?? _canvasHInput" />
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                        aria-label="Apply canvas size"
+                        title="Apply"
+                        @onclick="ApplyCanvasSize">✓</button>
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                        aria-label="Cancel canvas size"
+                        title="Cancel"
+                        @onclick="() => _canvasSizeEditing = false">✕</button>
+            }
+            else
+            {
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--text tm-wd-editor__btn--canvas-size"
+                        aria-label="Change canvas size, current @((int)(_document?.Width ?? 1280))×@((int)(_document?.Height ?? 800))"
+                        title="Change canvas size"
+                        @onclick="OpenCanvasSize">
+                    @((int)(_document?.Width ?? 1280))×@((int)(_document?.Height ?? 800))
+                </button>
+            }
+
+            <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
+
+            @* Export *@
+            <div class="tm-wd-editor__dropdown-wrap">
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
+                        aria-label="Export document"
+                        aria-haspopup="true"
+                        aria-expanded="@_exportMenuOpen"
+                        @onclick="ToggleExportMenu"
+                        title="Export">
+                    Export ▾
+                </button>
+                @if (_exportMenuOpen)
+                {
+                    <div class="tm-wd-editor__dropdown" role="menu" aria-label="Export options" @onfocusout="CloseExportMenu">
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportJson">Export JSON</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportSvg">Export SVG</button>
+                    </div>
+                }
+            </div>
+
+            @* Import *@
+            <label class="tm-wd-editor__btn tm-wd-editor__btn--text" title="Import JSON" aria-label="Import wireframe JSON file">
+                Import
+                <InputFile class="tm-wd-editor__file-input" OnChange="OnImportFile" accept=".json,.wireframe.json" />
+            </label>
+
+            <div class="tm-wd-editor__toolbar-spacer"></div>
+
+            @* Read-only toggle *@
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--text @(ReadOnly ? "tm-wd-editor__btn--active" : "")"
+                    aria-label="@(ReadOnly ? "Switch to edit mode" : "Switch to read-only mode")"
+                    aria-pressed="@ReadOnly"
+                    title="@(ReadOnly ? "Switch to edit mode" : "Switch to read-only mode")"
+                    @onclick="ToggleReadOnly">
+                @(ReadOnly ? "🔒 Read-only" : "✏ Edit")
+            </button>
+
+            @* Panel toggles *@
+            @if (ShowToolbox)
+            {
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolboxCollapsed ? "" : "tm-wd-editor__btn--active")"
+                        aria-label="@(_toolboxCollapsed ? "Show toolbox" : "Hide toolbox")"
+                        aria-pressed="@(!_toolboxCollapsed)"
+                        title="Toggle toolbox"
+                        @onclick="() => _toolboxCollapsed = !_toolboxCollapsed">
+                    ◧
+                </button>
+            }
+            @if (ShowPropertiesPanel)
+            {
+                <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_propsCollapsed ? "" : "tm-wd-editor__btn--active")"
+                        aria-label="@(_propsCollapsed ? "Show properties panel" : "Hide properties panel")"
+                        aria-pressed="@(!_propsCollapsed)"
+                        title="Toggle properties panel"
+                        @onclick="() => _propsCollapsed = !_propsCollapsed">
+                    ◨
+                </button>
+            }
+
+        </div>
+    }
+
+    @* ── Import error banner ──────────────────────────────────────────────── *@
+    @if (_importError is not null)
+    {
+        <div class="tm-wd-editor__error-banner" role="alert" aria-live="assertive">
+            @_importError
+            <button class="tm-wd-editor__error-close" aria-label="Dismiss error" @onclick="() => _importError = null">✕</button>
+        </div>
+    }
+
+    @* ── Body (toolbox + canvas + props) ─────────────────────────────────── *@
+    <div class="tm-wd-editor__body">
+
+        @* Left: Toolbox *@
+        @if (ShowToolbox && !_toolboxCollapsed)
+        {
+            <div class="tm-wd-editor__toolbox-wrap">
+                <TmWireframeToolbox OnComponentActivated="OnToolboxActivated"
+                                    Class="tm-wd-editor__toolbox" />
+            </div>
+        }
+
+        @* Centre: Canvas + optional minimap overlay *@
+        <div class="tm-wd-editor__canvas-wrap">
+            <TmWireframeDesignerCanvas @ref="_canvas"
+                                       Document="@_document"
+                                       DocumentChanged="OnDocumentChanged"
+                                       ShowGrid="@ShowGrid"
+                                       GridSize="@GridSize"
+                                       ReadOnly="@ReadOnly"
+                                       OnSelectionChanged="OnSelectionChanged"
+                                       OnToolModeChanged="OnCanvasToolModeChanged"
+                                       Class="tm-wd-editor__canvas" />
+
+            @if (ShowMinimap)
+            {
+                <div class="tm-wd-editor__minimap-wrap">
+                    <TmWireframeMinimap @ref="_minimap"
+                                        Document="@_document"
+                                        SelectedIds="@_selectedIds"
+                                        Viewport="@_minimapViewport"
+                                        Width="180"
+                                        NavigateRequested="OnMinimapNavigate"
+                                        Class="tm-wd-editor__minimap" />
+                </div>
+            }
+        </div>
+
+        @* Right: Properties Panel *@
+        @if (ShowPropertiesPanel && !_propsCollapsed)
+        {
+            <div class="tm-wd-editor__props-wrap">
+                <TmWireframePropertiesPanel Document="@_document"
+                                            DocumentChanged="OnDocumentChanged"
+                                            SelectedIds="@_selectedIds"
+                                            Class="tm-wd-editor__props" />
+            </div>
+        }
+
+    </div>
+
+</div>
+
+</CascadingValue>
+
+@* Hidden download anchor for export *@
+<a @ref="_downloadAnchor" style="display:none"></a>

@@ -1,0 +1,103 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using System.Globalization
+@using Microsoft.AspNetCore.Components.Rendering
+@using Tempo.Blazor.Components.Wireframe.Models
+
+<div class="tm-wd-toolbox @Class" @ref="_containerRef">
+
+    @* ── Search ──────────────────────────────────────────────────────────── *@
+    <div class="tm-wd-toolbox__search">
+        <input class="tm-wd-toolbox__search-input"
+               type="search"
+               placeholder="Search components…"
+               value="@_search"
+               @oninput="OnSearchInput"
+               aria-label="Search components" />
+        @if (!string.IsNullOrEmpty(_search))
+        {
+            <button class="tm-wd-toolbox__search-clear"
+                    @onclick="ClearSearch"
+                    aria-label="Clear search">✕</button>
+        }
+    </div>
+
+    @* ── Filter tabs (All / Built-in / Custom) ────────────────────────────── *@
+    @if (_hasCustomComponents)
+    {
+        <div class="tm-wd-toolbox__filters" role="tablist">
+            @foreach (var f in _filters)
+            {
+                <button class="tm-wd-toolbox__filter-btn @(_filterMode == f ? "tm-wd-toolbox__filter-btn--active" : "")"
+                        role="tab"
+                        aria-selected="@(_filterMode == f)"
+                        @onclick="@(() => SetFilter(f))">
+                    @f
+                </button>
+            }
+        </div>
+    }
+
+    @* ── Component list ───────────────────────────────────────────────────── *@
+    <div class="tm-wd-toolbox__list">
+        @if (!_visibleCategories.Any())
+        {
+            <div class="tm-wd-toolbox__empty">No components match "@_search"</div>
+        }
+        else
+        {
+            @foreach (var cat in _visibleCategories)
+            {
+                var items = GetVisibleItems(cat);
+                if (!items.Any()) continue;
+
+                <details class="tm-wd-toolbox__category" open>
+                    <summary class="tm-wd-toolbox__category-header">
+                        <span class="tm-wd-toolbox__category-name">@cat</span>
+                        <span class="tm-wd-toolbox__category-count">@items.Count()</span>
+                    </summary>
+
+                    <div class="tm-wd-toolbox__category-items">
+                        @foreach (var def in items)
+                        {
+                            <div class="tm-wd-toolbox__item"
+                                 draggable="true"
+                                 data-component-type="@def.Type"
+                                 title="@def.DisplayName (@def.DefaultWidth×@def.DefaultHeight)"
+                                 aria-label="Drag @def.DisplayName onto canvas"
+                                 role="button"
+                                 tabindex="0"
+                                 @onkeydown="@((e) => OnItemKeyDown(e, def.Type))">
+
+                                @* SVG preview *@
+                                <div class="tm-wd-toolbox__item-preview" aria-hidden="true">
+                                    <svg width="56" height="32"
+                                         viewBox="0 0 @def.DefaultWidth.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture) @def.DefaultHeight.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)"
+                                         xmlns="http://www.w3.org/2000/svg"
+                                         preserveAspectRatio="xMidYMid meet">
+                                        @((RenderTreeBuilder __b) => def.RenderSvg(
+                                            new WireframeElement
+                                            {
+                                                Id    = "preview",
+                                                Type  = def.Type,
+                                                W     = def.DefaultWidth,
+                                                H     = def.DefaultHeight
+                                            }, __b))
+                                    </svg>
+                                </div>
+
+                                @* Label + badge *@
+                                <span class="tm-wd-toolbox__item-name">@def.DisplayName</span>
+                                @if (!def.IsBuiltIn)
+                                {
+                                    <span class="tm-wd-toolbox__item-badge tm-wd-toolbox__item-badge--custom"
+                                          title="Custom component">C</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                </details>
+            }
+        }
+    </div>
+
+</div>

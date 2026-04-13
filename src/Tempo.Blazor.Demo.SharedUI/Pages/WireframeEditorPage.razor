@@ -1,0 +1,249 @@
+@page "/wireframe-editor"
+@using Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Components.Wireframe.Models
+
+@inject IHttpClientFactory HttpFactory
+
+<PageTitle>Wireframe Editor – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Wireframe Editor</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        SVG-based wireframe design tool for quickly sketching UI layouts with Tempo.Blazor components.
+        Drag components from the toolbox, resize, rearrange, and export as JSON or SVG.
+    </p>
+</div>
+
+<!-- ═══ Section 1: Interactive editor ═══════════════════════════════════════ -->
+<section class="demo-section mb-10">
+    <div class="flex items-center justify-between mb-3">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Interactive Editor</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Drag components from the left toolbox onto the canvas. Select to edit properties on the right.
+                Ctrl+Z / Ctrl+Y for undo/redo. Delete key removes selected elements.
+            </p>
+        </div>
+        <div class="flex gap-2">
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="LoadLoginSample">
+                Load Login page
+            </button>
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="LoadDashboardSample">
+                Load Dashboard
+            </button>
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="NewDocument">
+                New document
+            </button>
+        </div>
+    </div>
+
+    <div style="height: 600px;">
+        <TmWireframeEditor Document="@_document"
+                           DocumentChanged="@(doc => { _document = doc; _jsonPreview = WireframeSerializer.Serialize(doc); })"
+                           ShowGrid="true"
+                           GridSize="8"
+                           Class="h-full" />
+    </div>
+
+    <div class="mt-3 flex gap-4 text-sm text-slate-500 dark:text-slate-400">
+        <span>Elements: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Elements.Count ?? 0)</strong></span>
+        <span>Title: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Title ?? "—")</strong></span>
+        <span>Canvas: <strong class="text-slate-700 dark:text-slate-300">@((int?)_document?.Width ?? 0)×@((int?)_document?.Height ?? 0)</strong></span>
+    </div>
+</section>
+
+<!-- ═══ Section 2: Read-only preview ════════════════════════════════════════ -->
+<section class="demo-section mb-10">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-1">Read-Only Preview</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">
+        The same document rendered with <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono">ReadOnly="true"</code>.
+        No editing interactions — useful for embedding wireframe previews in documentation or approval flows.
+    </p>
+
+    <div style="height: 360px;">
+        <TmWireframeEditor Document="@_document"
+                           ReadOnly="true"
+                           ShowToolbar="false"
+                           ShowToolbox="false"
+                           ShowPropertiesPanel="false"
+                           ShowMinimap="false"
+                           Class="h-full" />
+    </div>
+</section>
+
+<!-- ═══ Section 3: JSON import/export ═══════════════════════════════════════ -->
+<section class="demo-section mb-10">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-1">JSON Import / Export</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">
+        Wireframe documents are plain JSON — AI-friendly, version-control friendly.
+        Paste any valid wireframe JSON below and click "Load into editor".
+    </p>
+
+    <div class="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        <!-- JSON input -->
+        <div>
+            <div class="flex items-center justify-between mb-2">
+                <label class="text-sm font-medium text-slate-700 dark:text-slate-300">Wireframe JSON</label>
+                <div class="flex gap-2">
+                    <button class="px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-400"
+                            @onclick="CopyJsonToClipboard">
+                        Copy
+                    </button>
+                    <button class="px-2 py-1 text-xs rounded bg-blue-600 hover:bg-blue-700 text-white"
+                            @onclick="LoadFromJson">
+                        Load into editor
+                    </button>
+                </div>
+            </div>
+            <textarea class="w-full h-64 p-3 text-xs font-mono border border-slate-300 dark:border-slate-600 rounded bg-slate-50 dark:bg-slate-900 text-slate-800 dark:text-slate-200 resize-none"
+                      @bind="_jsonPreview"
+                      placeholder="Paste wireframe JSON here…"></textarea>
+            @if (_jsonError is not null)
+            {
+                <p class="mt-1 text-xs text-red-600 dark:text-red-400">@_jsonError</p>
+            }
+        </div>
+
+        <!-- Cheat sheet -->
+        <div class="bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg p-4">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3">Document structure</h3>
+            <pre class="text-xs font-mono text-slate-600 dark:text-slate-400 whitespace-pre-wrap leading-relaxed">@_schemaHint</pre>
+        </div>
+    </div>
+</section>
+
+<!-- ═══ Section 4: Custom provider demo ═════════════════════════════════════ -->
+<section class="demo-section mb-10">
+    <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200 mb-1">Custom Component Provider</h2>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">
+        Extend the toolbox by registering a custom <code class="px-1 py-0.5 bg-slate-100 dark:bg-slate-800 rounded text-xs font-mono">IWireframeComponentProvider</code>.
+        The editor below uses a demo provider that adds three marketing components
+        (<em>HeroSection</em>, <em>FeatureCard</em>, <em>CtaBanner</em>) alongside the built-in Tempo.Blazor set.
+        Load the sample document to see them on the canvas.
+    </p>
+
+    <div class="mb-3">
+        <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                @onclick="LoadCustomSample">
+            Load custom-components sample
+        </button>
+    </div>
+
+    <div style="height: 560px;">
+        <TmWireframeEditor Document="@_customDocument"
+                           DocumentChanged="@(doc => _customDocument = doc)"
+                           Class="h-full" />
+    </div>
+
+    <details class="mt-4">
+        <summary class="cursor-pointer text-sm font-medium text-slate-700 dark:text-slate-300 select-none">
+            Show provider source code
+        </summary>
+        <pre class="mt-3 p-4 text-xs font-mono bg-slate-900 text-green-300 rounded-lg overflow-x-auto leading-relaxed whitespace-pre-wrap">@_providerCode</pre>
+    </details>
+</section>
+
+@code {
+    // ── State ──────────────────────────────────────────────────────────────────
+
+    private WireframeDocument _document = CreateDefault();
+    private WireframeDocument _customDocument = CreateDefault();
+
+    private string _jsonPreview  = "";
+    private string? _jsonError;
+
+    // ── Lifecycle ──────────────────────────────────────────────────────────────
+
+    protected override void OnInitialized()
+    {
+        _jsonPreview = WireframeSerializer.Serialize(_document);
+    }
+
+    // ── Sample loading ─────────────────────────────────────────────────────────
+
+    private async Task LoadLoginSample()
+    {
+        var doc = await FetchSample("login-page");
+        if (doc is not null)
+        {
+            _document    = doc;
+            _jsonPreview = WireframeSerializer.Serialize(doc);
+        }
+    }
+
+    private async Task LoadDashboardSample()
+    {
+        var doc = await FetchSample("dashboard");
+        if (doc is not null)
+        {
+            _document    = doc;
+            _jsonPreview = WireframeSerializer.Serialize(doc);
+        }
+    }
+
+    private async Task LoadCustomSample()
+    {
+        var doc = await FetchSample("custom-components");
+        if (doc is not null)
+            _customDocument = doc;
+    }
+
+    private async Task<WireframeDocument?> FetchSample(string slug)
+    {
+        try
+        {
+            var http = HttpFactory.CreateClient("DemoApi");
+            var json = await http.GetStringAsync($"api/wireframes/{slug}");
+            if (WireframeSerializer.TryDeserialize(json, out var doc))
+                return doc;
+        }
+        catch { /* ignore network errors in demo */ }
+        return null;
+    }
+
+    private void NewDocument()
+    {
+        _document    = CreateDefault();
+        _jsonPreview = WireframeSerializer.Serialize(_document);
+    }
+
+    // ── JSON panel ─────────────────────────────────────────────────────────────
+
+    private void LoadFromJson()
+    {
+        _jsonError = null;
+        if (WireframeSerializer.TryDeserialize(_jsonPreview, out var doc) && doc is not null)
+        {
+            _document = doc;
+        }
+        else
+        {
+            _jsonError = "Invalid wireframe JSON. Check the structure and try again.";
+        }
+    }
+
+    private async Task CopyJsonToClipboard()
+    {
+        // Best-effort clipboard write — not available in all browsers without HTTPS
+        try
+        {
+            await Task.CompletedTask; // placeholder; real impl needs JSInterop
+        }
+        catch { }
+    }
+
+    // ── Helpers ────────────────────────────────────────────────────────────────
+
+    private static WireframeDocument CreateDefault() => new()
+    {
+        Title  = "My wireframe",
+        Width  = 1280,
+        Height = 800
+    };
+
+    // _schemaHint and _providerCode are in WireframeEditorPage.cs (raw strings with < > cause Razor parse errors)
+}
