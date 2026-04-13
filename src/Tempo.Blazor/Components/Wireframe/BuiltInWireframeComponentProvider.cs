@@ -248,6 +248,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var shape = el.Props.GetString("shape", "circle");
                 var color = el.Props.GetString("color", "gray");
                 var name = el.Props.GetString("name", "AB");
+                var initials = string.Join("", name.Split(' ', StringSplitOptions.RemoveEmptyEntries).Select(w => w[0])).ToUpperInvariant();
+                if (initials.Length > 2) initials = initials.Substring(0, 2);
+                if (string.IsNullOrEmpty(initials)) initials = "?";
                 var sb = new StringBuilder();
                 var dim = size switch { "xs" => 24.0, "sm" => 32.0, "lg" => 48.0, "xl" => 56.0, "xxl" => 64.0, _ => 40.0 };
                 var rx = shape == "square" ? 6.0 : dim / 2;
@@ -270,7 +273,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     _ => "#6b7280"
                 };
                 sb.Append($"<rect x='0' y='0' width='{F(dim)}' height='{F(dim)}' rx='{F(rx)}' fill='{fill}' stroke='{Border}' stroke-width='1'></rect>");
-                sb.Append(Text(name, dim / 2, dim / 2, dim * 0.35, textColor, "middle"));
+                sb.Append(Text(initials, dim / 2, dim / 2, dim * 0.35, textColor, "middle"));
                 Svg(b, sb.ToString());
             },
             [
@@ -1044,6 +1047,31 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
 
     private static IEnumerable<WireframeComponentDef> DataDisplay()
     {
+        yield return Def("TmDivider", CatDataDisplay, "Divider", "minus", 200, 12,
+            (el, b) =>
+            {
+                var sb = new StringBuilder();
+                sb.Append(HLine(0, el.W, el.H / 2, Border));
+                Svg(b, sb.ToString());
+            },
+            []);
+
+        yield return Def("TmText", CatDataDisplay, "Text", "type", 120, 24,
+            (el, b) =>
+            {
+                var text = el.Props.GetString("text", "Text");
+                var align = el.Props.GetString("align", "left");
+                var sb = new StringBuilder();
+                var x = align switch { "center" => el.W / 2, "right" => el.W - 4, _ => 4.0 };
+                var anchor = align switch { "center" => "middle", "right" => "end", _ => "start" };
+                sb.Append(Text(text, x, el.H / 2, Math.Min(el.H * 0.6, 14), ColorText, anchor, "400"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("text", "Text", PropType.String, "Text", cat: "Content"),
+                Prop("align", "Align", PropType.Enum, "left", opts: ["left","center","right"], cat: "Appearance"),
+            ]);
+
         yield return Def("TmCard", CatDataDisplay, "Card", "square", 280, 180,
             (el, b) =>
             {

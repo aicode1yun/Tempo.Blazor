@@ -77,8 +77,6 @@
   background: var(--tm-wd-toolbar-bg);
   border-bottom: 1px solid var(--tm-wd-border);
   flex-shrink: 0;
-  overflow-x: auto;
-  overflow-y: hidden;
 }
 
 .tm-wd-editor__title {

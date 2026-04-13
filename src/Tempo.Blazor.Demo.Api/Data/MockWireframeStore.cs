@@ -35,19 +35,25 @@ public class MockWireframeStore
         Height = 800,
         Elements =
         [
-            MakeEl("TmCard",        "card",       360, 240, 560, 420),
-            MakeEl("TmAvatar",      "logo",       580, 200,  48,  48, ("name", "MyApp"), ("size", "xxl")),
-            MakeEl("TmHeading",     "heading",    400, 272, 480,  40, ("text", "Sign in to your account"), ("level", "h2")),
-            MakeEl("TmTextInput",   "email",      400, 332, 480,  40, ("label", "Email address"), ("placeholder", "you@example.com"), ("type", "email"), ("required", true)),
-            MakeEl("TmTextInput",   "password",   400, 392, 480,  40, ("label", "Password"), ("type", "password"), ("required", true)),
-            MakeEl("TmPasswordStrengthIndicator", "strength", 400, 440, 480, 20, ("strength", 3)),
-            MakeEl("TmCheckbox",    "remember",   400, 472, 200,  24, ("label", "Remember me")),
-            MakeEl("TmButton",      "submit",     400, 512, 480,  44, ("text", "Sign in"), ("variant", "primary"), ("block", true)),
-            MakeEl("TmText",        "forgot",     400, 572, 480,  24, ("text", "Forgot your password?"), ("align", "center")),
-            MakeEl("TmDivider",     "divider",    360, 608, 560,   1),
-            MakeEl("TmButton",      "register",   400, 620, 480,  40, ("text", "Create new account"), ("variant", "secondary")),
-            MakeEl("TmAlert",       "alert",      360, 674, 560,  40, ("text", "Invalid email or password."), ("type", "error"), ("title", "Error")),
-            MakeEl("TmText",        "tagline",    440, 672, 400,  24, ("text", "© 2025 MyApp. All rights reserved."), ("align", "center")),
+            // Main card
+            MakeEl("TmCard",        "card",       440, 180, 400, 420, ("title", ""), ("variant", "elevated")),
+
+            // Card content
+            MakeEl("TmText",        "heading",    480, 210, 320,  32, ("text", "Sign in to your account"), ("align", "center")),
+            MakeEl("TmTextInput",   "email",      480, 256, 320,  56, ("label", "Email address"), ("placeholder", "you@example.com"), ("type", "email"), ("required", true)),
+            MakeEl("TmTextInput",   "password",   480, 320, 320,  56, ("label", "Password"), ("type", "password"), ("required", true)),
+            MakeEl("TmPasswordStrengthIndicator", "strength", 480, 380, 320, 40, ("strength", 3)),
+            MakeEl("TmCheckbox",    "remember",   480, 424, 160,  20, ("label", "Remember me")),
+            MakeEl("TmButton",      "submit",     480, 456, 320,  44, ("label", "Sign in"), ("variant", "primary"), ("block", true)),
+            MakeEl("TmText",        "forgot",     480, 512, 320,  20, ("text", "Forgot your password?"), ("align", "center")),
+            MakeEl("TmDivider",     "divider",    480, 544, 320,  12),
+            MakeEl("TmButton",      "register",   480, 560, 320,  36, ("label", "Create new account"), ("variant", "secondary"), ("block", true)),
+
+            // Error alert below card
+            MakeEl("TmAlert",       "alert",      440, 620, 400,  56, ("message", "Invalid email or password."), ("variant", "error"), ("title", "Error")),
+
+            // Footer
+            MakeEl("TmText",        "tagline",    540, 700, 200,  20, ("text", "© 2025 MyApp"), ("align", "center")),
         ]
     };
 
@@ -60,11 +66,9 @@ public class MockWireframeStore
         [
             MakeEl("TmSidebar",     "sidebar",      0,   0, 240, 900, ("collapsed", false), ("items", new[] { "Dashboard", "Orders", "Products", "Customers", "Settings" })),
             MakeEl("TmNavbar",      "navbar",     240,   0,1200,  56),
-            MakeEl("TmNotificationBell", "bell",  1360,  12,  40,  32, ("unreadCount", 3)),
-            MakeEl("TmAvatar",      "userAvatar",  1400,  12,  32,  32, ("name", "John Doe"), ("size", "md")),
+            MakeEl("TmNotificationBell", "bell",  1320,  12,  40,  32, ("unreadCount", 3)),
+            MakeEl("TmAvatar",      "userAvatar", 1368,  12,  32,  32, ("name", "John Doe"), ("size", "sm")),            
             MakeEl("TmToolbar",     "toolbar",    240,  56,1200,  48, ("title", "Overview")),
-            MakeEl("TmToolbarButton", "tbRefresh",  1320,  64,  40,  32, ("icon", "refresh-cw")),
-            MakeEl("TmToolbarDivider", "tbDiv",   1370,  64,   4,  32),
             MakeEl("TmStatCard",    "stat1",      264,  120, 260,  96, ("title", "Total Users"),    ("value", "12,430"),  ("subValue", "+5% this month"),     ("subValueColor", "#22c55e")),
             MakeEl("TmStatCard",    "stat2",      544,  120, 260,  96, ("title", "Revenue"),        ("value", "$84,210"),  ("subValue", "+12% vs last month"), ("subValueColor", "#22c55e")),
             MakeEl("TmStatCard",    "stat3",      824,  120, 260,  96, ("title", "Active Orders"),  ("value", "1,284"),   ("subValue", "-3% this week"),      ("subValueColor", "#ef4444")),

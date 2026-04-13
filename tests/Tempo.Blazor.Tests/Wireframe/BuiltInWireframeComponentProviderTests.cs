@@ -77,6 +77,7 @@ public class BuiltInWireframeComponentProviderTests
     [InlineData("TmChangeDiff")]
     [InlineData("TmLightbox")]
     [InlineData("TmKeyboardShortcutsHelp")]
+    [InlineData("TmDivider")]
     public void ExpectedComponentIsRegistered(string type)
         => _defs.Should().Contain(d => d.Type == type, $"{type} should be registered");
 

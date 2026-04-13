@@ -204,6 +204,11 @@ window.tmWireframeDesigner = {
     _onMouseDown: function (e, inst) {
         if (inst.readOnly && e.button !== 1) return;
 
+        // Focus canvas wrapper so keyboard shortcuts (Delete, arrows, etc.)
+        // work immediately after clicking away from property panel inputs.
+        const wrap = inst.svg.closest('.tm-wd-canvas-wrap');
+        if (wrap) wrap.focus({ preventScroll: true });
+
         // Middle mouse button OR Space held OR pan mode → pan canvas
         const wantPan = e.button === 1 || inst.spaceHeld || inst.toolMode === 'pan';
         if (wantPan) {
