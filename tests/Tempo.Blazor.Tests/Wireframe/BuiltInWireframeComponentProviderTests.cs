@@ -78,6 +78,7 @@ public class BuiltInWireframeComponentProviderTests
     [InlineData("TmLightbox")]
     [InlineData("TmKeyboardShortcutsHelp")]
     [InlineData("TmDivider")]
+    [InlineData("TmIcon")]
     public void ExpectedComponentIsRegistered(string type)
         => _defs.Should().Contain(d => d.Type == type, $"{type} should be registered");
 
@@ -130,6 +131,7 @@ public class BuiltInWireframeComponentProviderTests
     [InlineData("Files")]
     [InlineData("Charts")]
     [InlineData("Complex")]
+    [InlineData("Icons")]
     public void CategoryExists(string category)
         => _defs.Should().Contain(d => d.Category == category, $"category '{category}' should have components");
 

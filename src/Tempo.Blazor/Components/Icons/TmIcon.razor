@@ -42,7 +42,7 @@ else
 
     protected override void OnParametersSet()
     {
-        var builtIn = GetBuiltInPath(Name);
+        var builtIn = GetBuiltInSvg(Name);
         if (!string.IsNullOrEmpty(builtIn))
         {
             _resolvedSvg = builtIn;
@@ -87,7 +87,7 @@ else
         }
     }
 
-    private static string GetBuiltInPath(string name) => name switch
+    public static string GetBuiltInSvg(string name) => name switch
     {
         // Actions
         "check"         => "<polyline points='20 6 9 17 4 12'/>",

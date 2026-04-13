@@ -1,5 +1,6 @@
 using System.Text;
 using Microsoft.AspNetCore.Components.Rendering;
+using Tempo.Blazor.Components.Icons;
 using Tempo.Blazor.Components.Wireframe.Models;
 using static Tempo.Blazor.Components.Wireframe.WireframeSvg;
 
@@ -22,6 +23,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     {
         foreach (var d in Buttons()) yield return d;
         foreach (var d in Avatars()) yield return d;
+        foreach (var d in Icons()) yield return d;
         foreach (var d in Inputs()) yield return d;
         foreach (var d in Tags()) yield return d;
         foreach (var d in Pickers()) yield return d;
@@ -238,6 +240,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     // AVATARS
     // ══════════════════════════════════════════════════════════════════════════
     private const string CatAvatars = "Avatars";
+    private const string CatIcons   = "Icons";
 
     private static IEnumerable<WireframeComponentDef> Avatars()
     {
@@ -321,6 +324,70 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("max", "Max", PropType.Int, 3, cat: "Appearance"),
                 Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg","xl","xxl"], cat: "Appearance"),
             ]);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // ICONS
+    // ══════════════════════════════════════════════════════════════════════════
+    private static IEnumerable<WireframeComponentDef> Icons()
+    {
+        yield return Def("TmIcon", CatIcons, "Icon", "circle", 24, 24,
+            (el, b) =>
+            {
+                var name = el.Props.GetString("name", "circle");
+                var customSvg = el.Props.GetString("svg", "");
+                var size = el.Props.GetString("size", "md");
+                var color = el.Props.GetString("color", "gray");
+                var dim = size switch { "sm" => 16.0, "lg" => 32.0, "xl" => 48.0, _ => 24.0 };
+                var stroke = color switch
+                {
+                    "blue" => Accent,
+                    "green" => "#22c55e",
+                    "red" => "#ef4444",
+                    "yellow" => "#eab308",
+                    "purple" => "#9333ea",
+                    _ => BorderStrong
+                };
+                var style = el.Props.GetString("style", "");
+                var svgStyle = string.IsNullOrWhiteSpace(style) ? "" : $" style='{System.Web.HttpUtility.HtmlAttributeEncode(style)}'";
+
+                string svgContent;
+                if (!string.IsNullOrWhiteSpace(customSvg))
+                {
+                    svgContent = customSvg;
+                }
+                else
+                {
+                    var builtIn = TmIcon.GetBuiltInSvg(name);
+                    if (!string.IsNullOrEmpty(builtIn))
+                    {
+                        svgContent = builtIn;
+                    }
+                    else
+                    {
+                        var registered = IconRegistry.Resolve(name);
+                        svgContent = registered
+                            ?? $"<circle cx='12' cy='12' r='10' fill='none' stroke='{BorderStrong}' stroke-width='1.5'></circle>";
+                    }
+                }
+
+                var svg = $"<svg viewBox='0 0 24 24' width='{F(dim)}' height='{F(dim)}' fill='none' stroke='{stroke}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'{svgStyle}>{svgContent}</svg>";
+                Svg(b, svg);
+            },
+            [
+                Prop("name", "Name", PropType.String, "circle", cat: "Content"),
+                Prop("svg", "Custom SVG", PropType.String, "", cat: "Content"),
+                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg","xl"], cat: "Appearance"),
+                Prop("color", "Color", PropType.Enum, "gray", opts: ["gray","blue","green","red","yellow","purple"], cat: "Appearance"),
+                Prop("style", "Style", PropType.String, "", cat: "Appearance"),
+            ],
+            sizePresets: new Dictionary<string, (double, double)>
+            {
+                ["sm"] = (16, 16),
+                ["md"] = (24, 24),
+                ["lg"] = (32, 32),
+                ["xl"] = (48, 48),
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -1283,6 +1350,32 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("multiple", "Allow Multiple", PropType.Bool, false, cat: "Behavior"),
             ]);
 
+        yield return Def("TmAccordionItem", CatDataDisplay, "Accordion Item", "chevron-down", 280, 44,
+            (el, b) =>
+            {
+                var title = el.Props.GetString("title", "Section");
+                var expanded = el.Props.GetBool("expanded", false);
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 4));
+                sb.Append(Text(title, 12, el.H / 2, 11, ColorText, "start", expanded ? "600" : "normal"));
+                // chevron pointing up if expanded, down if collapsed
+                var cy = el.H / 2 - 3;
+                if (expanded)
+                    sb.Append($"<polyline points='{F(el.W - 18)},{F(cy + 4)} {F(el.W - 14)},{F(cy)} {F(el.W - 10)},{F(cy + 4)}' fill='none' stroke='{BorderStrong}' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'></polyline>");
+                else
+                    sb.Append(ChevronDown(el.W - 18, cy));
+                if (expanded)
+                {
+                    sb.Append(HLine(8, el.W - 8, el.H));
+                    sb.Append(Text("Content area...", 12, el.H + 14, 10, ColorMuted));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("title", "Title", PropType.String, "Section", cat: "Content"),
+                Prop("expanded", "Expanded", PropType.Bool, false, cat: "State"),
+            ]);
+
         yield return Def("TmEmptyState", CatDataDisplay, "Empty State", "inbox", 280, 160,
             (el, b) =>
             {
@@ -2106,6 +2199,20 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     opts: ["line","pill","enclosed"], cat: "Appearance"),
             ]);
 
+        yield return Def("TmTabPanel", CatNavigation, "Tab Panel", "square", 400, 160,
+            (el, b) =>
+            {
+                var label = el.Props.GetString("label", "Tab content");
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
+                sb.Append(Text(label, 12, 18, 12, ColorText, "start", "500"));
+                sb.Append(Rect(12, 36, el.W - 24, el.H - 48, FillDark, "none", 4));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("label", "Label", PropType.String, "Tab content", cat: "Content"),
+            ]);
+
         yield return Def("TmBreadcrumbs", CatNavigation, "Breadcrumbs", "chevron-right", 300, 24,
             (el, b) =>
             {
@@ -2147,6 +2254,25 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             },
             [
                 Prop("items", "Items", PropType.StringList, cat: "Content"),
+            ]);
+
+        yield return Def("TmContextMenuItem", CatNavigation, "Context Menu Item", "menu", 160, 32,
+            (el, b) =>
+            {
+                var text = el.Props.GetString("text", "Item");
+                var disabled = el.Props.GetBool("disabled", false);
+                var danger = el.Props.GetBool("danger", false);
+                var sb = new StringBuilder();
+                if (disabled) sb.Append("<g opacity='0.45'>");
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 4));
+                sb.Append(Text(text, 12, el.H / 2, 11, danger ? "#ef4444" : ColorText));
+                if (disabled) sb.Append("</g>");
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("text", "Text", PropType.String, "Item", cat: "Content"),
+                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
+                Prop("danger", "Danger", PropType.Bool, false, cat: "Appearance"),
             ]);
     }
 
@@ -3320,6 +3446,56 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("steps", "Steps", PropType.StringList, cat: "Content"),
             ]);
 
+        yield return Def("TmExportOptions", CatComplex, "Export Options", "download", 360, 240,
+            (el, b) =>
+            {
+                var formats = el.Props.GetStringList("formats");
+                if (formats.Length == 0) formats = ["CSV", "Excel", "JSON"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8, 1.5));
+                sb.Append(Text("Export options", 16, 24, 13, ColorText, "start", "500"));
+                var rowH = 36.0;
+                for (var i = 0; i < formats.Length; i++)
+                {
+                    var y = 52 + i * rowH;
+                    sb.Append(Rect(16, y, 16, 16, Fill, Border, 3));
+                    sb.Append(Text(formats[i], 40, y + 8, 11));
+                }
+                sb.Append(Rect(el.W - 100, el.H - 44, 84, 32, FillAccent, "#93c5fd", 4));
+                sb.Append(Text("Export", el.W - 58, el.H - 28, 11, Accent, "middle"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("formats", "Formats", PropType.StringList, cat: "Content"),
+            ]);
+
+        yield return Def("TmImportPreview", CatComplex, "Import Preview", "table", 480, 260,
+            (el, b) =>
+            {
+                var rows = el.Props.GetInt("rows", 4);
+                var cols = el.Props.GetInt("cols", 4);
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8, 1.5));
+                sb.Append(Text("Preview", 16, 24, 13, ColorText, "start", "500"));
+                var tableY = 44.0;
+                var tableH = el.H - 88;
+                var rowH = tableH / (rows + 1);
+                var colW = (el.W - 32) / cols;
+                // header
+                sb.Append(Rect(16, tableY, el.W - 32, rowH, FillDark, Border, 0));
+                for (var c = 1; c < cols; c++) sb.Append(VLine(16 + c * colW, tableY, tableY + tableH));
+                // rows
+                for (var r = 1; r <= rows; r++) sb.Append(HLine(16, el.W - 16, tableY + r * rowH));
+                sb.Append(Rect(16, tableY, el.W - 32, tableH, "none", Border, 0));
+                sb.Append(Rect(el.W - 100, el.H - 36, 84, 28, FillAccent, "#93c5fd", 4));
+                sb.Append(Text("Confirm", el.W - 58, el.H - 22, 10, Accent, "middle"));
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("rows", "Rows", PropType.Int, 4, cat: "Appearance"),
+                Prop("cols", "Columns", PropType.Int, 4, cat: "Appearance"),
+            ]);
+
         yield return Def("TmFilterBuilder", CatComplex, "Filter Builder", "filter", 520, 192,
             (el, b) =>
             {
@@ -3439,6 +3615,48 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             },
             [
                 Prop("commentCount", "Comment Count", PropType.Int, 3, cat: "Appearance"),
+            ]);
+
+        yield return Def("TmActivityAttachments", CatComplex, "Activity Attachments", "paperclip", 320, 120,
+            (el, b) =>
+            {
+                var files = el.Props.GetStringList("files");
+                if (files.Length == 0) files = ["report.pdf", "image.png", "data.xlsx"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
+                sb.Append(Text("Attachments", 12, 20, 12, ColorText, "start", "500"));
+                var rowH = 28.0;
+                for (var i = 0; i < files.Length; i++)
+                {
+                    var y = 34 + i * rowH;
+                    sb.Append(Text("📎", 12, y + 10, 11));
+                    sb.Append(Text(files[i], 32, y + 10, 11));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("files", "Files", PropType.StringList, cat: "Content"),
+            ]);
+
+        yield return Def("TmActivityTimeline", CatComplex, "Activity Timeline", "list-ordered", 320, 160,
+            (el, b) =>
+            {
+                var events = el.Props.GetStringList("events");
+                if (events.Length == 0) events = ["Created project", "Added members", "Started sprint"];
+                var sb = new StringBuilder();
+                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
+                var rowH = 40.0;
+                for (var i = 0; i < events.Length; i++)
+                {
+                    var y = 12 + i * rowH;
+                    sb.Append($"<circle cx='{F(12)}' cy='{F(y + 8)}' r='4' fill='{FillAccent}'></circle>");
+                    if (i < events.Length - 1) sb.Append(VLine(12, y + 14, y + rowH));
+                    sb.Append(Text(events[i], 26, y + 8, 11));
+                }
+                Svg(b, sb.ToString());
+            },
+            [
+                Prop("events", "Events", PropType.StringList, cat: "Content"),
             ]);
 
         yield return Def("TmTreeView", CatComplex, "Tree View", "git-branch", 240, 200,
