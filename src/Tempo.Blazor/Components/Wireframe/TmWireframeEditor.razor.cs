@@ -22,6 +22,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     // ── DI ────────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private WireframeComponentRegistry _registry { get; set; } = default!;
 
     // ── Parameters ────────────────────────────────────────────────────────────
 
@@ -293,10 +294,13 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         // Add at a sensible default position in the visible area
         var x   = 100.0;
         var y   = 100.0;
-        var def = null as WireframeComponentDef;    // resolved inside canvas
+        var def = _registry.GetDef(componentType);
 
         var el = WireframeDocumentExtensions.NewElement(
-            componentType, x, y, 160, 40);
+            componentType, x, y,
+            def?.DefaultWidth  ?? 160,
+            def?.DefaultHeight ?? 40,
+            def?.Props ?? []);
         el.ZIndex = _document.Elements.Count > 0
             ? _document.Elements.Max(e => e.ZIndex) + 1 : 0;
 

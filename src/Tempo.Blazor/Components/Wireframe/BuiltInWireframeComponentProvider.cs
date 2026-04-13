@@ -124,14 +124,26 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmButton", CatButtons, "Button", "square", 120, 36,
             (el, b) =>
             {
-                var label = el.Props.GetString("label", "Button");
-                var variant = el.Props.GetString("variant", "primary");
-                var fill = variant == "primary" ? FillAccent : Fill;
-                var border = variant == "danger" ? "#fca5a5" : variant == "primary" ? "#93c5fd" : Border;
+                var label    = el.Props.GetString("label", "Button");
+                var variant  = el.Props.GetString("variant", "primary");
+                var disabled = el.Props.GetBool("disabled");
                 var (font, rx) = SizeScale(el.Props.GetString("size", "md"));
+                var (fill, border, textColor) = variant switch
+                {
+                    "primary"   => (FillAccent, "#93c5fd", ColorText),
+                    "danger"    => ("#fee2e2",  "#fca5a5", "#dc2626"),
+                    "ghost"     => ("none",     Border,    ColorText),
+                    "outline"   => ("none",     "#93c5fd", Accent),
+                    "link"      => ("none",     "none",    Accent),
+                    _           => (Fill,       Border,    ColorText),   // secondary / default
+                };
                 var sb = new StringBuilder();
+                if (disabled) sb.Append($"<g opacity='0.45'>");
                 sb.Append(Rect(0, 0, el.W, el.H, fill, border, rx));
-                sb.Append(TextCentred(label, el.W, el.H, font, ColorText, "500"));
+                if (variant == "link")
+                    sb.Append($"<line x1='8' y1='{F(el.H - 4)}' x2='{F(el.W - 8)}' y2='{F(el.H - 4)}' stroke='{Accent}' stroke-width='1'/>");
+                sb.Append(TextCentred(label, el.W, el.H, font, textColor, "500"));
+                if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -148,14 +160,22 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmSplitButton", CatButtons, "Split Button", "layout", 140, 36,
             (el, b) =>
             {
-                var label = el.Props.GetString("label", "Action");
+                var label   = el.Props.GetString("label", "Action");
+                var variant = el.Props.GetString("variant", "primary");
                 var (font, rx) = SizeScale(el.Props.GetString("size", "md"));
                 var w = el.W; var h = el.H;
+                var (fill, border, textColor) = variant switch
+                {
+                    "danger"    => ("#fee2e2", "#fca5a5", "#dc2626"),
+                    "ghost"     => ("none",    Border,    ColorText),
+                    "secondary" => (Fill,      Border,    ColorText),
+                    _           => (FillAccent, "#93c5fd", ColorText),  // primary
+                };
                 var sb = new StringBuilder();
-                sb.Append(Rect(0, 0, w, h, FillAccent, "#93c5fd", rx));
-                sb.Append(TextCentred(label, w - 28, h, font, ColorText));
-                sb.Append(VLine(w - 28, 0, h));
-                sb.Append(Rect(w - 28, 0, 28, h, FillAccent, "none", 0));
+                sb.Append(Rect(0, 0, w, h, fill, border, rx));
+                sb.Append(TextCentred(label, w - 28, h, font, textColor));
+                sb.Append(VLine(w - 28, 0, h, border == "none" ? Border : border));
+                sb.Append(Rect(w - 28, 0, 28, h, fill, "none", 0));
                 sb.Append(ChevronDown(w - 20, h / 2 - 4));
                 Svg(b, sb.ToString());
             },
@@ -196,7 +216,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var lbl = el.Props.GetString("label", "Label");
                 var ph = el.Props.GetString("placeholder", "Enter text...");
                 var req = el.Props.GetBool("required");
-                Svg(b, InputField(el.W, 36, lbl, ph, req));
+                var dis = el.Props.GetBool("disabled");
+                var ro  = el.Props.GetBool("readOnly");
+                Svg(b, InputField(el.W, 36, lbl, ph, req, disabled: dis, readOnly: ro));
             },
             [
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
@@ -212,10 +234,14 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var lbl = el.Props.GetString("label", "Label");
                 var ph = el.Props.GetString("placeholder", "Enter text...");
                 var req = el.Props.GetBool("required");
+                var dis = el.Props.GetBool("disabled");
+                var h = el.H - 16;
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
-                sb.Append(Rect(0, 0, el.W, el.H - 16));
+                sb.Append(Rect(0, 0, el.W, h, dis ? FillDark : Fill, Border));
                 sb.Append(Text(ph, 8, 16, 10, ColorLight));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -231,14 +257,17 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Label");
                 var req = el.Props.GetBool("required");
+                var dis = el.Props.GetBool("disabled");
                 var w = el.W; var h = 36.0;
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
-                sb.Append(Rect(0, 0, w, h));
+                sb.Append(Rect(0, 0, w, h, dis ? FillDark : Fill, Border));
                 sb.Append(Text("0", 8, h / 2, 11, ColorText));
                 sb.Append(VLine(w - 24, 0, h));
                 sb.Append(Text("▲", w - 16, h / 2 - 6, 8, ColorMuted, "middle"));
                 sb.Append(Text("▼", w - 16, h / 2 + 5, 8, ColorMuted, "middle"));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -254,7 +283,8 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Search...");
-                Svg(b, InputField(el.W, el.H, "", ph, hasIcon: true));
+                var dis = el.Props.GetBool("disabled");
+                Svg(b, InputField(el.W, el.H, "", ph, hasIcon: true, disabled: dis));
             },
             [
                 Prop("placeholder", "Placeholder", PropType.String, "Search...", cat: "Content"),
@@ -266,13 +296,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Amount");
                 var sym = el.Props.GetString("currencySymbol", "Kč");
+                var dis = el.Props.GetBool("disabled");
                 var h = 36.0;
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 sb.Append(FieldLabel(lbl));
-                sb.Append(Rect(0, 0, el.W, h));
+                sb.Append(Rect(0, 0, el.W, h, dis ? FillDark : Fill, Border));
                 sb.Append(Rect(0, 0, 28, h, FillDark, Border, 0));
                 sb.Append(Text(sym, 14, h / 2, 10, ColorMuted, "middle"));
                 sb.Append(Text("0.00", 36, h / 2, 11, ColorText));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -287,10 +320,13 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Checkbox");
                 var chk = el.Props.GetBool("checked");
+                var dis = el.Props.GetBool("disabled");
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 sb.Append(Rect(0, 0, 16, 16, chk ? FillAccent : Fill, chk ? "#93c5fd" : Border, 3));
                 if (chk) sb.Append(Icon("check", 8, 8, 10));
                 sb.Append(Text(lbl, 22, 8, 11));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -304,10 +340,13 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Option");
                 var chk = el.Props.GetBool("checked");
+                var dis = el.Props.GetBool("disabled");
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 sb.Append($"<circle cx='8' cy='8' r='7' fill='{Fill}' stroke='{(chk ? "#93c5fd" : Border)}' stroke-width='1.5'></circle>");
                 if (chk) sb.Append($"<circle cx='8' cy='8' r='3.5' fill='{Accent}'></circle>");
                 sb.Append(Text(lbl, 22, 8, 11));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -322,7 +361,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var lbl = el.Props.GetString("label", "Options");
                 var opts = el.Props.GetStringList("options").Take(4).ToArray();
                 if (opts.Length == 0) opts = ["Option 1", "Option 2", "Option 3"];
+                var dis = el.Props.GetBool("disabled");
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 sb.Append(FieldLabel(lbl));
                 for (var i = 0; i < opts.Length; i++)
                 {
@@ -331,6 +372,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (i == 0) sb.Append($"<circle cx='8' cy='{F(y + 8)}' r='3.5' fill='{Accent}'></circle>");
                     sb.Append(Text(opts[i], 22, y + 8, 11));
                 }
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -344,12 +386,15 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Toggle");
                 var chk = el.Props.GetBool("checked");
+                var dis = el.Props.GetBool("disabled");
                 var trackFill = chk ? "#93c5fd" : FillDark;
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 sb.Append(Pill(0, 2, 36, 16, trackFill, "none"));
                 var cx = chk ? 28.0 : 10.0;
                 sb.Append($"<circle cx='{F(cx)}' cy='10' r='7' fill='white' stroke='{Border}' stroke-width='1'></circle>");
                 sb.Append(Text(lbl, 42, 9, 11));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -382,7 +427,8 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var lbl = el.Props.GetString("label", "Label");
                 var ph = el.Props.GetString("placeholder", "Select option...");
                 var req = el.Props.GetBool("required");
-                Svg(b, InputField(el.W, 36, lbl, ph, req, hasChevron: true));
+                var dis = el.Props.GetBool("disabled");
+                Svg(b, InputField(el.W, 36, lbl, ph, req, hasChevron: true, disabled: dis));
             },
             [
                 Prop("label", "Label", PropType.String, "Label", cat: "Content"),
@@ -396,14 +442,17 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var lbl = el.Props.GetString("label", "Label");
                 var req = el.Props.GetBool("required");
+                var dis = el.Props.GetBool("disabled");
                 var h = 36.0;
                 var sb = new StringBuilder();
+                if (dis) sb.Append("<g opacity='0.45'>");
                 if (!string.IsNullOrEmpty(lbl)) sb.Append(FieldLabel(lbl, req));
-                sb.Append(Rect(0, 0, el.W, h));
+                sb.Append(Rect(0, 0, el.W, h, dis ? FillDark : Fill, Border));
                 sb.Append(Pill(6, 8, 50, 20, FillAccent, "#93c5fd"));
                 sb.Append(Text("Item 1", 11, 18, 9, Accent));
                 sb.Append(Icon("x", 50, 18, 8));
                 sb.Append(ChevronDown(el.W - 16, h / 2 - 4));
+                if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
             },
             [
@@ -612,8 +661,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmCard", CatDataDisplay, "Card", "square", 280, 180,
             (el, b) =>
             {
-                var title = el.Props.GetString("title", "Card Title");
+                var title      = el.Props.GetString("title", "Card Title");
                 var showHeader = el.Props.GetBool("showHeader", true);
+                var showFooter = el.Props.GetBool("showFooter", false);
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
                 if (showHeader)
@@ -623,32 +673,58 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(HLine(0, el.W, 40));
                     sb.Append(Text(title, 12, 20, 12, ColorText, "start", "500"));
                 }
+                if (showFooter)
+                {
+                    sb.Append(HLine(0, el.W, el.H - 44));
+                    sb.Append(Rect(0, el.H - 44, el.W, 44, FillDark, "none", 0));
+                    sb.Append(Rect(0, el.H - 8, el.W, 8, FillDark, "none", 8)); // round bottom corners
+                    var primaryLabel   = el.Props.GetString("primaryActionLabel", "Save");
+                    var secondaryLabel = el.Props.GetString("secondaryActionLabel", "Cancel");
+                    var showPrimary    = el.Props.GetBool("showPrimaryAction", true);
+                    var showSecondary  = el.Props.GetBool("showSecondaryAction", true);
+                    if (showPrimary)
+                    {
+                        sb.Append(Rect(el.W - 90, el.H - 36, 78, 26, FillAccent, "#93c5fd", 4));
+                        sb.Append(Text(primaryLabel, el.W - 51, el.H - 23, 10, Accent, "middle"));
+                    }
+                    if (showSecondary)
+                    {
+                        sb.Append(Rect(el.W - (showPrimary ? 176 : 90), el.H - 36, 78, 26, Fill, Border, 4));
+                        sb.Append(Text(secondaryLabel, el.W - (showPrimary ? 137 : 51), el.H - 23, 10, ColorMuted, "middle"));
+                    }
+                }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("title", "Title", PropType.String, "Card Title", cat: "Content"),
                 Prop("showHeader", "Show Header", PropType.Bool, true, cat: "Appearance"),
                 Prop("showFooter", "Show Footer", PropType.Bool, false, cat: "Appearance"),
+                Prop("primaryActionLabel", "Primary Action Label", PropType.String, "Save", cat: "Content"),
+                Prop("secondaryActionLabel", "Secondary Action Label", PropType.String, "Cancel", cat: "Content"),
+                Prop("showPrimaryAction", "Show Primary Action", PropType.Bool, true, cat: "Appearance"),
+                Prop("showSecondaryAction", "Show Secondary Action", PropType.Bool, true, cat: "Appearance"),
             ]);
 
         yield return Def("TmStatCard", CatDataDisplay, "Stat Card", "trending-up", 160, 100,
             (el, b) =>
             {
-                var title = el.Props.GetString("title", "Total Revenue");
+                var title = el.Props.GetString("title") ?? el.Props.GetString("label", "Total Revenue");
                 var value = el.Props.GetString("value", "12 450");
-                var unit = el.Props.GetString("unit", "Kč");
+                var subValue = el.Props.GetString("subValue");
+                var subValueColor = el.Props.GetString("subValueColor", ColorMuted);
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8));
                 sb.Append(Text(title, 12, 22, 10, ColorMuted));
-                sb.Append(Text($"{value} {unit}", 12, 55, 18, ColorText, "start", "600"));
-                sb.Append(Text("↑ 12%", 12, 78, 10, "#22c55e"));
+                sb.Append(Text(value, 12, 55, 18, ColorText, "start", "600"));
+                if (!string.IsNullOrEmpty(subValue))
+                    sb.Append(Text(subValue, 12, 78, 10, subValueColor));
                 Svg(b, sb.ToString());
             },
             [
                 Prop("title", "Title", PropType.String, "Total Revenue", cat: "Content"),
                 Prop("value", "Value", PropType.String, "12 450", cat: "Content"),
-                Prop("unit", "Unit", PropType.String, "Kč", cat: "Content"),
-                Prop("trend", "Trend", PropType.Enum, "up", opts: ["up","down","neutral"], cat: "Content"),
+                Prop("subValue", "SubValue", PropType.String, "+12% this month", cat: "Content"),
+                Prop("subValueColor", "SubValue Color", PropType.String, "#22c55e", cat: "Appearance"),
             ]);
 
         yield return Def("TmBadge", CatDataDisplay, "Badge", "tag", 60, 22,
@@ -690,11 +766,20 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmChip", CatDataDisplay, "Chip", "tag", 80, 24,
             (el, b) =>
             {
-                var lbl = el.Props.GetString("label", "Chip");
+                var lbl      = el.Props.GetString("label", "Chip");
                 var removable = el.Props.GetBool("removable", true);
+                var variant  = el.Props.GetString("variant", "default");
+                var (fill, border, textColor) = variant switch
+                {
+                    "primary" => (FillAccent, "#93c5fd", Accent),
+                    "success" => ("#dcfce7",  "#86efac", "#16a34a"),
+                    "danger"  => ("#fee2e2",  "#fca5a5", "#dc2626"),
+                    "warning" => ("#fef9c3",  "#fde047", "#ca8a04"),
+                    _         => (FillDark,   Border,    ColorText),
+                };
                 var sb = new StringBuilder();
-                sb.Append(Pill(0, 0, el.W, el.H, FillDark, Border));
-                sb.Append(Text(lbl, 10, el.H / 2, 10));
+                sb.Append(Pill(0, 0, el.W, el.H, fill, border));
+                sb.Append(Text(lbl, 10, el.H / 2, 10, textColor));
                 if (removable) sb.Append(Icon("x", el.W - 12, el.H / 2, 8));
                 Svg(b, sb.ToString());
             },
@@ -842,6 +927,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var rows = el.Props.GetInt("rows", 5);
                 var showSearch = el.Props.GetBool("showSearch", true);
                 var showPagination = el.Props.GetBool("showPagination", true);
+                var showBulkActions = el.Props.GetBool("showBulkActions", false);
+                var bulkActions = el.Props.GetStringList("bulkActions");
+                if (bulkActions.Length == 0) bulkActions = ["Delete", "Export"];
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
 
@@ -855,6 +943,23 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (showSearch)
                         sb.Append(InputField(160, 26, "", "Search...", hasIcon: true));
                     top = 40;
+                }
+
+                if (showBulkActions)
+                {
+                    var barH = 44.0;
+                    sb.Append(Rect(0, top, el.W, barH, FillAccent, "#93c5fd", 4));
+                    sb.Append(Text("3 selected", 12, top + barH / 2, 11, Accent));
+                    var btnX = el.W - 44;
+                    foreach (var action in bulkActions.AsEnumerable().Reverse())
+                    {
+                        btnX -= 68;
+                        sb.Append(Rect(btnX, top + 8, 60, 28, Fill, Border, 4));
+                        sb.Append(Text(action, btnX + 30, top + barH / 2, 10, ColorText, "middle"));
+                    }
+                    sb.Append(Rect(el.W - 44, top + 8, 36, 28, Fill, Border, 4));
+                    sb.Append(Icon("x", el.W - 26, top + barH / 2, 12));
+                    top += barH;
                 }
 
                 var paginH = showPagination ? 36.0 : 0;
@@ -896,6 +1001,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("showSearch", "Show Search", PropType.Bool, true, cat: "Appearance"),
                 Prop("showPagination", "Show Pagination", PropType.Bool, true, cat: "Appearance"),
                 Prop("showBulkActions", "Show Bulk Actions", PropType.Bool, false, cat: "Appearance"),
+                Prop("bulkActions", "Bulk Actions", PropType.StringList, cat: "Content"),
             ]);
 
         yield return Def("TmPagination", CatDataTable, "Pagination", "more-horizontal", 240, 36,
@@ -973,6 +1079,11 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
             {
                 var title = el.Props.GetString("title", "Modal Title");
                 var showFooter = el.Props.GetBool("showFooter", true);
+                var showOkButton = el.Props.GetBool("showOkButton", true);
+                var showCancelButton = el.Props.GetBool("showCancelButton", true);
+                var okButtonText = el.Props.GetString("okButtonText", "OK");
+                var cancelButtonText = el.Props.GetString("cancelButtonText", "Cancel");
+                var okButtonVariant = el.Props.GetString("okButtonVariant", "primary");
                 // Size prop affects inner dialog proportions (ratio of modal area used by the dialog)
                 var dialogScale = el.Props.GetString("size", "medium") switch
                 {
@@ -981,6 +1092,14 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     "xLarge"     => 0.96,
                     "fullscreen" => 1.00,
                     _            => 0.72   // medium
+                };
+                var (okFill, okBorder, okText) = okButtonVariant switch
+                {
+                    "danger"    => ("#fee2e2", "#fca5a5", "#dc2626"),
+                    "ghost"     => ("none",     Border,    ColorText),
+                    "outline"   => ("none",     "#93c5fd", Accent),
+                    "secondary" => (Fill,       Border,    ColorText),
+                    _           => (FillAccent, "#93c5fd", ColorText),  // primary
                 };
                 var sb = new StringBuilder();
                 // Backdrop
@@ -997,16 +1116,31 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 if (showFooter)
                 {
                     sb.Append(HLine(dx, dx + dw, dy + dh - 52));
-                    sb.Append(Rect(dx + dw - 90, dy + dh - 40, 78, 28, FillAccent, "#93c5fd", 4));
-                    sb.Append(Text("Confirm", dx + dw - 51, dy + dh - 26, 10, Accent, "middle"));
-                    sb.Append(Rect(dx + dw - 174, dy + dh - 40, 78, 28, Fill, Border, 4));
-                    sb.Append(Text("Cancel", dx + dw - 135, dy + dh - 26, 10, ColorMuted, "middle"));
+                    var btnX = dx + dw - 16;
+                    if (showOkButton)
+                    {
+                        btnX -= 86;
+                        sb.Append(Rect(btnX, dy + dh - 40, 78, 28, okFill, okBorder, 4));
+                        sb.Append(Text(okButtonText, btnX + 39, dy + dh - 26, 10, okText, "middle"));
+                    }
+                    if (showCancelButton)
+                    {
+                        btnX -= 86;
+                        sb.Append(Rect(btnX, dy + dh - 40, 78, 28, "none", Border, 4));
+                        sb.Append(Text(cancelButtonText, btnX + 39, dy + dh - 26, 10, ColorMuted, "middle"));
+                    }
                 }
                 Svg(b, sb.ToString());
             },
             [
                 Prop("title", "Title", PropType.String, "Modal Title", cat: "Content"),
                 Prop("showFooter", "Show Footer", PropType.Bool, true, cat: "Appearance"),
+                Prop("showOkButton", "Show OK Button", PropType.Bool, true, cat: "Appearance"),
+                Prop("showCancelButton", "Show Cancel Button", PropType.Bool, true, cat: "Appearance"),
+                Prop("okButtonText", "OK Button Text", PropType.String, "OK", cat: "Content"),
+                Prop("cancelButtonText", "Cancel Button Text", PropType.String, "Cancel", cat: "Content"),
+                Prop("okButtonVariant", "OK Button Variant", PropType.Enum, "primary",
+                    opts: ["primary","secondary","danger","ghost","outline"], cat: "Appearance"),
                 Prop("size", "Size", PropType.Enum, "medium",
                     opts: ["small","medium","large","xLarge","fullscreen"], cat: "Appearance"),
             ]);
@@ -1014,12 +1148,23 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmDialog", CatFeedback, "Dialog", "message-square", 320, 160,
             (el, b) =>
             {
-                var title = el.Props.GetString("title", "Confirm action");
-                var msg = el.Props.GetString("message", "Are you sure you want to proceed?");
+                var title   = el.Props.GetString("title", "Confirm action");
+                var msg     = el.Props.GetString("message", "Are you sure you want to proceed?");
+                var variant = el.Props.GetString("variant", "info");
+                var (headerFill, headerBorder, iconStr) = variant switch
+                {
+                    "success" => ("#dcfce7", "#86efac", "✓"),
+                    "warning" => ("#fef9c3", "#fde047", "⚠"),
+                    "error"   => ("#fee2e2", "#fca5a5", "✕"),
+                    _         => (FillAccent, "#93c5fd", "ⓘ"),   // info
+                };
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 8, 1.5));
-                sb.Append(HLine(0, el.W, 40));
-                sb.Append(Text(title, 14, 20, 12, ColorText, "start", "600"));
+                sb.Append(Rect(0, 0, el.W, 40, headerFill, "none", 8));
+                sb.Append(Rect(0, 32, el.W, 8, headerFill, "none", 0));
+                sb.Append(HLine(0, el.W, 40, headerBorder));
+                sb.Append(Text(iconStr, 14, 20, 13, headerBorder, "middle"));
+                sb.Append(Text(title, 30, 20, 12, ColorText, "start", "600"));
                 sb.Append(Text(msg, 14, 72, 11, ColorMuted));
                 sb.Append(HLine(0, el.W, el.H - 48));
                 sb.Append(Rect(el.W - 86, el.H - 36, 74, 26, FillAccent, "#93c5fd", 4));
@@ -1038,12 +1183,20 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmTooltip", CatFeedback, "Tooltip", "info", 120, 36,
             (el, b) =>
             {
-                var text = el.Props.GetString("text", "Tooltip text");
+                var text      = el.Props.GetString("text", "Tooltip text");
+                var placement = el.Props.GetString("placement", "top");
                 var sb = new StringBuilder();
                 sb.Append(Rect(0, 0, el.W, el.H, "#1f2937", "#1f2937", 4));
                 sb.Append(TextCentred(text, el.W, el.H, 10, "white"));
-                // Arrow
-                sb.Append($"<polygon points='{F(el.W / 2 - 5)},{F(el.H)} {F(el.W / 2 + 5)},{F(el.H)} {F(el.W / 2)},{F(el.H + 6)}' fill='#1f2937'></polygon>");
+                // Arrow points away from the tooltip box in the direction of the target
+                var arrow = placement switch
+                {
+                    "bottom" => $"<polygon points='{F(el.W/2-5)},0 {F(el.W/2+5)},0 {F(el.W/2)},{F(-6)}' fill='#1f2937'></polygon>",
+                    "left"   => $"<polygon points='{F(el.W)},{F(el.H/2-5)} {F(el.W)},{F(el.H/2+5)} {F(el.W+6)},{F(el.H/2)}' fill='#1f2937'></polygon>",
+                    "right"  => $"<polygon points='0,{F(el.H/2-5)} 0,{F(el.H/2+5)} {F(-6)},{F(el.H/2)}' fill='#1f2937'></polygon>",
+                    _        => $"<polygon points='{F(el.W/2-5)},{F(el.H)} {F(el.W/2+5)},{F(el.H)} {F(el.W/2)},{F(el.H+6)}' fill='#1f2937'></polygon>",  // top
+                };
+                sb.Append(arrow);
                 Svg(b, sb.ToString());
             },
             [
@@ -1072,17 +1225,89 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmProgressBar", CatFeedback, "Progress Bar", "bar-chart-2", 240, 16,
             (el, b) =>
             {
-                var value = el.Props.GetInt("value", 60);
-                var max = el.Props.GetInt("max", 100);
-                var pct = Math.Clamp(value / (double)max, 0, 1);
+                var value = el.Props.GetDouble("value", 60);
+                var max = el.Props.GetDouble("max", 100);
+                var size = el.Props.GetString("size", "md");
+                var variant = el.Props.GetString("variant", "default");
+                var indeterminate = el.Props.GetBool("indeterminate", false);
+                var striped = el.Props.GetBool("striped", false);
+                var showLabel = el.Props.GetBool("showLabel", false);
+                var pct = Math.Clamp(max > 0 ? value / max * 100 : 0, 0, 100);
+
+                var trackH = size switch { "sm" => 8.0, "lg" => 24.0, _ => 16.0 };
+                var y = (el.H - trackH) / 2;
+                var rx = trackH / 2;
+
+                var fillColor = variant switch
+                {
+                    "success" => "#22c55e",
+                    "warning" => "#f59e0b",
+                    "error" => "#ef4444",
+                    "gradient" => "url(#tm-pg-grad)",
+                    _ => Accent
+                };
+
+                double fillW = 0, segW1 = 0, segW2 = 0, segX1 = 0, segX2 = 0;
+                if (indeterminate)
+                {
+                    segW1 = el.W * 0.30;
+                    segW2 = el.W * 0.25;
+                    segX1 = 0.0;
+                    segX2 = el.W * 0.50;
+                }
+                else
+                {
+                    fillW = el.W * (pct / 100.0);
+                }
+
                 var sb = new StringBuilder();
-                sb.Append(Rect(0, 0, el.W, el.H, FillDark, "none", el.H / 2));
-                sb.Append(Pill(0, 0, el.W * pct, el.H, FillAccent, "none"));
+                if (showLabel)
+                    sb.Append(Text($"{pct:F0}%", el.W + 8, el.H / 2, 11, ColorText, "start", "500"));
+
+                sb.Append($"<rect x='0' y='{F(y)}' width='{F(el.W)}' height='{F(trackH)}' rx='{F(rx)}' fill='{FillDark}' stroke='none'></rect>");
+
+                if (variant == "gradient")
+                {
+                    var gradId = "pg" + Guid.NewGuid().ToString("N")[..8];
+                    sb.Append($"<defs><linearGradient id='{gradId}' x1='0%' y1='0%' x2='100%' y2='0%'><stop offset='0%' stop-color='{Accent}'/><stop offset='100%' stop-color='#8b5cf6'/></linearGradient></defs>");
+                    fillColor = $"url(#{gradId})";
+                }
+
+                if (indeterminate)
+                {
+                    sb.Append($"<rect x='{F(segX1)}' y='{F(y)}' width='{F(segW1)}' height='{F(trackH)}' rx='{F(rx)}' fill='{fillColor}'></rect>");
+                    sb.Append($"<rect x='{F(segX2)}' y='{F(y)}' width='{F(segW2)}' height='{F(trackH)}' rx='{F(rx)}' fill='{fillColor}'></rect>");
+                }
+                else
+                {
+                    sb.Append($"<rect x='0' y='{F(y)}' width='{F(fillW)}' height='{F(trackH)}' rx='{F(rx)}' fill='{fillColor}'></rect>");
+                }
+
+                if (striped)
+                {
+                    var patId = "pgst" + Guid.NewGuid().ToString("N")[..8];
+                    sb.Append($"<defs><pattern id='{patId}' width='10' height='10' patternUnits='userSpaceOnUse' patternTransform='rotate(45)'><rect width='5' height='10' fill='rgba(255,255,255,0.35)'></rect></pattern></defs>");
+                    if (indeterminate)
+                    {
+                        sb.Append($"<rect x='{F(segX1)}' y='{F(y)}' width='{F(segW1)}' height='{F(trackH)}' rx='{F(rx)}' fill='url(#{patId})'></rect>");
+                        sb.Append($"<rect x='{F(segX2)}' y='{F(y)}' width='{F(segW2)}' height='{F(trackH)}' rx='{F(rx)}' fill='url(#{patId})'></rect>");
+                    }
+                    else
+                    {
+                        sb.Append($"<rect x='0' y='{F(y)}' width='{F(fillW)}' height='{F(trackH)}' rx='{F(rx)}' fill='url(#{patId})'></rect>");
+                    }
+                }
+
                 Svg(b, sb.ToString());
             },
             [
-                Prop("value", "Value", PropType.Int, 60, cat: "State"),
-                Prop("max", "Max", PropType.Int, 100, cat: "State"),
+                Prop("value", "Value", PropType.Double, 60, cat: "State"),
+                Prop("max", "Max", PropType.Double, 100, cat: "State"),
+                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg"], cat: "Appearance"),
+                Prop("variant", "Variant", PropType.Enum, "default",
+                    opts: ["default","success","warning","error","gradient"], cat: "Appearance"),
+                Prop("indeterminate", "Indeterminate", PropType.Bool, false, cat: "State"),
+                Prop("striped", "Striped", PropType.Bool, false, cat: "Appearance"),
                 Prop("showLabel", "Show Label", PropType.Bool, false, cat: "Appearance"),
             ]);
 
@@ -1148,25 +1373,40 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmTabs", CatNavigation, "Tabs", "layout", 400, 40,
             (el, b) =>
             {
-                var tabs = el.Props.GetStringList("tabs");
+                var tabs    = el.Props.GetStringList("tabs");
                 if (tabs.Length == 0) tabs = ["Tab 1", "Tab 2", "Tab 3"];
-                var active = el.Props.GetInt("activeTab", 0);
+                var active  = el.Props.GetInt("activeTab", 0);
+                var variant = el.Props.GetString("variant", "line");
                 var sb = new StringBuilder();
-                sb.Append(HLine(0, el.W, el.H));
+                if (variant == "line") sb.Append(HLine(0, el.W, el.H));
                 var x = 0.0;
                 for (var i = 0; i < tabs.Length; i++)
                 {
                     var tw = tabs[i].Length * 7.0 + 24;
                     var isActive = i == active;
-                    if (isActive)
+                    switch (variant)
                     {
-                        sb.Append(Rect(x, 0, tw, el.H, FillAccent, "none", 0));
-                        sb.Append(HLine(x, x + tw, el.H, Accent));
+                        case "pill":
+                            if (isActive) sb.Append(Pill(x + 2, 4, tw - 4, el.H - 8, FillAccent, "#93c5fd"));
+                            break;
+                        case "enclosed":
+                            sb.Append(Rect(x, 0, tw, el.H, isActive ? Fill : FillDark, Border, 0));
+                            if (isActive) // erase bottom border of active tab
+                                sb.Append($"<line x1='{F(x + 1)}' y1='{F(el.H)}' x2='{F(x + tw - 1)}' y2='{F(el.H)}' stroke='{Fill}' stroke-width='2'/>");
+                            break;
+                        default: // line
+                            if (isActive)
+                            {
+                                sb.Append(Rect(x, 0, tw, el.H, FillAccent, "none", 0));
+                                sb.Append(HLine(x, x + tw, el.H, Accent));
+                            }
+                            break;
                     }
                     sb.Append(Text(tabs[i], x + tw / 2, el.H / 2, 11,
                         isActive ? Accent : ColorMuted, "middle", isActive ? "500" : "normal"));
                     x += tw;
                 }
+                if (variant == "enclosed") sb.Append(HLine(0, el.W, el.H));
                 Svg(b, sb.ToString());
             },
             [
@@ -1631,32 +1871,195 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
         yield return Def("TmScheduler", CatComplex, "Scheduler", "calendar", 700, 400,
             (el, b) =>
             {
-                var view = el.Props.GetString("view", "week");
+                var view  = el.Props.GetString("view", "week");
                 var title = el.Props.GetString("title", "Schedule");
-                var sb = new StringBuilder();
-                sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
-                sb.Append(Rect(0, 0, el.W, 44, FillDark, "none", 6));
-                sb.Append(Rect(0, 36, el.W, 8, FillDark, "none", 0));
-                sb.Append(HLine(0, el.W, 44));
+                var sb    = new StringBuilder();
+                var W = el.W; var H = el.H;
+
+                // ── Outer card ────────────────────────────────────────────────
+                sb.Append(Rect(0, 0, W, H, Fill, Border, 6));
+
+                // ── Toolbar ───────────────────────────────────────────────────
+                sb.Append(Rect(0, 0, W, 44, FillDark, "none", 6));
+                sb.Append(Rect(0, 36, W, 8, FillDark, "none", 0));
+                sb.Append(HLine(0, W, 44));
                 sb.Append(Text(title, 12, 22, 13, ColorText, "start", "500"));
-                // View buttons
-                foreach (var (vw, vx) in new[] { ("Day", el.W - 180), ("Week", el.W - 136), ("Month", el.W - 86) })
+                // Nav arrows
+                sb.Append(Text("‹", W / 2 - 36, 22, 14, ColorMuted, "middle"));
+                sb.Append(Text("Today", W / 2, 22, 9, ColorText, "middle"));
+                sb.Append(Text("›", W / 2 + 36, 22, 14, ColorMuted, "middle"));
+                // View buttons (Day / Week / Month / Agenda)
+                var views = new[] { "Day", "Week", "Month", "Agenda" };
+                var btnW  = 44.0; var btnGap = 2.0;
+                var btnsX = W - views.Length * (btnW + btnGap) - 8;
+                for (var vi = 0; vi < views.Length; vi++)
                 {
-                    var isActive = view.ToLower() == vw.ToLower();
-                    sb.Append(Rect(vx, 10, 40, 24, isActive ? FillAccent : Fill, isActive ? "#93c5fd" : Border, 3));
-                    sb.Append(Text(vw, vx + 20, 22, 9, isActive ? Accent : ColorMuted, "middle"));
+                    var vx = btnsX + vi * (btnW + btnGap);
+                    var isActive = string.Equals(view, views[vi], StringComparison.OrdinalIgnoreCase);
+                    sb.Append(Rect(vx, 10, btnW, 24, isActive ? FillAccent : Fill, isActive ? "#93c5fd" : Border, 3));
+                    sb.Append(Text(views[vi], vx + btnW / 2, 22, 9, isActive ? Accent : ColorMuted, "middle"));
                 }
-                // Time column + hour slots
-                var cols = view == "month" ? 7 : 7;
-                var colW2 = (el.W - 40) / cols;
-                for (var c = 0; c <= cols; c++)
-                    sb.Append(VLine(40 + c * colW2, 44, el.H));
-                var rowH2 = (el.H - 68) / 8;
-                for (var r = 0; r <= 8; r++)
-                    sb.Append(HLine(0, el.W, 68 + r * rowH2));
-                // Sample event
-                sb.Append(Rect(40 + colW2 + 2, 68 + rowH2, colW2 * 2 - 4, rowH2 * 2, FillAccent, "#93c5fd", 3));
-                sb.Append(Text("Meeting", 40 + colW2 * 2, 68 + rowH2 * 2, 9, Accent, "middle"));
+
+                var contentY = 44.0;
+
+                switch (view.ToLower())
+                {
+                    // ── DAY VIEW ─────────────────────────────────────────────
+                    case "day":
+                    {
+                        var timeW   = 44.0;
+                        var bodyH   = H - contentY;
+                        var hours   = 9;
+                        var rowH    = bodyH / hours;
+                        var labels  = new[] { "8:00","9:00","10:00","11:00","12:00","13:00","14:00","15:00","16:00" };
+                        // Day header
+                        sb.Append(Rect(timeW, contentY, W - timeW, 24, FillDark, "none", 0));
+                        sb.Append(HLine(0, W, contentY + 24));
+                        sb.Append(Text("Monday 13", timeW + (W - timeW) / 2, contentY + 12, 11, ColorText, "middle", "500"));
+                        contentY += 24;
+                        bodyH    -= 24;
+                        rowH      = bodyH / hours;
+                        // Time labels + rows
+                        for (var r = 0; r < hours; r++)
+                        {
+                            var ry = contentY + r * rowH;
+                            sb.Append(HLine(0, W, ry));
+                            sb.Append(Text(labels[r], timeW - 4, ry + 8, 8, ColorMuted, "end"));
+                        }
+                        sb.Append(HLine(0, W, H));
+                        sb.Append(VLine(timeW, contentY, H));
+                        // Sample events
+                        sb.Append(Rect(timeW + 4, contentY + rowH * 1.5, W - timeW - 8, rowH * 1.5, FillAccent, "#93c5fd", 3));
+                        sb.Append(Text("Team standup", timeW + 10, contentY + rowH * 2 + 4, 9, Accent));
+                        sb.Append(Rect(timeW + 4, contentY + rowH * 4, W - timeW - 8, rowH * 2, "#dcfce7", "#86efac", 3));
+                        sb.Append(Text("Design review", timeW + 10, contentY + rowH * 4 + 12, 9, "#16a34a"));
+                        break;
+                    }
+
+                    // ── WEEK VIEW ────────────────────────────────────────────
+                    case "week":
+                    {
+                        var timeW  = 44.0;
+                        var days   = new[] { "Mon\n13", "Tue\n14", "Wed\n15", "Thu\n16", "Fri\n17", "Sat\n18", "Sun\n19" };
+                        var colW   = (W - timeW) / days.Length;
+                        var hours  = 8;
+                        var headerH = 28.0;
+                        // Day headers
+                        sb.Append(Rect(timeW, contentY, W - timeW, headerH, FillDark, "none", 0));
+                        sb.Append(HLine(0, W, contentY + headerH));
+                        for (var d = 0; d < days.Length; d++)
+                        {
+                            var dx = timeW + d * colW;
+                            var isToday = d == 0;
+                            if (isToday) sb.Append(Rect(dx, contentY, colW, headerH, FillAccent, "none", 0));
+                            sb.Append(Text(days[d].Split('\n')[0], dx + colW / 2, contentY + 9,  8, isToday ? Accent : ColorMuted, "middle"));
+                            sb.Append(Text(days[d].Split('\n')[1], dx + colW / 2, contentY + 21, 10, isToday ? Accent : ColorText,  "middle", "500"));
+                            sb.Append(VLine(dx, contentY, H));
+                        }
+                        sb.Append(VLine(timeW + days.Length * colW, contentY, H));
+                        contentY += headerH;
+                        var bodyH = H - contentY;
+                        var rowH  = bodyH / hours;
+                        var timeLabels = new[] { "8:00","9:00","10:00","11:00","12:00","13:00","14:00","15:00" };
+                        for (var r = 0; r < hours; r++)
+                        {
+                            var ry = contentY + r * rowH;
+                            sb.Append(HLine(0, W, ry));
+                            sb.Append(Text(timeLabels[r], timeW - 4, ry + 8, 8, ColorMuted, "end"));
+                        }
+                        sb.Append(HLine(0, W, H));
+                        sb.Append(VLine(timeW, contentY, H));
+                        // Sample events
+                        sb.Append(Rect(timeW + 2, contentY + rowH * 1, colW - 4, rowH, FillAccent, "#93c5fd", 3));
+                        sb.Append(Text("Standup", timeW + colW / 2, contentY + rowH * 1 + rowH / 2, 8, Accent, "middle"));
+                        sb.Append(Rect(timeW + colW * 2 + 2, contentY + rowH * 3, colW * 2 - 4, rowH * 1.5, "#dcfce7", "#86efac", 3));
+                        sb.Append(Text("Design", timeW + colW * 3, contentY + rowH * 3 + rowH * 0.75, 8, "#16a34a", "middle"));
+                        break;
+                    }
+
+                    // ── MONTH VIEW ───────────────────────────────────────────
+                    case "month":
+                    {
+                        var days    = new[] { "Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun" };
+                        var colW    = W / days.Length;
+                        var headerH = 24.0;
+                        var weeks   = 5;
+                        var rowH    = (H - contentY - headerH) / weeks;
+                        // Day-of-week header
+                        sb.Append(Rect(0, contentY, W, headerH, FillDark, "none", 0));
+                        sb.Append(HLine(0, W, contentY + headerH));
+                        for (var d = 0; d < days.Length; d++)
+                        {
+                            sb.Append(VLine(d * colW, contentY, H));
+                            sb.Append(Text(days[d], d * colW + colW / 2, contentY + 12, 9, ColorMuted, "middle"));
+                        }
+                        contentY += headerH;
+                        // Week rows with day numbers
+                        var dayNum = 1;
+                        for (var w = 0; w < weeks; w++)
+                        {
+                            var wy = contentY + w * rowH;
+                            sb.Append(HLine(0, W, wy + rowH));
+                            for (var d = 0; d < days.Length; d++)
+                            {
+                                var cx2 = d * colW;
+                                var isToday = w == 0 && d == 0;
+                                if (isToday)
+                                {
+                                    sb.Append($"<circle cx='{F(cx2 + 12)}' cy='{F(wy + 11)}' r='9' fill='{Accent}'></circle>");
+                                    sb.Append(Text(dayNum.ToString(), cx2 + 12, wy + 11, 9, "white", "middle", "500"));
+                                }
+                                else
+                                    sb.Append(Text(dayNum.ToString(), cx2 + 8, wy + 11, 9, d >= 5 ? ColorLight : ColorText));
+                                dayNum++;
+                                // Sample event chips
+                                if (w == 0 && d == 1)
+                                {
+                                    sb.Append(Rect(cx2 + 2, wy + 20, colW - 4, 12, FillAccent, "none", 2));
+                                    sb.Append(Text("Meeting", cx2 + colW / 2, wy + 26, 8, Accent, "middle"));
+                                }
+                                if (w == 1 && d == 3)
+                                {
+                                    sb.Append(Rect(cx2 + 2, wy + 20, colW - 4, 12, "#dcfce7", "none", 2));
+                                    sb.Append(Text("Review", cx2 + colW / 2, wy + 26, 8, "#16a34a", "middle"));
+                                }
+                            }
+                        }
+                        break;
+                    }
+
+                    // ── AGENDA VIEW ──────────────────────────────────────────
+                    default: // agenda
+                    {
+                        var entries = new[]
+                        {
+                            ("Monday, 13 April",   new[] { ("9:00 – 9:30",  "Team standup",  FillAccent, "#93c5fd", Accent),
+                                                            ("11:00 – 12:00", "Design review", "#dcfce7",  "#86efac", "#16a34a") }),
+                            ("Tuesday, 14 April",  new[] { ("10:00 – 11:00", "Sprint planning", "#fef9c3", "#fde047", "#ca8a04") }),
+                            ("Wednesday, 15 April", new[] { ("14:00 – 15:00", "1:1 with manager", FillAccent, "#93c5fd", Accent) }),
+                        };
+                        var y = contentY + 8.0;
+                        foreach (var (date, events) in entries)
+                        {
+                            if (y > H - 16) break;
+                            // Date heading
+                            sb.Append(Text(date, 12, y + 6, 10, ColorText, "start", "600"));
+                            sb.Append(HLine(12, W - 12, y + 14, FillDark));
+                            y += 20;
+                            foreach (var (time, name, evFill, evBorder, evText) in events)
+                            {
+                                if (y > H - 16) break;
+                                sb.Append(Rect(12, y, W - 24, 28, evFill, evBorder, 4));
+                                sb.Append(Text(time, 20, y + 14, 9, evText));
+                                sb.Append(Text(name, 90, y + 14, 10, evText, "start", "500"));
+                                y += 34;
+                            }
+                            y += 6;
+                        }
+                        break;
+                    }
+                }
+
                 Svg(b, sb.ToString());
             },
             [
@@ -1820,29 +2223,78 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 Prop("steps", "Steps", PropType.StringList, cat: "Content"),
             ]);
 
-        yield return Def("TmFilterBuilder", CatComplex, "Filter Builder", "filter", 500, 160,
+        yield return Def("TmFilterBuilder", CatComplex, "Filter Builder", "filter", 520, 192,
             (el, b) =>
             {
-                var conditions = el.Props.GetInt("conditions", 2);
+                var conditions    = el.Props.GetInt("conditions", 3);
+                var groupOperator = el.Props.GetString("groupOperator", "AND");
                 var sb = new StringBuilder();
+
+                // Outer card
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 6));
-                for (var i = 0; i < conditions && i < 4; i++)
+
+                // AND / OR toggle in top-left corner
+                var togW = 56.0; var togH = 22.0; var togY = 10.0;
+                sb.Append(Rect(12, togY, togW, togH, FillDark, Border, 4));
+                var andActive = groupOperator == "AND";
+                sb.Append(Rect(12, togY, togW / 2, togH, andActive ? FillAccent : FillDark, andActive ? "#93c5fd" : "none", 4));
+                sb.Append(Rect(12 + togW / 2, togY, togW / 2, togH, !andActive ? FillAccent : FillDark, !andActive ? "#93c5fd" : "none", 4));
+                sb.Append(Text("AND", 12 + togW / 4,      togY + togH / 2, 9, andActive  ? Accent : ColorMuted, "middle", "500"));
+                sb.Append(Text("OR",  12 + togW * 3 / 4,  togY + togH / 2, 9, !andActive ? Accent : ColorMuted, "middle", "500"));
+
+                // Column widths: field (35%), operator (25%), value (rest), gap=6, delete=20, padding=12 each side
+                var innerW  = el.W - 24 - 20 - 8;   // total usable minus delete col and right pad
+                var colF    = innerW * 0.37;          // field
+                var colO    = innerW * 0.25;          // operator
+                var colV    = innerW - colF - colO - 12; // value
+                var gap     = 6.0;
+                var rowH    = 30.0;
+                var rowGap  = 22.0;   // gap between rows — must fit the 14px pill with margin
+                var startY  = 42.0;
+
+                for (var i = 0; i < conditions && i < 5; i++)
                 {
-                    var ry = 12 + i * 40.0;
-                    if (i > 0) sb.Append(Pill(8, ry - 8, 30, 16, FillAccent, "#93c5fd"));
-                    var fw = (el.W - 32) / 3.0 - 4;
-                    sb.Append(Rect(8, ry, fw, 28, Fill, Border, 4));
-                    sb.Append(ChevronDown(8 + fw - 14, ry + 10));
-                    sb.Append(Rect(8 + fw + 4, ry, fw, 28, Fill, Border, 4));
-                    sb.Append(ChevronDown(8 + fw * 2 + 8, ry + 10));
-                    sb.Append(Rect(8 + fw * 2 + 8, ry, fw, 28, Fill, Border, 4));
-                    sb.Append(Icon("x", el.W - 14, ry + 14, 10));
+                    var ry = startY + i * (rowH + rowGap);
+
+                    // AND/OR connector pill — centred in the gap between rows
+                    if (i > 0)
+                    {
+                        var pillH = 14.0;
+                        var pillY = ry - rowGap / 2 - pillH / 2;   // vertically centred in the gap
+                        sb.Append(Pill(12, pillY, togW, pillH, andActive ? FillAccent : FillDark, andActive ? "#93c5fd" : Border));
+                        sb.Append(Text(groupOperator, 12 + togW / 2, pillY + pillH / 2, 8,
+                            andActive ? Accent : ColorMuted, "middle", "500"));
+                    }
+
+                    var x0 = 12.0;
+                    // Field selector (dropdown)
+                    sb.Append(Rect(x0, ry, colF, rowH, FillDark, Border, 4));
+                    sb.Append(Text("Field", x0 + 8, ry + rowH / 2, 10, ColorMuted));
+                    sb.Append(ChevronDown(x0 + colF - 14, ry + rowH / 2 - 4));
+
+                    // Operator selector (dropdown)
+                    var x1 = x0 + colF + gap;
+                    sb.Append(Rect(x1, ry, colO, rowH, FillDark, Border, 4));
+                    sb.Append(Text("equals", x1 + 8, ry + rowH / 2, 10, ColorMuted));
+                    sb.Append(ChevronDown(x1 + colO - 14, ry + rowH / 2 - 4));
+
+                    // Value input (text field — no chevron)
+                    var x2 = x1 + colO + gap;
+                    sb.Append(Rect(x2, ry, colV, rowH, Fill, Border, 4));
+                    sb.Append(Text("Value…", x2 + 8, ry + rowH / 2, 10, ColorLight));
+
+                    // Delete button
+                    sb.Append(Icon("x", el.W - 16, ry + rowH / 2, 10));
                 }
-                sb.Append(Text("+ Add condition", 12, el.H - 14, 10, Accent));
+
+                // "+ Add condition" link at bottom
+                sb.Append(Text("+ Add condition", 12, el.H - 10, 10, Accent));
+
                 Svg(b, sb.ToString());
             },
             [
-                Prop("conditions", "Conditions", PropType.Int, 2, cat: "Appearance"),
+                Prop("conditions",    "Conditions",     PropType.Int,  3,     cat: "Appearance"),
+                Prop("groupOperator", "Group Operator", PropType.Enum, "AND", opts: ["AND","OR"], cat: "Appearance"),
             ]);
 
         yield return Def("TmActivityLog", CatComplex, "Activity Log", "activity", 400, 280,

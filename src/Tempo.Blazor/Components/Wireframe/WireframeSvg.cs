@@ -166,12 +166,18 @@ internal static class WireframeSvg
 
     /// <summary>Standard input field: rect + optional label above + placeholder inside.</summary>
     internal static string InputField(double w, double h, string label, string placeholder,
-        bool required = false, bool hasIcon = false, bool hasChevron = false)
+        bool required = false, bool hasIcon = false, bool hasChevron = false,
+        bool disabled = false, bool readOnly = false)
     {
         var sb = new StringBuilder();
+        if (disabled) sb.Append("<g opacity='0.45'>");
         if (!string.IsNullOrEmpty(label))
             sb.Append(FieldLabel(label, required));
-        sb.Append(Rect(0, 0, w, h));
+        var rectFill = disabled ? FillDark : Fill;
+        var rectBorder = readOnly ? "none" : Border;
+        sb.Append(Rect(0, 0, w, h, rectFill, rectBorder));
+        if (readOnly)
+            sb.Append($"<rect x='0' y='0' width='{F(w)}' height='{F(h)}' fill='none' stroke='{Border}' stroke-width='1' stroke-dasharray='4 2' rx='3'></rect>");
         if (hasIcon)
             sb.Append(Icon("search", h / 2, h / 2, h * 0.55));
         var textX = hasIcon ? h * 0.8 : 8.0;
@@ -179,6 +185,7 @@ internal static class WireframeSvg
             sb.Append(Text(placeholder, textX, h / 2, 10, ColorLight));
         if (hasChevron)
             sb.Append(ChevronDown(w - 16, h / 2 - 4));
+        if (disabled) sb.Append("</g>");
         return sb.ToString();
     }
 

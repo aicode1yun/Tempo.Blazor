@@ -28,6 +28,38 @@ public static class WireframeDocumentExtensions
     }
 
     /// <summary>
+    /// Creates a new <see cref="WireframeElement"/> and pre-populates its <see cref="WireframeElement.Props"/>
+    /// from the <paramref name="propDefs"/> defaults. This ensures the canvas renders correctly
+    /// immediately after drop — without relying on <c>GetBool</c>/<c>GetString</c> fallbacks.
+    /// Props with a <c>null</c> default are skipped (the render fallback handles those).
+    /// </summary>
+    public static WireframeElement NewElement(
+        string type,
+        double x,
+        double y,
+        double defaultWidth,
+        double defaultHeight,
+        IEnumerable<PropDef> propDefs)
+    {
+        var el = new WireframeElement
+        {
+            Type = type,
+            X = x,
+            Y = y,
+            W = defaultWidth,
+            H = defaultHeight
+        };
+
+        foreach (var prop in propDefs)
+        {
+            if (prop.Default is not null)
+                el.SetProp(prop.Name, prop.Default);
+        }
+
+        return el;
+    }
+
+    /// <summary>
     /// Deep-clones the document via JSON roundtrip.
     /// Used by Undo/Redo – not on a hot path, so JSON overhead is acceptable.
     /// </summary>

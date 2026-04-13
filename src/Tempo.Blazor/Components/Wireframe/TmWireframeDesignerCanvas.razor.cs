@@ -250,7 +250,8 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         var el  = WireframeDocumentExtensions.NewElement(
             type, x, y,
             def?.DefaultWidth  ?? 160,
-            def?.DefaultHeight ?? 40);
+            def?.DefaultHeight ?? 40,
+            def?.Props ?? []);
         el.ZIndex = Document.Elements.Count > 0
             ? Document.Elements.Max(e => e.ZIndex) + 1
             : 0;
