@@ -46,6 +46,14 @@
             OnConfirm="@OnLinkConfirm"
             OnCancel="@OnLinkCancel" />
     }
+
+    @if (_showTableDialog)
+    {
+        <TableDialog
+            IsVisible="true"
+            OnConfirm="@OnTableConfirm"
+            OnCancel="@OnTableCancel" />
+    }
 </div>
 
 @code {
@@ -98,6 +106,7 @@
     private int _charCount;
     private bool _showLinkDialog;
     private string? _linkPreselectedText;
+    private bool _showTableDialog;
     private bool _suppressKeyDown;
     private bool _isInitialized;
     private bool _isUpdatingFromJs;     // guards OnAfterRenderAsync sync loop
@@ -231,6 +240,12 @@
                     await JS.InvokeVoidAsync("tmMarkdownEditor.insertHr", _editorRef);
                     break;
 
+                // Table — open dialog
+                case "table":
+                    _showTableDialog = true;
+                    await InvokeAsync(StateHasChanged);
+                    return;
+
                 // Link — open dialog, capture selected text as preset
                 case "link":
                     _linkPreselectedText = await JS.InvokeAsync<string>("tmMarkdownEditor.getSelectedText", _editorRef);
@@ -260,6 +275,24 @@
     private void OnLinkCancel()
     {
         _showLinkDialog = false;
+    }
+
+    // ── Table dialog ───────────────────────────────────────────────────────────
+
+    private async Task OnTableConfirm((int Rows, int Cols) table)
+    {
+        _showTableDialog = false;
+        try
+        {
+            await JS.InvokeVoidAsync("tmMarkdownEditor.insertTable", _editorRef, table.Rows, table.Cols);
+            await SyncValueFromEditorAsync();
+        }
+        catch { }
+    }
+
+    private void OnTableCancel()
+    {
+        _showTableDialog = false;
     }
 
     // ── Value sync helper ──────────────────────────────────────────────────────

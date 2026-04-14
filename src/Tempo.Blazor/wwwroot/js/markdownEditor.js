@@ -3,8 +3,8 @@
  *
  * Architecture (Notion-inspired):
  *   .tm-mde-content[contenteditable]
- *     .tm-b[data-t="p|h1|h2|h3|ul|ol|bq|cf|hr"]  ← one div per logical block
- *       inline HTML: <b><em><s><code><a>           ← real semantic elements, NO markdown syntax
+ *     .tm-b[data-t="p|h1|h2|h3|ul|ol|bq|cf|hr|table"]  ← one div per logical block
+ *       inline HTML: <b><em><s><code><a>                ← real semantic elements, NO markdown syntax
  *
  * getValue()  → serialize DOM to markdown string
  * setValue()  → parse markdown string → rebuild DOM
@@ -170,6 +170,32 @@ window.tmMarkdownEditor = {
         el.dispatchEvent(new Event('input', { bubbles: true }));
     },
 
+    insertTable(el, rows, cols) {
+        if (!el) return;
+        el.focus();
+        const block = this._getCaretBlock(el) || el.lastElementChild;
+        if (!block) return;
+
+        const tableData = {
+            type: 'table',
+            header: Array.from({ length: cols }, (_, i) => `Col ${i + 1}`),
+            rows: Array.from({ length: Math.max(0, rows - 1) }, () =>
+                Array.from({ length: cols }, () => '')
+            )
+        };
+
+        const tableBlock = this._buildBlock(tableData);
+        block.after(tableBlock);
+
+        // Focus first cell
+        const firstCell = tableBlock.querySelector('th, td');
+        if (firstCell) {
+            this._focusCell(firstCell);
+        }
+
+        el.dispatchEvent(new Event('input', { bubbles: true }));
+    },
+
     insertLink(el, url, linkText) {
         if (!el) return;
         el.focus();
@@ -236,6 +262,40 @@ window.tmMarkdownEditor = {
             }
         }
 
+        const cell = this._getCaretCell(el);
+        if (cell) {
+            // ── Tab navigation in tables ──────────────────────────────────────
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                this._handleTableTab(el, cell, e.shiftKey);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
+
+            // ── Enter in table cell ───────────────────────────────────────────
+            if (e.key === 'Enter' && !ctrl) {
+                e.preventDefault();
+                this._handleTableEnter(el, cell);
+                el.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
+
+            // ── Backspace in first cell of empty row ──────────────────────────
+            if (e.key === 'Backspace' && !ctrl) {
+                const tr = cell.closest('tr');
+                const tbody = cell.closest('tbody');
+                if (tbody && tr && cell.textContent.trim() === '' && tr.cells[0] === cell) {
+                    e.preventDefault();
+                    this._handleTableBackspace(el, tr);
+                    el.dispatchEvent(new Event('input', { bubbles: true }));
+                    return;
+                }
+            }
+
+            // Let other keys (arrows, typing) behave natively inside the cell
+            return;
+        }
+
         // ── Enter — split block ───────────────────────────────────────────────
         if (e.key === 'Enter' && !ctrl) {
             const block = this._getCaretBlock(el);
@@ -260,6 +320,142 @@ window.tmMarkdownEditor = {
                 }
             }
         }
+    },
+
+    // ══════════════════════════════════════════════════════════════════════════
+    // Internal — Table helpers
+    // ══════════════════════════════════════════════════════════════════════════
+
+    _getCaretCell(el) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return null;
+        const node = sel.getRangeAt(0).startContainer;
+        const cell = node.nodeType === Node.ELEMENT_NODE
+            ? (node.closest ? node.closest('th, td') : null)
+            : (node.parentElement ? node.parentElement.closest('th, td') : null);
+        if (cell && el.contains(cell)) return cell;
+        return null;
+    },
+
+    _focusCell(cell) {
+        if (!cell) return;
+        cell.focus();
+        const sel = window.getSelection();
+        if (!sel) return;
+        const range = document.createRange();
+        range.selectNodeContents(cell);
+        range.collapse(false);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    },
+
+    _handleTableTab(el, cell, shift) {
+        const row = cell.closest('tr');
+        const table = cell.closest('table');
+        if (!row || !table) return;
+
+        const rows = [...table.querySelectorAll('tr')];
+        const cells = [...row.querySelectorAll('th, td')];
+        const rowIndex = rows.indexOf(row);
+        const colIndex = cells.indexOf(cell);
+
+        let nextRow = rowIndex;
+        let nextCol = colIndex + (shift ? -1 : 1);
+
+        if (nextCol >= cells.length) {
+            nextCol = 0;
+            nextRow++;
+        }
+        if (nextCol < 0) {
+            nextCol = cells.length - 1;
+            nextRow--;
+        }
+
+        // If past last row, append a new row
+        if (nextRow >= rows.length) {
+            this._insertTableRow(table, rows.length);
+            const newRows = [...table.querySelectorAll('tr')];
+            const nextCell = newRows[nextRow]?.cells[nextCol];
+            if (nextCell) this._focusCell(nextCell);
+            return;
+        }
+
+        const nextCell = rows[nextRow]?.cells[nextCol];
+        if (nextCell) this._focusCell(nextCell);
+    },
+
+    _handleTableEnter(el, cell) {
+        const row = cell.closest('tr');
+        const tbody = cell.closest('tbody');
+        const table = cell.closest('table');
+        if (!row || !table) return;
+
+        const rows = tbody ? [...tbody.querySelectorAll('tr')] : [...table.querySelectorAll('tbody tr')];
+        const rowIndex = rows.indexOf(row);
+
+        // Insert new row after current row
+        const newRow = this._insertTableRow(table, rowIndex + 1);
+        const firstCell = newRow.cells[0];
+        if (firstCell) this._focusCell(firstCell);
+    },
+
+    _handleTableBackspace(el, row) {
+        const tbody = row.closest('tbody');
+        const table = row.closest('table');
+        const block = table?.closest('.tm-b');
+        if (!tbody || !table || !block) return;
+
+        const rows = [...tbody.querySelectorAll('tr')];
+        if (rows.length > 1) {
+            const prevRow = row.previousElementSibling;
+            row.remove();
+            const focusCell = prevRow ? prevRow.cells[prevRow.cells.length - 1] : null;
+            if (focusCell) this._focusCell(focusCell);
+        } else {
+            // Remove the entire table block and replace with empty paragraph
+            const p = this._buildBlock({ type: 'p', md: '' });
+            block.replaceWith(p);
+            this._setCursorAtStart(p);
+        }
+    },
+
+    _insertTableRow(table, index) {
+        const thead = table.querySelector('thead');
+        const tbody = table.querySelector('tbody') || table;
+        const refRow = thead?.querySelector('tr');
+        const colCount = refRow ? refRow.cells.length : (tbody.querySelector('tr')?.cells.length || 1);
+
+        const tr = document.createElement('tr');
+        for (let i = 0; i < colCount; i++) {
+            const td = document.createElement('td');
+            td.setAttribute('contenteditable', 'true');
+            td.textContent = '';
+            tr.appendChild(td);
+        }
+
+        const rows = [...tbody.querySelectorAll('tr')];
+        if (index >= 0 && index < rows.length) {
+            rows[index].before(tr);
+        } else {
+            tbody.appendChild(tr);
+        }
+        return tr;
+    },
+
+    _parseTableRow(line) {
+        return line.split('|')
+            .map(c => c.trim())
+            .filter((c, i, arr) => {
+                if (i === 0 && c === '') return false;
+                if (i === arr.length - 1 && c === '') return false;
+                return true;
+            });
+    },
+
+    _isTableSeparator(line) {
+        if (!line.includes('|')) return false;
+        const parts = this._parseTableRow(line);
+        return parts.length > 0 && parts.every(p => /^[-:]+$/.test(p.replace(/\s/g, '')));
     },
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -534,8 +730,29 @@ window.tmMarkdownEditor = {
             case 'bq': return '> '  + this._serializeInlines(block);
             case 'hr': return '---';
             case 'cf': return '```\n' + block.textContent + '\n```';
+            case 'table': return this._serializeTable(block);
             default:   return this._serializeInlines(block);
         }
+    },
+
+    _serializeTable(block) {
+        const table = block.querySelector('table');
+        if (!table) return '';
+        const lines = [];
+
+        const headerRow = table.querySelector('thead tr');
+        if (headerRow) {
+            const cells = [...headerRow.querySelectorAll('th, td')].map(td => td.textContent);
+            lines.push('| ' + cells.join(' | ') + ' |');
+            lines.push('|' + cells.map(() => ' --- ').join('|') + '|');
+        }
+
+        for (const tr of table.querySelectorAll('tbody tr')) {
+            const cells = [...tr.querySelectorAll('td, th')].map(td => td.textContent);
+            lines.push('| ' + cells.join(' | ') + ' |');
+        }
+
+        return lines.join('\n');
     },
 
     _serializeInlines(node) {
@@ -608,6 +825,19 @@ window.tmMarkdownEditor = {
             const h1 = line.match(/^# (.*)$/);
             if (h1) { blocks.push({ type: 'h1', md: h1[1] }); i++; continue; }
 
+            // Table
+            if (line.includes('|') && (i + 1) < lines.length && this._isTableSeparator(lines[i + 1])) {
+                const header = this._parseTableRow(line);
+                i += 2; // skip header and separator
+                const rows = [];
+                while (i < lines.length && lines[i].includes('|')) {
+                    rows.push(this._parseTableRow(lines[i]));
+                    i++;
+                }
+                blocks.push({ type: 'table', header, rows });
+                continue;
+            }
+
             // Bullet list
             const ul = line.match(/^[-*+] (.*)$/);
             if (ul) { blocks.push({ type: 'ul', md: ul[1] }); i++; continue; }
@@ -641,6 +871,37 @@ window.tmMarkdownEditor = {
 
         if (data.type === 'cf') {
             div.textContent = data.md ?? '';
+            return div;
+        }
+
+        if (data.type === 'table') {
+            const table = document.createElement('table');
+            table.className = 'tm-mde-table';
+
+            const thead = document.createElement('thead');
+            const headerTr = document.createElement('tr');
+            for (const h of (data.header || [])) {
+                const th = document.createElement('th');
+                th.setAttribute('contenteditable', 'true');
+                th.textContent = h;
+                headerTr.appendChild(th);
+            }
+            thead.appendChild(headerTr);
+            table.appendChild(thead);
+
+            const tbody = document.createElement('tbody');
+            for (const row of (data.rows || [])) {
+                const tr = document.createElement('tr');
+                for (const cell of row) {
+                    const td = document.createElement('td');
+                    td.setAttribute('contenteditable', 'true');
+                    td.textContent = cell;
+                    tr.appendChild(td);
+                }
+                tbody.appendChild(tr);
+            }
+            table.appendChild(tbody);
+            div.appendChild(table);
             return div;
         }
 
