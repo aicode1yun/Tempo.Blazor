@@ -241,12 +241,6 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         ("w", "Left")
     ];
 
-    // Rotate state
-    private string? _rotateNodeId;
-    private double _rotateStartAngle;
-    private double _rotateStartNodeRotation;
-    private (double X, double Y) _rotateCenter;
-
     /// <summary>Raised when a connect arrow is clicked.</summary>
     [Parameter] public EventCallback<(string NodeId, string Direction)> OnConnectArrowClicked { get; set; }
 
@@ -267,22 +261,27 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _resizeStartRect = (node.X, node.Y, node.W, node.H);
     }
 
-    private void OnRotateStart(MouseEventArgs e, string nodeId)
+    private void OnRotateStartJs(MouseEventArgs e, string nodeId)
     {
         if (ReadOnly || Document is null) return;
         var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is null) return;
-
-        _rotateNodeId = nodeId;
-        _rotateCenter = (node.X + node.W / 2.0, node.Y + node.H / 2.0);
-        _rotateStartNodeRotation = node.Rotation;
-        _rotateStartAngle = ComputeAngle(_rotateCenter, (e.ClientX, e.ClientY));
+        if (node is null || !_jsInitialized) return;
+        _ = JS.InvokeVoidAsync("tmDiagramEditor.startRotate", _containerRef, nodeId, e.ClientX, e.ClientY, node.Rotation, RotateSnap);
     }
 
-    private static double ComputeAngle((double X, double Y) center, (double X, double Y) point)
+    [JSInvokable]
+    public async Task OnRotateEnded(string nodeId, double angle)
     {
-        var rad = Math.Atan2(point.Y - center.Y, point.X - center.X);
-        return rad * 180.0 / Math.PI;
+        if (Document is null) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null) return;
+        var before = node.Rotation;
+        node.Rotation = angle;
+        if (CommandStack is not null && Math.Abs(angle - before) > 0.001)
+        {
+            CommandStack.Push(new RotateNodeCommand(Document, nodeId, before, angle));
+            await DocumentChanged.InvokeAsync(Document);
+        }
     }
 
     private static double SnapAngle(double angle, double snap)
@@ -293,19 +292,6 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private void OnCanvasMouseMove(MouseEventArgs e)
     {
-        if (_rotateNodeId is not null && Document is not null)
-        {
-            var rotateNode = Document.Nodes.FirstOrDefault(n => n.Id == _rotateNodeId);
-            if (rotateNode is not null)
-            {
-                var currentAngle = ComputeAngle(_rotateCenter, (e.ClientX, e.ClientY));
-                var delta = currentAngle - _rotateStartAngle;
-                rotateNode.Rotation = SnapAngle(_rotateStartNodeRotation + delta, RotateSnap);
-                StateHasChanged();
-            }
-            return;
-        }
-
         if (_resizeNodeId is null || Document is null || string.IsNullOrEmpty(_resizeHandle) || Zoom <= 0) return;
 
         var dx = (e.ClientX - _resizeStartScreen.X) / Zoom;
@@ -330,21 +316,6 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private void OnCanvasMouseUp(MouseEventArgs e)
     {
-        if (_rotateNodeId is not null && Document is not null)
-        {
-            var rotateNode = Document.Nodes.FirstOrDefault(n => n.Id == _rotateNodeId);
-            if (rotateNode is not null && CommandStack is not null)
-            {
-                if (Math.Abs(rotateNode.Rotation - _rotateStartNodeRotation) > 0.001)
-                {
-                    CommandStack.Push(new RotateNodeCommand(Document, _rotateNodeId, _rotateStartNodeRotation, rotateNode.Rotation));
-                    _ = DocumentChanged.InvokeAsync(Document);
-                }
-            }
-            _rotateNodeId = null;
-            return;
-        }
-
         if (_resizeNodeId is null || Document is null) return;
 
         var node = Document.Nodes.FirstOrDefault(n => n.Id == _resizeNodeId);

@@ -144,7 +144,7 @@
                          data-h="@node.H"
                          data-parent-id="@node.ParentNodeId"
                          data-locked="@(IsNodeLocked(node) ? "true" : "false")"
-                         style="transform: translate(@(F(node.X))px, @(F(node.Y))px); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">
+                         style="transform: translate(@(F(node.X))px, @(F(node.Y))px) rotate(@(F(node.Rotation))deg); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">
                         <TmDiagramStencilShape Node="node"
                                                IsSelected="_currentSelectionIds.Contains(node.Id)"
                                                OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)" />
@@ -180,7 +180,7 @@
                             <div class="tm-diagram-rotate-handle"
                                  title="@Loc["TmDiagramEditor_RotateHandleLabel"]"
                                  @onmousedown:stopPropagation="true"
-                                 @onmousedown="e => OnRotateStart(e, node.Id)">
+                                 @onmousedown="e => OnRotateStartJs(e, node.Id)">
                             </div>
 
                             @* Quick-connect arrows *@

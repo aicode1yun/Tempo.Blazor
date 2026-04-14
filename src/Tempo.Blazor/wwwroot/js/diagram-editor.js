@@ -235,9 +235,17 @@ window.tmDiagramEditor = {
         return { x, y, w: dw, h: dh };
     },
 
+    _getNodeRotation: function (el) {
+        const style = el ? el.style.transform : '';
+        const m = style.match(/rotate\(([-\d.e+]+)deg\)/);
+        return m ? parseFloat(m[1]) : 0;
+    },
+
     _setNodeTranslate: function (inst, id, x, y) {
         const el = this._nodeEl(inst, id);
-        if (el) el.style.transform = 'translate(' + x + 'px, ' + y + 'px)';
+        if (!el) return;
+        const rot = this._getNodeRotation(el);
+        el.style.transform = 'translate(' + x + 'px, ' + y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
     },
 
     _clampChildPosition: function (inst, childId, x, y) {
@@ -950,6 +958,8 @@ window.tmDiagramEditor = {
         inst.selectedIds.forEach(id => {
             const r = this._nodeRect(inst, id);
             if (!r) return;
+            const nodeEl = this._nodeEl(inst, id);
+            const rot = this._getNodeRotation(nodeEl);
             const el = document.createElement('div');
             el.className = 'tm-diagram-selection-outline';
             el.style.position = 'absolute';
@@ -957,7 +967,8 @@ window.tmDiagramEditor = {
             el.style.top = '-4px';
             el.style.width = (r.w + 8) + 'px';
             el.style.height = (r.h + 8) + 'px';
-            el.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)';
+            el.style.transformOrigin = 'center center';
+            el.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
             el.style.pointerEvents = 'none';
             el.style.boxSizing = 'border-box';
             el.setAttribute('data-sel-for', id);
@@ -1141,6 +1152,67 @@ window.tmDiagramEditor = {
 
     getDragStencilId: function () {
         return window.__tmDiagramDragStencil ?? null;
+    },
+
+    _applyNodeRotation: function (inst, nodeId, angle) {
+        const el = this._nodeEl(inst, nodeId);
+        if (!el) return;
+        const style = el.style.transform || '';
+        const m = style.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
+        const translate = m ? 'translate(' + m[1] + 'px, ' + m[2] + 'px)' : 'translate(0px, 0px)';
+        el.style.transform = translate + ' rotate(' + angle + 'deg)';
+        this._updateSelection(inst);
+    },
+
+    setNodeRotation: function (container, nodeId, angle) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst) return;
+        this._applyNodeRotation(inst, nodeId, angle);
+    },
+
+    startRotate: function (container, nodeId, clientX, clientY, initialRotation, snap) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst) return;
+        const r = this._nodeRect(inst, nodeId);
+        if (!r) return;
+
+        inst.isRotating = true;
+        inst.rotateNodeId = nodeId;
+        inst.rotateCenterDoc = { x: r.x + r.w / 2, y: r.y + r.h / 2 };
+        inst.rotateStartNodeRotation = initialRotation;
+        inst.rotateSnap = snap || 0;
+
+        const startPt = this._screenToDoc(inst, clientX, clientY);
+        inst.rotateStartAngle = Math.atan2(startPt.y - inst.rotateCenterDoc.y, startPt.x - inst.rotateCenterDoc.x) * 180 / Math.PI;
+
+        const self = this;
+        const move = function (e) {
+            if (!inst.isRotating) return;
+            e.preventDefault();
+            const pt = self._screenToDoc(inst, e.clientX, e.clientY);
+            const angle = Math.atan2(pt.y - inst.rotateCenterDoc.y, pt.x - inst.rotateCenterDoc.x) * 180 / Math.PI;
+            let delta = angle - inst.rotateStartAngle;
+            let rot = inst.rotateStartNodeRotation + delta;
+            if (inst.rotateSnap > 0) {
+                rot = Math.round(rot / inst.rotateSnap) * inst.rotateSnap;
+            }
+            self._applyNodeRotation(inst, inst.rotateNodeId, rot);
+        };
+        const up = function (e) {
+            if (!inst.isRotating) return;
+            inst.isRotating = false;
+            document.removeEventListener('mousemove', move);
+            document.removeEventListener('mouseup', up);
+            const nodeEl = self._nodeEl(inst, inst.rotateNodeId);
+            const rot = nodeEl ? self._getNodeRotation(nodeEl) : inst.rotateStartNodeRotation;
+            if (inst.dotNetRef) {
+                inst.dotNetRef.invokeMethodAsync('OnRotateEnded', inst.rotateNodeId, rot);
+            }
+            inst.rotateNodeId = null;
+        };
+
+        document.addEventListener('mousemove', move);
+        document.addEventListener('mouseup', up);
     },
 
     computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2) {

@@ -31,7 +31,7 @@ public partial class TmDiagramStencilShape : ComponentBase
         var shape = layout?.BackgroundShape ?? "rectangle";
 
         var borderStyle = shape == "weak-entity" ? "double" : "solid";
-        var style = $"background: {fill}; border: {F(strokeWidth)}px {borderStyle} {stroke}; border-radius: {radius}; width: 100%; height: 100%; overflow: hidden; transform: rotate({F(Node.Rotation)}deg);";
+        var style = $"background: {fill}; border: {F(strokeWidth)}px {borderStyle} {stroke}; border-radius: {radius}; width: 100%; height: 100%; overflow: hidden;";
 
         if (shape == "diamond")
         {
