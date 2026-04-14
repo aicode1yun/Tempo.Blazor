@@ -80,6 +80,12 @@ public static class ServiceCollectionExtensions
             return registry;
         });
 
+        // ── Wireframe schema registry (Abstractions-level, no Blazor dep) ────
+        // BuiltInComponentSchemas is the single source of truth for prop metadata.
+        services.TryAddSingleton<IWireframeSchemaSource, BuiltInComponentSchemas>();
+        services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
+            new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
+
         return services;
     }
 

@@ -44,68 +44,28 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 
-    private static WireframeComponentDef Def(
-        string type, string category, string displayName, string? icon,
-        double w, double h,
-        Action<WireframeElement, RenderTreeBuilder> render,
-        PropDef[]? props = null,
-        IReadOnlyDictionary<string, (double W, double H)>? sizePresets = null)
-        => new()
+    private static readonly BuiltInComponentSchemas _schemas = new();
+
+    private static WireframeComponentDef DefFromSchema(
+        string type, string? icon,
+        Action<WireframeElement, RenderTreeBuilder> render)
+    {
+        var s = _schemas.GetSchemas().FirstOrDefault(x => x.Type == type)
+                ?? throw new InvalidOperationException($"No schema found for '{type}'");
+        return new WireframeComponentDef
         {
-            Type = type,
-            Category = category,
-            DisplayName = displayName,
-            Icon = icon,
-            DefaultWidth = w,
-            DefaultHeight = h,
-            Props = props ?? [],
-            IsBuiltIn = true,
-            RenderSvg = render,
-            SizePresets = sizePresets
+            Type         = s.Type,
+            Category     = s.Category,
+            DisplayName  = s.DisplayName,
+            Icon         = icon,
+            DefaultWidth  = s.DefaultWidth,
+            DefaultHeight = s.DefaultHeight,
+            Props        = [.. s.Props],
+            IsBuiltIn    = true,
+            RenderSvg    = render,
+            SizePresets  = s.SizePresets,
         };
-
-    // Size preset maps — shared across button-family components
-    private static readonly IReadOnlyDictionary<string, (double W, double H)> ButtonSizes = new Dictionary<string, (double, double)>
-    {
-        ["xs"] = (80,  24),
-        ["sm"] = (100, 30),
-        ["md"] = (120, 36),
-        ["lg"] = (140, 44),
-    };
-
-    private static readonly IReadOnlyDictionary<string, (double W, double H)> SplitButtonSizes = new Dictionary<string, (double, double)>
-    {
-        ["xs"] = (100, 24),
-        ["sm"] = (120, 30),
-        ["md"] = (140, 36),
-        ["lg"] = (160, 44),
-    };
-
-    private static readonly IReadOnlyDictionary<string, (double W, double H)> IconButtonSizes = new Dictionary<string, (double, double)>
-    {
-        ["xs"] = (24, 24),
-        ["sm"] = (28, 28),
-        ["md"] = (36, 36),
-        ["lg"] = (44, 44),
-    };
-
-    private static readonly IReadOnlyDictionary<string, (double W, double H)> BadgeSizes = new Dictionary<string, (double, double)>
-    {
-        ["sm"] = (48, 18),
-        ["md"] = (60, 22),
-        ["lg"] = (72, 26),
-    };
-
-    private static readonly IReadOnlyDictionary<string, (double W, double H)> SpinnerSizes = new Dictionary<string, (double, double)>
-    {
-        ["sm"] = (16, 16),
-        ["md"] = (32, 32),
-        ["lg"] = (48, 48),
-    };
-
-    private static PropDef Prop(string name, string display, PropType type,
-        object? def = null, string[]? opts = null, string? cat = null, bool req = false)
-        => new() { Name = name, DisplayName = display, Type = type, Default = def, Options = opts, Category = cat, IsRequired = req };
+    }
 
     private static void Svg(RenderTreeBuilder b, string markup)
         => b.AddMarkupContent(0, markup);
@@ -125,11 +85,10 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     // ══════════════════════════════════════════════════════════════════════════
     // BUTTONS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatButtons = "Buttons";
 
     private static IEnumerable<WireframeComponentDef> Buttons()
     {
-        yield return Def("TmButton", CatButtons, "Button", "square", 120, 36,
+        yield return DefFromSchema("TmButton", "square",
             (el, b) =>
             {
                 var label    = el.Props.GetString("label", "Button");
@@ -174,23 +133,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(displayText, textX, h / 2, font, textColor, "middle", "500"));
                 if (disabled || loading) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Button", cat: "Content", req: true),
-                Prop("variant", "Variant", PropType.Enum, "primary",
-                    opts: ["primary","secondary","ghost","danger","outline","link","default"], cat: "Appearance"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg"], cat: "Appearance"),
-                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
-                Prop("iconRight", "Icon Right", PropType.Bool, false, cat: "Appearance"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-                Prop("loading", "Loading", PropType.Bool, false, cat: "Behavior"),
-                Prop("loadingText", "Loading Text", PropType.String, "", cat: "Content"),
-                Prop("block", "Block", PropType.Bool, false, cat: "Appearance"),
-                Prop("type", "Type", PropType.Enum, "button", opts: ["button","submit","reset"], cat: "Behavior"),
-            ],
-            sizePresets: ButtonSizes);
+            });
 
-        yield return Def("TmSplitButton", CatButtons, "Split Button", "layout", 140, 36,
+        yield return DefFromSchema("TmSplitButton", "layout",
             (el, b) =>
             {
                 var label   = el.Props.GetString("label", "Action");
@@ -211,16 +156,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(w - 28, 0, 28, h, fill, "none", 0));
                 sb.Append(ChevronDown(w - 20, h / 2 - 4));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Action", cat: "Content"),
-                Prop("variant", "Variant", PropType.Enum, "primary",
-                    opts: ["primary","secondary","ghost","danger"], cat: "Appearance"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg"], cat: "Appearance"),
-            ],
-            sizePresets: SplitButtonSizes);
+            });
 
-        yield return Def("TmCopyButton", CatButtons, "Copy Button", "copy", 36, 36,
+        yield return DefFromSchema("TmCopyButton", "copy",
             (el, b) =>
             {
                 var (_, rx) = SizeScale(el.Props.GetString("size", "md"));
@@ -229,22 +167,15 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(0, 0, el.W, h, Fill, Border, rx));
                 sb.Append(Icon("copy", el.W / 2, h / 2, h * 0.45));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg"], cat: "Appearance"),
-            ],
-            sizePresets: IconButtonSizes);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // AVATARS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatAvatars = "Avatars";
-    private const string CatIcons   = "Icons";
-
     private static IEnumerable<WireframeComponentDef> Avatars()
     {
-        yield return Def("TmAvatar", CatAvatars, "Avatar", "user", 40, 40,
+        yield return DefFromSchema("TmAvatar", "user",
             (el, b) =>
             {
                 var size = el.Props.GetString("size", "md");
@@ -278,24 +209,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append($"<rect x='0' y='0' width='{F(dim)}' height='{F(dim)}' rx='{F(rx)}' fill='{fill}' stroke='{Border}' stroke-width='1'></rect>");
                 sb.Append(Text(initials, dim / 2, dim / 2, dim * 0.35, textColor, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("name", "Name", PropType.String, "AB", cat: "Content"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg","xl","xxl"], cat: "Appearance"),
-                Prop("shape", "Shape", PropType.Enum, "circle", opts: ["circle","square"], cat: "Appearance"),
-                Prop("color", "Color", PropType.Enum, "gray", opts: ["gray","blue","green","purple","red","yellow"], cat: "Appearance"),
-            ],
-            sizePresets: new Dictionary<string, (double, double)>
-            {
-                ["xs"] = (24, 24),
-                ["sm"] = (32, 32),
-                ["md"] = (40, 40),
-                ["lg"] = (48, 48),
-                ["xl"] = (56, 56),
-                ["xxl"] = (64, 64),
             });
 
-        yield return Def("TmAvatarGroup", CatAvatars, "Avatar Group", "users", 120, 40,
+        yield return DefFromSchema("TmAvatarGroup", "users",
             (el, b) =>
             {
                 var count = el.Props.GetInt("count", 3);
@@ -318,12 +234,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text($"+{count - max}", x + dim / 2, dim / 2, dim * 0.28, "white", "middle"));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("count", "Count", PropType.Int, 3, cat: "State"),
-                Prop("max", "Max", PropType.Int, 3, cat: "Appearance"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["xs","sm","md","lg","xl","xxl"], cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
@@ -331,7 +242,7 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
     // ══════════════════════════════════════════════════════════════════════════
     private static IEnumerable<WireframeComponentDef> Icons()
     {
-        yield return Def("TmIcon", CatIcons, "Icon", "circle", 24, 24,
+        yield return DefFromSchema("TmIcon", "circle",
             (el, b) =>
             {
                 var name = el.Props.GetString("name", "circle");
@@ -373,31 +284,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
 
                 var svg = $"<svg viewBox='0 0 24 24' width='{F(dim)}' height='{F(dim)}' fill='none' stroke='{stroke}' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'{svgStyle}>{svgContent}</svg>";
                 Svg(b, svg);
-            },
-            [
-                Prop("name", "Name", PropType.String, "circle", cat: "Content"),
-                Prop("svg", "Custom SVG", PropType.String, "", cat: "Content"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg","xl"], cat: "Appearance"),
-                Prop("color", "Color", PropType.Enum, "gray", opts: ["gray","blue","green","red","yellow","purple"], cat: "Appearance"),
-                Prop("style", "Style", PropType.String, "", cat: "Appearance"),
-            ],
-            sizePresets: new Dictionary<string, (double, double)>
-            {
-                ["sm"] = (16, 16),
-                ["md"] = (24, 24),
-                ["lg"] = (32, 32),
-                ["xl"] = (48, 48),
             });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // INPUTS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatInputs = "Inputs";
 
     private static IEnumerable<WireframeComponentDef> Inputs()
     {
-        yield return Def("TmTextInput", CatInputs, "Text Input", "edit-2", 240, 56,
+        yield return DefFromSchema("TmTextInput", "edit-2",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -437,18 +333,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text($"0/{maxLength}", el.W - 8, 18, 9, ColorLight, "end"));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Enter text...", cat: "Content"),
-                Prop("type", "Type", PropType.Enum, "text", opts: ["text","password","email","tel","url"], cat: "Behavior"),
-                Prop("maxLength", "Max Length", PropType.Int, 0, cat: "Behavior"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-                Prop("readOnly", "Read Only", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmTextArea", CatInputs, "Text Area", "align-left", 240, 100,
+        yield return DefFromSchema("TmTextArea", "align-left",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -469,17 +356,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Enter text...", cat: "Content"),
-                Prop("rows", "Rows", PropType.Int, 3, cat: "Appearance"),
-                Prop("autoGrow", "Auto Grow", PropType.Bool, false, cat: "Behavior"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmNumberInput", CatInputs, "Number Input", "hash", 200, 56,
+        yield return DefFromSchema("TmNumberInput", "hash",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -496,29 +375,17 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("▼", w - 16, h / 2 + 5, 8, ColorMuted, "middle"));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("min", "Min", PropType.Double, cat: "Behavior"),
-                Prop("max", "Max", PropType.Double, cat: "Behavior"),
-                Prop("step", "Step", PropType.Double, 1.0, cat: "Behavior"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmSearchInput", CatInputs, "Search Input", "search", 240, 36,
+        yield return DefFromSchema("TmSearchInput", "search",
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Search...");
                 var dis = el.Props.GetBool("disabled");
                 Svg(b, InputField(el.W, el.H, "", ph, hasIcon: true, disabled: dis));
-            },
-            [
-                Prop("placeholder", "Placeholder", PropType.String, "Search...", cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmCurrencyInput", CatInputs, "Currency Input", "dollar-sign", 200, 56,
+        yield return DefFromSchema("TmCurrencyInput", "dollar-sign",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Amount");
@@ -534,15 +401,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("0.00", 36, h / 2, 11, ColorText));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Amount", cat: "Content"),
-                Prop("currencySymbol", "Currency Symbol", PropType.String, "Kč", cat: "Appearance"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmCheckbox", CatInputs, "Checkbox", "check-square", 140, 20,
+        yield return DefFromSchema("TmCheckbox", "check-square",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Checkbox");
@@ -558,15 +419,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(lbl, 22, 8, 11));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Checkbox", cat: "Content"),
-                Prop("checked", "Checked", PropType.Bool, false, cat: "State"),
-                Prop("indeterminate", "Indeterminate", PropType.Bool, false, cat: "State"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmRadio", CatInputs, "Radio", "circle", 140, 20,
+        yield return DefFromSchema("TmRadio", "circle",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Option");
@@ -579,14 +434,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(lbl, 22, 8, 11));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Option", cat: "Content"),
-                Prop("checked", "Checked", PropType.Bool, false, cat: "State"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmRadioGroup", CatInputs, "Radio Group", "list", 200, 80,
+        yield return DefFromSchema("TmRadioGroup", "list",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Options");
@@ -605,14 +455,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Options", cat: "Content"),
-                Prop("options", "Options", PropType.StringList, cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmToggle", CatInputs, "Toggle", "toggle-right", 100, 20,
+        yield return DefFromSchema("TmToggle", "toggle-right",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Toggle");
@@ -627,14 +472,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(lbl, 42, 9, 11));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Toggle", cat: "Content"),
-                Prop("checked", "Checked", PropType.Bool, false, cat: "State"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmToggleSection", CatInputs, "Toggle Section", "chevron-down", 240, 40,
+        yield return DefFromSchema("TmToggleSection", "chevron-down",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Section");
@@ -646,13 +486,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append($"<circle cx='{F(expanded ? 30.0 : 18.0)}' cy='18' r='7' fill='white' stroke='{Border}' stroke-width='1'></circle>");
                 sb.Append(Text(lbl, 46, 18, 11, ColorText, "start", "500"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Section", cat: "Content"),
-                Prop("expanded", "Expanded", PropType.Bool, true, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmSelect", CatInputs, "Select", "chevron-down", 200, 56,
+        yield return DefFromSchema("TmSelect", "chevron-down",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -683,17 +519,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Select option...", cat: "Content"),
-                Prop("multiple", "Multiple", PropType.Bool, false, cat: "Behavior"),
-                Prop("clearable", "Clearable", PropType.Bool, false, cat: "Behavior"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmMultiSelect", CatInputs, "Multi Select", "chevrons-down", 240, 56,
+        yield return DefFromSchema("TmMultiSelect", "chevrons-down",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -710,15 +538,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(ChevronDown(el.W - 16, h / 2 - 4));
                 if (dis) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Select items...", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmCascadingSelect", CatInputs, "Cascading Select", "git-branch", 300, 56,
+        yield return DefFromSchema("TmCascadingSelect", "git-branch",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -734,26 +556,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(ChevronDown(x + selW - 16, 14));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("levels", "Levels", PropType.Int, 2, cat: "Appearance"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmFilterableDropdown", CatInputs, "Filterable Dropdown", "filter", 200, 56,
+        yield return DefFromSchema("TmFilterableDropdown", "filter",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
                 Svg(b, InputField(el.W, 36, lbl, "Filter & select...", hasIcon: true, hasChevron: true));
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Filter...", cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmEntityPicker", CatInputs, "Entity Picker", "users", 240, 56,
+        yield return DefFromSchema("TmEntityPicker", "users",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Select entity");
@@ -765,14 +577,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("Choose...", h * 0.9, h / 2, 10, ColorLight));
                 sb.Append(ChevronDown(el.W - 16, h / 2 - 4));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Select entity", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "Choose...", cat: "Content"),
-                Prop("multiple", "Multiple", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmExpressionEditor", CatInputs, "Expression Editor", "code", 280, 56,
+        yield return DefFromSchema("TmExpressionEditor", "code",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Expression");
@@ -782,13 +589,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(0, 0, el.W, h, FillDark, Border));
                 sb.Append(Text("{expression}", 8, h / 2, 10, ColorMuted));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Expression", cat: "Content"),
-                Prop("placeholder", "Placeholder", PropType.String, "{expression}", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmPasswordStrengthIndicator", CatInputs, "Password Strength", "shield", 240, 48,
+        yield return DefFromSchema("TmPasswordStrengthIndicator", "shield",
             (el, b) =>
             {
                 var strength = el.Props.GetInt("strength", 3);
@@ -803,20 +606,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(label, 0, 24, 11, fill, "start", "500"));
                 sb.Append(Text("Use 8+ chars with letters and numbers", 0, 38, 10, ColorMuted, "start"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("strength", "Strength", PropType.Int, 3, cat: "State"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // TAGS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatTags = "Tags";
 
     private static IEnumerable<WireframeComponentDef> Tags()
     {
-        yield return Def("TmTagPicker", CatTags, "Tag Picker", "tag", 240, 40,
+        yield return DefFromSchema("TmTagPicker", "tag",
             (el, b) =>
             {
                 var tags = el.Props.GetStringList("tags");
@@ -847,23 +646,17 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("tags", "Tags", PropType.StringList, cat: "Content"),
-                Prop("allowCreate", "Allow Create", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // PICKERS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatPickers = "Pickers";
 
     private static IEnumerable<WireframeComponentDef> Pickers()
     {
         static WireframeComponentDef DateLike(string type, string display, string icon, string defaultLabel)
-            => Def(type, CatPickers, display, icon, 200, 56,
+            => DefFromSchema(type, icon,
                 (el, b) =>
                 {
                     var lbl = el.Props.GetString("label", defaultLabel);
@@ -876,20 +669,12 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(format, 8, h / 2, 10, ColorLight));
                     sb.Append(Icon(icon, el.W - 18, h / 2, h * 0.5));
                     Svg(b, sb.ToString());
-                },
-                [
-                    Prop("label", "Label", PropType.String, defaultLabel, cat: "Content"),
-                    Prop("format", "Format", PropType.String, "dd.mm.yyyy", cat: "Appearance"),
-                    Prop("min", "Min", PropType.String, "", cat: "Behavior"),
-                    Prop("max", "Max", PropType.String, "", cat: "Behavior"),
-                    Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                    Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-                ]);
+                });
 
         yield return DateLike("TmDatePicker", "Date Picker", "calendar", "Date");
         yield return DateLike("TmDateTimePicker", "Date & Time Picker", "calendar", "Date & Time");
 
-        yield return Def("TmTimePicker", CatPickers, "Time Picker", "clock", 160, 56,
+        yield return DefFromSchema("TmTimePicker", "clock",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Time");
@@ -900,14 +685,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("HH:MM", 8, h / 2, 10, ColorLight));
                 sb.Append(Icon("clock", el.W - 18, h / 2, h * 0.5));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Time", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmDateRangePicker", CatPickers, "Date Range Picker", "calendar", 320, 56,
+        yield return DefFromSchema("TmDateRangePicker", "calendar",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Date range");
@@ -921,14 +701,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(halfW + 16, 0, halfW, h));
                 sb.Append(Text("To", halfW + 24, h / 2, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Date range", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmTimeRangePicker", CatPickers, "Time Range Picker", "clock", 280, 56,
+        yield return DefFromSchema("TmTimeRangePicker", "clock",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Time range");
@@ -939,13 +714,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("–", halfW + 4, h / 2, 12, ColorMuted));
                 sb.Append(Rect(halfW + 16, 0, halfW, h)); sb.Append(Text("HH:MM", halfW + 24, h / 2, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Time range", cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmDateTimeRangePicker", CatPickers, "DateTime Range Picker", "calendar", 400, 56,
+        yield return DefFromSchema("TmDateTimeRangePicker", "calendar",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "DateTime range");
@@ -956,13 +727,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("→", halfW + 4, h / 2, 12, ColorMuted));
                 sb.Append(Rect(halfW + 16, 0, halfW, h)); sb.Append(Text("To date & time", halfW + 24, h / 2, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "DateTime range", cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmTimeInput", CatPickers, "Time Input", "clock", 120, 36,
+        yield return DefFromSchema("TmTimeInput", "clock",
             (el, b) =>
             {
                 var sb = new StringBuilder();
@@ -971,12 +738,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(":", el.W / 2, el.H / 2, 12, ColorMuted, "middle"));
                 sb.Append(Text("MM", el.W - 12, el.H / 2, 12, ColorText, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmCalendarView", CatPickers, "Calendar View", "calendar", 280, 260,
+        yield return DefFromSchema("TmCalendarView", "calendar",
             (el, b) =>
             {
                 var month = el.Props.GetString("month", "January");
@@ -1009,14 +773,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("month", "Month", PropType.String, "January", cat: "Content"),
-                Prop("year", "Year", PropType.Int, 2025, cat: "Content"),
-                Prop("selectedDay", "Selected Day", PropType.Int, 15, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmCalendarGrid", CatPickers, "Calendar Grid", "grid", 240, 200,
+        yield return DefFromSchema("TmCalendarGrid", "grid",
             (el, b) =>
             {
                 var month = el.Props.GetString("month", "January");
@@ -1041,21 +800,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 sb.Append(HLine(0, el.W, el.H));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("month", "Month", PropType.String, "January", cat: "Content"),
-                Prop("year", "Year", PropType.Int, 2025, cat: "Content"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // DROPDOWNS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatDropdowns = "Dropdowns";
 
     private static IEnumerable<WireframeComponentDef> Dropdowns()
     {
-        yield return Def("TmDropdown", CatDropdowns, "Dropdown", "chevron-down", 160, 36,
+        yield return DefFromSchema("TmDropdown", "chevron-down",
             (el, b) =>
             {
                 var text = el.Props.GetString("text", "Options");
@@ -1074,14 +828,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(ChevronDown(el.W - 18, el.H / 2 - 4));
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("text", "Text", PropType.String, "Options", cat: "Content"),
-                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmDropdownItem", CatDropdowns, "Dropdown Item", "menu", 160, 32,
+        yield return DefFromSchema("TmDropdownItem", "menu",
             (el, b) =>
             {
                 var label = el.Props.GetString("label", "Item");
@@ -1099,31 +848,24 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(label, textX, el.H / 2, 11, ColorText, "start"));
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Item", cat: "Content"),
-                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // DATA DISPLAY
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatDataDisplay = "Data Display";
 
     private static IEnumerable<WireframeComponentDef> DataDisplay()
     {
-        yield return Def("TmDivider", CatDataDisplay, "Divider", "minus", 200, 12,
+        yield return DefFromSchema("TmDivider", "minus",
             (el, b) =>
             {
                 var sb = new StringBuilder();
                 sb.Append(HLine(0, el.W, el.H / 2, Border));
                 Svg(b, sb.ToString());
-            },
-            []);
+            });
 
-        yield return Def("TmText", CatDataDisplay, "Text", "type", 120, 24,
+        yield return DefFromSchema("TmText", "type",
             (el, b) =>
             {
                 var text = el.Props.GetString("text", "Text");
@@ -1133,13 +875,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 var anchor = align switch { "center" => "middle", "right" => "end", _ => "start" };
                 sb.Append(Text(text, x, el.H / 2, Math.Min(el.H * 0.6, 14), ColorText, anchor, "400"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("text", "Text", PropType.String, "Text", cat: "Content"),
-                Prop("align", "Align", PropType.Enum, "left", opts: ["left","center","right"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmCard", CatDataDisplay, "Card", "square", 280, 180,
+        yield return DefFromSchema("TmCard", "square",
             (el, b) =>
             {
                 var title      = el.Props.GetString("title", "Card Title");
@@ -1188,20 +926,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Card Title", cat: "Content"),
-                Prop("showHeader", "Show Header", PropType.Bool, true, cat: "Appearance"),
-                Prop("showFooter", "Show Footer", PropType.Bool, false, cat: "Appearance"),
-                Prop("variant", "Variant", PropType.Enum, "default", opts: ["default","elevated","outlined"], cat: "Appearance"),
-                Prop("headerIcon", "Header Icon", PropType.Icon, cat: "Content"),
-                Prop("primaryActionLabel", "Primary Action Label", PropType.String, "Save", cat: "Content"),
-                Prop("secondaryActionLabel", "Secondary Action Label", PropType.String, "Cancel", cat: "Content"),
-                Prop("showPrimaryAction", "Show Primary Action", PropType.Bool, true, cat: "Appearance"),
-                Prop("showSecondaryAction", "Show Secondary Action", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmStatCard", CatDataDisplay, "Stat Card", "trending-up", 160, 100,
+        yield return DefFromSchema("TmStatCard", "trending-up",
             (el, b) =>
             {
                 var title = el.Props.GetString("title") ?? el.Props.GetString("label", "Total Revenue");
@@ -1215,15 +942,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 if (!string.IsNullOrEmpty(subValue))
                     sb.Append(Text(subValue, 12, 78, 10, subValueColor));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Total Revenue", cat: "Content"),
-                Prop("value", "Value", PropType.String, "12 450", cat: "Content"),
-                Prop("subValue", "SubValue", PropType.String, "+12% this month", cat: "Content"),
-                Prop("subValueColor", "SubValue Color", PropType.String, "#22c55e", cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmBadge", CatDataDisplay, "Badge", "tag", 60, 22,
+        yield return DefFromSchema("TmBadge", "tag",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Badge");
@@ -1250,16 +971,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Pill(0, 0, el.W, el.H, fill, border));
                 sb.Append(TextCentred(lbl, el.W, el.H, font));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Badge", cat: "Content"),
-                Prop("variant", "Variant", PropType.Enum, "default",
-                    opts: ["default","primary","success","danger","warning","info"], cat: "Appearance"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg"], cat: "Appearance"),
-            ],
-            sizePresets: BadgeSizes);
+            });
 
-        yield return Def("TmChip", CatDataDisplay, "Chip", "tag", 80, 24,
+        yield return DefFromSchema("TmChip", "tag",
             (el, b) =>
             {
                 var lbl      = el.Props.GetString("label", "Chip");
@@ -1278,15 +992,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(lbl, 10, el.H / 2, 10, textColor));
                 if (removable) sb.Append(Icon("x", el.W - 12, el.H / 2, 8));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Chip", cat: "Content"),
-                Prop("removable", "Removable", PropType.Bool, true, cat: "Behavior"),
-                Prop("variant", "Variant", PropType.Enum, "default",
-                    opts: ["default","primary","success","danger","warning"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmChipGroup", CatDataDisplay, "Chip Group", "tag", 240, 32,
+        yield return DefFromSchema("TmChipGroup", "tag",
             (el, b) =>
             {
                 var chips = el.Props.GetStringList("chips");
@@ -1302,12 +1010,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (x > el.W - 20) break;
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("chips", "Chips", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmFilterChip", CatDataDisplay, "Filter Chip", "filter", 120, 28,
+        yield return DefFromSchema("TmFilterChip", "filter",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Filter");
@@ -1322,14 +1027,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(lbl, 28, el.H / 2, 10, textColor));
                 if (removable) sb.Append(Icon("x", el.W - 10, el.H / 2, 8));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Filter", cat: "Content"),
-                Prop("active", "Active", PropType.Bool, true, cat: "State"),
-                Prop("removable", "Removable", PropType.Bool, true, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmAccordion", CatDataDisplay, "Accordion", "chevrons-down", 280, 120,
+        yield return DefFromSchema("TmAccordion", "chevrons-down",
             (el, b) =>
             {
                 var items = el.Props.GetStringList("items");
@@ -1344,13 +1044,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(ChevronDown(el.W - 18, i * rowH + rowH / 2 - 4));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("items", "Items", PropType.StringList, cat: "Content"),
-                Prop("multiple", "Allow Multiple", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmAccordionItem", CatDataDisplay, "Accordion Item", "chevron-down", 280, 44,
+        yield return DefFromSchema("TmAccordionItem", "chevron-down",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Section");
@@ -1370,13 +1066,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text("Content area...", 12, el.H + 14, 10, ColorMuted));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Section", cat: "Content"),
-                Prop("expanded", "Expanded", PropType.Bool, false, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmEmptyState", CatDataDisplay, "Empty State", "inbox", 280, 160,
+        yield return DefFromSchema("TmEmptyState", "inbox",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "No data");
@@ -1390,14 +1082,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W / 2 - 40, el.H / 2 + 42, 80, 28, FillAccent, "#93c5fd", 4));
                 sb.Append(Text(action, el.W / 2, el.H / 2 + 56, 10, Accent, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "No data", cat: "Content"),
-                Prop("description", "Description", PropType.String, "There is nothing to display here.", cat: "Content"),
-                Prop("actionLabel", "Action Label", PropType.String, "Add item", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmChangeDiff", CatDataDisplay, "Change Diff", "git-commit", 400, 120,
+        yield return DefFromSchema("TmChangeDiff", "git-commit",
             (el, b) =>
             {
                 var oldValue = el.Props.GetString("oldValue", "Old value");
@@ -1411,13 +1098,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W / 2 + 4, 8, el.W / 2 - 12, el.H - 16, "#dcfce7", "#86efac", 4));
                 sb.Append(Text("+ " + newValue, el.W / 2 + 12, el.H / 2, 10, "#16a34a"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("oldValue", "Old Value", PropType.String, "Old value", cat: "Content"),
-                Prop("newValue", "New Value", PropType.String, "New value", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmKanbanBoard", CatDataDisplay, "Kanban Board", "columns", 480, 320,
+        yield return DefFromSchema("TmKanbanBoard", "columns",
             (el, b) =>
             {
                 var cols = el.Props.GetStringList("columns");
@@ -1440,13 +1123,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("columns", "Columns", PropType.StringList, cat: "Content"),
-                Prop("showAddCard", "Show Add Card", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmMultiViewList", CatDataDisplay, "Multi View List", "list", 360, 280,
+        yield return DefFromSchema("TmMultiViewList", "list",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Items");
@@ -1468,21 +1147,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (ry + 52 > el.H - 10) break;
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Items", cat: "Content"),
-                Prop("showSearch", "Show Search", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // DATA TABLE
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatDataTable = "Data Table";
 
     private static IEnumerable<WireframeComponentDef> DataTable()
     {
-        yield return Def("TmDataTable", CatDataTable, "Data Table", "table", 600, 320,
+        yield return DefFromSchema("TmDataTable", "table",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "");
@@ -1610,24 +1284,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
 
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "", cat: "Content"),
-                Prop("emptyTitle", "Empty Title", PropType.String, "", cat: "Content"),
-                Prop("columns", "Columns", PropType.StringList, cat: "Content"),
-                Prop("rows", "Rows", PropType.Int, 5, cat: "Appearance"),
-                Prop("showSearch", "Show Search", PropType.Bool, true, cat: "Appearance"),
-                Prop("showPagination", "Show Pagination", PropType.Bool, true, cat: "Appearance"),
-                Prop("scrollMode", "Scroll Mode", PropType.Enum, "pagination", opts: ["pagination","virtualized","none"], cat: "Appearance"),
-                Prop("showBulkActions", "Show Bulk Actions", PropType.Bool, false, cat: "Appearance"),
-                Prop("bulkActions", "Bulk Actions", PropType.StringList, cat: "Content"),
-                Prop("selectable", "Selectable", PropType.Bool, false, cat: "Appearance"),
-                Prop("showColumnPicker", "Show Column Picker", PropType.Bool, false, cat: "Appearance"),
-                Prop("showGrouping", "Show Grouping", PropType.Bool, false, cat: "Appearance"),
-                Prop("showFilters", "Show Filters", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmPagination", CatDataTable, "Pagination", "more-horizontal", 240, 36,
+        yield return DefFromSchema("TmPagination", "more-horizontal",
             (el, b) =>
             {
                 var total = el.Props.GetInt("totalPages", 5);
@@ -1636,13 +1295,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(0, 0, el.W, el.H, Fill, Border, 4));
                 sb.Append(TextCentred($"← {Enumerable.Range(1, Math.Min(total, 5)).Select(p => p == current ? $"[{p}]" : p.ToString()).Aggregate((a, x) => a + "  " + x)}  →", el.W, el.H, 10, ColorMuted));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("totalPages", "Total Pages", PropType.Int, 5, cat: "Content"),
-                Prop("currentPage", "Current Page", PropType.Int, 1, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmBulkActionBar", CatDataTable, "Bulk Action Bar", "check-square", 400, 44,
+        yield return DefFromSchema("TmBulkActionBar", "check-square",
             (el, b) =>
             {
                 var count = el.Props.GetInt("selectedCount", 3);
@@ -1656,12 +1311,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 44, 8, 36, 28, Fill, Border, 4));
                 sb.Append(Icon("x", el.W - 26, el.H / 2, 12));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("selectedCount", "Selected Count", PropType.Int, 3, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmColumnFilter", CatDataTable, "Column Filter", "filter", 180, 120,
+        yield return DefFromSchema("TmColumnFilter", "filter",
             (el, b) =>
             {
                 var columnName = el.Props.GetString("columnName", "Name");
@@ -1678,13 +1330,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(96, el.H - 34, 76, 24, Fill, Border, 4));
                 sb.Append(Text("Clear", 134, el.H - 22, 9, ColorMuted, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("columnName", "Column Name", PropType.String, "Name", cat: "Content"),
-                Prop("filterType", "Filter Type", PropType.Enum, "text", opts: ["text","select","date","number"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmColumnPicker", CatDataTable, "Column Picker", "columns", 160, 160,
+        yield return DefFromSchema("TmColumnPicker", "columns",
             (el, b) =>
             {
                 var columns = el.Props.GetStringList("columns");
@@ -1701,12 +1349,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(columns[i], 26, y + 6, 10, ColorText));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("columns", "Columns", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmViewManager", CatDataTable, "View Manager", "save", 200, 40,
+        yield return DefFromSchema("TmViewManager", "save",
             (el, b) =>
             {
                 var viewName = el.Props.GetString("viewName", "Default view");
@@ -1721,21 +1366,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text("Save", 168, el.H / 2, 10, Accent, "middle"));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("viewName", "View Name", PropType.String, "Default view", cat: "Content"),
-                Prop("showSaveButton", "Show Save Button", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // FEEDBACK
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatFeedback = "Feedback";
 
     private static IEnumerable<WireframeComponentDef> Feedback()
     {
-        yield return Def("TmAlert", CatFeedback, "Alert", "alert-circle", 400, 56,
+        yield return DefFromSchema("TmAlert", "alert-circle",
             (el, b) =>
             {
                 var msg = el.Props.GetString("message", "This is an alert message.");
@@ -1787,19 +1427,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(msg, 38, h / 2, 11, textColor));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("message", "Message", PropType.String, "This is an alert message.", cat: "Content"),
-                Prop("title", "Title", PropType.String, "", cat: "Content"),
-                Prop("variant", "Variant", PropType.Enum, "info",
-                    opts: ["info","success","warning","danger"], cat: "Appearance"),
-                Prop("visualVariant", "Visual Variant", PropType.Enum, "soft",
-                    opts: ["soft","filled","outlined"], cat: "Appearance"),
-                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
-                Prop("dismissible", "Dismissible", PropType.Bool, true, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmModal", CatFeedback, "Modal", "layers", 480, 360,
+        yield return DefFromSchema("TmModal", "layers",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Modal Title");
@@ -1856,21 +1486,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Modal Title", cat: "Content"),
-                Prop("showFooter", "Show Footer", PropType.Bool, true, cat: "Appearance"),
-                Prop("showOkButton", "Show OK Button", PropType.Bool, true, cat: "Appearance"),
-                Prop("showCancelButton", "Show Cancel Button", PropType.Bool, true, cat: "Appearance"),
-                Prop("okButtonText", "OK Button Text", PropType.String, "OK", cat: "Content"),
-                Prop("cancelButtonText", "Cancel Button Text", PropType.String, "Cancel", cat: "Content"),
-                Prop("okButtonVariant", "OK Button Variant", PropType.Enum, "primary",
-                    opts: ["primary","secondary","danger","ghost","outline"], cat: "Appearance"),
-                Prop("size", "Size", PropType.Enum, "medium",
-                    opts: ["small","medium","large","xLarge","fullscreen"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmDialog", CatFeedback, "Dialog", "message-square", 320, 160,
+        yield return DefFromSchema("TmDialog", "message-square",
             (el, b) =>
             {
                 var title   = el.Props.GetString("title", "Confirm action");
@@ -1897,15 +1515,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 166, el.H - 36, 74, 26, Fill, Border, 4));
                 sb.Append(Text("Cancel", el.W - 129, el.H - 23, 10, ColorMuted, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Confirm action", cat: "Content"),
-                Prop("message", "Message", PropType.String, "Are you sure?", cat: "Content"),
-                Prop("variant", "Variant", PropType.Enum, "info",
-                    opts: ["info","success","warning","error"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmTooltip", CatFeedback, "Tooltip", "info", 120, 36,
+        yield return DefFromSchema("TmTooltip", "info",
             (el, b) =>
             {
                 var text      = el.Props.GetString("text", "Tooltip text");
@@ -1923,14 +1535,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 };
                 sb.Append(arrow);
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("text", "Text", PropType.String, "Tooltip text", cat: "Content"),
-                Prop("placement", "Placement", PropType.Enum, "top",
-                    opts: ["top","bottom","left","right"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmPopover", CatFeedback, "Popover", "message-circle", 200, 120,
+        yield return DefFromSchema("TmPopover", "message-circle",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Popover");
@@ -1940,14 +1547,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(title, 10, 16, 11, ColorText, "start", "500"));
                 sb.Append($"<polygon points='{F(el.W / 2 - 6)},0 {F(el.W / 2 + 6)},0 {F(el.W / 2)},{F(-7)}' fill='{Fill}' stroke='{Border}' stroke-width='1'></polygon>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Popover", cat: "Content"),
-                Prop("placement", "Placement", PropType.Enum, "bottom",
-                    opts: ["top","bottom","left","right"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmToastContainer", CatFeedback, "Toast Container", "bell", 320, 120,
+        yield return DefFromSchema("TmToastContainer", "bell",
             (el, b) =>
             {
                 var position = el.Props.GetString("position", "topRight");
@@ -1966,14 +1568,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append($"<rect x='0' y='{F(y + toastH - 3)}' width='{F(el.W)}' height='3' rx='0' fill='{FillAccent}'></rect>");
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("position", "Position", PropType.Enum, "topRight",
-                    opts: ["topRight","topLeft","bottomRight","bottomLeft"], cat: "Appearance"),
-                Prop("maxVisible", "Max Visible", PropType.Int, 3, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmProgressBar", CatFeedback, "Progress Bar", "bar-chart-2", 240, 16,
+        yield return DefFromSchema("TmProgressBar", "bar-chart-2",
             (el, b) =>
             {
                 var value = el.Props.GetDouble("value", 60);
@@ -2050,26 +1647,12 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
 
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("value", "Value", PropType.Double, 60, cat: "State"),
-                Prop("max", "Max", PropType.Double, 100, cat: "State"),
-                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg"], cat: "Appearance"),
-                Prop("variant", "Variant", PropType.Enum, "default",
-                    opts: ["default","success","warning","error","gradient"], cat: "Appearance"),
-                Prop("indeterminate", "Indeterminate", PropType.Bool, false, cat: "State"),
-                Prop("striped", "Striped", PropType.Bool, false, cat: "Appearance"),
-                Prop("showLabel", "Show Label", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmSpinner", CatFeedback, "Spinner", "loader", 32, 32,
-            (el, b) => Svg(b, Icon("spinner", el.W / 2, el.H / 2, Math.Min(el.W, el.H))),
-            [
-                Prop("size", "Size", PropType.Enum, "md", opts: ["sm","md","lg"], cat: "Appearance"),
-            ],
-            sizePresets: SpinnerSizes);
+        yield return DefFromSchema("TmSpinner", "loader",
+            (el, b) => Svg(b, Icon("spinner", el.W / 2, el.H / 2, Math.Min(el.W, el.H))));
 
-        yield return Def("TmSkeleton", CatFeedback, "Skeleton", "minus", 280, 80,
+        yield return DefFromSchema("TmSkeleton", "minus",
             (el, b) =>
             {
                 var lines = el.Props.GetInt("lines", 3);
@@ -2087,13 +1670,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(startX, i * 20 + (i > 0 ? i * 4 : 0), lw, 12, FillDark, "none", 4));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("lines", "Lines", PropType.Int, 3, cat: "Appearance"),
-                Prop("showAvatar", "Show Avatar", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmAutoSaveIndicator", CatFeedback, "Auto Save Indicator", "save", 100, 24,
+        yield return DefFromSchema("TmAutoSaveIndicator", "save",
             (el, b) =>
             {
                 var state = el.Props.GetString("state", "saved");
@@ -2107,21 +1686,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Pill(0, 0, el.W, el.H, fill, border));
                 sb.Append(TextCentred(text, el.W, el.H, 9, ColorText));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("state", "State", PropType.Enum, "saved",
-                    opts: ["saving","saved","error"], cat: "State"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // NOTIFICATIONS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatNotifications = "Notifications";
 
     private static IEnumerable<WireframeComponentDef> Notifications()
     {
-        yield return Def("TmNotificationBell", CatNotifications, "Notification Bell", "bell", 48, 48,
+        yield return DefFromSchema("TmNotificationBell", "bell",
             (el, b) =>
             {
                 var unreadCount = el.Props.GetInt("unreadCount", 3);
@@ -2139,21 +1713,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("unreadCount", "Unread Count", PropType.Int, 3, cat: "State"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // NAVIGATION
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatNavigation = "Navigation";
 
     private static IEnumerable<WireframeComponentDef> Navigation()
     {
-        yield return Def("TmTabs", CatNavigation, "Tabs", "layout", 400, 40,
+        yield return DefFromSchema("TmTabs", "layout",
             (el, b) =>
             {
                 var tabs    = el.Props.GetStringList("tabs");
@@ -2191,15 +1760,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 if (variant == "enclosed") sb.Append(HLine(0, el.W, el.H));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("tabs", "Tabs", PropType.StringList, cat: "Content"),
-                Prop("activeTab", "Active Tab Index", PropType.Int, 0, cat: "State"),
-                Prop("variant", "Variant", PropType.Enum, "line",
-                    opts: ["line","pill","enclosed"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmTabPanel", CatNavigation, "Tab Panel", "square", 400, 160,
+        yield return DefFromSchema("TmTabPanel", "square",
             (el, b) =>
             {
                 var label = el.Props.GetString("label", "Tab content");
@@ -2208,12 +1771,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(label, 12, 18, 12, ColorText, "start", "500"));
                 sb.Append(Rect(12, 36, el.W - 24, el.H - 48, FillDark, "none", 4));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Tab content", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmBreadcrumbs", CatNavigation, "Breadcrumbs", "chevron-right", 300, 24,
+        yield return DefFromSchema("TmBreadcrumbs", "chevron-right",
             (el, b) =>
             {
                 var items = el.Props.GetStringList("items");
@@ -2230,12 +1790,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (!isLast) { sb.Append(Text("/", x + 4, el.H / 2, 10, ColorLight)); x += 14; }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("items", "Items", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmContextMenu", CatNavigation, "Context Menu", "menu", 160, 120,
+        yield return DefFromSchema("TmContextMenu", "menu",
             (el, b) =>
             {
                 var items = el.Props.GetStringList("items");
@@ -2251,12 +1808,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                         isDanger ? "#ef4444" : ColorText));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("items", "Items", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmContextMenuItem", CatNavigation, "Context Menu Item", "menu", 160, 32,
+        yield return DefFromSchema("TmContextMenuItem", "menu",
             (el, b) =>
             {
                 var text = el.Props.GetString("text", "Item");
@@ -2268,22 +1822,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(text, 12, el.H / 2, 11, danger ? "#ef4444" : ColorText));
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("text", "Text", PropType.String, "Item", cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-                Prop("danger", "Danger", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // LAYOUT
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatLayout = "Layout";
 
     private static IEnumerable<WireframeComponentDef> Layout()
     {
-        yield return Def("TmTopBar", CatLayout, "Top Bar", "layout", 800, 56,
+        yield return DefFromSchema("TmTopBar", "layout",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "App Name");
@@ -2303,14 +1851,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Icon("bell", el.W - 40, el.H / 2, 18));
                 sb.Append(Icon("user", el.W - 16, el.H / 2, 22));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "App Name", cat: "Content"),
-                Prop("showSearch", "Show Search", PropType.Bool, true, cat: "Appearance"),
-                Prop("showNotifications", "Show Notifications", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmSidebar", CatLayout, "Sidebar", "sidebar", 220, 400,
+        yield return DefFromSchema("TmSidebar", "sidebar",
             (el, b) =>
             {
                 var items = el.Props.GetStringList("items");
@@ -2329,14 +1872,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                         sb.Append(Text(items[i], 38, ry + 17, 11, i == 0 ? Accent : ColorText));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("items", "Items", PropType.StringList, cat: "Content"),
-                Prop("collapsed", "Collapsed", PropType.Bool, false, cat: "State"),
-                Prop("width", "Width", PropType.Int, 220, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmDrawer", CatLayout, "Drawer", "sidebar", 360, 400,
+        yield return DefFromSchema("TmDrawer", "sidebar",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Drawer");
@@ -2352,15 +1890,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(title, px + 16, 22, 13, ColorText, "start", "600"));
                 sb.Append(Icon("x", px + pw - 20, 22, 14));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Drawer", cat: "Content"),
-                Prop("placement", "Placement", PropType.Enum, "right",
-                    opts: ["left","right"], cat: "Appearance"),
-                Prop("width", "Width", PropType.Int, 400, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmSection", CatLayout, "Section", "minus", 400, 160,
+        yield return DefFromSchema("TmSection", "minus",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Section Title");
@@ -2369,12 +1901,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(HLine(0, el.W, 24));
                 sb.Append(DashedRect(el.W, el.H - 32));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Section Title", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmCommandPalette", CatLayout, "Command Palette", "command", 480, 320,
+        yield return DefFromSchema("TmCommandPalette", "command",
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Type a command...");
@@ -2393,12 +1922,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(dx + 12, ry + 10, 100, 10, FillDark, "none", 3));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("placeholder", "Placeholder", PropType.String, "Type a command...", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmKeyboardShortcutsHelp", CatLayout, "Keyboard Shortcuts", "command", 360, 280,
+        yield return DefFromSchema("TmKeyboardShortcutsHelp", "command",
             (el, b) =>
             {
                 var shortcuts = el.Props.GetStringList("shortcuts");
@@ -2420,20 +1946,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(desc, 84, y + 11, 10, ColorMuted));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("shortcuts", "Shortcuts", PropType.StringList, cat: "Content"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // TOOLBAR
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatToolbar = "Toolbar";
 
     private static IEnumerable<WireframeComponentDef> Toolbar()
     {
-        yield return Def("TmToolbar", CatToolbar, "Toolbar", "minus", 600, 48,
+        yield return DefFromSchema("TmToolbar", "minus",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "");
@@ -2448,13 +1970,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 72, 10, 60, 28, Fill, Border, 4));
                 sb.Append(Text("Cancel", el.W - 42, el.H / 2, 10, ColorMuted, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "", cat: "Content"),
-                Prop("sticky", "Sticky", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmToolbarButton", CatToolbar, "Toolbar Button", "square", 80, 32,
+        yield return DefFromSchema("TmToolbarButton", "square",
             (el, b) =>
             {
                 var label = el.Props.GetString("label", "Action");
@@ -2472,29 +1990,22 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(label, textX, el.H / 2, 11, ColorText, "middle"));
                 if (disabled) sb.Append("</g>");
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Action", cat: "Content"),
-                Prop("icon", "Icon", PropType.Icon, cat: "Content"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmToolbarDivider", CatToolbar, "Toolbar Divider", "minus", 1, 32,
+        yield return DefFromSchema("TmToolbarDivider", "minus",
             (el, b) =>
             {
                 Svg(b, VLine(el.W / 2, 4, el.H - 4, Border));
-            },
-            []);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // FORMS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatForms = "Forms";
 
     private static IEnumerable<WireframeComponentDef> Forms()
     {
-        yield return Def("TmFormSection", CatForms, "Form Section", "layout", 500, 140,
+        yield return DefFromSchema("TmFormSection", "layout",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Section");
@@ -2507,13 +2018,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text(title, 14, 20, 12, ColorText, "start", "600"));
                 sb.Append(Text(desc, 14, 36, 10, ColorMuted));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Section", cat: "Content"),
-                Prop("description", "Description", PropType.String, "Section description.", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmFormRow", CatForms, "Form Row", "minus", 500, 56,
+        yield return DefFromSchema("TmFormRow", "minus",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Field Label");
@@ -2523,13 +2030,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(160, 0, el.W - 160, 36, Fill, Border, 4));
                 sb.Append(Text("Value", 168, 18, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Field Label", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmFormField", CatForms, "Form Field", "edit-3", 280, 64,
+        yield return DefFromSchema("TmFormField", "edit-3",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -2558,16 +2061,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(h)}' rx='4' fill='none' stroke='#fca5a5' stroke-width='1.5'></rect>");
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("disabled", "Disabled", PropType.Bool, false, cat: "Behavior"),
-                Prop("helpText", "Help Text", PropType.String, "", cat: "Content"),
-                Prop("errorMessage", "Error Message", PropType.String, "", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmInlineEdit", CatForms, "Inline Edit", "edit", 200, 28,
+        yield return DefFromSchema("TmInlineEdit", "edit",
             (el, b) =>
             {
                 var value = el.Props.GetString("value", "Click to edit");
@@ -2576,13 +2072,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Icon("edit", el.W - 14, el.H / 2, 12));
                 sb.Append(HLine(0, el.W - 20, el.H - 2, FillDark));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("value", "Value", PropType.String, "Click to edit", cat: "Content"),
-                Prop("editOnClick", "Edit on Click", PropType.Bool, true, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmValidationSummary", CatForms, "Validation Summary", "alert-circle", 320, 100,
+        yield return DefFromSchema("TmValidationSummary", "alert-circle",
             (el, b) =>
             {
                 var errors = el.Props.GetStringList("errors");
@@ -2592,12 +2084,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 for (var i = 0; i < errors.Length && i < 4; i++)
                     sb.Append(Text("• " + errors[i], 10, 16 + i * 18.0, 10, "#dc2626"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("errors", "Errors", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmDynamicFormRenderer", CatForms, "Dynamic Form", "list", 400, 240,
+        yield return DefFromSchema("TmDynamicFormRenderer", "list",
             (el, b) =>
             {
                 var count = el.Props.GetInt("fieldCount", 4);
@@ -2610,12 +2099,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(8, fy + 8, el.W * 0.28, 10, FillDark, "none", 3));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("fieldCount", "Field Count", PropType.Int, 4, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmValidatedField", CatForms, "Validated Field", "check-circle", 280, 64,
+        yield return DefFromSchema("TmValidatedField", "check-circle",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Label");
@@ -2631,15 +2117,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 if (!string.IsNullOrEmpty(msg))
                     sb.Append(Text(msg, 0, 52, 10, iconColor));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Label", cat: "Content"),
-                Prop("required", "Required", PropType.Bool, false, cat: "Behavior"),
-                Prop("valid", "Valid", PropType.Bool, true, cat: "State"),
-                Prop("validationMessage", "Validation Message", PropType.String, "", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmFormValidationMessage", CatForms, "Validation Message", "alert-circle", 280, 24,
+        yield return DefFromSchema("TmFormValidationMessage", "alert-circle",
             (el, b) =>
             {
                 var msg = el.Props.GetString("message", "Validation message");
@@ -2654,21 +2134,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Icon(icon, 10, el.H / 2, 12));
                 sb.Append(Text(msg, 26, el.H / 2, 10, color));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("message", "Message", PropType.String, "Validation message", cat: "Content"),
-                Prop("severity", "Severity", PropType.Enum, "error", opts: ["error","warning","info"], cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // FILES
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatFiles = "Files";
 
     private static IEnumerable<WireframeComponentDef> Files()
     {
-        yield return Def("TmFileDropZone", CatFiles, "File Drop Zone", "upload-cloud", 300, 160,
+        yield return DefFromSchema("TmFileDropZone", "upload-cloud",
             (el, b) =>
             {
                 var lbl = el.Props.GetString("label", "Drop files here or click to upload");
@@ -2677,14 +2152,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Icon("upload", el.W / 2, el.H / 2 - 16, 32));
                 sb.Append(Text(lbl, el.W / 2, el.H / 2 + 16, 10, ColorMuted, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("label", "Label", PropType.String, "Drop files here or click to upload", cat: "Content"),
-                Prop("accept", "Accept", PropType.String, "*/*", cat: "Behavior"),
-                Prop("multiple", "Multiple", PropType.Bool, true, cat: "Behavior"),
-            ]);
+            });
 
-        yield return Def("TmAttachmentManager", CatFiles, "Attachment Manager", "paperclip", 360, 200,
+        yield return DefFromSchema("TmAttachmentManager", "paperclip",
             (el, b) =>
             {
                 var maxFiles = el.Props.GetInt("maxFiles", 5);
@@ -2703,20 +2173,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Icon("x", el.W - 16, fy + 16, 10));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("maxFiles", "Max Files", PropType.Int, 5, cat: "Behavior"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // CHARTS
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatCharts = "Charts";
 
     private static IEnumerable<WireframeComponentDef> Charts()
     {
-        yield return Def("TmChart", CatCharts, "Chart", "bar-chart-2", 400, 240,
+        yield return DefFromSchema("TmChart", "bar-chart-2",
             (el, b) =>
             {
                 var type = el.Props.GetString("type", "bar");
@@ -2819,26 +2285,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Chart Title", cat: "Content"),
-                Prop("type", "Type", PropType.Enum, "bar",
-                    opts: ["bar","line","pie","donut"], cat: "Appearance"),
-                Prop("dataPoints", "Data Points", PropType.Int, 6, cat: "Appearance"),
-                Prop("showLegend", "Show Legend", PropType.Bool, false, cat: "Appearance"),
-                Prop("showGrid", "Show Grid", PropType.Bool, false, cat: "Appearance"),
-                Prop("horizontal", "Horizontal", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // WORKFLOW
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatWorkflow = "Workflow";
 
     private static IEnumerable<WireframeComponentDef> Workflow()
     {
-        yield return Def("TmWorkflowToolbox", CatWorkflow, "Workflow Toolbox", "sidebar", 160, 280,
+        yield return DefFromSchema("TmWorkflowToolbox", "sidebar",
             (el, b) =>
             {
                 var nodes = el.Props.GetStringList("nodes");
@@ -2854,12 +2310,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(nodes[i], el.W / 2, y + 16, 10, ColorText, "middle"));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("nodes", "Nodes", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmWorkflowPropertiesPanel", CatWorkflow, "Properties Panel", "sliders", 220, 300,
+        yield return DefFromSchema("TmWorkflowPropertiesPanel", "sliders",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Properties");
@@ -2878,13 +2331,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(10, y + 14, el.W - 20, 28, Fill, Border, 3));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Properties", cat: "Content"),
-                Prop("nodeType", "Node Type", PropType.String, "Task", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmWorkflowMinimap", CatWorkflow, "Workflow Minimap", "map", 160, 120,
+        yield return DefFromSchema("TmWorkflowMinimap", "map",
             (el, b) =>
             {
                 var scale = el.Props.GetDouble("scale", 0.2);
@@ -2902,20 +2351,16 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(20, 20, 24, 16, FillAccent, Border, 2));
                 sb.Append(Rect(el.W - 50, el.H - 40, 24, 16, Fill, Border, 2));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("scale", "Scale", PropType.Double, 0.2, cat: "Appearance"),
-            ]);
+            });
     }
 
     // ══════════════════════════════════════════════════════════════════════════
     // COMPLEX
     // ══════════════════════════════════════════════════════════════════════════
-    private const string CatComplex = "Complex";
 
     private static IEnumerable<WireframeComponentDef> Complex()
     {
-        yield return Def("TmTimeline", CatComplex, "Timeline", "git-commit", 300, 240,
+        yield return DefFromSchema("TmTimeline", "git-commit",
             (el, b) =>
             {
                 var items = el.Props.GetStringList("items");
@@ -2959,14 +2404,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("items", "Items", PropType.StringList, cat: "Content"),
-                Prop("orientation", "Orientation", PropType.Enum, "vertical", opts: ["vertical","horizontal"], cat: "Appearance"),
-                Prop("alternate", "Alternate", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmStepper", CatComplex, "Stepper", "list", 500, 56,
+        yield return DefFromSchema("TmStepper", "list",
             (el, b) =>
             {
                 var steps = el.Props.GetStringList("steps");
@@ -3012,14 +2452,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     }
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("steps", "Steps", PropType.StringList, cat: "Content"),
-                Prop("activeStep", "Active Step Index", PropType.Int, 1, cat: "State"),
-                Prop("orientation", "Orientation", PropType.Enum, "horizontal", opts: ["horizontal","vertical"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmScheduler", CatComplex, "Scheduler", "calendar", 700, 400,
+        yield return DefFromSchema("TmScheduler", "calendar",
             (el, b) =>
             {
                 var view  = el.Props.GetString("view", "week");
@@ -3212,14 +2647,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
 
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Schedule", cat: "Content"),
-                Prop("view", "View", PropType.Enum, "week",
-                    opts: ["day","week","month","agenda"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmDashboard", CatComplex, "Dashboard", "grid", 800, 500,
+        yield return DefFromSchema("TmDashboard", "grid",
             (el, b) =>
             {
                 var cols = el.Props.GetInt("columns", 3);
@@ -3258,15 +2688,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text("+ Add widget", wx + cellW / 2, wy + cellH / 2, 10, ColorMuted, "middle"));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("columns", "Columns", PropType.Int, 3, cat: "Appearance"),
-                Prop("rows", "Rows", PropType.Int, 2, cat: "Appearance"),
-                Prop("editable", "Editable", PropType.Bool, false, cat: "Behavior"),
-                Prop("showAddWidget", "Show Add Widget", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmMarkdownEditor", CatComplex, "Markdown Editor", "edit", 500, 300,
+        yield return DefFromSchema("TmMarkdownEditor", "edit",
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Write markdown...");
@@ -3288,13 +2712,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 sb.Append(Text(ph, 10, contentY + 16, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("placeholder", "Placeholder", PropType.String, "Write markdown...", cat: "Content"),
-                Prop("showToolbar", "Show Toolbar", PropType.Bool, true, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmRichEditorFull", CatComplex, "Rich Text Editor (Full)", "edit-3", 600, 320,
+        yield return DefFromSchema("TmRichEditorFull", "edit-3",
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Start writing...");
@@ -3312,12 +2732,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 sb.Append(Text(ph, 10, 58, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("placeholder", "Placeholder", PropType.String, "Start writing...", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmRichEditorSimple", CatComplex, "Rich Text Editor (Simple)", "edit-2", 400, 200,
+        yield return DefFromSchema("TmRichEditorSimple", "edit-2",
             (el, b) =>
             {
                 var ph = el.Props.GetString("placeholder", "Type here...");
@@ -3334,12 +2751,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 }
                 sb.Append(Text(ph, 10, 48, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("placeholder", "Placeholder", PropType.String, "Type here...", cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmImageGallery", CatComplex, "Image Gallery", "image", 400, 280,
+        yield return DefFromSchema("TmImageGallery", "image",
             (el, b) =>
             {
                 var cols = el.Props.GetInt("columns", 3);
@@ -3374,14 +2788,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Icon("image", ix + cellW / 2, iy + cellH / 2, Math.Min(cellW, cellH) * 0.45));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("columns", "Columns", PropType.Int, 3, cat: "Appearance"),
-                Prop("itemCount", "Item Count", PropType.Int, 6, cat: "Appearance"),
-                Prop("layout", "Layout", PropType.Enum, "grid", opts: ["grid","masonry"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmLightbox", CatComplex, "Lightbox", "image", 600, 400,
+        yield return DefFromSchema("TmLightbox", "image",
             (el, b) =>
             {
                 var imageCount = el.Props.GetInt("imageCount", 8);
@@ -3408,13 +2817,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(tx, el.H - 70, thumbW, 48, isCurrent ? FillAccent : FillDark, isCurrent ? "#93c5fd" : Border, 4));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("imageCount", "Image Count", PropType.Int, 8, cat: "Content"),
-                Prop("currentIndex", "Current Index", PropType.Int, 1, cat: "State"),
-            ]);
+            });
 
-        yield return Def("TmImportWizard", CatComplex, "Import Wizard", "upload", 560, 360,
+        yield return DefFromSchema("TmImportWizard", "upload",
             (el, b) =>
             {
                 var steps = el.Props.GetStringList("steps");
@@ -3441,12 +2846,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 176, el.H - 36, 78, 28, Fill, Border, 4));
                 sb.Append(Text("← Back", el.W - 137, el.H - 22, 10, ColorMuted, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("steps", "Steps", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmExportOptions", CatComplex, "Export Options", "download", 360, 240,
+        yield return DefFromSchema("TmExportOptions", "download",
             (el, b) =>
             {
                 var formats = el.Props.GetStringList("formats");
@@ -3464,12 +2866,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 100, el.H - 44, 84, 32, FillAccent, "#93c5fd", 4));
                 sb.Append(Text("Export", el.W - 58, el.H - 28, 11, Accent, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("formats", "Formats", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmImportPreview", CatComplex, "Import Preview", "table", 480, 260,
+        yield return DefFromSchema("TmImportPreview", "table",
             (el, b) =>
             {
                 var rows = el.Props.GetInt("rows", 4);
@@ -3490,13 +2889,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(el.W - 100, el.H - 36, 84, 28, FillAccent, "#93c5fd", 4));
                 sb.Append(Text("Confirm", el.W - 58, el.H - 22, 10, Accent, "middle"));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("rows", "Rows", PropType.Int, 4, cat: "Appearance"),
-                Prop("cols", "Columns", PropType.Int, 4, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmFilterBuilder", CatComplex, "Filter Builder", "filter", 520, 192,
+        yield return DefFromSchema("TmFilterBuilder", "filter",
             (el, b) =>
             {
                 var conditions    = el.Props.GetInt("conditions", 3);
@@ -3564,13 +2959,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Text("+ Add condition", 12, el.H - 10, 10, Accent));
 
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("conditions",    "Conditions",     PropType.Int,  3,     cat: "Appearance"),
-                Prop("groupOperator", "Group Operator", PropType.Enum, "AND", opts: ["AND","OR"], cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmActivityLog", CatComplex, "Activity Log", "activity", 400, 280,
+        yield return DefFromSchema("TmActivityLog", "activity",
             (el, b) =>
             {
                 var count = el.Props.GetInt("itemCount", 5);
@@ -3588,12 +2979,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Rect(el.W - 64, ry + rowH2 / 2 - 4, 56, 8, FillDark, "none", 3));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("itemCount", "Item Count", PropType.Int, 5, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmActivityComments", CatComplex, "Activity Comments", "message-circle", 400, 320,
+        yield return DefFromSchema("TmActivityComments", "message-circle",
             (el, b) =>
             {
                 var count = el.Props.GetInt("commentCount", 3);
@@ -3612,12 +3000,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(Rect(8, el.H - 40, el.W - 16, 32, FillDark, Border, 4));
                 sb.Append(Text("Write a comment...", 16, el.H - 24, 10, ColorLight));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("commentCount", "Comment Count", PropType.Int, 3, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmActivityAttachments", CatComplex, "Activity Attachments", "paperclip", 320, 120,
+        yield return DefFromSchema("TmActivityAttachments", "paperclip",
             (el, b) =>
             {
                 var files = el.Props.GetStringList("files");
@@ -3633,12 +3018,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(files[i], 32, y + 10, 11));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("files", "Files", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmActivityTimeline", CatComplex, "Activity Timeline", "list-ordered", 320, 160,
+        yield return DefFromSchema("TmActivityTimeline", "list-ordered",
             (el, b) =>
             {
                 var events = el.Props.GetStringList("events");
@@ -3654,12 +3036,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     sb.Append(Text(events[i], 26, y + 8, 11));
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("events", "Events", PropType.StringList, cat: "Content"),
-            ]);
+            });
 
-        yield return Def("TmTreeView", CatComplex, "Tree View", "git-branch", 240, 200,
+        yield return DefFromSchema("TmTreeView", "git-branch",
             (el, b) =>
             {
                 var depth = el.Props.GetInt("depth", 3);
@@ -3687,13 +3066,9 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                     if (y > el.H) break;
                 }
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("depth", "Depth", PropType.Int, 3, cat: "Appearance"),
-                Prop("showCheckboxes", "Show Checkboxes", PropType.Bool, false, cat: "Appearance"),
-            ]);
+            });
 
-        yield return Def("TmWorkflowDesignerCanvas", CatComplex, "Workflow Designer", "git-branch", 500, 300,
+        yield return DefFromSchema("TmWorkflowDesignerCanvas", "git-branch",
             (el, b) =>
             {
                 var title = el.Props.GetString("title", "Workflow");
@@ -3718,9 +3093,6 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(HLine(180, el.W / 2 - 60, el.H / 2));
                 sb.Append(HLine(el.W / 2 + 60, el.W - 200, el.H / 2));
                 Svg(b, sb.ToString());
-            },
-            [
-                Prop("title", "Title", PropType.String, "Workflow", cat: "Content"),
-            ]);
+            });
     }
 }
