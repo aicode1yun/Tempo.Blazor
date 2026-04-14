@@ -92,6 +92,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private (double X, double Y) _resizeStartScreen;
     private (double X, double Y, double W, double H) _resizeStartRect;
     private const double MinNodeSize = 20;
+    private const double RotateSnap = 15.0;
 
     private double _viewportX;
     private double _viewportY;
@@ -232,6 +233,27 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     // ── Resize handles ───────────────────────────────────────────────────────
 
     private static readonly string[] _resizeHandles = ["nw", "n", "ne", "e", "se", "s", "sw", "w"];
+    private static readonly (string Css, string Label)[] _connectDirections =
+    [
+        ("n", "Top"),
+        ("e", "Right"),
+        ("s", "Bottom"),
+        ("w", "Left")
+    ];
+
+    // Rotate state
+    private string? _rotateNodeId;
+    private double _rotateStartAngle;
+    private double _rotateStartNodeRotation;
+    private (double X, double Y) _rotateCenter;
+
+    /// <summary>Raised when a connect arrow is clicked.</summary>
+    [Parameter] public EventCallback<(string NodeId, string Direction)> OnConnectArrowClicked { get; set; }
+
+    private void HandleConnectArrowClicked(string nodeId, string direction)
+    {
+        _ = OnConnectArrowClicked.InvokeAsync((nodeId, direction));
+    }
 
     private void OnResizeStart(MouseEventArgs e, string nodeId, string handle)
     {
@@ -245,21 +267,58 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _resizeStartRect = (node.X, node.Y, node.W, node.H);
     }
 
+    private void OnRotateStart(MouseEventArgs e, string nodeId)
+    {
+        if (ReadOnly || Document is null) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null) return;
+
+        _rotateNodeId = nodeId;
+        _rotateCenter = (node.X + node.W / 2.0, node.Y + node.H / 2.0);
+        _rotateStartNodeRotation = node.Rotation;
+        _rotateStartAngle = ComputeAngle(_rotateCenter, (e.ClientX, e.ClientY));
+    }
+
+    private static double ComputeAngle((double X, double Y) center, (double X, double Y) point)
+    {
+        var rad = Math.Atan2(point.Y - center.Y, point.X - center.X);
+        return rad * 180.0 / Math.PI;
+    }
+
+    private static double SnapAngle(double angle, double snap)
+    {
+        if (snap <= 0) return angle;
+        return Math.Round(angle / snap) * snap;
+    }
+
     private void OnCanvasMouseMove(MouseEventArgs e)
     {
+        if (_rotateNodeId is not null && Document is not null)
+        {
+            var rotateNode = Document.Nodes.FirstOrDefault(n => n.Id == _rotateNodeId);
+            if (rotateNode is not null)
+            {
+                var currentAngle = ComputeAngle(_rotateCenter, (e.ClientX, e.ClientY));
+                var delta = currentAngle - _rotateStartAngle;
+                rotateNode.Rotation = SnapAngle(_rotateStartNodeRotation + delta, RotateSnap);
+                StateHasChanged();
+            }
+            return;
+        }
+
         if (_resizeNodeId is null || Document is null || string.IsNullOrEmpty(_resizeHandle) || Zoom <= 0) return;
 
         var dx = (e.ClientX - _resizeStartScreen.X) / Zoom;
         var dy = (e.ClientY - _resizeStartScreen.Y) / Zoom;
 
         var (x, y, w, h) = ComputeResize(_resizeStartRect, _resizeHandle, dx, dy);
-        var node = Document.Nodes.FirstOrDefault(n => n.Id == _resizeNodeId);
-        if (node is null) return;
+        var resizeNode = Document.Nodes.FirstOrDefault(n => n.Id == _resizeNodeId);
+        if (resizeNode is null) return;
 
-        node.X = x;
-        node.Y = y;
-        node.W = w;
-        node.H = h;
+        resizeNode.X = x;
+        resizeNode.Y = y;
+        resizeNode.W = w;
+        resizeNode.H = h;
         StateHasChanged();
 
         // Re-sync JS selection outline to follow the new bounds
@@ -271,6 +330,21 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private void OnCanvasMouseUp(MouseEventArgs e)
     {
+        if (_rotateNodeId is not null && Document is not null)
+        {
+            var rotateNode = Document.Nodes.FirstOrDefault(n => n.Id == _rotateNodeId);
+            if (rotateNode is not null && CommandStack is not null)
+            {
+                if (Math.Abs(rotateNode.Rotation - _rotateStartNodeRotation) > 0.001)
+                {
+                    CommandStack.Push(new RotateNodeCommand(Document, _rotateNodeId, _rotateStartNodeRotation, rotateNode.Rotation));
+                    _ = DocumentChanged.InvokeAsync(Document);
+                }
+            }
+            _rotateNodeId = null;
+            return;
+        }
+
         if (_resizeNodeId is null || Document is null) return;
 
         var node = Document.Nodes.FirstOrDefault(n => n.Id == _resizeNodeId);
@@ -348,6 +422,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var side2 = (tgtPort?.Side ?? PortSide.Left).ToString().ToLowerInvariant();
 
         var result = await JS.InvokeAsync<double[][]>("tmDiagramEditor.computeOrthogonalWaypoints", x1, y1, side1, x2, y2, side2);
+        if (result is null) return [];
         return result.Select(r => new DiagramPoint(r[0], r[1])).ToList();
     }
 

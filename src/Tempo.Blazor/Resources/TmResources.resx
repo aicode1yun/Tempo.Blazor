@@ -669,6 +669,14 @@
   <data name="TmDiagramProperties_ConnectorType_Composition" xml:space="preserve"><value>Composition</value></data>
   <data name="TmDiagramProperties_ConnectorType_Aggregation" xml:space="preserve"><value>Aggregation</value></data>
 
+  <!-- ═══════════════ TmDiagramEditor Rotate + Connect ═══════════════ -->
+  <data name="TmDiagramEditor_RotateHandleLabel" xml:space="preserve"><value>Rotate</value></data>
+  <data name="TmDiagramEditor_ConnectArrowTop" xml:space="preserve"><value>Connect top</value></data>
+  <data name="TmDiagramEditor_ConnectArrowRight" xml:space="preserve"><value>Connect right</value></data>
+  <data name="TmDiagramEditor_ConnectArrowBottom" xml:space="preserve"><value>Connect bottom</value></data>
+  <data name="TmDiagramEditor_ConnectArrowLeft" xml:space="preserve"><value>Connect left</value></data>
+  <data name="TmDiagramEditor_SelectStencilTitle" xml:space="preserve"><value>Select shape to connect</value></data>
+
   <!-- ═══════════════ TmDiagramEditor History ═══════════════ -->
   <data name="TmDiagramEditor_SaveDiagram" xml:space="preserve"><value>Save diagram</value></data>
   <data name="TmDiagramEditor_SaveVersionPlaceholder" xml:space="preserve"><value>Version label (optional)</value></data>

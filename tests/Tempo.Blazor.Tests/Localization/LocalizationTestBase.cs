@@ -18,6 +18,7 @@ public abstract class LocalizationTestBase : TestContext
     {
         Services.AddSingleton<ITmLocalizer>(BuildEnglishLocalizer());
         Services.AddScoped<DragDropService>();
+        Services.AddSingleton<Tempo.Blazor.Components.Diagram.Stencils.DiagramStencilRegistry>();
         Services.AddHttpClient();
         JSInterop.Mode = JSRuntimeMode.Loose;
     }
@@ -443,6 +444,12 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDiagramProperties_ConnectorType_Composition"] = "Composition",
         ["TmDiagramProperties_ConnectorType_Aggregation"] = "Aggregation",
         ["TmDiagramCanvas_AriaLabel"] = "Diagram canvas",
+        ["TmDiagramEditor_RotateHandleLabel"] = "Rotate",
+        ["TmDiagramEditor_ConnectArrowTop"] = "Connect top",
+        ["TmDiagramEditor_ConnectArrowRight"] = "Connect right",
+        ["TmDiagramEditor_ConnectArrowBottom"] = "Connect bottom",
+        ["TmDiagramEditor_ConnectArrowLeft"] = "Connect left",
+        ["TmDiagramEditor_SelectStencilTitle"] = "Select shape to connect",
 
         // TmWireframe
         ["TmWireframe_ToolbarAriaLabel"] = "Wireframe editor toolbar",

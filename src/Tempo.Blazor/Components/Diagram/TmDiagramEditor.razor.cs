@@ -95,6 +95,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private string _canvasWInput = "";
     private string _canvasHInput = "";
 
+    // Connect modal state
+    private bool _connectModalOpen;
+    private string? _connectSourceNodeId;
+    private string? _connectDirection;
+
     // ── Context menu ─────────────────────────────────────────────────────────
 
     private bool _contextMenuOpen;
@@ -531,6 +536,132 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         }
 
         await OnDocumentChanged(_document);
+    }
+
+    // ── Connect modal ────────────────────────────────────────────────────────
+
+    private void OnConnectArrowClicked((string NodeId, string Direction) args)
+    {
+        if (ReadOnly || _document is null) return;
+        _connectSourceNodeId = args.NodeId;
+        _connectDirection = args.Direction;
+        _connectModalOpen = true;
+        StateHasChanged();
+    }
+
+    private void CloseConnectModal()
+    {
+        _connectModalOpen = false;
+        _connectSourceNodeId = null;
+        _connectDirection = null;
+    }
+
+    private async Task OnStencilSelectedForConnect(string stencilId)
+    {
+        if (_document is null || ReadOnly || _connectSourceNodeId is null || _connectDirection is null) return;
+
+        var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == _connectSourceNodeId);
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (sourceNode is null || stencil is null) return;
+
+        var w = stencil.DefaultWidth;
+        var h = stencil.DefaultHeight;
+        var (x, y) = ComputeConnectPosition(sourceNode, w, h, _connectDirection);
+        x = Math.Round(x / GridSize) * GridSize;
+        y = Math.Round(y / GridSize) * GridSize;
+
+        var newNode = new DiagramNode
+        {
+            StencilId = stencilId,
+            X = x,
+            Y = y,
+            W = w,
+            H = h,
+            ZIndex = _document.Nodes.Count > 0 ? _document.Nodes.Max(n => n.ZIndex) + 1 : 0,
+            LayerId = sourceNode.LayerId ?? _activeLayerId,
+        };
+
+        foreach (var kvp in stencil.DefaultData)
+            newNode.Data[kvp.Key] = kvp.Value;
+
+        foreach (var portDef in stencil.Ports)
+        {
+            newNode.Ports.Add(new DiagramPort
+            {
+                Name = portDef.Name,
+                Side = portDef.Side,
+                Offset = portDef.Offset,
+                IsInput = portDef.IsInput,
+                IsOutput = portDef.IsOutput,
+            });
+        }
+
+        _commandStack.Push(new AddNodeCommand(_document, newNode));
+
+        // Determine ports based on direction
+        var (sourcePort, targetPort) = ResolveConnectPorts(sourceNode, newNode, _connectDirection);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = sourceNode.Id,
+            SourcePortId = sourcePort?.Id,
+            TargetNodeId = newNode.Id,
+            TargetPortId = targetPort?.Id,
+        };
+
+        _commandStack.Push(new AddEdgeCommand(_document, edge));
+
+        if (_canvas is not null)
+        {
+            edge.Waypoints = await _canvas.ComputeOrthogonalWaypointsAsync(edge);
+        }
+
+        _selectedIds = [newNode.Id];
+        await OnDocumentChanged(_document);
+        if (_canvas is not null)
+        {
+            await _canvas.SetSelection(newNode.Id);
+            await OnSelectionChanged([newNode.Id]);
+        }
+
+        CloseConnectModal();
+    }
+
+    private static (double X, double Y) ComputeConnectPosition(DiagramNode source, double newW, double newH, string direction)
+    {
+        const double padding = 40.0;
+        return direction switch
+        {
+            "n" => (source.X + source.W / 2.0 - newW / 2.0, source.Y - newH - padding),
+            "e" => (source.X + source.W + padding, source.Y + source.H / 2.0 - newH / 2.0),
+            "s" => (source.X + source.W / 2.0 - newW / 2.0, source.Y + source.H + padding),
+            "w" => (source.X - newW - padding, source.Y + source.H / 2.0 - newH / 2.0),
+            _ => (source.X + source.W + padding, source.Y),
+        };
+    }
+
+    private static (DiagramPort? SourcePort, DiagramPort? TargetPort) ResolveConnectPorts(DiagramNode source, DiagramNode target, string direction)
+    {
+        var sourceSide = direction switch
+        {
+            "n" => PortSide.Top,
+            "e" => PortSide.Right,
+            "s" => PortSide.Bottom,
+            "w" => PortSide.Left,
+            _ => PortSide.Right,
+        };
+        var targetSide = direction switch
+        {
+            "n" => PortSide.Bottom,
+            "e" => PortSide.Left,
+            "s" => PortSide.Top,
+            "w" => PortSide.Right,
+            _ => PortSide.Left,
+        };
+
+        var sp = source.Ports.FirstOrDefault(p => p.Side == sourceSide) ?? source.Ports.FirstOrDefault();
+        var tp = target.Ports.FirstOrDefault(p => p.Side == targetSide) ?? target.Ports.FirstOrDefault();
+        return (sp, tp);
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

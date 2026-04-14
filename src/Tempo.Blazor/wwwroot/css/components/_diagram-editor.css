@@ -974,3 +974,129 @@
     margin: 4px 8px;
     background: var(--tm-color-border, #e5e7eb);
 }
+/* Append to existing file */
+
+/* ── Rotate handle ─────────────────────────────────────────────────────── */
+.tm-diagram-rotate-handle {
+    position: absolute;
+    top: -26px;
+    left: calc(50% - 7px);
+    width: 14px;
+    height: 14px;
+    background: #fff;
+    border: 1.5px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 50%;
+    cursor: grab;
+    z-index: 20;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+}
+.tm-diagram-rotate-handle:active {
+    cursor: grabbing;
+}
+.tm-diagram-rotate-handle::after {
+    content: "";
+    position: absolute;
+    top: 100%;
+    left: 50%;
+    width: 1px;
+    height: 10px;
+    background: var(--tm-color-primary, #3b82f6);
+    transform: translateX(-50%);
+}
+
+/* ── Quick-connect arrows ──────────────────────────────────────────────── */
+.tm-diagram-connect-arrow {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #fff;
+    border: 1.5px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 20;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    transition: transform 0.12s, background 0.12s;
+}
+.tm-diagram-connect-arrow:hover {
+    background: var(--tm-color-primary, #3b82f6);
+    transform: scale(1.15);
+}
+.tm-diagram-connect-arrow:hover .tm-diagram-connect-arrow__icon {
+    color: #fff;
+}
+.tm-diagram-connect-arrow__icon {
+    font-size: 12px;
+    line-height: 1;
+    color: var(--tm-color-primary, #3b82f6);
+    pointer-events: none;
+}
+
+/* Positioning */
+.tm-diagram-connect-arrow--n { top: -14px; left: calc(50% - 11px); }
+.tm-diagram-connect-arrow--n .tm-diagram-connect-arrow__icon { transform: rotate(-90deg); }
+
+.tm-diagram-connect-arrow--e { top: calc(50% - 11px); right: -14px; }
+.tm-diagram-connect-arrow--e .tm-diagram-connect-arrow__icon { transform: rotate(0deg); }
+
+.tm-diagram-connect-arrow--s { bottom: -14px; left: calc(50% - 11px); }
+.tm-diagram-connect-arrow--s .tm-diagram-connect-arrow__icon { transform: rotate(90deg); }
+
+.tm-diagram-connect-arrow--w { top: calc(50% - 11px); left: -14px; }
+.tm-diagram-connect-arrow--w .tm-diagram-connect-arrow__icon { transform: rotate(180deg); }
+
+/* ── Connect modal stencil grid ────────────────────────────────────────── */
+.tm-diagram-connect-modal__grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+    max-height: 320px;
+    overflow-y: auto;
+    padding: 4px;
+}
+@media (max-width: 480px) {
+    .tm-diagram-connect-modal__grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.tm-diagram-connect-modal__item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    padding: 10px 8px;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    cursor: pointer;
+    transition: border-color 0.12s, background 0.12s;
+}
+.tm-diagram-connect-modal__item:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-connect-modal__icon {
+    width: 32px;
+    height: 32px;
+    color: var(--tm-color-text-muted, #6b7280);
+}
+.tm-diagram-connect-modal__item:hover .tm-diagram-connect-modal__icon {
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-connect-modal__label {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text, #111827);
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}

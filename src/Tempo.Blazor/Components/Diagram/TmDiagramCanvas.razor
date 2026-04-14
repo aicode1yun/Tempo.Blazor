@@ -175,6 +175,27 @@
                                      @onmousedown="e => OnResizeStart(e, node.Id, h)">
                                 </div>
                             }
+
+                            @* Rotate handle *@
+                            <div class="tm-diagram-rotate-handle"
+                                 title="@Loc["TmDiagramEditor_RotateHandleLabel"]"
+                                 @onmousedown:stopPropagation="true"
+                                 @onmousedown="e => OnRotateStart(e, node.Id)">
+                            </div>
+
+                            @* Quick-connect arrows *@
+                            @foreach (var dir in _connectDirections)
+                            {
+                                <button type="button"
+                                        class="tm-diagram-connect-arrow tm-diagram-connect-arrow--@dir.Css"
+                                        aria-label="@Loc[$"TmDiagramEditor_ConnectArrow{dir.Label}"]"
+                                        title="@Loc[$"TmDiagramEditor_ConnectArrow{dir.Label}"]"
+                                        @onmousedown:stopPropagation="true"
+                                        @onclick:stopPropagation="true"
+                                        @onclick="() => HandleConnectArrowClicked(node.Id, dir.Css)">
+                                    <span class="tm-diagram-connect-arrow__icon">→</span>
+                                </button>
+                            }
                         }
                     </div>
                 }

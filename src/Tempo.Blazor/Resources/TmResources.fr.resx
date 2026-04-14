@@ -1465,4 +1465,12 @@
   <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Aucune sélection</value></data>
   <data name="TmDiagramProperties_ReadOnly" xml:space="preserve"><value>Mode lecture seule</value></data>
 
+  <!-- ═══════════════ TmDiagramEditor Rotate + Connect ═══════════════ -->
+  <data name="TmDiagramEditor_RotateHandleLabel" xml:space="preserve"><value>Pivoter</value></data>
+  <data name="TmDiagramEditor_ConnectArrowTop" xml:space="preserve"><value>Connecter en haut</value></data>
+  <data name="TmDiagramEditor_ConnectArrowRight" xml:space="preserve"><value>Connecter à droite</value></data>
+  <data name="TmDiagramEditor_ConnectArrowBottom" xml:space="preserve"><value>Connecter en bas</value></data>
+  <data name="TmDiagramEditor_ConnectArrowLeft" xml:space="preserve"><value>Connecter à gauche</value></data>
+  <data name="TmDiagramEditor_SelectStencilTitle" xml:space="preserve"><value>Sélectionner une forme à connecter</value></data>
+
 </root>

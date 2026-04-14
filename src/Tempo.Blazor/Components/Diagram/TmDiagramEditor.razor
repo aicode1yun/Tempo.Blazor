@@ -243,6 +243,7 @@
                              OnPortMouseDownEvent="OnPortMouseDownEvent"
                              OnEdgeCreated="OnEdgeCreated"
                              OnContextMenu="OnContextMenu"
+                             OnConnectArrowClicked="OnConnectArrowClicked"
                              Class="tm-diagram-editor__canvas" />
             @* Context menu (long-press / right-click) *@
             @if (_contextMenuOpen)
@@ -305,6 +306,45 @@
     </div>
 
 </div>
+
+@* Connect stencil selection modal *@
+<TmModal Show="@_connectModalOpen"
+         OnClose="CloseConnectModal"
+         Title="@Loc["TmDiagramEditor_SelectStencilTitle"]"
+         ShowDefaultFooterButtons="false"
+         Size="ModalSize.Medium"
+         CloseOnOverlayClick="true"
+         CloseOnEscape="true">
+    <ChildContent>
+        <div class="tm-diagram-connect-modal__grid">
+            @foreach (var stencil in StencilRegistry.GetAll())
+            {
+                <button type="button"
+                        class="tm-diagram-connect-modal__item"
+                        title="@stencil.Name"
+                        @onclick="() => OnStencilSelectedForConnect(stencil.Id)">
+                    <div class="tm-diagram-connect-modal__icon">
+                        @if (!string.IsNullOrEmpty(stencil.IconSvg))
+                        {
+                            <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
+                                @((MarkupString)stencil.IconSvg)
+                            </svg>
+                        }
+                        else
+                        {
+                            <svg viewBox="0 0 32 32" aria-hidden="true" style="width:32px;height:32px;">
+                                <rect x="2" y="8" width="28" height="16" rx="2"
+                                      fill="var(--tm-color-surface-elevated)"
+                                      stroke="var(--tm-color-text)" stroke-width="2" />
+                            </svg>
+                        }
+                    </div>
+                    <span class="tm-diagram-connect-modal__label">@stencil.Name</span>
+                </button>
+            }
+        </div>
+    </ChildContent>
+</TmModal>
 
 </CascadingValue>
 

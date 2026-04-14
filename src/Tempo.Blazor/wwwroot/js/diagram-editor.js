@@ -307,9 +307,9 @@ window.tmDiagramEditor = {
             return;
         }
 
-        // Resize handle clicked? -> let Blazor handle it (do NOT stopPropagation,
+        // Resize / rotate / connect clicked? -> let Blazor handle it (do NOT stopPropagation,
         // otherwise Blazor's document-level event delegation never receives the event)
-        if (e.target.closest('.tm-diagram-resize-handle')) {
+        if (e.target.closest('.tm-diagram-resize-handle, .tm-diagram-rotate-handle, .tm-diagram-connect-arrow')) {
             return;
         }
 
