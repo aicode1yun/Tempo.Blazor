@@ -121,6 +121,13 @@ public partial class TmWireframeToolbox : ComponentBase
         _filterMode = mode;
     }
 
+    private string GetFilterLabel(string filter) => filter switch
+    {
+        FilterBuiltIn => Loc["TmWireframeToolbox_FilterBuiltIn"],
+        FilterCustom  => Loc["TmWireframeToolbox_FilterCustom"],
+        _             => Loc["TmWireframeToolbox_FilterAll"],
+    };
+
     /// <summary>
     /// Keyboard activation (Enter or Space on a toolbox item).
     /// Fires <see cref="OnComponentActivated"/> so the parent can add the element

@@ -1,0 +1,75 @@
+{
+  "itemName": "WireframeElement",
+  "kind": "Model",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "assembly": "Tempo.Blazor.Abstractions",
+  "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WirframeElementExtensions simplify prop access.",
+  "properties": [
+    {
+      "name": "Id",
+      "type": "string",
+      "description": "Unique element ID. Auto-generated as an 8-char hex string (Guid prefix)."
+    },
+    {
+      "name": "Type",
+      "type": "string",
+      "description": "Component type identifier matching a WireframeComponentDef.Type (e.g. 'TmButton', 'TmDataTable')."
+    },
+    {
+      "name": "X",
+      "type": "double",
+      "defaultValue": "0",
+      "description": "Left edge in document coordinates (pixels)."
+    },
+    {
+      "name": "Y",
+      "type": "double",
+      "defaultValue": "0",
+      "description": "Top edge in document coordinates (pixels)."
+    },
+    {
+      "name": "W",
+      "type": "double",
+      "defaultValue": "120",
+      "description": "Width in pixels."
+    },
+    {
+      "name": "H",
+      "type": "double",
+      "defaultValue": "36",
+      "description": "Height in pixels."
+    },
+    {
+      "name": "Props",
+      "type": "Dictionary<string, JsonElement>",
+      "description": "Component property bag. Keys are camelCase prop names matching PropDef.Name."
+    },
+    {
+      "name": "ZIndex",
+      "type": "int",
+      "defaultValue": "0",
+      "description": "Rendering order. Higher values render on top."
+    },
+    {
+      "name": "GroupId",
+      "type": "string?",
+      "description": "Optional group identifier. Null = not grouped. Omitted from JSON when null."
+    },
+    {
+      "name": "LockedBy",
+      "type": "string?",
+      "description": "Optional user identifier that has locked this element. Null = unlocked. Omitted from JSON when null."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Create a button element with props",
+      "code": "var el = WireframeDocumentExtensions.NewElement(\"TmButton\", x: 40, y: 100, w: 120, h: 36);\nel.SetProp(\"label\", \"Save\");\nel.SetProp(\"variant\", \"primary\");\nel.SetProp(\"size\", \"lg\");"
+    },
+    {
+      "title": "Read props safely",
+      "code": "var label   = el.Props.GetString(\"label\", \"Button\");\nvar disabled = el.Props.GetBool(\"disabled\");\nvar opacity  = el.Props.GetDouble(\"opacity\", 1.0);"
+    }
+  ]
+}

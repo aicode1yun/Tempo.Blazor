@@ -15,31 +15,31 @@
     @* ── Toolbar ─────────────────────────────────────────────────────────── *@
     @if (ShowToolbar)
     {
-        <div class="tm-wd-editor__toolbar" role="toolbar" aria-label="Wireframe editor toolbar">
+        <div class="tm-wd-editor__toolbar" role="toolbar" aria-label="@Loc["TmWireframe_ToolbarAriaLabel"]">
 
             @* Title *@
             <input class="tm-wd-editor__title"
                    type="text"
                    value="@_document?.Title"
-                   placeholder="Untitled wireframe"
-                   aria-label="Document title"
+                   placeholder="@Loc["TmWireframe_UntitledPlaceholder"]"
+                   aria-label="@Loc["TmWireframe_DocumentTitleLabel"]"
                    @onchange="OnTitleChanged"
                    disabled="@ReadOnly"
-                   title="Document title" />
+                   title="@Loc["TmWireframe_DocumentTitleLabel"]" />
 
             @* Tool mode: Select / Pan *@
             <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolMode == "select" ? "tm-wd-editor__btn--active" : "")"
-                    aria-label="Select tool (V)"
+                    aria-label="@Loc["TmWireframe_SelectTool"]"
                     aria-pressed="@(_toolMode == "select")"
-                    title="Select tool (V)"
+                    title="@Loc["TmWireframe_SelectTool"]"
                     disabled="@ReadOnly"
                     @onclick='() => SetToolMode("select")'>
                 ↖
             </button>
             <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolMode == "pan" ? "tm-wd-editor__btn--active" : "")"
-                    aria-label="Pan tool (H)"
+                    aria-label="@Loc["TmWireframe_PanTool"]"
                     aria-pressed="@(_toolMode == "pan")"
-                    title="Pan tool (H) — or hold Space"
+                    title="@Loc["TmWireframe_PanToolHint"]"
                     @onclick='() => SetToolMode("pan")'>
                 ✋
             </button>
@@ -48,15 +48,15 @@
 
             @* Undo / Redo *@
             <button class="tm-wd-editor__btn"
-                    aria-label="Undo @_commandStack.NextUndoName"
-                    title="Undo (@_commandStack.NextUndoName)"
+                    aria-label="@Loc["TmWireframe_Undo"] @_commandStack.NextUndoName"
+                    title="@Loc["TmWireframe_Undo"] (@_commandStack.NextUndoName)"
                     disabled="@(!_commandStack.CanUndo || ReadOnly)"
                     @onclick="OnUndoClicked">
                 ↩
             </button>
             <button class="tm-wd-editor__btn"
-                    aria-label="Redo @_commandStack.NextRedoName"
-                    title="Redo (@_commandStack.NextRedoName)"
+                    aria-label="@Loc["TmWireframe_Redo"] @_commandStack.NextRedoName"
+                    title="@Loc["TmWireframe_Redo"] (@_commandStack.NextRedoName)"
                     disabled="@(!_commandStack.CanRedo || ReadOnly)"
                     @onclick="OnRedoClicked">
                 ↪
@@ -65,39 +65,39 @@
             <div class="tm-wd-editor__toolbar-sep" role="separator"></div>
 
             @* Zoom *@
-            <button class="tm-wd-editor__btn" aria-label="Zoom out" title="Zoom out" @onclick="ZoomOut">−</button>
-            <span class="tm-wd-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom level @_zoomLabel">@_zoomLabel</span>
+            <button class="tm-wd-editor__btn" aria-label="@Loc["TmWireframe_ZoomOut"]" title="@Loc["TmWireframe_ZoomOut"]" @onclick="ZoomOut">−</button>
+            <span class="tm-wd-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
             <button class="tm-wd-editor__btn" aria-label="Zoom in"  title="Zoom in"  @onclick="ZoomIn">+</button>
-            <button class="tm-wd-editor__btn tm-wd-editor__btn--text" aria-label="Fit canvas to view" title="Fit to view" @onclick="FitToView">Fit</button>
+            <button class="tm-wd-editor__btn tm-wd-editor__btn--text" aria-label="@Loc["TmWireframe_FitToView"]" title="@Loc["TmWireframe_FitToView"]" @onclick="FitToView">@Loc["TmWireframe_FitToView"]</button>
 
             @* Canvas size *@
             @if (_canvasSizeEditing)
             {
                 <input class="tm-wd-editor__canvas-size-input"
                        type="number" min="100" max="9999" step="1"
-                       aria-label="Canvas width"
+                       aria-label="@Loc["TmWireframe_CanvasWidth"]"
                        value="@_canvasWInput"
                        @oninput="e => _canvasWInput = e.Value?.ToString() ?? _canvasWInput" />
                 <span class="tm-wd-editor__canvas-size-sep">×</span>
                 <input class="tm-wd-editor__canvas-size-input"
                        type="number" min="100" max="9999" step="1"
-                       aria-label="Canvas height"
+                       aria-label="@Loc["TmWireframe_CanvasHeight"]"
                        value="@_canvasHInput"
                        @oninput="e => _canvasHInput = e.Value?.ToString() ?? _canvasHInput" />
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
-                        aria-label="Apply canvas size"
-                        title="Apply"
+                        aria-label="@Loc["TmWireframe_Apply"]"
+                        title="@Loc["TmWireframe_Apply"]"
                         @onclick="ApplyCanvasSize">✓</button>
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
-                        aria-label="Cancel canvas size"
-                        title="Cancel"
+                        aria-label="@Loc["TmWireframe_Cancel"]"
+                        title="@Loc["TmWireframe_Cancel"]"
                         @onclick="() => _canvasSizeEditing = false">✕</button>
             }
             else
             {
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--text tm-wd-editor__btn--canvas-size"
-                        aria-label="Change canvas size, current @((int)(_document?.Width ?? 1280))×@((int)(_document?.Height ?? 800))"
-                        title="Change canvas size"
+                        aria-label="@Loc["TmWireframe_ChangeCanvasSize"], current @((int)(_document?.Width ?? 1280))×@((int)(_document?.Height ?? 800))"
+                        title="@Loc["TmWireframe_ChangeCanvasSize"]"
                         @onclick="OpenCanvasSize">
                     @((int)(_document?.Width ?? 1280))×@((int)(_document?.Height ?? 800))
                 </button>
@@ -108,25 +108,25 @@
             @* Export *@
             <div class="tm-wd-editor__dropdown-wrap">
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--text"
-                        aria-label="Export document"
+                        aria-label="@Loc["TmWireframe_Export"]"
                         aria-haspopup="true"
                         aria-expanded="@_exportMenuOpen"
                         @onclick="ToggleExportMenu"
-                        title="Export">
-                    Export ▾
+                        title="@Loc["TmWireframe_Export"]">
+                    @Loc["TmWireframe_Export"] ▾
                 </button>
                 @if (_exportMenuOpen)
                 {
-                    <div class="tm-wd-editor__dropdown" role="menu" aria-label="Export options" @onfocusout="CloseExportMenu">
-                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportJson">Export JSON</button>
-                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportSvg">Export SVG</button>
+                    <div class="tm-wd-editor__dropdown" role="menu" aria-label="@Loc["TmWireframe_Export"]" @onfocusout="CloseExportMenu">
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportJson">@Loc["TmWireframe_ExportJson"]</button>
+                        <button class="tm-wd-editor__dropdown-item" role="menuitem" @onclick="ExportSvg">@Loc["TmWireframe_ExportSvg"]</button>
                     </div>
                 }
             </div>
 
             @* Import *@
-            <label class="tm-wd-editor__btn tm-wd-editor__btn--text" title="Import JSON" aria-label="Import wireframe JSON file">
-                Import
+            <label class="tm-wd-editor__btn tm-wd-editor__btn--text" title="@Loc["TmWireframe_ImportJson"]" aria-label="@Loc["TmWireframe_ImportJson"]">
+                @Loc["TmWireframe_ImportJson"]
                 <InputFile class="tm-wd-editor__file-input" OnChange="OnImportFile" accept=".json,.wireframe.json" />
             </label>
 
@@ -134,20 +134,20 @@
 
             @* Read-only toggle *@
             <button class="tm-wd-editor__btn tm-wd-editor__btn--text @(ReadOnly ? "tm-wd-editor__btn--active" : "")"
-                    aria-label="@(ReadOnly ? "Switch to edit mode" : "Switch to read-only mode")"
+                    aria-label="@(ReadOnly ? Loc["TmWireframe_SwitchToEditMode"] : Loc["TmWireframe_SwitchToReadOnlyMode"])"
                     aria-pressed="@ReadOnly"
-                    title="@(ReadOnly ? "Switch to edit mode" : "Switch to read-only mode")"
+                    title="@(ReadOnly ? Loc["TmWireframe_SwitchToEditMode"] : Loc["TmWireframe_SwitchToReadOnlyMode"])"
                     @onclick="ToggleReadOnly">
-                @(ReadOnly ? "🔒 Read-only" : "✏ Edit")
+                @(ReadOnly ? "🔒 " + Loc["TmWireframe_ReadOnly"] : "✏ " + Loc["TmWireframe_Edit"])
             </button>
 
             @* Panel toggles *@
             @if (ShowToolbox)
             {
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_toolboxCollapsed ? "" : "tm-wd-editor__btn--active")"
-                        aria-label="@(_toolboxCollapsed ? "Show toolbox" : "Hide toolbox")"
+                        aria-label="@(_toolboxCollapsed ? Loc["TmWireframe_ShowToolbox"] : Loc["TmWireframe_HideToolbox"])"
                         aria-pressed="@(!_toolboxCollapsed)"
-                        title="Toggle toolbox"
+                        title="@Loc["TmWireframe_ToggleToolbox"]"
                         @onclick="() => _toolboxCollapsed = !_toolboxCollapsed">
                     ◧
                 </button>
@@ -155,9 +155,9 @@
             @if (ShowPropertiesPanel)
             {
                 <button class="tm-wd-editor__btn tm-wd-editor__btn--icon @(_propsCollapsed ? "" : "tm-wd-editor__btn--active")"
-                        aria-label="@(_propsCollapsed ? "Show properties panel" : "Hide properties panel")"
+                        aria-label="@(_propsCollapsed ? Loc["TmWireframe_ShowProperties"] : Loc["TmWireframe_HideProperties"])"
                         aria-pressed="@(!_propsCollapsed)"
-                        title="Toggle properties panel"
+                        title="@Loc["TmWireframe_ToggleProperties"]"
                         @onclick="() => _propsCollapsed = !_propsCollapsed">
                     ◨
                 </button>
@@ -171,7 +171,7 @@
     {
         <div class="tm-wd-editor__error-banner" role="alert" aria-live="assertive">
             @_importError
-            <button class="tm-wd-editor__error-close" aria-label="Dismiss error" @onclick="() => _importError = null">✕</button>
+            <button class="tm-wd-editor__error-close" aria-label="@Loc["TmWireframe_DismissError"]" @onclick="() => _importError = null">✕</button>
         </div>
     }
 

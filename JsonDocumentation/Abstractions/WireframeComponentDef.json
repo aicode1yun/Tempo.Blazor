@@ -1,0 +1,70 @@
+{
+  "itemName": "WireframeComponentDef",
+  "kind": "Model",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "assembly": "Tempo.Blazor",
+  "description": "Describes a single component that can be placed on the wireframe canvas. Each Tempo.Blazor component (TmButton, TmDataTable, …) has exactly one definition registered via IWireframeComponentProvider. The RenderSvg delegate produces the SVG markup shown on the canvas. SizePresets maps size prop values to canonical W×H so that changing 'size' in the Properties Panel automatically resizes the element.",
+  "properties": [
+    {
+      "name": "Type",
+      "type": "string (required)",
+      "description": "Unique type identifier matching WireframeElement.Type. E.g. 'TmButton'."
+    },
+    {
+      "name": "Category",
+      "type": "string (required)",
+      "description": "Toolbox group. E.g. 'Buttons', 'Inputs', 'Layout', 'Custom'."
+    },
+    {
+      "name": "DisplayName",
+      "type": "string (required)",
+      "description": "Human-readable name shown in the Toolbox and Properties Panel header."
+    },
+    {
+      "name": "Icon",
+      "type": "string?",
+      "description": "TmIcon name used in the Toolbox list item."
+    },
+    {
+      "name": "DefaultWidth",
+      "type": "double",
+      "defaultValue": "120",
+      "description": "Default element width when dropped from the Toolbox."
+    },
+    {
+      "name": "DefaultHeight",
+      "type": "double",
+      "defaultValue": "36",
+      "description": "Default element height when dropped from the Toolbox."
+    },
+    {
+      "name": "Props",
+      "type": "IReadOnlyList<PropDef>",
+      "defaultValue": "[]",
+      "description": "Property definitions that drive the Properties Panel UI."
+    },
+    {
+      "name": "RenderSvg",
+      "type": "Action<WireframeElement, RenderTreeBuilder> (required)",
+      "description": "Delegate that renders the component's SVG shape. Coordinates are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+    },
+    {
+      "name": "IsBuiltIn",
+      "type": "bool",
+      "defaultValue": "false",
+      "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
+    },
+    {
+      "name": "SizePresets",
+      "type": "IReadOnlyDictionary<string, (double W, double H)>?",
+      "description": "Optional map from a 'size' prop value to canonical element dimensions. When present and the user changes the size prop, the canvas element is automatically resized. Null for components where 'size' describes an internal sub-element (e.g. TmModal dialog scale)."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Minimal custom component definition",
+      "code": "new WireframeComponentDef\n{\n    Type        = \"StatusBadge\",\n    Category    = \"Custom\",\n    DisplayName = \"Status Badge\",\n    DefaultWidth  = 80,\n    DefaultHeight = 24,\n    RenderSvg   = (el, b) =>\n    {\n        var color = el.Props.GetString(\"color\", \"#22c55e\");\n        b.AddMarkupContent(0,\n            $\"<rect width='{el.W}' height='{el.H}' rx='{el.H/2}' fill='{color}' opacity='0.15' stroke='{color}' stroke-width='1'/>\"\n            + $\"<text x='{el.W/2}' y='{el.H/2}' fill='{color}' text-anchor='middle' dominant-baseline='middle' font-size='10'>Active</text>\");\n    },\n    Props = [\n        new PropDef { Name = \"color\", DisplayName = \"Color\", Type = PropType.Color, Default = \"#22c55e\", Category = \"Appearance\" }\n    ]\n}"
+    }
+  ]
+}

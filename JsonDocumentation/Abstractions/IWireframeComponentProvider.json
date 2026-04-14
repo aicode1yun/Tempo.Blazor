@@ -1,0 +1,32 @@
+{
+  "itemName": "IWireframeComponentProvider",
+  "kind": "Interface",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "assembly": "Tempo.Blazor",
+  "description": "Provides a set of WireframeComponentDef entries to the WireframeComponentRegistry. Built-in Tempo.Blazor components are registered via BuiltInWireframeComponentProvider (priority 0). Custom components are added by implementing this interface and calling services.AddWireframeComponentProvider<T>() in Program.cs. When two providers register the same Type, the one with the higher Priority wins. Note: for pure metadata (no Blazor rendering dependency), use IWireframeSchemaSource / WireframeSchemaRegistry instead — those live in Tempo.Blazor.Abstractions and are safe for API/MCP server projects.",
+  "methods": [
+    {
+      "name": "ProviderId",
+      "returnType": "string",
+      "description": "Unique identifier for this provider (used in logging and override detection)."
+    },
+    {
+      "name": "Priority",
+      "returnType": "int",
+      "description": "Higher priority wins when multiple providers register the same component type. Built-in uses 0; set > 0 to override."
+    },
+    {
+      "name": "GetDefinitions",
+      "returnType": "IEnumerable<WireframeComponentDef>",
+      "description": "Returns all component definitions supplied by this provider."
+    }
+  ],
+  "registration": "services.AddWireframeComponentProvider<MyProvider>()",
+  "examples": [
+    {
+      "title": "Register a custom component",
+      "code": "// Program.cs\nbuilder.Services.AddTempoBlazor();\nbuilder.Services.AddWireframeComponentProvider<MarketingComponentProvider>();\n\n// MarketingComponentProvider.cs\npublic class MarketingComponentProvider : IWireframeComponentProvider\n{\n    public string ProviderId => \"Marketing\";\n    public int Priority => 10;\n\n    public IEnumerable<WireframeComponentDef> GetDefinitions()\n    {\n        yield return new WireframeComponentDef\n        {\n            Type        = \"HeroBanner\",\n            Category    = \"Marketing\",\n            DisplayName = \"Hero Banner\",\n            Icon        = \"image\",\n            DefaultWidth  = 800,\n            DefaultHeight = 200,\n            IsBuiltIn   = false,\n            RenderSvg   = (el, b) =>\n            {\n                var sb = new StringBuilder();\n                sb.Append($\"<rect width='{el.W}' height='{el.H}' fill='#1e293b' rx='8'/>\");\n                sb.Append($\"<text x='{el.W/2}' y='{el.H/2}' fill='white' text-anchor='middle' dominant-baseline='middle' font-size='18'>Hero Banner</text>\");\n                b.AddMarkupContent(0, sb.ToString());\n            },\n            Props = [\n                new PropDef { Name = \"headline\",  DisplayName = \"Headline\",  Type = PropType.String },\n                new PropDef { Name = \"subheadline\", DisplayName = \"Subheadline\", Type = PropType.String },\n            ]\n        };\n    }\n}"
+    }
+  ]
+}

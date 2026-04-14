@@ -1325,4 +1325,73 @@
   <data name="TmDashboard_RenameDashboard" xml:space="preserve">
     <value>Renommer le tableau de bord</value>
   </data>
+  <!-- ═══════════════ TmWireframe ═══════════════ -->
+  <data name="TmWireframe_ToolbarAriaLabel" xml:space="preserve"><value>Wireframe editor toolbar</value></data>
+  <data name="TmWireframe_UntitledPlaceholder" xml:space="preserve"><value>Untitled wireframe</value></data>
+  <data name="TmWireframe_DocumentTitleLabel" xml:space="preserve"><value>Document title</value></data>
+  <data name="TmWireframe_SelectTool" xml:space="preserve"><value>Select tool (V)</value></data>
+  <data name="TmWireframe_PanTool" xml:space="preserve"><value>Pan tool (H)</value></data>
+  <data name="TmWireframe_PanToolHint" xml:space="preserve"><value>Pan tool (H) — or hold Space</value></data>
+  <data name="TmWireframe_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="TmWireframe_Redo" xml:space="preserve"><value>Redo</value></data>
+  <data name="TmWireframe_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmWireframe_ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmWireframe_FitToView" xml:space="preserve"><value>Fit to view</value></data>
+  <data name="TmWireframe_CanvasWidth" xml:space="preserve"><value>Canvas width</value></data>
+  <data name="TmWireframe_CanvasHeight" xml:space="preserve"><value>Canvas height</value></data>
+  <data name="TmWireframe_Apply" xml:space="preserve"><value>Apply</value></data>
+  <data name="TmWireframe_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmWireframe_ChangeCanvasSize" xml:space="preserve"><value>Change canvas size</value></data>
+  <data name="TmWireframe_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="TmWireframe_ExportJson" xml:space="preserve"><value>Export JSON</value></data>
+  <data name="TmWireframe_ExportSvg" xml:space="preserve"><value>Export SVG</value></data>
+  <data name="TmWireframe_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
+  <data name="TmWireframe_SwitchToEditMode" xml:space="preserve"><value>Switch to edit mode</value></data>
+  <data name="TmWireframe_SwitchToReadOnlyMode" xml:space="preserve"><value>Switch to read-only mode</value></data>
+  <data name="TmWireframe_ReadOnly" xml:space="preserve"><value>Read-only</value></data>
+  <data name="TmWireframe_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="TmWireframe_ShowToolbox" xml:space="preserve"><value>Show toolbox</value></data>
+  <data name="TmWireframe_HideToolbox" xml:space="preserve"><value>Hide toolbox</value></data>
+  <data name="TmWireframe_ToggleToolbox" xml:space="preserve"><value>Toggle toolbox</value></data>
+  <data name="TmWireframe_ShowProperties" xml:space="preserve"><value>Show properties panel</value></data>
+  <data name="TmWireframe_HideProperties" xml:space="preserve"><value>Hide properties panel</value></data>
+  <data name="TmWireframe_ToggleProperties" xml:space="preserve"><value>Toggle properties panel</value></data>
+  <data name="TmWireframe_DismissError" xml:space="preserve"><value>Dismiss error</value></data>
+  <data name="TmWireframe_DefaultTitle" xml:space="preserve"><value>Untitled wireframe</value></data>
+  <data name="TmWireframe_ExportFilename" xml:space="preserve"><value>wireframe</value></data>
+  <data name="TmWireframe_ImportError_InvalidJson" xml:space="preserve"><value>Failed to import: the file is not a valid wireframe JSON.</value></data>
+  <data name="TmWireframe_ImportError_Generic" xml:space="preserve"><value>Failed to import: {0}.</value></data>
+  <data name="TmWireframeToolbox_SearchPlaceholder" xml:space="preserve"><value>Search components…</value></data>
+  <data name="TmWireframeToolbox_ClearSearch" xml:space="preserve"><value>Clear search</value></data>
+  <data name="TmWireframeToolbox_FilterAll" xml:space="preserve"><value>All</value></data>
+  <data name="TmWireframeToolbox_FilterBuiltIn" xml:space="preserve"><value>Built-in</value></data>
+  <data name="TmWireframeToolbox_FilterCustom" xml:space="preserve"><value>Custom</value></data>
+  <data name="TmWireframeToolbox_NoComponentsMatch" xml:space="preserve"><value>No components match "{0}"</value></data>
+  <data name="TmWireframeToolbox_CustomComponentTooltip" xml:space="preserve"><value>Custom component</value></data>
+  <data name="TmWireframeToolbox_DragOntoCanvas" xml:space="preserve"><value>Drag {0} onto canvas</value></data>
+  <data name="TmWireframeProps_NoSelectionTitle" xml:space="preserve"><value>No selection</value></data>
+  <data name="TmWireframeProps_NoSelectionHint" xml:space="preserve"><value>Select an element on the canvas to edit its properties.</value></data>
+  <data name="TmWireframeProps_ElementsCount" xml:space="preserve"><value>{0} elements</value></data>
+  <data name="TmWireframeProps_MixedTypes" xml:space="preserve"><value>Mixed types</value></data>
+  <data name="TmWireframeProps_SectionElement" xml:space="preserve"><value>Element</value></data>
+  <data name="TmWireframeProps_SectionLayout" xml:space="preserve"><value>Layout</value></data>
+  <data name="TmWireframeProps_SectionGeneral" xml:space="preserve"><value>General</value></data>
+  <data name="TmWireframeProps_Type" xml:space="preserve"><value>Type</value></data>
+  <data name="TmWireframeProps_Types" xml:space="preserve"><value>Types</value></data>
+  <data name="TmWireframeProps_ZIndex" xml:space="preserve"><value>Z-Index</value></data>
+  <data name="TmWireframeProps_X" xml:space="preserve"><value>X</value></data>
+  <data name="TmWireframeProps_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="TmWireframeProps_W" xml:space="preserve"><value>W</value></data>
+  <data name="TmWireframeProps_H" xml:space="preserve"><value>H</value></data>
+  <data name="TmWireframeProps_MixedPlaceholder" xml:space="preserve"><value>Mixed</value></data>
+  <data name="TmWireframeProps_CommaSeparatedPlaceholder" xml:space="preserve"><value>comma, separated</value></data>
+  <data name="TmWireframeProps_ValidationRegexError" xml:space="preserve"><value>Value does not match pattern: {0}</value></data>
+  <data name="TmWireframeProps_CommandChangeZIndex" xml:space="preserve"><value>Change Z-Index</value></data>
+  <data name="TmWireframeCanvas_AriaLabel" xml:space="preserve"><value>Wireframe canvas</value></data>
+  <data name="TmWireframeCanvas_UnknownComponent" xml:space="preserve"><value>Unknown: {0}</value></data>
+  <data name="TmWireframeProps_CatContent" xml:space="preserve"><value>Content</value></data>
+  <data name="TmWireframeProps_CatAppearance" xml:space="preserve"><value>Appearance</value></data>
+  <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Behavior</value></data>
+  <data name="TmWireframeProps_CatState" xml:space="preserve"><value>State</value></data>
+
 </root>

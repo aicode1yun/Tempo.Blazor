@@ -1,0 +1,66 @@
+{
+  "itemName": "WireframeDocument",
+  "kind": "Model",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "assembly": "Tempo.Blazor.Abstractions",
+  "description": "Root model for a wireframe document. Contains the canvas dimensions, all placed elements, connectors, and metadata. Serialized to/from JSON via WireframeSerializer. Safe to use in API or service projects (no UI dependencies).",
+  "properties": [
+    {
+      "name": "Version",
+      "type": "string",
+      "defaultValue": "\"1.0\"",
+      "description": "Schema version. Used for forward-compatibility detection."
+    },
+    {
+      "name": "Title",
+      "type": "string",
+      "defaultValue": "\"Untitled wireframe\"",
+      "description": "Human-readable document title shown in the editor toolbar."
+    },
+    {
+      "name": "Width",
+      "type": "double",
+      "defaultValue": "1280",
+      "description": "Canvas width in pixels."
+    },
+    {
+      "name": "Height",
+      "type": "double",
+      "defaultValue": "800",
+      "description": "Canvas height in pixels."
+    },
+    {
+      "name": "Elements",
+      "type": "List<WireframeElement>",
+      "defaultValue": "[]",
+      "description": "All placed component elements. Rendered in ZIndex order."
+    },
+    {
+      "name": "Connectors",
+      "type": "List<WireframeConnector>",
+      "defaultValue": "[]",
+      "description": "Arrow/line connectors between elements."
+    },
+    {
+      "name": "CreatedAt",
+      "type": "DateTime",
+      "description": "UTC timestamp when the document was created."
+    },
+    {
+      "name": "ModifiedAt",
+      "type": "DateTime",
+      "description": "UTC timestamp of the last modification."
+    }
+  ],
+  "examples": [
+    {
+      "title": "Create a document with one button element",
+      "code": "var doc = new WireframeDocument\n{\n    Title = \"Login page\",\n    Width = 1280,\n    Height = 800\n};\ndoc.Elements.Add(WireframeDocumentExtensions.NewElement(\"TmButton\", x: 40, y: 40, w: 120, h: 36));\nvar json = WireframeSerializer.Serialize(doc);"
+    },
+    {
+      "title": "Round-trip through JSON",
+      "code": "var json = WireframeSerializer.Serialize(doc);\nif (WireframeSerializer.TryDeserialize(json, out var restored))\n{\n    Console.WriteLine(restored!.Title);\n}"
+    }
+  ]
+}

@@ -1,0 +1,106 @@
+{
+  "itemName": "TmWireframeDesignerCanvas",
+  "kind": "Component",
+  "category": "Wireframe",
+  "description": "SVG-based wireframe canvas. Renders WireframeDocument elements as scalable SVG shapes and handles pan, zoom, drag-move, resize (8-handle), rubber-band multi-select, element drop from toolbox, keyboard nudge, and context menu. Communicates with wireframe-designer.js for all mouse/touch interactions. All mutations go through the cascaded WireframeCommandStack when available. Typically used as a child of TmWireframeEditor rather than directly.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Wireframe"
+  ],
+  "parameters": [
+    {
+      "name": "Document",
+      "type": "WireframeDocument?",
+      "isRequired": false,
+      "description": "Document to display and edit."
+    },
+    {
+      "name": "DocumentChanged",
+      "type": "EventCallback<WireframeDocument>",
+      "isRequired": false,
+      "description": "Raised after every mutation."
+    },
+    {
+      "name": "ShowGrid",
+      "type": "bool",
+      "isRequired": false,
+      "defaultValue": "true",
+      "description": "Render grid lines on the canvas background."
+    },
+    {
+      "name": "GridSize",
+      "type": "int",
+      "isRequired": false,
+      "defaultValue": "8",
+      "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "defaultValue": "false",
+      "description": "Disables all editing interactions (drag, resize, drop). Pan via middle-mouse or Space+drag still works."
+    },
+    {
+      "name": "OnSelectionChanged",
+      "type": "EventCallback<string[]>",
+      "isRequired": false,
+      "description": "Raised when the user changes the selection. Payload is an array of selected element IDs."
+    },
+    {
+      "name": "OnToolModeChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Raised when the user switches tool mode via H/V keyboard shortcuts. Values: 'select' | 'pan'."
+    },
+    {
+      "name": "OnUndo",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when Ctrl+Z is pressed and no CommandStack is cascaded."
+    },
+    {
+      "name": "OnRedo",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Raised when Ctrl+Y/Ctrl+Shift+Z is pressed and no CommandStack is cascaded."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the canvas wrapper div."
+    }
+  ],
+  "publicMethods": [
+    {
+      "name": "SetToolMode(string mode)",
+      "description": "Programmatically switches JS tool mode. Values: 'select' | 'pan'."
+    },
+    {
+      "name": "UpdateCanvasSize(double w, double h)",
+      "description": "Notifies JS of updated canvas dimensions after a ResizeCanvasCommand."
+    },
+    {
+      "name": "SelectElements(params string[] ids)",
+      "description": "Sets JS-side selection highlights without raising OnSelectionChanged."
+    },
+    {
+      "name": "ClearSelection()",
+      "description": "Clears all selection highlights."
+    },
+    {
+      "name": "ExportSvg()",
+      "description": "Returns the canvas as a clean SVG string with all selection handles stripped."
+    }
+  ],
+  "cssClasses": [
+    "tm-wd-canvas-wrap",
+    "tm-wd-canvas__svg"
+  ],
+  "examples": [
+    {
+      "title": "Standalone canvas (without full editor)",
+      "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"OnChanged\"\n                           OnSelectionChanged=\"OnSelect\" />\n\n@code {\n    private TmWireframeDesignerCanvas? _canvas;\n    private WireframeDocument _document = new();\n\n    private void OnSelect(string[] ids)\n    {\n        Console.WriteLine($\"Selected: {string.Join(\", \", ids)}\");\n    }\n}"
+    }
+  ]
+}

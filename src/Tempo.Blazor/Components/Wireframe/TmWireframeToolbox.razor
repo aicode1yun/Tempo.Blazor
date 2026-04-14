@@ -9,15 +9,15 @@
     <div class="tm-wd-toolbox__search">
         <input class="tm-wd-toolbox__search-input"
                type="search"
-               placeholder="Search components…"
+               placeholder="@Loc["TmWireframeToolbox_SearchPlaceholder"]"
                value="@_search"
                @oninput="OnSearchInput"
-               aria-label="Search components" />
+               aria-label="@Loc["TmWireframeToolbox_SearchPlaceholder"]" />
         @if (!string.IsNullOrEmpty(_search))
         {
             <button class="tm-wd-toolbox__search-clear"
                     @onclick="ClearSearch"
-                    aria-label="Clear search">✕</button>
+                    aria-label="@Loc["TmWireframeToolbox_ClearSearch"]">✕</button>
         }
     </div>
 
@@ -31,7 +31,7 @@
                         role="tab"
                         aria-selected="@(_filterMode == f)"
                         @onclick="@(() => SetFilter(f))">
-                    @f
+                    @GetFilterLabel(f)
                 </button>
             }
         </div>
@@ -41,7 +41,7 @@
     <div class="tm-wd-toolbox__list">
         @if (!_visibleCategories.Any())
         {
-            <div class="tm-wd-toolbox__empty">No components match "@_search"</div>
+            <div class="tm-wd-toolbox__empty">@Loc["TmWireframeToolbox_NoComponentsMatch", _search]</div>
         }
         else
         {
@@ -63,7 +63,7 @@
                                  draggable="true"
                                  data-component-type="@def.Type"
                                  title="@def.DisplayName (@def.DefaultWidth×@def.DefaultHeight)"
-                                 aria-label="Drag @def.DisplayName onto canvas"
+                                 aria-label="@Loc["TmWireframeToolbox_DragOntoCanvas", def.DisplayName]"
                                  role="button"
                                  tabindex="0"
                                  @onkeydown="@((e) => OnItemKeyDown(e, def.Type))">
@@ -90,7 +90,7 @@
                                 @if (!def.IsBuiltIn)
                                 {
                                     <span class="tm-wd-toolbox__item-badge tm-wd-toolbox__item-badge--custom"
-                                          title="Custom component">C</span>
+                                          title="@Loc["TmWireframeToolbox_CustomComponentTooltip"]">C</span>
                                 }
                             </div>
                         }

@@ -1,0 +1,70 @@
+{
+  "itemName": "TmWireframeMinimap",
+  "kind": "Component",
+  "category": "Wireframe",
+  "description": "SVG minimap overlay for the wireframe canvas. Renders a scaled-down thumbnail of the full document with a viewport indicator rectangle. Clicking or dragging on the minimap pans the main canvas. Selected elements are highlighted. Typically rendered as an overlay inside TmWireframeDesignerCanvas via TmWireframeEditor.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Wireframe"
+  ],
+  "parameters": [
+    {
+      "name": "Document",
+      "type": "WireframeDocument?",
+      "isRequired": false,
+      "description": "Document whose elements are rendered in the minimap."
+    },
+    {
+      "name": "SelectedIds",
+      "type": "string[]",
+      "isRequired": false,
+      "defaultValue": "[]",
+      "description": "Currently selected element IDs – highlighted in the minimap."
+    },
+    {
+      "name": "Viewport",
+      "type": "MinimapViewport?",
+      "isRequired": false,
+      "description": "Current visible viewport region in document coordinates. Updated by the canvas on pan/zoom."
+    },
+    {
+      "name": "Width",
+      "type": "int",
+      "isRequired": false,
+      "defaultValue": "200",
+      "description": "Width of the minimap in pixels."
+    },
+    {
+      "name": "NavigateRequested",
+      "type": "EventCallback<MinimapNavigateArgs>",
+      "isRequired": false,
+      "description": "Raised when the user clicks/drags on the minimap. Parent should pan the canvas to the requested centre point."
+    },
+    {
+      "name": "Class",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS class applied to the minimap wrapper."
+    }
+  ],
+  "relatedTypes": [
+    {
+      "name": "MinimapViewport",
+      "description": "Current viewport region: X, Y, Width, Height in document coordinates."
+    },
+    {
+      "name": "MinimapNavigateArgs",
+      "description": "Navigate-to request: CentreX, CentreY in document coordinates."
+    }
+  ],
+  "cssClasses": [
+    "tm-wd-minimap",
+    "tm-wd-minimap__svg",
+    "tm-wd-minimap__viewport"
+  ],
+  "examples": [
+    {
+      "title": "Minimap bound to canvas viewport",
+      "code": "<TmWireframeMinimap Document=\"_document\"\n                    SelectedIds=\"_selectedIds\"\n                    Viewport=\"_viewport\"\n                    Width=\"180\"\n                    NavigateRequested=\"OnMinimapNavigate\" />\n\n@code {\n    private MinimapViewport? _viewport;\n\n    private async Task OnMinimapNavigate(MinimapNavigateArgs args)\n    {\n        if (_canvas is not null)\n            await _canvas.ScrollTo(args.CentreX, args.CentreY);\n    }\n}"
+    }
+  ]
+}

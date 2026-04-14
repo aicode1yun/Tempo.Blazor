@@ -138,6 +138,16 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
     private IEnumerable<PropDef> GetPropsForCategory(string cat)
         => _commonProps.Where(p => (p.Category ?? "General") == cat);
 
+    private string GetCategoryName(string cat) => cat switch
+    {
+        "General"   => Loc["TmWireframeProps_SectionGeneral"],
+        "Content"   => Loc["TmWireframeProps_CatContent"],
+        "Appearance"=> Loc["TmWireframeProps_CatAppearance"],
+        "Behavior"  => Loc["TmWireframeProps_CatBehavior"],
+        "State"     => Loc["TmWireframeProps_CatState"],
+        _           => cat,
+    };
+
     /// <summary>True when the prop has different values across the selected elements.</summary>
     internal bool IsMixedValue(string propName)
         => IsMixedValue(_elements, propName);
@@ -241,7 +251,7 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
         return DebounceApply("zindex", async () =>
         {
             if (CommandStack is not null)
-                CommandStack.Push(new ZIndexCommand(Document, el.Id, before, z));
+                CommandStack.Push(new ZIndexCommand(Document, el.Id, before, z, Loc["TmWireframeProps_CommandChangeZIndex"]));
             else
                 el.ZIndex = z;
             await NotifyChanged();
@@ -260,7 +270,7 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
         {
             if (!Regex.IsMatch(raw, validationRegex))
             {
-                _validationErrors[propName] = $"Value does not match pattern: {validationRegex}";
+                _validationErrors[propName] = Loc["TmWireframeProps_ValidationRegexError", validationRegex];
                 return Task.CompletedTask;
             }
         }
@@ -379,11 +389,12 @@ file sealed class ZIndexCommand : IWireframeCommand
     private readonly WireframeDocument _doc;
     private readonly string _id;
     private readonly int _before, _after;
+    private readonly string _name;
 
-    public ZIndexCommand(WireframeDocument doc, string id, int before, int after)
-    { _doc = doc; _id = id; _before = before; _after = after; }
+    public ZIndexCommand(WireframeDocument doc, string id, int before, int after, string name)
+    { _doc = doc; _id = id; _before = before; _after = after; _name = name; }
 
-    public string Name => "Change Z-Index";
+    public string Name => _name;
     public void Execute() => Apply(_after);
     public void Undo()    => Apply(_before);
 

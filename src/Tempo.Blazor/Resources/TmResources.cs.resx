@@ -491,4 +491,73 @@
   <data name="TmDashboard_DefaultDashboard" xml:space="preserve"><value>Výchozí dashboard</value></data>
   <data name="TmDashboard_RenameDashboard" xml:space="preserve"><value>Přejmenovat dashboard</value></data>
 
+  <!-- ═══════════════ TmWireframe ═══════════════ -->
+  <data name="TmWireframe_ToolbarAriaLabel" xml:space="preserve"><value>Panel nástrojů editoru wireframe</value></data>
+  <data name="TmWireframe_UntitledPlaceholder" xml:space="preserve"><value>Nepojmenovaný wireframe</value></data>
+  <data name="TmWireframe_DocumentTitleLabel" xml:space="preserve"><value>Název dokumentu</value></data>
+  <data name="TmWireframe_SelectTool" xml:space="preserve"><value>Nástroj výběru (V)</value></data>
+  <data name="TmWireframe_PanTool" xml:space="preserve"><value>Nástroj posunu (H)</value></data>
+  <data name="TmWireframe_PanToolHint" xml:space="preserve"><value>Nástroj posunu (H) — nebo podržte mezerník</value></data>
+  <data name="TmWireframe_Undo" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmWireframe_Redo" xml:space="preserve"><value>Znovu</value></data>
+  <data name="TmWireframe_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmWireframe_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmWireframe_FitToView" xml:space="preserve"><value>Přizpůsobit zobrazení</value></data>
+  <data name="TmWireframe_CanvasWidth" xml:space="preserve"><value>Šířka plátna</value></data>
+  <data name="TmWireframe_CanvasHeight" xml:space="preserve"><value>Výška plátna</value></data>
+  <data name="TmWireframe_Apply" xml:space="preserve"><value>Použít</value></data>
+  <data name="TmWireframe_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmWireframe_ChangeCanvasSize" xml:space="preserve"><value>Změnit velikost plátna</value></data>
+  <data name="TmWireframe_Export" xml:space="preserve"><value>Exportovat</value></data>
+  <data name="TmWireframe_ExportJson" xml:space="preserve"><value>Exportovat JSON</value></data>
+  <data name="TmWireframe_ExportSvg" xml:space="preserve"><value>Exportovat SVG</value></data>
+  <data name="TmWireframe_ImportJson" xml:space="preserve"><value>Importovat JSON</value></data>
+  <data name="TmWireframe_SwitchToEditMode" xml:space="preserve"><value>Přepnout do režimu úprav</value></data>
+  <data name="TmWireframe_SwitchToReadOnlyMode" xml:space="preserve"><value>Přepnout do režimu pouze pro čtení</value></data>
+  <data name="TmWireframe_ReadOnly" xml:space="preserve"><value>Pouze pro čtení</value></data>
+  <data name="TmWireframe_Edit" xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmWireframe_ShowToolbox" xml:space="preserve"><value>Zobrazit panel nástrojů</value></data>
+  <data name="TmWireframe_HideToolbox" xml:space="preserve"><value>Skrýt panel nástrojů</value></data>
+  <data name="TmWireframe_ToggleToolbox" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
+  <data name="TmWireframe_ShowProperties" xml:space="preserve"><value>Zobrazit panel vlastností</value></data>
+  <data name="TmWireframe_HideProperties" xml:space="preserve"><value>Skrýt panel vlastností</value></data>
+  <data name="TmWireframe_ToggleProperties" xml:space="preserve"><value>Přepnout panel vlastností</value></data>
+  <data name="TmWireframe_DismissError" xml:space="preserve"><value>Zavřít chybu</value></data>
+  <data name="TmWireframe_DefaultTitle" xml:space="preserve"><value>Nepojmenovaný wireframe</value></data>
+  <data name="TmWireframe_ExportFilename" xml:space="preserve"><value>wireframe</value></data>
+  <data name="TmWireframe_ImportError_InvalidJson" xml:space="preserve"><value>Import se nezdařil: soubor není platný wireframe JSON.</value></data>
+  <data name="TmWireframe_ImportError_Generic" xml:space="preserve"><value>Import se nezdařil: {0}.</value></data>
+  <data name="TmWireframeToolbox_SearchPlaceholder" xml:space="preserve"><value>Hledat komponenty…</value></data>
+  <data name="TmWireframeToolbox_ClearSearch" xml:space="preserve"><value>Vymazat hledání</value></data>
+  <data name="TmWireframeToolbox_FilterAll" xml:space="preserve"><value>Vše</value></data>
+  <data name="TmWireframeToolbox_FilterBuiltIn" xml:space="preserve"><value>Vestavěné</value></data>
+  <data name="TmWireframeToolbox_FilterCustom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmWireframeToolbox_NoComponentsMatch" xml:space="preserve"><value>Žádné komponenty neodpovídají "{0}"</value></data>
+  <data name="TmWireframeToolbox_CustomComponentTooltip" xml:space="preserve"><value>Vlastní komponenta</value></data>
+  <data name="TmWireframeToolbox_DragOntoCanvas" xml:space="preserve"><value>Přetáhněte {0} na plátno</value></data>
+  <data name="TmWireframeProps_NoSelectionTitle" xml:space="preserve"><value>Nic není vybráno</value></data>
+  <data name="TmWireframeProps_NoSelectionHint" xml:space="preserve"><value>Vyberte prvek na plátně pro úpravu jeho vlastností.</value></data>
+  <data name="TmWireframeProps_ElementsCount" xml:space="preserve"><value>{0} prvků</value></data>
+  <data name="TmWireframeProps_MixedTypes" xml:space="preserve"><value>Smíšené typy</value></data>
+  <data name="TmWireframeProps_SectionElement" xml:space="preserve"><value>Prvek</value></data>
+  <data name="TmWireframeProps_SectionLayout" xml:space="preserve"><value>Rozvržení</value></data>
+  <data name="TmWireframeProps_SectionGeneral" xml:space="preserve"><value>Obecné</value></data>
+  <data name="TmWireframeProps_Type" xml:space="preserve"><value>Typ</value></data>
+  <data name="TmWireframeProps_Types" xml:space="preserve"><value>Typy</value></data>
+  <data name="TmWireframeProps_ZIndex" xml:space="preserve"><value>Z-Index</value></data>
+  <data name="TmWireframeProps_X" xml:space="preserve"><value>X</value></data>
+  <data name="TmWireframeProps_Y" xml:space="preserve"><value>Y</value></data>
+  <data name="TmWireframeProps_W" xml:space="preserve"><value>Š</value></data>
+  <data name="TmWireframeProps_H" xml:space="preserve"><value>V</value></data>
+  <data name="TmWireframeProps_MixedPlaceholder" xml:space="preserve"><value>Smíšené</value></data>
+  <data name="TmWireframeProps_CommaSeparatedPlaceholder" xml:space="preserve"><value>oddělené čárkou</value></data>
+  <data name="TmWireframeProps_ValidationRegexError" xml:space="preserve"><value>Hodnota neodpovídá vzoru: {0}</value></data>
+  <data name="TmWireframeProps_CommandChangeZIndex" xml:space="preserve"><value>Změnit Z-Index</value></data>
+  <data name="TmWireframeCanvas_AriaLabel" xml:space="preserve"><value>Plátno wireframe</value></data>
+  <data name="TmWireframeCanvas_UnknownComponent" xml:space="preserve"><value>Neznámá: {0}</value></data>
+  <data name="TmWireframeProps_CatContent" xml:space="preserve"><value>Obsah</value></data>
+  <data name="TmWireframeProps_CatAppearance" xml:space="preserve"><value>Vzhled</value></data>
+  <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Chování</value></data>
+  <data name="TmWireframeProps_CatState" xml:space="preserve"><value>Stav</value></data>
+
 </root>

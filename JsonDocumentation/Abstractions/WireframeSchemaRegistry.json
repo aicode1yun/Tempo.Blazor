@@ -1,0 +1,38 @@
+{
+  "type": "WireframeSchemaRegistry",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "assembly": "Tempo.Blazor.Abstractions",
+  "description": "Merges WireframeComponentSchema entries from all registered IWireframeSchemaSource implementations. When two sources register the same Type, the one with the higher Priority wins. Registered as a singleton via AddTempoBlazor() or AddWireframeSchemas(). Useful for MCP tools and AI-assisted wireframe generation — exposes a complete catalog of all available components and their property definitions without any Blazor rendering dependency.",
+  "constructor": {
+    "parameters": [
+      {
+        "name": "sources",
+        "type": "IEnumerable<IWireframeSchemaSource>",
+        "description": "All registered schema sources, injected by DI."
+      }
+    ]
+  },
+  "methods": [
+    {
+      "name": "GetAll()",
+      "returnType": "IEnumerable<WireframeComponentSchema>",
+      "description": "Returns all registered schemas ordered by Category then DisplayName."
+    },
+    {
+      "name": "GetSchema(string type)",
+      "returnType": "WireframeComponentSchema?",
+      "description": "Returns the schema for the given component type (case-insensitive), or null if not registered."
+    },
+    {
+      "name": "GetByCategory(string category)",
+      "returnType": "IEnumerable<WireframeComponentSchema>",
+      "description": "Returns all schemas in the given category (case-insensitive)."
+    },
+    {
+      "name": "GetCategories()",
+      "returnType": "IEnumerable<string>",
+      "description": "Returns all distinct category names in alphabetical order."
+    }
+  ],
+  "mcpUsage": "Inject WireframeSchemaRegistry into an MCP tool handler. Call GetAll() and serialize to JSON to give an LLM a complete component catalog for wireframe generation."
+}

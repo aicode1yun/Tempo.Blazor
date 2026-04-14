@@ -1,0 +1,43 @@
+{
+  "type": "WireframeComponentSchema",
+  "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+  "assembly": "Tempo.Blazor.Abstractions",
+  "description": "Pure-data description of a wireframe component's metadata. Contains everything an external consumer (API, MCP server, AI tooling) needs to understand what the component is and how to configure it — without any UI or rendering dependencies. Built-in schemas are provided by BuiltInComponentSchemas in this assembly. Custom schemas (e.g. from a database) can be supplied by implementing IWireframeSchemaSource and registering it in DI.",
+  "properties": [
+    {
+      "name": "Type",
+      "type": "string",
+      "description": "Unique type identifier. Matches WireframeElement.Type in document JSON. E.g. 'TmButton', 'TmDataTable'."
+    },
+    {
+      "name": "Category",
+      "type": "string",
+      "description": "Toolbox grouping category. E.g. 'Buttons', 'Inputs', 'Layout'."
+    },
+    {
+      "name": "DisplayName",
+      "type": "string",
+      "description": "Human-readable component name shown in toolboxes and palettes."
+    },
+    {
+      "name": "DefaultWidth",
+      "type": "double",
+      "description": "Default element width when dropped onto the canvas. Defaults to 120."
+    },
+    {
+      "name": "DefaultHeight",
+      "type": "double",
+      "description": "Default element height when dropped onto the canvas. Defaults to 36."
+    },
+    {
+      "name": "Props",
+      "type": "IReadOnlyList<PropDef>",
+      "description": "Property definitions that drive the Properties Panel UI and document serialisation. Each entry describes one key in WireframeElement.Props."
+    },
+    {
+      "name": "SizePresets",
+      "type": "IReadOnlyDictionary<string, (double W, double H)>?",
+      "description": "Optional map from a 'size' prop value to canonical element dimensions. Null for components where the size prop does not affect element footprint."
+    }
+  ]
+}

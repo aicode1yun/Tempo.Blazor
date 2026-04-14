@@ -245,7 +245,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         _exportMenuOpen = false;
         if (_canvas is null) return;
         var svg      = await _canvas.ExportSvg();
-        var fileName = SanitizeFileName(_document?.Title ?? "wireframe") + ".svg";
+        var fileName = SanitizeFileName(_document?.Title ?? Loc["TmWireframe_ExportFilename"]) + ".svg";
         await DownloadFile(fileName, "image/svg+xml", System.Text.Encoding.UTF8.GetBytes(svg));
     }
 
@@ -265,7 +265,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
 
             if (!WireframeSerializer.TryDeserialize(json, out var doc) || doc is null)
             {
-                _importError = "Failed to import: the file is not a valid wireframe JSON.";
+                _importError = Loc["TmWireframe_ImportError_InvalidJson"];
                 return;
             }
 
@@ -277,7 +277,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         }
         catch (Exception ex)
         {
-            _importError = $"Failed to import: {ex.Message}";
+            _importError = Loc["TmWireframe_ImportError_Generic", ex.Message];
         }
     }
 
@@ -331,8 +331,8 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
             await DocumentChanged.InvokeAsync(_document);
     }
 
-    private static WireframeDocument CreateEmptyDocument() =>
-        new() { Title = "Untitled wireframe", Width = 1280, Height = 800 };
+    private WireframeDocument CreateEmptyDocument() =>
+        new() { Title = Loc["TmWireframe_DefaultTitle"], Width = 1280, Height = 800 };
 
     private static string SanitizeFileName(string name)
     {

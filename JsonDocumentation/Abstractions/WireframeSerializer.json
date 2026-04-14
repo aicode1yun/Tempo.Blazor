@@ -1,0 +1,58 @@
+{
+  "itemName": "WireframeSerializer",
+  "kind": "StaticClass",
+  "category": "Wireframe",
+  "namespace": "Tempo.Blazor.Components.Wireframe",
+  "assembly": "Tempo.Blazor.Abstractions",
+  "description": "Serializes and deserializes WireframeDocument to/from JSON. Uses camelCase keys, indented output (for AI readability), and ignores null optional fields. Safe to use in API or service projects. The JSON format is the canonical interchange format for wireframe documents — suitable for storage, REST APIs, and AI prompt injection.",
+  "methods": [
+    {
+      "name": "Serialize",
+      "returnType": "string",
+      "description": "Serializes a WireframeDocument to indented camelCase JSON.",
+      "parameters": [
+        { "name": "document", "type": "WireframeDocument", "description": "Document to serialize." }
+      ]
+    },
+    {
+      "name": "Deserialize",
+      "returnType": "WireframeDocument",
+      "description": "Deserializes a WireframeDocument from JSON. Throws WireframeDeserializationException on failure.",
+      "parameters": [
+        { "name": "json", "type": "string", "description": "JSON string to deserialize." }
+      ]
+    },
+    {
+      "name": "TryDeserialize",
+      "returnType": "bool",
+      "description": "Attempts to deserialize a WireframeDocument from JSON. Returns false (and out null) on failure instead of throwing.",
+      "parameters": [
+        { "name": "json", "type": "string", "description": "JSON string to deserialize." },
+        { "name": "document", "type": "out WireframeDocument?", "description": "Deserialized document, or null on failure." }
+      ]
+    }
+  ],
+  "jsonFormat": {
+    "description": "Canonical wireframe JSON format",
+    "requiredFields": ["version", "title", "elements"],
+    "optionalFields": ["connectors", "width", "height", "createdAt", "modifiedAt"],
+    "elementRequiredFields": ["id", "type", "x", "y", "w", "h"],
+    "elementOptionalFields": ["props", "zIndex", "groupId", "lockedBy"],
+    "connectorRequiredFields": ["id", "fromId", "toId"],
+    "notes": "Extra unknown fields are ignored (forward-compatible). All keys are camelCase."
+  },
+  "examples": [
+    {
+      "title": "Serialize and store",
+      "code": "var json = WireframeSerializer.Serialize(document);\nawait File.WriteAllTextAsync(\"layout.wireframe.json\", json);"
+    },
+    {
+      "title": "Safe deserialization from API response",
+      "code": "var json = await response.Content.ReadAsStringAsync();\nif (WireframeSerializer.TryDeserialize(json, out var doc))\n{\n    // use doc\n}\nelse\n{\n    logger.LogWarning(\"Invalid wireframe JSON received\");\n}"
+    },
+    {
+      "title": "Minimal AI-generated JSON that deserializes correctly",
+      "code": "var json = \"\"\"\n{\n  \"version\": \"1.0\",\n  \"title\": \"Contact form\",\n  \"elements\": [\n    { \"id\": \"f1a2b3c4\", \"type\": \"TmTextInput\", \"x\": 40, \"y\": 40, \"w\": 280, \"h\": 36,\n      \"props\": { \"label\": \"Name\", \"placeholder\": \"Your name\" } },\n    { \"id\": \"d5e6f7a8\", \"type\": \"TmButton\", \"x\": 40, \"y\": 100, \"w\": 120, \"h\": 36,\n      \"props\": { \"label\": \"Submit\", \"variant\": \"primary\" } }\n  ]\n}\n\"\"\";\nvar doc = WireframeSerializer.Deserialize(json);"
+    }
+  ]
+}

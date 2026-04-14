@@ -10,7 +10,7 @@
     {
         <div class="tm-wd-props__empty">
             <span class="tm-wd-props__empty-icon">◻</span>
-            <span>Select an element to edit its properties.</span>
+            <span>@Loc["TmWireframeProps_NoSelectionHint"]</span>
         </div>
     }
     else
@@ -20,9 +20,9 @@
     <div class="tm-wd-props__header">
         @if (_isMulti)
         {
-            <span class="tm-wd-props__type-badge">@_elements.Count elements</span>
+            <span class="tm-wd-props__type-badge">@Loc["TmWireframeProps_ElementsCount", _elements.Count]</span>
             <span class="tm-wd-props__subtitle">
-                @(_sameType ? _elements[0].Type : "Mixed types")
+                @(_sameType ? _elements[0].Type : Loc["TmWireframeProps_MixedTypes"])
             </span>
         }
         else
@@ -34,17 +34,17 @@
 
     @* ── Element section (Type read-only, ZIndex) ─────────────────────────── *@
     <details class="tm-wd-props__section" open>
-        <summary class="tm-wd-props__section-header">Element</summary>
+        <summary class="tm-wd-props__section-header">@Loc["TmWireframeProps_SectionElement"]</summary>
         <div class="tm-wd-props__section-body">
             @if (!_isMulti)
             {
                 <div class="tm-wd-props__field">
-                    <label class="tm-wd-props__label">Type</label>
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Type"]</label>
                     <input class="tm-wd-props__input tm-wd-props__input--readonly"
                            value="@_elements[0].Type" readonly />
                 </div>
                 <div class="tm-wd-props__field">
-                    <label class="tm-wd-props__label">Z-Index</label>
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_ZIndex"]</label>
                     <input class="tm-wd-props__input"
                            type="number" step="1"
                            value="@_elements[0].ZIndex"
@@ -54,7 +54,7 @@
             else
             {
                 <div class="tm-wd-props__field">
-                    <label class="tm-wd-props__label">Types</label>
+                    <label class="tm-wd-props__label">@Loc["TmWireframeProps_Types"]</label>
                     <input class="tm-wd-props__input tm-wd-props__input--readonly"
                            value="@string.Join(", ", _elements.Select(e => e.Type).Distinct())"
                            readonly />
@@ -65,12 +65,12 @@
 
     @* ── Layout section (X, Y, W, H) ──────────────────────────────────────── *@
     <details class="tm-wd-props__section" open>
-        <summary class="tm-wd-props__section-header">Layout</summary>
+        <summary class="tm-wd-props__section-header">@Loc["TmWireframeProps_SectionLayout"]</summary>
         <div class="tm-wd-props__section-body tm-wd-props__section-body--grid2">
-            @RenderLayoutField("X", _layoutX, "x", "0")
-            @RenderLayoutField("Y", _layoutY, "y", "0")
-            @RenderLayoutField("W", _layoutW, "w", "—")
-            @RenderLayoutField("H", _layoutH, "h", "—")
+            @RenderLayoutField(Loc["TmWireframeProps_X"], _layoutX, "x", "0")
+            @RenderLayoutField(Loc["TmWireframeProps_Y"], _layoutY, "y", "0")
+            @RenderLayoutField(Loc["TmWireframeProps_W"], _layoutW, "w", "—")
+            @RenderLayoutField(Loc["TmWireframeProps_H"], _layoutH, "h", "—")
         </div>
     </details>
 
@@ -81,7 +81,7 @@
         if (!propsInCat.Any()) continue;
 
         <details class="tm-wd-props__section" open>
-            <summary class="tm-wd-props__section-header">@cat</summary>
+            <summary class="tm-wd-props__section-header">@GetCategoryName(cat)</summary>
             <div class="tm-wd-props__section-body">
                 @foreach (var prop in propsInCat)
                 {
@@ -113,7 +113,7 @@
                                         @onchange="@(e => OnStringPropChanged(prop.Name, e))">
                                     @if (isMixed)
                                     {
-                                        <option value="" disabled>— Mixed —</option>
+                                        <option value="" disabled>— @Loc["TmWireframeProps_MixedPlaceholder"] —</option>
                                     }
                                     @foreach (var opt in prop.Options)
                                     {
@@ -130,7 +130,7 @@
                                            @onchange="@(e => OnStringPropChanged(prop.Name, e))" />
                                     <input type="text"
                                            class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
-                                           placeholder="@(isMixed ? "Mixed" : "#rrggbb")"
+                                           placeholder="@(isMixed ? Loc["TmWireframeProps_MixedPlaceholder"] : "#rrggbb")"
                                            value="@(isMixed ? "" : valStr)"
                                            @oninput="@(e => OnStringPropChanged(prop.Name, e))" />
                                 </div>
@@ -141,7 +141,7 @@
                                 <input type="number"
                                        class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
                                        step="@(prop.Type == PropType.Int ? "1" : "0.01")"
-                                       placeholder="@(isMixed ? "Mixed" : "")"
+                                       placeholder="@(isMixed ? Loc["TmWireframeProps_MixedPlaceholder"] : "")"
                                        value="@(isMixed ? "" : valStr)"
                                        @oninput="@(e => OnNumberPropChanged(prop.Name, prop.Type, e))" />
                                 break;
@@ -149,7 +149,7 @@
                             case PropType.StringList:
                                 <input type="text"
                                        class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
-                                       placeholder="@(isMixed ? "Mixed" : "comma, separated")"
+                                       placeholder="@(isMixed ? Loc["TmWireframeProps_MixedPlaceholder"] : Loc["TmWireframeProps_CommaSeparatedPlaceholder"])"
                                        value="@(isMixed ? "" : valStr)"
                                        @oninput="@(e => OnStringListPropChanged(prop.Name, e))" />
                                 break;
@@ -157,7 +157,7 @@
                             default: @* String, Icon, Object, unknown *@
                                 <input type="text"
                                        class="tm-wd-props__input @(isMixed ? "tm-wd-props__input--mixed" : "") @(hasError ? "tm-wd-props__input--error" : "")"
-                                       placeholder="@(isMixed ? "Mixed" : (prop.Default?.ToString() ?? ""))"
+                                       placeholder="@(isMixed ? Loc["TmWireframeProps_MixedPlaceholder"] : (prop.Default?.ToString() ?? ""))"
                                        value="@(isMixed ? "" : valStr)"
                                        @oninput="@(e => OnStringPropChanged(prop.Name, e, prop.ValidationRegex))" />
                                 break;
@@ -185,7 +185,7 @@
             <input type="number"
                    class="tm-wd-props__input @(value == MixedMarker ? "tm-wd-props__input--mixed" : "")"
                    step="1"
-                   placeholder="@(value == MixedMarker ? "Mixed" : placeholder)"
+                   placeholder="@(value == MixedMarker ? Loc["TmWireframeProps_MixedPlaceholder"] : placeholder)"
                    value="@(value == MixedMarker ? "" : value)"
                    @oninput="@(e => OnLayoutChanged(fieldKey, e))" />
         </div>;
