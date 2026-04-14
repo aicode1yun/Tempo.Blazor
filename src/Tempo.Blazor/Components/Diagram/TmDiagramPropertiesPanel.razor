@@ -1,0 +1,93 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Commands
+@using Tempo.Blazor.Components.Diagram.Models
+
+<div class="tm-diagram-properties @Class" data-collapsed="@_collapsed">
+    <button type="button" class="tm-diagram-properties__toggle" @onclick="ToggleCollapse"
+            aria-label="@Loc["TmDiagramProperties_Toggle"]" title="@Loc["TmDiagramProperties_Toggle"]">
+        <TmIcon Name="@(_collapsed ? IconNames.ChevronLeft : IconNames.ChevronRight)" />
+    </button>
+
+    <div class="tm-diagram-properties__inner">
+        <h3 class="tm-diagram-properties__title">@Loc["TmDiagramProperties_Title"]</h3>
+
+        @if (SelectedNode is not null && !ReadOnly)
+        {
+            <div class="tm-diagram-properties__section">
+                <h4 class="tm-diagram-properties__section-title">@Loc["TmDiagramProperties_NodeTitle"]</h4>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_Label"]</label>
+                    <TmTextInput Value="@GetNodeLabel()" ValueChanged="OnNodeLabelChanged" />
+                </div>
+
+                <div class="tm-diagram-properties__row">
+                    <div class="tm-diagram-properties__field">
+                        <label>X</label>
+                        <input class="tm-text-input" type="number" step="1" value="@SelectedNode.X" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
+                    </div>
+                    <div class="tm-diagram-properties__field">
+                        <label>Y</label>
+                        <input class="tm-text-input" type="number" step="1" value="@SelectedNode.Y" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
+                    </div>
+                </div>
+
+                <div class="tm-diagram-properties__row">
+                    <div class="tm-diagram-properties__field">
+                        <label>W</label>
+                        <input class="tm-text-input" type="number" step="1" min="20" value="@SelectedNode.W" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
+                    </div>
+                    <div class="tm-diagram-properties__field">
+                        <label>H</label>
+                        <input class="tm-text-input" type="number" step="1" min="20" value="@SelectedNode.H" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
+                    </div>
+                </div>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_ZIndex"]</label>
+                    <input class="tm-text-input" type="number" step="1" value="@SelectedNode.ZIndex" @onchange="e => OnNodeZChanged(e.Value?.ToString())" />
+                </div>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_Layer"]</label>
+                    <select class="tm-text-input" value="@SelectedNode.LayerId" @onchange="OnNodeLayerChanged">
+                        <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                        @foreach (var layer in SortedLayers)
+                        {
+                            <option value="@layer.Id">@layer.Name</option>
+                        }
+                    </select>
+                </div>
+            </div>
+        }
+        else if (SelectedEdge is not null && !ReadOnly)
+        {
+            <div class="tm-diagram-properties__section">
+                <h4 class="tm-diagram-properties__section-title">@Loc["TmDiagramProperties_EdgeTitle"]</h4>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_Label"]</label>
+                    <TmTextInput Value="@GetEdgeLabel()" ValueChanged="OnEdgeLabelChanged" />
+                </div>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_Routing"]</label>
+                    <TmSelect TValue="string" Value="@SelectedEdge.Routing" ValueChanged="HandleEdgeRoutingChanged" Options="@_routingOptions" />
+                </div>
+
+                <div class="tm-diagram-properties__field">
+                    <label>@Loc["TmDiagramProperties_ConnectorType"]</label>
+                    <TmSelect TValue="string" Value="@SelectedEdge.ConnectorType" ValueChanged="HandleConnectorTypeChanged" Options="@_connectorTypeOptions" />
+                </div>
+            </div>
+        }
+        else if (SelectedNode is null && SelectedEdge is null)
+        {
+            <p class="tm-diagram-properties__empty">@Loc["TmDiagramProperties_Empty"]</p>
+        }
+        else
+        {
+            <p class="tm-diagram-properties__empty">@Loc["TmDiagramProperties_ReadOnly"]</p>
+        }
+    </div>
+</div>

@@ -1,0 +1,48 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Models
+@using Tempo.Blazor.Components.Diagram.Stencils
+
+<div class="tm-diagram-node__shape"
+     data-shape="@(_stencil?.Layout.BackgroundShape ?? "rectangle")"
+     data-stencil-id="@Node.StencilId"
+     style="@GetShapeStyle()">
+    <div class="tm-diagram-node__content" style="@GetContentStyle()">
+        @foreach (var section in _stencil?.Layout.Sections ?? [])
+        {
+            switch (section.Type)
+            {
+                case "divider":
+                    <div class="tm-diagram-node__divider" style="margin: @(F((section.Padding ?? 0) / 2))px 0;"></div>
+                    break;
+
+                case "text":
+                    <div class="tm-diagram-node__section"
+                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
+                        <div class="tm-diagram-node__text" style="@GetTextInnerStyle(section.TextStyle)">
+                            @GetSectionText(section)
+                        </div>
+                    </div>
+                    break;
+
+                case "list":
+                    <div class="tm-diagram-node__section tm-diagram-node__section--grow"
+                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
+                        <ul class="tm-diagram-node__list">
+                            @foreach (var item in GetSectionList(section))
+                            {
+                                <li class="tm-diagram-node__list-item" style="@GetTextInnerStyle(section.TextStyle)">@item</li>
+                            }
+                        </ul>
+                    </div>
+                    break;
+
+                case "icon":
+                    <div class="tm-diagram-node__section tm-diagram-node__section--icon"
+                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
+                        <span class="tm-diagram-node__icon" style="@GetTextInnerStyle(section.TextStyle)">@GetSectionText(section)</span>
+                    </div>
+                    break;
+            }
+        }
+    </div>
+</div>

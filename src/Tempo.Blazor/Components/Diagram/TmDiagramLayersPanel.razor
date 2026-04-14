@@ -1,0 +1,121 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Commands
+@using Tempo.Blazor.Components.Diagram.Models
+
+<div class="tm-diagram-layers @Class">
+    <div class="tm-diagram-layers__header">
+        <h4 class="tm-diagram-layers__title">@Loc["TmDiagramLayers_Title"]</h4>
+        @if (!ReadOnly)
+        {
+            <button class="tm-diagram-layers__icon-btn"
+                    type="button"
+                    title="@Loc["TmDiagramLayers_AddLayer"]"
+                    aria-label="@Loc["TmDiagramLayers_AddLayer"]"
+                    @onclick="AddLayer">
+                <span aria-hidden="true">+</span>
+            </button>
+        }
+    </div>
+
+    <div class="tm-diagram-layers__list" role="list" aria-label="@Loc["TmDiagramLayers_Title"]">
+        @* Default layer *@
+        <div class="tm-diagram-layers__item @(ActiveLayerId is null ? "tm-diagram-layers__item--active" : "")"
+             role="listitem"
+             @onclick="() => SetActiveLayer(null)">
+            <button class="tm-diagram-layers__visibility"
+                    type="button"
+                    title="@Loc["TmDiagramLayers_Show"]"
+                    aria-label="@Loc["TmDiagramLayers_Show"]"
+                    disabled>
+                <span aria-hidden="true">👁</span>
+            </button>
+            @if (!ReadOnly)
+            {
+                <button class="tm-diagram-layers__lock"
+                        type="button"
+                        title="@Loc["TmDiagramLayers_Unlock"]"
+                        aria-label="@Loc["TmDiagramLayers_Unlock"]"
+                        disabled>
+                    <span aria-hidden="true">🔓</span>
+                </button>
+            }
+            <span class="tm-diagram-layers__name">@Loc["TmDiagramLayers_DefaultLayer"]</span>
+        </div>
+
+        @foreach (var layer in SortedLayers)
+        {
+            <div class="tm-diagram-layers__item @(layer.Id == ActiveLayerId ? "tm-diagram-layers__item--active" : "")"
+                 role="listitem"
+                 @onclick="() => SetActiveLayer(layer.Id)">
+                <button class="tm-diagram-layers__visibility"
+                        type="button"
+                        title="@(layer.IsVisible ? Loc["TmDiagramLayers_Hide"] : Loc["TmDiagramLayers_Show"])"
+                        aria-label="@(layer.IsVisible ? Loc["TmDiagramLayers_Hide"] : Loc["TmDiagramLayers_Show"])"
+                        @onclick:stopPropagation
+                        @onclick="() => ToggleVisibility(layer)">
+                    <span aria-hidden="true">@(layer.IsVisible ? "👁" : "🚫")</span>
+                </button>
+                @if (!ReadOnly)
+                {
+                    <button class="tm-diagram-layers__lock"
+                            type="button"
+                            title="@(layer.IsLocked ? Loc["TmDiagramLayers_Unlock"] : Loc["TmDiagramLayers_Lock"])"
+                            aria-label="@(layer.IsLocked ? Loc["TmDiagramLayers_Unlock"] : Loc["TmDiagramLayers_Lock"])"
+                            @onclick:stopPropagation
+                            @onclick="() => ToggleLock(layer)">
+                        <span aria-hidden="true">@(layer.IsLocked ? "🔒" : "🔓")</span>
+                    </button>
+                }
+                @if (_editingLayerId == layer.Id)
+                {
+                    <input class="tm-diagram-layers__name-input"
+                           @bind="_editingLayerName"
+                           @bind:event="oninput"
+                           @onkeydown="OnLayerNameKeyDown"
+                           @onblur="() => FinishRename(layer)" />
+                }
+                else
+                {
+                    <span class="tm-diagram-layers__name" @ondblclick="() => StartRename(layer)">@layer.Name</span>
+                }
+                @if (!ReadOnly)
+                {
+                    <button class="tm-diagram-layers__delete"
+                            type="button"
+                            title="@Loc["TmDiagramLayers_DeleteLayer"]"
+                            aria-label="@Loc["TmDiagramLayers_DeleteLayer"]"
+                            @onclick:stopPropagation
+                            @onclick="() => DeleteLayer(layer)">
+                        <span aria-hidden="true">×</span>
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (HasSelection && !ReadOnly)
+    {
+        <div class="tm-diagram-layers__selected-section">
+            <label class="tm-diagram-layers__label" for="@(_selectId)">@Loc["TmDiagramLayers_AssignToLayer"]</label>
+            <select id="@(_selectId)"
+                    class="tm-diagram-layers__select"
+                    value="@SelectedLayerId"
+                    @onchange="OnAssignLayerChanged">
+                <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                @foreach (var layer in SortedLayers)
+                {
+                    <option value="@layer.Id">@layer.Name</option>
+                }
+            </select>
+
+            <div class="tm-diagram-layers__actions">
+                <button class="tm-diagram-layers__action-btn"
+                        type="button"
+                        @onclick="BringToFront">@Loc["TmDiagramEditor_BringToFront"]</button>
+                <button class="tm-diagram-layers__action-btn"
+                        type="button"
+                        @onclick="SendToBack">@Loc["TmDiagramEditor_SendToBack"]</button>
+            </div>
+        </div>
+    }
+</div>

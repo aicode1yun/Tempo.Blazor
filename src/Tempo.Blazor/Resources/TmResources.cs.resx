@@ -560,4 +560,102 @@
   <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Chování</value></data>
   <data name="TmWireframeProps_CatState" xml:space="preserve"><value>Stav</value></data>
 
+  <!-- ═══════════════ TmDiagramEditor ═══════════════ -->
+  <data name="TmDiagramEditor_ToolbarAriaLabel" xml:space="preserve"><value>Lišta editoru diagramu</value></data>
+  <data name="TmDiagramEditor_UntitledPlaceholder" xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmDiagramEditor_DocumentTitleLabel" xml:space="preserve"><value>Název dokumentu</value></data>
+  <data name="TmDiagramEditor_SelectTool" xml:space="preserve"><value>Výběr (V)</value></data>
+  <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Posun (H)</value></data>
+  <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Posun (H) — nebo držte Mezerník</value></data>
+  <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Znovu</value></data>
+  <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmDiagramEditor_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmDiagramEditor_FitToView" xml:space="preserve"><value>Přizpůsobit zobrazení</value></data>
+  <data name="TmDiagramEditor_CanvasWidth" xml:space="preserve"><value>Šířka plátna</value></data>
+  <data name="TmDiagramEditor_CanvasHeight" xml:space="preserve"><value>Výška plátna</value></data>
+  <data name="TmDiagramEditor_Apply" xml:space="preserve"><value>Použít</value></data>
+  <data name="TmDiagramEditor_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmDiagramEditor_ChangeCanvasSize" xml:space="preserve"><value>Změnit velikost plátna</value></data>
+  <data name="TmDiagramEditor_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="TmDiagramEditor_ExportJson" xml:space="preserve"><value>Export JSON</value></data>
+  <data name="TmDiagramEditor_ExportSvg" xml:space="preserve"><value>Export SVG</value></data>
+  <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
+  <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
+  <data name="TmDiagramEditor_SwitchToEditMode" xml:space="preserve"><value>Přepnout do režimu úprav</value></data>
+  <data name="TmDiagramEditor_SwitchToReadOnlyMode" xml:space="preserve"><value>Přepnout do režimu pouze pro čtení</value></data>
+  <data name="TmDiagramEditor_ReadOnly" xml:space="preserve"><value>Pouze pro čtení</value></data>
+  <data name="TmDiagramEditor_Edit" xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmDiagramEditor_ShowToolbox" xml:space="preserve"><value>Zobrazit panel nástrojů</value></data>
+  <data name="TmDiagramEditor_HideToolbox" xml:space="preserve"><value>Skrýt panel nástrojů</value></data>
+  <data name="TmDiagramEditor_ToggleToolbox" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
+  <data name="TmDiagramEditor_ShowProperties" xml:space="preserve"><value>Zobrazit vlastnosti</value></data>
+  <data name="TmDiagramEditor_HideProperties" xml:space="preserve"><value>Skrýt vlastnosti</value></data>
+  <data name="TmDiagramEditor_ToggleProperties" xml:space="preserve"><value>Přepnout vlastnosti</value></data>
+  <data name="TmDiagramEditor_DismissError" xml:space="preserve"><value>Zavřít chybu</value></data>
+  <data name="TmDiagramEditor_ImportError_InvalidJson" xml:space="preserve"><value>Import selhal: soubor není platný diagram JSON.</value></data>
+  <data name="TmDiagramEditor_ImportError_Generic" xml:space="preserve"><value>Import selhal: {0}.</value></data>
+  <data name="TmDiagramEditor_ExportError" xml:space="preserve"><value>Export selhal: {0}.</value></data>
+  <data name="TmDiagramEditor_BringToFront" xml:space="preserve"><value>Přenést do popředí</value></data>
+  <data name="TmDiagramEditor_SendToBack" xml:space="preserve"><value>Odeslat do pozadí</value></data>
+  <data name="TmDiagramEditor_Delete" xml:space="preserve"><value>Odstranit</value></data>
+  <data name="TmDiagramEditor_ShowLayers" xml:space="preserve"><value>Zobrazit vrstvy</value></data>
+  <data name="TmDiagramEditor_HideLayers" xml:space="preserve"><value>Skrýt vrstvy</value></data>
+  <data name="TmDiagramEditor_ToggleLayers" xml:space="preserve"><value>Přepnout vrstvy</value></data>
+  <data name="TmDiagramEditor_ShowMinimap" xml:space="preserve"><value>Zobrazit minimapu</value></data>
+  <data name="TmDiagramEditor_HideMinimap" xml:space="preserve"><value>Skrýt minimapu</value></data>
+  <data name="TmDiagramEditor_ToggleMinimap" xml:space="preserve"><value>Přepnout minimapu</value></data>
+  <data name="TmDiagramMinimap_Title" xml:space="preserve"><value>Minimapa</value></data>
+  <data name="TmDiagramMinimap_Empty" xml:space="preserve"><value>Žádný diagram k zobrazení</value></data>
+  <data name="TmDiagramLayers_Title" xml:space="preserve"><value>Vrstvy</value></data>
+  <data name="TmDiagramLayers_AddLayer" xml:space="preserve"><value>Přidat vrstvu</value></data>
+  <data name="TmDiagramLayers_Show" xml:space="preserve"><value>Zobrazit</value></data>
+  <data name="TmDiagramLayers_Hide" xml:space="preserve"><value>Skrýt</value></data>
+  <data name="TmDiagramLayers_Lock" xml:space="preserve"><value>Zamknout</value></data>
+  <data name="TmDiagramLayers_Unlock" xml:space="preserve"><value>Odemknout</value></data>
+  <data name="TmDiagramLayers_DefaultLayer" xml:space="preserve"><value>Výchozí vrstva</value></data>
+  <data name="TmDiagramLayers_DeleteLayer" xml:space="preserve"><value>Odstranit vrstvu</value></data>
+  <data name="TmDiagramLayers_AssignToLayer" xml:space="preserve"><value>Přiřadit do vrstvy</value></data>
+  <data name="TmDiagramLayers_Layer" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Vrstva</value></data>
+
+  <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
+  <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
+  <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Panel nástrojů</value></data>
+
+  <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
+  <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Přepnout vlastnosti</value></data>
+  <data name="TmDiagramProperties_Title" xml:space="preserve"><value>Vlastnosti</value></data>
+  <data name="TmDiagramProperties_NodeTitle" xml:space="preserve"><value>Uzel</value></data>
+  <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Hrana</value></data>
+  <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Styl</value></data>
+  <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Nic není vybráno</value></data>
+  <data name="TmDiagramProperties_ReadOnly" xml:space="preserve"><value>Režim pouze pro čtení</value></data>
+  <data name="TmDiagramProperties_Routing" xml:space="preserve"><value>Směrování</value></data>
+  <data name="TmDiagramProperties_Routing_Straight" xml:space="preserve"><value>Přímé</value></data>
+  <data name="TmDiagramProperties_Routing_Orthogonal" xml:space="preserve"><value>Ortogonální</value></data>
+  <data name="TmDiagramProperties_Routing_Curved" xml:space="preserve"><value>Zakřivené</value></data>
+  <data name="TmDiagramProperties_ConnectorType" xml:space="preserve"><value>Typ spojnice</value></data>
+  <data name="TmDiagramProperties_ConnectorType_Association" xml:space="preserve"><value>Asociace</value></data>
+  <data name="TmDiagramProperties_ConnectorType_Dependency" xml:space="preserve"><value>Závislost</value></data>
+  <data name="TmDiagramProperties_ConnectorType_Inheritance" xml:space="preserve"><value>Dědičnost</value></data>
+  <data name="TmDiagramProperties_ConnectorType_Composition" xml:space="preserve"><value>Kompozice</value></data>
+  <data name="TmDiagramProperties_ConnectorType_Aggregation" xml:space="preserve"><value>Agregace</value></data>
+
+  <!-- ═══════════════ TmDiagramEditor History ═══════════════ -->
+  <data name="TmDiagramEditor_SaveDiagram" xml:space="preserve"><value>Uložit diagram</value></data>
+  <data name="TmDiagramEditor_SaveVersionPlaceholder" xml:space="preserve"><value>Popisek verze (nepovinné)</value></data>
+  <data name="TmDiagramEditor_SavedSuccessfully" xml:space="preserve"><value>Diagram byl úspěšně uložen</value></data>
+  <data name="TmDiagramEditor_SaveError" xml:space="preserve"><value>Uložení diagramu selhalo</value></data>
+  <data name="TmDiagramEditor_LoadDiagram" xml:space="preserve"><value>Načíst diagram</value></data>
+  <data name="TmDiagramEditor_LoadVersion" xml:space="preserve"><value>Načíst verzi {0}</value></data>
+  <data name="TmDiagramEditor_Versions" xml:space="preserve"><value>Verze</value></data>
+  <data name="TmDiagramEditor_NoVersions" xml:space="preserve"><value>Žádné uložené verze</value></data>
+  <data name="TmDiagramEditor_DiagramHistory" xml:space="preserve"><value>Historie</value></data>
+  <data name="TmDiagramEditor_LoadError" xml:space="preserve"><value>Načtení diagramu selhalo</value></data>
+  <data name="TmDiagramEditor_VersionLabel" xml:space="preserve"><value>Popisek</value></data>
+
 </root>

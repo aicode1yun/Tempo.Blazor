@@ -1,0 +1,188 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using System.Globalization
+@using Tempo.Blazor.Components.Diagram.Models
+@using Tempo.Blazor.Components.Diagram.Commands
+
+<div class="tm-diagram-canvas @Class"
+     tabindex="0"
+     @ref="_containerRef"
+     @onmousemove="OnCanvasMouseMove"
+     @onmouseup="OnCanvasMouseUp"
+     @onmouseleave="OnCanvasMouseUp">
+    @* SVG layer: grid + background + edges *@
+    <svg @ref="_svgRef"
+         id="@_svgId"
+         class="tm-diagram-canvas__svg"
+         viewBox="@_viewBox"
+         xmlns="http://www.w3.org/2000/svg"
+         aria-label="@Loc["TmDiagramCanvas_AriaLabel"]"
+         style="width:100%;height:100%;display:block;overflow:hidden;">
+
+        <defs>
+            @if (ShowGrid)
+            {
+                <pattern id="@_gridSmallId" width="@_gs" height="@_gs" patternUnits="userSpaceOnUse">
+                    <path d="M @_gs 0 L 0 0 0 @_gs" fill="none" stroke="#e5e7eb" stroke-width="0.5" />
+                </pattern>
+                <pattern id="@_gridLargeId" width="@_gl" height="@_gl" patternUnits="userSpaceOnUse">
+                    <rect width="@_gl" height="@_gl" fill="url(#@_gridSmallId)" />
+                    <path d="M @_gl 0 L 0 0 0 @_gl" fill="none" stroke="#d1d5db" stroke-width="1" />
+                </pattern>
+            }
+
+            <marker id="arrow-default" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#111827" />
+            </marker>
+            <marker id="arrow-empty-triangle" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="white" stroke="#111827" stroke-width="1" />
+            </marker>
+            <marker id="arrow-filled-diamond" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                <polygon points="0,5 5,0 10,5 5,10" fill="#111827" />
+            </marker>
+            <marker id="arrow-empty-diamond" markerWidth="12" markerHeight="10" refX="10" refY="5" orient="auto" markerUnits="strokeWidth">
+                <polygon points="0,5 5,0 10,5 5,10" fill="white" stroke="#111827" stroke-width="1" />
+            </marker>
+        </defs>
+
+        @* Canvas background + grid *@
+        <rect x="0" y="0"
+              width="@(Document?.Width ?? 3000)" height="@(Document?.Height ?? 2000)"
+              fill="white" stroke="#d1d5db" stroke-width="1" rx="4" />
+        @if (ShowGrid)
+        {
+            <rect x="0" y="0"
+                  width="@(Document?.Width ?? 3000)" height="@(Document?.Height ?? 2000)"
+                  fill="url(#@_gridLargeId)"
+                  pointer-events="none" />
+        }
+
+        @* Edges *@
+        @if (Document is not null)
+        {
+            @foreach (var edge in Document.Edges)
+            {
+                var pathD = ComputeEdgePath(edge);
+                var isSelected = _currentSelectionIds.Contains(edge.Id);
+                <g>
+                    @* Invisible hit path *@
+                    <path class="tm-diagram-edge-hit-path"
+                          d="@pathD"
+                          data-edge-id="@edge.Id"
+                          @onclick="() => OnEdgeClicked(edge.Id)" />
+                    @* Visible path *@
+                    <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "")"
+                          d="@pathD"
+                          stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                          marker-start="@GetEdgeMarkerStart(edge)"
+                          marker-end="@GetEdgeMarkerEnd(edge)" />
+                    @* Edge label *@
+                    @{
+                        var mid = ComputeEdgeMidpoint(edge);
+                    }
+                    <g class="tm-diagram-edge-label-group" @onclick:stopPropagation="true" @onclick="() => OnEdgeLabelClicked(edge.Id)">
+                        <rect class="tm-diagram-edge-label-hit"
+                              x="@F(mid.X - 24)"
+                              y="@F(mid.Y - 12)"
+                              width="48"
+                              height="24"
+                              fill="transparent" />
+                        @if (!string.IsNullOrEmpty(edge.Label))
+                        {
+                            @((Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __b) =>
+                            {
+                                __b.AddMarkupContent(0,
+                                    $"<text class='tm-diagram-edge-label' x='{F(mid.X)}' y='{F(mid.Y)}' text-anchor='middle' dominant-baseline='middle'>" +
+                                    $"{System.Net.WebUtility.HtmlEncode(edge.Label)}</text>");
+                            })
+                        }
+                    </g>
+                    @if (_editingEdgeLabelId == edge.Id)
+                    {
+                        <foreignObject x="@F(mid.X - 60)" y="@F(mid.Y - 14)" width="120" height="28">
+                            <input @ref="_labelInputRef"
+                                   class="tm-diagram-edge-label-input"
+                                   value="@_editingLabelValue"
+                                   @oninput="OnLabelInputChanged"
+                                   @onkeydown="OnLabelInputKeyDown"
+                                   @onblur="OnLabelInputBlur"
+                                   placeholder="@Loc["TmDiagramProperties_Label"]" />
+                        </foreignObject>
+                    }
+                    @* Selection handles (control points) *@
+                    @if (isSelected)
+                    {
+                        var pts = GetEdgePoints(edge);
+                        for (int i = 0; i < pts.Length; i++)
+                        {
+                            var pt = pts[i];
+                            var isWaypoint = i > 0 && i < pts.Length - 1;
+                            <circle class="tm-diagram-edge-handle"
+                                    cx="@F(pt.X)"
+                                    cy="@F(pt.Y)"
+                                    r="5"
+                                    data-edge-id="@edge.Id"
+                                    data-handle-index="@i"
+                                    data-waypoint="@(isWaypoint.ToString().ToLowerInvariant())" />
+                        }
+                    }
+                </g>
+            }
+        }
+
+    </svg>
+
+    @* HTML overlay layer: nodes *@
+    <div class="tm-diagram-canvas__overlay">
+        <div class="tm-diagram-transform-layer">
+            @if (Document is not null)
+            {
+                @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
+                {
+                    <div class="tm-diagram-node"
+                         data-node-id="@node.Id"
+                         data-w="@node.W"
+                         data-h="@node.H"
+                         data-parent-id="@node.ParentNodeId"
+                         data-locked="@(IsNodeLocked(node) ? "true" : "false")"
+                         style="transform: translate(@(F(node.X))px, @(F(node.Y))px); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">
+                        <TmDiagramStencilShape Node="node"
+                                               IsSelected="_currentSelectionIds.Contains(node.Id)"
+                                               OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)" />
+
+                        @if (!ReadOnly)
+                        {
+                            @foreach (var port in node.Ports)
+                            {
+                                var (px, py) = ComputePortPosition(node, port);
+                                <div class="tm-diagram-port"
+                                     data-port-id="@port.Id"
+                                     style="left: @(F(px))px; top: @(F(py))px;"
+                                     title="@port.Name"
+                                     @onmousedown:stopPropagation="true"
+                                     @onmousedown="() => HandlePortMouseDown(node.Id, port.Id)"
+                                     @onmouseenter="() => HandlePortMouseEnter(node.Id, port.Id)"
+                                     @onmouseleave="() => HandlePortMouseLeave(node.Id, port.Id)">
+                                </div>
+                            }
+                        }
+
+                        @if (_currentSelectionIds.Contains(node.Id) && !ReadOnly)
+                        {
+                            @foreach (var h in _resizeHandles)
+                            {
+                                <div class="tm-diagram-resize-handle tm-diagram-resize-handle--@h"
+                                     @onmousedown:stopPropagation="true"
+                                     @onmousedown="e => OnResizeStart(e, node.Id, h)">
+                                </div>
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+    @* Interaction layer: injected by JS for selection outlines *@
+    <div class="tm-diagram-canvas__interaction"></div>
+
+</div>

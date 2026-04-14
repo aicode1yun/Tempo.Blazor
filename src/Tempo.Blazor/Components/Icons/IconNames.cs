@@ -331,6 +331,10 @@ public static class IconNames
     public const string ZoomIn        = "zoom-in";
     /// <summary>Icon name for: ZoomOut.</summary>
     public const string ZoomOut       = "zoom-out";
+    /// <summary>Icon name for: MousePointer, Cursor.</summary>
+    public const string MousePointer  = "mouse-pointer";
+    /// <summary>Icon name for: Hand, Pan.</summary>
+    public const string Hand          = "hand";
     /// <summary>Icon name for: Scissors, Cut.</summary>
     public const string Scissors      = "scissors";
     /// <summary>Icon name for: Crop.</summary>

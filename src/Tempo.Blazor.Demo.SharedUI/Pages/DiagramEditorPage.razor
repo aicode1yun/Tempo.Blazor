@@ -1,0 +1,350 @@
+@page "/diagram-editor"
+@using Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Diagram.Models
+@using Tempo.Blazor.Components.Diagram.Services
+@inject IHttpClientFactory HttpClientFactory
+@inject ITmLocalizer Loc
+
+<PageTitle>Diagram Editor – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Diagram Editor</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Declarative diagram editor with stencil-based nodes, SVG edges, and hybrid HTML/SVG rendering.
+        Drag stencils from the toolbox, connect ports, and export as JSON.
+    </p>
+</div>
+
+<!-- ═══ Interactive editor ═══════════════════════════════════════════════════ -->
+<section class="demo-section mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Interactive Editor</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                The canvas below is pre-loaded with a UML Class stencil. Drag from a port to create edges.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="LoadUmlSample">
+                Load UML sample
+            </button>
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="NewDocument">
+                New document
+            </button>
+            <input type="text"
+                   class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-slate-700 dark:text-slate-300 w-40"
+                   placeholder="@Loc["TmDiagramEditor_SaveVersionPlaceholder"]"
+                   @bind="_saveLabel"
+                   @bind:event="oninput" />
+            <button class="px-3 py-1.5 text-sm rounded bg-indigo-600 hover:bg-indigo-700 text-white disabled:opacity-50"
+                    @onclick="SaveDiagramAsync"
+                    disabled="@_isSaving">
+                @if (_isSaving)
+                {
+                    <span>@Loc["Tm_Loading"]</span>
+                }
+                else
+                {
+                    <span>@Loc["TmDiagramEditor_SaveDiagram"]</span>
+                }
+            </button>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="mb-3 px-4 py-2 rounded text-sm @(_statusIsError ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200")">
+            @_statusMessage
+        </div>
+    }
+
+    <div style="height: 600px;">
+        <TmDiagramEditor Document="@_document"
+                         DocumentChanged="@(doc => _document = doc)"
+                         ShowGrid="true"
+                         GridSize="20"
+                         ExportHttpClientName="DemoApi"
+                         Class="h-full" />
+    </div>
+
+    <div class="mt-3 flex gap-4 text-sm text-slate-500 dark:text-slate-400">
+        <span>Nodes: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Nodes.Count ?? 0)</strong></span>
+        <span>Edges: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Edges.Count ?? 0)</strong></span>
+        <span>Title: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Title ?? "—")</strong></span>
+        <span>ID: <strong class="text-slate-700 dark:text-slate-300">@(_document?.Id ?? "—")</strong></span>
+    </div>
+</section>
+
+<!-- ═══ History panel ════════════════════════════════════════════════════════ -->
+<section class="demo-section">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-3">@Loc["TmDiagramEditor_DiagramHistory"]</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <!-- Saved diagrams -->
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">@Loc["TmDiagramEditor_LoadDiagram"]</h4>
+            @if (_savedDiagrams is null)
+            {
+                <p class="text-sm text-slate-500 dark:text-slate-400">@Loc["Tm_Loading"]</p>
+            }
+            else if (_savedDiagrams.Count == 0)
+            {
+                <p class="text-sm text-slate-500 dark:text-slate-400">@Loc["TmDiagramEditor_NoVersions"]</p>
+            }
+            else
+            {
+                <ul class="space-y-2 max-h-64 overflow-auto">
+                    @foreach (var diagram in _savedDiagrams)
+                    {
+                        <li class="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <div class="min-w-0">
+                                <div class="text-sm font-medium text-slate-800 dark:text-slate-200 truncate">@diagram.DiagramId</div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">
+                                    v@(diagram.LatestVersion) • @diagram.LatestSavedAt.ToLocalTime().ToString("g")
+                                </div>
+                            </div>
+                            <button class="ml-3 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0"
+                                    @onclick="() => LoadDiagramAsync(diagram.DiagramId)">
+                                @Loc["TmDiagramEditor_LoadDiagram"]
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+
+        <!-- Versions for current diagram -->
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">
+                @Loc["TmDiagramEditor_Versions"] <span class="text-slate-400 font-normal">(@(_versions?.Count ?? 0))</span>
+            </h4>
+            @if (_versions is null)
+            {
+                <p class="text-sm text-slate-500 dark:text-slate-400">@Loc["Tm_Loading"]</p>
+            }
+            else if (_versions.Count == 0)
+            {
+                <p class="text-sm text-slate-500 dark:text-slate-400">@Loc["TmDiagramEditor_NoVersions"]</p>
+            }
+            else
+            {
+                <ul class="space-y-2 max-h-64 overflow-auto">
+                    @foreach (var version in _versions)
+                    {
+                        <li class="flex items-center justify-between p-2 rounded hover:bg-slate-50 dark:hover:bg-slate-800">
+                            <div class="min-w-0">
+                                <div class="text-sm font-medium text-slate-800 dark:text-slate-200">
+                                    @Loc["TmDiagramEditor_LoadVersion", version.Version]
+                                </div>
+                                <div class="text-xs text-slate-500 dark:text-slate-400">
+                                    @if (!string.IsNullOrWhiteSpace(version.Label))
+                                    {
+                                        <span>@version.Label • </span>
+                                    }
+                                    <span>@version.SavedAt.ToLocalTime().ToString("g")</span>
+                                </div>
+                            </div>
+                            <button class="ml-3 px-2 py-1 text-xs rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 shrink-0"
+                                    @onclick="() => LoadVersionAsync(_document!.Id, version.Version)">
+                                @Loc["TmDiagramEditor_LoadDiagram"]
+                            </button>
+                        </li>
+                    }
+                </ul>
+            }
+        </div>
+    </div>
+</section>
+
+@code {
+    private DiagramDocument _document = CreateUmlSample();
+    private string _saveLabel = "";
+    private bool _isSaving;
+    private string? _statusMessage;
+    private bool _statusIsError;
+
+    private List<DiagramSummaryDto>? _savedDiagrams;
+    private List<DiagramHistoryVersion>? _versions;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await RefreshHistoryAsync();
+    }
+
+    private void NewDocument()
+    {
+        _document = new()
+        {
+            Title = "Untitled diagram",
+            Width = 3000,
+            Height = 2000,
+            Nodes = [],
+            Edges = []
+        };
+        _ = RefreshVersionsAsync();
+    }
+
+    private void LoadUmlSample()
+    {
+        _document = CreateUmlSample();
+        _ = RefreshVersionsAsync();
+    }
+
+    private static DiagramDocument CreateUmlSample() => new()
+    {
+        Title = "UML Class Diagram",
+        Width = 3000,
+        Height = 2000,
+        Nodes =
+        [
+            new()
+            {
+                Id = "class1",
+                StencilId = "uml.class",
+                X = 200,
+                Y = 150,
+                W = 180,
+                H = 140,
+                Data = new()
+                {
+                    ["name"] = "Customer",
+                    ["attributes"] = new[] { "- id: Guid", "- name: string", "- email: string" },
+                    ["methods"] = new[] { "+ Save(): void", "+ Load(): void" }
+                }
+            },
+            new()
+            {
+                Id = "class2",
+                StencilId = "uml.class",
+                X = 500,
+                Y = 150,
+                W = 180,
+                H = 140,
+                Data = new()
+                {
+                    ["name"] = "Order",
+                    ["attributes"] = new[] { "- id: Guid", "- total: decimal" },
+                    ["methods"] = new[] { "+ Place(): void", "+ Cancel(): void" }
+                }
+            }
+        ],
+        Edges =
+        [
+            new()
+            {
+                Id = "edge1",
+                SourceNodeId = "class1",
+                SourcePortId = "right",
+                TargetNodeId = "class2",
+                TargetPortId = "left",
+                Label = "1..*"
+            }
+        ]
+    };
+
+    private async Task SaveDiagramAsync()
+    {
+        _isSaving = true;
+        _statusMessage = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DemoApi");
+            var response = await client.PostAsJsonAsync($"/api/diagrams/{_document.Id}/versions", new
+            {
+                document = _document,
+                label = _saveLabel
+            });
+
+            if (response.IsSuccessStatusCode)
+            {
+                _statusMessage = Loc["TmDiagramEditor_SavedSuccessfully"];
+                _statusIsError = false;
+                _saveLabel = "";
+                await RefreshHistoryAsync();
+            }
+            else
+            {
+                _statusMessage = $"{Loc["TmDiagramEditor_SaveError"]} ({(int)response.StatusCode})";
+                _statusIsError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"{Loc["TmDiagramEditor_SaveError"]}: {ex.Message}";
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isSaving = false;
+        }
+    }
+
+    private async Task LoadDiagramAsync(string diagramId)
+    {
+        _statusMessage = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DemoApi");
+            var doc = await client.GetFromJsonAsync<DiagramDocument>($"/api/diagrams/{diagramId}");
+            if (doc is not null)
+            {
+                _document = doc;
+                await RefreshVersionsAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"{Loc["TmDiagramEditor_LoadError"]}: {ex.Message}";
+            _statusIsError = true;
+        }
+    }
+
+    private async Task LoadVersionAsync(string diagramId, int version)
+    {
+        _statusMessage = null;
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DemoApi");
+            var doc = await client.GetFromJsonAsync<DiagramDocument>($"/api/diagrams/{diagramId}/versions/{version}");
+            if (doc is not null)
+            {
+                _document = doc;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"{Loc["TmDiagramEditor_LoadError"]}: {ex.Message}";
+            _statusIsError = true;
+        }
+    }
+
+    private async Task RefreshHistoryAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DemoApi");
+            _savedDiagrams = await client.GetFromJsonAsync<List<DiagramSummaryDto>>("/api/diagrams") ?? new();
+            await RefreshVersionsAsync();
+        }
+        catch
+        {
+            _savedDiagrams = new();
+        }
+    }
+
+    private async Task RefreshVersionsAsync()
+    {
+        try
+        {
+            var client = HttpClientFactory.CreateClient("DemoApi");
+            _versions = await client.GetFromJsonAsync<List<DiagramHistoryVersion>>($"/api/diagrams/{_document.Id}/versions") ?? new();
+        }
+        catch
+        {
+            _versions = new();
+        }
+    }
+}

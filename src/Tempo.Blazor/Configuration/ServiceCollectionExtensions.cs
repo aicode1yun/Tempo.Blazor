@@ -1,5 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
+using Tempo.Blazor.Components.Diagram.Services;
+using Tempo.Blazor.Components.Diagram.Stencils;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.Services;
@@ -86,6 +88,17 @@ public static class ServiceCollectionExtensions
         services.TryAddSingleton<WireframeSchemaRegistry>(sp =>
             new WireframeSchemaRegistry(sp.GetServices<IWireframeSchemaSource>()));
 
+        // ── Diagram editor ────────────────────────────────────────────────────
+        services.TryAddSingleton<IDiagramStencilProvider, BuiltInDiagramStencilProvider>();
+        services.TryAddSingleton<DiagramStencilRegistry>(sp =>
+        {
+            var registry = new DiagramStencilRegistry();
+            var providers = sp.GetServices<IDiagramStencilProvider>();
+            foreach (var provider in providers.OrderBy(p => p.Priority))
+                registry.RegisterProvider(provider);
+            return registry;
+        });
+
         return services;
     }
 
@@ -100,7 +113,7 @@ public static class ServiceCollectionExtensions
     /// builder.Services.AddWireframeComponentProvider&lt;MarketingComponentProvider&gt;();
     /// </code>
     ///
-    /// When the custom provider registers the same <see cref="WireframeComponentDef.ComponentType"/>
+    /// When the custom provider registers the same component type
     /// as the built-in provider, the one with the higher
     /// <see cref="IWireframeComponentProvider.Priority"/> wins (built-in uses priority 0;
     /// set a higher value to override).
@@ -115,6 +128,32 @@ public static class ServiceCollectionExtensions
         // Register as IWireframeComponentProvider so GetServices<IWireframeComponentProvider>
         // picks it up inside the WireframeComponentRegistry factory.
         services.AddSingleton<IWireframeComponentProvider>(sp => sp.GetRequiredService<T>());
+        return services;
+    }
+
+    /// <summary>
+    /// Registers a custom <see cref="IDiagramStencilProvider"/> so its stencil
+    /// definitions appear in <see cref="DiagramStencilRegistry"/> and are shown in the
+    /// <c>TmDiagramToolbox</c>.
+    ///
+    /// Call this <em>after</em> <see cref="AddTempoBlazor"/>:
+    /// <code>
+    /// builder.Services.AddTempoBlazor();
+    /// builder.Services.AddDiagramStencilProvider&lt;CustomDiagramStencilProvider&gt;();
+    /// </code>
+    ///
+    /// When the custom provider registers the same stencil id
+    /// as the built-in provider, the one with the higher
+    /// <see cref="IDiagramStencilProvider.Priority"/> wins (built-in uses priority 0;
+    /// set a higher value to override).
+    /// </summary>
+    /// <typeparam name="T">Concrete provider type to register.</typeparam>
+    public static IServiceCollection AddDiagramStencilProvider<T>(
+        this IServiceCollection services)
+        where T : class, IDiagramStencilProvider
+    {
+        services.TryAddSingleton<T>();
+        services.AddSingleton<IDiagramStencilProvider>(sp => sp.GetRequiredService<T>());
         return services;
     }
 }

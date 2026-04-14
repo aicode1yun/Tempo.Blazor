@@ -1394,4 +1394,75 @@
   <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Behavior</value></data>
   <data name="TmWireframeProps_CatState" xml:space="preserve"><value>State</value></data>
 
+  <!-- ═══════════════ TmDiagramEditor ═══════════════ -->
+  <data name="TmDiagramEditor_ToolbarAriaLabel" xml:space="preserve"><value>Barre d'outils de l'éditeur de diagrammes</value></data>
+  <data name="TmDiagramEditor_UntitledPlaceholder" xml:space="preserve"><value>Diagramme sans titre</value></data>
+  <data name="TmDiagramEditor_DocumentTitleLabel" xml:space="preserve"><value>Titre du document</value></data>
+  <data name="TmDiagramEditor_SelectTool" xml:space="preserve"><value>Outil de sélection (V)</value></data>
+  <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Outil de déplacement (H)</value></data>
+  <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Outil de déplacement (H) — ou maintenez Espace</value></data>
+  <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Rétablir</value></data>
+  <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Zoom arrière</value></data>
+  <data name="TmDiagramEditor_ZoomIn" xml:space="preserve"><value>Zoom avant</value></data>
+  <data name="TmDiagramEditor_FitToView" xml:space="preserve"><value>Ajuster à la vue</value></data>
+  <data name="TmDiagramEditor_CanvasWidth" xml:space="preserve"><value>Largeur du canevas</value></data>
+  <data name="TmDiagramEditor_CanvasHeight" xml:space="preserve"><value>Hauteur du canevas</value></data>
+  <data name="TmDiagramEditor_Apply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="TmDiagramEditor_Cancel" xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmDiagramEditor_ChangeCanvasSize" xml:space="preserve"><value>Modifier la taille du canevas</value></data>
+  <data name="TmDiagramEditor_Export" xml:space="preserve"><value>Exporter</value></data>
+  <data name="TmDiagramEditor_ExportJson" xml:space="preserve"><value>Exporter JSON</value></data>
+  <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Importer JSON</value></data>
+  <data name="TmDiagramEditor_SwitchToEditMode" xml:space="preserve"><value>Passer en mode édition</value></data>
+  <data name="TmDiagramEditor_SwitchToReadOnlyMode" xml:space="preserve"><value>Passer en mode lecture seule</value></data>
+  <data name="TmDiagramEditor_ReadOnly" xml:space="preserve"><value>Lecture seule</value></data>
+  <data name="TmDiagramEditor_Edit" xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmDiagramEditor_ShowToolbox" xml:space="preserve"><value>Afficher la boîte à outils</value></data>
+  <data name="TmDiagramEditor_HideToolbox" xml:space="preserve"><value>Masquer la boîte à outils</value></data>
+  <data name="TmDiagramEditor_ToggleToolbox" xml:space="preserve"><value>Basculer la boîte à outils</value></data>
+  <data name="TmDiagramEditor_ShowProperties" xml:space="preserve"><value>Afficher les propriétés</value></data>
+  <data name="TmDiagramEditor_HideProperties" xml:space="preserve"><value>Masquer les propriétés</value></data>
+  <data name="TmDiagramEditor_ToggleProperties" xml:space="preserve"><value>Basculer les propriétés</value></data>
+  <data name="TmDiagramEditor_DismissError" xml:space="preserve"><value>Fermer l'erreur</value></data>
+  <data name="TmDiagramEditor_ImportError_InvalidJson" xml:space="preserve"><value>Échec de l'importation : le fichier n'est pas un diagramme JSON valide.</value></data>
+  <data name="TmDiagramEditor_ImportError_Generic" xml:space="preserve"><value>Échec de l'importation : {0}.</value></data>
+  <data name="TmDiagramEditor_BringToFront" xml:space="preserve"><value>Mettre au premier plan</value></data>
+  <data name="TmDiagramEditor_SendToBack" xml:space="preserve"><value>Envoyer à l'arrière-plan</value></data>
+  <data name="TmDiagramEditor_Delete" xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmDiagramEditor_ShowLayers" xml:space="preserve"><value>Afficher les calques</value></data>
+  <data name="TmDiagramEditor_HideLayers" xml:space="preserve"><value>Masquer les calques</value></data>
+  <data name="TmDiagramEditor_ToggleLayers" xml:space="preserve"><value>Basculer les calques</value></data>
+  <data name="TmDiagramEditor_ShowMinimap" xml:space="preserve"><value>Afficher la mini-carte</value></data>
+  <data name="TmDiagramEditor_HideMinimap" xml:space="preserve"><value>Masquer la mini-carte</value></data>
+  <data name="TmDiagramEditor_ToggleMinimap" xml:space="preserve"><value>Basculer la mini-carte</value></data>
+  <data name="TmDiagramMinimap_Title" xml:space="preserve"><value>Mini-carte</value></data>
+  <data name="TmDiagramMinimap_Empty" xml:space="preserve"><value>Aucun diagramme à afficher</value></data>
+  <data name="TmDiagramLayers_Title" xml:space="preserve"><value>Calques</value></data>
+  <data name="TmDiagramLayers_AddLayer" xml:space="preserve"><value>Ajouter un calque</value></data>
+  <data name="TmDiagramLayers_Show" xml:space="preserve"><value>Afficher</value></data>
+  <data name="TmDiagramLayers_Hide" xml:space="preserve"><value>Masquer</value></data>
+  <data name="TmDiagramLayers_Lock" xml:space="preserve"><value>Verrouiller</value></data>
+  <data name="TmDiagramLayers_Unlock" xml:space="preserve"><value>Déverrouiller</value></data>
+  <data name="TmDiagramLayers_DefaultLayer" xml:space="preserve"><value>Calque par défaut</value></data>
+  <data name="TmDiagramLayers_DeleteLayer" xml:space="preserve"><value>Supprimer le calque</value></data>
+  <data name="TmDiagramLayers_AssignToLayer" xml:space="preserve"><value>Assigner au calque</value></data>
+  <data name="TmDiagramLayers_Layer" xml:space="preserve"><value>Calque</value></data>
+  <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Calque</value></data>
+
+  <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
+  <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Basculer la boîte à outils</value></data>
+  <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Boîte à outils</value></data>
+
+  <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
+  <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Basculer les propriétés</value></data>
+  <data name="TmDiagramProperties_Title" xml:space="preserve"><value>Propriétés</value></data>
+  <data name="TmDiagramProperties_NodeTitle" xml:space="preserve"><value>Nœud</value></data>
+  <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Arête</value></data>
+  <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Libellé</value></data>
+  <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Style</value></data>
+  <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Plan</value></data>
+  <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Aucune sélection</value></data>
+  <data name="TmDiagramProperties_ReadOnly" xml:space="preserve"><value>Mode lecture seule</value></data>
+
 </root>

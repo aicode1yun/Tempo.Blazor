@@ -1,0 +1,89 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using System.Globalization
+@using Tempo.Blazor.Components.Diagram.Models
+
+<div class="tm-diagram-minimap @Class"
+     style="width:@(Width)px"
+     @ref="_container">
+    <div class="tm-diagram-minimap__title">@Loc["TmDiagramMinimap_Title"]</div>
+
+    @if (Document is not null)
+    {
+        var scale = ComputeScale();
+        var mapH = (int)Math.Round(Document.Height * scale);
+
+        <svg @ref="_svg"
+             class="tm-diagram-minimap__svg"
+             width="@Width"
+             height="@mapH"
+             viewBox="0 0 @F(Document.Width) @F(Document.Height)"
+             xmlns="http://www.w3.org/2000/svg"
+             @onmousedown="OnSvgMouseDown"
+             @onmousemove="OnSvgMouseMove"
+             @onmouseup="OnSvgMouseUp"
+             @onmouseleave="OnSvgMouseLeave">
+
+            @* Canvas background *@
+            <rect x="0" y="0"
+                  width="@F(Document.Width)"
+                  height="@F(Document.Height)"
+                  fill="var(--tm-color-surface-elevated, #f9fafb)"
+                  stroke="var(--tm-color-border, #e5e7eb)"
+                  stroke-width="1" />
+
+            @* Simplified edges *@
+            @foreach (var edge in Document.Edges)
+            {
+                var src = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
+                var tgt = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
+                if (src is null || tgt is null) continue;
+                <line x1="@F(src.X + src.W / 2)"
+                      y1="@F(src.Y + src.H / 2)"
+                      x2="@F(tgt.X + tgt.W / 2)"
+                      y2="@F(tgt.Y + tgt.H / 2)"
+                      stroke="var(--tm-color-border-strong, #d1d5db)"
+                      stroke-width="@F(1.5 / scale)" />
+            }
+
+            @* Node boxes *@
+            @foreach (var node in Document.Nodes.OrderBy(n => n.ZIndex))
+            {
+                var isSelected = SelectedIds.Contains(node.Id);
+                <rect class="tm-diagram-minimap__node"
+                      x="@F(node.X)"
+                      y="@F(node.Y)"
+                      width="@F(Math.Max(1, node.W))"
+                      height="@F(Math.Max(1, node.H))"
+                      fill="@(isSelected ? "var(--tm-color-primary-subtle, #dbeafe)" : "var(--tm-color-surface, #ffffff)")"
+                      stroke="@(isSelected ? "var(--tm-color-primary, #3b82f6)" : "var(--tm-color-text-muted, #6b7280)")"
+                      stroke-width="@(isSelected ? F(2 / scale) : F(1 / scale))"
+                      rx="1" />
+            }
+
+            @* Viewport rectangle *@
+            @if (_viewportRect is { } vp)
+            {
+                <rect x="@F(vp.X)"
+                      y="@F(vp.Y)"
+                      width="@F(Math.Max(1, vp.W))"
+                      height="@F(Math.Max(1, vp.H))"
+                      fill="rgba(59, 130, 246, 0.08)"
+                      stroke="#3b82f6"
+                      stroke-width="@F(1.5 / scale)"
+                      stroke-dasharray="@F(4 / scale) @F(3 / scale)"
+                      rx="1"
+                      class="tm-diagram-minimap__viewport"
+                      style="cursor:move" />
+            }
+        </svg>
+    }
+    else
+    {
+        <div class="tm-diagram-minimap__empty">@Loc["TmDiagramMinimap_Empty"]</div>
+    }
+</div>
+
+@code {
+    private static string F(double v) =>
+        v.ToString("0.##", CultureInfo.InvariantCulture);
+}

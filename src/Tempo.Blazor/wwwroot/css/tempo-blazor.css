@@ -122,10 +122,11 @@
 @import "components/_mention-autocomplete.css";
 @import "components/_token-autocomplete.css";
 
-/* 14. Charts */
+/* 14. Charts & Diagrams */
 @import "components/_chart.css";
 @import "components/_workflow-designer.css";
 @import "components/_wireframe-editor.css";
+@import "components/_diagram-editor.css";
 
 /* 15. Navigation & Views */
 @import "components/_tree-view.css";

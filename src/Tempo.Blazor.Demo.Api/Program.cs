@@ -1,8 +1,17 @@
+using Microsoft.EntityFrameworkCore;
+using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.Demo.Api.Endpoints;
+using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.Models;
 
+QuestPDF.Settings.License = QuestPDF.Infrastructure.LicenseType.Community;
+
 var builder = WebApplication.CreateBuilder(args);
+
+var dbPath = Path.Combine(builder.Environment.ContentRootPath, "diagrams.db");
+builder.Services.AddDbContext<DemoDiagramDbContext>(options =>
+    options.UseSqlite($"Data Source={dbPath}"));
 
 builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
     p.WithOrigins(
@@ -23,6 +32,9 @@ builder.Services.AddSingleton<MockDropdownStore>();
 builder.Services.AddSingleton<MockScheduleStore>();
 builder.Services.AddSingleton<MockTokenStore>();
 builder.Services.AddSingleton<MockWireframeStore>();
+builder.Services.AddSingleton<IDiagramExportService, DemoDiagramExportService>();
+builder.Services.AddScoped<DemoDiagramHistoryStore>();
+builder.Services.AddScoped<IDiagramHistoryStore>(sp => sp.GetRequiredService<DemoDiagramHistoryStore>());
 
 var app = builder.Build();
 
@@ -39,6 +51,14 @@ app.MapScheduleEndpoints();
 app.MapImportExportEndpoints();
 app.MapTokenEndpoints();
 app.MapWireframeEndpoints();
+app.MapDiagramExportEndpoints();
+app.MapDiagramHistoryEndpoints();
+
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<DemoDiagramDbContext>();
+    db.Database.EnsureCreated();
+}
 
 app.Run();
 
