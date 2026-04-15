@@ -130,7 +130,7 @@ public partial class TmDiagramStencilShape : ComponentBase
         var sb = new System.Text.StringBuilder();
         if (contentBelow)
         {
-            sb.Append("position:relative;flex:0 0 auto;width:100%;");
+            sb.Append("position:relative;flex:0 0 auto;width:100%;height:auto;");
         }
         else
         {
