@@ -1030,7 +1030,11 @@ window.tmDiagramEditor = {
 
     // ── Orthogonal router ────────────────────────────────────────────────────
 
-    _computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2) {
+    _computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing) {
+        routing = (routing || 'orthogonal').toLowerCase();
+        sourceSpacing = sourceSpacing || 0;
+        targetSpacing = targetSpacing || 0;
+
         const s1 = (side1 || '').toLowerCase();
         const s2 = (side2 || '').toLowerCase();
 
@@ -1039,22 +1043,65 @@ window.tmDiagramEditor = {
         const dx2 = s2 === 'left' ? -1 : s2 === 'right' ? 1 : 0;
         const dy2 = s2 === 'top' ? -1 : s2 === 'bottom' ? 1 : 0;
 
+        // Apply spacing
+        const sx1 = x1 + dx1 * sourceSpacing;
+        const sy1 = y1 + dy1 * sourceSpacing;
+        const sx2 = x2 + dx2 * targetSpacing;
+        const sy2 = y2 + dy2 * targetSpacing;
+
+        if (routing === 'elbow') {
+            if (dx1 !== 0 && dx2 !== 0) {
+                const midX = (sx1 + sx2) / 2;
+                return [[midX, sy1], [midX, sy2]];
+            }
+            if (dy1 !== 0 && dy2 !== 0) {
+                const midY = (sy1 + sy2) / 2;
+                return [[sx1, midY], [sx2, midY]];
+            }
+            if (dx1 !== 0 && dy2 !== 0) {
+                return [[sx2, sy1]];
+            }
+            if (dy1 !== 0 && dx2 !== 0) {
+                return [[sx1, sy2]];
+            }
+            return [[sx1, sy2]];
+        }
+
+        if (routing === 'segment') {
+            if (dx1 !== 0 && dx2 !== 0) {
+                const midX = (sx1 + sx2) / 2;
+                return [[midX, sy1], [midX, sy2]];
+            }
+            if (dy1 !== 0 && dy2 !== 0) {
+                const midY = (sy1 + sy2) / 2;
+                return [[sx1, midY], [sx2, midY]];
+            }
+            if (dx1 !== 0 && dy2 !== 0) {
+                return [[sx2, sy1]];
+            }
+            if (dy1 !== 0 && dx2 !== 0) {
+                return [[sx1, sy2]];
+            }
+            return [[sx1, sy2]];
+        }
+
+        // orthogonal (default) and rounded
         if (dx1 !== 0 && dx2 !== 0) {
-            const midX = (x1 + x2) / 2;
-            return [ [midX, y1], [midX, y2] ];
+            const midX = (sx1 + sx2) / 2;
+            return [[midX, sy1], [midX, sy2]];
         }
         if (dy1 !== 0 && dy2 !== 0) {
-            const midY = (y1 + y2) / 2;
-            return [ [x1, midY], [x2, midY] ];
+            const midY = (sy1 + sy2) / 2;
+            return [[sx1, midY], [sx2, midY]];
         }
         if (dx1 !== 0 && dy2 !== 0) {
-            return [ [x2, y1] ];
+            return [[sx2, sy1]];
         }
         if (dy1 !== 0 && dx2 !== 0) {
-            return [ [x1, y2] ];
+            return [[sx1, sy2]];
         }
-        const midX = (x1 + x2) / 2;
-        return [ [midX, y1], [midX, y2] ];
+        const midX = (sx1 + sx2) / 2;
+        return [[midX, sy1], [midX, sy2]];
     },
 
     // ── Programmatic API ─────────────────────────────────────────────────────
@@ -1221,7 +1268,13 @@ window.tmDiagramEditor = {
         document.addEventListener('mouseup', up);
     },
 
-    computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2) {
-        return this._computeOrthogonalWaypoints(x1, y1, side1, x2, y2, side2);
+    computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing) {
+        return this._computeOrthogonalWaypoints(x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing);
+    },
+
+    screenToDoc: function (container, clientX, clientY) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return { x: clientX, y: clientY };
+        return this._screenToDoc(inst, clientX, clientY);
     },
 };

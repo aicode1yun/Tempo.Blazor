@@ -393,7 +393,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var side1 = (srcPort?.Side ?? PortSide.Right).ToString().ToLowerInvariant();
         var side2 = (tgtPort?.Side ?? PortSide.Left).ToString().ToLowerInvariant();
 
-        var result = await JS.InvokeAsync<double[][]>("tmDiagramEditor.computeOrthogonalWaypoints", x1, y1, side1, x2, y2, side2, edge.Routing, edge.SourceSpacing ?? 0, edge.TargetSpacing ?? 0);
+        var result = await JS.InvokeAsync<double[][]>("tmDiagramEditor.computeOrthogonalWaypoints", x1, y1, side1, x2, y2, side2);
         if (result is null) return [];
         return result.Select(r => new DiagramPoint(r[0], r[1])).ToList();
     }
@@ -631,82 +631,6 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _currentSelectionIds = [edgeId];
         await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
         await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
-    }
-
-    private async Task OnEdgeDoubleClicked(string edgeId, MouseEventArgs e)
-    {
-        if (ReadOnly || Document is null) return;
-        var pt = await JS.InvokeAsync<DocPoint>("tmDiagramEditor.screenToDoc", _containerRef, e.ClientX, e.ClientY);
-
-        // Find closest segment and insert waypoint
-        var edge = Document.Edges.FirstOrDefault(ed => ed.Id == edgeId);
-        if (edge is null) return;
-
-        var pts = GetEdgePoints(edge);
-        if (pts.Length < 2) return;
-
-        int bestIndex = 0;
-        double bestDist = double.MaxValue;
-        for (int i = 0; i < pts.Length - 1; i++)
-        {
-            var dist = DistancePointToSegment(pt.X, pt.Y, pts[i], pts[i + 1]);
-            if (dist < bestDist)
-            {
-                bestDist = dist;
-                bestIndex = i;
-            }
-        }
-
-        var insertIndex = bestIndex + 1;
-        if (GridSize > 0)
-        {
-            pt.X = Math.Round(pt.X / GridSize) * GridSize;
-            pt.Y = Math.Round(pt.Y / GridSize) * GridSize;
-        }
-
-        if (CommandStack is not null)
-            CommandStack.Push(new InsertEdgeWaypointCommand(Document, edgeId, insertIndex, new DiagramPoint(pt.X, pt.Y)));
-        else
-            edge.Waypoints.Insert(insertIndex, new DiagramPoint(pt.X, pt.Y));
-
-        _currentSelectionIds = [edgeId];
-        await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
-        await NotifyAndRender();
-    }
-
-    private static double DistancePointToSegment(double px, double py, (double X, double Y) a, (double X, double Y) b)
-    {
-        var dx = b.X - a.X;
-        var dy = b.Y - a.Y;
-        if (dx == 0 && dy == 0) return Math.Sqrt((px - a.X) * (px - a.X) + (py - a.Y) * (py - a.Y));
-        var t = ((px - a.X) * dx + (py - a.Y) * dy) / (dx * dx + dy * dy);
-        t = Math.Max(0, Math.Min(1, t));
-        var projX = a.X + t * dx;
-        var projY = a.Y + t * dy;
-        return Math.Sqrt((px - projX) * (px - projX) + (py - projY) * (py - projY));
-    }
-
-    private class DocPoint
-    {
-        public double X { get; set; }
-        public double Y { get; set; }
-    }
-
-    private async Task OnEdgeWaypointDelete(string edgeId, int waypointIndex)
-    {
-        if (ReadOnly || Document is null) return;
-        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
-        if (edge is null) return;
-        var actualIndex = waypointIndex - 1;
-        if (actualIndex < 0 || actualIndex >= edge.Waypoints.Count) return;
-
-        var removed = edge.Waypoints[actualIndex];
-        if (CommandStack is not null)
-            CommandStack.Push(new DeleteEdgeWaypointCommand(Document, edgeId, actualIndex, removed));
-        else
-            edge.Waypoints.RemoveAt(actualIndex);
-
-        await NotifyAndRender();
     }
 
     [JSInvokable]
@@ -952,15 +876,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
             : tgtNode.Ports.FirstOrDefault();
 
-        var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
-        var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
-
-        var p1 = ComputePortPosition(srcNode, sPort);
-        var p2 = ComputePortPosition(tgtNode, tPort);
-
-        // Apply source/target spacing along port direction
-        p1 = ApplyPortSpacing(p1, sPort.Side, edge.SourceSpacing ?? 0);
-        p2 = ApplyPortSpacing(p2, tPort.Side, edge.TargetSpacing ?? 0);
+        var p1 = ComputePortPosition(srcNode, srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 });
+        var p2 = ComputePortPosition(tgtNode, tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 });
 
         var pts = new List<(double X, double Y)> { p1 };
         foreach (var wp in edge.Waypoints)
@@ -969,274 +886,35 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return pts.ToArray();
     }
 
-    private static (double X, double Y) ApplyPortSpacing((double X, double Y) point, PortSide side, double spacing)
-    {
-        if (spacing <= 0) return point;
-        return side switch
-        {
-            PortSide.Left => (point.X - spacing, point.Y),
-            PortSide.Right => (point.X + spacing, point.Y),
-            PortSide.Top => (point.X, point.Y - spacing),
-            PortSide.Bottom => (point.X, point.Y + spacing),
-            _ => point,
-        };
-    }
-
     private string ComputeEdgePath(DiagramEdge edge)
     {
         var pts = GetEdgePoints(edge);
         if (pts.Length < 2) return string.Empty;
-
-        // Inset endpoints to leave room for arrowhead markers
-        var startInset = edge.StartArrow == "none" ? 0 : (edge.StartArrowSize ?? 10) / 2.0;
-        var endInset = edge.EndArrow == "none" ? 0 : (edge.EndArrowSize ?? 10) / 2.0;
-        if (startInset > 0)
-            pts[0] = ShortenToward(pts[0], pts[1], startInset);
-        if (endInset > 0)
-            pts[^1] = ShortenToward(pts[^1], pts[^2], endInset);
-
         var sb = new System.Text.StringBuilder();
         sb.Append($"M {F(pts[0].X)} {F(pts[0].Y)}");
-        if (edge.Rounded && pts.Length > 2)
-        {
-            const double r = 8.0;
-            for (int i = 1; i < pts.Length; i++)
-            {
-                var prev = pts[i - 1];
-                var curr = pts[i];
-                if (i < pts.Length - 1)
-                {
-                    var next = pts[i + 1];
-                    // Compute shortened points for fillet
-                    var (sx, sy) = ShortenToward(curr, prev, r);
-                    var (ex, ey) = ShortenToward(curr, next, r);
-                    sb.Append($" L {F(sx)} {F(sy)} Q {F(curr.X)} {F(curr.Y)} {F(ex)} {F(ey)}");
-                }
-                else
-                {
-                    sb.Append($" L {F(curr.X)} {F(curr.Y)}");
-                }
-            }
-        }
-        else if (edge.Routing == "orthogonal" && !string.IsNullOrEmpty(edge.JumpStyle) && Document is not null)
-        {
-            for (int i = 1; i < pts.Length; i++)
-            {
-                var prev = pts[i - 1];
-                var curr = pts[i];
-                var jumps = FindLineJumps(edge, i - 1, prev, curr);
-                if (jumps.Count > 0)
-                    AppendSegmentWithJumps(sb, prev, curr, edge.JumpStyle, edge.JumpSize ?? 10, jumps);
-                else
-                    sb.Append($" L {F(curr.X)} {F(curr.Y)}");
-            }
-        }
-        else
-        {
-            for (int i = 1; i < pts.Length; i++)
-                sb.Append($" L {F(pts[i].X)} {F(pts[i].Y)}");
-        }
+        for (int i = 1; i < pts.Length; i++)
+            sb.Append($" L {F(pts[i].X)} {F(pts[i].Y)}");
         return sb.ToString();
     }
 
-    private static (double X, double Y) ShortenToward((double X, double Y) from, (double X, double Y) to, double r)
-    {
-        var dx = to.X - from.X;
-        var dy = to.Y - from.Y;
-        var len = Math.Sqrt(dx * dx + dy * dy);
-        if (len == 0) return from;
-        var t = Math.Min(r / len, 0.5);
-        return (from.X + dx * t, from.Y + dy * t);
-    }
-
-    private List<double> FindLineJumps(DiagramEdge edge, int segmentIndex, (double X, double Y) a, (double X, double Y) b)
-    {
-        var jumps = new List<double>();
-        if (Document is null || string.IsNullOrEmpty(edge.JumpStyle)) return jumps;
-
-        bool isHoriz = Math.Abs(b.Y - a.Y) < 0.001;
-        bool isVert = Math.Abs(b.X - a.X) < 0.001;
-        if (!isHoriz && !isVert) return jumps;
-
-        double len = isHoriz ? Math.Abs(b.X - a.X) : Math.Abs(b.Y - a.Y);
-        if (len < 0.001) return jumps;
-
-        foreach (var other in Document.Edges)
-        {
-            if (other.Id == edge.Id) continue;
-            if (other.Routing != "orthogonal") continue;
-            if (string.IsNullOrEmpty(other.JumpStyle)) continue;
-
-            var otherPts = GetEdgePoints(other);
-            for (int j = 1; j < otherPts.Length; j++)
-            {
-                var oa = otherPts[j - 1];
-                var ob = otherPts[j];
-
-                bool oHoriz = Math.Abs(ob.Y - oa.Y) < 0.001;
-                bool oVert = Math.Abs(ob.X - oa.X) < 0.001;
-
-                if (isHoriz && !oVert) continue;
-                if (isVert && !oHoriz) continue;
-
-                double ix = isHoriz ? oa.X : a.X;
-                double iy = isHoriz ? a.Y : oa.Y;
-
-                const double eps = 0.5;
-                if (ix < Math.Min(a.X, b.X) - eps || ix > Math.Max(a.X, b.X) + eps) continue;
-                if (iy < Math.Min(a.Y, b.Y) - eps || iy > Math.Max(a.Y, b.Y) + eps) continue;
-                if (ix < Math.Min(oa.X, ob.X) - eps || ix > Math.Max(oa.X, ob.X) + eps) continue;
-                if (iy < Math.Min(oa.Y, ob.Y) - eps || iy > Math.Max(oa.Y, ob.Y) + eps) continue;
-
-                double t = isHoriz
-                    ? (Math.Abs(b.X - a.X) > 0.001 ? (ix - a.X) / (b.X - a.X) : 0)
-                    : (Math.Abs(b.Y - a.Y) > 0.001 ? (iy - a.Y) / (b.Y - a.Y) : 0);
-
-                if (t > 0.05 && t < 0.95)
-                    jumps.Add(t);
-            }
-        }
-
-        jumps.Sort();
-        return jumps;
-    }
-
-    private static void AppendSegmentWithJumps(System.Text.StringBuilder sb, (double X, double Y) a, (double X, double Y) b, string jumpStyle, double jumpSize, List<double> jumps)
-    {
-        if (jumps.Count == 0)
-        {
-            sb.Append($" L {F(b.X)} {F(b.Y)}");
-            return;
-        }
-
-        bool isHoriz = Math.Abs(b.Y - a.Y) < 0.001;
-        double dx = b.X - a.X;
-        double dy = b.Y - a.Y;
-        double segLen = Math.Sqrt(dx * dx + dy * dy);
-        double half = Math.Max(jumpSize / 2.0, 2.0);
-
-        double prevT = 0;
-        foreach (var t in jumps)
-        {
-            double t0 = Math.Max(prevT, t - half / segLen);
-            double t1 = Math.Min(1.0, t + half / segLen);
-
-            var x0 = a.X + dx * t0;
-            var y0 = a.Y + dy * t0;
-            var x1 = a.X + dx * t1;
-            var y1 = a.Y + dy * t1;
-            var xc = a.X + dx * t;
-            var yc = a.Y + dy * t;
-
-            sb.Append($" L {F(x0)} {F(y0)}");
-
-            switch (jumpStyle)
-            {
-                case "arc":
-                    sb.Append($" A {F(half)} {F(half)} 0 0 0 {F(x1)} {F(y1)}");
-                    break;
-                case "gap":
-                    sb.Append($" M {F(x1)} {F(y1)}");
-                    break;
-                case "sharp":
-                    if (isHoriz)
-                        sb.Append($" L {F(xc)} {F(yc - half)} L {F(x1)} {F(y1)}");
-                    else
-                        sb.Append($" L {F(xc + half)} {F(yc)} L {F(x1)} {F(y1)}");
-                    break;
-                case "line":
-                    if (isHoriz)
-                    {
-                        sb.Append($" L {F(xc - half * 0.3)} {F(yc - half)}");
-                        sb.Append($" L {F(xc + half * 0.3)} {F(yc + half)}");
-                        sb.Append($" L {F(x1)} {F(y1)}");
-                    }
-                    else
-                    {
-                        sb.Append($" L {F(xc - half)} {F(yc - half * 0.3)}");
-                        sb.Append($" L {F(xc + half)} {F(yc + half * 0.3)}");
-                        sb.Append($" L {F(x1)} {F(y1)}");
-                    }
-                    break;
-                default:
-                    sb.Append($" L {F(x1)} {F(y1)}");
-                    break;
-            }
-
-            prevT = t1;
-        }
-
-        if (prevT < 1.0)
-        {
-            var xe = a.X + dx * 1.0;
-            var ye = a.Y + dy * 1.0;
-            sb.Append($" L {F(xe)} {F(ye)}");
-        }
-    }
-
-    private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Style.StrokeWidth ?? 1;
     private static string GetEdgeStrokeDasharray(DiagramEdge edge)
-    {
-        var pattern = edge.Style.StrokeDashPattern;
-        if (string.IsNullOrEmpty(pattern)) return edge.ConnectorType == "dependency" ? "5,5" : "";
-        return pattern switch
+        => edge.ConnectorType == "dependency" ? "5,5" : "";
+
+    private static string GetEdgeMarkerEnd(DiagramEdge edge)
+        => edge.ConnectorType switch
         {
-            "solid" => "",
-            "dashed" => "5,5",
-            "dotted" => "1,3",
-            "dash-dot" => "5,2,1,2",
-            _ => pattern,
+            "inheritance" => "url(#arrow-empty-triangle)",
+            "dependency" => "url(#arrow-default)",
+            _ => "url(#arrow-default)",
         };
-    }
 
-    private static string GetEdgeColor(DiagramEdge edge)
-        => edge.Style.Stroke ?? "#111827";
-
-    private string GetEdgeMarkerEnd(DiagramEdge edge)
-    {
-        var arrow = string.IsNullOrEmpty(edge.EndArrow) ? "none" : edge.EndArrow;
-        if (arrow == "none") return "";
-        var color = GetEdgeColor(edge);
-        var size = edge.EndArrowSize ?? 10;
-        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size);
-        return $"url(#{id})";
-    }
-
-    private string GetEdgeMarkerStart(DiagramEdge edge)
-    {
-        var arrow = string.IsNullOrEmpty(edge.StartArrow) ? "none" : edge.StartArrow;
-        if (arrow == "none") return "";
-        var color = GetEdgeColor(edge);
-        var size = edge.StartArrowSize ?? 10;
-        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size);
-        return $"url(#{id})";
-    }
-
-    private record MarkerRef(string Id, string Arrowhead, string Color);
-
-    private IEnumerable<MarkerRef> GetRequiredMarkers()
-    {
-        if (Document is null) yield break;
-        var seen = new HashSet<string>();
-        foreach (var edge in Document.Edges)
+    private static string GetEdgeMarkerStart(DiagramEdge edge)
+        => edge.ConnectorType switch
         {
-            var color = GetEdgeColor(edge);
-            if (!string.IsNullOrEmpty(edge.StartArrow) && edge.StartArrow != "none")
-            {
-                var size = edge.StartArrowSize ?? 10;
-                var id = DiagramArrowheadRegistry.GetMarkerId(edge.StartArrow, color, size);
-                if (seen.Add(id))
-                    yield return new MarkerRef(id, edge.StartArrow, color);
-            }
-            if (!string.IsNullOrEmpty(edge.EndArrow) && edge.EndArrow != "none")
-            {
-                var size = edge.EndArrowSize ?? 10;
-                var id = DiagramArrowheadRegistry.GetMarkerId(edge.EndArrow, color, size);
-                if (seen.Add(id))
-                    yield return new MarkerRef(id, edge.EndArrow, color);
-            }
-        }
-    }
+            "composition" => "url(#arrow-filled-diamond)",
+            "aggregation" => "url(#arrow-empty-diamond)",
+            _ => "",
+        };
 
     // ── Helper DTOs ──────────────────────────────────────────────────────────
 

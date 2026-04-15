@@ -2,13 +2,27 @@
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Stencils
 
+@{
+    var contentBelow = _stencil?.Layout.ContentPosition == "below";
+}
 <div class="tm-diagram-node__shape"
      data-shape="@(_stencil?.Layout.BackgroundShape ?? "rectangle")"
      data-stencil-id="@Node.StencilId"
-     style="@GetShapeStyle()"
+     data-content-position="@(_stencil?.Layout.ContentPosition ?? "overlay")"
+     data-has-shape-svg="@(!string.IsNullOrEmpty(_stencil?.Layout.ShapeSvg) ? "true" : "false")"
+     style="@GetShapeStyle(contentBelow)"
      @onfocusout="OnEditFocusOut">
-    <div style="@GetInnerWrapperStyle()">
-        <div class="tm-diagram-node__content" style="@GetContentStyle()">
+    @if (!string.IsNullOrEmpty(_stencil?.Layout.ShapeSvg))
+    {
+        <svg class="tm-diagram-node__svg-bg"
+             viewBox="0 0 100 100"
+             preserveAspectRatio="@(_stencil.Layout.PreserveAspectRatio ? "xMidYMid meet" : "none")"
+             style="@GetSvgBgStyle(contentBelow)"
+             xmlns="http://www.w3.org/2000/svg">
+            @((MarkupString)_stencil.Layout.ShapeSvg)
+        </svg>
+    }
+    <div class="tm-diagram-node__content" style="@GetContentStyle(contentBelow)">
         @foreach (var section in _stencil?.Layout.Sections ?? [])
         {
             switch (section.Type)
@@ -84,6 +98,5 @@
                     break;
             }
         }
-        </div>
     </div>
 </div>

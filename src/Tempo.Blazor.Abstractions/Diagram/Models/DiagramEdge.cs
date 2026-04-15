@@ -30,6 +30,33 @@ public sealed class DiagramEdge
     /// <summary>Optional label rendered along the connector path.</summary>
     public string? Label { get; set; }
 
+    /// <summary>Start arrowhead style. Supported: none, classic, block, open, oval, diamond, async.</summary>
+    public string StartArrow { get; set; } = "none";
+
+    /// <summary>End arrowhead style. Supported: none, classic, block, open, oval, diamond, async.</summary>
+    public string EndArrow { get; set; } = "classic";
+
+    /// <summary>Start arrowhead size in pixels.</summary>
+    public double? StartArrowSize { get; set; }
+
+    /// <summary>End arrowhead size in pixels.</summary>
+    public double? EndArrowSize { get; set; }
+
+    /// <summary>Whether to use rounded corners on the edge path.</summary>
+    public bool Rounded { get; set; }
+
+    /// <summary>Line jump style when edges cross. Supported: arc, gap, sharp, line.</summary>
+    public string? JumpStyle { get; set; }
+
+    /// <summary>Line jump size in pixels.</summary>
+    public double? JumpSize { get; set; }
+
+    /// <summary>Spacing between source node boundary and edge start.</summary>
+    public double? SourceSpacing { get; set; }
+
+    /// <summary>Spacing between target node boundary and edge end.</summary>
+    public double? TargetSpacing { get; set; }
+
     /// <summary>Visual style overrides for this edge.</summary>
     public DiagramStyle Style { get; set; } = new();
 

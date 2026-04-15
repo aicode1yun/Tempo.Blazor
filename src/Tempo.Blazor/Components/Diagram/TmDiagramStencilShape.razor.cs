@@ -102,116 +102,86 @@ public partial class TmDiagramStencilShape : ComponentBase
         }
     }
 
-    private string GetShapeStyle()
+    private string GetShapeStyle(bool contentBelow)
+    {
+        var flex = contentBelow ? "display:flex;flex-direction:column;" : "";
+        return $"position:relative;width:100%;height:100%;overflow:hidden;{flex}{GetShapeStyleVars()}";
+    }
+
+    private string GetShapeStyleVars()
     {
         var layout = _stencil?.Layout;
-        var fill = layout?.Fill ?? Node.Style.Fill ?? "#ffffff";
-        var stroke = layout?.Stroke ?? Node.Style.Stroke ?? "#111827";
-        var strokeWidth = layout?.StrokeWidth ?? Node.Style.StrokeWidth ?? 1.5;
-        var radius = GetBorderRadius();
-        var shape = layout?.BackgroundShape ?? "rectangle";
-
-        var borderStyle = shape == "weak-entity" ? "double" : "solid";
-        var hasClipPath = shape is "diamond" or "document";
-
-        if (shape == "package")
-        {
-            var pkgSvg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>" +
-                         "<path d='M0,20 L0,3 Q0,0 3,0 L32,0 Q35,0 35,3 L35,20 L100,20 L100,100 L0,100 Z' " +
-                         "fill='" + fill + "' stroke='" + stroke + "' stroke-width='" + F(strokeWidth) + "' vector-effect='non-scaling-stroke'/></svg>";
-            var pkgUri = "data:image/svg+xml;utf8," + Uri.EscapeDataString(pkgSvg);
-            return $"background-image: url(\"{pkgUri}\"); background-size: 100% 100%; width: 100%; height: 100%; overflow: hidden;";
-        }
-
-        if (hasClipPath)
-        {
-            var style = $"background: {stroke}; padding: {F(strokeWidth)}px; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;";
-            if (shape == "diamond")
-                style += " clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);";
-            else if (shape == "document")
-                style += " clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 85% 100%, 70% 80%, 55% 100%, 40% 80%, 25% 100%, 10% 80%, 0% 100%);";
-            return style;
-        }
-
-        return $"background: {fill}; border: {F(strokeWidth)}px {borderStyle} {stroke}; border-radius: {radius}; width: 100%; height: 100%; overflow: hidden;";
+        var fill = Node.Style.Fill ?? layout?.Fill ?? "#ffffff";
+        var stroke = Node.Style.Stroke ?? layout?.Stroke ?? "#111827";
+        var strokeWidth = Node.Style.StrokeWidth ?? layout?.StrokeWidth ?? 1.5;
+        var opacity = Node.Style.Opacity ?? 1.0;
+        var shadow = (Node.Style.HasShadow ?? false) ? "box-shadow: 2px 2px 6px rgba(0,0,0,0.25);" : "";
+        var baseOpacity = $"opacity: {F(opacity)};";
+        return $"--stencil-fill:{fill};--stencil-stroke:{stroke};--stencil-stroke-width:{F(strokeWidth)}px;{baseOpacity} {shadow}";
     }
 
-    private string GetInnerWrapperStyle()
+    private string GetSvgBgStyle(bool contentBelow)
+        => contentBelow
+            ? "position:relative;flex:1 1 auto;width:100%;height:auto;overflow:hidden;"
+            : "position:absolute;inset:0;width:100%;height:100%;overflow:hidden;pointer-events:none;";
+
+    private string GetContentStyle(bool contentBelow)
     {
-        var layout = _stencil?.Layout;
-        var fill = layout?.Fill ?? Node.Style.Fill ?? "#ffffff";
-        var shape = layout?.BackgroundShape ?? "rectangle";
-        var hasClipPath = shape is "diamond" or "document";
-
-        if (shape == "package")
-            return "width: 100%; height: 100%; background: transparent;";
-
-        if (!hasClipPath)
-            return "width: 100%; height: 100%;";
-
-        var style = $"background: {fill}; width: 100%; height: 100%; overflow: hidden;";
-        if (shape == "diamond")
-            style += " clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);";
-        else if (shape == "document")
-            style += " clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 85% 100%, 70% 80%, 55% 100%, 40% 80%, 25% 100%, 10% 80%, 0% 100%);";
-        return style;
-    }
-
-    private string GetContentStyle()
-    {
-        if (_stencil?.Layout.BackgroundShape == "diamond")
-        {
-            return "transform: rotate(0deg);"; // Content stays upright; diamond is shape-level
-        }
-        if (_stencil?.Layout.BackgroundShape == "document")
-        {
-            return "padding-bottom: 8px;"; // Leave room for scalloped bottom
-        }
-        if (_stencil?.Layout.BackgroundShape == "package")
-        {
-            return "padding-top: 20%; box-sizing: border-box;";
-        }
-        return "";
-    }
-
-    private string GetBorderRadius()
-    {
-        return _stencil?.Layout.BackgroundShape switch
-        {
-            "rounded" => "8px",
-            "ellipse" => "9999px",
-            _ => "0px",
-        };
-    }
-
-    private static string GetTextStyle(DiagramStencilTextStyle? ts)
-    {
-        if (ts is null) return "";
         var sb = new System.Text.StringBuilder();
-        sb.Append($"text-align: {GetTextAlign(ts.TextAlign)};");
-        if (ts.Color is not null) sb.Append($" color: {ts.Color};");
-        if (ts.FontSize is not null) sb.Append($" font-size: {F(ts.FontSize.Value)}px;");
-        if (ts.FontFamily is not null) sb.Append($" font-family: {ts.FontFamily};");
-        if (ts.TextTransform is not null) sb.Append($" text-transform: {ts.TextTransform};");
-        if (ts.LetterSpacing is not null) sb.Append($" letter-spacing: {ts.LetterSpacing};");
+        if (contentBelow)
+        {
+            sb.Append("position:relative;flex:0 0 auto;width:100%;");
+        }
+        else
+        {
+            sb.Append("position:absolute;inset:0;");
+            sb.Append("height:100%;");
+        }
+        sb.Append($"display:flex;justify-content:{GetVerticalAlignCss(Node.Style.VerticalAlign ?? "middle")};");
         return sb.ToString();
     }
 
-    private static string GetTextInnerStyle(DiagramStencilTextStyle? ts)
+    private string GetTextStyle(DiagramStencilTextStyle? ts)
     {
-        if (ts is null) return "";
         var sb = new System.Text.StringBuilder();
-        if (ts.IsBold) sb.Append(" font-weight: 700;");
-        if (ts.IsItalic) sb.Append(" font-style: italic;");
+        var align = Node.Style.TextAlign ?? GetTextAlign(ts?.TextAlign);
+        sb.Append($"text-align: {align};");
+        var color = Node.Style.Color ?? ts?.Color;
+        if (color is not null) sb.Append($" color: {color};");
+        var fontSize = Node.Style.FontSize ?? ts?.FontSize;
+        if (fontSize is not null) sb.Append($" font-size: {F(fontSize.Value)}px;");
+        var fontFamily = Node.Style.FontFamily ?? ts?.FontFamily;
+        if (fontFamily is not null) sb.Append($" font-family: {fontFamily};");
+        if (ts?.TextTransform is not null) sb.Append($" text-transform: {ts.TextTransform};");
+        if (ts?.LetterSpacing is not null) sb.Append($" letter-spacing: {ts.LetterSpacing};");
+        if (Node.Style.IsUnderline == true) sb.Append(" text-decoration: underline;");
         return sb.ToString();
     }
 
-    private static string GetTextAlign(StencilTextAlign align)
+    private string GetTextInnerStyle(DiagramStencilTextStyle? ts)
+    {
+        var sb = new System.Text.StringBuilder();
+        var isBold = Node.Style.IsBold ?? ts?.IsBold ?? false;
+        var isItalic = Node.Style.IsItalic ?? ts?.IsItalic ?? false;
+        if (isBold) sb.Append(" font-weight: 700;");
+        if (isItalic) sb.Append(" font-style: italic;");
+        return sb.ToString();
+    }
+
+    private static string GetTextAlign(StencilTextAlign? align)
         => align switch
         {
             StencilTextAlign.Center => "center",
             StencilTextAlign.Right => "right",
             _ => "left",
+        };
+
+    private static string GetVerticalAlignCss(string align)
+        => align switch
+        {
+            "top" => "flex-start",
+            "bottom" => "flex-end",
+            _ => "center",
         };
 
     private string GetSectionText(DiagramStencilSection section)

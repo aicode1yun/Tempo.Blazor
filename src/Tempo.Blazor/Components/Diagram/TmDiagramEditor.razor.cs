@@ -520,13 +520,15 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         }
     }
 
-    private async Task HandleEdgeRoutingChanged((string EdgeId, string Routing) args)
+    private async Task HandleEdgeRoutingChanged((string EdgeId, string OldRouting, string NewRouting) args)
     {
         if (_document is null || _canvas is null || ReadOnly) return;
         var edge = _document.Edges.FirstOrDefault(e => e.Id == args.EdgeId);
         if (edge is null) return;
 
-        if (args.Routing == "orthogonal")
+        var oldWaypoints = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+
+        if (args.NewRouting is "orthogonal" or "elbow" or "segment")
         {
             edge.Waypoints = await _canvas.ComputeOrthogonalWaypointsAsync(edge);
         }
@@ -535,6 +537,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             edge.Waypoints.Clear();
         }
 
+        var newWaypoints = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+        _commandStack.Push(new UpdateEdgeRoutingCommand(_document, edge.Id, args.OldRouting, args.NewRouting, oldWaypoints, newWaypoints));
         await OnDocumentChanged(_document);
     }
 

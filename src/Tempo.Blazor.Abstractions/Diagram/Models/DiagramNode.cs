@@ -39,6 +39,9 @@ public sealed class DiagramNode
     /// <summary>Optional parent node identifier for nested nodes (containers, packages, pools).</summary>
     public string? ParentNodeId { get; set; }
 
+    /// <summary>Optional group identifier. Nodes with the same GroupId behave as a group.</summary>
+    public string? GroupId { get; set; }
+
     /// <summary>Optional layer identifier. When null, the node belongs to the default layer.</summary>
     public string? LayerId { get; set; }
 

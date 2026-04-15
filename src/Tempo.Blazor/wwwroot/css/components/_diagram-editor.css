@@ -1149,3 +1149,118 @@
     text-overflow: ellipsis;
     max-width: 100%;
 }
+
+/* ── Property Panel collapsible sections ───────────────────────────────── */
+.tm-diagram-properties__section--collapsible {
+    border-bottom: 1px solid var(--tm-color-border, #e5e7eb);
+}
+
+.tm-diagram-properties__section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 100%;
+    padding: 10px 12px;
+    background: transparent;
+    border: none;
+    font-size: var(--tm-font-size-sm, 14px);
+    font-weight: 500;
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+}
+
+.tm-diagram-properties__section-header:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties__section-body {
+    padding: 0 12px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.tm-diagram-properties__slider {
+    width: 100%;
+    accent-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__color-wrap {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.tm-diagram-properties__color {
+    width: 44px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    background: var(--tm-color-surface, #ffffff);
+    cursor: pointer;
+}
+
+.tm-diagram-properties__toggles {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-diagram-properties__toggle-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    border: 1px solid var(--tm-color-border, #e5e7eb);
+    border-radius: var(--tm-radius-md, 6px);
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    cursor: pointer;
+    transition: background 0.12s, border-color 0.12s;
+}
+
+.tm-diagram-properties__toggle-btn:hover {
+    background: var(--tm-color-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-properties__toggle-btn--active {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-properties__actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tm-diagram-properties__align-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 6px;
+}
+
+.tm-diagram-properties__mixed {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    font-style: italic;
+}
+
+/* Dark mode adjustments */
+[data-theme="dark"] .tm-diagram-properties__color {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+}
+
+[data-theme="dark"] .tm-diagram-properties__toggle-btn {
+    background: var(--tm-color-surface-elevated, #1f2937);
+    border-color: var(--tm-color-border-strong, #374151);
+    color: var(--tm-color-text, #f3f4f6);
+}
+
+[data-theme="dark"] .tm-diagram-properties__toggle-btn--active {
+    background: rgba(59, 130, 246, 0.2);
+    border-color: var(--tm-color-primary, #3b82f6);
+}

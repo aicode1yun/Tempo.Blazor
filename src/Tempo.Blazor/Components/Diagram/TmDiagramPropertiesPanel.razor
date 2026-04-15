@@ -11,91 +11,310 @@
     <div class="tm-diagram-properties__inner">
         <h3 class="tm-diagram-properties__title">@Loc["TmDiagramProperties_Title"]</h3>
 
-        @if (SelectedNode is not null && !ReadOnly)
+        @if (IsMixedSelection)
         {
-            <div class="tm-diagram-properties__section">
-                <h4 class="tm-diagram-properties__section-title">@Loc["TmDiagramProperties_NodeTitle"]</h4>
+            <p class="tm-diagram-properties__empty">
+                @SelectedNodes.Count @Loc["TmDiagramProperties_NodeTitle"] + @SelectedEdges.Count @Loc["TmDiagramProperties_EdgeTitle"]
+            </p>
+        }
+        else if (SelectedNodes.Count > 0 && !ReadOnly)
+        {
+            @* ── Single Node Data Fields ───────────────────────────────────── *@
+            @if (IsSingleNode && SelectedStencil?.Layout.Sections.Any(s => s.DataKey is not null && (s.Type == "text" || s.Type == "list")) == true)
+            {
+                <div class="tm-diagram-properties__section">
+                    @foreach (var section in SelectedStencil.Layout.Sections.Where(s => s.DataKey is not null && (s.Type == "text" || s.Type == "list")))
+                    {
+                        <div class="tm-diagram-properties__field">
+                            <label>@Capitalize(section.DataKey!)</label>
+                            @if (section.Type == "list")
+                            {
+                                <textarea class="tm-text-input"
+                                          style="min-height: 80px; font-family: inherit;"
+                                          value="@GetNodeDataListText(section.DataKey!)"
+                                          @onchange="e => OnNodeDataListChanged(section.DataKey!, e.Value?.ToString())"></textarea>
+                            }
+                            else
+                            {
+                                <TmTextInput Value="@GetNodeDataText(section.DataKey!)"
+                                             ValueChanged="v => OnNodeDataTextChanged(section.DataKey!, v)" />
+                            }
+                        </div>
+                    }
+                </div>
+            }
 
-                @foreach (var section in SelectedStencil?.Layout.Sections.Where(s => s.DataKey is not null && (s.Type == "text" || s.Type == "list")) ?? [])
+            @* ── Style Section ─────────────────────────────────────────────── *@
+            <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
+                <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("style")'>
+                    <span>@Loc["TmDiagramProperties_Style"]</span>
+                    <TmIcon Name="@(IsSectionExpanded("style") ? IconNames.ChevronDown : IconNames.ChevronRight)" />
+                </button>
+                @if (IsSectionExpanded("style"))
                 {
-                    <div class="tm-diagram-properties__field">
-                        <label>@Capitalize(section.DataKey!)</label>
-                        @if (section.Type == "list")
+                    <div class="tm-diagram-properties__section-body">
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_Fill"]</label>
+                                <div class="tm-diagram-properties__color-wrap">
+                                    <input class="tm-text-input tm-diagram-properties__color" type="color" value="@GetNodeFill()" @onchange="OnNodeFillChanged" />
+                                </div>
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_Stroke"]</label>
+                                <div class="tm-diagram-properties__color-wrap">
+                                    <input class="tm-text-input tm-diagram-properties__color" type="color" value="@GetNodeStroke()" @onchange="OnNodeStrokeChanged" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_StrokeWidth"]</label>
+                            <input class="tm-text-input" type="number" step="0.5" min="0" value="@GetNodeStrokeWidth()" @onchange="OnNodeStrokeWidthChanged" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Opacity"] (@(GetNodeOpacity())%)</label>
+                            <input class="tm-diagram-properties__slider" type="range" min="0" max="100" step="5" value="@GetNodeOpacity()" @onchange="OnNodeOpacityChanged" />
+                        </div>
+
+                        @if (SelectedStencil?.Layout.SupportsCornerRadius != false)
                         {
-                            <textarea class="tm-text-input"
-                                      style="min-height: 80px; font-family: inherit;"
-                                      value="@GetNodeDataListText(section.DataKey!)"
-                                      @onchange="e => OnNodeDataListChanged(section.DataKey!, e.Value?.ToString())"></textarea>
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_Radius"]</label>
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetNodeRadius()" @onchange="OnNodeRadiusChanged" />
+                            </div>
                         }
-                        else
+
+                        <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
+                            <TmCheckbox Value="@GetNodeShadow()" ValueChanged="OnNodeShadowChanged" Label="@Loc["TmDiagramProperties_Shadow"]" />
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* ── Text Section ──────────────────────────────────────────────── *@
+            <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
+                <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("text")'>
+                    <span>@Loc["TmDiagramProperties_Text"]</span>
+                    <TmIcon Name="@(IsSectionExpanded("text") ? IconNames.ChevronDown : IconNames.ChevronRight)" />
+                </button>
+                @if (IsSectionExpanded("text"))
+                {
+                    <div class="tm-diagram-properties__section-body">
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_FontFamily"]</label>
+                            <TmSelect TValue="string" Value="@GetNodeFontFamily()" ValueChanged="OnNodeFontFamilyChanged" Options="@_fontFamilyOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_FontSize"]</label>
+                            <input class="tm-text-input" type="number" step="1" min="6" value="@GetNodeFontSize()" @onchange="OnNodeFontSizeChanged" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Color"]</label>
+                            <div class="tm-diagram-properties__color-wrap">
+                                <input class="tm-text-input tm-diagram-properties__color" type="color" value="@GetNodeColor()" @onchange="OnNodeColorChanged" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_TextAlign"]</label>
+                            <TmSelect TValue="string" Value="@GetNodeTextAlign()" ValueChanged="OnNodeTextAlignChanged" Options="@_textAlignOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_VerticalAlign"]</label>
+                            <TmSelect TValue="string" Value="@GetNodeVerticalAlign()" ValueChanged="OnNodeVerticalAlignChanged" Options="@_verticalAlignOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__row tm-diagram-properties__toggles">
+                            <button type="button" class="tm-diagram-properties__toggle-btn @(GetNodeBold() ? "tm-diagram-properties__toggle-btn--active" : "")" @onclick="() => OnNodeBoldChanged(!GetNodeBold())">
+                                <strong>B</strong>
+                            </button>
+                            <button type="button" class="tm-diagram-properties__toggle-btn @(GetNodeItalic() ? "tm-diagram-properties__toggle-btn--active" : "")" @onclick="() => OnNodeItalicChanged(!GetNodeItalic())">
+                                <em>I</em>
+                            </button>
+                            <button type="button" class="tm-diagram-properties__toggle-btn @(GetNodeUnderline() ? "tm-diagram-properties__toggle-btn--active" : "")" @onclick="() => OnNodeUnderlineChanged(!GetNodeUnderline())">
+                                <u>U</u>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @* ── Arrange Section ───────────────────────────────────────────── *@
+            <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
+                <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("arrange")'>
+                    <span>@Loc["TmDiagramProperties_Arrange"]</span>
+                    <TmIcon Name="@(IsSectionExpanded("arrange") ? IconNames.ChevronDown : IconNames.ChevronRight)" />
+                </button>
+                @if (IsSectionExpanded("arrange"))
+                {
+                    <div class="tm-diagram-properties__section-body">
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>X</label>
+                                <input class="tm-text-input" type="number" step="1" value="@(FirstSelectedNode?.X ?? 0)" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>Y</label>
+                                <input class="tm-text-input" type="number" step="1" value="@(FirstSelectedNode?.Y ?? 0)" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>W</label>
+                                <input class="tm-text-input" type="number" step="1" min="20" value="@(FirstSelectedNode?.W ?? 0)" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>H</label>
+                                <input class="tm-text-input" type="number" step="1" min="20" value="@(FirstSelectedNode?.H ?? 0)" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_ZIndex"]</label>
+                            <input class="tm-text-input" type="number" step="1" value="@(FirstSelectedNode?.ZIndex ?? 0)" @onchange="e => OnNodeZChanged(e.Value?.ToString())" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Layer"]</label>
+                            <select class="tm-text-input" value="@(FirstSelectedNode?.LayerId ?? "")" @onchange="OnNodeLayerChanged">
+                                <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                                @foreach (var layer in SortedLayers)
+                                {
+                                    <option value="@layer.Id">@layer.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="tm-diagram-properties__row tm-diagram-properties__actions">
+                            <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnBringToFront">@Loc["TmDiagramProperties_BringToFront"]</button>
+                            <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnSendToBack">@Loc["TmDiagramProperties_SendToBack"]</button>
+                        </div>
+
+                        @if (CanGroup || CanUngroup)
                         {
-                            <TmTextInput Value="@GetNodeDataText(section.DataKey!)"
-                                         ValueChanged="v => OnNodeDataTextChanged(section.DataKey!, v)" />
+                            <div class="tm-diagram-properties__row tm-diagram-properties__actions">
+                                @if (CanGroup)
+                                {
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnGroup">@Loc["TmDiagramProperties_Group"]</button>
+                                }
+                                @if (CanUngroup)
+                                {
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnUngroup">@Loc["TmDiagramProperties_Ungroup"]</button>
+                                }
+                            </div>
+                        }
+
+                        @if (CanAlign)
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_TextAlign"]</label>
+                                <div class="tm-diagram-properties__align-grid">
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("left")'>@Loc["TmDiagramProperties_AlignLeft"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("center")'>@Loc["TmDiagramProperties_AlignCenter"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("right")'>@Loc["TmDiagramProperties_AlignRight"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("top")'>@Loc["TmDiagramProperties_AlignTop"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("middle")'>@Loc["TmDiagramProperties_AlignMiddle"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnAlign("bottom")'>@Loc["TmDiagramProperties_AlignBottom"]</button>
+                                </div>
+                            </div>
                         }
                     </div>
                 }
-
-                <div class="tm-diagram-properties__row">
-                    <div class="tm-diagram-properties__field">
-                        <label>X</label>
-                        <input class="tm-text-input" type="number" step="1" value="@SelectedNode.X" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
-                    </div>
-                    <div class="tm-diagram-properties__field">
-                        <label>Y</label>
-                        <input class="tm-text-input" type="number" step="1" value="@SelectedNode.Y" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
-                    </div>
-                </div>
-
-                <div class="tm-diagram-properties__row">
-                    <div class="tm-diagram-properties__field">
-                        <label>W</label>
-                        <input class="tm-text-input" type="number" step="1" min="20" value="@SelectedNode.W" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
-                    </div>
-                    <div class="tm-diagram-properties__field">
-                        <label>H</label>
-                        <input class="tm-text-input" type="number" step="1" min="20" value="@SelectedNode.H" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
-                    </div>
-                </div>
-
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_ZIndex"]</label>
-                    <input class="tm-text-input" type="number" step="1" value="@SelectedNode.ZIndex" @onchange="e => OnNodeZChanged(e.Value?.ToString())" />
-                </div>
-
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_Layer"]</label>
-                    <select class="tm-text-input" value="@SelectedNode.LayerId" @onchange="OnNodeLayerChanged">
-                        <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
-                        @foreach (var layer in SortedLayers)
-                        {
-                            <option value="@layer.Id">@layer.Name</option>
-                        }
-                    </select>
-                </div>
             </div>
         }
-        else if (SelectedEdge is not null && !ReadOnly)
+        else if (SelectedEdges.Count > 0 && !ReadOnly)
         {
-            <div class="tm-diagram-properties__section">
-                <h4 class="tm-diagram-properties__section-title">@Loc["TmDiagramProperties_EdgeTitle"]</h4>
+            @* ── Edge Style Section ────────────────────────────────────────── *@
+            <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
+                <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("style")'>
+                    <span>@Loc["TmDiagramProperties_Style"]</span>
+                    <TmIcon Name="@(IsSectionExpanded("style") ? IconNames.ChevronDown : IconNames.ChevronRight)" />
+                </button>
+                @if (IsSectionExpanded("style"))
+                {
+                    <div class="tm-diagram-properties__section-body">
+                        @if (IsSingleEdge)
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_Label"]</label>
+                                <TmTextInput Value="@GetEdgeLabel()" ValueChanged="OnEdgeLabelChanged" />
+                            </div>
+                        }
 
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_Label"]</label>
-                    <TmTextInput Value="@GetEdgeLabel()" ValueChanged="OnEdgeLabelChanged" />
-                </div>
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Routing"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgeRouting()" ValueChanged="HandleEdgeRoutingChanged" Options="@_routingOptions" />
+                        </div>
 
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_Routing"]</label>
-                    <TmSelect TValue="string" Value="@SelectedEdge.Routing" ValueChanged="HandleEdgeRoutingChanged" Options="@_routingOptions" />
-                </div>
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_ConnectorType"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgeConnectorType()" ValueChanged="HandleConnectorTypeChanged" Options="@_connectorTypeOptions" />
+                        </div>
 
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_ConnectorType"]</label>
-                    <TmSelect TValue="string" Value="@SelectedEdge.ConnectorType" ValueChanged="HandleConnectorTypeChanged" Options="@_connectorTypeOptions" />
-                </div>
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_StartArrow"]</label>
+                                <TmSelect TValue="string" Value="@GetEdgeStartArrow()" ValueChanged="OnEdgeStartArrowChanged" Options="@_arrowheadOptions" />
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_EndArrow"]</label>
+                                <TmSelect TValue="string" Value="@GetEdgeEndArrow()" ValueChanged="OnEdgeEndArrowChanged" Options="@_arrowheadOptions" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_StrokeColor"]</label>
+                            <div class="tm-diagram-properties__color-wrap">
+                                <input class="tm-text-input tm-diagram-properties__color" type="color" value="@GetEdgeStrokeColor()" @onchange="OnEdgeStrokeColorChanged" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_StrokeWidth"]</label>
+                                <input class="tm-text-input" type="number" step="0.5" min="0.5" value="@GetEdgeStrokeWidth()" @onchange="OnEdgeStrokeWidthChanged" />
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_JumpSize"]</label>
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeJumpSize()" @onchange="OnEdgeJumpSizeChanged" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_StrokeDashPattern"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgeStrokeDashPattern()" ValueChanged="OnEdgeStrokeDashPatternChanged" Options="@_dashPatternOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_JumpStyle"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgeJumpStyle()" ValueChanged="OnEdgeJumpStyleChanged" Options="@_jumpStyleOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__row">
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_SourceSpacing"]</label>
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeSourceSpacing()" @onchange="OnEdgeSourceSpacingChanged" />
+                            </div>
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_TargetSpacing"]</label>
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeTargetSpacing()" @onchange="OnEdgeTargetSpacingChanged" />
+                            </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
+                            <TmCheckbox Value="@GetEdgeRounded()" ValueChanged="OnEdgeRoundedChanged" Label="@Loc["TmDiagramProperties_Rounded"]" />
+                        </div>
+                    </div>
+                }
             </div>
         }
-        else if (SelectedNode is null && SelectedEdge is null)
+        else if (SelectedIds.Length == 0)
         {
             <p class="tm-diagram-properties__empty">@Loc["TmDiagramProperties_Empty"]</p>
         }

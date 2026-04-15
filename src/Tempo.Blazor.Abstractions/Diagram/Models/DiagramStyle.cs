@@ -29,4 +29,25 @@ public sealed class DiagramStyle
 
     /// <summary>Corner radius in pixels for rectangles.</summary>
     public double? Radius { get; set; }
+
+    /// <summary>Horizontal text alignment. left, center, right.</summary>
+    public string? TextAlign { get; set; }
+
+    /// <summary>Vertical text alignment. top, middle, bottom.</summary>
+    public string? VerticalAlign { get; set; }
+
+    /// <summary>Whether text is bold.</summary>
+    public bool? IsBold { get; set; }
+
+    /// <summary>Whether text is italic.</summary>
+    public bool? IsItalic { get; set; }
+
+    /// <summary>Whether text is underlined.</summary>
+    public bool? IsUnderline { get; set; }
+
+    /// <summary>Whether the shape has a shadow effect.</summary>
+    public bool? HasShadow { get; set; }
+
+    /// <summary>Stroke dash pattern. e.g. solid, dashed, dotted, dash-dot.</summary>
+    public string? StrokeDashPattern { get; set; }
 }
