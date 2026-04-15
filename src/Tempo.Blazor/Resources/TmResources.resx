@@ -647,6 +647,8 @@
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Toggle toolbox</value></data>
   <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Toolbox</value></data>
+  <data name="TmDiagramToolbox_SearchPlaceholder" xml:space="preserve"><value>Search stencils...</value></data>
+  <data name="TmDiagramToolbox_NoResults" xml:space="preserve"><value>No stencils found</value></data>
 
   <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
   <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Toggle properties panel</value></data>
@@ -753,6 +755,9 @@
   <data name="TmDiagramProperties_AlignTop" xml:space="preserve"><value>Align Top</value></data>
   <data name="TmDiagramProperties_AlignMiddle" xml:space="preserve"><value>Align Middle</value></data>
   <data name="TmDiagramProperties_AlignBottom" xml:space="preserve"><value>Align Bottom</value></data>
+  <data name="TmDiagramProperties_Distribute" xml:space="preserve"><value>Distribute</value></data>
+  <data name="TmDiagramProperties_DistributeHorizontal" xml:space="preserve"><value>Horizontally</value></data>
+  <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Vertically</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Mixed</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> items selected</value></data>
 </root>

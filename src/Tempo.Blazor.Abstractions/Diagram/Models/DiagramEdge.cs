@@ -18,6 +18,12 @@ public sealed class DiagramEdge
     /// <summary>Optional target port identifier.</summary>
     public string? TargetPortId { get; set; }
 
+    /// <summary>Optional source edge identifier (for edge-to-edge connections).</summary>
+    public string? SourceEdgeId { get; set; }
+
+    /// <summary>Optional target edge identifier (for edge-to-edge connections).</summary>
+    public string? TargetEdgeId { get; set; }
+
     /// <summary>Edge routing type. Supported: "straight", "orthogonal", "curved".</summary>
     public string Routing { get; set; } = "straight";
 

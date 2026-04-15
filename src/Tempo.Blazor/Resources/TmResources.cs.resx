@@ -623,6 +623,8 @@
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
   <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Panel nástrojů</value></data>
+  <data name="TmDiagramToolbox_SearchPlaceholder" xml:space="preserve"><value>Hledat šablony...</value></data>
+  <data name="TmDiagramToolbox_NoResults" xml:space="preserve"><value>Žádné šablony nenalezeny</value></data>
 
   <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
   <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Přepnout vlastnosti</value></data>
@@ -729,6 +731,9 @@
   <data name="TmDiagramProperties_AlignTop" xml:space="preserve"><value>Zarovnat nahoru</value></data>
   <data name="TmDiagramProperties_AlignMiddle" xml:space="preserve"><value>Zarovnat na střed výšky</value></data>
   <data name="TmDiagramProperties_AlignBottom" xml:space="preserve"><value>Zarovnat dolů</value></data>
+  <data name="TmDiagramProperties_Distribute" xml:space="preserve"><value>Rozložit</value></data>
+  <data name="TmDiagramProperties_DistributeHorizontal" xml:space="preserve"><value>Vodorovně</value></data>
+  <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Svisle</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Smíšené</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> vybraných položek</value></data>
 </root>

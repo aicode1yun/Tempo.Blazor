@@ -1453,6 +1453,8 @@
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Basculer la boîte à outils</value></data>
   <data name="TmDiagramToolbox_Title" xml:space="preserve"><value>Boîte à outils</value></data>
+  <data name="TmDiagramToolbox_SearchPlaceholder" xml:space="preserve"><value>Rechercher des pochoirs...</value></data>
+  <data name="TmDiagramToolbox_NoResults" xml:space="preserve"><value>Aucun pochoir trouvé</value></data>
 
   <!-- ═══════════════ TmDiagramPropertiesPanel ═══════════════ -->
   <data name="TmDiagramProperties_Toggle" xml:space="preserve"><value>Basculer les propriétés</value></data>

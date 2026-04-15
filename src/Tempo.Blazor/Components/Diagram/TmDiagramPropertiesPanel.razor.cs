@@ -57,6 +57,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private bool CanGroup => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
     private bool CanUngroup => SelectedNodes.Count == 1 && !string.IsNullOrEmpty(FirstSelectedNode?.GroupId);
     private bool CanAlign => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
+    private bool CanDistribute => SelectedNodes.Count > 2 && SelectedEdges.Count == 0;
 
     private void ToggleCollapse() => _collapsed = !_collapsed;
     private void ToggleSection(string section)
@@ -390,6 +391,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         else
         {
             var cmd = new AlignNodesCommand(Document, ids, alignment);
+            cmd.Execute();
+        }
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnDistribute(string axis)
+    {
+        if (Document is null || SelectedNodes.Count <= 2) return;
+        var ids = SelectedNodes.Select(n => n.Id).ToList();
+        if (CommandStack is not null)
+            CommandStack.Push(new DistributeNodesCommand(Document, ids, axis));
+        else
+        {
+            var cmd = new DistributeNodesCommand(Document, ids, axis);
             cmd.Execute();
         }
         await DocumentChanged.InvokeAsync(Document);

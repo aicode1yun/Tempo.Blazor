@@ -586,6 +586,44 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await OnSelectionChanged.InvokeAsync(added.ToArray());
     }
 
+    [JSInvokable]
+    public async Task OnCopy(string[] ids)
+    {
+        if (Document is null || ReadOnly) return;
+        var cmd = new CopyNodesCommand(Document, ids);
+        cmd.Execute();
+        if (!string.IsNullOrEmpty(CopyNodesCommand.SharedClipboardJson))
+        {
+            await JS.InvokeVoidAsync("localStorage.setItem", "tm-diagram-clipboard", CopyNodesCommand.SharedClipboardJson);
+        }
+    }
+
+    [JSInvokable]
+    public async Task OnPaste()
+    {
+        if (Document is null || ReadOnly) return;
+        if (string.IsNullOrEmpty(CopyNodesCommand.SharedClipboardJson))
+        {
+            var stored = await JS.InvokeAsync<string?>("localStorage.getItem", "tm-diagram-clipboard");
+            if (!string.IsNullOrEmpty(stored))
+                CopyNodesCommand.SharedClipboardJson = stored;
+        }
+        if (CommandStack is not null)
+            CommandStack.Push(new PasteNodesCommand(Document, CommandStack, JS, _containerRef));
+        else
+        {
+            var cmd = new PasteNodesCommand(Document, null, JS, _containerRef);
+            cmd.Execute();
+        }
+        await NotifyAndRender();
+        var pastedIds = PasteNodesCommand.LastPastedNodeIds;
+        if (pastedIds.Count > 0)
+        {
+            await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, pastedIds.ToArray());
+            await OnSelectionChanged.InvokeAsync(pastedIds.ToArray());
+        }
+    }
+
     // ── Drag & Drop from toolbox ─────────────────────────────────────────────
 
     [JSInvokable]
@@ -941,26 +979,51 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         if (Document is null) return [];
 
-        var srcNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
-        var tgtNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
-        if (srcNode is null || tgtNode is null) return [];
+        (double X, double Y) p1;
+        PortSide sSide;
 
-        var srcPort = edge.SourcePortId is not null
-            ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
-            : srcNode.Ports.FirstOrDefault();
-        var tgtPort = edge.TargetPortId is not null
-            ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
-            : tgtNode.Ports.FirstOrDefault();
+        if (!string.IsNullOrEmpty(edge.SourceEdgeId))
+        {
+            var srcEdge = Document.Edges.FirstOrDefault(e => e.Id == edge.SourceEdgeId);
+            if (srcEdge is null) return [];
+            p1 = ComputeEdgeMidpoint(srcEdge);
+            sSide = PortSide.Right;
+        }
+        else
+        {
+            var srcNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
+            if (srcNode is null) return [];
+            var srcPort = edge.SourcePortId is not null
+                ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
+                : srcNode.Ports.FirstOrDefault();
+            var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
+            p1 = ComputePortPosition(srcNode, sPort);
+            sSide = sPort.Side;
+            p1 = ApplyPortSpacing(p1, sSide, edge.SourceSpacing ?? 0);
+        }
 
-        var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
-        var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
+        (double X, double Y) p2;
+        PortSide tSide;
 
-        var p1 = ComputePortPosition(srcNode, sPort);
-        var p2 = ComputePortPosition(tgtNode, tPort);
-
-        // Apply source/target spacing along port direction
-        p1 = ApplyPortSpacing(p1, sPort.Side, edge.SourceSpacing ?? 0);
-        p2 = ApplyPortSpacing(p2, tPort.Side, edge.TargetSpacing ?? 0);
+        if (!string.IsNullOrEmpty(edge.TargetEdgeId))
+        {
+            var tgtEdge = Document.Edges.FirstOrDefault(e => e.Id == edge.TargetEdgeId);
+            if (tgtEdge is null) return [];
+            p2 = ComputeEdgeMidpoint(tgtEdge);
+            tSide = PortSide.Left;
+        }
+        else
+        {
+            var tgtNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
+            if (tgtNode is null) return [];
+            var tgtPort = edge.TargetPortId is not null
+                ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
+                : tgtNode.Ports.FirstOrDefault();
+            var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
+            p2 = ComputePortPosition(tgtNode, tPort);
+            tSide = tPort.Side;
+            p2 = ApplyPortSpacing(p2, tSide, edge.TargetSpacing ?? 0);
+        }
 
         var pts = new List<(double X, double Y)> { p1 };
         foreach (var wp in edge.Waypoints)

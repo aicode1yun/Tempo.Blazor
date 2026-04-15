@@ -71,6 +71,12 @@ window.tmDiagramEditor = {
             longPressTimer: null,
             longPressStart: null,
             longPressNodeId: null,
+
+            // magnetic guidelines
+            guideLines: [],
+
+            // group bounds
+            groupBoundsEls: [],
         };
 
         this.instances.set(id, inst);
@@ -264,6 +270,169 @@ window.tmDiagramEditor = {
         };
     },
 
+    _includeGroupNodes: function (inst, ids) {
+        const allIds = new Set(ids);
+        const groupIds = new Set();
+        ids.forEach(nid => {
+            const el = this._nodeEl(inst, nid);
+            const gid = el ? el.getAttribute('data-group-id') : null;
+            if (gid) groupIds.add(gid);
+        });
+        if (groupIds.size > 0 && inst.htmlLayer) {
+            inst.htmlLayer.querySelectorAll('[data-group-id]').forEach(el => {
+                const gid = el.getAttribute('data-group-id');
+                const nid = el.getAttribute('data-node-id');
+                if (gid && groupIds.has(gid) && nid) allIds.add(nid);
+            });
+        }
+        return [...allIds];
+    },
+
+    // ── Magnetic guidelines ──────────────────────────────────────────────────
+
+    _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
+        const tolerance = 8; // document pixels
+        const guides = { x: null, y: null };
+        const otherNodes = [];
+
+        if (!inst.htmlLayer) return guides;
+
+        inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+            const nid = el.getAttribute('data-node-id');
+            if (!nid || dragNodeIds.includes(nid)) return;
+            const r = this._nodeRect(inst, nid);
+            if (r) otherNodes.push({ id: nid, x: r.x, y: r.y, w: r.w, h: r.h, cx: r.x + r.w / 2, cy: r.y + r.h / 2 });
+        });
+
+        if (otherNodes.length === 0) return guides;
+
+        for (let i = 0; i < dragNodeIds.length; i++) {
+            const id = dragNodeIds[i];
+            const start = dragStartPositions[id];
+            if (!start) continue;
+            const r = this._nodeRect(inst, id);
+            if (!r) continue;
+            const nx = start.x + dxDoc;
+            const ny = start.y + dyDoc;
+            const cx = nx + r.w / 2;
+            const cy = ny + r.h / 2;
+            const right = nx + r.w;
+            const bottom = ny + r.h;
+
+            for (const other of otherNodes) {
+                // left align
+                if (guides.x === null && Math.abs(nx - other.x) <= tolerance) {
+                    guides.x = { value: other.x, delta: other.x - nx };
+                }
+                // center align
+                if (guides.x === null && Math.abs(cx - other.cx) <= tolerance) {
+                    guides.x = { value: other.cx, delta: other.cx - cx };
+                }
+                // right align
+                if (guides.x === null && Math.abs(right - (other.x + other.w)) <= tolerance) {
+                    guides.x = { value: other.x + other.w, delta: (other.x + other.w) - right };
+                }
+                // top align
+                if (guides.y === null && Math.abs(ny - other.y) <= tolerance) {
+                    guides.y = { value: other.y, delta: other.y - ny };
+                }
+                // middle align
+                if (guides.y === null && Math.abs(cy - other.cy) <= tolerance) {
+                    guides.y = { value: other.cy, delta: other.cy - cy };
+                }
+                // bottom align
+                if (guides.y === null && Math.abs(bottom - (other.y + other.h)) <= tolerance) {
+                    guides.y = { value: other.y + other.h, delta: (other.y + other.h) - bottom };
+                }
+            }
+            if (guides.x !== null && guides.y !== null) break;
+        }
+        return guides;
+    },
+
+    _drawGuideLines: function (inst, guides) {
+        this._clearGuideLines(inst);
+        if (!inst.svg) return;
+        const vb = this._getViewBox(inst);
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.setAttribute('class', 'tm-diagram-guidelines');
+        g.style.pointerEvents = 'none';
+
+        if (guides.x !== null) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', guides.x.value);
+            line.setAttribute('y1', vb.y);
+            line.setAttribute('x2', guides.x.value);
+            line.setAttribute('y2', vb.y + vb.h);
+            line.setAttribute('stroke', '#3b82f6');
+            line.setAttribute('stroke-width', '1');
+            line.setAttribute('stroke-dasharray', '4 4');
+            g.appendChild(line);
+        }
+        if (guides.y !== null) {
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', vb.x);
+            line.setAttribute('y1', guides.y.value);
+            line.setAttribute('x2', vb.x + vb.w);
+            line.setAttribute('y2', guides.y.value);
+            line.setAttribute('stroke', '#3b82f6');
+            line.setAttribute('stroke-width', '1');
+            line.setAttribute('stroke-dasharray', '4 4');
+            g.appendChild(line);
+        }
+        inst.svg.appendChild(g);
+        inst.guideLines.push(g);
+    },
+
+    _clearGuideLines: function (inst) {
+        if (!inst.svg) return;
+        inst.svg.querySelectorAll('.tm-diagram-guidelines').forEach(el => el.remove());
+        inst.guideLines = [];
+    },
+
+    // ── Group bounds ─────────────────────────────────────────────────────────
+
+    _renderGroupBounds: function (inst) {
+        this._clearGroupBounds(inst);
+        if (!inst.htmlLayer) return;
+        const groupMap = {};
+        inst.selectedIds.forEach(id => {
+            const el = this._nodeEl(inst, id);
+            const gid = el ? el.getAttribute('data-group-id') : null;
+            if (!gid) return;
+            if (!groupMap[gid]) groupMap[gid] = [];
+            const r = this._nodeRect(inst, id);
+            if (r) groupMap[gid].push(r);
+        });
+
+        Object.keys(groupMap).forEach(gid => {
+            const rects = groupMap[gid];
+            if (rects.length === 0) return;
+            const minX = Math.min(...rects.map(r => r.x)) - 6;
+            const minY = Math.min(...rects.map(r => r.y)) - 6;
+            const maxX = Math.max(...rects.map(r => r.x + r.w)) + 6;
+            const maxY = Math.max(...rects.map(r => r.y + r.h)) + 6;
+            const el = document.createElement('div');
+            el.className = 'tm-diagram-group-bounds';
+            el.style.position = 'absolute';
+            el.style.left = minX + 'px';
+            el.style.top = minY + 'px';
+            el.style.width = (maxX - minX) + 'px';
+            el.style.height = (maxY - minY) + 'px';
+            el.style.border = '1px dashed var(--tm-color-primary, #3b82f6)';
+            el.style.borderRadius = '4px';
+            el.style.pointerEvents = 'none';
+            inst.htmlLayer.appendChild(el);
+            inst.groupBoundsEls.push(el);
+        });
+    },
+
+    _clearGroupBounds: function (inst) {
+        if (!inst.htmlLayer) return;
+        inst.htmlLayer.querySelectorAll('.tm-diagram-group-bounds').forEach(el => el.remove());
+        inst.groupBoundsEls = [];
+    },
+
     // ── Mouse down ───────────────────────────────────────────────────────────
 
     _onMouseDown: function (e, inst) {
@@ -362,6 +531,9 @@ window.tmDiagramEditor = {
             });
             inst.dragNodeIds = [...allIds];
 
+            // Include group nodes
+            inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
             inst.dragStartScreen = { x: e.clientX, y: e.clientY };
             inst.dragStartPositions = {};
             inst.dragNodeIds.forEach(nid => {
@@ -405,8 +577,13 @@ window.tmDiagramEditor = {
         if (inst.isDragging && inst.dragNodeIds.length > 0) {
             const dxScreen = e.clientX - inst.dragStartScreen.x;
             const dyScreen = e.clientY - inst.dragStartScreen.y;
-            const dxDoc = dxScreen / inst.scale;
-            const dyDoc = dyScreen / inst.scale;
+            let dxDoc = dxScreen / inst.scale;
+            let dyDoc = dyScreen / inst.scale;
+
+            const guides = this._computeSnapGuides(inst, inst.dragNodeIds, inst.dragStartPositions, dxDoc, dyDoc);
+            if (guides.x !== null) dxDoc += guides.x.delta;
+            if (guides.y !== null) dyDoc += guides.y.delta;
+            this._drawGuideLines(inst, guides);
 
             inst.dragNodeIds.forEach(id => {
                 const start = inst.dragStartPositions[id];
@@ -488,6 +665,7 @@ window.tmDiagramEditor = {
             inst.dragStartScreen = null;
             inst.dragStartPositions = {};
             inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            this._clearGuideLines(inst);
 
             if (moves.length === 1) {
                 inst.dotNetRef.invokeMethodAsync('OnElementMoved', moves[0].id, moves[0].x, moves[0].y);
@@ -633,6 +811,9 @@ window.tmDiagramEditor = {
             });
             inst.dragNodeIds = [...allIds];
 
+            // Include group nodes
+            inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
             inst.dragStartScreen = { x: t.clientX, y: t.clientY };
             inst.dragStartPositions = {};
             inst.dragNodeIds.forEach(nid => {
@@ -706,8 +887,13 @@ window.tmDiagramEditor = {
             e.preventDefault();
             const dxScreen = t.clientX - inst.dragStartScreen.x;
             const dyScreen = t.clientY - inst.dragStartScreen.y;
-            const dxDoc = dxScreen / inst.scale;
-            const dyDoc = dyScreen / inst.scale;
+            let dxDoc = dxScreen / inst.scale;
+            let dyDoc = dyScreen / inst.scale;
+
+            const guides = this._computeSnapGuides(inst, inst.dragNodeIds, inst.dragStartPositions, dxDoc, dyDoc);
+            if (guides.x !== null) dxDoc += guides.x.delta;
+            if (guides.y !== null) dyDoc += guides.y.delta;
+            this._drawGuideLines(inst, guides);
 
             inst.dragNodeIds.forEach(id => {
                 const start = inst.dragStartPositions[id];
@@ -756,6 +942,7 @@ window.tmDiagramEditor = {
             inst.dragNodeIds = [];
             inst.dragStartScreen = null;
             inst.dragStartPositions = {};
+            this._clearGuideLines(inst);
 
             if (moves.length === 1) {
                 inst.dotNetRef.invokeMethodAsync('OnElementMoved', moves[0].id, moves[0].x, moves[0].y);
@@ -885,6 +1072,14 @@ window.tmDiagramEditor = {
                 case 'd':
                     e.preventDefault();
                     if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnDuplicate', ids);
+                    return;
+                case 'c':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopy', ids);
+                    return;
+                case 'v':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnPaste');
                     return;
             }
         }
@@ -1276,5 +1471,133 @@ window.tmDiagramEditor = {
         const inst = this.instances.get(container.id);
         if (!inst) return { x: clientX, y: clientY };
         return this._screenToDoc(inst, clientX, clientY);
+    },
+
+    // ── Magnetic guidelines ────────────────────────────────────────────────
+
+    _includeGroupNodes: function (inst, nodeIds) {
+        const all = new Set(nodeIds);
+        const addChildren = (parentId) => {
+            if (!inst.htmlLayer) return;
+            inst.htmlLayer.querySelectorAll('[data-parent-id="' + parentId + '"]').forEach(childEl => {
+                const cid = childEl.getAttribute('data-node-id');
+                if (cid && !all.has(cid)) {
+                    all.add(cid);
+                    addChildren(cid);
+                }
+            });
+        };
+        nodeIds.forEach(id => addChildren(id));
+        return [...all];
+    },
+
+    _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
+        const threshold = 8 / inst.scale; // 8 screen px
+        const guides = { x: null, y: null };
+        if (!inst.htmlLayer) return guides;
+
+        const draggedRects = dragNodeIds.map(id => {
+            const start = dragStartPositions[id];
+            if (!start) return null;
+            const w = start.w ?? 0;
+            const h = start.h ?? 0;
+            return {
+                id,
+                left: start.x + dxDoc,
+                right: start.x + dxDoc + w,
+                top: start.y + dyDoc,
+                bottom: start.y + dyDoc + h,
+                centerX: start.x + dxDoc + w / 2,
+                centerY: start.y + dyDoc + h / 2,
+            };
+        }).filter(Boolean);
+
+        const allRects = [];
+        inst.htmlLayer.querySelectorAll('.tm-diagram-node').forEach(el => {
+            const id = el.getAttribute('data-node-id');
+            if (!id || dragNodeIds.includes(id)) return;
+            const r = this._nodeRect(inst, id);
+            if (!r) return;
+            allRects.push({
+                id,
+                left: r.x,
+                right: r.x + r.w,
+                top: r.y,
+                bottom: r.y + r.h,
+                centerX: r.x + r.w / 2,
+                centerY: r.y + r.h / 2,
+            });
+        });
+
+        function findBest(dragged, targets, propNames) {
+            let best = null;
+            for (const d of dragged) {
+                for (const t of targets) {
+                    for (const dp of propNames) {
+                        for (const tp of propNames) {
+                            const delta = t[tp] - d[dp];
+                            if (Math.abs(delta) <= threshold) {
+                                if (!best || Math.abs(delta) < Math.abs(best.delta)) {
+                                    best = { delta, dProp: dp, tProp: tp, dVal: d[dp], tVal: t[tp] };
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            return best;
+        }
+
+        const xBest = findBest(draggedRects, allRects, ['left', 'right', 'centerX']);
+        const yBest = findBest(draggedRects, allRects, ['top', 'bottom', 'centerY']);
+
+        if (xBest) guides.x = xBest;
+        if (yBest) guides.y = yBest;
+        return guides;
+    },
+
+    _drawGuideLines: function (inst, guides) {
+        this._clearGuideLines(inst);
+        if (!inst.svg) return;
+        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        g.id = 'tm-diagram-snap-guides';
+        g.setAttribute('pointer-events', 'none');
+
+        const vb = this._getViewBox(inst);
+        const color = '#3b82f6'; // blue-500
+
+        if (guides.x !== null) {
+            const x = guides.x.tVal;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', x);
+            line.setAttribute('y1', vb.y);
+            line.setAttribute('x2', x);
+            line.setAttribute('y2', vb.y + vb.h);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', 1 / inst.scale);
+            line.setAttribute('stroke-dasharray', (4 / inst.scale) + ',' + (4 / inst.scale));
+            g.appendChild(line);
+        }
+        if (guides.y !== null) {
+            const y = guides.y.tVal;
+            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+            line.setAttribute('x1', vb.x);
+            line.setAttribute('y1', y);
+            line.setAttribute('x2', vb.x + vb.w);
+            line.setAttribute('y2', y);
+            line.setAttribute('stroke', color);
+            line.setAttribute('stroke-width', 1 / inst.scale);
+            line.setAttribute('stroke-dasharray', (4 / inst.scale) + ',' + (4 / inst.scale));
+            g.appendChild(line);
+        }
+        if (g.childNodes.length > 0) {
+            inst.svg.appendChild(g);
+        }
+    },
+
+    _clearGuideLines: function (inst) {
+        if (!inst.svg) return;
+        const g = inst.svg.getElementById('tm-diagram-snap-guides');
+        if (g) g.remove();
     },
 };

@@ -224,6 +224,17 @@
                                 </div>
                             </div>
                         }
+
+                        @if (CanDistribute)
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_Distribute"]</label>
+                                <div class="tm-diagram-properties__align-grid">
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnDistribute("horizontal")'>@Loc["TmDiagramProperties_DistributeHorizontal"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnDistribute("vertical")'>@Loc["TmDiagramProperties_DistributeVertical"]</button>
+                                </div>
+                            </div>
+                        }
                     </div>
                 }
             </div>

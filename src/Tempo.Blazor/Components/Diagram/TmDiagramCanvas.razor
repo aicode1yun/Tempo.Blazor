@@ -63,6 +63,31 @@
                   pointer-events="none" />
         }
 
+        @* Group bounds *@
+        @if (Document is not null)
+        {
+            var groups = Document.Nodes
+                .Where(n => !string.IsNullOrEmpty(n.GroupId))
+                .GroupBy(n => n.GroupId!)
+                .ToList();
+            @foreach (var g in groups)
+            {
+                var minX = g.Min(n => n.X);
+                var minY = g.Min(n => n.Y);
+                var maxX = g.Max(n => n.X + n.W);
+                var maxY = g.Max(n => n.Y + n.H);
+                const double pad = 8;
+                <rect x="@F(minX - pad)" y="@F(minY - pad)"
+                      width="@F(maxX - minX + pad * 2)" height="@F(maxY - minY + pad * 2)"
+                      fill="none"
+                      stroke="var(--tm-color-primary)"
+                      stroke-width="1"
+                      stroke-dasharray="4,4"
+                      opacity="0.4"
+                      pointer-events="none" />
+            }
+        }
+
         @* Edges *@
         @if (Document is not null)
         {
@@ -158,6 +183,7 @@
                          data-node-id="@node.Id"
                          data-w="@node.W"
                          data-h="@node.H"
+                         data-group-id="@node.GroupId"
                          data-parent-id="@node.ParentNodeId"
                          data-locked="@(IsNodeLocked(node) ? "true" : "false")"
                          style="transform: translate(@(F(node.X))px, @(F(node.Y))px) rotate(@(F(node.Rotation))deg); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">

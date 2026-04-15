@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.Diagram.Models;
 
 namespace Tempo.Blazor.Components.Diagram;
 
@@ -21,6 +22,15 @@ public partial class TmDiagramToolbox : ComponentBase
     private readonly HashSet<string> _collapsedCategories = new();
     private ElementReference _containerRef;
     private bool _initialized;
+
+    private string _searchQuery = string.Empty;
+    private List<string> _filteredCategories = new();
+    private Dictionary<string, List<DiagramStencil>> _filteredStencilsByCategory = new();
+
+    protected override void OnInitialized()
+    {
+        RefreshFilter();
+    }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -47,5 +57,36 @@ public partial class TmDiagramToolbox : ComponentBase
     private async Task OnDragStart(DragEventArgs e, string stencilId)
     {
         await StencilDragStart.InvokeAsync(stencilId);
+    }
+
+    private void OnSearchChanged(string value)
+    {
+        _searchQuery = value;
+        RefreshFilter();
+    }
+
+    private void RefreshFilter()
+    {
+        var query = _searchQuery.Trim();
+        var allCategories = StencilRegistry.GetCategories();
+        var categories = new List<string>();
+        var stencilsByCategory = new Dictionary<string, List<DiagramStencil>>();
+
+        foreach (var cat in allCategories)
+        {
+            var stencils = StencilRegistry.GetByCategory(cat)
+                .Where(s => string.IsNullOrEmpty(query)
+                    || s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+                .ToList();
+
+            if (stencils.Count > 0)
+            {
+                categories.Add(cat);
+                stencilsByCategory[cat] = stencils;
+            }
+        }
+
+        _filteredCategories = categories;
+        _filteredStencilsByCategory = stencilsByCategory;
     }
 }

@@ -604,6 +604,21 @@
     margin: 0 0 var(--tm-space-3, 12px);
 }
 
+.tm-diagram-toolbox__search {
+    margin-bottom: var(--tm-space-3, 12px);
+}
+
+.tm-diagram-toolbox__search .tm-search-input {
+    width: 100%;
+}
+
+.tm-diagram-toolbox__no-results {
+    padding: var(--tm-space-4, 16px);
+    text-align: center;
+    font-size: var(--tm-font-size-sm, 14px);
+    color: var(--tm-color-text-muted, #6b7280);
+}
+
 .tm-diagram-toolbox__category {
     margin-bottom: var(--tm-space-2, 8px);
 }
