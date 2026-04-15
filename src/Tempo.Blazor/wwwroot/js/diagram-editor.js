@@ -556,6 +556,9 @@ window.tmDiagramEditor = {
     // ── Wheel zoom ───────────────────────────────────────────────────────────
 
     _onWheel: function (e, inst) {
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input')) {
+            return;
+        }
         e.preventDefault();
         const factor = e.deltaY > 0 ? 1.1 : 0.9;
         const vb = this._getViewBox(inst);

@@ -213,7 +213,18 @@
                     ["name"] = "Customer",
                     ["attributes"] = new[] { "- id: Guid", "- name: string", "- email: string" },
                     ["methods"] = new[] { "+ Save(): void", "+ Load(): void" }
-                }
+                },
+                Ports =
+                [
+                    new() { Id = "top", Name = "top", Side = PortSide.Top, Offset = 0.25 },
+                    new() { Id = "top-mid", Name = "top-mid", Side = PortSide.Top, Offset = 0.5 },
+                    new() { Id = "top-right", Name = "top-right", Side = PortSide.Top, Offset = 0.75 },
+                    new() { Id = "right", Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                    new() { Id = "bottom", Name = "bottom", Side = PortSide.Bottom, Offset = 0.25 },
+                    new() { Id = "bottom-mid", Name = "bottom-mid", Side = PortSide.Bottom, Offset = 0.5 },
+                    new() { Id = "bottom-right", Name = "bottom-right", Side = PortSide.Bottom, Offset = 0.75 },
+                    new() { Id = "left", Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                ]
             },
             new()
             {
@@ -228,7 +239,18 @@
                     ["name"] = "Order",
                     ["attributes"] = new[] { "- id: Guid", "- total: decimal" },
                     ["methods"] = new[] { "+ Place(): void", "+ Cancel(): void" }
-                }
+                },
+                Ports =
+                [
+                    new() { Id = "top", Name = "top", Side = PortSide.Top, Offset = 0.25 },
+                    new() { Id = "top-mid", Name = "top-mid", Side = PortSide.Top, Offset = 0.5 },
+                    new() { Id = "top-right", Name = "top-right", Side = PortSide.Top, Offset = 0.75 },
+                    new() { Id = "right", Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                    new() { Id = "bottom", Name = "bottom", Side = PortSide.Bottom, Offset = 0.25 },
+                    new() { Id = "bottom-mid", Name = "bottom-mid", Side = PortSide.Bottom, Offset = 0.5 },
+                    new() { Id = "bottom-right", Name = "bottom-right", Side = PortSide.Bottom, Offset = 0.75 },
+                    new() { Id = "left", Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                ]
             }
         ],
         Edges =
