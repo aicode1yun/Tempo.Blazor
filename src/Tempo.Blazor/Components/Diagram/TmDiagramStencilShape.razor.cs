@@ -112,17 +112,36 @@ public partial class TmDiagramStencilShape : ComponentBase
         var shape = layout?.BackgroundShape ?? "rectangle";
 
         var borderStyle = shape == "weak-entity" ? "double" : "solid";
-        var style = $"background: {fill}; border: {F(strokeWidth)}px {borderStyle} {stroke}; border-radius: {radius}; width: 100%; height: 100%; overflow: hidden;";
+        var hasClipPath = shape is "diamond" or "document";
 
+        if (hasClipPath)
+        {
+            var style = $"background: {stroke}; padding: {F(strokeWidth)}px; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;";
+            if (shape == "diamond")
+                style += " clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);";
+            else if (shape == "document")
+                style += " clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 85% 100%, 70% 80%, 55% 100%, 40% 80%, 25% 100%, 10% 80%, 0% 100%);";
+            return style;
+        }
+
+        return $"background: {fill}; border: {F(strokeWidth)}px {borderStyle} {stroke}; border-radius: {radius}; width: 100%; height: 100%; overflow: hidden;";
+    }
+
+    private string GetInnerWrapperStyle()
+    {
+        var layout = _stencil?.Layout;
+        var fill = layout?.Fill ?? Node.Style.Fill ?? "#ffffff";
+        var shape = layout?.BackgroundShape ?? "rectangle";
+        var hasClipPath = shape is "diamond" or "document";
+
+        if (!hasClipPath)
+            return "width: 100%; height: 100%;";
+
+        var style = $"background: {fill}; width: 100%; height: 100%; overflow: hidden;";
         if (shape == "diamond")
-        {
             style += " clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%);";
-        }
         else if (shape == "document")
-        {
             style += " clip-path: polygon(0% 0%, 100% 0%, 100% 80%, 85% 100%, 70% 80%, 55% 100%, 40% 80%, 25% 100%, 10% 80%, 0% 100%);";
-        }
-
         return style;
     }
 

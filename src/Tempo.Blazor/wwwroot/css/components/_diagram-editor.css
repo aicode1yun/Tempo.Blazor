@@ -290,6 +290,33 @@
     text-align: center;
 }
 
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__content {
+    flex-direction: row;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__divider {
+    width: 1px;
+    height: 100%;
+    margin: 0;
+    flex-shrink: 0;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__section:first-child {
+    width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.03);
+    flex-shrink: 0;
+}
+
+.tm-diagram-node__shape[data-shape="pool"] .tm-diagram-node__section:last-child {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
 .tm-diagram-node__section--icon {
     display: flex;
     align-items: center;
@@ -525,7 +552,7 @@
     background: var(--tm-color-surface, #ffffff);
     border: 1.5px solid var(--tm-color-primary, #3b82f6);
     border-radius: 2px;
-    z-index: 20;
+    z-index: 25;
     cursor: pointer;
 }
 
@@ -997,7 +1024,7 @@
 /* ── Rotate handle ─────────────────────────────────────────────────────── */
 .tm-diagram-rotate-handle {
     position: absolute;
-    top: -26px;
+    top: -38px;
     left: calc(50% - 7px);
     width: 14px;
     height: 14px;
@@ -1055,16 +1082,16 @@
 }
 
 /* Positioning */
-.tm-diagram-connect-arrow--n { top: -14px; left: calc(50% - 11px); }
+.tm-diagram-connect-arrow--n { top: -24px; left: calc(50% - 11px); }
 .tm-diagram-connect-arrow--n .tm-diagram-connect-arrow__icon { transform: rotate(-90deg); }
 
-.tm-diagram-connect-arrow--e { top: calc(50% - 11px); right: -14px; }
+.tm-diagram-connect-arrow--e { top: calc(50% - 11px); right: -24px; }
 .tm-diagram-connect-arrow--e .tm-diagram-connect-arrow__icon { transform: rotate(0deg); }
 
-.tm-diagram-connect-arrow--s { bottom: -14px; left: calc(50% - 11px); }
+.tm-diagram-connect-arrow--s { bottom: -24px; left: calc(50% - 11px); }
 .tm-diagram-connect-arrow--s .tm-diagram-connect-arrow__icon { transform: rotate(90deg); }
 
-.tm-diagram-connect-arrow--w { top: calc(50% - 11px); left: -14px; }
+.tm-diagram-connect-arrow--w { top: calc(50% - 11px); left: -24px; }
 .tm-diagram-connect-arrow--w .tm-diagram-connect-arrow__icon { transform: rotate(180deg); }
 
 /* ── Connect modal stencil grid ────────────────────────────────────────── */

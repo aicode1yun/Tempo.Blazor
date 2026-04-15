@@ -7,7 +7,8 @@
      data-stencil-id="@Node.StencilId"
      style="@GetShapeStyle()"
      @onfocusout="OnEditFocusOut">
-    <div class="tm-diagram-node__content" style="@GetContentStyle()">
+    <div style="@GetInnerWrapperStyle()">
+        <div class="tm-diagram-node__content" style="@GetContentStyle()">
         @foreach (var section in _stencil?.Layout.Sections ?? [])
         {
             switch (section.Type)
@@ -83,5 +84,6 @@
                     break;
             }
         }
+        </div>
     </div>
 </div>

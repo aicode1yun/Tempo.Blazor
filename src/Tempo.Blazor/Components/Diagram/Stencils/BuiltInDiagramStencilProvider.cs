@@ -427,7 +427,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     ],
                     Layout = new()
                     {
-                        BackgroundShape = "rectangle",
+                        BackgroundShape = "pool",
                         Sections =
                         [
                             new()
@@ -435,7 +435,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                                 Type = "text",
                                 DataKey = "label",
                                 DefaultText = "Pool",
-                                Padding = 8,
+                                Padding = 4,
                                 TextStyle = new()
                                 {
                                     IsBold = true,
