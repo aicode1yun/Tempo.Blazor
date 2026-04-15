@@ -197,7 +197,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "sticky-note",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='rotate(-4 50 50)'/>",
+                        ShapeSvg = "<rect x='7' y='7' width='86' height='86' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='rotate(6 50 50)'/><path d='M70 70 L94 94' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='rotate(6 50 50)'/>",
                         Fill = "#fef08a",
                         Stroke = "#ca8a04",
                         Sections =
@@ -413,7 +413,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='33' x2='100' y2='33' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='66' x2='100' y2='66' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -492,7 +492,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "package",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='30' y1='0' x2='30' y2='100' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='18' width='100' height='82' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='0' y='0' width='35' height='25' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -601,7 +601,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='22' text-anchor='middle' font-size='10' fill='var(--stencil-stroke)'>&lt;&lt;enum&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -721,7 +721,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='22' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>&lt;&lt;abstract&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -851,7 +851,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "cube",
-                        ShapeSvg = "<path d='M0,30 L50,0 L100,30 L100,80 L50,110 L0,80 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/><path d='M0,30 L50,60 L100,30' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/><path d='M50,60 L50,110' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/>",
+                        ShapeSvg = "<path d='M15,32 L50,12 L85,32 L85,68 L50,88 L15,68 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M15,32 L50,50 L85,32' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M50,50 L50,88' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -884,7 +884,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "document",
-                        ShapeSvg = "<path d='M0,0 L100,0 L100,80 L85,100 L70,80 L55,100 L40,80 L25,100 L10,80 L0,100 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='80' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M100 0 L100 48 L60 80' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -917,7 +917,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "package",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='30' y1='0' x2='30' y2='100' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='15' width='100' height='85' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='0' y='0' width='30' height='20' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='15' y='13' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>sd</text>",
                         Sections =
                         [
                             new()
@@ -1083,7 +1083,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "package",
-                        ShapeSvg = "<path d='M0,20 L0,3 Q0,0 3,0 L35,0 Q38,0 38,3 L38,20 L100,20 L100,100 L0,100 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='18' width='100' height='82' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='0' y='0' width='30' height='20' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='15' y='13' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>sd</text>",
                         Sections =
                         [
                             new()
@@ -1114,7 +1114,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='30' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='50' y1='30' x2='50' y2='100' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' stroke-dasharray='4 2' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -1180,7 +1180,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='22' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>&lt;&lt;role&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1213,7 +1213,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;business process&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1246,7 +1246,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;business function&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1279,7 +1279,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;business service&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1312,7 +1312,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;business object&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1411,7 +1411,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;application service&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1475,7 +1475,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;application function&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1508,7 +1508,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;data object&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -1652,7 +1652,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='8' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='14' fill='var(--stencil-stroke)'>BPMN</text>",
                         Sections =
                         [
                             new()
@@ -1697,7 +1697,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "diamond",
-                        ShapeSvg = "<polygon points='50,2 98,50 50,98 2,50' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<polygon points='50,10 90,50 50,90 10,50' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='30' y1='50' x2='70' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='50' y1='30' x2='50' y2='70' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -1824,7 +1824,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='8' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M55 25 A8 8 0 0 1 55 41 A8 8 0 0 1 55 25' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M45 45 L65 45 L65 60 L45 60 Z' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -1865,7 +1865,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='8' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='42' y='30' width='16' height='16' rx='2' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='46' y1='38' x2='54' y2='38' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -1906,7 +1906,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='8' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M40 35 L60 35 L50 50 Z' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -1947,7 +1947,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='8' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M40 35 L50 48 L60 35' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2453,7 +2453,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='14' fill='var(--stencil-stroke)'>ERD</text>",
                         Sections =
                         [
                             new()
@@ -2549,7 +2549,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "weak-entity",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='4' y='4' width='92' height='92' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='0' y='0' width='100' height='100' rx='2' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         StrokeWidth = 3,
                         Sections =
                         [
@@ -2643,7 +2643,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='25' y1='50' x2='75' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2688,7 +2688,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "cloud",
-                        ShapeSvg = "<path d='M20 45 A15 15 0 0 1 20 15 A15 15 0 0 1 50 10 A15 15 0 0 1 85 20 A15 15 0 0 1 75 50 H25' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<path d='M15 70 A18 18 0 0 1 18 37 A20 20 0 0 1 55 30 A20 20 0 0 1 88 40 A18 18 0 0 1 82 70 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2721,7 +2721,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='20' y='15' width='60' height='70' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='32' cy='30' r='3' fill='var(--stencil-stroke)'/><line x1='42' y1='30' x2='74' y2='30' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='32' cy='50' r='3' fill='var(--stencil-stroke)'/><line x1='42' y1='50' x2='74' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='32' cy='70' r='3' fill='var(--stencil-stroke)'/><line x1='42' y1='70' x2='74' y2='70' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2762,7 +2762,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<ellipse cx='50' cy='50' rx='40' ry='38' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='50' cy='50' r='10' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='50' y1='22' x2='50' y2='38' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='50' y1='62' x2='50' y2='78' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='22' y1='50' x2='38' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='62' y1='50' x2='78' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2828,7 +2828,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='20' x2='100' y2='20' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='40' x2='100' y2='40' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='60' x2='100' y2='60' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='80' x2='100' y2='80' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2861,7 +2861,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='15' y='35' width='70' height='30' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='25' y1='45' x2='35' y2='45' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='45' y1='45' x2='55' y2='45' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='65' y1='45' x2='75' y2='45' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='25' y1='55' x2='35' y2='55' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='45' y1='55' x2='55' y2='55' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='65' y1='55' x2='75' y2='55' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2894,7 +2894,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='20' y='20' width='60' height='45' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='25' y='25' width='50' height='35' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='40' y='65' width='20' height='8' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2927,7 +2927,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='18' y='20' width='64' height='42' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M12 68 L88 68' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='28' y='28' width='44' height='26' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2960,7 +2960,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='35' y='15' width='30' height='55' rx='3' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='40' y='22' width='20' height='35' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -2993,7 +2993,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><ellipse cx='50' cy='50' rx='48' ry='19' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='50' y1='2' x2='50' y2='98' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='2' y1='50' x2='98' y2='50' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3026,7 +3026,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='20' y='20' width='60' height='60' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='30' cy='35' r='3' fill='var(--stencil-stroke)'/><line x1='38' y1='35' x2='70' y2='35' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='30' cy='55' r='3' fill='var(--stencil-stroke)'/><line x1='38' y1='55' x2='70' y2='55' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3059,7 +3059,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='20' y='30' width='60' height='40' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='25' y='20' width='50' height='15' rx='1' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='30' y='40' width='40' height='20' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3092,7 +3092,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "cube",
-                        ShapeSvg = "<path d='M0,30 L50,0 L100,30 L100,80 L50,110 L0,80 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/><path d='M0,30 L50,60 L100,30' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/><path d='M50,60 L50,110' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' transform='translate(0,-10) scale(1,0.95)'/>",
+                        ShapeSvg = "<path d='M20,35 L50,18 L80,35 L80,65 L50,82 L20,65 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M20,35 L50,50 L80,35' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M50,50 L50,82' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3125,7 +3125,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='20' y='20' width='60' height='60' rx='3' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='30' y='30' width='40' height='28' rx='2' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3158,7 +3158,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;software&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -3191,7 +3191,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>&lt;&lt;technology service&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -3255,7 +3255,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "document",
-                        ShapeSvg = "<path d='M0,0 L100,0 L100,80 L85,100 L70,80 L55,100 L40,80 L25,100 L10,80 L0,100 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='80' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M100 0 L100 48 L60 80' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3288,7 +3288,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "cloud",
-                        ShapeSvg = "<path d='M20 45 A15 15 0 0 1 20 15 A15 15 0 0 1 50 10 A15 15 0 0 1 85 20 A15 15 0 0 1 75 50 H25' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<path d='M20 60 A15 15 0 0 1 20 30 A15 15 0 0 1 50 25 A15 15 0 0 1 85 35 A15 15 0 0 1 75 65 H25' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3368,7 +3368,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='22' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>&lt;&lt;System&gt;&gt;</text>",
                         Sections =
                         [
                             new()
@@ -3401,7 +3401,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='22' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>&lt;&lt;Container&gt;&gt;</text><text x='50' y='34' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>[Technology]</text>",
                         Sections =
                         [
                             new()
@@ -3586,7 +3586,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='25' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3619,7 +3619,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='20' y='20' width='60' height='15' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><rect x='20' y='40' width='60' height='15' rx='1' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3687,7 +3687,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='14' fill='var(--stencil-stroke)'>!</text>",
                         Fill = "#fef2f2",
                         Stroke = "#dc2626",
                         Sections =
@@ -3722,7 +3722,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='10' fill='var(--stencil-stroke)'>A</text>",
                         Fill = "#eff6ff",
                         Stroke = "#2563eb",
                         Sections =
@@ -3757,7 +3757,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='25' y1='25' x2='75' y2='75' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='75' y1='25' x2='25' y2='75' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Fill = "#fff7ed",
                         Stroke = "#ea580c",
                         Sections =
@@ -3792,7 +3792,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "document",
-                        ShapeSvg = "<path d='M0,0 L100,0 L100,80 L85,100 L70,80 L55,100 L40,80 L25,100 L10,80 L0,100 Z' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='80' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><path d='M100 0 L100 48 L60 80' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -3825,7 +3825,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><circle cx='50' cy='50' r='25' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='12' fill='var(--stencil-stroke)'>$</text>",
                         Fill = "#f0fdf4",
                         Stroke = "#16a34a",
                         Sections =
@@ -3893,7 +3893,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><ellipse cx='35' cy='38' rx='8' ry='6' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><ellipse cx='65' cy='38' rx='8' ry='6' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><ellipse cx='50' cy='55' rx='18' ry='10' fill='none' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()
@@ -4035,7 +4035,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='14' fill='var(--stencil-stroke)'>BA</text>",
                         Sections =
                         [
                             new()
@@ -4068,7 +4068,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Epic</text>",
                         Sections =
                         [
                             new()
@@ -4101,7 +4101,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Feature</text>",
                         Sections =
                         [
                             new()
@@ -4134,7 +4134,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Functional Req</text>",
                         Sections =
                         [
                             new()
@@ -4167,7 +4167,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>Non-Functional Req</text>",
                         Sections =
                         [
                             new()
@@ -4200,7 +4200,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Business Rule</text>",
                         Sections =
                         [
                             new()
@@ -4363,7 +4363,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Process Step</text>",
                         Sections =
                         [
                             new()
@@ -4429,7 +4429,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "ellipse",
-                        ShapeSvg = "<ellipse cx='50' cy='50' rx='48' ry='46' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='12' fill='var(--stencil-stroke)'>A</text>",
                         Fill = "#eff6ff",
                         Stroke = "#2563eb",
                         Sections =
@@ -4464,7 +4464,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>System Context</text>",
                         Sections =
                         [
                             new()
@@ -4542,7 +4542,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='55' text-anchor='middle' font-size='12' fill='var(--stencil-stroke)'>Strategy</text>",
                         Fill = "#f0fdf4",
                         Stroke = "#16a34a",
                         Sections =
@@ -4577,7 +4577,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Weakness</text>",
                         Fill = "#fef2f2",
                         Stroke = "#dc2626",
                         Sections =
@@ -4612,7 +4612,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Opportunity</text>",
                         Fill = "#eff6ff",
                         Stroke = "#2563eb",
                         Sections =
@@ -4647,7 +4647,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Threat</text>",
                         Fill = "#fff7ed",
                         Stroke = "#ea580c",
                         Sections =
@@ -4682,7 +4682,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Key Partner</text>",
                         Sections =
                         [
                             new()
@@ -4715,7 +4715,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Key Activity</text>",
                         Sections =
                         [
                             new()
@@ -4748,7 +4748,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Key Resource</text>",
                         Sections =
                         [
                             new()
@@ -4781,7 +4781,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>Value Proposition</text>",
                         Fill = "#fefce8",
                         Stroke = "#ca8a04",
                         Sections =
@@ -4816,7 +4816,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='6' fill='var(--stencil-stroke)'>Customer Relationship</text>",
                         Sections =
                         [
                             new()
@@ -4849,7 +4849,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='9' fill='var(--stencil-stroke)'>Channel</text>",
                         Sections =
                         [
                             new()
@@ -4882,7 +4882,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>Customer Segment</text>",
                         Sections =
                         [
                             new()
@@ -4915,7 +4915,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>Cost Structure</text>",
                         Sections =
                         [
                             new()
@@ -4948,7 +4948,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='7' fill='var(--stencil-stroke)'>Revenue Stream</text>",
                         Sections =
                         [
                             new()
@@ -5012,7 +5012,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rounded",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='12' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><text x='50' y='18' text-anchor='middle' font-size='8' fill='var(--stencil-stroke)'>Capability</text>",
                         Sections =
                         [
                             new()
