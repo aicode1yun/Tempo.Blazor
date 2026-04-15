@@ -271,6 +271,11 @@ window.tmDiagramEditor = {
     _onMouseDown: function (e, inst) {
         if (inst.readOnly && e.button !== 1) return;
 
+        // Ignore when interacting with inline edit inputs so text selection and cursor work
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea')) {
+            return;
+        }
+
         inst.container.focus({ preventScroll: true });
 
         // Middle mouse OR Space held OR pan mode => pan
