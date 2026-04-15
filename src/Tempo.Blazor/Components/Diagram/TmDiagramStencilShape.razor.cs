@@ -1,5 +1,6 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
 
@@ -11,14 +12,94 @@ public partial class TmDiagramStencilShape : ComponentBase
     [Parameter] public DiagramNode Node { get; set; } = default!;
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public EventCallback<string> OnPortMouseDownEvent { get; set; }
+    [Parameter] public EventCallback<(string DataKey, object Value)> OnSectionEdit { get; set; }
 
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
     private DiagramStencil? _stencil;
+    private string? _editingDataKey;
+    private string _editingText = "";
+    private bool _editFocusPending;
+    private ElementReference _editInputRef;
+    private ElementReference _editTextareaRef;
 
     protected override void OnParametersSet()
     {
         _stencil = StencilRegistry.GetStencil(Node.StencilId);
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_editFocusPending && _editingDataKey is not null)
+        {
+            _editFocusPending = false;
+            var section = _stencil?.Layout.Sections.FirstOrDefault(s => s.DataKey == _editingDataKey);
+            try
+            {
+                if (section?.Type == "list")
+                    await _editTextareaRef.FocusAsync();
+                else
+                    await _editInputRef.FocusAsync();
+            }
+            catch { }
+        }
+    }
+
+    private void StartEdit(string? dataKey, string text)
+    {
+        if (string.IsNullOrEmpty(dataKey)) return;
+        _editingDataKey = dataKey;
+        _editingText = text;
+        _editFocusPending = true;
+    }
+
+    private void StartEditList(string? dataKey, IEnumerable<string> list)
+    {
+        if (string.IsNullOrEmpty(dataKey)) return;
+        _editingDataKey = dataKey;
+        _editingText = string.Join("\n", list);
+        _editFocusPending = true;
+    }
+
+    private void SaveEdit()
+    {
+        if (string.IsNullOrEmpty(_editingDataKey)) return;
+        var section = _stencil?.Layout.Sections.FirstOrDefault(s => s.DataKey == _editingDataKey);
+        object value = section?.Type == "list"
+            ? _editingText.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                           .Select(s => s.Trim())
+                           .Where(s => !string.IsNullOrWhiteSpace(s))
+                           .ToList()
+            : _editingText;
+        _ = OnSectionEdit.InvokeAsync((_editingDataKey, value));
+        _editingDataKey = null;
+        _editingText = "";
+    }
+
+    private void CancelEdit()
+    {
+        _editingDataKey = null;
+        _editingText = "";
+    }
+
+    private void OnEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && !e.ShiftKey)
+        {
+            SaveEdit();
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelEdit();
+        }
+    }
+
+    private void OnEditFocusOut(FocusEventArgs e)
+    {
+        if (_editingDataKey is not null)
+        {
+            SaveEdit();
+        }
     }
 
     private string GetShapeStyle()

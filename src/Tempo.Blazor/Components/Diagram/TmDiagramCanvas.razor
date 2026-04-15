@@ -147,7 +147,8 @@
                          style="transform: translate(@(F(node.X))px, @(F(node.Y))px) rotate(@(F(node.Rotation))deg); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">
                         <TmDiagramStencilShape Node="node"
                                                IsSelected="_currentSelectionIds.Contains(node.Id)"
-                                               OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)" />
+                                               OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)"
+                                               OnSectionEdit="(args) => HandleSectionEdit(node.Id, args.DataKey, args.Value)" />
 
                         @if (!ReadOnly)
                         {

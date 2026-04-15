@@ -16,10 +16,24 @@
             <div class="tm-diagram-properties__section">
                 <h4 class="tm-diagram-properties__section-title">@Loc["TmDiagramProperties_NodeTitle"]</h4>
 
-                <div class="tm-diagram-properties__field">
-                    <label>@Loc["TmDiagramProperties_Label"]</label>
-                    <TmTextInput Value="@GetNodeLabel()" ValueChanged="OnNodeLabelChanged" />
-                </div>
+                @foreach (var section in SelectedStencil?.Layout.Sections.Where(s => s.DataKey is not null && (s.Type == "text" || s.Type == "list")) ?? [])
+                {
+                    <div class="tm-diagram-properties__field">
+                        <label>@Capitalize(section.DataKey!)</label>
+                        @if (section.Type == "list")
+                        {
+                            <textarea class="tm-text-input"
+                                      style="min-height: 80px; font-family: inherit;"
+                                      value="@GetNodeDataListText(section.DataKey!)"
+                                      @onchange="e => OnNodeDataListChanged(section.DataKey!, e.Value?.ToString())"></textarea>
+                        }
+                        else
+                        {
+                            <TmTextInput Value="@GetNodeDataText(section.DataKey!)"
+                                         ValueChanged="v => OnNodeDataTextChanged(section.DataKey!, v)" />
+                        }
+                    </div>
+                }
 
                 <div class="tm-diagram-properties__row">
                     <div class="tm-diagram-properties__field">

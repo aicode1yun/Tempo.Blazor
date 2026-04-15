@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -703,6 +704,25 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         _editingEdgeLabelId = null;
         _editingLabelValue = "";
+    }
+
+    private async Task HandleSectionEdit(string nodeId, string dataKey, object value)
+    {
+        if (Document is null) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null) return;
+        var oldData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(node.Data)) ?? new Dictionary<string, object>();
+        var newData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(node.Data)) ?? new Dictionary<string, object>();
+        newData[dataKey] = value;
+        if (CommandStack is not null)
+        {
+            CommandStack.Push(new UpdateNodeDataCommand(Document, nodeId, oldData, newData));
+        }
+        else
+        {
+            node.Data = newData;
+        }
+        await NotifyAndRender();
     }
 
     private (double X, double Y) ComputeEdgeMidpoint(DiagramEdge edge)

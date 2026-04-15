@@ -5,7 +5,8 @@
 <div class="tm-diagram-node__shape"
      data-shape="@(_stencil?.Layout.BackgroundShape ?? "rectangle")"
      data-stencil-id="@Node.StencilId"
-     style="@GetShapeStyle()">
+     style="@GetShapeStyle()"
+     @onfocusout="OnEditFocusOut">
     <div class="tm-diagram-node__content" style="@GetContentStyle()">
         @foreach (var section in _stencil?.Layout.Sections ?? [])
         {
@@ -17,22 +18,58 @@
 
                 case "text":
                     <div class="tm-diagram-node__section"
-                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
-                        <div class="tm-diagram-node__text" style="@GetTextInnerStyle(section.TextStyle)">
-                            @GetSectionText(section)
-                        </div>
+                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)"
+                         @ondblclick:stopPropagation="true"
+                         @ondblclick="() => StartEdit(section.DataKey, GetSectionText(section))">
+                        @if (_editingDataKey == section.DataKey)
+                        {
+                            <input class="tm-diagram-node__inline-input"
+                                   style="width: 100%; @GetTextInnerStyle(section.TextStyle)"
+                                   value="@_editingText"
+                                   @oninput="e => _editingText = e.Value?.ToString() ?? string.Empty"
+                                   @onkeydown="OnEditKeyDown"
+                                   @onblur="SaveEdit"
+                                   @onmousedown:stopPropagation="true"
+                                   @onmousemove:stopPropagation="true"
+                                   @onmouseup:stopPropagation="true"
+                                   @ref="_editInputRef" />
+                        }
+                        else
+                        {
+                            <div class="tm-diagram-node__text" style="@GetTextInnerStyle(section.TextStyle)">
+                                @GetSectionText(section)
+                            </div>
+                        }
                     </div>
                     break;
 
                 case "list":
                     <div class="tm-diagram-node__section tm-diagram-node__section--grow"
-                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
-                        <ul class="tm-diagram-node__list">
-                            @foreach (var item in GetSectionList(section))
-                            {
-                                <li class="tm-diagram-node__list-item" style="@GetTextInnerStyle(section.TextStyle)">@item</li>
-                            }
-                        </ul>
+                         style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)"
+                         @ondblclick:stopPropagation="true"
+                         @ondblclick="() => StartEditList(section.DataKey, GetSectionList(section))">
+                        @if (_editingDataKey == section.DataKey)
+                        {
+                            <textarea class="tm-diagram-node__inline-textarea"
+                                      style="width: 100%; min-height: 40px; resize: none; @GetTextInnerStyle(section.TextStyle)"
+                                      value="@_editingText"
+                                      @oninput="e => _editingText = e.Value?.ToString() ?? string.Empty"
+                                      @onkeydown="OnEditKeyDown"
+                                      @onblur="SaveEdit"
+                                      @onmousedown:stopPropagation="true"
+                                      @onmousemove:stopPropagation="true"
+                                      @onmouseup:stopPropagation="true"
+                                      @ref="_editTextareaRef"></textarea>
+                        }
+                        else
+                        {
+                            <ul class="tm-diagram-node__list">
+                                @foreach (var item in GetSectionList(section))
+                                {
+                                    <li class="tm-diagram-node__list-item" style="@GetTextInnerStyle(section.TextStyle)">@item</li>
+                                }
+                            </ul>
+                        }
                     </div>
                     break;
 

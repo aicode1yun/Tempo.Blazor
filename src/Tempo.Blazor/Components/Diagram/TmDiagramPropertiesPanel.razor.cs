@@ -1,7 +1,9 @@
 using System.Linq;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Components.Diagram.Stencils;
 using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.Diagram;
@@ -32,6 +34,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     /// <summary>Raised when the user changes the routing type of an edge.</summary>
     [Parameter] public EventCallback<(string EdgeId, string Routing)> OnEdgeRoutingChanged { get; set; }
 
+    [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
+
     private bool _collapsed;
 
     private IReadOnlyList<SelectOption<string>> _routingOptions =>
@@ -58,23 +62,62 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         ? Document?.Edges.FirstOrDefault(e => e.Id == SelectedIds[0])
         : null;
 
+    private DiagramStencil? SelectedStencil => SelectedNode is not null
+        ? StencilRegistry.GetStencil(SelectedNode.StencilId)
+        : null;
+
     private IEnumerable<DiagramLayer> SortedLayers =>
         Document?.Layers.OrderBy(l => l.Order).ThenBy(l => l.Name) ?? Enumerable.Empty<DiagramLayer>();
 
     private void ToggleCollapse() => _collapsed = !_collapsed;
 
-    private string GetNodeLabel() => SelectedNode?.Data.GetValueOrDefault("label")?.ToString() ?? "";
-    private string GetEdgeLabel() => SelectedEdge?.Label ?? "";
+    private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
-    private async Task OnNodeLabelChanged(string value)
+    private string GetNodeDataText(string dataKey) => SelectedNode?.Data.GetValueOrDefault(dataKey)?.ToString() ?? "";
+
+    private string GetNodeDataListText(string dataKey)
+    {
+        if (SelectedNode?.Data.TryGetValue(dataKey, out var value) == true)
+        {
+            if (value is JsonElement je && je.ValueKind == JsonValueKind.Array)
+            {
+                return string.Join("\n", je.EnumerateArray().Select(e => e.ToString()));
+            }
+            if (value is IEnumerable<string> strs)
+            {
+                return string.Join("\n", strs);
+            }
+            var s = value?.ToString();
+            if (!string.IsNullOrWhiteSpace(s)) return s;
+        }
+        return "";
+    }
+
+    private async Task OnNodeDataTextChanged(string dataKey, string value)
     {
         if (SelectedNode is null || CommandStack is null || Document is null) return;
         var oldData = DeepCopy(SelectedNode.Data);
         var newData = DeepCopy(SelectedNode.Data);
-        newData["label"] = value;
+        newData[dataKey] = value;
         CommandStack.Push(new UpdateNodeDataCommand(Document, SelectedNode.Id, oldData, newData));
         await DocumentChanged.InvokeAsync(Document);
     }
+
+    private async Task OnNodeDataListChanged(string dataKey, string? text)
+    {
+        if (SelectedNode is null || CommandStack is null || Document is null) return;
+        var oldData = DeepCopy(SelectedNode.Data);
+        var newData = DeepCopy(SelectedNode.Data);
+        var lines = text?.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                       .Select(s => s.Trim())
+                       .Where(s => !string.IsNullOrWhiteSpace(s))
+                       .ToList() ?? new List<string>();
+        newData[dataKey] = lines;
+        CommandStack.Push(new UpdateNodeDataCommand(Document, SelectedNode.Id, oldData, newData));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private string GetEdgeLabel() => SelectedEdge?.Label ?? "";
 
     private async Task OnNodeXChanged(string? valueStr)
     {
@@ -163,9 +206,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private static Dictionary<string, object> DeepCopy(Dictionary<string, object> source)
     {
-        var result = new Dictionary<string, object>();
-        foreach (var kvp in source)
-            result[kvp.Key] = kvp.Value;
-        return result;
+        var json = JsonSerializer.Serialize(source);
+        return JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? new Dictionary<string, object>();
     }
 }

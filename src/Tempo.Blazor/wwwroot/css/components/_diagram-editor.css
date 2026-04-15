@@ -321,6 +321,24 @@
     word-break: break-word;
 }
 
+.tm-diagram-node__inline-input,
+.tm-diagram-node__inline-textarea {
+    border: 1px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 2px;
+    background: var(--tm-color-surface, #ffffff);
+    color: var(--tm-color-text, #111827);
+    font: inherit;
+    outline: none;
+    padding: 0 2px;
+    margin: 0;
+    box-sizing: border-box;
+}
+
+.tm-diagram-node__inline-input:focus,
+.tm-diagram-node__inline-textarea:focus {
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
 /* ── Port styling ─────────────────────────────────────────────────────────── */
 .tm-diagram-port {
     position: absolute;
