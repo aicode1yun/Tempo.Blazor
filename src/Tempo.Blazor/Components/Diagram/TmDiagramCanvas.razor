@@ -157,7 +157,9 @@
                         {
                             @foreach (var port in node.Ports)
                             {
-                                var (px, py) = ComputePortPosition(node, port);
+                                var (absX, absY) = ComputePortPosition(node, port);
+                                var px = absX - node.X;
+                                var py = absY - node.Y;
                                 <div class="tm-diagram-port"
                                      data-port-id="@port.Id"
                                      style="left: @(F(px))px; top: @(F(py))px;"
