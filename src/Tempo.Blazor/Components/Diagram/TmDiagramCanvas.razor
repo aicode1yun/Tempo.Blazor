@@ -105,6 +105,9 @@
                                    @oninput="OnLabelInputChanged"
                                    @onkeydown="OnLabelInputKeyDown"
                                    @onblur="OnLabelInputBlur"
+                                   @onmousedown:stopPropagation="true"
+                                   @onmousemove:stopPropagation="true"
+                                   @onmouseup:stopPropagation="true"
                                    placeholder="@Loc["TmDiagramProperties_Label"]" />
                         </foreignObject>
                     }

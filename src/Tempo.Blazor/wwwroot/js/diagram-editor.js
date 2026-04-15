@@ -272,7 +272,7 @@ window.tmDiagramEditor = {
         if (inst.readOnly && e.button !== 1) return;
 
         // Ignore when interacting with inline edit inputs so text selection and cursor work
-        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea')) {
+        if (e.target.closest('.tm-diagram-node__inline-input, .tm-diagram-node__inline-textarea, .tm-diagram-edge-label-input')) {
             return;
         }
 
