@@ -114,6 +114,15 @@ public partial class TmDiagramStencilShape : ComponentBase
         var borderStyle = shape == "weak-entity" ? "double" : "solid";
         var hasClipPath = shape is "diamond" or "document";
 
+        if (shape == "package")
+        {
+            var pkgSvg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100' preserveAspectRatio='none'>" +
+                         "<path d='M0,20 L0,3 Q0,0 3,0 L32,0 Q35,0 35,3 L35,20 L100,20 L100,100 L0,100 Z' " +
+                         "fill='" + fill + "' stroke='" + stroke + "' stroke-width='" + F(strokeWidth) + "' vector-effect='non-scaling-stroke'/></svg>";
+            var pkgUri = "data:image/svg+xml;utf8," + Uri.EscapeDataString(pkgSvg);
+            return $"background-image: url(\"{pkgUri}\"); background-size: 100% 100%; width: 100%; height: 100%; overflow: hidden;";
+        }
+
         if (hasClipPath)
         {
             var style = $"background: {stroke}; padding: {F(strokeWidth)}px; width: 100%; height: 100%; overflow: hidden; box-sizing: border-box;";
@@ -133,6 +142,9 @@ public partial class TmDiagramStencilShape : ComponentBase
         var fill = layout?.Fill ?? Node.Style.Fill ?? "#ffffff";
         var shape = layout?.BackgroundShape ?? "rectangle";
         var hasClipPath = shape is "diamond" or "document";
+
+        if (shape == "package")
+            return "width: 100%; height: 100%; background: transparent;";
 
         if (!hasClipPath)
             return "width: 100%; height: 100%;";
@@ -154,6 +166,10 @@ public partial class TmDiagramStencilShape : ComponentBase
         if (_stencil?.Layout.BackgroundShape == "document")
         {
             return "padding-bottom: 8px;"; // Leave room for scalloped bottom
+        }
+        if (_stencil?.Layout.BackgroundShape == "package")
+        {
+            return "padding-top: 20%; box-sizing: border-box;";
         }
         return "";
     }

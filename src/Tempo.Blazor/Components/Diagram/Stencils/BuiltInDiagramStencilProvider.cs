@@ -261,7 +261,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     ],
                     Layout = new()
                     {
-                        BackgroundShape = "rectangle",
+                        BackgroundShape = "package",
                         Sections =
                         [
                             new()

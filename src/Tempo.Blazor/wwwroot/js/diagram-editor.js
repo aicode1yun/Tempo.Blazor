@@ -170,11 +170,9 @@ window.tmDiagramEditor = {
         const stencilId = window.__tmDiagramDragStencil;
         if (!stencilId) return;
 
-        const rect = inst.container.getBoundingClientRect();
-        const x = (e.clientX - rect.left) / inst.scale;
-        const y = (e.clientY - rect.top) / inst.scale;
+        const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
 
-        inst.dotNetRef.invokeMethodAsync('OnDropFromToolbox', stencilId, x, y);
+        inst.dotNetRef.invokeMethodAsync('OnDropFromToolbox', stencilId, docPt.x, docPt.y);
         window.__tmDiagramDragStencil = null;
     },
 
