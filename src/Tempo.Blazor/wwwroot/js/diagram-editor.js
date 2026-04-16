@@ -1075,11 +1075,23 @@ window.tmDiagramEditor = {
                     return;
                 case 'c':
                     e.preventDefault();
-                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopy', ids);
+                    if (e.shiftKey) {
+                        if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopyStyle');
+                    } else {
+                        if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnCopy', ids);
+                    }
                     return;
                 case 'v':
                     e.preventDefault();
-                    inst.dotNetRef.invokeMethodAsync('OnPaste');
+                    if (e.shiftKey) {
+                        inst.dotNetRef.invokeMethodAsync('OnPasteStyle');
+                    } else {
+                        inst.dotNetRef.invokeMethodAsync('OnPaste');
+                    }
+                    return;
+                case 'f':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnShowSearch');
                     return;
             }
         }
@@ -1378,6 +1390,26 @@ window.tmDiagramEditor = {
             inst.dotNetRef.invokeMethodAsync('OnViewportChanged', newX, newY, vb.w, vb.h);
     },
 
+    zoomToRect: function (container, x, y, w, h, padding) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst || !inst.svg) return;
+        padding = (padding != null) ? padding : 40;
+        const svgRect = inst.svg.getBoundingClientRect();
+        const contentW = w + padding * 2;
+        const contentH = h + padding * 2;
+        const scale = Math.min(svgRect.width / contentW, svgRect.height / contentH, 2.0);
+        const clampedScale = Math.max(0.25, scale);
+        const newW = svgRect.width / clampedScale;
+        const newH = svgRect.height / clampedScale;
+        const nx = x + w / 2 - newW / 2;
+        const ny = y + h / 2 - newH / 2;
+        this._setViewBox(inst, nx, ny, newW, newH);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', clampedScale);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+    },
+
     // ── Toolbox drag init ─────────────────────────────────────────────────────
 
     initToolbox: function (toolboxElement) {
@@ -1599,5 +1631,42 @@ window.tmDiagramEditor = {
         if (!inst.svg) return;
         const g = inst.svg.getElementById('tm-diagram-snap-guides');
         if (g) g.remove();
+    },
+
+    // ── Layout (dagre) ─────────────────────────────────────────────────────
+
+    runDagreLayout: function (container, nodes, edges, direction) {
+        if (typeof dagre === 'undefined') {
+            console.warn('dagre not loaded');
+            return null;
+        }
+        const inst = this.instances.get(container.id);
+        if (!inst) return null;
+
+        const g = new dagre.graphlib.Graph().setGraph({
+            rankdir: direction || 'TB',
+            ranksep: 80,
+            nodesep: 40,
+            marginx: 20,
+            marginy: 20,
+        }).setDefaultEdgeLabel(function() { return {}; });
+
+        nodes.forEach(function(n) {
+            g.setNode(n.id, { width: n.width, height: n.height });
+        });
+
+        edges.forEach(function(e) {
+            g.setEdge(e.source, e.target);
+        });
+
+        dagre.layout(g);
+
+        const result = [];
+        g.nodes().forEach(function(v) {
+            const node = g.node(v);
+            result.push({ id: v, x: node.x - node.width / 2, y: node.y - node.height / 2 });
+        });
+
+        return result;
     },
 };

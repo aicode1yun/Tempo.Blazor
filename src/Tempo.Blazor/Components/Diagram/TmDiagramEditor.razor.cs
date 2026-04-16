@@ -6,6 +6,7 @@ using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Serialization;
+using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Components.Diagram.Stencils;
 
 namespace Tempo.Blazor.Components.Diagram;
@@ -106,6 +107,13 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private string? _contextMenuNodeId;
     private double _contextMenuScreenX;
     private double _contextMenuScreenY;
+
+    // ── Search panel ─────────────────────────────────────────────────────────
+
+    private bool _showSearchPanel;
+    private string _searchQuery = "";
+    private List<DiagramSearchResult> _searchResults = [];
+    private int _searchCurrentIndex;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -225,6 +233,66 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await OnDocumentChanged(_document);
     }
 
+    // ── Search panel ─────────────────────────────────────────────────────────
+
+    private void OpenSearchPanel()
+    {
+        _showSearchPanel = true;
+        _searchQuery = "";
+        _searchResults = [];
+        _searchCurrentIndex = 0;
+        if (_canvas is not null)
+            _ = _canvas.SetActiveSearchResult(null);
+    }
+
+    private void CloseSearchPanel()
+    {
+        _showSearchPanel = false;
+        _searchQuery = "";
+        _searchResults = [];
+        _searchCurrentIndex = 0;
+        if (_canvas is not null)
+            _ = _canvas.SetActiveSearchResult(null);
+    }
+
+    private void OnSearchQueryChanged(string query)
+    {
+        _searchQuery = query;
+        _searchResults = string.IsNullOrWhiteSpace(query)
+            ? []
+            : DiagramSearchService.Search(_document, query);
+        _searchCurrentIndex = _searchResults.Count > 0 ? 0 : 0;
+        if (_canvas is not null)
+        {
+            var activeId = _searchResults.Count > 0
+                ? _searchResults[0].NodeId ?? _searchResults[0].EdgeId
+                : null;
+            _ = _canvas.SetActiveSearchResult(activeId);
+        }
+    }
+
+    private async Task OnSearchIndexChanged(int index)
+    {
+        _searchCurrentIndex = index;
+        if (_searchResults.Count == 0 || _canvas is null) return;
+
+        var result = _searchResults[index];
+        var activeId = result.NodeId ?? result.EdgeId;
+        await _canvas.SetActiveSearchResult(activeId);
+
+        if (result.NodeId is not null)
+        {
+            await _canvas.FocusOnNode(result.NodeId);
+            _selectedIds = [result.NodeId];
+        }
+        else if (result.EdgeId is not null)
+        {
+            await _canvas.FocusOnEdge(result.EdgeId);
+            _selectedIds = [result.EdgeId];
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
     private void OnCanvasZoomChanged(double scale)
     {
         _zoomLevel = scale;
@@ -291,6 +359,30 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await RerenderCanvas();
     }
 
+    // ── Toolbar: Format Painter ──────────────────────────────────────────────
+
+    private void OnCopyStyle()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _selectedIds[0]);
+        if (node is null) return;
+        new CopyStyleCommand(node, includeSize: false).Execute();
+    }
+
+    private async Task OnPasteStyle()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        _commandStack.Push(new PasteStyleCommand(_document, _selectedIds));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task OnPasteSize()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        _commandStack.Push(new PasteSizeCommand(_document, _selectedIds));
+        await OnDocumentChanged(_document);
+    }
+
     // ── Toolbar: Zoom ────────────────────────────────────────────────────────
 
     private static readonly double[] ZoomSteps = [0.25, 0.33, 0.5, 0.67, 0.75, 1.0, 1.25, 1.5, 2.0, 3.0];
@@ -323,6 +415,17 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             var scale = await JS.InvokeAsync<double>("tmDiagramEditor.fitToView", _canvas.GetContainerRef(), 40);
             _zoomLevel = scale;
         }
+    }
+
+    private bool _layoutMenuOpen;
+
+    private void ToggleLayoutMenu() => _layoutMenuOpen = !_layoutMenuOpen;
+
+    private async Task RunLayout(string direction)
+    {
+        _layoutMenuOpen = false;
+        if (_canvas is null) return;
+        await _canvas.RunLayoutAsync(direction);
     }
 
     // ── Toolbar: Export ──────────────────────────────────────────────────────
@@ -460,6 +563,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             H = h,
             ZIndex = _document.Nodes.Count > 0 ? _document.Nodes.Max(n => n.ZIndex) + 1 : 0,
             LayerId = _activeLayerId,
+            IsCollapsible = stencil?.IsCollapsible ?? false,
         };
 
         // Copy default data
@@ -583,6 +687,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             H = h,
             ZIndex = _document.Nodes.Count > 0 ? _document.Nodes.Max(n => n.ZIndex) + 1 : 0,
             LayerId = sourceNode.LayerId ?? _activeLayerId,
+            IsCollapsible = stencil?.IsCollapsible ?? false,
         };
 
         foreach (var kvp in stencil.DefaultData)

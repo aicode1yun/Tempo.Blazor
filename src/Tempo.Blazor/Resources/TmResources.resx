@@ -633,16 +633,21 @@
   <data name="TmDiagramMinimap_Title" xml:space="preserve"><value>Minimap</value></data>
   <data name="TmDiagramMinimap_Empty" xml:space="preserve"><value>No diagram to show</value></data>
   <data name="TmDiagramLayers_Title" xml:space="preserve"><value>Layers</value></data>
+  <data name="TmDiagramLayers_Toggle" xml:space="preserve"><value>Toggle layers panel</value></data>
   <data name="TmDiagramLayers_AddLayer" xml:space="preserve"><value>Add layer</value></data>
+  <data name="TmDiagramLayers_SetActive" xml:space="preserve"><value>Set as active layer</value></data>
   <data name="TmDiagramLayers_Show" xml:space="preserve"><value>Show</value></data>
   <data name="TmDiagramLayers_Hide" xml:space="preserve"><value>Hide</value></data>
   <data name="TmDiagramLayers_Lock" xml:space="preserve"><value>Lock</value></data>
   <data name="TmDiagramLayers_Unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="TmDiagramLayers_Delete" xml:space="preserve"><value>Delete layer</value></data>
+  <data name="TmDiagramLayers_DoubleClickToEdit" xml:space="preserve"><value>Double-click to edit name</value></data>
+  <data name="TmDiagramLayers_MoveToLayer" xml:space="preserve"><value>Move selected nodes to layer</value></data>
+  <data name="TmDiagramLayers_SelectLayer" xml:space="preserve"><value>Select layer</value></data>
   <data name="TmDiagramLayers_DefaultLayer" xml:space="preserve"><value>Default Layer</value></data>
-  <data name="TmDiagramLayers_DeleteLayer" xml:space="preserve"><value>Delete layer</value></data>
-  <data name="TmDiagramLayers_AssignToLayer" xml:space="preserve"><value>Assign to layer</value></data>
-  <data name="TmDiagramLayers_Layer" xml:space="preserve"><value>Layer</value></data>
   <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Layer</value></data>
+  <data name="TmDiagramProperties_ReplaceShape" xml:space="preserve"><value>Replace Shape</value></data>
+  <data name="TmDiagramProperties_ReplaceShapeSearch" xml:space="preserve"><value>Search shapes...</value></data>
 
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Toggle toolbox</value></data>
@@ -723,7 +728,6 @@
   <data name="TmDiagramProperties_EdgeStyle_Elbow" xml:space="preserve"><value>Elbow</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Segment" xml:space="preserve"><value>Segment</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Rounded" xml:space="preserve"><value>Rounded</value></data>
-  <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Style</value></data>
   <data name="TmDiagramProperties_Text" xml:space="preserve"><value>Text</value></data>
   <data name="TmDiagramProperties_Arrange" xml:space="preserve"><value>Arrange</value></data>
   <data name="TmDiagramProperties_Fill" xml:space="preserve"><value>Fill</value></data>
@@ -760,4 +764,25 @@
   <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Vertically</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Mixed</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> items selected</value></data>
+  <data name="TmDiagram_Layout" xml:space="preserve"><value>Layout</value></data>
+  <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchical Top-Down</value></data>
+  <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchical Left-Right</value></data>
+
+  <!-- ═══════════════ TmDiagramEditor Format Painter ═══════════════ -->
+  <data name="TmDiagramEditor_CopyStyle" xml:space="preserve"><value>Copy style (Ctrl+Shift+C)</value></data>
+  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Paste style (Ctrl+Shift+V)</value></data>
+  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Paste size</value></data>
+
+  <!-- ═══════════════ TmDiagramNode Collapse / Expand ═══════════════ -->
+  <data name="TmDiagramNode_Collapse" xml:space="preserve"><value>Collapse</value></data>
+  <data name="TmDiagramNode_Expand" xml:space="preserve"><value>Expand</value></data>
+
+  <!-- ═══════════════ TmDiagram Search ═══════════════ -->
+  <data name="TmDiagram_SearchPlaceholder" xml:space="preserve"><value>Search diagram...</value></data>
+  <data name="TmDiagram_SearchResults" xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="TmDiagram_SearchNoResults" xml:space="preserve"><value>No results</value></data>
+  <data name="TmDiagram_SearchPrevious" xml:space="preserve"><value>Previous result</value></data>
+  <data name="TmDiagram_SearchNext" xml:space="preserve"><value>Next result</value></data>
+  <data name="TmDiagram_SearchClose" xml:space="preserve"><value>Close search</value></data>
+
 </root>

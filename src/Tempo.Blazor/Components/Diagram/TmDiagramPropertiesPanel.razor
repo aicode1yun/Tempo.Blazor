@@ -93,6 +93,64 @@
                 }
             </div>
 
+            @* ── Replace Shape Section (single node only) ─────────────────── *@
+            @if (IsSingleNode && !ReadOnly)
+            {
+                <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
+                    <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("replaceShape")'>
+                        <span>@Loc["TmDiagramProperties_ReplaceShape"]</span>
+                        <TmIcon Name="@(IsSectionExpanded("replaceShape") ? IconNames.ChevronDown : IconNames.ChevronRight)" />
+                    </button>
+                    @if (IsSectionExpanded("replaceShape"))
+                    {
+                        <div class="tm-diagram-properties__section-body">
+                            <div class="tm-diagram-properties__field">
+                                <TmSearchInput Value="_replaceShapeSearch"
+                                               ValueChanged="OnReplaceShapeSearchChanged"
+                                               Placeholder="@Loc["TmDiagramProperties_ReplaceShapeSearch"]"
+                                               Clearable="true" />
+                            </div>
+                            <div class="tm-diagram-replace-shape__list">
+                                @foreach (var cat in ReplaceShapeCategories)
+                                {
+                                    var stencils = GetReplaceShapeStencils(cat);
+                                    if (stencils.Count == 0) continue;
+
+                                    <div class="tm-diagram-replace-shape__category">
+                                        <span class="tm-diagram-replace-shape__category-name">@cat</span>
+                                        <div class="tm-diagram-replace-shape__items">
+                                            @foreach (var stencil in stencils)
+                                            {
+                                                <button type="button"
+                                                        class="tm-diagram-replace-shape__item"
+                                                        title="@stencil.Name"
+                                                        @onclick="() => OnReplaceShape(stencil.Id)">
+                                                    @if (!string.IsNullOrEmpty(stencil.IconSvg))
+                                                    {
+                                                        <svg viewBox="0 0 32 32" aria-hidden="true">
+                                                            @((MarkupString)stencil.IconSvg)
+                                                        </svg>
+                                                    }
+                                                    else
+                                                    {
+                                                        <svg viewBox="0 0 32 32" aria-hidden="true">
+                                                            <rect x="2" y="8" width="28" height="16" rx="2"
+                                                                  fill="var(--tm-color-surface-elevated)"
+                                                                  stroke="var(--tm-color-text)" stroke-width="2" />
+                                                        </svg>
+                                                    }
+                                                    <span>@stencil.Name</span>
+                                                </button>
+                                            }
+                                        </div>
+                                    </div>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+            }
+
             @* ── Text Section ──────────────────────────────────────────────── *@
             <div class="tm-diagram-properties__section tm-diagram-properties__section--collapsible">
                 <button type="button" class="tm-diagram-properties__section-header" @onclick='() => ToggleSection("text")'>
@@ -232,6 +290,17 @@
                                 <div class="tm-diagram-properties__align-grid">
                                     <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnDistribute("horizontal")'>@Loc["TmDiagramProperties_DistributeHorizontal"]</button>
                                     <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnDistribute("vertical")'>@Loc["TmDiagramProperties_DistributeVertical"]</button>
+                                </div>
+                            </div>
+                        }
+
+                        @if (CanLayout)
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagram_Layout"]</label>
+                                <div class="tm-diagram-properties__align-grid">
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnApplyLayout.InvokeAsync("TB")'>@Loc["TmDiagram_LayoutHierarchicalTopDown"]</button>
+                                    <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick='() => OnApplyLayout.InvokeAsync("LR")'>@Loc["TmDiagram_LayoutHierarchicalLeftRight"]</button>
                                 </div>
                             </div>
                         }

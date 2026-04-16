@@ -482,6 +482,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     IconSvg = "<rect x='4' y='8' width='24' height='20' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><rect x='4' y='4' width='10' height='6' rx='1' fill='none' stroke='currentColor' stroke-width='2'/>",
                     DefaultWidth = 200,
                     DefaultHeight = 160,
+                    IsCollapsible = true,
                     Ports =
                     [
                         new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
@@ -1073,6 +1074,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     IconSvg = "<rect x='4' y='8' width='24' height='20' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><rect x='4' y='4' width='10' height='6' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><text x='9' y='8' font-size='4' fill='currentColor'>sd</text>",
                     DefaultWidth = 240,
                     DefaultHeight = 160,
+                    IsCollapsible = true,
                     Ports =
                     [
                         new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
@@ -1759,6 +1761,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     IconSvg = "<rect x='4' y='4' width='24' height='20' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><line x1='10' y1='4' x2='10' y2='24' stroke='currentColor' stroke-width='2'/>",
                     DefaultWidth = 300,
                     DefaultHeight = 180,
+                    IsCollapsible = true,
                     Ports =
                     [
                         new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },

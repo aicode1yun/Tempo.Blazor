@@ -25,6 +25,8 @@ public static class IconNames
     public const string Save         = "save";
     /// <summary>Icon name for: Copy.</summary>
     public const string Copy         = "copy";
+    /// <summary>Icon name for: Brush, Format Painter.</summary>
+    public const string Brush        = "brush";
     /// <summary>Icon name for: Paste.</summary>
     public const string Paste        = "paste";
     /// <summary>Icon name for: Send.</summary>

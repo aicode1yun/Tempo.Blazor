@@ -103,7 +103,7 @@
                           @onclick="() => OnEdgeClicked(edge.Id)"
                           @ondblclick="e => OnEdgeDoubleClicked(edge.Id, e)" />
                     @* Visible path *@
-                    <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "")"
+                    <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
                           d="@pathD"
                           stroke="@GetEdgeColor(edge)"
                           stroke-width="@F(GetEdgeStrokeWidth(edge))"
@@ -179,7 +179,7 @@
             {
                 @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
                 {
-                    <div class="tm-diagram-node"
+                    <div class="tm-diagram-node @(_activeSearchResultId == node.Id ? "tm-diagram-search-match" : "")"
                          data-node-id="@node.Id"
                          data-w="@node.W"
                          data-h="@node.H"
@@ -192,10 +192,24 @@
                                                OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)"
                                                OnSectionEdit="(args) => HandleSectionEdit(node.Id, args.DataKey, args.Value)" />
 
+                        @if (node.IsCollapsible && !ReadOnly)
+                        {
+                            <button type="button"
+                                    class="tm-diagram-node__collapse-btn"
+                                    aria-label="@(node.Collapsed ? Loc["TmDiagramNode_Expand"] : Loc["TmDiagramNode_Collapse"])"
+                                    title="@(node.Collapsed ? Loc["TmDiagramNode_Expand"] : Loc["TmDiagramNode_Collapse"])"
+                                    @onclick:stopPropagation="true"
+                                    @onclick="() => ToggleCollapse(node.Id)">
+                                <span>@(node.Collapsed ? "+" : "−")</span>
+                            </button>
+                        }
+
                         @if (!ReadOnly)
                         {
                             @foreach (var port in node.Ports)
                             {
+                                if (node is { IsCollapsible: true, Collapsed: true } && port.Side is not (PortSide.Top or PortSide.Bottom))
+                                    continue;
                                 var (absX, absY) = ComputePortPosition(node, port);
                                 var px = absX - node.X;
                                 var py = absY - node.Y;

@@ -59,6 +59,31 @@
 
             <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
 
+            @* Format Painter *@
+            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
+                    aria-label="@Loc["TmDiagramEditor_CopyStyle"]"
+                    title="@Loc["TmDiagramEditor_CopyStyle"]"
+                    disabled="@ReadOnly"
+                    @onclick="OnCopyStyle">
+                <TmIcon Name="@IconNames.Brush" />
+            </button>
+            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
+                    aria-label="@Loc["TmDiagramEditor_PasteStyle"]"
+                    title="@Loc["TmDiagramEditor_PasteStyle"]"
+                    disabled="@ReadOnly"
+                    @onclick="OnPasteStyle">
+                <TmIcon Name="@IconNames.Brush" Color="IconColor.Primary" />
+            </button>
+            <button class="tm-diagram-editor__btn"
+                    aria-label="@Loc["TmDiagramEditor_PasteSize"]"
+                    title="@Loc["TmDiagramEditor_PasteSize"]"
+                    disabled="@ReadOnly"
+                    @onclick="OnPasteSize">
+                @Loc["TmDiagramEditor_PasteSize"]
+            </button>
+
+            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+
             @* Zoom *@
             <button class="tm-diagram-editor__btn" aria-label="@Loc["TmDiagramEditor_ZoomOut"]" title="@Loc["TmDiagramEditor_ZoomOut"]" @onclick="ZoomOut">−</button>
             <span class="tm-diagram-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
@@ -99,6 +124,27 @@
                     @((int)(_document?.Width ?? 3000))×@((int)(_document?.Height ?? 2000))
                 </button>
             }
+
+            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+
+            @* Layout *@
+            <div style="position:relative;">
+                <button class="tm-diagram-editor__btn"
+                        aria-label="@Loc["TmDiagram_Layout"]"
+                        aria-haspopup="true"
+                        aria-expanded="@_layoutMenuOpen"
+                        @onclick="ToggleLayoutMenu"
+                        title="@Loc["TmDiagram_Layout"]">
+                    <span>@Loc["TmDiagram_Layout"] ▾</span>
+                </button>
+                @if (_layoutMenuOpen)
+                {
+                    <div class="tm-dropdown__menu" role="menu" aria-label="@Loc["TmDiagram_Layout"]" style="position:absolute;top:100%;left:0;z-index:100;min-width:180px;">
+                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("TB")'>@Loc["TmDiagram_LayoutHierarchicalTopDown"]</button>
+                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("LR")'>@Loc["TmDiagram_LayoutHierarchicalLeftRight"]</button>
+                    </div>
+                }
+            </div>
 
             <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
 
@@ -192,6 +238,17 @@
         </div>
     }
 
+    @* ── Search panel ───────────────────────────────────────────────────── *@
+    @if (_showSearchPanel)
+    {
+        <TmDiagramSearchPanel Query="@_searchQuery"
+                              QueryChanged="OnSearchQueryChanged"
+                              ResultsCount="_searchResults.Count"
+                              CurrentIndex="_searchCurrentIndex"
+                              CurrentIndexChanged="OnSearchIndexChanged"
+                              OnClose="CloseSearchPanel" />
+    }
+
     @* ── Import error banner ─────────────────────────────────────────────── *@
     @if (_importError is not null)
     {
@@ -244,6 +301,7 @@
                              OnEdgeCreated="OnEdgeCreated"
                              OnContextMenu="OnContextMenu"
                              OnConnectArrowClicked="OnConnectArrowClicked"
+                             OnShowSearch="OpenSearchPanel"
                              Class="tm-diagram-editor__canvas" />
             @* Context menu (long-press / right-click) *@
             @if (_contextMenuOpen)
@@ -274,6 +332,7 @@
                                                           DocumentChanged="OnDocumentChanged"
                                                           SelectedIds="_selectedIds"
                                                           OnEdgeRoutingChanged="HandleEdgeRoutingChanged"
+                                                          OnApplyLayout="RunLayout"
                                                           Class="tm-diagram-editor__props" />
                             </div>
                         }

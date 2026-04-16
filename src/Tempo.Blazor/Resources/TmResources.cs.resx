@@ -609,16 +609,21 @@
   <data name="TmDiagramMinimap_Title" xml:space="preserve"><value>Minimapa</value></data>
   <data name="TmDiagramMinimap_Empty" xml:space="preserve"><value>Žádný diagram k zobrazení</value></data>
   <data name="TmDiagramLayers_Title" xml:space="preserve"><value>Vrstvy</value></data>
+  <data name="TmDiagramLayers_Toggle" xml:space="preserve"><value>Přepnout panel vrstev</value></data>
   <data name="TmDiagramLayers_AddLayer" xml:space="preserve"><value>Přidat vrstvu</value></data>
+  <data name="TmDiagramLayers_SetActive" xml:space="preserve"><value>Nastavit jako aktivní</value></data>
   <data name="TmDiagramLayers_Show" xml:space="preserve"><value>Zobrazit</value></data>
   <data name="TmDiagramLayers_Hide" xml:space="preserve"><value>Skrýt</value></data>
   <data name="TmDiagramLayers_Lock" xml:space="preserve"><value>Zamknout</value></data>
   <data name="TmDiagramLayers_Unlock" xml:space="preserve"><value>Odemknout</value></data>
+  <data name="TmDiagramLayers_Delete" xml:space="preserve"><value>Odstranit vrstvu</value></data>
+  <data name="TmDiagramLayers_DoubleClickToEdit" xml:space="preserve"><value>Dvojklikem upravíte název</value></data>
+  <data name="TmDiagramLayers_MoveToLayer" xml:space="preserve"><value>Přesunout výběr do vrstvy</value></data>
+  <data name="TmDiagramLayers_SelectLayer" xml:space="preserve"><value>Vyberte vrstvu</value></data>
   <data name="TmDiagramLayers_DefaultLayer" xml:space="preserve"><value>Výchozí vrstva</value></data>
-  <data name="TmDiagramLayers_DeleteLayer" xml:space="preserve"><value>Odstranit vrstvu</value></data>
-  <data name="TmDiagramLayers_AssignToLayer" xml:space="preserve"><value>Přiřadit do vrstvy</value></data>
-  <data name="TmDiagramLayers_Layer" xml:space="preserve"><value>Vrstva</value></data>
   <data name="TmDiagramProperties_Layer" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmDiagramProperties_ReplaceShape" xml:space="preserve"><value>Nahradit tvar</value></data>
+  <data name="TmDiagramProperties_ReplaceShapeSearch" xml:space="preserve"><value>Hledat tvary...</value></data>
 
   <!-- ═══════════════ TmDiagramToolbox ═══════════════ -->
   <data name="TmDiagramToolbox_Toggle" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
@@ -699,7 +704,6 @@
   <data name="TmDiagramProperties_EdgeStyle_Elbow" xml:space="preserve"><value>Lomený</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Segment" xml:space="preserve"><value>Segmentový</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Rounded" xml:space="preserve"><value>Zaoblený</value></data>
-  <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Styl</value></data>
   <data name="TmDiagramProperties_Text" xml:space="preserve"><value>Text</value></data>
   <data name="TmDiagramProperties_Arrange" xml:space="preserve"><value>Uspořádání</value></data>
   <data name="TmDiagramProperties_Fill" xml:space="preserve"><value>Výplň</value></data>
@@ -736,4 +740,25 @@
   <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Svisle</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Smíšené</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> vybraných položek</value></data>
+  <data name="TmDiagram_Layout" xml:space="preserve"><value>Rozložit</value></data>
+  <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchicky shora dolů</value></data>
+  <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchicky zleva doprava</value></data>
+
+  <!-- ═══════════════ TmDiagramEditor Format Painter ═══════════════ -->
+  <data name="TmDiagramEditor_CopyStyle" xml:space="preserve"><value>Kopírovat styl (Ctrl+Shift+C)</value></data>
+  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Vložit styl (Ctrl+Shift+V)</value></data>
+  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Vložit velikost</value></data>
+
+  <!-- ═══════════════ TmDiagramNode Collapse / Expand ═══════════════ -->
+  <data name="TmDiagramNode_Collapse" xml:space="preserve"><value>Sbalit</value></data>
+  <data name="TmDiagramNode_Expand" xml:space="preserve"><value>Rozbalit</value></data>
+
+  <!-- ═══════════════ TmDiagram Search ═══════════════ -->
+  <data name="TmDiagram_SearchPlaceholder" xml:space="preserve"><value>Hledat v diagramu...</value></data>
+  <data name="TmDiagram_SearchResults" xml:space="preserve"><value>{0} z {1}</value></data>
+  <data name="TmDiagram_SearchNoResults" xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmDiagram_SearchPrevious" xml:space="preserve"><value>Předchozí výsledek</value></data>
+  <data name="TmDiagram_SearchNext" xml:space="preserve"><value>Další výsledek</value></data>
+  <data name="TmDiagram_SearchClose" xml:space="preserve"><value>Zavřít hledání</value></data>
+
 </root>

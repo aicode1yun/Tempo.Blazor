@@ -45,6 +45,15 @@ public sealed class DiagramNode
     /// <summary>Optional layer identifier. When null, the node belongs to the default layer.</summary>
     public string? LayerId { get; set; }
 
+    /// <summary>Whether this node can be collapsed/expanded.</summary>
+    public bool IsCollapsible { get; set; }
+
+    /// <summary>Whether this node is currently collapsed.</summary>
+    public bool Collapsed { get; set; }
+
+    /// <summary>Height to restore when expanding. Set automatically during collapse.</summary>
+    public double ExpandedHeight { get; set; }
+
     /// <summary>Reserved for future collaborative editing – who has this node locked.</summary>
     public string? LockedBy { get; set; }
 }

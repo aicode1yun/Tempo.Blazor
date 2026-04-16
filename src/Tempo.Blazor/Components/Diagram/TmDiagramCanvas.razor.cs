@@ -57,6 +57,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Raised when the user switches tool mode.</summary>
     [Parameter] public EventCallback<string> OnToolModeChanged { get; set; }
 
+    /// <summary>Raised when the user presses Ctrl+F.</summary>
+    [Parameter] public EventCallback OnShowSearch { get; set; }
+
     /// <summary>Raised when the zoom level changes (e.g. via wheel).</summary>
     [Parameter] public EventCallback<double> ZoomChanged { get; set; }
 
@@ -87,6 +90,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private Dictionary<string, (double X, double Y)>? _dragStartPositions;
     private string[] _currentSelectionIds = [];
+    private string? _activeSearchResultId;
 
     private string? _resizeNodeId;
     private string? _resizeHandle;
@@ -506,6 +510,10 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     public async Task JsOnToolModeChanged(string mode)
         => await OnToolModeChanged.InvokeAsync(mode);
 
+    [JSInvokable("OnShowSearch")]
+    public async Task JsOnShowSearch()
+        => await OnShowSearch.InvokeAsync();
+
     [JSInvokable("OnContextMenu")]
     public async Task JsOnContextMenu(string nodeId, double screenX, double screenY)
         => await OnContextMenu.InvokeAsync((nodeId, screenX, screenY));
@@ -536,10 +544,38 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private bool IsNodeVisible(DiagramNode node)
     {
-        return node.X + node.W >= _viewportX - ViewportMargin
+        bool inViewport = node.X + node.W >= _viewportX - ViewportMargin
             && node.Y + node.H >= _viewportY - ViewportMargin
             && node.X <= _viewportX + _viewportW + ViewportMargin
             && node.Y <= _viewportY + _viewportH + ViewportMargin;
+
+        if (!inViewport) return false;
+        if (Document is null) return true;
+
+        // Hide children of collapsed containers
+        var current = node;
+        while (!string.IsNullOrEmpty(current.ParentNodeId))
+        {
+            var parent = Document.Nodes.FirstOrDefault(n => n.Id == current.ParentNodeId);
+            if (parent is { IsCollapsible: true, Collapsed: true })
+                return false;
+            current = parent;
+            if (current is null) break;
+        }
+
+        // Hide grouped nodes inside a collapsed container
+        if (!string.IsNullOrEmpty(node.GroupId))
+        {
+            var collapsedContainer = Document.Nodes.FirstOrDefault(n =>
+                n.IsCollapsible && n.Collapsed
+                && n.GroupId == node.GroupId
+                && node.X >= n.X && node.Y >= n.Y
+                && node.X + node.W <= n.X + n.W
+                && node.Y + node.H <= n.Y + n.H);
+            if (collapsedContainer is not null) return false;
+        }
+
+        return true;
     }
 
     private bool IsLayerVisible(DiagramNode node)
@@ -622,6 +658,77 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, pastedIds.ToArray());
             await OnSelectionChanged.InvokeAsync(pastedIds.ToArray());
         }
+    }
+
+    [JSInvokable]
+    public async Task OnCopyStyle()
+    {
+        if (Document is null || ReadOnly || _currentSelectionIds.Length == 0) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == _currentSelectionIds[0]);
+        if (node is null) return;
+        new CopyStyleCommand(node, includeSize: false).Execute();
+    }
+
+    [JSInvokable]
+    public async Task OnPasteStyle()
+    {
+        if (Document is null || ReadOnly || _currentSelectionIds.Length == 0) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new PasteStyleCommand(Document, _currentSelectionIds));
+        else
+            new PasteStyleCommand(Document, _currentSelectionIds).Execute();
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnPasteSize()
+    {
+        if (Document is null || ReadOnly || _currentSelectionIds.Length == 0) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new PasteSizeCommand(Document, _currentSelectionIds));
+        else
+            new PasteSizeCommand(Document, _currentSelectionIds).Execute();
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnLayoutApplied(ElementMove[] moves)
+    {
+        if (Document is null || ReadOnly || moves.Length == 0) return;
+        var dict = moves.ToDictionary(m => m.Id, m => (m.X, m.Y));
+        if (CommandStack is not null)
+            CommandStack.Push(new ApplyLayoutCommand(Document, dict));
+        else
+        {
+            var cmd = new ApplyLayoutCommand(Document, dict);
+            cmd.Execute();
+        }
+        await NotifyAndRender();
+        await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, moves.Select(m => m.Id).ToArray());
+        await OnSelectionChanged.InvokeAsync(moves.Select(m => m.Id).ToArray());
+    }
+
+    public async Task RunLayoutAsync(string direction = "TB")
+    {
+        if (Document is null || ReadOnly || _currentSelectionIds.Length == 0) return;
+        var nodeIds = _currentSelectionIds.Where(id => Document.Nodes.Any(n => n.Id == id)).ToList();
+        if (nodeIds.Count == 0) return;
+
+        // Include edges between selected nodes
+        var nodes = nodeIds.Select(id =>
+        {
+            var n = Document.Nodes.First(x => x.Id == id);
+            return new { id = n.Id, width = n.W, height = n.H };
+        }).ToList();
+
+        var edges = Document.Edges
+            .Where(e => nodeIds.Contains(e.SourceNodeId) && nodeIds.Contains(e.TargetNodeId))
+            .Select(e => new { source = e.SourceNodeId, target = e.TargetNodeId })
+            .ToList();
+
+        var result = await JS.InvokeAsync<ElementMove[]?>("tmDiagramEditor.runDagreLayout", _containerRef, nodes, edges, direction);
+        if (result is not null)
+            await OnLayoutApplied(result);
     }
 
     // ── Drag & Drop from toolbox ─────────────────────────────────────────────
@@ -760,6 +867,20 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
         if (CommandStack is not null)
             CommandStack.Push(new UpdateEdgeWaypointsCommand(Document, edgeId, before, after));
+
+        await NotifyAndRender();
+    }
+
+    private async Task ToggleCollapse(string nodeId)
+    {
+        if (Document is null || ReadOnly) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is not { IsCollapsible: true }) return;
+
+        if (CommandStack is not null)
+            CommandStack.Push(new ToggleCollapseCommand(Document, nodeId));
+        else
+            new ToggleCollapseCommand(Document, nodeId).Execute();
 
         await NotifyAndRender();
     }
@@ -916,6 +1037,39 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await JS.InvokeVoidAsync("tmDiagramEditor.scrollTo", _containerRef, centreX, centreY);
     }
 
+    public async Task ZoomToRect(double x, double y, double w, double h, double padding = 40)
+    {
+        if (!_jsInitialized) return;
+        await JS.InvokeVoidAsync("tmDiagramEditor.zoomToRect", _containerRef, x, y, w, h, padding);
+    }
+
+    public async Task FocusOnNode(string nodeId)
+    {
+        if (Document is null || !_jsInitialized) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null) return;
+        await ZoomToRect(node.X, node.Y, node.W, node.H, 40);
+        await SetSelection(nodeId);
+    }
+
+    public async Task FocusOnEdge(string edgeId)
+    {
+        if (Document is null || !_jsInitialized) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+        var mid = ComputeEdgeMidpoint(edge);
+        await ZoomToRect(mid.X - 80, mid.Y - 40, 160, 80, 40);
+        _currentSelectionIds = [edgeId];
+        await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
+        await NotifyAndRender();
+    }
+
+    public Task SetActiveSearchResult(string? id)
+    {
+        _activeSearchResultId = id;
+        return InvokeAsync(StateHasChanged);
+    }
+
     public ElementReference GetContainerRef() => _containerRef;
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -1060,7 +1214,43 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
         var sb = new System.Text.StringBuilder();
         sb.Append($"M {F(pts[0].X)} {F(pts[0].Y)}");
-        if (edge.Rounded && pts.Length > 2)
+        if (edge.Routing == "curved")
+        {
+            if (pts.Length == 2)
+            {
+                var (x1, y1) = pts[0];
+                var (x2, y2) = pts[1];
+                var dx = Math.Abs(x2 - x1);
+                var dy = Math.Abs(y2 - y1);
+                double c1x, c1y, c2x, c2y;
+                if (dx > dy)
+                {
+                    c1x = x1 + dx * 0.5;
+                    c1y = y1;
+                    c2x = x2 - dx * 0.5;
+                    c2y = y2;
+                }
+                else
+                {
+                    c1x = x1;
+                    c1y = y1 + dy * 0.5;
+                    c2x = x2;
+                    c2y = y2 - dy * 0.5;
+                }
+                sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
+            }
+            else
+            {
+                var cps = GetCurvedControlPoints(pts);
+                for (int i = 1; i < pts.Length; i++)
+                {
+                    var (cp1, cp2) = cps[i - 1];
+                    var curr = pts[i];
+                    sb.Append($" C {F(cp1.X)} {F(cp1.Y)} {F(cp2.X)} {F(cp2.Y)} {F(curr.X)} {F(curr.Y)}");
+                }
+            }
+        }
+        else if (edge.Rounded && pts.Length > 2)
         {
             const double r = 8.0;
             for (int i = 1; i < pts.Length; i++)
@@ -1110,6 +1300,23 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (len == 0) return from;
         var t = Math.Min(r / len, 0.5);
         return (from.X + dx * t, from.Y + dy * t);
+    }
+
+    private static ((double X, double Y) cp1, (double X, double Y) cp2)[] GetCurvedControlPoints((double X, double Y)[] pts)
+    {
+        var result = new ((double X, double Y), (double X, double Y))[pts.Length - 1];
+        for (int i = 0; i < pts.Length - 1; i++)
+        {
+            (double X, double Y) p0 = i > 0 ? pts[i - 1] : (pts[0].X * 2 - pts[1].X, pts[0].Y * 2 - pts[1].Y);
+            (double X, double Y) p1 = pts[i];
+            (double X, double Y) p2 = pts[i + 1];
+            (double X, double Y) p3 = i < pts.Length - 2 ? pts[i + 2] : (pts[^1].X * 2 - pts[^2].X, pts[^1].Y * 2 - pts[^2].Y);
+
+            (double X, double Y) cp1 = (p1.X + (p2.X - p0.X) / 6.0, p1.Y + (p2.Y - p0.Y) / 6.0);
+            (double X, double Y) cp2 = (p2.X - (p3.X - p1.X) / 6.0, p2.Y - (p3.Y - p1.Y) / 6.0);
+            result[i] = (cp1, cp2);
+        }
+        return result;
     }
 
     private List<double> FindLineJumps(DiagramEdge edge, int segmentIndex, (double X, double Y) a, (double X, double Y) b)

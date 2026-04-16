@@ -21,6 +21,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback<DiagramDocument> DocumentChanged { get; set; }
     [Parameter] public EventCallback<(string EdgeId, string OldRouting, string NewRouting)> OnEdgeRoutingChanged { get; set; }
+    [Parameter] public EventCallback<string> OnApplyLayout { get; set; }
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
     private bool _collapsed;
@@ -58,6 +59,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private bool CanUngroup => SelectedNodes.Count == 1 && !string.IsNullOrEmpty(FirstSelectedNode?.GroupId);
     private bool CanAlign => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
     private bool CanDistribute => SelectedNodes.Count > 2 && SelectedEdges.Count == 0;
+    private bool CanLayout => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
 
     private void ToggleCollapse() => _collapsed = !_collapsed;
     private void ToggleSection(string section)
@@ -638,6 +640,53 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         new SelectOption<string> { Value = "middle", Label = Loc["TmDiagramProperties_VerticalAlign_Middle"] },
         new SelectOption<string> { Value = "bottom", Label = Loc["TmDiagramProperties_VerticalAlign_Bottom"] }
     ];
+
+    // ── Replace Shape ────────────────────────────────────────────────────────
+
+    private string _replaceShapeSearch = string.Empty;
+
+    private List<string> ReplaceShapeCategories
+    {
+        get
+        {
+            var query = _replaceShapeSearch.Trim();
+            return StencilRegistry.GetCategories()
+                .Where(cat => GetReplaceShapeStencils(cat).Count > 0)
+                .ToList();
+        }
+    }
+
+    private List<DiagramStencil> GetReplaceShapeStencils(string category)
+    {
+        var query = _replaceShapeSearch.Trim();
+        return StencilRegistry.GetByCategory(category)
+            .Where(s => string.IsNullOrEmpty(query) || s.Name.Contains(query, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+    }
+
+    private void OnReplaceShapeSearchChanged(string value)
+    {
+        _replaceShapeSearch = value;
+    }
+
+    private async Task OnReplaceShape(string stencilId)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (stencil is null) return;
+
+        var newPorts = stencil.Ports.Select(p => new DiagramPort
+        {
+            Name = p.Name,
+            Side = p.Side,
+            Offset = p.Offset,
+            IsInput = p.IsInput,
+            IsOutput = p.IsOutput
+        }).ToList();
+
+        CommandStack.Push(new ReplaceShapeCommand(Document, FirstSelectedNode.Id, stencilId, newPorts, stencil.DefaultWidth, stencil.DefaultHeight));
+        await DocumentChanged.InvokeAsync(Document);
+    }
 
     private static Dictionary<string, object> DeepCopy(Dictionary<string, object> source)
     {

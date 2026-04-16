@@ -3,185 +3,233 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Components.Diagram;
 
-/// <summary>
-/// Mini layer panel for the diagram editor.
-/// Shows layers with visibility / lock toggles, supports renaming, adding and deleting layers,
-/// and provides Bring to Front / Send to Back actions for the current selection.
-/// </summary>
+/// <summary>Right-side layers panel for managing diagram layers.</summary>
 public partial class TmDiagramLayersPanel : ComponentBase
 {
-    /// <summary>Document being edited.</summary>
-    [Parameter] public DiagramDocument? Document { get; set; }
-
-    /// <summary>Raised after every mutation.</summary>
+    [Parameter, EditorRequired] public DiagramDocument? Document { get; set; }
+    [Parameter] public string[] SelectedIds { get; set; } = [];
+    [CascadingParameter] public DiagramCommandStack? CommandStack { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
+    [Parameter] public string? Class { get; set; }
+    [Parameter] public string? ActiveLayerId { get; set; }
+    [Parameter] public EventCallback<string?> ActiveLayerIdChanged { get; set; }
     [Parameter] public EventCallback<DiagramDocument> DocumentChanged { get; set; }
 
-    /// <summary>IDs of currently selected elements.</summary>
-    [Parameter] public string[] SelectedIds { get; set; } = [];
-
-    /// <summary>Whether the editor is read-only.</summary>
-    [Parameter] public bool ReadOnly { get; set; }
-
-    /// <summary>Additional CSS class on the panel wrapper.</summary>
-    [Parameter] public string? Class { get; set; }
-
-    /// <summary>Currently active layer for new nodes.</summary>
-    [Parameter] public string? ActiveLayerId { get; set; }
-
-    /// <summary>Raised when the active layer changes.</summary>
-    [Parameter] public EventCallback<string?> ActiveLayerIdChanged { get; set; }
-
-    /// <summary>Command stack cascaded from the parent editor.</summary>
-    [CascadingParameter] public DiagramCommandStack? CommandStack { get; set; }
-
+    private bool _collapsed;
     private string? _editingLayerId;
-    private string _editingLayerName = "";
-    private readonly string _selectId = "tm-dl-select-" + Guid.NewGuid().ToString("N")[..8];
+    private string _editName = "";
+    private ElementReference _nameInputRef;
+    private string? _draggedLayerId;
+    private string? _dragOverLayerId;
+    private string? _defaultLayerId;
+    private string? _moveTargetLayerId;
+
+    private List<DiagramNode> SelectedNodes => SelectedIds
+        .Select(id => Document?.Nodes.FirstOrDefault(n => n.Id == id))
+        .Where(n => n is not null)
+        .Select(n => n!)
+        .ToList();
 
     private IEnumerable<DiagramLayer> SortedLayers =>
         Document?.Layers.OrderBy(l => l.Order).ThenBy(l => l.Name) ?? Enumerable.Empty<DiagramLayer>();
 
-    private bool HasSelection => SelectedIds.Length > 0;
+    private List<SelectOption<string>> MoveLayerOptions =>
+        SortedLayers.Select(l => new SelectOption<string>(l.Id, l.Name)).ToList();
 
-    private string? SelectedLayerId => SelectedIds.Length > 0
-        ? Document?.Nodes.FirstOrDefault(n => n.Id == SelectedIds[0])?.LayerId
-        : null;
-
-    private async Task SetActiveLayer(string? layerId)
+    protected override void OnParametersSet()
     {
-        ActiveLayerId = layerId;
+        EnsureDefaultLayer();
+        if (string.IsNullOrEmpty(ActiveLayerId) && !string.IsNullOrEmpty(_defaultLayerId))
+        {
+            ActiveLayerId = _defaultLayerId;
+            ActiveLayerIdChanged.InvokeAsync(_defaultLayerId);
+        }
+    }
+
+    private void EnsureDefaultLayer()
+    {
+        if (Document is null) return;
+        if (Document.Layers.Count == 0)
+        {
+            var defaultLayer = new DiagramLayer { Name = "Default", Order = 0 };
+            Document.Layers.Add(defaultLayer);
+            _defaultLayerId = defaultLayer.Id;
+        }
+        else
+        {
+            _defaultLayerId = Document.Layers.OrderBy(l => l.Order).First().Id;
+        }
+    }
+
+    private void ToggleCollapse() => _collapsed = !_collapsed;
+
+    private async Task OnAddLayer()
+    {
+        if (Document is null || ReadOnly) return;
+        var name = $"Layer {Document.Layers.Count + 1}";
+        var cmd = new AddLayerCommand(Document, name);
+        if (CommandStack is not null)
+            CommandStack.Push(cmd);
+        else
+            cmd.Execute();
+
+        await ActiveLayerIdChanged.InvokeAsync(cmd.Layer.Id);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnRemoveLayer(DiagramLayer layer)
+    {
+        if (Document is null || ReadOnly) return;
+        var cmd = new RemoveLayerCommand(Document, layer.Id);
+        if (CommandStack is not null)
+            CommandStack.Push(cmd);
+        else
+            cmd.Execute();
+
+        if (ActiveLayerId == layer.Id)
+            await ActiveLayerIdChanged.InvokeAsync(_defaultLayerId);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnSetActive(string layerId)
+    {
+        if (ReadOnly) return;
         await ActiveLayerIdChanged.InvokeAsync(layerId);
     }
 
-    private async Task AddLayer()
+    private async Task OnToggleVisibility(DiagramLayer layer)
     {
         if (Document is null || ReadOnly) return;
-
-        var maxOrder = Document.Layers.Count > 0 ? Document.Layers.Max(l => l.Order) : 0;
-        var layer = new DiagramLayer
-        {
-            Name = $"{Loc["TmDiagramLayers_Layer"]} {Document.Layers.Count + 1}",
-            Order = maxOrder + 1
-        };
-
-        Document.Layers.Add(layer);
-        await SetActiveLayer(layer.Id);
+        var cmd = new ToggleLayerVisibilityCommand(layer);
+        if (CommandStack is not null)
+            CommandStack.Push(cmd);
+        else
+            cmd.Execute();
         await DocumentChanged.InvokeAsync(Document);
     }
 
-    private async Task ToggleVisibility(DiagramLayer layer)
-    {
-        if (Document is null) return;
-        layer.IsVisible = !layer.IsVisible;
-        await DocumentChanged.InvokeAsync(Document);
-    }
-
-    private async Task ToggleLock(DiagramLayer layer)
+    private async Task OnToggleLock(DiagramLayer layer)
     {
         if (Document is null || ReadOnly) return;
-        layer.IsLocked = !layer.IsLocked;
+        var cmd = new ToggleLayerLockCommand(layer);
+        if (CommandStack is not null)
+            CommandStack.Push(cmd);
+        else
+            cmd.Execute();
         await DocumentChanged.InvokeAsync(Document);
     }
 
-    private void StartRename(DiagramLayer layer)
+    private void OnStartEdit(DiagramLayer layer)
     {
         if (ReadOnly) return;
         _editingLayerId = layer.Id;
-        _editingLayerName = layer.Name;
+        _editName = layer.Name;
     }
 
-    private async Task FinishRename(DiagramLayer layer)
+    private async Task OnNameBlur(DiagramLayer layer)
     {
-        if (_editingLayerId == layer.Id && !string.IsNullOrWhiteSpace(_editingLayerName))
+        await CommitRename(layer);
+    }
+
+    private async Task OnNameKeyDown(KeyboardEventArgs e, DiagramLayer layer)
+    {
+        if (e.Key == "Enter")
+            await CommitRename(layer);
+        else if (e.Key == "Escape")
+            _editingLayerId = null;
+    }
+
+    private async Task CommitRename(DiagramLayer layer)
+    {
+        if (_editingLayerId != layer.Id) return;
+        if (!string.IsNullOrWhiteSpace(_editName) && _editName != layer.Name)
         {
-            layer.Name = _editingLayerName.Trim();
+            var cmd = new RenameLayerCommand(layer, _editName.Trim());
+            if (CommandStack is not null)
+                CommandStack.Push(cmd);
+            else
+                cmd.Execute();
             await DocumentChanged.InvokeAsync(Document);
         }
         _editingLayerId = null;
     }
 
-    private async Task OnLayerNameKeyDown(KeyboardEventArgs e)
+    private void OnDragStart(DragEventArgs e, string layerId)
     {
-        if (e.Key == "Enter" && _editingLayerId is not null)
+        if (ReadOnly)
         {
-            var layer = Document?.Layers.FirstOrDefault(l => l.Id == _editingLayerId);
-            if (layer is not null) await FinishRename(layer);
+            _draggedLayerId = null;
+            return;
         }
-        else if (e.Key == "Escape")
-        {
-            _editingLayerId = null;
-        }
+        _draggedLayerId = layerId;
     }
 
-    private async Task DeleteLayer(DiagramLayer layer)
+    private void OnDragOver(DragEventArgs e)
     {
-        if (Document is null || ReadOnly) return;
-
-        foreach (var node in Document.Nodes.Where(n => n.LayerId == layer.Id))
-        {
-            node.LayerId = null;
-        }
-
-        Document.Layers.Remove(layer);
-        if (ActiveLayerId == layer.Id)
-            await SetActiveLayer(null);
-
-        await DocumentChanged.InvokeAsync(Document);
+        // preventDefault handled in razor via @ondragover:preventDefault
     }
 
-    private async Task OnAssignLayerChanged(ChangeEventArgs e)
+    private void OnDragEnter(DragEventArgs e, string layerId)
     {
-        if (Document is null || ReadOnly) return;
-
-        var layerId = e.Value?.ToString();
-        if (string.IsNullOrEmpty(layerId)) layerId = null;
-
-        foreach (var node in Document.Nodes.Where(n => SelectedIds.Contains(n.Id)))
-        {
-            node.LayerId = layerId;
-        }
-
-        await DocumentChanged.InvokeAsync(Document);
+        if (_draggedLayerId != null && _draggedLayerId != layerId)
+            _dragOverLayerId = layerId;
     }
 
-    private async Task BringToFront()
+    private void OnDragLeave(DragEventArgs e)
     {
-        if (Document is null || ReadOnly || SelectedIds.Length == 0) return;
+        _dragOverLayerId = null;
+    }
 
-        var maxZ = Document.Nodes.Count > 0 ? Document.Nodes.Max(n => n.ZIndex) : 0;
-        var before = SelectedIds.ToDictionary(
-            id => id,
-            id => Document.Nodes.First(n => n.Id == id).ZIndex);
-        var after = SelectedIds.ToDictionary(id => id, _ => maxZ + 1);
+    private async Task OnDrop(DragEventArgs e, string targetLayerId)
+    {
+        if (Document is null || ReadOnly || _draggedLayerId is null || _draggedLayerId == targetLayerId)
+        {
+            _draggedLayerId = null;
+            _dragOverLayerId = null;
+            return;
+        }
 
+        var layers = SortedLayers.ToList();
+        var draggedIndex = layers.FindIndex(l => l.Id == _draggedLayerId);
+        var targetIndex = layers.FindIndex(l => l.Id == targetLayerId);
+        if (draggedIndex < 0 || targetIndex < 0)
+        {
+            _draggedLayerId = null;
+            _dragOverLayerId = null;
+            return;
+        }
+
+        var reordered = layers.ToList();
+        var draggedLayer = reordered[draggedIndex];
+        reordered.RemoveAt(draggedIndex);
+        reordered.Insert(targetIndex, draggedLayer);
+
+        var newOrders = reordered.Select((l, i) => (l.Id, Order: i)).ToDictionary(x => x.Id, x => x.Order);
+        var cmd = new ReorderLayersCommand(Document, newOrders);
         if (CommandStack is not null)
-            CommandStack.Push(new UpdateZIndexCommand(Document, before, after));
+            CommandStack.Push(cmd);
         else
-            foreach (var node in Document.Nodes.Where(n => SelectedIds.Contains(n.Id)))
-                node.ZIndex = maxZ + 1;
+            cmd.Execute();
 
+        _draggedLayerId = null;
+        _dragOverLayerId = null;
         await DocumentChanged.InvokeAsync(Document);
     }
 
-    private async Task SendToBack()
+    private async Task OnMoveNodesToLayer(string? layerId)
     {
-        if (Document is null || ReadOnly || SelectedIds.Length == 0) return;
-
-        var minZ = Document.Nodes.Count > 0 ? Document.Nodes.Min(n => n.ZIndex) : 0;
-        var before = SelectedIds.ToDictionary(
-            id => id,
-            id => Document.Nodes.First(n => n.Id == id).ZIndex);
-        var after = SelectedIds.ToDictionary(id => id, _ => minZ - 1);
-
+        if (Document is null || ReadOnly || SelectedNodes.Count == 0) return;
+        var nodeIds = SelectedNodes.Select(n => n.Id).ToList();
+        var cmd = new MoveNodesToLayerCommand(Document, nodeIds, layerId);
         if (CommandStack is not null)
-            CommandStack.Push(new UpdateZIndexCommand(Document, before, after));
+            CommandStack.Push(cmd);
         else
-            foreach (var node in Document.Nodes.Where(n => SelectedIds.Contains(n.Id)))
-                node.ZIndex = minZ - 1;
-
+            cmd.Execute();
+        _moveTargetLayerId = null;
         await DocumentChanged.InvokeAsync(Document);
     }
 }

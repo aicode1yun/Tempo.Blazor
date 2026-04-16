@@ -1,0 +1,45 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Components.Icons
+
+<div class="tm-diagram-search-panel">
+    <div class="tm-diagram-search-panel__input-wrap">
+        <TmSearchInput Value="Query"
+                       ValueChanged="OnQueryChanged"
+                       Placeholder="@Loc["TmDiagram_SearchPlaceholder"]"
+                       Clearable="true" />
+    </div>
+    <span class="tm-diagram-search-panel__counter">
+        @if (ResultsCount > 0)
+        {
+            @string.Format(Loc["TmDiagram_SearchResults"], CurrentIndex + 1, ResultsCount)
+        }
+        else if (!string.IsNullOrEmpty(Query))
+        {
+            @Loc["TmDiagram_SearchNoResults"]
+        }
+    </span>
+    <button type="button"
+            class="tm-diagram-search-panel__nav"
+            aria-label="@Loc["TmDiagram_SearchPrevious"]"
+            title="@Loc["TmDiagram_SearchPrevious"]"
+            @onclick="OnPreviousClick"
+            disabled="@(ResultsCount == 0)">
+        <TmIcon Name="@IconNames.ChevronLeft" />
+    </button>
+    <button type="button"
+            class="tm-diagram-search-panel__nav"
+            aria-label="@Loc["TmDiagram_SearchNext"]"
+            title="@Loc["TmDiagram_SearchNext"]"
+            @onclick="OnNextClick"
+            disabled="@(ResultsCount == 0)">
+        <TmIcon Name="@IconNames.ChevronRight" />
+    </button>
+    <button type="button"
+            class="tm-diagram-search-panel__close"
+            aria-label="@Loc["TmDiagram_SearchClose"]"
+            title="@Loc["TmDiagram_SearchClose"]"
+            @onclick="OnCloseClick">
+        <TmIcon Name="@IconNames.X" />
+    </button>
+</div>

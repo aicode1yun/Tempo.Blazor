@@ -27,6 +27,9 @@ public sealed class DiagramStencil
     /// <summary>Declarative layout defining the visual appearance.</summary>
     public DiagramStencilLayout Layout { get; set; } = new();
 
+    /// <summary>Whether nodes created from this stencil support collapse/expand.</summary>
+    public bool IsCollapsible { get; set; }
+
     /// <summary>Default data values for nodes created from this stencil.</summary>
     public Dictionary<string, object> DefaultData { get; set; } = [];
 }
