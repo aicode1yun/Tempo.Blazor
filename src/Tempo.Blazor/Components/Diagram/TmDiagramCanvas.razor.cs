@@ -154,6 +154,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private string _pageShadowFilterId => _svgId + "-ps";
 
     private Dictionary<string, NodeMoveState>? _dragStartPositions;
+    private bool _isJsDragging;
     private string[] _currentSelectionIds = [];
     private string? _activeSearchResultId;
 
@@ -223,9 +224,13 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
             await JS.InvokeVoidAsync("tmDiagramEditor.init", _containerRef, _dotNetRef, options);
         }
-        else if (_jsInitialized && _currentSelectionIds.Length > 0)
+        else if (_jsInitialized)
         {
-            await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, _currentSelectionIds);
+            await JS.InvokeVoidAsync("tmDiagramEditor.syncHtmlTransform", _containerRef);
+            if (_currentSelectionIds.Length > 0)
+            {
+                await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, _currentSelectionIds);
+            }
         }
 
         if (_editingEdgeLabelId is not null)
@@ -251,12 +256,16 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _dotNetRef?.Dispose();
     }
 
+    /// <inheritdoc />
+    protected override bool ShouldRender() => !_isJsDragging;
+
     // ── JS → C# callbacks ───────────────────────────────────────────────────
 
     [JSInvokable]
     public void OnDragStarted(string[] ids)
     {
         if (Document is null) return;
+        _isJsDragging = true;
         _dragStartPositions = [];
         foreach (var id in ids)
         {
@@ -279,6 +288,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
         ExecuteMove(before, after);
         await RecalculateOrthogonalWaypointsForMovedNodesAsync([id]);
+        _isJsDragging = false;
         await NotifyAndRender();
     }
 
@@ -294,6 +304,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
         ExecuteMove(before, after);
         await RecalculateOrthogonalWaypointsForMovedNodesAsync(moves.Select(m => m.Id));
+        _isJsDragging = false;
         await NotifyAndRender();
     }
 

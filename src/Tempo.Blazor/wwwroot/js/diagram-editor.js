@@ -209,8 +209,8 @@ window.tmDiagramEditor = {
         inst.container.addEventListener('drop', inst._onDrop);
         inst.container.addEventListener('dragover', inst._onDragOver);
         inst.container.addEventListener('contextmenu', inst._onContextMenu);
-        document.addEventListener('mousemove', inst._onMouseMove);
-        document.addEventListener('mouseup', inst._onMouseUp);
+        document.addEventListener('mousemove', inst._onMouseMove, true);
+        document.addEventListener('mouseup', inst._onMouseUp, true);
         document.addEventListener('keydown', inst._onKeyDown);
         document.addEventListener('keyup', inst._onKeyUp);
     },
@@ -225,8 +225,8 @@ window.tmDiagramEditor = {
         inst.container.removeEventListener('drop', inst._onDrop);
         inst.container.removeEventListener('dragover', inst._onDragOver);
         inst.container.removeEventListener('contextmenu', inst._onContextMenu);
-        document.removeEventListener('mousemove', inst._onMouseMove);
-        document.removeEventListener('mouseup', inst._onMouseUp);
+        document.removeEventListener('mousemove', inst._onMouseMove, true);
+        document.removeEventListener('mouseup', inst._onMouseUp, true);
         document.removeEventListener('keydown', inst._onKeyDown);
         document.removeEventListener('keyup', inst._onKeyUp);
     },
@@ -316,7 +316,10 @@ window.tmDiagramEditor = {
         inst.scale = scale;
         const tx = -vb.x * scale;
         const ty = -vb.y * scale;
-        inst.htmlLayer.style.transform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+        var newTransform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
+        if (inst.htmlLayer.style.transform !== newTransform) {
+            inst.htmlLayer.style.transform = newTransform;
+        }
     },
 
     _snap: function (inst, v) {
@@ -664,7 +667,7 @@ window.tmDiagramEditor = {
             inst.dragStartPositions = {};
             inst.dragNodeIds.forEach(nid => {
                 const r = this._nodeRect(inst, nid);
-                if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y };
+                if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y, w: r.w, h: r.h };
             });
             inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
             inst.container.style.cursor = 'grabbing';
@@ -762,8 +765,11 @@ window.tmDiagramEditor = {
         }
 
         if (inst.isDragging && inst.dragNodeIds.length > 0) {
+            e.preventDefault();
+            e.stopPropagation();
             const dxScreen = e.clientX - inst.dragStartScreen.x;
             const dyScreen = e.clientY - inst.dragStartScreen.y;
+
             let dxDoc = dxScreen / inst.scale;
             let dyDoc = dyScreen / inst.scale;
 
@@ -775,12 +781,12 @@ window.tmDiagramEditor = {
             inst.dragNodeIds.forEach(id => {
                 const start = inst.dragStartPositions[id];
                 if (!start) return;
-                let nx = this._snap(inst, start.x + dxDoc);
-                let ny = this._snap(inst, start.y + dyDoc);
+                let nx = start.x + dxDoc;
+                let ny = start.y + dyDoc;
                 const clamped = this._clampChildPosition(inst, id, nx, ny);
                 this._setNodeTranslate(inst, id, clamped.x, clamped.y);
             });
-            this._updateSelection(inst);
+            this._updateSelectionTransforms(inst);
             return;
         }
 
@@ -807,10 +813,12 @@ window.tmDiagramEditor = {
             this._setViewBox(inst, vb.x - dxDoc, vb.y - dyDoc, vb.w, vb.h);
         }
 
-        // Ruler cursor
-        if (inst.dotNetRef) {
+        // Ruler cursor (skip during drag/pan/rubber-band to avoid Blazor re-render fighting with JS direct DOM updates)
+        if (inst.dotNetRef && !inst.isDragging && !inst.isPanning && !inst.isRubberBand && !inst.isDrawingEdge && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel) {
             const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
             inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
+        } else if (inst.dotNetRef) {
+            console.log('[JS] Ruler cursor SKIPPED', 'drag=' + inst.isDragging, 'pan=' + inst.isPanning);
         }
 
         // Connection hover icons
@@ -872,9 +880,12 @@ window.tmDiagramEditor = {
         if (inst.isDragging) {
             const moves = inst.dragNodeIds.map(id => {
                 const r = this._nodeRect(inst, id);
-                return r ? { id, x: r.x, y: r.y } : null;
+                if (!r) return null;
+                const sx = this._snap(inst, r.x);
+                const sy = this._snap(inst, r.y);
+                this._setNodeTranslate(inst, id, sx, sy);
+                return { id, x: sx, y: sy };
             }).filter(Boolean);
-
             inst.isDragging = false;
             inst.dragNodeIds = [];
             inst.dragStartScreen = null;
@@ -1101,6 +1112,7 @@ window.tmDiagramEditor = {
 
         if (inst.isDragging && inst.dragNodeIds.length > 0) {
             e.preventDefault();
+            e.stopPropagation();
             const dxScreen = t.clientX - inst.dragStartScreen.x;
             const dyScreen = t.clientY - inst.dragStartScreen.y;
             let dxDoc = dxScreen / inst.scale;
@@ -1114,12 +1126,12 @@ window.tmDiagramEditor = {
             inst.dragNodeIds.forEach(id => {
                 const start = inst.dragStartPositions[id];
                 if (!start) return;
-                let nx = this._snap(inst, start.x + dxDoc);
-                let ny = this._snap(inst, start.y + dyDoc);
+                let nx = start.x + dxDoc;
+                let ny = start.y + dyDoc;
                 const clamped = this._clampChildPosition(inst, id, nx, ny);
                 this._setNodeTranslate(inst, id, clamped.x, clamped.y);
             });
-            this._updateSelection(inst);
+            this._updateSelectionTransforms(inst);
             return;
         }
 
@@ -1151,7 +1163,11 @@ window.tmDiagramEditor = {
         if (inst.isDragging) {
             const moves = inst.dragNodeIds.map(id => {
                 const r = this._nodeRect(inst, id);
-                return r ? { id, x: r.x, y: r.y } : null;
+                if (!r) return null;
+                const sx = this._snap(inst, r.x);
+                const sy = this._snap(inst, r.y);
+                this._setNodeTranslate(inst, id, sx, sy);
+                return { id, x: sx, y: sy };
             }).filter(Boolean);
 
             inst.isDragging = false;
@@ -1611,6 +1627,19 @@ window.tmDiagramEditor = {
         });
     },
 
+    _updateSelectionTransforms: function (inst) {
+        if (!inst.htmlLayer) return;
+        inst.selectedIds.forEach(id => {
+            const r = this._nodeRect(inst, id);
+            if (!r) return;
+            const outline = inst.htmlLayer.querySelector('[data-sel-for="' + id + '"]');
+            if (!outline) return;
+            const nodeEl = this._nodeEl(inst, id);
+            const rot = this._getNodeRotation(nodeEl);
+            outline.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
+        });
+    },
+
     _clearSelectionOutlines: function (inst) {
         if (!inst.htmlLayer) return;
         inst.htmlLayer.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
@@ -1957,6 +1986,12 @@ window.tmDiagramEditor = {
         const inst = this.instances.get(container.id);
         if (!inst) return;
         inst.activeGroupId = activeGroupId || null;
+    },
+
+    syncHtmlTransform: function (container) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        this._syncHtmlTransform(inst);
     },
 
     zoomTo: function (container, scale) {

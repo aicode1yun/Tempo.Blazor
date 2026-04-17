@@ -232,7 +232,7 @@
 
     @* HTML overlay layer: nodes *@
     <div class="tm-diagram-canvas__overlay">
-        <div class="tm-diagram-transform-layer" style="transform:scale(@(F(Document?.ActivePage?.Scale ?? 1.0)));transform-origin:0 0;">
+        <div class="tm-diagram-transform-layer">
             @if (Document is not null)
             {
                 @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
