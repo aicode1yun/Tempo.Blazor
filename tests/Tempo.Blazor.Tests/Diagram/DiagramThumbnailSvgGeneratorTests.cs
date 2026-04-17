@@ -23,8 +23,8 @@ public class DiagramThumbnailSvgGeneratorTests
 
         svg.Should().Contain("<svg");
         svg.Should().Contain("<rect");
-        svg.Should().Contain('x="100"');
-        svg.Should().Contain('width="120"');
+        svg.Should().Contain("x=\"100\"");
+        svg.Should().Contain("width=\"120\"");
     }
 
     [Fact]

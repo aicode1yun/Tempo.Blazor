@@ -7,5 +7,5 @@ public interface IDiagramTemplateProvider
     int Priority { get; }
 
     /// <summary>Returns all template categories provided by this source.</summary>
-    IEnumerable<DiagramTemplateCategory> GetTemplateCategories();
+    Task<IEnumerable<DiagramTemplateCategory>> GetTemplateCategoriesAsync();
 }

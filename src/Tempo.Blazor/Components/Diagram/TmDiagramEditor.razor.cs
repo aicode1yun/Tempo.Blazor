@@ -502,7 +502,24 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _contextMenuOpen = false;
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
-        ActiveCommandStack.Push(new RemoveNodesCommand(_document, ids));
+        var nodeIds = ids.Where(id => _document.Nodes.Any(n => n.Id == id)).ToArray();
+        var edgeIds = ids.Where(id => _document.Edges.Any(e => e.Id == id)).ToArray();
+
+        if (nodeIds.Length > 0 && edgeIds.Length > 0)
+        {
+            using var tx = ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_Delete"]);
+            ActiveCommandStack.Push(new RemoveNodesCommand(_document, nodeIds));
+            ActiveCommandStack.Push(new RemoveEdgesCommand(_document, edgeIds));
+        }
+        else if (nodeIds.Length > 0)
+        {
+            ActiveCommandStack.Push(new RemoveNodesCommand(_document, nodeIds));
+        }
+        else if (edgeIds.Length > 0)
+        {
+            ActiveCommandStack.Push(new RemoveEdgesCommand(_document, edgeIds));
+        }
+
         _selectedIds = [];
         if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);

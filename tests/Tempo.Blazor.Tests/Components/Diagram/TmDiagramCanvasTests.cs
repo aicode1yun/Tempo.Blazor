@@ -127,4 +127,25 @@ public class TmDiagramCanvasTests : LocalizationTestBase
         var svg = cut.Find("svg");
         svg.GetAttribute("viewBox").Should().Be("0 0 800 600");
     }
+
+    [Fact]
+    public async Task OnDeleteSelected_RemovesSelectedEdge()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 40, H = 40 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 100, W = 40, H = 40 };
+        var edge = new DiagramEdge { SourceNodeId = n1.Id, TargetNodeId = n2.Id };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        await cut.Instance.OnDeleteSelected([edge.Id]);
+
+        doc.Edges.Should().BeEmpty();
+        doc.Nodes.Should().HaveCount(2);
+    }
 }

@@ -121,7 +121,7 @@
                     <path class="tm-diagram-edge-hit-path"
                           d="@pathD"
                           data-edge-id="@edge.Id"
-                          @onclick="() => OnEdgeClicked(edge.Id)"
+                          @onclick="e => OnEdgeClicked(edge.Id, e)"
                           @ondblclick="e => OnEdgeDoubleClicked(edge.Id, e)" />
                     @* Visible path *@
                     <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"

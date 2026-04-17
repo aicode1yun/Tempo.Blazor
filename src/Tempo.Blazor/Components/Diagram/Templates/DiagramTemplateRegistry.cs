@@ -9,15 +9,33 @@ namespace Tempo.Blazor.Components.Diagram.Templates;
 public sealed class DiagramTemplateRegistry
 {
     private readonly Dictionary<string, (DiagramTemplate Template, int Priority)> _templates = new(StringComparer.Ordinal);
+    private readonly List<IDiagramTemplateProvider> _providers = [];
+    private bool _initialized;
 
-    /// <summary>Loads all template categories from <paramref name="provider"/> into the registry.</summary>
+    /// <summary>Registers a provider for lazy async loading.</summary>
     public void RegisterProvider(IDiagramTemplateProvider provider)
     {
         ArgumentNullException.ThrowIfNull(provider);
-        foreach (var category in provider.GetTemplateCategories())
+        _providers.Add(provider);
+    }
+
+    /// <summary>
+    /// Initializes the registry by loading all templates from registered providers.
+    /// Safe to call multiple times (subsequent calls are no-ops).
+    /// </summary>
+    public async Task InitializeAsync()
+    {
+        if (_initialized) return;
+        _initialized = true;
+
+        foreach (var provider in _providers.OrderBy(p => p.Priority))
         {
-            foreach (var template in category.Templates)
-                RegisterTemplate(template, provider.Priority);
+            var categories = await provider.GetTemplateCategoriesAsync();
+            foreach (var category in categories)
+            {
+                foreach (var template in category.Templates)
+                    RegisterTemplate(template, provider.Priority);
+            }
         }
     }
 

@@ -29,12 +29,12 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
     public int Priority => 0;
 
     /// <inheritdoc />
-    public IEnumerable<DiagramTemplateCategory> GetTemplateCategories()
+    public async Task<IEnumerable<DiagramTemplateCategory>> GetTemplateCategoriesAsync()
     {
         if (_categories is not null)
             return _categories;
 
-        _categories = LoadCategoriesAsync().GetAwaiter().GetResult();
+        _categories = await LoadCategoriesAsync();
         return _categories;
     }
 

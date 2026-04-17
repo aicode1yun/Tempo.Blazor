@@ -84,8 +84,9 @@
     private DiagramTemplate? _selectedTemplate;
     private string[] _categories = [];
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
+        await TemplateRegistry.InitializeAsync();
         _categories = TemplateRegistry.GetCategories();
     }
 

@@ -105,7 +105,7 @@ public static class ServiceCollectionExtensions
         {
             var registry = new DiagramTemplateRegistry();
             var providers = sp.GetServices<IDiagramTemplateProvider>();
-            foreach (var provider in providers.OrderBy(p => p.Priority))
+            foreach (var provider in providers)
                 registry.RegisterProvider(provider);
             return registry;
         });

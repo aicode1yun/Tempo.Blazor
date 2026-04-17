@@ -588,15 +588,40 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         if (Document is null || ReadOnly) return;
 
+        var targetIds = _currentSelectionIds.Length > 0 ? _currentSelectionIds : ids;
+        if (targetIds.Length == 0) return;
+
+        var nodeIds = targetIds.Where(id => Document.Nodes.Any(n => n.Id == id)).ToArray();
+        var edgeIds = targetIds.Where(id => Document.Edges.Any(e => e.Id == id)).ToArray();
+
         if (CommandStack is not null)
-            CommandStack.Push(new RemoveNodesCommand(Document, ids));
+        {
+            if (nodeIds.Length > 0 && edgeIds.Length > 0)
+            {
+                using var tx = CommandStack.TransactionScope("Delete selection");
+                CommandStack.Push(new RemoveNodesCommand(Document, nodeIds));
+                CommandStack.Push(new RemoveEdgesCommand(Document, edgeIds));
+            }
+            else if (nodeIds.Length > 0)
+            {
+                CommandStack.Push(new RemoveNodesCommand(Document, nodeIds));
+            }
+            else if (edgeIds.Length > 0)
+            {
+                CommandStack.Push(new RemoveEdgesCommand(Document, edgeIds));
+            }
+        }
         else
         {
-            var idSet = ids.ToHashSet();
-            Document.Nodes.RemoveAll(n => idSet.Contains(n.Id));
-            Document.Edges.RemoveAll(e => idSet.Contains(e.SourceNodeId) || idSet.Contains(e.TargetNodeId));
+            var nodeIdSet = nodeIds.ToHashSet();
+            var edgeIdSet = edgeIds.ToHashSet();
+            Document.Nodes.RemoveAll(n => nodeIdSet.Contains(n.Id));
+            Document.Edges.RemoveAll(e => edgeIdSet.Contains(e.Id) || nodeIdSet.Contains(e.SourceNodeId) || nodeIdSet.Contains(e.TargetNodeId));
         }
 
+        _currentSelectionIds = [];
+        await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+        await OnSelectionChanged.InvokeAsync([]);
         await NotifyAndRender();
     }
 
@@ -999,10 +1024,22 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     // ── Edge interactions ────────────────────────────────────────────────────
 
-    private async Task OnEdgeClicked(string edgeId)
+    private async Task OnEdgeClicked(string edgeId, MouseEventArgs e)
     {
-        _currentSelectionIds = [edgeId];
-        await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+        if (e.CtrlKey || e.MetaKey)
+        {
+            var current = _currentSelectionIds.ToList();
+            if (current.Contains(edgeId))
+                current.Remove(edgeId);
+            else
+                current.Add(edgeId);
+            _currentSelectionIds = current.ToArray();
+        }
+        else
+        {
+            _currentSelectionIds = [edgeId];
+            await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+        }
         await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
     }
 

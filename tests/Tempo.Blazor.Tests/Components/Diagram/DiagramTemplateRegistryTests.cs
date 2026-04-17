@@ -80,12 +80,13 @@ public class DiagramTemplateRegistryTests
     }
 
     [Fact]
-    public void RegisterProvider_Adds_All_Provider_Templates()
+    public async Task RegisterProvider_Adds_All_Provider_Templates()
     {
         var registry = new DiagramTemplateRegistry();
         var provider = new TestTemplateProvider();
 
         registry.RegisterProvider(provider);
+        await registry.InitializeAsync();
 
         registry.Count.Should().Be(2);
         registry.GetTemplate("p1")!.Name.Should().Be("Provider T1");
@@ -95,9 +96,9 @@ public class DiagramTemplateRegistryTests
     {
         public int Priority => 0;
 
-        public IEnumerable<DiagramTemplateCategory> GetTemplateCategories()
+        public Task<IEnumerable<DiagramTemplateCategory>> GetTemplateCategoriesAsync()
         {
-            return new List<DiagramTemplateCategory>
+            return Task.FromResult<IEnumerable<DiagramTemplateCategory>>(new List<DiagramTemplateCategory>
             {
                 new()
                 {
@@ -108,7 +109,7 @@ public class DiagramTemplateRegistryTests
                         new DiagramTemplate { Id = "p2", Name = "Provider T2", Category = "Cat1" }
                     ]
                 }
-            };
+            });
         }
     }
 }
