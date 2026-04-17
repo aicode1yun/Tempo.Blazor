@@ -679,6 +679,12 @@
     flex-shrink: 0;
 }
 
+/* UML class nodes: list sections should not scroll or stretch — auto-height handles sizing */
+.tm-diagram-node__shape[data-stencil-id^="uml."] .tm-diagram-node__section--grow {
+    flex: 0 0 auto;
+    overflow: visible;
+}
+
 .tm-diagram-node__icon {
     font-size: 18px;
     line-height: 1;

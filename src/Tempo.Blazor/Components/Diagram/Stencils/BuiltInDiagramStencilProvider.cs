@@ -481,7 +481,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     Layout = new()
                     {
                         BackgroundShape = "rectangle",
-                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='33' x2='100' y2='33' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/><line x1='0' y1='66' x2='100' y2='66' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
                         Sections =
                         [
                             new()

@@ -57,7 +57,7 @@ public class CsvToTimelineGeneratorTests
         var doc = CsvToTimelineGenerator.Generate(parseResult, mappings);
         var node = doc.ActivePage.Nodes[0];
         node.X.Should().Be(40);
-        node.Y.Should().Be(100);
+        node.Y.Should().Be(96); // SnapToGrid(8): Math.Round(100/8)=Math.Round(12.5)=12 → 12*8=96
         node.W.Should().Be(200);
         node.H.Should().Be(40);
     }

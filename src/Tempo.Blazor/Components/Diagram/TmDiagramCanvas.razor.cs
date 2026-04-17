@@ -1308,15 +1308,88 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var oldData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(node.Data)) ?? new Dictionary<string, object>();
         var newData = JsonSerializer.Deserialize<Dictionary<string, object>>(JsonSerializer.Serialize(node.Data)) ?? new Dictionary<string, object>();
         newData[dataKey] = value;
+
+        var oldHeight = node.H;
+        var newHeight = ComputeUmlAutoHeight(node, newData);
+        var shouldResize = node.StencilId?.StartsWith("uml.", StringComparison.OrdinalIgnoreCase) == true
+            && Math.Abs(newHeight - oldHeight) > 2;
+
         if (CommandStack is not null)
         {
+            using var tx = CommandStack.TransactionScope("Edit section");
             CommandStack.Push(new UpdateNodeDataCommand(Document, nodeId, oldData, newData));
+            if (shouldResize)
+            {
+                CommandStack.Push(new ResizeNodeCommand(Document, nodeId,
+                    node.X, node.Y, node.W, oldHeight,
+                    node.X, node.Y, node.W, newHeight));
+            }
         }
         else
         {
             node.Data = newData;
+            if (shouldResize)
+            {
+                node.H = newHeight;
+            }
         }
         await NotifyAndRender();
+    }
+
+    private static double ComputeUmlAutoHeight(DiagramNode node, Dictionary<string, object> data)
+    {
+        var stencilId = node.StencilId?.ToLowerInvariant() ?? "";
+        if (!stencilId.StartsWith("uml.")) return node.H;
+
+        double headerHeight = stencilId switch
+        {
+            "uml.abstract-class" or "uml.component" => 38, // stereotype + name
+            _ => 30 // name only
+        };
+
+        double h = headerHeight;
+        bool hasListSection = false;
+
+        foreach (var key in new[] { "attributes", "methods", "values" })
+        {
+            if (!data.TryGetValue(key, out var listValue)) continue;
+            var count = CountListItems(listValue);
+            hasListSection = true;
+            h += 1; // divider
+            h += 16 + Math.Max(1, count) * 18; // padding + rows (min 1 row for empty section)
+        }
+
+        if (!hasListSection)
+            h += 20;
+
+        var minHeight = stencilId switch
+        {
+            "uml.class" or "uml.abstract-class" or "uml.component" => 140,
+            "uml.enum" => 120,
+            _ => 100
+        };
+
+        return Math.Max(minHeight, h);
+    }
+
+    private static int CountListItems(object? value)
+    {
+        if (value is null) return 0;
+        if (value is System.Text.Json.JsonElement je)
+        {
+            if (je.ValueKind == System.Text.Json.JsonValueKind.Array)
+                return je.EnumerateArray().Count(e => !string.IsNullOrWhiteSpace(e.ToString()));
+            var s = je.ToString();
+            return string.IsNullOrWhiteSpace(s) ? 0 : 1;
+        }
+        if (value is System.Collections.Generic.IEnumerable<string> strList)
+            return strList.Count(s => !string.IsNullOrWhiteSpace(s));
+        if (value is System.Collections.IEnumerable enumerable && value is not string)
+            return enumerable.Cast<object>().Count(o => o is not null && !string.IsNullOrWhiteSpace(o.ToString()));
+        if (value is string str)
+            return str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
+                      .Count(l => !string.IsNullOrWhiteSpace(l));
+        return 1;
     }
 
     private async Task HandleTableCellSelect(string nodeId, int row, int column, bool isCtrlHeld)
