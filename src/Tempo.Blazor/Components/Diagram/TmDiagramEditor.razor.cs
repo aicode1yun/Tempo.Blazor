@@ -165,6 +165,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private double _contextMenuScreenY;
     private double _contextMenuCanvasX;
     private double _contextMenuCanvasY;
+    private ElementReference _contextMenuRef;
 
     private readonly List<(int Row, int Column)> _selectedTableCells = [];
 
@@ -286,6 +287,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             await _canvas.SetSelection(args.NodeId);
         }
         await InvokeAsync(StateHasChanged);
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmDiagramEditor.openContextMenu", _canvas.GetContainerRef(), _contextMenuRef);
     }
 
     private async Task OnEdgeContextMenu((string EdgeId, double ScreenX, double ScreenY) args)
@@ -303,9 +306,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _selectedIds = [args.EdgeId];
         if (_canvas is not null) await _canvas.SetSelection([]);
         await InvokeAsync(StateHasChanged);
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmDiagramEditor.openContextMenu", _canvas.GetContainerRef(), _contextMenuRef);
     }
 
-    private void OnTableCellContextMenu((string NodeId, int Row, int Column, double ScreenX, double ScreenY) args)
+    private async Task OnTableCellContextMenu((string NodeId, int Row, int Column, double ScreenX, double ScreenY) args)
     {
         if (ReadOnly) return;
         _contextMenuType = ContextMenuType.TableCell;
@@ -316,7 +321,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _contextMenuScreenX = args.ScreenX;
         _contextMenuScreenY = args.ScreenY;
         ClampContextMenuPosition();
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmDiagramEditor.openContextMenu", _canvas.GetContainerRef(), _contextMenuRef);
     }
 
     private async Task OnCanvasContextMenu((double CanvasX, double CanvasY, double ScreenX, double ScreenY) args)
@@ -335,21 +342,33 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
         _selectedIds = [];
         if (_canvas is not null) await _canvas.SetSelection([]);
-        StateHasChanged();
+        await InvokeAsync(StateHasChanged);
+        if (_canvas is not null)
+            await JS.InvokeVoidAsync("tmDiagramEditor.openContextMenu", _canvas.GetContainerRef(), _contextMenuRef);
     }
 
     private void ClampContextMenuPosition()
     {
-        // Estimate menu size: 220px width, 320px max height
-        const double menuW = 220;
-        const double menuH = 320;
-        var w = 1920d;
-        var h = 1080d;
-        if (_contextMenuScreenX + menuW > w) _contextMenuScreenX = Math.Max(0, w - menuW - 8);
-        if (_contextMenuScreenY + menuH > h) _contextMenuScreenY = Math.Max(0, h - menuH - 8);
+        // Basic guard; precise viewport-aware clamping (with flip) is done in JS after render
+        if (_contextMenuScreenX < 0) _contextMenuScreenX = 8;
+        if (_contextMenuScreenY < 0) _contextMenuScreenY = 8;
     }
 
-    private void CloseContextMenu() => _contextMenuOpen = false;
+    private async Task CloseContextMenu()
+    {
+        _contextMenuOpen = false;
+        if (_canvas is not null)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmDiagramEditor.closeContextMenu", _canvas.GetContainerRef());
+            }
+            catch
+            {
+                // Ignore JS interop errors during cleanup
+            }
+        }
+    }
 
     private async Task HandleTableCellSelect((string NodeId, int Row, int Column, bool IsCtrlHeld) args)
     {
@@ -424,7 +443,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuCut()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         ActiveCommandStack.Push(new CutNodesCommand(_document, ids));
@@ -435,7 +454,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuCopy()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         new CopyNodesCommand(_document, ids).Execute();
@@ -443,7 +462,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuDuplicate()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         ActiveCommandStack.Push(new DuplicateNodesCommand(_document, ids));
@@ -452,7 +471,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuPaste()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         var cmd = new PasteNodesCommand(_document, 16, 16, useInternalClipboard: true, parentGroupId: ActiveGroupId);
         if (cmd.PastedNodes.Count == 0) return;
@@ -464,7 +483,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuPasteHere()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         var cmd = new PasteNodesCommand(_document, _contextMenuCanvasX, _contextMenuCanvasY, useInternalClipboard: true, pasteHere: true, parentGroupId: ActiveGroupId);
         if (cmd.PastedNodes.Count == 0) return;
@@ -476,7 +495,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuSelectAll()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null) return;
         _selectedIds = _document.Nodes.Select(n => n.Id).ToArray();
         if (_canvas is not null) await _canvas.SetSelection(_selectedIds);
@@ -485,7 +504,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuUndo()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (ActiveCommandStack.CanUndo)
         {
             ActiveCommandStack.Undo();
@@ -495,7 +514,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuRedo()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (ActiveCommandStack.CanRedo)
         {
             ActiveCommandStack.Redo();
@@ -505,7 +524,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuDelete()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         var nodeIds = ids.Where(id => _document.Nodes.Any(n => n.Id == id)).ToArray();
@@ -533,7 +552,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuBringToFront()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         var before = ids.ToDictionary(id => id, id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.ZIndex ?? 0);
@@ -545,7 +564,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuSendToBack()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         var before = ids.ToDictionary(id => id, id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.ZIndex ?? 0);
@@ -557,7 +576,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuLock()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         ActiveCommandStack.Push(new LockNodesCommand(_document, ids));
@@ -566,7 +585,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuUnlock()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         ActiveCommandStack.Push(new UnlockNodesCommand(_document, ids));
@@ -575,7 +594,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuGroup()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         if (!CanContextMenuGroup()) return;
         ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
@@ -584,7 +603,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuUngroup()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         if (!CanContextMenuUngroup()) return;
         var node = _document.Nodes.FirstOrDefault(n => n.Id == _selectedIds[0]);
@@ -596,7 +615,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuPasteStyle()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         if (DiagramClipboard.Style is null) return;
@@ -606,7 +625,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuPasteSize()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
         if (DiagramClipboard.Width is null || DiagramClipboard.Height is null) return;
@@ -616,7 +635,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuReplaceShape(string stencilId)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var stencil = StencilRegistry.GetStencil(stencilId);
         if (stencil is null) return;
@@ -639,15 +658,15 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuDeleteEdge()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
         ActiveCommandStack.Push(new RemoveEdgesCommand(_document, [_contextMenuEdgeId]));
         await OnDocumentChanged(_document);
     }
 
-    private void ContextMenuEditEdgeLabel()
+    private async Task ContextMenuEditEdgeLabel()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || _contextMenuEdgeId is null) return;
         // Trigger inline label editing via the canvas
         _canvas?.StartEdgeLabelEdit(_contextMenuEdgeId);
@@ -655,7 +674,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuChangeEdgeConnector(string routing)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
         var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
         if (edge is null || edge.Routing == routing) return;
@@ -665,7 +684,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuChangeEdgeArrowheadStart(string arrowhead)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
         ActiveCommandStack.Push(new UpdateEdgeArrowheadsCommand(_document, [_contextMenuEdgeId], newStartArrow: arrowhead));
         await OnDocumentChanged(_document);
@@ -673,7 +692,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuChangeEdgeArrowheadEnd(string arrowhead)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
         ActiveCommandStack.Push(new UpdateEdgeArrowheadsCommand(_document, [_contextMenuEdgeId], newEndArrow: arrowhead));
         await OnDocumentChanged(_document);
@@ -681,7 +700,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuChangeEdgeLineStyle(string? dasharray)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
         ActiveCommandStack.Push(new UpdateEdgeLineStyleCommand(_document, [_contextMenuEdgeId], dasharray));
         await OnDocumentChanged(_document);
@@ -691,7 +710,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertRowAbove()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var row = _contextMenuTableCell?.Row ?? 0;
         using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertRowAbove"]))
@@ -703,7 +722,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertRowBelow()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var row = (_contextMenuTableCell?.Row ?? 0) + 1;
         var rowCount = Services.TableLayoutService.GetRowCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
@@ -717,7 +736,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertColumnLeft()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var col = _contextMenuTableCell?.Column ?? 0;
         using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertColumnLeft"]))
@@ -729,7 +748,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertColumnRight()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         var col = (_contextMenuTableCell?.Column ?? 0) + 1;
         var colCount = Services.TableLayoutService.GetColumnCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
@@ -743,7 +762,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuMergeCells()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
         if (!CanContextMenuMergeCells()) return;
         ActiveCommandStack.Push(new MergeTableCellsCommand(_document, _contextMenuNodeId, _selectedTableCells));
@@ -753,16 +772,16 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuSplitCell()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_contextMenuTableCell is null || _document is null || ReadOnly || _contextMenuNodeId is null) return;
         var (row, col) = _contextMenuTableCell.Value;
         ActiveCommandStack.Push(new SplitTableCellCommand(_document, _contextMenuNodeId, row, col));
         await OnDocumentChanged(_document);
     }
 
-    private void ContextMenuEditTableCellText()
+    private async Task ContextMenuEditTableCellText()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_contextMenuTableCell is null) return;
         // The stencil shape handles inline editing via double-click; we can't easily trigger it remotely.
         // For now we rely on the Properties panel for inline text editing.
@@ -770,7 +789,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuFormatTableCell(string backgroundColor, string borderColor)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly || _contextMenuNodeId is null || _contextMenuTableCell is null) return;
         var (row, col) = _contextMenuTableCell.Value;
         var cell = Services.TableLayoutService.GetCells(_document.Nodes.First(n => n.Id == _contextMenuNodeId))
@@ -790,7 +809,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertText()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         var node = new DiagramNode { StencilId = "general.text", X = _contextMenuCanvasX, Y = _contextMenuCanvasY, W = 80, H = 30 };
         node.Data["text"] = "Text";
@@ -800,7 +819,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertRectangle()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         var node = new DiagramNode { StencilId = "general.rectangle", X = _contextMenuCanvasX, Y = _contextMenuCanvasY };
         ActiveCommandStack.Push(new AddNodeCommand(_document, node));
@@ -809,7 +828,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuInsertEllipse()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         var node = new DiagramNode { StencilId = "general.ellipse", X = _contextMenuCanvasX, Y = _contextMenuCanvasY };
         ActiveCommandStack.Push(new AddNodeCommand(_document, node));
@@ -818,27 +837,27 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task ContextMenuRunLayout(string algorithm, string direction)
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         await RunLayout(algorithm, direction);
     }
 
-    private void ContextMenuToggleGrid()
+    private async Task ContextMenuToggleGrid()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         ShowGrid = !ShowGrid;
         StateHasChanged();
     }
 
-    private void ContextMenuTogglePageView()
+    private async Task ContextMenuTogglePageView()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         ShowPageView = !ShowPageView;
         StateHasChanged();
     }
 
-    private void ContextMenuToggleSnapToGrid()
+    private async Task ContextMenuToggleSnapToGrid()
     {
-        _contextMenuOpen = false;
+        await CloseContextMenu();
         GridSize = GridSize == 0 ? 8 : 0;
         StateHasChanged();
     }

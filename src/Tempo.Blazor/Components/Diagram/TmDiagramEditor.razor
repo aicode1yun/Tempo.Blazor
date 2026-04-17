@@ -465,6 +465,7 @@
                              OnEdgeContextMenu="OnEdgeContextMenu"
                              OnTableCellContextMenu="OnTableCellContextMenu"
                              OnCanvasContextMenu="OnCanvasContextMenu"
+                             OnCloseContextMenu="CloseContextMenu"
                              OnConnectArrowClicked="OnConnectArrowClicked"
                              OnShowSearch="OpenSearchPanel"
                              OnShowReplace="OpenReplacePanel"
@@ -486,8 +487,9 @@
             @* Context menu (long-press / right-click) *@
             @if (_contextMenuOpen)
             {
-                <div class="tm-diagram-editor__context-menu" role="menu" style="position:fixed;left:@($"{_contextMenuScreenX}px");top:@($"{_contextMenuScreenY}px");z-index:1000;"
-                     @onclick:stopPropagation>
+                <div @ref="_contextMenuRef" class="tm-diagram-editor__context-menu" role="menu" style="position:fixed;left:@($"{_contextMenuScreenX}px");top:@($"{_contextMenuScreenY}px");z-index:1000;"
+                     @onclick:stopPropagation
+                     @oncontextmenu:preventDefault>
                     @switch (_contextMenuType)
                     {
                         case ContextMenuType.Canvas:
@@ -596,7 +598,6 @@
                             break;
                     }
                 </div>
-                <div class="tm-diagram-editor__context-backdrop" style="position:fixed;inset:0;z-index:999;" @onclick="CloseContextMenu"></div>
             }
 
         </div>

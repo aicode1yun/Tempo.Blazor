@@ -245,7 +245,18 @@ window.tmDiagramEditor = {
 
     _onContextMenu: function (e, inst) {
         if (inst.readOnly || !inst.dotNetRef) return;
+
+        // If clicking on the custom context menu itself, close it and prevent native menu
+        if (e.target.closest('.tm-diagram-editor__context-menu')) {
+            e.preventDefault();
+            inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+            return;
+        }
+
         e.preventDefault();
+
+        // No need to call CloseContextMenu here — OnNodeContextMenu/OnEdgeContextMenu/OnCanvasContextMenu
+        // will set _contextMenuOpen = true and openContextMenu will replace the old menu and listeners.
 
         const labelGroupEl = e.target.closest('.tm-diagram-edge-label-group');
         if (labelGroupEl) {
@@ -2005,6 +2016,69 @@ window.tmDiagramEditor = {
         if (inst.dotNetRef)
             inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
         return fitScale;
+    },
+
+    openContextMenu: function (container, menuEl) {
+        if (!container || !menuEl) return;
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        // Clean up any existing dismiss handlers first
+        if (inst._menuDismissHandler) {
+            document.removeEventListener('mousedown', inst._menuDismissHandler);
+            document.removeEventListener('keydown', inst._menuKeyHandler);
+            inst._menuDismissHandler = null;
+            inst._menuKeyHandler = null;
+        }
+        setTimeout(function () {
+            if (!menuEl) return;
+            const rect = menuEl.getBoundingClientRect();
+            const vw = window.innerWidth;
+            const vh = window.innerHeight;
+            const margin = 8;
+            let left = parseFloat(menuEl.style.left) || 0;
+            let top = parseFloat(menuEl.style.top) || 0;
+            if (left + rect.width + margin > vw) {
+                left = Math.max(margin, vw - rect.width - margin);
+            }
+            if (top + rect.height + margin > vh) {
+                top = Math.max(margin, vh - rect.height - margin);
+            }
+            menuEl.style.left = left + 'px';
+            menuEl.style.top = top + 'px';
+
+            inst._menuDismissHandler = function (e) {
+                if (e.button !== 0) return; // only left click outside
+                if (e.target.closest('.tm-diagram-editor__context-menu')) return;
+                if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+                document.removeEventListener('mousedown', inst._menuDismissHandler);
+                document.removeEventListener('keydown', inst._menuKeyHandler);
+                inst._menuDismissHandler = null;
+                inst._menuKeyHandler = null;
+            };
+            inst._menuKeyHandler = function (e) {
+                if (e.key === 'Escape') {
+                    if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('CloseContextMenu');
+                    document.removeEventListener('mousedown', inst._menuDismissHandler);
+                    document.removeEventListener('keydown', inst._menuKeyHandler);
+                    inst._menuDismissHandler = null;
+                    inst._menuKeyHandler = null;
+                }
+            };
+            document.addEventListener('mousedown', inst._menuDismissHandler);
+            document.addEventListener('keydown', inst._menuKeyHandler);
+        }, 0);
+    },
+
+    closeContextMenu: function (container) {
+        if (!container) return;
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        if (inst._menuDismissHandler) {
+            document.removeEventListener('mousedown', inst._menuDismissHandler);
+            document.removeEventListener('keydown', inst._menuKeyHandler);
+            inst._menuDismissHandler = null;
+            inst._menuKeyHandler = null;
+        }
     },
 
     scrollTo: function (container, centreX, centreY) {

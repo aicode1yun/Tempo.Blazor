@@ -119,6 +119,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Raised when the empty canvas is right-clicked to open a context menu.</summary>
     [Parameter] public EventCallback<(double CanvasX, double CanvasY, double ScreenX, double ScreenY)> OnCanvasContextMenu { get; set; }
 
+    /// <summary>Raised when the context menu should be closed (e.g. second right-click).</summary>
+    [Parameter] public EventCallback OnCloseContextMenu { get; set; }
+
     /// <summary>Selected table cells for multi-select merge UI.</summary>
     [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
 
@@ -737,6 +740,10 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     [JSInvokable("OnCanvasContextMenu")]
     public async Task JsOnCanvasContextMenu(double canvasX, double canvasY, double screenX, double screenY)
         => await OnCanvasContextMenu.InvokeAsync((canvasX, canvasY, screenX, screenY));
+
+    [JSInvokable("CloseContextMenu")]
+    public async Task JsOnCloseContextMenu()
+        => await OnCloseContextMenu.InvokeAsync();
 
     [JSInvokable("OnNodeLinkClicked")]
     public async Task JsOnNodeLinkClicked(string nodeId, string link)
