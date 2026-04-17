@@ -1311,6 +1311,10 @@ window.tmDiagramEditor = {
             this._hideConnectHoverIcons(inst);
             return;
         }
+        if (nodeEl.getAttribute('data-locked') === 'true') {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
         const nodeId = nodeEl.getAttribute('data-node-id');
         const rect = this._nodeRect(inst, nodeId);
         if (!rect) {
@@ -1342,12 +1346,12 @@ window.tmDiagramEditor = {
             const btn = document.createElement('div');
             btn.className = 'tm-diagram-hover-connect tm-diagram-hover-connect--' + d.css;
             btn.setAttribute('data-hover-side', d.side);
-            btn.style.cssText = 'position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--tm-color-primary,#3b82f6);display:flex;align-items:center;justify-content:center;cursor:crosshair;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,0.12);pointer-events:all;';
-            if (d.css === 'n') { btn.style.top = '-24px'; btn.style.left = 'calc(50% - 11px)'; }
-            else if (d.css === 'e') { btn.style.top = 'calc(50% - 11px)'; btn.style.right = '-24px'; }
-            else if (d.css === 's') { btn.style.bottom = '-24px'; btn.style.left = 'calc(50% - 11px)'; }
-            else if (d.css === 'w') { btn.style.top = 'calc(50% - 11px)'; btn.style.left = '-24px'; }
-            btn.innerHTML = '<span style="font-size:12px;color:var(--tm-color-primary,#3b82f6);transform:rotate(' + (d.css === 'n' ? '-90deg' : d.css === 's' ? '90deg' : d.css === 'w' ? '180deg' : '0deg') + ')">→</span>';
+            btn.style.cssText = 'position:absolute;width:16px;height:16px;border-radius:50%;background:transparent;border:1px solid #94a3b3;display:flex;align-items:center;justify-content:center;cursor:crosshair;z-index:50;pointer-events:all;';
+            if (d.css === 'n') { btn.style.top = '-8px'; btn.style.left = 'calc(50% - 8px)'; }
+            else if (d.css === 'e') { btn.style.top = 'calc(50% - 8px)'; btn.style.right = '-8px'; }
+            else if (d.css === 's') { btn.style.bottom = '-8px'; btn.style.left = 'calc(50% - 8px)'; }
+            else if (d.css === 'w') { btn.style.top = 'calc(50% - 8px)'; btn.style.left = '-8px'; }
+            btn.innerHTML = '<span style="font-size:10px;color:#94a3b3;transform:rotate(' + (d.css === 'n' ? '-90deg' : d.css === 's' ? '90deg' : d.css === 'w' ? '180deg' : '0deg') + ')">→</span>';
             btn.onmousedown = (e) => {
                 e.preventDefault();
                 e.stopPropagation();
