@@ -81,6 +81,12 @@ public sealed class DiagramEdge
     /// <summary>Visual style overrides for this edge.</summary>
     public DiagramStyle Style { get; set; } = new();
 
+    /// <summary>Z-order index for edge layering. Higher values render on top.</summary>
+    public int ZIndex { get; set; }
+
+    /// <summary>Optional layer identifier. When null, the edge belongs to the default layer.</summary>
+    public string? LayerId { get; set; }
+
     /// <summary>Reserved for future collaborative editing – who has this edge locked.</summary>
     public string? LockedBy { get; set; }
 

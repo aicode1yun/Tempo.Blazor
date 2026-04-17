@@ -1,5 +1,6 @@
 @namespace Tempo.Blazor.Components.Diagram
 @using System.Globalization
+@using System.Linq
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Commands
 
@@ -112,11 +113,11 @@
         @* Edges *@
         @if (Document is not null)
         {
-            @foreach (var edge in Document.Edges)
+            @foreach (var edge in Document.Edges.Where(IsLayerVisible).OrderBy(e => e.ZIndex))
             {
                 var pathD = ComputeEdgePath(edge);
                 var isSelected = _currentSelectionIds.Contains(edge.Id);
-                <g>
+                <g opacity="@F(GetEdgeOpacity(edge))">
                     @* Invisible hit path *@
                     <path class="tm-diagram-edge-hit-path"
                           d="@pathD"

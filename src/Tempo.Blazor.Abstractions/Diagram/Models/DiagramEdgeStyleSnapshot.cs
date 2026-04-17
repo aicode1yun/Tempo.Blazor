@@ -17,6 +17,7 @@ public sealed class DiagramEdgeStyleSnapshot
     public double LabelPositionT { get; set; } = 0.5;
     public string? SourceCardinality { get; set; }
     public string? TargetCardinality { get; set; }
+    public string? LayerId { get; set; }
     public DiagramStyle Style { get; set; } = new();
 
     /// <summary>Creates a snapshot from the current state of an edge.</summary>
@@ -36,6 +37,7 @@ public sealed class DiagramEdgeStyleSnapshot
         LabelPositionT = edge.LabelPositionT,
         SourceCardinality = edge.SourceCardinality,
         TargetCardinality = edge.TargetCardinality,
+        LayerId = edge.LayerId,
         Style = new DiagramStyle
         {
             Fill = edge.Style.Fill,
@@ -67,6 +69,7 @@ public sealed class DiagramEdgeStyleSnapshot
         edge.LabelPositionT = LabelPositionT;
         edge.SourceCardinality = SourceCardinality;
         edge.TargetCardinality = TargetCardinality;
+        edge.LayerId = LayerId;
         edge.Style = new DiagramStyle
         {
             Fill = Style.Fill,

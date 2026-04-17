@@ -522,6 +522,11 @@
                         </div>
 
                         <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Opacity"] (@(GetEdgeOpacity())%)</label>
+                            <input class="tm-diagram-properties__slider" type="range" min="0" max="100" step="5" value="@GetEdgeOpacity()" @onchange="OnEdgeOpacityChanged" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_StrokeDashPattern"]</label>
                             <TmSelect TValue="string" Value="@GetEdgeStrokeDashPattern()" ValueChanged="OnEdgeStrokeDashPatternChanged" Options="@_dashPatternOptions" />
                         </div>
@@ -555,6 +560,27 @@
                                 <label>@Loc["TmDiagramProperties_TargetCardinality"]</label>
                                 <TmSelect TValue="string" Value="@GetEdgeTargetCardinality()" ValueChanged="OnEdgeTargetCardinalityChanged" Options="@_cardinalityOptions" />
                             </div>
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_ZIndex"]</label>
+                            <input class="tm-text-input" type="number" step="1" value="@GetEdgeZIndex()" @onchange="e => OnEdgeZChanged(e.Value?.ToString())" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_Layer"]</label>
+                            <select class="tm-text-input" value="@GetEdgeLayerId()" @onchange="OnEdgeLayerChanged">
+                                <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                                @foreach (var layer in SortedLayers)
+                                {
+                                    <option value="@layer.Id">@layer.Name</option>
+                                }
+                            </select>
+                        </div>
+
+                        <div class="tm-diagram-properties__row tm-diagram-properties__actions">
+                            <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnBringEdgeToFront">@Loc["TmDiagramProperties_BringToFront"]</button>
+                            <button type="button" class="tm-btn tm-btn--secondary tm-btn--small" @onclick="OnSendEdgeToBack">@Loc["TmDiagramProperties_SendToBack"]</button>
                         </div>
                     </div>
                 }

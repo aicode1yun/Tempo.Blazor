@@ -851,6 +851,13 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return layer?.IsVisible ?? true;
     }
 
+    private bool IsLayerVisible(DiagramEdge edge)
+    {
+        if (edge.LayerId is null) return true;
+        var layer = Document?.Layers.FirstOrDefault(l => l.Id == edge.LayerId);
+        return layer?.IsVisible ?? true;
+    }
+
     private bool IsNodeLocked(DiagramNode node)
     {
         if (node.IsLocked) return true;
@@ -1752,6 +1759,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private static string GetEdgeColor(DiagramEdge edge)
         => edge.Style.Stroke ?? "#111827";
+
+    private static double GetEdgeOpacity(DiagramEdge edge)
+        => edge.Style.Opacity ?? 1.0;
 
     private string GetEdgeMarkerEnd(DiagramEdge edge)
     {

@@ -108,6 +108,14 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         return list.All(v => v == first) ? first : null;
     }
 
+    private static int? GetCommonInt(IEnumerable<int> values)
+    {
+        var list = values.ToList();
+        if (list.Count == 0) return null;
+        var first = list[0];
+        return list.All(v => v == first) ? first : null;
+    }
+
     private string GetNodeDataText(string dataKey) => FirstSelectedNode?.Data.GetValueOrDefault(dataKey)?.ToString() ?? "";
 
     private string GetNodeDataListText(string dataKey)
@@ -581,6 +589,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private string GetEdgeEndArrow() => GetCommonString(SelectedEdges.Select(e => e.EndArrow)) ?? "classic";
     private string GetEdgeStrokeColor() => GetCommonString(SelectedEdges.Select(e => e.Style.Stroke)) ?? "#111827";
     private double GetEdgeStrokeWidth() => GetCommonDouble(SelectedEdges.Select(e => e.Style.StrokeWidth)) ?? 1.5;
+    private double GetEdgeOpacity() => (GetCommonDouble(SelectedEdges.Select(e => e.Style.Opacity)) ?? 1.0) * 100;
     private double GetEdgeJumpSize() => GetCommonDouble(SelectedEdges.Select(e => e.JumpSize)) ?? 10;
     private string GetEdgeStrokeDashPattern() => GetCommonString(SelectedEdges.Select(e => e.Style.StrokeDashPattern)) ?? "";
     private string GetEdgeJumpStyle() => GetCommonString(SelectedEdges.Select(e => e.JumpStyle)) ?? "";
@@ -589,6 +598,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private bool GetEdgeRounded() => GetCommonBool(SelectedEdges.Select(e => e.Rounded)) ?? false;
     private string GetEdgeSourceCardinality() => GetCommonString(SelectedEdges.Select(e => e.SourceCardinality)) ?? "";
     private string GetEdgeTargetCardinality() => GetCommonString(SelectedEdges.Select(e => e.TargetCardinality)) ?? "";
+    private int GetEdgeZIndex() => GetCommonInt(SelectedEdges.Select(e => e.ZIndex)) ?? 0;
+    private string? GetEdgeLayerId() => GetCommonString(SelectedEdges.Select(e => e.LayerId)) ?? "";
 
     private async Task OnEdgeStartArrowChanged(string value)
     {
@@ -616,6 +627,13 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     {
         if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), out var value)) return;
         ApplyEdgeStyleChange(edge => edge.Style.StrokeWidth = value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeOpacityChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), out var value)) return;
+        ApplyEdgeStyleChange(edge => edge.Style.Opacity = value / 100.0);
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -672,6 +690,52 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     {
         if (Document is null || SelectedEdges.Count == 0) return;
         ApplyEdgeStyleChange(e => e.TargetCardinality = string.IsNullOrEmpty(value) ? null : value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeZChanged(string? valueStr)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !int.TryParse(valueStr, out var value)) return;
+        var before = SelectedEdges.ToDictionary(e => e.Id, e => e.ZIndex);
+        var after = SelectedEdges.ToDictionary(e => e.Id, _ => value);
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeZIndexCommand(Document, before, after));
+        foreach (var edge in SelectedEdges)
+            edge.ZIndex = value;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeLayerChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        var layerId = e.Value?.ToString();
+        ApplyEdgeStyleChange(edge => edge.LayerId = string.IsNullOrEmpty(layerId) ? null : layerId);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnBringEdgeToFront()
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        var maxZ = Document.Edges.Count > 0 ? Document.Edges.Max(e => e.ZIndex) : 0;
+        var before = SelectedEdges.ToDictionary(e => e.Id, e => e.ZIndex);
+        var after = SelectedEdges.ToDictionary(e => e.Id, _ => maxZ + 1);
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeZIndexCommand(Document, before, after));
+        foreach (var edge in SelectedEdges)
+            edge.ZIndex = maxZ + 1;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnSendEdgeToBack()
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        var minZ = Document.Edges.Count > 0 ? Document.Edges.Min(e => e.ZIndex) : 0;
+        var before = SelectedEdges.ToDictionary(e => e.Id, e => e.ZIndex);
+        var after = SelectedEdges.ToDictionary(e => e.Id, _ => minZ - 1);
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeZIndexCommand(Document, before, after));
+        foreach (var edge in SelectedEdges)
+            edge.ZIndex = minZ - 1;
         await DocumentChanged.InvokeAsync(Document);
     }
 

@@ -653,7 +653,7 @@
   <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Hrana</value></data>
   <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Popisek</value></data>
   <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Styl</value></data>
-  <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Z-index</value></data>
   <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Nic není vybráno</value></data>
   <data name="TmDiagramProperties_ReadOnly" xml:space="preserve"><value>Režim pouze pro čtení</value></data>
   <data name="TmDiagramProperties_Routing" xml:space="preserve"><value>Směrování</value></data>
