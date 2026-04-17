@@ -1183,7 +1183,14 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await NotifyAndRender();
     }
 
-    private void OnEdgeLabelClicked(string edgeId)
+    private async Task OnEdgeLabelSelect(string edgeId)
+    {
+        _currentSelectionIds = [edgeId];
+        await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+        await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
+    }
+
+    private void OnEdgeLabelEdit(string edgeId)
     {
         if (ReadOnly || Document is null) return;
         var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);

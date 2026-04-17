@@ -288,7 +288,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    private void OnEdgeContextMenu((string EdgeId, double ScreenX, double ScreenY) args)
+    private async Task OnEdgeContextMenu((string EdgeId, double ScreenX, double ScreenY) args)
     {
         if (ReadOnly) return;
         _contextMenuType = ContextMenuType.Edge;
@@ -299,7 +299,10 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _contextMenuScreenX = args.ScreenX;
         _contextMenuScreenY = args.ScreenY;
         ClampContextMenuPosition();
-        StateHasChanged();
+
+        _selectedIds = [args.EdgeId];
+        if (_canvas is not null) await _canvas.SetSelection([]);
+        await InvokeAsync(StateHasChanged);
     }
 
     private void OnTableCellContextMenu((string NodeId, int Row, int Column, double ScreenX, double ScreenY) args)
@@ -316,7 +319,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         StateHasChanged();
     }
 
-    private void OnCanvasContextMenu((double CanvasX, double CanvasY, double ScreenX, double ScreenY) args)
+    private async Task OnCanvasContextMenu((double CanvasX, double CanvasY, double ScreenX, double ScreenY) args)
     {
         if (ReadOnly) return;
         _contextMenuType = ContextMenuType.Canvas;
@@ -329,6 +332,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _contextMenuScreenX = args.ScreenX;
         _contextMenuScreenY = args.ScreenY;
         ClampContextMenuPosition();
+
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
         StateHasChanged();
     }
 

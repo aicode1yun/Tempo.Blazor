@@ -135,7 +135,9 @@
                     @{
                         var labelPos = ComputeEdgePointAtT(edge, edge.LabelPositionT);
                     }
-                    <g class="tm-diagram-edge-label-group" @onclick:stopPropagation="true" @onclick="() => OnEdgeLabelClicked(edge.Id)">
+                    <g class="tm-diagram-edge-label-group"
+                       @onclick:stopPropagation="true" @onclick="() => OnEdgeLabelSelect(edge.Id)"
+                       @ondblclick:stopPropagation="true" @ondblclick="() => OnEdgeLabelEdit(edge.Id)">
                         <rect class="tm-diagram-edge-label-hit"
                               x="@F(labelPos.X - 24)"
                               y="@F(labelPos.Y - 12)"

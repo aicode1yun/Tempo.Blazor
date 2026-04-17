@@ -247,6 +247,16 @@ window.tmDiagramEditor = {
         if (inst.readOnly || !inst.dotNetRef) return;
         e.preventDefault();
 
+        const labelGroupEl = e.target.closest('.tm-diagram-edge-label-group');
+        if (labelGroupEl) {
+            const labelHandle = labelGroupEl.querySelector('[data-label-handle]');
+            const edgeId = labelHandle ? labelHandle.getAttribute('data-edge-id') : null;
+            if (edgeId) {
+                inst.dotNetRef.invokeMethodAsync('OnEdgeContextMenu', edgeId, e.clientX, e.clientY);
+                return;
+            }
+        }
+
         const tableCellEl = e.target.closest('.tm-diagram-node__table-cell');
         const nodeEl = e.target.closest('.tm-diagram-node');
         const edgeEl = e.target.closest('.tm-diagram-edge-hit-path');
@@ -467,7 +477,38 @@ window.tmDiagramEditor = {
             return;
         }
 
-        if (e.button !== 0) return;
+        const isRightClick = e.button === 2;
+        if (e.button !== 0 && !isRightClick) return;
+
+        // Right-click on edge or label -> select edge
+        if (isRightClick) {
+            const edgeEl = e.target.closest('.tm-diagram-edge-hit-path');
+            if (edgeEl) {
+                const edgeId = edgeEl.getAttribute('data-edge-id');
+                if (edgeId) {
+                    if (e.ctrlKey || e.metaKey) {
+                        if (inst.selectedIds.has(edgeId)) inst.selectedIds.delete(edgeId);
+                        else inst.selectedIds.add(edgeId);
+                    } else {
+                        inst.selectedIds = new Set([edgeId]);
+                        this._updateSelection(inst);
+                    }
+                    inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                    return;
+                }
+            }
+            const labelGroupEl = e.target.closest('.tm-diagram-edge-label-group');
+            if (labelGroupEl) {
+                const labelHandle = labelGroupEl.querySelector('[data-label-handle]');
+                const edgeId = labelHandle ? labelHandle.getAttribute('data-edge-id') : null;
+                if (edgeId) {
+                    inst.selectedIds = new Set([edgeId]);
+                    this._updateSelection(inst);
+                    inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [edgeId]);
+                    return;
+                }
+            }
+        }
 
         // Edge label handle clicked?
         const labelHitEl = e.target.closest('[data-label-handle="true"]');
@@ -588,6 +629,7 @@ window.tmDiagramEditor = {
             }
 
             if (isLocked || inst.readOnly) return;
+            if (isRightClick) return;
 
             inst.isDragging = true;
             inst.dragNodeIds = [...inst.selectedIds];
@@ -626,7 +668,15 @@ window.tmDiagramEditor = {
             return;
         }
 
-        // Empty canvas: rubber-band selection
+        // Empty canvas: rubber-band selection (or clear selection on right-click)
+        if (isRightClick) {
+            if (inst.selectedIds.size > 0) {
+                inst.selectedIds.clear();
+                this._updateSelection(inst);
+                inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', []);
+            }
+            return;
+        }
         e.preventDefault();
         const rect = inst.container.getBoundingClientRect();
         const screenPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
