@@ -119,4 +119,55 @@ public class PropertyPanelTests : LocalizationTestBase
         var groupBtn = buttons.FirstOrDefault(b => b.TextContent.Contains("Group") || b.TextContent.Contains("Seskupit"));
         groupBtn.Should().NotBeNull();
     }
+
+    [Fact]
+    public void EmptySelection_ShowsPageProperties()
+    {
+        var doc = new DiagramDocument { Width = 794, Height = 1123 };
+
+        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.SelectedIds, Array.Empty<string>())
+            .Add(c => c.ReadOnly, false));
+
+        cut.FindAll(".tm-diagram-properties__section-header")
+           .Any(h => h.TextContent.Contains("Page") || h.TextContent.Contains("Stránka"))
+           .Should().BeTrue();
+    }
+
+    [Fact]
+    public void PageSizeSelect_ChangesPageDimensions()
+    {
+        var doc = new DiagramDocument { Width = 1000, Height = 1200 };
+
+        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.SelectedIds, Array.Empty<string>())
+            .Add(c => c.ReadOnly, false));
+
+        var select = cut.Find("select");
+        select.Change("a4");
+
+        doc.Width.Should().Be(794);
+        doc.Height.Should().Be(1123);
+    }
+
+    [Fact]
+    public void OrientationToggle_SwapsWidthAndHeight()
+    {
+        var doc = new DiagramDocument { Width = 794, Height = 1123 };
+
+        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.SelectedIds, Array.Empty<string>())
+            .Add(c => c.ReadOnly, false));
+
+        var buttons = cut.FindAll(".tm-diagram-properties__toggle-btn");
+        var landscapeBtn = buttons.FirstOrDefault(b => b.GetAttribute("title")?.Contains("Landscape") == true || b.GetAttribute("title")?.Contains("šířku") == true);
+        landscapeBtn.Should().NotBeNull();
+        landscapeBtn!.Click();
+
+        doc.Width.Should().Be(1123);
+        doc.Height.Should().Be(794);
+    }
 }

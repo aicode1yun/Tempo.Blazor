@@ -2,6 +2,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Components.Diagram.Stencils;
+using Tempo.Blazor.Components.Diagram.Templates;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Localization;
 using Tempo.Blazor.Services;
@@ -94,6 +95,16 @@ public static class ServiceCollectionExtensions
         {
             var registry = new DiagramStencilRegistry();
             var providers = sp.GetServices<IDiagramStencilProvider>();
+            foreach (var provider in providers.OrderBy(p => p.Priority))
+                registry.RegisterProvider(provider);
+            return registry;
+        });
+
+        services.TryAddSingleton<IDiagramTemplateProvider, BuiltInDiagramTemplateProvider>();
+        services.TryAddSingleton<DiagramTemplateRegistry>(sp =>
+        {
+            var registry = new DiagramTemplateRegistry();
+            var providers = sp.GetServices<IDiagramTemplateProvider>();
             foreach (var provider in providers.OrderBy(p => p.Priority))
                 registry.RegisterProvider(provider);
             return registry;

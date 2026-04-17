@@ -16,7 +16,8 @@ public sealed class DemoDiagramExportService : IDiagramExportService
 
     public Task<byte[]> ExportPngAsync(DiagramDocument document, DiagramExportOptions options, CancellationToken cancellationToken = default)
     {
-        var svg = DiagramExportSvgBuilder.Build(document, options, _stencilRegistry);
+        var page = ResolvePage(document, options.PageIndex);
+        var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
         var svgBytes = Encoding.UTF8.GetBytes(svg);
 
         double width = ExtractSvgWidth(svg);
@@ -43,29 +44,62 @@ public sealed class DemoDiagramExportService : IDiagramExportService
 
     public Task<byte[]> ExportPdfAsync(DiagramDocument document, DiagramExportOptions options, CancellationToken cancellationToken = default)
     {
-        var svg = DiagramExportSvgBuilder.Build(document, options, _stencilRegistry);
-
-        double width = ExtractSvgWidth(svg);
-        double height = ExtractSvgHeight(svg);
-
-        var pdf = Document.Create(container =>
+        if (options.ExportAllPages && document.Pages.Count > 1)
         {
-            container.Page(page =>
+            var pdf = Document.Create(container =>
             {
-                page.Size(new PageSize((float)width, (float)height));
-                page.Margin(0);
-                page.PageColor(Colors.White);
-                page.Content().Svg(svg);
-            });
-        });
+                foreach (var page in document.Pages)
+                {
+                    var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+                    double width = ExtractSvgWidth(svg);
+                    double height = ExtractSvgHeight(svg);
 
-        return Task.FromResult(pdf.GeneratePdf());
+                    container.Page(pdfPage =>
+                    {
+                        pdfPage.Size(new PageSize((float)width, (float)height));
+                        pdfPage.Margin(0);
+                        pdfPage.PageColor(Colors.White);
+                        pdfPage.Content().Svg(svg);
+                    });
+                }
+            });
+            return Task.FromResult(pdf.GeneratePdf());
+        }
+        else
+        {
+            var page = ResolvePage(document, options.PageIndex);
+            var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
+            double width = ExtractSvgWidth(svg);
+            double height = ExtractSvgHeight(svg);
+
+            var pdf = Document.Create(container =>
+            {
+                container.Page(pdfPage =>
+                {
+                    pdfPage.Size(new PageSize((float)width, (float)height));
+                    pdfPage.Margin(0);
+                    pdfPage.PageColor(Colors.White);
+                    pdfPage.Content().Svg(svg);
+                });
+            });
+
+            return Task.FromResult(pdf.GeneratePdf());
+        }
     }
 
     public Task<string> ExportSvgAsync(DiagramDocument document, DiagramExportOptions options, CancellationToken cancellationToken = default)
     {
-        var svg = DiagramExportSvgBuilder.Build(document, options, _stencilRegistry);
+        var page = ResolvePage(document, options.PageIndex);
+        var svg = DiagramExportSvgBuilder.Build(page, options, _stencilRegistry);
         return Task.FromResult(svg);
+    }
+
+    private static DiagramPage ResolvePage(DiagramDocument document, int? pageIndex)
+    {
+        document.EnsurePages();
+        if (pageIndex.HasValue && pageIndex.Value >= 0 && pageIndex.Value < document.Pages.Count)
+            return document.Pages[pageIndex.Value];
+        return document.ActivePage;
     }
 
     private static double ExtractSvgWidth(string svg)

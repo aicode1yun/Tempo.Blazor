@@ -567,11 +567,15 @@
   <data name="TmDiagramEditor_SelectTool" xml:space="preserve"><value>Výběr (V)</value></data>
   <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Posun (H)</value></data>
   <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Posun (H) — nebo držte Mezerník</value></data>
+  <data name="TmDiagramEditor_EdgeTool" xml:space="preserve"><value>Spojnice (L)</value></data>
+  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Spojnice (L / C) — klikněte na uzel pro začátek kreslení hrany</value></data>
   <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Zpět</value></data>
   <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Znovu</value></data>
   <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
   <data name="TmDiagramEditor_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
   <data name="TmDiagramEditor_FitToView" xml:space="preserve"><value>Přizpůsobit zobrazení</value></data>
+  <data name="TmDiagramEditor_ToggleRulers" xml:space="preserve"><value>Přepnout pravítka</value></data>
+  <data name="TmDiagramEditor_RulerUnitLabel" xml:space="preserve"><value>Jednotka pravítka</value></data>
   <data name="TmDiagramEditor_CanvasWidth" xml:space="preserve"><value>Šířka plátna</value></data>
   <data name="TmDiagramEditor_CanvasHeight" xml:space="preserve"><value>Výška plátna</value></data>
   <data name="TmDiagramEditor_Apply" xml:space="preserve"><value>Použít</value></data>
@@ -583,6 +587,17 @@
   <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
   <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
+  <data name="TmDiagramEditor_ImportSql" xml:space="preserve"><value>Import SQL → ER</value></data>
+  <data name="TmDiagramSqlImportDialog_Title" xml:space="preserve"><value>Import SQL do ER diagramu</value></data>
+  <data name="TmDiagramSqlImportDialog_SqlLabel" xml:space="preserve"><value>SQL DDL</value></data>
+  <data name="TmDiagramSqlImportDialog_SqlPlaceholder" xml:space="preserve"><value>Vložte příkazy CREATE TABLE...</value></data>
+  <data name="TmDiagramSqlImportDialog_LayoutLabel" xml:space="preserve"><value>Směr rozvržení</value></data>
+  <data name="TmDiagramSqlImportDialog_PreviewTables" xml:space="preserve"><value>Tabulky: {0}</value></data>
+  <data name="TmDiagramSqlImportDialog_PreviewRelations" xml:space="preserve"><value>Vztahy: {0}</value></data>
+  <data name="TmDiagramSqlImportDialog_ImportButton" xml:space="preserve"><value>Importovat</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorEmpty" xml:space="preserve"><value>Zadejte SQL DDL.</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorNoTables" xml:space="preserve"><value>V zadaném SQL nebyly nalezeny žádné tabulky.</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorParse" xml:space="preserve"><value>Nepodařilo se zpracovat SQL: {0}</value></data>
   <data name="TmDiagramEditor_SwitchToEditMode" xml:space="preserve"><value>Přepnout do režimu úprav</value></data>
   <data name="TmDiagramEditor_SwitchToReadOnlyMode" xml:space="preserve"><value>Přepnout do režimu pouze pro čtení</value></data>
   <data name="TmDiagramEditor_ReadOnly" xml:space="preserve"><value>Pouze pro čtení</value></data>
@@ -648,6 +663,11 @@
   <data name="TmDiagramProperties_ConnectorType" xml:space="preserve"><value>Typ spojnice</value></data>
   <data name="TmDiagramProperties_ConnectorType_Association" xml:space="preserve"><value>Asociace</value></data>
   <data name="TmDiagramProperties_ConnectorType_Dependency" xml:space="preserve"><value>Závislost</value></data>
+  <data name="TmDiagramEditor_AddPage" xml:space="preserve"><value>Přidat stránku</value></data>
+  <data name="TmDiagramEditor_ClosePage" xml:space="preserve"><value>Zavřít stránku "{0}"</value></data>
+  <data name="TmDiagramEditor_PageName" xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmDiagramEditor_DuplicatePage" xml:space="preserve"><value>Duplikovat stránku</value></data>
+  <data name="TmDiagramEditor_CopySuffix" xml:space="preserve"><value>kopie</value></data>
   <data name="TmDiagramProperties_ConnectorType_Inheritance" xml:space="preserve"><value>Dědičnost</value></data>
   <data name="TmDiagramProperties_ConnectorType_Composition" xml:space="preserve"><value>Kompozice</value></data>
   <data name="TmDiagramProperties_ConnectorType_Aggregation" xml:space="preserve"><value>Agregace</value></data>
@@ -658,6 +678,7 @@
   <data name="TmDiagramEditor_ConnectArrowRight" xml:space="preserve"><value>Připojit vpravo</value></data>
   <data name="TmDiagramEditor_ConnectArrowBottom" xml:space="preserve"><value>Připojit dolů</value></data>
   <data name="TmDiagramEditor_ConnectArrowLeft" xml:space="preserve"><value>Připojit vlevo</value></data>
+  <data name="TmDiagramEditor_ConnectTransaction" xml:space="preserve"><value>Připojit tvar</value></data>
   <data name="TmDiagramEditor_SelectStencilTitle" xml:space="preserve"><value>Vyberte tvar pro připojení</value></data>
 
   <!-- ═══════════════ TmDiagramEditor History ═══════════════ -->
@@ -682,6 +703,18 @@
   <data name="TmDiagramProperties_Arrowhead_Oval" xml:space="preserve"><value>Oválná</value></data>
   <data name="TmDiagramProperties_Arrowhead_Diamond" xml:space="preserve"><value>Kosočtverec</value></data>
   <data name="TmDiagramProperties_Arrowhead_Async" xml:space="preserve"><value>Asynchronní</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Crow" xml:space="preserve"><value>Vraní noha</value></data>
+  <data name="TmDiagramProperties_Arrowhead_One" xml:space="preserve"><value>Jeden</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Mnoho</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Nula nebo jeden</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ZeroMany" xml:space="preserve"><value>Nula nebo mnoho</value></data>
+  <data name="TmDiagramProperties_Cardinality_None" xml:space="preserve"><value>Žádná</value></data>
+  <data name="TmDiagramProperties_Cardinality_One" xml:space="preserve"><value>Jeden</value></data>
+  <data name="TmDiagramProperties_Cardinality_Many" xml:space="preserve"><value>Mnoho</value></data>
+  <data name="TmDiagramProperties_Cardinality_ZeroOne" xml:space="preserve"><value>Nula nebo jeden</value></data>
+  <data name="TmDiagramProperties_Cardinality_ZeroMany" xml:space="preserve"><value>Nula nebo mnoho</value></data>
+  <data name="TmDiagramProperties_SourceCardinality" xml:space="preserve"><value>Kardinalita zdroje</value></data>
+  <data name="TmDiagramProperties_TargetCardinality" xml:space="preserve"><value>Kardinalita cíle</value></data>
   <data name="TmDiagramProperties_StrokeColor" xml:space="preserve"><value>Barva čáry</value></data>
   <data name="TmDiagramProperties_StrokeWidth" xml:space="preserve"><value>Tloušťka čáry</value></data>
   <data name="TmDiagramProperties_JumpSize" xml:space="preserve"><value>Velikost skoku</value></data>
@@ -725,6 +758,7 @@
   <data name="TmDiagramProperties_VerticalAlign_Top" xml:space="preserve"><value>Nahoře</value></data>
   <data name="TmDiagramProperties_VerticalAlign_Middle" xml:space="preserve"><value>Střed</value></data>
   <data name="TmDiagramProperties_VerticalAlign_Bottom" xml:space="preserve"><value>Dole</value></data>
+  <data name="TmDiagram_EnableMathJax" xml:space="preserve"><value>MathJax</value></data>
   <data name="TmDiagramProperties_BringToFront" xml:space="preserve"><value>Dopředu</value></data>
   <data name="TmDiagramProperties_SendToBack" xml:space="preserve"><value>Dozadu</value></data>
   <data name="TmDiagramProperties_Group" xml:space="preserve"><value>Seskupit</value></data>
@@ -743,6 +777,18 @@
   <data name="TmDiagram_Layout" xml:space="preserve"><value>Rozložit</value></data>
   <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchicky shora dolů</value></data>
   <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchicky zleva doprava</value></data>
+  <data name="TmDiagram_LayoutHierarchicalTopDown_Tooltip" xml:space="preserve"><value>Hierarchické rozložení shora dolů (Dagre)</value></data>
+  <data name="TmDiagram_LayoutHierarchicalLeftRight_Tooltip" xml:space="preserve"><value>Hierarchické rozložení zleva doprava (Dagre)</value></data>
+  <data name="TmDiagram_LayoutTree" xml:space="preserve"><value>Strom</value></data>
+  <data name="TmDiagram_LayoutTreeLR" xml:space="preserve"><value>Strom zleva doprava</value></data>
+  <data name="TmDiagram_LayoutTree_Tooltip" xml:space="preserve"><value>Stromové rozložení pomocí d3-hierarchy</value></data>
+  <data name="TmDiagram_LayoutTreeLR_Tooltip" xml:space="preserve"><value>Stromové rozložení zleva doprava pomocí d3-hierarchy</value></data>
+  <data name="TmDiagram_LayoutForce" xml:space="preserve"><value>Síla</value></data>
+  <data name="TmDiagram_LayoutForce_Tooltip" xml:space="preserve"><value>Organické rozložení pomocí d3-force</value></data>
+  <data name="TmDiagram_LayoutCircle" xml:space="preserve"><value>Kruh</value></data>
+  <data name="TmDiagram_LayoutCircle_Tooltip" xml:space="preserve"><value>Kruhové rozložení pro kontextové diagramy</value></data>
+  <data name="TmDiagram_LayoutGrid" xml:space="preserve"><value>Mřížka</value></data>
+  <data name="TmDiagram_LayoutGrid_Tooltip" xml:space="preserve"><value>Rozložení do mřížky</value></data>
 
   <!-- ═══════════════ TmDiagramEditor Format Painter ═══════════════ -->
   <data name="TmDiagramEditor_CopyStyle" xml:space="preserve"><value>Kopírovat styl (Ctrl+Shift+C)</value></data>
@@ -760,5 +806,124 @@
   <data name="TmDiagram_SearchPrevious" xml:space="preserve"><value>Předchozí výsledek</value></data>
   <data name="TmDiagram_SearchNext" xml:space="preserve"><value>Další výsledek</value></data>
   <data name="TmDiagram_SearchClose" xml:space="preserve"><value>Zavřít hledání</value></data>
+  <data name="TmDiagram_SearchAllPages" xml:space="preserve"><value>Všechny stránky</value></data>
+  <data name="TmDiagram_ReplacePlaceholder" xml:space="preserve"><value>Nahradit za...</value></data>
+  <data name="TmDiagram_Replace" xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmDiagram_ReplaceAll" xml:space="preserve"><value>Nahradit vše</value></data>
+  <data name="TmDiagram_UseRegex" xml:space="preserve"><value>Použít regulární výrazy</value></data>
+  <data name="TmDiagram_RegexError" xml:space="preserve"><value>Neplatný regex: {0}</value></data>
+  <data name="TmDiagram_ReplaceNoMatches" xml:space="preserve"><value>Žádné nahraditelné výsledky</value></data>
+
+  <!-- ═══════════════ TmDiagramProperties Page ═══════════════ -->
+  <data name="TmDiagramProperties_Page" xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmDiagramProperties_PageSize" xml:space="preserve"><value>Velikost stránky</value></data>
+  <data name="TmDiagramProperties_PageOrientation" xml:space="preserve"><value>Orientace</value></data>
+  <data name="TmDiagramProperties_Portrait" xml:space="preserve"><value>Na výšku</value></data>
+  <data name="TmDiagramProperties_Landscape" xml:space="preserve"><value>Na šířku</value></data>
+  <data name="TmDiagramProperties_PageSize_A4" xml:space="preserve"><value>A4</value></data>
+  <data name="TmDiagramProperties_PageSize_Letter" xml:space="preserve"><value>Letter</value></data>
+  <data name="TmDiagramProperties_PageSize_Legal" xml:space="preserve"><value>Legal</value></data>
+  <data name="TmDiagramProperties_PageSize_A3" xml:space="preserve"><value>A3</value></data>
+  <data name="TmDiagramProperties_PageSize_A5" xml:space="preserve"><value>A5</value></data>
+  <data name="TmDiagramProperties_PageSize_Custom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmDiagramProperties_Scale" xml:space="preserve"><value>Měřítko</value></data>
+  <data name="TmDiagramProperties_Link" xml:space="preserve"><value>Odkaz</value></data>
+  <data name="TmDiagramProperties_LinkPlaceholder" xml:space="preserve"><value>https://...</value></data>
+  <data name="TmDiagramProperties_LinkType_None" xml:space="preserve"><value>Žádný</value></data>
+  <data name="TmDiagramProperties_ExternalUrl" xml:space="preserve"><value>Externí URL</value></data>
+  <data name="TmDiagramProperties_PageLink" xml:space="preserve"><value>Odkaz na stránku</value></data>
+  <data name="TmDiagramProperties_PlaceholdersHint" xml:space="preserve"><value>Placeholdery: %page%, %pagenumber%, %totalpages%, %date%</value></data>
+  <data name="TmDiagramProperties_Swimlane" xml:space="preserve"><value>Swimlane</value></data>
+  <data name="TmDiagramProperties_AddRow" xml:space="preserve"><value>Přidat řádek</value></data>
+  <data name="TmDiagramProperties_RemoveRow" xml:space="preserve"><value>Odebrat řádek</value></data>
+  <data name="TmDiagramProperties_AddColumn" xml:space="preserve"><value>Přidat sloupec</value></data>
+  <data name="TmDiagramProperties_RemoveColumn" xml:space="preserve"><value>Odebrat sloupec</value></data>
+  <data name="TmDiagramProperties_RowHeights" xml:space="preserve"><value>Výšky řádků</value></data>
+  <data name="TmDiagramProperties_ColumnWidths" xml:space="preserve"><value>Šířky sloupců</value></data>
+  <data name="TmDiagramProperties_Table" xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmDiagramProperties_TableCellSelection" xml:space="preserve"><value>Výběr buněk</value></data>
+  <data name="TmDiagramProperties_MergeCells" xml:space="preserve"><value>Sloučit buňky</value></data>
+  <data name="TmDiagramProperties_SplitCell" xml:space="preserve"><value>Rozdělit buňku</value></data>
+  <data name="TmDiagramProperties_CellText" xml:space="preserve"><value>Text buňky</value></data>
+  <data name="TmDiagramProperties_CellBackground" xml:space="preserve"><value>Pozadí</value></data>
+  <data name="TmDiagramProperties_CellBorder" xml:space="preserve"><value>Ohraničení</value></data>
+  <data name="TmDiagramEditor_InsertRowAbove" xml:space="preserve"><value>Vložit řádek nad</value></data>
+  <data name="TmDiagramEditor_InsertRowBelow" xml:space="preserve"><value>Vložit řádek pod</value></data>
+  <data name="TmDiagramEditor_InsertColumnLeft" xml:space="preserve"><value>Vložit sloupec vlevo</value></data>
+  <data name="TmDiagramEditor_InsertColumnRight" xml:space="preserve"><value>Vložit sloupec vpravo</value></data>
+
+  <!-- ═══════════════ Canvas Context Menu ═══════════════ -->
+  <data name="TmDiagramEditor_Cut" xml:space="preserve"><value>Vyjmout</value></data>
+  <data name="TmDiagramEditor_Copy" xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="TmDiagramEditor_Duplicate" xml:space="preserve"><value>Duplikovat</value></data>
+  <data name="TmDiagramEditor_Paste" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmDiagramEditor_SelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
+  <data name="TmDiagramEditor_Lock" xml:space="preserve"><value>Uzamknout</value></data>
+  <data name="TmDiagramEditor_Unlock" xml:space="preserve"><value>Odemknout</value></data>
+  <data name="TmDiagramEditor_Group" xml:space="preserve"><value>Seskupit</value></data>
+  <data name="TmDiagramEditor_Ungroup" xml:space="preserve"><value>Rozdělit skupinu</value></data>
+  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Vložit styl</value></data>
+  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Vložit velikost</value></data>
+  <data name="TmDiagramEditor_ChangeShape" xml:space="preserve"><value>Změnit tvar</value></data>
+  <data name="TmDiagramEditor_Rectangle" xml:space="preserve"><value>Obdélník</value></data>
+  <data name="TmDiagramEditor_Ellipse" xml:space="preserve"><value>Elipsa</value></data>
+  <data name="TmDiagramEditor_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmDiagramEditor_Diamond" xml:space="preserve"><value>Kosočtverec</value></data>
+  <data name="TmDiagramEditor_EditLabel" xml:space="preserve"><value>Upravit popisek</value></data>
+  <data name="TmDiagramEditor_Connector" xml:space="preserve"><value>Spojnice</value></data>
+  <data name="TmDiagramEditor_Straight" xml:space="preserve"><value>Přímá</value></data>
+  <data name="TmDiagramEditor_Orthogonal" xml:space="preserve"><value>Orthogonální</value></data>
+  <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Křivka</value></data>
+  <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Počáteční šipka</value></data>
+  <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>Koncová šipka</value></data>
+  <data name="TmDiagramEditor_ArrowNone" xml:space="preserve"><value>Žádná</value></data>
+  <data name="TmDiagramEditor_ArrowClassic" xml:space="preserve"><value>Klasická</value></data>
+  <data name="TmDiagramEditor_ArrowBlock" xml:space="preserve"><value>Blok</value></data>
+  <data name="TmDiagramEditor_ArrowCrow" xml:space="preserve"><value>Vraní noha</value></data>
+  <data name="TmDiagramEditor_LineStyle" xml:space="preserve"><value>Styl čáry</value></data>
+  <data name="TmDiagramEditor_LineSolid" xml:space="preserve"><value>Souvislá</value></data>
+  <data name="TmDiagramEditor_LineDashed" xml:space="preserve"><value>Čárkovaná</value></data>
+  <data name="TmDiagramEditor_LineDotted" xml:space="preserve"><value>Tečkovaná</value></data>
+  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmDiagramEditor_Layout" xml:space="preserve"><value>Rozvržení</value></data>
+  <data name="TmDiagramEditor_LayoutDagreTb" xml:space="preserve"><value>Dagre shora dolů</value></data>
+  <data name="TmDiagramEditor_LayoutDagreLr" xml:space="preserve"><value>Dagre zleva doprava</value></data>
+  <data name="TmDiagramEditor_LayoutTree" xml:space="preserve"><value>Strom</value></data>
+  <data name="TmDiagramEditor_LayoutForce" xml:space="preserve"><value>Síla</value></data>
+  <data name="TmDiagramEditor_LayoutCircle" xml:space="preserve"><value>Kruh</value></data>
+  <data name="TmDiagramEditor_ShowGrid" xml:space="preserve"><value>Zobrazit mřížku</value></data>
+  <data name="TmDiagramEditor_HideGrid" xml:space="preserve"><value>Skrýt mřížku</value></data>
+  <data name="TmDiagramEditor_ShowPageView" xml:space="preserve"><value>Zobrazit stránku</value></data>
+  <data name="TmDiagramEditor_HidePageView" xml:space="preserve"><value>Skrýt stránku</value></data>
+  <data name="TmDiagramEditor_EnableSnap" xml:space="preserve"><value>Zapnout přichycení</value></data>
+  <data name="TmDiagramEditor_DisableSnap" xml:space="preserve"><value>Vypnout přichycení</value></data>
+  <data name="TmDiagramEditor_MergeCells" xml:space="preserve"><value>Sloučit buňky</value></data>
+  <data name="TmDiagramEditor_SplitCell" xml:space="preserve"><value>Rozdělit buňku</value></data>
+  <data name="TmDiagramEditor_FormatCell" xml:space="preserve"><value>Formátovat buňku</value></data>
+  <data name="TmDiagramEditor_CellWhite" xml:space="preserve"><value>Bílá</value></data>
+  <data name="TmDiagramEditor_CellLightGray" xml:space="preserve"><value>Světle šedá</value></data>
+  <data name="TmDiagramEditor_CellGray" xml:space="preserve"><value>Šedá</value></data>
+  <data name="TmDiagramEditor_ImportCsv" xml:space="preserve"><value>Import CSV</value></data>
+  <data name="TmDiagramEditor_Templates" xml:space="preserve"><value>Šablony</value></data>
+  <data name="TmDiagramTemplateGallery_Title" xml:space="preserve"><value>Vyberte šablonu</value></data>
+  <data name="TmDiagramTemplateGallery_SearchPlaceholder" xml:space="preserve"><value>Hledat šablony...</value></data>
+  <data name="TmDiagramTemplateGallery_All" xml:space="preserve"><value>Vše</value></data>
+  <data name="TmDiagramTemplateGallery_NoResults" xml:space="preserve"><value>Žádná šablona neodpovídá hledání.</value></data>
+  <data name="TmDiagramTemplateGallery_CreateButton" xml:space="preserve"><value>Vytvořit</value></data>
+  <data name="TmDiagramCsvImportDialog_Title" xml:space="preserve"><value>Import CSV do diagramu</value></data>
+  <data name="TmDiagramCsvImportDialog_CsvLabel" xml:space="preserve"><value>CSV data</value></data>
+  <data name="TmDiagramCsvImportDialog_CsvPlaceholder" xml:space="preserve"><value>Vložte CSV data zde...</value></data>
+  <data name="TmDiagramCsvImportDialog_TypeLabel" xml:space="preserve"><value>Typ diagramu</value></data>
+  <data name="TmDiagramCsvImportDialog_MappingsTitle" xml:space="preserve"><value>Mapování sloupců</value></data>
+  <data name="TmDiagramCsvImportDialog_SelectColumn" xml:space="preserve"><value>Vyberte sloupec</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewTitle" xml:space="preserve"><value>Náhled (prvních 5 řádků)</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewNodes" xml:space="preserve"><value>Uzly: {0}</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewEdges" xml:space="preserve"><value>Hrany: {0}</value></data>
+  <data name="TmDiagramCsvImportDialog_ImportButton" xml:space="preserve"><value>Importovat</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorEmpty" xml:space="preserve"><value>Zadejte CSV data.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorNoData" xml:space="preserve"><value>V zadaném CSV nebyly nalezeny žádné datové řádky.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorMinColumns" xml:space="preserve"><value>CSV musí obsahovat alespoň 2 sloupce.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorMappings" xml:space="preserve"><value>Přiřaďte všechny povinné sloupce.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Nepodařilo se zpracovat CSV: {0}</value></data>
 
 </root>

@@ -63,9 +63,27 @@ public sealed class DiagramEdge
     /// <summary>Spacing between target node boundary and edge end.</summary>
     public double? TargetSpacing { get; set; }
 
+    /// <summary>Parameter t (0-1) along the source edge for edge-to-edge connections.</summary>
+    public double? SourceEdgeT { get; set; }
+
+    /// <summary>Parameter t (0-1) along the target edge for edge-to-edge connections.</summary>
+    public double? TargetEdgeT { get; set; }
+
+    /// <summary>Label position along the edge path as parameter t (0-1). Default 0.5.</summary>
+    public double LabelPositionT { get; set; } = 0.5;
+
+    /// <summary>Source cardinality for ER diagrams.</summary>
+    public string? SourceCardinality { get; set; }
+
+    /// <summary>Target cardinality for ER diagrams.</summary>
+    public string? TargetCardinality { get; set; }
+
     /// <summary>Visual style overrides for this edge.</summary>
     public DiagramStyle Style { get; set; } = new();
 
     /// <summary>Reserved for future collaborative editing – who has this edge locked.</summary>
     public string? LockedBy { get; set; }
+
+    /// <summary>Optional hyperlink target (external URL or page:// link).</summary>
+    public string? Link { get; set; }
 }

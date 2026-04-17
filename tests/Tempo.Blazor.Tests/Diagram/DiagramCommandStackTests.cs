@@ -252,8 +252,8 @@ public class DiagramCommandStackTests
         var node = MakeNode(x: 10, y: 20);
         doc.Nodes.Add(node);
 
-        var before = new Dictionary<string, (double X, double Y)> { [node.Id] = (10, 20) };
-        var after = new Dictionary<string, (double X, double Y)> { [node.Id] = (50, 60) };
+        var before = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 20, null, -1, -1) };
+        var after = new Dictionary<string, NodeMoveState> { [node.Id] = new(50, 60, null, -1, -1) };
         var cmd = new MoveNodesCommand(doc, before, after);
         cmd.Execute();
 
@@ -267,8 +267,8 @@ public class DiagramCommandStackTests
         var node = MakeNode(x: 10, y: 20);
         doc.Nodes.Add(node);
 
-        var before = new Dictionary<string, (double X, double Y)> { [node.Id] = (10, 20) };
-        var after = new Dictionary<string, (double X, double Y)> { [node.Id] = (50, 60) };
+        var before = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 20, null, -1, -1) };
+        var after = new Dictionary<string, NodeMoveState> { [node.Id] = new(50, 60, null, -1, -1) };
         var cmd = new MoveNodesCommand(doc, before, after);
         cmd.Execute();
         cmd.Undo();
@@ -284,12 +284,12 @@ public class DiagramCommandStackTests
         doc.Nodes.Add(node);
         var stack = new DiagramCommandStack();
 
-        var before1 = new Dictionary<string, (double X, double Y)> { [node.Id] = (0, 0) };
-        var after1 = new Dictionary<string, (double X, double Y)> { [node.Id] = (10, 10) };
+        var before1 = new Dictionary<string, NodeMoveState> { [node.Id] = new(0, 0, null, -1, -1) };
+        var after1 = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 10, null, -1, -1) };
         stack.Push(new MoveNodesCommand(doc, before1, after1));
 
-        var before2 = new Dictionary<string, (double X, double Y)> { [node.Id] = (10, 10) };
-        var after2 = new Dictionary<string, (double X, double Y)> { [node.Id] = (20, 20) };
+        var before2 = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 10, null, -1, -1) };
+        var after2 = new Dictionary<string, NodeMoveState> { [node.Id] = new(20, 20, null, -1, -1) };
         stack.Push(new MoveNodesCommand(doc, before2, after2));
 
         stack.Undo();
@@ -407,5 +407,115 @@ public class DiagramCommandStackTests
 
         n1.ZIndex.Should().Be(1);
         n2.ZIndex.Should().Be(2);
+    }
+
+    // ── Transactions ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void TransactionScope_GroupsMultipleCommandsIntoSingleUndo()
+    {
+        var doc = EmptyDoc();
+        var stack = new DiagramCommandStack();
+        var n1 = MakeNode();
+        var n2 = MakeNode();
+
+        using (stack.TransactionScope("Add two nodes"))
+        {
+            stack.Push(new AddNodeCommand(doc, n1));
+            stack.Push(new AddNodeCommand(doc, n2));
+        }
+
+        doc.Nodes.Should().HaveCount(2);
+        stack.CanUndo.Should().BeTrue();
+        stack.NextUndoName.Should().Be("Add two nodes");
+
+        stack.Undo();
+        doc.Nodes.Should().BeEmpty();
+        stack.CanRedo.Should().BeTrue();
+    }
+
+    [Fact]
+    public void TransactionScope_RedoReappliesAllCommands()
+    {
+        var doc = EmptyDoc();
+        var stack = new DiagramCommandStack();
+        var n1 = MakeNode();
+
+        using (stack.TransactionScope("Add node"))
+        {
+            stack.Push(new AddNodeCommand(doc, n1));
+        }
+
+        stack.Undo();
+        doc.Nodes.Should().BeEmpty();
+
+        stack.Redo();
+        doc.Nodes.Should().ContainSingle(n => n.Id == n1.Id);
+    }
+
+    [Fact]
+    public void Transaction_EmptyTransaction_IsNotPushed()
+    {
+        var doc = EmptyDoc();
+        var stack = new DiagramCommandStack();
+
+        using (stack.TransactionScope("Empty"))
+        {
+            // no commands
+        }
+
+        stack.CanUndo.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Transaction_NestedTransactionThrows()
+    {
+        var stack = new DiagramCommandStack();
+        stack.BeginTransaction("Outer");
+
+        Action act = () => stack.BeginTransaction("Inner");
+        act.Should().Throw<InvalidOperationException>().WithMessage("*already in progress*");
+
+        stack.RollbackTransaction();
+    }
+
+    [Fact]
+    public void Transaction_Rollback_RevertsCommands()
+    {
+        var doc = EmptyDoc();
+        var stack = new DiagramCommandStack();
+        var n1 = MakeNode();
+
+        stack.BeginTransaction("Add node");
+        stack.Push(new AddNodeCommand(doc, n1));
+        stack.RollbackTransaction();
+
+        doc.Nodes.Should().BeEmpty();
+        stack.CanUndo.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Transaction_MoveNodes_CoalescesInsideTransaction()
+    {
+        var doc = EmptyDoc();
+        var stack = new DiagramCommandStack();
+        var node = MakeNode(x: 0, y: 0);
+        doc.Nodes.Add(node);
+
+        using (stack.TransactionScope("Move"))
+        {
+            var before1 = new Dictionary<string, NodeMoveState> { [node.Id] = new(0, 0, null, -1, -1) };
+            var after1 = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 10, null, -1, -1) };
+            stack.Push(new MoveNodesCommand(doc, before1, after1));
+
+            var before2 = new Dictionary<string, NodeMoveState> { [node.Id] = new(10, 10, null, -1, -1) };
+            var after2 = new Dictionary<string, NodeMoveState> { [node.Id] = new(20, 20, null, -1, -1) };
+            stack.Push(new MoveNodesCommand(doc, before2, after2));
+        }
+
+        stack.CanUndo.Should().BeTrue();
+        stack.Undo();
+        node.X.Should().Be(0);
+        node.Y.Should().Be(0);
     }
 }

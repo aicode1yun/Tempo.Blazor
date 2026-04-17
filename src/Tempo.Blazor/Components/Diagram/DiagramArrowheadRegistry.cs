@@ -81,6 +81,51 @@ public static class DiagramArrowheadRegistry
             RefX = 10,
             RefY = 5,
         },
+        ["crow"] = new()
+        {
+            PathData = "M0,0 L10,5 L0,10 M8,0 L8,10",
+            FillMode = "line",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["one"] = new()
+        {
+            PathData = "M2,0 L2,10 M6,0 L6,10",
+            FillMode = "line",
+            Width = 8,
+            Height = 10,
+            RefX = 8,
+            RefY = 5,
+        },
+        ["many"] = new()
+        {
+            PathData = "M0,10 L5,0 L10,10 M5,0 L5,10",
+            FillMode = "line",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["zero-one"] = new()
+        {
+            PathData = "M0,5 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 M8,0 L8,10",
+            FillMode = "line",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["zero-many"] = new()
+        {
+            PathData = "M0,5 a3,3 0 1,0 6,0 a3,3 0 1,0 -6,0 M8,10 L11,0 L14,10 M11,0 L11,10",
+            FillMode = "line",
+            Width = 14,
+            Height = 10,
+            RefX = 14,
+            RefY = 5,
+        },
     };
 
     public static IReadOnlyDictionary<string, ArrowheadDef> Definitions => _defs;

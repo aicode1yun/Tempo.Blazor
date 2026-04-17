@@ -1,5 +1,6 @@
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Diagram.Stencils;
+using Tempo.Blazor.Components.Diagram.Templates;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Diagram;
@@ -13,8 +14,11 @@ public abstract class DiagramTestBase : LocalizationTestBase
 {
     protected DiagramTestBase()
     {
-        var registry = new DiagramStencilRegistry();
-        registry.RegisterProvider(new BuiltInDiagramStencilProvider());
-        Services.AddSingleton(registry);
+        var stencilRegistry = new DiagramStencilRegistry();
+        stencilRegistry.RegisterProvider(new BuiltInDiagramStencilProvider());
+        Services.AddSingleton(stencilRegistry);
+
+        var templateRegistry = new DiagramTemplateRegistry();
+        Services.AddSingleton(templateRegistry);
     }
 }

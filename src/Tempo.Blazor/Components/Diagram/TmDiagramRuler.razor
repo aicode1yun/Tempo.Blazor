@@ -1,0 +1,29 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using System.Globalization
+
+<svg class="tm-diagram-ruler tm-diagram-ruler--@Orientation"
+     width="@SvgWidth"
+     height="@SvgHeight"
+     viewBox="@ViewBox"
+     preserveAspectRatio="none">
+    @foreach (var tick in Ticks)
+    {
+        <line x1="@F(tick.X1)"
+              y1="@F(tick.Y1)"
+              x2="@F(tick.X2)"
+              y2="@F(tick.Y2)"
+              class="tm-diagram-ruler__tick @(tick.IsMajor ? "tm-diagram-ruler__tick--major" : tick.IsHalf ? "tm-diagram-ruler__tick--half" : "tm-diagram-ruler__tick--sub")" />
+        @if (tick.ShowLabel)
+        {
+            @((MarkupString)$"""<text x="{F(tick.TextX)}" y="{F(tick.TextY)}" class="tm-diagram-ruler__text">{tick.Label}</text>""")
+        }
+    }
+    @if (Orientation == "horizontal" && CursorX >= ViewportX && CursorX <= ViewportX + ViewportW)
+    {
+        <line x1="@F(CursorX)" y1="0" x2="@F(CursorX)" y2="24" class="tm-diagram-ruler__crosshair" />
+    }
+    @if (Orientation == "vertical" && CursorY >= ViewportY && CursorY <= ViewportY + ViewportH)
+    {
+        <line x1="0" y1="@F(CursorY)" x2="24" y2="@F(CursorY)" class="tm-diagram-ruler__crosshair" />
+    }
+</svg>

@@ -8,9 +8,42 @@
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
 }
 
-.tm-diagram-search-panel__input-wrap {
-    width: 220px;
+.tm-diagram-search-panel__inputs {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    width: 200px;
     flex-shrink: 0;
+}
+
+.tm-diagram-search-panel__input-wrap {
+    width: 100%;
+}
+
+.tm-diagram-search-panel__error {
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-danger, #ef4444);
+}
+
+.tm-diagram-search-panel__all-pages {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: var(--tm-font-size-xs, 12px);
+    color: var(--tm-color-text-muted, #6b7280);
+    cursor: pointer;
+    user-select: none;
+    white-space: nowrap;
+}
+
+.tm-diagram-search-panel__all-pages input {
+    margin: 0;
+    cursor: pointer;
+}
+
+.tm-diagram-search-panel__regex-toggle {
+    --tm-toggle-label-text-font-size: var(--tm-font-size-xs, 12px);
+    --tm-toggle-label-text-color: var(--tm-color-text-muted, #6b7280);
 }
 
 .tm-diagram-search-panel__counter {
@@ -18,6 +51,12 @@
     color: var(--tm-color-text-muted, #6b7280);
     min-width: 80px;
     text-align: center;
+}
+
+.tm-diagram-search-panel__actions {
+    display: flex;
+    align-items: center;
+    gap: 6px;
 }
 
 .tm-diagram-search-panel__nav,

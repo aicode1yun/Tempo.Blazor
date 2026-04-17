@@ -12,6 +12,11 @@ public sealed class DiagramEdgeStyleSnapshot
     public double? JumpSize { get; set; }
     public double? SourceSpacing { get; set; }
     public double? TargetSpacing { get; set; }
+    public double? SourceEdgeT { get; set; }
+    public double? TargetEdgeT { get; set; }
+    public double LabelPositionT { get; set; } = 0.5;
+    public string? SourceCardinality { get; set; }
+    public string? TargetCardinality { get; set; }
     public DiagramStyle Style { get; set; } = new();
 
     /// <summary>Creates a snapshot from the current state of an edge.</summary>
@@ -26,6 +31,11 @@ public sealed class DiagramEdgeStyleSnapshot
         JumpSize = edge.JumpSize,
         SourceSpacing = edge.SourceSpacing,
         TargetSpacing = edge.TargetSpacing,
+        SourceEdgeT = edge.SourceEdgeT,
+        TargetEdgeT = edge.TargetEdgeT,
+        LabelPositionT = edge.LabelPositionT,
+        SourceCardinality = edge.SourceCardinality,
+        TargetCardinality = edge.TargetCardinality,
         Style = new DiagramStyle
         {
             Fill = edge.Style.Fill,
@@ -52,6 +62,11 @@ public sealed class DiagramEdgeStyleSnapshot
         edge.JumpSize = JumpSize;
         edge.SourceSpacing = SourceSpacing;
         edge.TargetSpacing = TargetSpacing;
+        edge.SourceEdgeT = SourceEdgeT;
+        edge.TargetEdgeT = TargetEdgeT;
+        edge.LabelPositionT = LabelPositionT;
+        edge.SourceCardinality = SourceCardinality;
+        edge.TargetCardinality = TargetCardinality;
         edge.Style = new DiagramStyle
         {
             Fill = Style.Fill,

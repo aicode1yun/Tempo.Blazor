@@ -13,6 +13,10 @@ public partial class TmDiagramStencilShape : ComponentBase
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public EventCallback<string> OnPortMouseDownEvent { get; set; }
     [Parameter] public EventCallback<(string DataKey, object Value)> OnSectionEdit { get; set; }
+    [Parameter] public EventCallback<(int Row, int Column, bool IsCtrlHeld)> OnTableCellSelect { get; set; }
+    [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
+    [Parameter] public DiagramPage? Page { get; set; }
+    [Parameter] public DiagramDocument? Document { get; set; }
 
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
@@ -22,6 +26,16 @@ public partial class TmDiagramStencilShape : ComponentBase
     private bool _editFocusPending;
     private ElementReference _editInputRef;
     private ElementReference _editTextareaRef;
+
+    private (int Row, int Column)? _editingSwimlaneCell;
+    private string _editingSwimlaneText = "";
+    private bool _editSwimlaneFocusPending;
+    private ElementReference _editSwimlaneInputRef;
+
+    private (int Row, int Column)? _editingTableCell;
+    private string _editingTableText = "";
+    private bool _editTableFocusPending;
+    private ElementReference _editTableInputRef;
 
     protected override void OnParametersSet()
     {
@@ -40,6 +54,26 @@ public partial class TmDiagramStencilShape : ComponentBase
                     await _editTextareaRef.FocusAsync();
                 else
                     await _editInputRef.FocusAsync();
+            }
+            catch { }
+        }
+
+        if (_editSwimlaneFocusPending && _editingSwimlaneCell.HasValue)
+        {
+            _editSwimlaneFocusPending = false;
+            try
+            {
+                await _editSwimlaneInputRef.FocusAsync();
+            }
+            catch { }
+        }
+
+        if (_editTableFocusPending && _editingTableCell.HasValue)
+        {
+            _editTableFocusPending = false;
+            try
+            {
+                await _editTableInputRef.FocusAsync();
             }
             catch { }
         }
@@ -194,6 +228,24 @@ public partial class TmDiagramStencilShape : ComponentBase
         return section.DefaultText ?? "";
     }
 
+    private static bool ContainsMath(string text)
+    {
+        if (string.IsNullOrEmpty(text)) return false;
+        return text.Contains("$$") || text.Contains("\\(") || text.Contains("\\)") || text.Contains('`');
+    }
+
+    private MarkupString GetSectionContent(DiagramStencilSection section)
+    {
+        var text = GetSectionText(section);
+        if (Page is not null && Document is not null)
+            text = PlaceholderHelper.ReplacePlaceholders(text, Page, Document);
+
+        if (string.IsNullOrEmpty(text) || Node.Style.EnableMathJax != true || !ContainsMath(text))
+            return (MarkupString)System.Net.WebUtility.HtmlEncode(text);
+
+        return (MarkupString)$"""<span class="tm-diagram-math">{System.Net.WebUtility.HtmlEncode(text)}</span>""";
+    }
+
     private IEnumerable<string> GetSectionList(DiagramStencilSection section)
     {
         if (section.DataKey is not null && Node.Data.TryGetValue(section.DataKey, out var value))
@@ -220,6 +272,199 @@ public partial class TmDiagramStencilShape : ComponentBase
         var def = section.DefaultText;
         if (!string.IsNullOrWhiteSpace(def)) return [def];
         return [];
+    }
+
+    private string GetSwimlaneLabel(int row, int column)
+    {
+        var data = Node.SwimlaneData;
+        if (data is null) return "";
+        int idx = row * data.ColumnCount + column;
+        if (idx >= 0 && idx < data.CellLabels.Count)
+            return data.CellLabels[idx];
+        return $"Lane {idx + 1}";
+    }
+
+    private void StartSwimlaneEdit(int row, int column)
+    {
+        _editingSwimlaneCell = (row, column);
+        _editingSwimlaneText = GetSwimlaneLabel(row, column);
+        _editSwimlaneFocusPending = true;
+    }
+
+    private void SaveSwimlaneEdit()
+    {
+        if (_editingSwimlaneCell is not { } cell || Node.SwimlaneData is not { } data) return;
+        int idx = cell.Row * data.ColumnCount + cell.Column;
+        while (data.CellLabels.Count <= idx)
+            data.CellLabels.Add($"Lane {data.CellLabels.Count + 1}");
+        data.CellLabels[idx] = _editingSwimlaneText;
+        _ = OnSectionEdit.InvokeAsync(("swimlane", data.CellLabels));
+        _editingSwimlaneCell = null;
+        _editingSwimlaneText = "";
+    }
+
+    private void CancelSwimlaneEdit()
+    {
+        _editingSwimlaneCell = null;
+        _editingSwimlaneText = "";
+    }
+
+    private void OnSwimlaneEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SaveSwimlaneEdit();
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelSwimlaneEdit();
+        }
+    }
+
+    // ── Table helpers ────────────────────────────────────────────────────────
+
+    private int? GetTableRowCount()
+    {
+        if (Node.Data.TryGetValue("rowCount", out var value) && value is not null)
+        {
+            if (value is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Number)
+                return je.GetInt32();
+            if (int.TryParse(value.ToString(), out var n)) return n;
+        }
+        return null;
+    }
+
+    private int? GetTableColumnCount()
+    {
+        if (Node.Data.TryGetValue("columnCount", out var value) && value is not null)
+        {
+            if (value is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Number)
+                return je.GetInt32();
+            if (int.TryParse(value.ToString(), out var n)) return n;
+        }
+        return null;
+    }
+
+    private List<DiagramTableCellData> GetTableCells()
+    {
+        if (Node.Data.TryGetValue("cells", out var value) && value is not null)
+        {
+            if (value is List<DiagramTableCellData> list) return list;
+            if (value is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Array)
+            {
+                return je.EnumerateArray().Select(e => new DiagramTableCellData
+                {
+                    Row = e.GetProperty("row").GetInt32(),
+                    Column = e.GetProperty("column").GetInt32(),
+                    RowSpan = e.TryGetProperty("rowSpan", out var rs) ? rs.GetInt32() : 1,
+                    ColSpan = e.TryGetProperty("colSpan", out var cs) ? cs.GetInt32() : 1,
+                    Text = e.TryGetProperty("text", out var t) ? t.GetString() ?? "" : "",
+                    Style = e.TryGetProperty("style", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.Object
+                        ? new DiagramTableCellStyle
+                        {
+                            BackgroundColor = s.TryGetProperty("backgroundColor", out var bc) ? bc.GetString() : null,
+                            BorderColor = s.TryGetProperty("borderColor", out var boc) ? boc.GetString() : null,
+                            TextAlign = s.TryGetProperty("textAlign", out var ta) ? ta.GetString() : null,
+                            FontWeight = s.TryGetProperty("fontWeight", out var fw) ? fw.GetString() : null,
+                        }
+                        : null
+                }).ToList();
+            }
+        }
+        return [];
+    }
+
+    private DiagramTableCellData? GetTableCellAt(int row, int column)
+    {
+        var cells = GetTableCells();
+        return cells.FirstOrDefault(c => c.Row == row && c.Column == column);
+    }
+
+    private bool IsTableCellCovered(int row, int column)
+    {
+        var cells = GetTableCells();
+        foreach (var cell in cells)
+        {
+            if (cell.Row == row && cell.Column == column) continue;
+            for (int r = cell.Row; r < cell.Row + cell.RowSpan; r++)
+            {
+                for (int c = cell.Column; c < cell.Column + cell.ColSpan; c++)
+                {
+                    if (r == row && c == column) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    private string GetTableCellStyle(DiagramTableCellStyle? style)
+    {
+        var sb = new System.Text.StringBuilder();
+        sb.Append("border: 1px solid var(--tm-color-border, #e5e7eb);");
+        sb.Append(" padding: 4px;");
+        if (!string.IsNullOrEmpty(style?.BackgroundColor))
+            sb.Append($" background-color: {style.BackgroundColor};");
+        if (!string.IsNullOrEmpty(style?.BorderColor))
+            sb.Append($" border-color: {style.BorderColor};");
+        if (!string.IsNullOrEmpty(style?.TextAlign))
+            sb.Append($" text-align: {style.TextAlign};");
+        if (!string.IsNullOrEmpty(style?.FontWeight))
+            sb.Append($" font-weight: {style.FontWeight};");
+        return sb.ToString();
+    }
+
+    private void StartTableCellEdit(int row, int column, string text)
+    {
+        _editingTableCell = (row, column);
+        _editingTableText = text;
+        _editTableFocusPending = true;
+    }
+
+    private void SaveTableCellEdit()
+    {
+        if (_editingTableCell is not { } cell) return;
+        var cells = GetTableCells();
+        var existing = cells.FirstOrDefault(c => c.Row == cell.Row && c.Column == cell.Column);
+        if (existing is null)
+        {
+            existing = new DiagramTableCellData { Row = cell.Row, Column = cell.Column };
+            cells.Add(existing);
+        }
+        existing.Text = _editingTableText;
+        Node.Data["cells"] = cells;
+        _ = OnSectionEdit.InvokeAsync(("cells", cells));
+        _editingTableCell = null;
+        _editingTableText = "";
+    }
+
+    private void CancelTableCellEdit()
+    {
+        _editingTableCell = null;
+        _editingTableText = "";
+    }
+
+    private void OnTableEditKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            SaveTableCellEdit();
+        }
+        else if (e.Key == "Escape")
+        {
+            CancelTableCellEdit();
+        }
+    }
+
+    private async Task OnTableCellClick(int row, int column, MouseEventArgs e)
+    {
+        await OnTableCellSelect.InvokeAsync((row, column, e.CtrlKey));
+    }
+
+    private string GetTableCellSelectedClass(int row, int column)
+    {
+        return SelectedTableCells.Any(c => c.Row == row && c.Column == column)
+            ? "tm-diagram-node__table-cell--selected"
+            : "";
     }
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);

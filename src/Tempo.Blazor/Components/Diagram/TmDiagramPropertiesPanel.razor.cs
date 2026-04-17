@@ -21,11 +21,14 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback<DiagramDocument> DocumentChanged { get; set; }
     [Parameter] public EventCallback<(string EdgeId, string OldRouting, string NewRouting)> OnEdgeRoutingChanged { get; set; }
-    [Parameter] public EventCallback<string> OnApplyLayout { get; set; }
+    [Parameter] public EventCallback<(string Algorithm, string Direction)> OnApplyLayout { get; set; }
+    [Parameter] public EventCallback OnPageSizeChanged { get; set; }
+    [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
+    [Parameter] public EventCallback<List<(int Row, int Column)>> SelectedTableCellsChanged { get; set; }
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
     private bool _collapsed;
-    private readonly HashSet<string> _expandedSections = new() { "style", "text", "arrange" };
+    private readonly HashSet<string> _expandedSections = new() { "style", "text", "arrange", "page" };
 
     private bool IsSingleNode => SelectedNodes.Count == 1 && SelectedEdges.Count == 0;
     private bool IsSingleEdge => SelectedNodes.Count == 0 && SelectedEdges.Count == 1;
@@ -200,6 +203,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private bool GetNodeBold() => GetCommonBool(SelectedNodes.Select(n => n.Style.IsBold)) ?? false;
     private bool GetNodeItalic() => GetCommonBool(SelectedNodes.Select(n => n.Style.IsItalic)) ?? false;
     private bool GetNodeUnderline() => GetCommonBool(SelectedNodes.Select(n => n.Style.IsUnderline)) ?? false;
+    private bool GetNodeMathJax() => GetCommonBool(SelectedNodes.Select(n => n.Style.EnableMathJax)) ?? false;
     private string GetNodeTextAlign() => GetCommonString(SelectedNodes.Select(n => n.Style.TextAlign)) ?? "left";
     private string GetNodeVerticalAlign() => GetCommonString(SelectedNodes.Select(n => n.Style.VerticalAlign)) ?? "middle";
 
@@ -233,6 +237,11 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnNodeUnderlineChanged(bool value)
     {
         await ApplyNodeStyleAsync(s => s.IsUnderline = value);
+    }
+
+    private async Task OnNodeMathJaxChanged(bool value)
+    {
+        await ApplyNodeStyleAsync(s => s.EnableMathJax = value);
     }
 
     private async Task OnNodeTextAlignChanged(string value)
@@ -282,8 +291,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnNodeXChanged(string? valueStr)
     {
         if (FirstSelectedNode is null || !double.TryParse(valueStr, out var value) || CommandStack is null || Document is null) return;
-        var before = new Dictionary<string, (double X, double Y)> { [FirstSelectedNode.Id] = (FirstSelectedNode.X, FirstSelectedNode.Y) };
-        var after = new Dictionary<string, (double X, double Y)> { [FirstSelectedNode.Id] = (value, FirstSelectedNode.Y) };
+        var before = new Dictionary<string, NodeMoveState> { [FirstSelectedNode.Id] = new(FirstSelectedNode.X, FirstSelectedNode.Y, FirstSelectedNode.ParentNodeId, FirstSelectedNode.SwimlaneRow, FirstSelectedNode.SwimlaneColumn) };
+        var after = new Dictionary<string, NodeMoveState> { [FirstSelectedNode.Id] = new(value, FirstSelectedNode.Y, FirstSelectedNode.ParentNodeId, FirstSelectedNode.SwimlaneRow, FirstSelectedNode.SwimlaneColumn) };
         CommandStack.Push(new MoveNodesCommand(Document, before, after));
         await DocumentChanged.InvokeAsync(Document);
     }
@@ -291,8 +300,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnNodeYChanged(string? valueStr)
     {
         if (FirstSelectedNode is null || !double.TryParse(valueStr, out var value) || CommandStack is null || Document is null) return;
-        var before = new Dictionary<string, (double X, double Y)> { [FirstSelectedNode.Id] = (FirstSelectedNode.X, FirstSelectedNode.Y) };
-        var after = new Dictionary<string, (double X, double Y)> { [FirstSelectedNode.Id] = (FirstSelectedNode.X, value) };
+        var before = new Dictionary<string, NodeMoveState> { [FirstSelectedNode.Id] = new(FirstSelectedNode.X, FirstSelectedNode.Y, FirstSelectedNode.ParentNodeId, FirstSelectedNode.SwimlaneRow, FirstSelectedNode.SwimlaneColumn) };
+        var after = new Dictionary<string, NodeMoveState> { [FirstSelectedNode.Id] = new(FirstSelectedNode.X, value, FirstSelectedNode.ParentNodeId, FirstSelectedNode.SwimlaneRow, FirstSelectedNode.SwimlaneColumn) };
         CommandStack.Push(new MoveNodesCommand(Document, before, after));
         await DocumentChanged.InvokeAsync(Document);
     }
@@ -412,6 +421,110 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         await DocumentChanged.InvokeAsync(Document);
     }
 
+    // ── Swimlane properties ─────────────────────────────────────────────────
+
+    private double GetSwimlaneRowSize(int index)
+    {
+        var data = FirstSelectedNode?.SwimlaneData;
+        if (data is null) return 80;
+        if (index >= 0 && index < data.RowSizes.Count) return data.RowSizes[index];
+        var contentH = data.IsHorizontal ? FirstSelectedNode!.H : FirstSelectedNode!.H - data.HeaderSize;
+        return data.RowCount > 0 ? contentH / data.RowCount : 80;
+    }
+
+    private double GetSwimlaneColumnSize(int index)
+    {
+        var data = FirstSelectedNode?.SwimlaneData;
+        if (data is null) return 80;
+        if (index >= 0 && index < data.ColumnSizes.Count) return data.ColumnSizes[index];
+        var contentW = data.IsHorizontal ? FirstSelectedNode!.W - data.HeaderSize : FirstSelectedNode!.W;
+        return data.ColumnCount > 0 ? contentW / data.ColumnCount : 80;
+    }
+
+    private async Task OnAddSwimlaneRow()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null) return;
+        var size = Services.SwimlaneLayoutService.GetDefaultLaneSize(data, true);
+        CommandStack.Push(new AddSwimlaneRowCommand(Document, FirstSelectedNode.Id, data.RowCount, size));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnRemoveSwimlaneRow()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null || data.RowCount <= 1) return;
+        CommandStack.Push(new RemoveSwimlaneRowCommand(Document, FirstSelectedNode.Id, data.RowCount - 1));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnAddSwimlaneColumn()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null) return;
+        var size = Services.SwimlaneLayoutService.GetDefaultLaneSize(data, false);
+        CommandStack.Push(new AddSwimlaneColumnCommand(Document, FirstSelectedNode.Id, data.ColumnCount, size));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnRemoveSwimlaneColumn()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null || data.ColumnCount <= 1) return;
+        CommandStack.Push(new RemoveSwimlaneColumnCommand(Document, FirstSelectedNode.Id, data.ColumnCount - 1));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnSwimlaneRowSizeChanged(int index, string? valueStr)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (!double.TryParse(valueStr, out var value)) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null) return;
+
+        var oldRowSizes = new List<double>(data.RowSizes);
+        var oldColumnSizes = new List<double>(data.ColumnSizes);
+        var newRowSizes = new List<double>(oldRowSizes);
+        while (newRowSizes.Count <= index) newRowSizes.Add(80);
+        newRowSizes[index] = Math.Max(20, value);
+
+        double newH = data.IsHorizontal ? 0 : data.HeaderSize;
+        for (int i = 0; i < data.RowCount; i++)
+            newH += i < newRowSizes.Count ? newRowSizes[i] : 80;
+
+        CommandStack.Push(new ResizeSwimlaneCommand(Document, FirstSelectedNode.Id,
+            oldRowSizes, oldColumnSizes, FirstSelectedNode.W, FirstSelectedNode.H,
+            newRowSizes, oldColumnSizes, FirstSelectedNode.W, newH));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnSwimlaneColumnSizeChanged(int index, string? valueStr)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (!double.TryParse(valueStr, out var value)) return;
+        var data = FirstSelectedNode.SwimlaneData;
+        if (data is null) return;
+
+        var oldRowSizes = new List<double>(data.RowSizes);
+        var oldColumnSizes = new List<double>(data.ColumnSizes);
+        var newColumnSizes = new List<double>(oldColumnSizes);
+        while (newColumnSizes.Count <= index) newColumnSizes.Add(80);
+        newColumnSizes[index] = Math.Max(20, value);
+
+        double newW = data.IsHorizontal ? data.HeaderSize : 0;
+        for (int i = 0; i < data.ColumnCount; i++)
+            newW += i < newColumnSizes.Count ? newColumnSizes[i] : 80;
+
+        CommandStack.Push(new ResizeSwimlaneCommand(Document, FirstSelectedNode.Id,
+            oldRowSizes, oldColumnSizes, FirstSelectedNode.W, FirstSelectedNode.H,
+            oldRowSizes, newColumnSizes, newW, FirstSelectedNode.H));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     // ── Edge properties (single + multi) ─────────────────────────────────────
 
     private string GetEdgeLabel() => FirstSelectedEdge?.Label ?? "";
@@ -474,6 +587,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private double GetEdgeSourceSpacing() => GetCommonDouble(SelectedEdges.Select(e => e.SourceSpacing)) ?? 0;
     private double GetEdgeTargetSpacing() => GetCommonDouble(SelectedEdges.Select(e => e.TargetSpacing)) ?? 0;
     private bool GetEdgeRounded() => GetCommonBool(SelectedEdges.Select(e => e.Rounded)) ?? false;
+    private string GetEdgeSourceCardinality() => GetCommonString(SelectedEdges.Select(e => e.SourceCardinality)) ?? "";
+    private string GetEdgeTargetCardinality() => GetCommonString(SelectedEdges.Select(e => e.TargetCardinality)) ?? "";
 
     private async Task OnEdgeStartArrowChanged(string value)
     {
@@ -546,6 +661,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         await DocumentChanged.InvokeAsync(Document);
     }
 
+    private async Task OnEdgeSourceCardinalityChanged(string value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(e => e.SourceCardinality = string.IsNullOrEmpty(value) ? null : value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeTargetCardinalityChanged(string value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(e => e.TargetCardinality = string.IsNullOrEmpty(value) ? null : value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     private void ApplyEdgeStyleChange(Action<DiagramEdge> mutate)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
@@ -597,7 +726,21 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         new SelectOption<string> { Value = "open", Label = Loc["TmDiagramProperties_Arrowhead_Open"] },
         new SelectOption<string> { Value = "oval", Label = Loc["TmDiagramProperties_Arrowhead_Oval"] },
         new SelectOption<string> { Value = "diamond", Label = Loc["TmDiagramProperties_Arrowhead_Diamond"] },
-        new SelectOption<string> { Value = "async", Label = Loc["TmDiagramProperties_Arrowhead_Async"] }
+        new SelectOption<string> { Value = "async", Label = Loc["TmDiagramProperties_Arrowhead_Async"] },
+        new SelectOption<string> { Value = "crow", Label = Loc["TmDiagramProperties_Arrowhead_Crow"] },
+        new SelectOption<string> { Value = "one", Label = Loc["TmDiagramProperties_Arrowhead_One"] },
+        new SelectOption<string> { Value = "many", Label = Loc["TmDiagramProperties_Arrowhead_Many"] },
+        new SelectOption<string> { Value = "zero-one", Label = Loc["TmDiagramProperties_Arrowhead_ZeroOne"] },
+        new SelectOption<string> { Value = "zero-many", Label = Loc["TmDiagramProperties_Arrowhead_ZeroMany"] }
+    ];
+
+    private IReadOnlyList<SelectOption<string>> _cardinalityOptions =>
+    [
+        new SelectOption<string> { Value = "", Label = Loc["TmDiagramProperties_Cardinality_None"] },
+        new SelectOption<string> { Value = "one", Label = Loc["TmDiagramProperties_Cardinality_One"] },
+        new SelectOption<string> { Value = "many", Label = Loc["TmDiagramProperties_Cardinality_Many"] },
+        new SelectOption<string> { Value = "zero-one", Label = Loc["TmDiagramProperties_Cardinality_ZeroOne"] },
+        new SelectOption<string> { Value = "zero-many", Label = Loc["TmDiagramProperties_Cardinality_ZeroMany"] }
     ];
 
     private IReadOnlyList<SelectOption<string>> _dashPatternOptions =>
@@ -685,6 +828,305 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         }).ToList();
 
         CommandStack.Push(new ReplaceShapeCommand(Document, FirstSelectedNode.Id, stencilId, newPorts, stencil.DefaultWidth, stencil.DefaultHeight));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    // ── Page properties ────────────────────────────────────────────────────
+
+    private static readonly Dictionary<string, (int W, int H, DiagramPageSize Size)> PageSizes = new()
+    {
+        ["a4"] = (794, 1123, DiagramPageSize.A4),
+        ["letter"] = (816, 1056, DiagramPageSize.Letter),
+        ["legal"] = (816, 1344, DiagramPageSize.Legal),
+        ["a3"] = (1123, 1587, DiagramPageSize.A3),
+        ["a5"] = (559, 794, DiagramPageSize.A5),
+    };
+
+    private string GetCurrentPageSizeKey()
+    {
+        var page = Document?.ActivePage;
+        if (page is null) return "custom";
+        if (page.PageSize != DiagramPageSize.Custom)
+        {
+            var key = PageSizes.FirstOrDefault(kv => kv.Value.Size == page.PageSize).Key;
+            if (key is not null) return key;
+        }
+        var w = (int)page.Width;
+        var h = (int)page.Height;
+        foreach (var kv in PageSizes)
+        {
+            if ((kv.Value.W == w && kv.Value.H == h) || (kv.Value.W == h && kv.Value.H == w))
+                return kv.Key;
+        }
+        return "custom";
+    }
+
+    private string GetPageOrientation()
+    {
+        var page = Document?.ActivePage;
+        if (page is null) return "portrait";
+        if (page.PageOrientation == DiagramPageOrientation.Landscape) return "landscape";
+        return page.Width >= page.Height ? "landscape" : "portrait";
+    }
+
+    private async Task OnPageSizeChangedHandler(string key)
+    {
+        if (Document is null || ReadOnly) return;
+        if (key == "custom") return;
+        if (!PageSizes.TryGetValue(key, out var size)) return;
+        var page = Document.ActivePage;
+        var isLandscape = GetPageOrientation() == "landscape";
+        var newW = isLandscape ? Math.Max(size.W, size.H) : Math.Min(size.W, size.H);
+        var newH = isLandscape ? Math.Min(size.W, size.H) : Math.Max(size.W, size.H);
+        page.Width = newW;
+        page.Height = newH;
+        page.PageSize = size.Size;
+        await DocumentChanged.InvokeAsync(Document);
+        await OnPageSizeChanged.InvokeAsync();
+    }
+
+    private async Task OnOrientationChanged(string orientation)
+    {
+        if (Document is null || ReadOnly) return;
+        var current = GetPageOrientation();
+        if (current == orientation) return;
+        var page = Document.ActivePage;
+        (page.Width, page.Height) = (page.Height, page.Width);
+        page.PageOrientation = orientation == "landscape" ? DiagramPageOrientation.Landscape : DiagramPageOrientation.Portrait;
+        await DocumentChanged.InvokeAsync(Document);
+        await OnPageSizeChanged.InvokeAsync();
+    }
+
+    private async Task OnPageWidthChanged(ChangeEventArgs e)
+    {
+        if (Document is null || ReadOnly || !double.TryParse(e.Value?.ToString(), out var value)) return;
+        var page = Document.ActivePage;
+        page.Width = Math.Max(100, value);
+        page.PageSize = DiagramPageSize.Custom;
+        await DocumentChanged.InvokeAsync(Document);
+        await OnPageSizeChanged.InvokeAsync();
+    }
+
+    private async Task OnPageHeightChanged(ChangeEventArgs e)
+    {
+        if (Document is null || ReadOnly || !double.TryParse(e.Value?.ToString(), out var value)) return;
+        var page = Document.ActivePage;
+        page.Height = Math.Max(100, value);
+        page.PageSize = DiagramPageSize.Custom;
+        await DocumentChanged.InvokeAsync(Document);
+        await OnPageSizeChanged.InvokeAsync();
+    }
+
+    // ── Node Link properties ───────────────────────────────────────────────
+
+    private string? GetNodeLink() => GetCommonString(SelectedNodes.Select(n => n.Link));
+
+    private string? GetNodeLinkPageId()
+    {
+        var link = GetNodeLink();
+        if (link?.StartsWith("page://", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            var rest = link[7..];
+            var idx = rest.IndexOf('/');
+            var pageId = idx >= 0 ? rest[..idx] : rest;
+            return pageId;
+        }
+        return null;
+    }
+
+    private bool IsNodeLinkExternal()
+    {
+        var link = GetNodeLink();
+        return !string.IsNullOrEmpty(link) && !link.StartsWith("page://", StringComparison.OrdinalIgnoreCase);
+    }
+
+    private async Task OnNodeLinkChanged(string? value)
+    {
+        if (Document is null || SelectedNodes.Count == 0) return;
+        foreach (var n in SelectedNodes) n.Link = string.IsNullOrEmpty(value) ? null : value;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnNodeLinkPageChanged(string? pageId)
+    {
+        if (string.IsNullOrEmpty(pageId) || Document is null || SelectedNodes.Count == 0) return;
+        foreach (var n in SelectedNodes) n.Link = $"page://{pageId}";
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    // ── Page scale property ────────────────────────────────────────────────
+
+    private double GetCurrentPageScale() => Document?.ActivePage?.Scale ?? 1.0;
+
+    private async Task OnPageScaleChanged(ChangeEventArgs e)
+    {
+        if (Document is null || ReadOnly || !double.TryParse(e.Value?.ToString(), out var value)) return;
+        var page = Document.ActivePage;
+        page.Scale = Math.Max(0.1, Math.Round(value, 2));
+        await DocumentChanged.InvokeAsync(Document);
+        await OnPageSizeChanged.InvokeAsync();
+    }
+
+    private IReadOnlyList<SelectOption<string>> _pageLinkOptions
+    {
+        get
+        {
+            var options = new List<SelectOption<string>>
+            {
+                new() { Value = "", Label = Loc["TmDiagramProperties_LinkType_None"] }
+            };
+            if (Document is not null)
+            {
+                foreach (var page in Document.Pages)
+                {
+                    options.Add(new SelectOption<string> { Value = page.Id, Label = page.Name });
+                }
+            }
+            return options;
+        }
+    }
+
+    private IReadOnlyList<SelectOption<string>> _pageSizeOptions =>
+    [
+        new SelectOption<string> { Value = "a4", Label = Loc["TmDiagramProperties_PageSize_A4"] },
+        new SelectOption<string> { Value = "letter", Label = Loc["TmDiagramProperties_PageSize_Letter"] },
+        new SelectOption<string> { Value = "legal", Label = Loc["TmDiagramProperties_PageSize_Legal"] },
+        new SelectOption<string> { Value = "a3", Label = Loc["TmDiagramProperties_PageSize_A3"] },
+        new SelectOption<string> { Value = "a5", Label = Loc["TmDiagramProperties_PageSize_A5"] },
+        new SelectOption<string> { Value = "custom", Label = Loc["TmDiagramProperties_PageSize_Custom"] }
+    ];
+
+    // ── Table helpers ────────────────────────────────────────────────────────
+
+    // SelectedTableCells is now managed by the parent editor and passed as a parameter.
+
+    private int GetTableRowCount() => FirstSelectedNode is null ? 0 : Services.TableLayoutService.GetRowCount(FirstSelectedNode);
+    private int GetTableColumnCount() => FirstSelectedNode is null ? 0 : Services.TableLayoutService.GetColumnCount(FirstSelectedNode);
+    private List<DiagramTableCellData> GetTableCells() => FirstSelectedNode is null ? [] : Services.TableLayoutService.GetCells(FirstSelectedNode);
+
+    private string GetTableCellText(int row, int column)
+    {
+        var cell = GetTableCells().FirstOrDefault(c => c.Row == row && c.Column == column);
+        if (cell is not null) return cell.Text;
+        // If covered by a merged cell, show the merged cell text
+        var merged = GetTableCells().FirstOrDefault(c => row >= c.Row && row < c.Row + c.RowSpan && column >= c.Column && column < c.Column + c.ColSpan);
+        return merged?.Text ?? "";
+    }
+
+    private bool IsTableCellSelected(int row, int column) => SelectedTableCells.Any(s => s.Row == row && s.Column == column);
+
+    private async Task ToggleTableCellSelection(int row, int column)
+    {
+        if (SelectedTableCells.RemoveAll(s => s.Row == row && s.Column == column) == 0)
+            SelectedTableCells.Add((row, column));
+        await SelectedTableCellsChanged.InvokeAsync(SelectedTableCells);
+    }
+
+    private bool CanMergeTableCells() => FirstSelectedNode is not null && Services.TableLayoutService.CanMerge(FirstSelectedNode, SelectedTableCells);
+
+    private bool CanSplitTableCells() => SelectedTableCells.Count == 1 && FirstSelectedNode is not null
+        && Services.TableLayoutService.CanSplit(FirstSelectedNode, SelectedTableCells[0].Row, SelectedTableCells[0].Column);
+
+    private DiagramTableCellData? GetSelectedTableCell() => SelectedTableCells.Count == 1
+        ? GetTableCells().FirstOrDefault(c => c.Row == SelectedTableCells[0].Row && c.Column == SelectedTableCells[0].Column)
+        : null;
+
+    private async Task OnAddTableRow()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var rowCount = GetTableRowCount();
+        CommandStack.Push(new InsertTableRowCommand(Document, FirstSelectedNode.Id, rowCount));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnRemoveTableRow()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var rowCount = GetTableRowCount();
+        if (rowCount <= 1) return;
+        CommandStack.Push(new DeleteTableRowCommand(Document, FirstSelectedNode.Id, rowCount - 1));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnAddTableColumn()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var colCount = GetTableColumnCount();
+        CommandStack.Push(new InsertTableColumnCommand(Document, FirstSelectedNode.Id, colCount));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnRemoveTableColumn()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        var colCount = GetTableColumnCount();
+        if (colCount <= 1) return;
+        CommandStack.Push(new DeleteTableColumnCommand(Document, FirstSelectedNode.Id, colCount - 1));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnMergeTableCells()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (!CanMergeTableCells()) return;
+        CommandStack.Push(new MergeTableCellsCommand(Document, FirstSelectedNode.Id, SelectedTableCells));
+        SelectedTableCells.Clear();
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnSplitTableCell()
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1) return;
+        var (row, col) = SelectedTableCells[0];
+        CommandStack.Push(new SplitTableCellCommand(Document, FirstSelectedNode.Id, row, col));
+        SelectedTableCells.Clear();
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnTableCellTextChanged(string value)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1) return;
+        var (row, col) = SelectedTableCells[0];
+        var oldData = DeepCopy(FirstSelectedNode.Data);
+        var cells = Services.TableLayoutService.GetCells(FirstSelectedNode);
+        var cell = cells.FirstOrDefault(c => c.Row == row && c.Column == col);
+        if (cell is null) return;
+        cell.Text = value;
+        CommandStack.Push(new UpdateNodeDataCommand(Document, FirstSelectedNode.Id, oldData, FirstSelectedNode.Data));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnTableCellBackgroundChanged(ChangeEventArgs e)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1) return;
+        var color = e.Value?.ToString() ?? "#ffffff";
+        var (row, col) = SelectedTableCells[0];
+        var cell = Services.TableLayoutService.GetCells(FirstSelectedNode).FirstOrDefault(c => c.Row == row && c.Column == col);
+        var newStyle = cell?.Style is null ? new DiagramTableCellStyle { BackgroundColor = color } : new DiagramTableCellStyle
+        {
+            BackgroundColor = color,
+            BorderColor = cell.Style.BorderColor,
+            TextAlign = cell.Style.TextAlign,
+            FontWeight = cell.Style.FontWeight
+        };
+        CommandStack.Push(new UpdateTableCellStyleCommand(Document, FirstSelectedNode.Id, row, col, newStyle));
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnTableCellBorderChanged(ChangeEventArgs e)
+    {
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1) return;
+        var color = e.Value?.ToString() ?? "#e5e7eb";
+        var (row, col) = SelectedTableCells[0];
+        var cell = Services.TableLayoutService.GetCells(FirstSelectedNode).FirstOrDefault(c => c.Row == row && c.Column == col);
+        var newStyle = cell?.Style is null ? new DiagramTableCellStyle { BorderColor = color } : new DiagramTableCellStyle
+        {
+            BackgroundColor = cell.Style.BackgroundColor,
+            BorderColor = color,
+            TextAlign = cell.Style.TextAlign,
+            FontWeight = cell.Style.FontWeight
+        };
+        CommandStack.Push(new UpdateTableCellStyleCommand(Document, FirstSelectedNode.Id, row, col, newStyle));
         await DocumentChanged.InvokeAsync(Document);
     }
 

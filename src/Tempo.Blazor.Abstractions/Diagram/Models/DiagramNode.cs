@@ -39,6 +39,9 @@ public sealed class DiagramNode
     /// <summary>Optional parent node identifier for nested nodes (containers, packages, pools).</summary>
     public string? ParentNodeId { get; set; }
 
+    /// <summary>Optional group container identifier. When set, the node is rendered only inside that group.</summary>
+    public string? ParentGroupId { get; set; }
+
     /// <summary>Optional group identifier. Nodes with the same GroupId behave as a group.</summary>
     public string? GroupId { get; set; }
 
@@ -56,4 +59,19 @@ public sealed class DiagramNode
 
     /// <summary>Reserved for future collaborative editing – who has this node locked.</summary>
     public string? LockedBy { get; set; }
+
+    /// <summary>When true, the node cannot be moved, resized or deleted.</summary>
+    public bool IsLocked { get; set; }
+
+    /// <summary>Swimlane configuration when this node is a swimlane container.</summary>
+    public DiagramNodeSwimlaneData? SwimlaneData { get; set; }
+
+    /// <summary>Row index inside a parent swimlane (-1 when not in a swimlane).</summary>
+    public int SwimlaneRow { get; set; } = -1;
+
+    /// <summary>Column index inside a parent swimlane (-1 when not in a swimlane).</summary>
+    public int SwimlaneColumn { get; set; } = -1;
+
+    /// <summary>Optional hyperlink target (external URL or page:// link).</summary>
+    public string? Link { get; set; }
 }

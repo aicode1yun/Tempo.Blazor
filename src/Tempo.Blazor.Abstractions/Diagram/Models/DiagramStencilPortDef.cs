@@ -17,4 +17,7 @@ public sealed class DiagramStencilPortDef
 
     /// <summary>Whether the port allows outgoing edges.</summary>
     public bool IsOutput { get; set; } = true;
+
+    /// <summary>Magnet strategy for edge snapping. Supported: cardinal, perimeter, custom.</summary>
+    public string? MagnetStrategy { get; set; }
 }

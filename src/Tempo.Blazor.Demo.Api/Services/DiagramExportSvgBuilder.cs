@@ -11,28 +11,29 @@ namespace Tempo.Blazor.Demo.Api.Services;
 internal static class DiagramExportSvgBuilder
 {
     public static string Build(
-        DiagramDocument document,
+        DiagramPage page,
         DiagramExportOptions options,
         DemoDiagramStencilRegistry stencilRegistry)
     {
-        var nodes = document.Nodes;
-        var edges = document.Edges;
+        var nodes = page.Nodes;
+        var edges = page.Edges;
 
+        bool autoFit = options.Width is null && options.Height is null;
         double minX = nodes.Count > 0 ? nodes.Min(n => n.X) : 0;
         double minY = nodes.Count > 0 ? nodes.Min(n => n.Y) : 0;
-        double maxX = nodes.Count > 0 ? nodes.Max(n => n.X + n.W) : document.Width;
-        double maxY = nodes.Count > 0 ? nodes.Max(n => n.Y + n.H) : document.Height;
+        double maxX = nodes.Count > 0 ? nodes.Max(n => n.X + n.W) : page.Width;
+        double maxY = nodes.Count > 0 ? nodes.Max(n => n.Y + n.H) : page.Height;
 
-        double padding = options.Padding;
-        double svgWidth = options.Width ?? (maxX - minX + padding * 2);
-        double svgHeight = options.Height ?? (maxY - minY + padding * 2);
+        double padding = autoFit ? options.Padding : 0;
+        double svgWidth = options.Width ?? Math.Max(page.Width, maxX - minX + padding * 2);
+        double svgHeight = options.Height ?? Math.Max(page.Height, maxY - minY + padding * 2);
 
-        double offsetX = options.Width is not null && nodes.Count > 0
-            ? options.Width.Value / 2 - (minX + (maxX - minX) / 2)
-            : padding - minX;
-        double offsetY = options.Height is not null && nodes.Count > 0
-            ? options.Height.Value / 2 - (minY + (maxY - minY) / 2)
-            : padding - minY;
+        double offsetX = autoFit && nodes.Count > 0
+            ? padding - minX
+            : 0;
+        double offsetY = autoFit && nodes.Count > 0
+            ? padding - minY
+            : 0;
 
         string bg = string.IsNullOrWhiteSpace(options.BackgroundColor) ? "#ffffff" : options.BackgroundColor;
 
@@ -44,6 +45,7 @@ internal static class DiagramExportSvgBuilder
         {
             sb.Append("""<pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse"><circle cx="1" cy="1" r="1" fill="#e5e7eb"/></pattern>""");
         }
+        sb.Append($"""<clipPath id="page-clip"><rect x="0" y="0" width="{F(page.Width)}" height="{F(page.Height)}"/></clipPath>""");
         sb.Append("</defs>");
 
         sb.Append($"""<rect width="{F(svgWidth)}" height="{F(svgHeight)}" fill="{EscapeSvg(bg)}"/>""");
@@ -52,14 +54,14 @@ internal static class DiagramExportSvgBuilder
             sb.Append($"""<rect width="{F(svgWidth)}" height="{F(svgHeight)}" fill="url(#grid)"/>""");
         }
 
-        sb.Append("""<g id="edges">""");
+        sb.Append("""<g id="edges" clip-path="url(#page-clip)">""");
         foreach (var edge in edges)
         {
             RenderEdge(sb, edge, nodes, offsetX, offsetY);
         }
         sb.Append("</g>");
 
-        sb.Append("""<g id="nodes">""");
+        sb.Append("""<g id="nodes" clip-path="url(#page-clip)">""");
         foreach (var node in nodes.OrderBy(n => n.ZIndex))
         {
             RenderNode(sb, node, stencilRegistry, offsetX, offsetY);
@@ -184,6 +186,11 @@ internal static class DiagramExportSvgBuilder
     private static void AppendTextElement(StringBuilder sb, string text, double x, double y, DiagramStencilTextStyle? ts, DiagramNode node, string anchor)
     {
         double fs = ts?.FontSize ?? 12;
+        if (node.Data.TryGetValue("__mathSvg", out var svgObj) && svgObj is string svgHtml && !string.IsNullOrWhiteSpace(svgHtml))
+        {
+            sb.Append($"""<g transform="translate({F(x)},{F(y - fs)})">{svgHtml}</g>""");
+            return;
+        }
         sb.Append($"""<text x="{F(x)}" y="{F(y)}" font-size="{F(fs)}" text-anchor="{anchor}" font-family="{EscapeSvg(ts?.FontFamily ?? "sans-serif")}" fill="{EscapeSvg(ts?.Color ?? node.Style.Color ?? "#111827")}" font-weight="{(ts?.IsBold == true ? "700" : "400")}" font-style="{(ts?.IsItalic == true ? "italic" : "normal")}">{EscapeSvg(text)}</text>""");
     }
 
@@ -213,7 +220,33 @@ internal static class DiagramExportSvgBuilder
         var tp = GetPortPosition(target, edge.TargetPortId);
 
         string pathD;
-        if (edge.Routing == "curved")
+        if (edge.SourceNodeId == edge.TargetNodeId)
+        {
+            // Loop edge: U-shaped cubic bezier
+            double loopSize = 40.0;
+            double midX = (sp.X + tp.X) / 2;
+            double midY = (sp.Y + tp.Y) / 2;
+            double dirX = tp.X - sp.X;
+            double dirY = tp.Y - sp.Y;
+            double len = Math.Sqrt(dirX * dirX + dirY * dirY);
+            double perpX, perpY;
+            if (len > 0.001)
+            {
+                perpX = -dirY / len * loopSize;
+                perpY = dirX / len * loopSize;
+            }
+            else
+            {
+                perpX = 0;
+                perpY = -loopSize;
+            }
+            double cx1 = midX + perpX * 0.5;
+            double cy1 = midY + perpY * 0.5;
+            double cx2 = midX + perpX * 0.5;
+            double cy2 = midY + perpY * 0.5;
+            pathD = $"M{F(sp.X)},{F(sp.Y)} C{F(cx1)},{F(cy1)} {F(cx2)},{F(cy2)} {F(tp.X)},{F(tp.Y)}";
+        }
+        else if (edge.Routing == "curved")
         {
             double mx = (sp.X + tp.X) / 2;
             pathD = $"M{F(sp.X)},{F(sp.Y)} C{F(mx)},{F(sp.Y)} {F(mx)},{F(tp.Y)} {F(tp.X)},{F(tp.Y)}";

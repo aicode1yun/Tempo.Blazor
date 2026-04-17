@@ -46,6 +46,12 @@ public sealed class CopyNodesCommand : IDiagramCommand
     public void Execute()
     {
         SharedClipboardJson = ClipboardJson;
+        var payload = JsonSerializer.Deserialize<DiagramClipboardData>(ClipboardJson, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        if (payload is not null)
+        {
+            DiagramClipboard.Nodes = payload.Nodes;
+            DiagramClipboard.Edges = payload.Edges;
+        }
     }
 
     public void Undo() { /* No-op */ }

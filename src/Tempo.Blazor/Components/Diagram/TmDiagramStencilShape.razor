@@ -12,6 +12,16 @@
      data-has-shape-svg="@(!string.IsNullOrEmpty(_stencil?.Layout.ShapeSvg) ? "true" : "false")"
      style="@GetShapeStyle(contentBelow)"
      @onfocusout="OnEditFocusOut">
+
+    @if (!string.IsNullOrEmpty(Node.Link))
+    {
+        <div class="tm-diagram-node__link-badge" title="@Loc["TmDiagramProperties_Link"]">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
+                <path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" />
+            </svg>
+        </div>
+    }
     @if (!string.IsNullOrEmpty(_stencil?.Layout.ShapeSvg))
     {
         <svg class="tm-diagram-node__svg-bg"
@@ -53,7 +63,7 @@
                         else
                         {
                             <div class="tm-diagram-node__text" style="@GetTextInnerStyle(section.TextStyle)">
-                                @GetSectionText(section)
+                                @GetSectionContent(section)
                             </div>
                         }
                     </div>
@@ -93,8 +103,128 @@
                 case "icon":
                     <div class="tm-diagram-node__section tm-diagram-node__section--icon"
                          style="padding: @(F(section.Padding ?? 0))px; @GetTextStyle(section.TextStyle)">
-                        <span class="tm-diagram-node__icon" style="@GetTextInnerStyle(section.TextStyle)">@GetSectionText(section)</span>
+                        <span class="tm-diagram-node__icon" style="@GetTextInnerStyle(section.TextStyle)">@GetSectionContent(section)</span>
                     </div>
+                    break;
+
+                case "swimlane":
+                    @if (Node.SwimlaneData is { } sd)
+                    {
+                        @if (sd.IsHorizontal)
+                        {
+                            <div class="tm-diagram-node__swimlane tm-diagram-node__swimlane--horizontal">
+                                @for (int r = 0; r < sd.RowCount; r++)
+                                {
+                                    <div class="tm-diagram-node__swimlane-row">
+                                        <div class="tm-diagram-node__swimlane-header"
+                                             @ondblclick:stopPropagation="true"
+                                             @ondblclick="() => StartSwimlaneEdit(r, 0)">
+                                            @if (_editingSwimlaneCell == (r, 0))
+                                            {
+                                                <input class="tm-diagram-node__inline-input"
+                                                       style="width: 100%;"
+                                                       value="@_editingSwimlaneText"
+                                                       @oninput="e => _editingSwimlaneText = e.Value?.ToString() ?? string.Empty"
+                                                       @onkeydown="OnSwimlaneEditKeyDown"
+                                                       @onblur="SaveSwimlaneEdit"
+                                                       @onmousedown:stopPropagation="true"
+                                                       @onmousemove:stopPropagation="true"
+                                                       @onmouseup:stopPropagation="true"
+                                                       @ref="_editSwimlaneInputRef" />
+                                            }
+                                            else
+                                            {
+                                                <span>@GetSwimlaneLabel(r, 0)</span>
+                                            }
+                                        </div>
+                                        <div class="tm-diagram-node__swimlane-cell"></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="tm-diagram-node__swimlane tm-diagram-node__swimlane--vertical">
+                                @for (int c = 0; c < sd.ColumnCount; c++)
+                                {
+                                    <div class="tm-diagram-node__swimlane-col">
+                                        <div class="tm-diagram-node__swimlane-header"
+                                             @ondblclick:stopPropagation="true"
+                                             @ondblclick="() => StartSwimlaneEdit(0, c)">
+                                            @if (_editingSwimlaneCell == (0, c))
+                                            {
+                                                <input class="tm-diagram-node__inline-input"
+                                                       style="width: 100%;"
+                                                       value="@_editingSwimlaneText"
+                                                       @oninput="e => _editingSwimlaneText = e.Value?.ToString() ?? string.Empty"
+                                                       @onkeydown="OnSwimlaneEditKeyDown"
+                                                       @onblur="SaveSwimlaneEdit"
+                                                       @onmousedown:stopPropagation="true"
+                                                       @onmousemove:stopPropagation="true"
+                                                       @onmouseup:stopPropagation="true"
+                                                       @ref="_editSwimlaneInputRef" />
+                                            }
+                                            else
+                                            {
+                                                <span>@GetSwimlaneLabel(0, c)</span>
+                                            }
+                                        </div>
+                                        <div class="tm-diagram-node__swimlane-cell"></div>
+                                    </div>
+                                }
+                            </div>
+                        }
+                    }
+                    break;
+
+                case "table":
+                    @if (GetTableRowCount() is { } rowCount && GetTableColumnCount() is { } colCount)
+                    {
+                        <table class="tm-diagram-node__table">
+                            @for (int r = 0; r < rowCount; r++)
+                            {
+                                <tr class="tm-diagram-node__table-row">
+                                    @for (int c = 0; c < colCount; c++)
+                                    {
+                                        if (IsTableCellCovered(r, c))
+                                        {
+                                            continue;
+                                        }
+                                        var cell = GetTableCellAt(r, c);
+                                        <td class="tm-diagram-node__table-cell @GetTableCellSelectedClass(r, c)"
+                                            data-row="@r"
+                                            data-col="@c"
+                                            rowspan="@(cell?.RowSpan ?? 1)"
+                                            colspan="@(cell?.ColSpan ?? 1)"
+                                            style="@GetTableCellStyle(cell?.Style)"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="e => OnTableCellClick(r, c, e)"
+                                            @ondblclick:stopPropagation="true"
+                                            @ondblclick="() => StartTableCellEdit(r, c, cell?.Text ?? string.Empty)">
+                                            @if (_editingTableCell == (r, c))
+                                            {
+                                                <input class="tm-diagram-node__inline-input"
+                                                       style="width: 100%; height: 100%;"
+                                                       value="@_editingTableText"
+                                                       @oninput="e => _editingTableText = e.Value?.ToString() ?? string.Empty"
+                                                       @onkeydown="OnTableEditKeyDown"
+                                                       @onblur="SaveTableCellEdit"
+                                                       @onmousedown:stopPropagation="true"
+                                                       @onmousemove:stopPropagation="true"
+                                                       @onmouseup:stopPropagation="true"
+                                                       @onwheel:stopPropagation="true"
+                                                       @ref="_editTableInputRef" />
+                                            }
+                                            else
+                                            {
+                                                <span>@(cell?.Text ?? string.Empty)</span>
+                                            }
+                                        </td>
+                                    }
+                                </tr>
+                            }
+                        </table>
+                    }
                     break;
             }
         }

@@ -3,7 +3,7 @@ namespace Tempo.Blazor.Components.Diagram.Models;
 /// <summary>A layout section inside a diagram stencil.</summary>
 public sealed class DiagramStencilSection
 {
-    /// <summary>Section type. Supported: "text", "list", "divider", "icon".</summary>
+    /// <summary>Section type. Supported: "text", "list", "divider", "icon", "swimlane".</summary>
     public string Type { get; set; } = "text";
 
     /// <summary>Data key referencing <see cref="DiagramNode.Data"/> (e.g. "name", "attributes").</summary>

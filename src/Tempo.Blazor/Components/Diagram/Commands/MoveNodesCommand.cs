@@ -2,8 +2,11 @@ using Tempo.Blazor.Components.Diagram.Models;
 
 namespace Tempo.Blazor.Components.Diagram.Commands;
 
+/// <summary>Tracks the full movement state of a node including swimlane parent.</summary>
+public sealed record NodeMoveState(double X, double Y, string? ParentNodeId, int SwimlaneRow, int SwimlaneColumn);
+
 /// <summary>
-/// Moves one or more nodes to new positions.
+/// Moves one or more nodes to new positions and updates their swimlane parent state.
 ///
 /// <para>
 /// Supports coalescing: consecutive move commands targeting the same node ids within
@@ -14,14 +17,14 @@ namespace Tempo.Blazor.Components.Diagram.Commands;
 public sealed class MoveNodesCommand : IDiagramCommand
 {
     private readonly DiagramDocument _doc;
-    private readonly Dictionary<string, (double X, double Y)> _before;
-    private Dictionary<string, (double X, double Y)> _after;
+    private readonly Dictionary<string, NodeMoveState> _before;
+    private Dictionary<string, NodeMoveState> _after;
     private DateTime _pushedAt;
 
     public MoveNodesCommand(
         DiagramDocument doc,
-        Dictionary<string, (double X, double Y)> before,
-        Dictionary<string, (double X, double Y)> after)
+        Dictionary<string, NodeMoveState> before,
+        Dictionary<string, NodeMoveState> after)
     {
         _doc = doc;
         _before = before;
@@ -39,8 +42,14 @@ public sealed class MoveNodesCommand : IDiagramCommand
     {
         foreach (var node in _doc.Nodes)
         {
-            if (_after.TryGetValue(node.Id, out var pos))
-            { node.X = pos.X; node.Y = pos.Y; }
+            if (_after.TryGetValue(node.Id, out var state))
+            {
+                node.X = state.X;
+                node.Y = state.Y;
+                node.ParentNodeId = state.ParentNodeId;
+                node.SwimlaneRow = state.SwimlaneRow;
+                node.SwimlaneColumn = state.SwimlaneColumn;
+            }
         }
     }
 
@@ -48,8 +57,14 @@ public sealed class MoveNodesCommand : IDiagramCommand
     {
         foreach (var node in _doc.Nodes)
         {
-            if (_before.TryGetValue(node.Id, out var pos))
-            { node.X = pos.X; node.Y = pos.Y; }
+            if (_before.TryGetValue(node.Id, out var state))
+            {
+                node.X = state.X;
+                node.Y = state.Y;
+                node.ParentNodeId = state.ParentNodeId;
+                node.SwimlaneRow = state.SwimlaneRow;
+                node.SwimlaneColumn = state.SwimlaneColumn;
+            }
         }
     }
 
@@ -64,8 +79,14 @@ public sealed class MoveNodesCommand : IDiagramCommand
 
         foreach (var node in _doc.Nodes)
         {
-            if (next._after.TryGetValue(node.Id, out var pos))
-            { node.X = pos.X; node.Y = pos.Y; }
+            if (next._after.TryGetValue(node.Id, out var state))
+            {
+                node.X = state.X;
+                node.Y = state.Y;
+                node.ParentNodeId = state.ParentNodeId;
+                node.SwimlaneRow = state.SwimlaneRow;
+                node.SwimlaneColumn = state.SwimlaneColumn;
+            }
         }
 
         _after = next._after;

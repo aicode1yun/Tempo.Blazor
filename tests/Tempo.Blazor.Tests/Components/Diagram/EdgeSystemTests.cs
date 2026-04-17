@@ -285,4 +285,129 @@ public class EdgeSystemTests : LocalizationTestBase
         edge.Waypoints.Count.Should().Be(1);
         edge.Waypoints[0].X.Should().Be(10);
     }
+
+    [Fact]
+    public async Task ComputeOrthogonalWaypointsAsync_PassesObstaclesExcludingSourceAndTarget()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 0, W = 100, H = 50 };
+        var n3 = new DiagramNode { StencilId = "general.rectangle", X = 150, Y = 0, W = 50, H = 50 }; // obstacle
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+        doc.Nodes.Add(n3);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Routing = "orthogonal"
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        var _ = await cut.Instance.ComputeOrthogonalWaypointsAsync(edge);
+
+        var invocation = JSInterop.Invocations
+            .Where(i => i.Identifier == "tmDiagramEditor.computeOrthogonalWaypoints")
+            .LastOrDefault();
+
+        invocation.Should().NotBeNull();
+        var obstacles = invocation.Arguments.Last() as System.Collections.Generic.IEnumerable<object>;
+        obstacles.Should().NotBeNull();
+        var obstacleList = obstacles!.ToList();
+        obstacleList.Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void StencilShape_GetSectionContent_WithMathJaxEnabled_WrapsMathInSpan()
+    {
+        var doc = new DiagramDocument();
+        var node = new DiagramNode
+        {
+            StencilId = "general.rectangle",
+            X = 0, Y = 0, W = 100, H = 50,
+            Style = new DiagramStyle { EnableMathJax = true },
+            Data = { ["label"] = "$$x^2$$" }
+        };
+        doc.Nodes.Add(node);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var mathSpan = cut.Find(".tm-diagram-math");
+        mathSpan.Should().NotBeNull();
+        mathSpan.TextContent.Should().Contain("x^2");
+    }
+
+    [Fact]
+    public void StencilShape_GetSectionContent_WithMathJaxDisabled_ReturnsPlainText()
+    {
+        var doc = new DiagramDocument();
+        var node = new DiagramNode
+        {
+            StencilId = "general.rectangle",
+            X = 0, Y = 0, W = 100, H = 50,
+            Style = new DiagramStyle { EnableMathJax = false },
+            Data = { ["label"] = "$$x^2$$" }
+        };
+        doc.Nodes.Add(node);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var nodeText = cut.Find(".tm-diagram-node__text");
+        nodeText.InnerHtml.Should().NotContain("tm-diagram-math");
+        nodeText.TextContent.Should().Contain("$$x^2$$");
+    }
+
+    [Fact]
+    public void EdgeLabel_WithMathJaxEnabled_RendersForeignObject()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Label = "$$x^2$$",
+            Style = new DiagramStyle { EnableMathJax = true }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var fo = cut.Find("foreignObject");
+        fo.Should().NotBeNull();
+        fo.InnerHtml.Should().Contain("tm-diagram-math");
+    }
+
+    [Fact]
+    public void OnMathSvgCached_StoresSvgInNodeData()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Instance.JsOnMathSvgCached(n1.Id, "<svg></svg>");
+        n1.Data["__mathSvg"].Should().Be("<svg></svg>");
+    }
 }

@@ -50,4 +50,7 @@ public sealed class DiagramStyle
 
     /// <summary>Stroke dash pattern. e.g. solid, dashed, dotted, dash-dot.</summary>
     public string? StrokeDashPattern { get; set; }
+
+    /// <summary>Whether MathJax rendering is enabled for this element's text.</summary>
+    public bool? EnableMathJax { get; set; }
 }

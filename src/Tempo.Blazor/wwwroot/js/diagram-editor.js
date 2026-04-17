@@ -4,6 +4,55 @@ window.tmDiagramEditor = {
 
     instances: new Map(),
 
+    // ── MathJax support ──────────────────────────────────────────────────────
+
+    mathJaxReady: false,
+
+    loadMathJax: function () {
+        if (this.mathJaxReady) return Promise.resolve();
+        if (typeof window.MathJax === 'undefined') return Promise.resolve();
+        const self = this;
+        return new Promise(function (resolve) {
+            const check = function () {
+                if (window.MathJax && window.MathJax.typesetPromise) {
+                    self.mathJaxReady = true;
+                    resolve();
+                } else {
+                    setTimeout(check, 100);
+                }
+            };
+            check();
+        });
+    },
+
+    typesetMath: function (container, nodeId) {
+        const self = this;
+        return this.loadMathJax().then(function () {
+            const inst = self.instances.get(container.id);
+            if (!inst || !inst.dotNetRef) return;
+
+            const selector = nodeId
+                ? '[data-node-id="' + nodeId + '"] .tm-diagram-math'
+                : '.tm-diagram-math';
+            const elements = container.querySelectorAll(selector);
+            if (elements.length === 0) return;
+
+            return window.MathJax.typesetPromise(Array.from(elements)).then(function () {
+                elements.forEach(function (el) {
+                    const svg = el.querySelector('svg');
+                    if (svg) {
+                        const nid = el.closest('[data-node-id]')?.getAttribute('data-node-id');
+                        if (nid) {
+                            const serializer = new XMLSerializer();
+                            const svgString = serializer.serializeToString(svg);
+                            inst.dotNetRef.invokeMethodAsync('OnMathSvgCached', nid, svgString);
+                        }
+                    }
+                });
+            });
+        });
+    },
+
     // ── Init / Destroy ────────────────────────────────────────────────────────
 
     init: function (container, dotNetRef, options) {
@@ -29,6 +78,7 @@ window.tmDiagramEditor = {
             showGrid: opts.showGrid !== false,
             canvasW: opts.canvasWidth || 3000,
             canvasH: opts.canvasHeight || 2000,
+            activeGroupId: opts.activeGroupId || null,
 
             // drag node state
             isDragging: false,
@@ -60,6 +110,14 @@ window.tmDiagramEditor = {
             isDrawingEdge: false,
             drawSource: null,
             drawTempPath: null,
+
+            // jetty drag
+            isDraggingJetty: false,
+            dragJettyEdgeId: null,
+            dragJettyType: null,
+            dragJettySide: null,
+            dragJettyNodeId: null,
+            dragJettyStartDoc: null,
 
             // pinch zoom
             pinchStartDist: 0,
@@ -114,7 +172,7 @@ window.tmDiagramEditor = {
         const inst = this.instances.get(container.id);
         if (!inst) return;
         inst.toolMode = mode;
-        inst.container.style.cursor = mode === 'pan' ? 'grab' : '';
+        inst.container.style.cursor = mode === 'pan' ? 'grab' : (mode === 'edge' ? 'crosshair' : '');
     },
 
     // ── Canvas size update ────────────────────────────────────────────────────
@@ -140,6 +198,7 @@ window.tmDiagramEditor = {
         inst._onTouchEnd = (e) => this._onTouchEnd(e, inst);
         inst._onDrop = (e) => this._onDrop(e, inst);
         inst._onDragOver = (e) => { e.preventDefault(); };
+        inst._onContextMenu = (e) => this._onContextMenu(e, inst);
 
         inst.container.addEventListener('mousedown', inst._onMouseDown);
         inst.container.addEventListener('wheel', inst._onWheel, { passive: false });
@@ -149,6 +208,7 @@ window.tmDiagramEditor = {
         inst.container.addEventListener('touchcancel', inst._onTouchEnd);
         inst.container.addEventListener('drop', inst._onDrop);
         inst.container.addEventListener('dragover', inst._onDragOver);
+        inst.container.addEventListener('contextmenu', inst._onContextMenu);
         document.addEventListener('mousemove', inst._onMouseMove);
         document.addEventListener('mouseup', inst._onMouseUp);
         document.addEventListener('keydown', inst._onKeyDown);
@@ -164,6 +224,7 @@ window.tmDiagramEditor = {
         inst.container.removeEventListener('touchcancel', inst._onTouchEnd);
         inst.container.removeEventListener('drop', inst._onDrop);
         inst.container.removeEventListener('dragover', inst._onDragOver);
+        inst.container.removeEventListener('contextmenu', inst._onContextMenu);
         document.removeEventListener('mousemove', inst._onMouseMove);
         document.removeEventListener('mouseup', inst._onMouseUp);
         document.removeEventListener('keydown', inst._onKeyDown);
@@ -180,6 +241,37 @@ window.tmDiagramEditor = {
 
         inst.dotNetRef.invokeMethodAsync('OnDropFromToolbox', stencilId, docPt.x, docPt.y);
         window.__tmDiagramDragStencil = null;
+    },
+
+    _onContextMenu: function (e, inst) {
+        if (inst.readOnly || !inst.dotNetRef) return;
+        e.preventDefault();
+
+        const tableCellEl = e.target.closest('.tm-diagram-node__table-cell');
+        const nodeEl = e.target.closest('.tm-diagram-node');
+        const edgeEl = e.target.closest('.tm-diagram-edge-hit-path');
+
+        if (tableCellEl && nodeEl) {
+            const nodeId = nodeEl.getAttribute('data-node-id');
+            const row = parseInt(tableCellEl.getAttribute('data-row'), 10);
+            const col = parseInt(tableCellEl.getAttribute('data-col'), 10);
+            if (nodeId && !isNaN(row) && !isNaN(col)) {
+                inst.dotNetRef.invokeMethodAsync('OnTableCellContextMenu', nodeId, row, col, e.clientX, e.clientY);
+            }
+        } else if (nodeEl) {
+            const nodeId = nodeEl.getAttribute('data-node-id');
+            if (nodeId) {
+                inst.dotNetRef.invokeMethodAsync('OnNodeContextMenu', nodeId, e.clientX, e.clientY);
+            }
+        } else if (edgeEl) {
+            const edgeId = edgeEl.getAttribute('data-edge-id');
+            if (edgeId) {
+                inst.dotNetRef.invokeMethodAsync('OnEdgeContextMenu', edgeId, e.clientX, e.clientY);
+            }
+        } else {
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('OnCanvasContextMenu', docPt.x, docPt.y, e.clientX, e.clientY);
+        }
     },
 
     // ── Coordinate helpers ────────────────────────────────────────────────────
@@ -252,6 +344,13 @@ window.tmDiagramEditor = {
         el.style.transform = 'translate(' + x + 'px, ' + y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
     },
 
+    _isNodeInActiveGroup: function (inst, nodeEl) {
+        if (!nodeEl) return false;
+        const parentGroupId = nodeEl.getAttribute('data-parent-group-id') || null;
+        if (!inst.activeGroupId) return !parentGroupId;
+        return parentGroupId === inst.activeGroupId;
+    },
+
     _clampChildPosition: function (inst, childId, x, y) {
         const childEl = this._nodeEl(inst, childId);
         const parentId = childEl ? childEl.getAttribute('data-parent-id') : null;
@@ -264,10 +363,23 @@ window.tmDiagramEditor = {
         const minY = parentRect.y + padding;
         const maxX = parentRect.x + parentRect.w - childRect.w - padding;
         const maxY = parentRect.y + parentRect.h - childRect.h - padding;
-        return {
-            x: Math.max(minX, Math.min(x, maxX)),
-            y: Math.max(minY, Math.min(y, maxY))
-        };
+        let cx = Math.max(minX, Math.min(x, maxX));
+        let cy = Math.max(minY, Math.min(y, maxY));
+
+        // Also clamp to parent group bounds
+        const groupId = childEl ? childEl.getAttribute('data-parent-group-id') : null;
+        if (groupId) {
+            const groupRect = this._nodeRect(inst, groupId);
+            if (groupRect && childRect && !inst.dragNodeIds.includes(groupId)) {
+                const gMinX = groupRect.x + padding;
+                const gMinY = groupRect.y + padding;
+                const gMaxX = groupRect.x + groupRect.w - childRect.w - padding;
+                const gMaxY = groupRect.y + groupRect.h - childRect.h - padding;
+                cx = Math.max(gMinX, Math.min(cx, gMaxX));
+                cy = Math.max(gMinY, Math.min(cy, gMaxY));
+            }
+        }
+        return { x: cx, y: cy };
     },
 
     _includeGroupNodes: function (inst, ids) {
@@ -280,114 +392,13 @@ window.tmDiagramEditor = {
         });
         if (groupIds.size > 0 && inst.htmlLayer) {
             inst.htmlLayer.querySelectorAll('[data-group-id]').forEach(el => {
+                if (!this._isNodeInActiveGroup(inst, el)) return;
                 const gid = el.getAttribute('data-group-id');
                 const nid = el.getAttribute('data-node-id');
                 if (gid && groupIds.has(gid) && nid) allIds.add(nid);
             });
         }
         return [...allIds];
-    },
-
-    // ── Magnetic guidelines ──────────────────────────────────────────────────
-
-    _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
-        const tolerance = 8; // document pixels
-        const guides = { x: null, y: null };
-        const otherNodes = [];
-
-        if (!inst.htmlLayer) return guides;
-
-        inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
-            const nid = el.getAttribute('data-node-id');
-            if (!nid || dragNodeIds.includes(nid)) return;
-            const r = this._nodeRect(inst, nid);
-            if (r) otherNodes.push({ id: nid, x: r.x, y: r.y, w: r.w, h: r.h, cx: r.x + r.w / 2, cy: r.y + r.h / 2 });
-        });
-
-        if (otherNodes.length === 0) return guides;
-
-        for (let i = 0; i < dragNodeIds.length; i++) {
-            const id = dragNodeIds[i];
-            const start = dragStartPositions[id];
-            if (!start) continue;
-            const r = this._nodeRect(inst, id);
-            if (!r) continue;
-            const nx = start.x + dxDoc;
-            const ny = start.y + dyDoc;
-            const cx = nx + r.w / 2;
-            const cy = ny + r.h / 2;
-            const right = nx + r.w;
-            const bottom = ny + r.h;
-
-            for (const other of otherNodes) {
-                // left align
-                if (guides.x === null && Math.abs(nx - other.x) <= tolerance) {
-                    guides.x = { value: other.x, delta: other.x - nx };
-                }
-                // center align
-                if (guides.x === null && Math.abs(cx - other.cx) <= tolerance) {
-                    guides.x = { value: other.cx, delta: other.cx - cx };
-                }
-                // right align
-                if (guides.x === null && Math.abs(right - (other.x + other.w)) <= tolerance) {
-                    guides.x = { value: other.x + other.w, delta: (other.x + other.w) - right };
-                }
-                // top align
-                if (guides.y === null && Math.abs(ny - other.y) <= tolerance) {
-                    guides.y = { value: other.y, delta: other.y - ny };
-                }
-                // middle align
-                if (guides.y === null && Math.abs(cy - other.cy) <= tolerance) {
-                    guides.y = { value: other.cy, delta: other.cy - cy };
-                }
-                // bottom align
-                if (guides.y === null && Math.abs(bottom - (other.y + other.h)) <= tolerance) {
-                    guides.y = { value: other.y + other.h, delta: (other.y + other.h) - bottom };
-                }
-            }
-            if (guides.x !== null && guides.y !== null) break;
-        }
-        return guides;
-    },
-
-    _drawGuideLines: function (inst, guides) {
-        this._clearGuideLines(inst);
-        if (!inst.svg) return;
-        const vb = this._getViewBox(inst);
-        const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        g.setAttribute('class', 'tm-diagram-guidelines');
-        g.style.pointerEvents = 'none';
-
-        if (guides.x !== null) {
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', guides.x.value);
-            line.setAttribute('y1', vb.y);
-            line.setAttribute('x2', guides.x.value);
-            line.setAttribute('y2', vb.y + vb.h);
-            line.setAttribute('stroke', '#3b82f6');
-            line.setAttribute('stroke-width', '1');
-            line.setAttribute('stroke-dasharray', '4 4');
-            g.appendChild(line);
-        }
-        if (guides.y !== null) {
-            const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-            line.setAttribute('x1', vb.x);
-            line.setAttribute('y1', guides.y.value);
-            line.setAttribute('x2', vb.x + vb.w);
-            line.setAttribute('y2', guides.y.value);
-            line.setAttribute('stroke', '#3b82f6');
-            line.setAttribute('stroke-width', '1');
-            line.setAttribute('stroke-dasharray', '4 4');
-            g.appendChild(line);
-        }
-        inst.svg.appendChild(g);
-        inst.guideLines.push(g);
-    },
-
-    _clearGuideLines: function (inst) {
-        if (!inst.svg) return;
-        inst.svg.querySelectorAll('.tm-diagram-guidelines').forEach(el => el.remove());
-        inst.guideLines = [];
     },
 
     // ── Group bounds ─────────────────────────────────────────────────────────
@@ -458,7 +469,18 @@ window.tmDiagramEditor = {
 
         if (e.button !== 0) return;
 
-        // Edge waypoint handle clicked?
+        // Edge label handle clicked?
+        const labelHitEl = e.target.closest('[data-label-handle="true"]');
+        if (labelHitEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            inst.isDraggingEdgeLabel = true;
+            inst.dragEdgeLabelId = labelHitEl.getAttribute('data-edge-id');
+            inst.dragEdgeLabelStart = { x: e.clientX, y: e.clientY };
+            return;
+        }
+
+        // Edge waypoint / jetty handle clicked?
         const handleEl = e.target.closest('.tm-diagram-edge-handle');
         if (handleEl && !inst.readOnly) {
             const isWaypoint = handleEl.getAttribute('data-waypoint') === 'true';
@@ -471,6 +493,19 @@ window.tmDiagramEditor = {
                 inst.dragWaypointStartScreen = { x: e.clientX, y: e.clientY };
                 const pt = this._screenToDoc(inst, e.clientX, e.clientY);
                 inst.dragWaypointStartDoc = pt;
+                return;
+            }
+            const jettyType = handleEl.getAttribute('data-jetty');
+            if (jettyType) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.isDraggingJetty = true;
+                inst.dragJettyEdgeId = handleEl.getAttribute('data-edge-id');
+                inst.dragJettyType = jettyType;
+                inst.dragJettySide = handleEl.getAttribute('data-jetty-side');
+                inst.dragJettyNodeId = handleEl.getAttribute('data-node-id');
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dragJettyStartDoc = pt;
                 return;
             }
         }
@@ -493,9 +528,22 @@ window.tmDiagramEditor = {
             return;
         }
 
+        // Link clicked? (on a node with data-link)
+        const linkEl = e.target.closest('[data-link]');
+        if (linkEl && !e.ctrlKey && !e.metaKey && !e.shiftKey) {
+            const link = linkEl.getAttribute('data-link');
+            const nodeId = linkEl.getAttribute('data-node-id');
+            if (link && nodeId && inst.dotNetRef) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.dotNetRef.invokeMethodAsync('OnNodeLinkClicked', nodeId, link);
+                return;
+            }
+        }
+
         // Node clicked?
         const nodeEl = e.target.closest('[data-node-id]');
-        if (nodeEl) {
+        if (nodeEl && this._isNodeInActiveGroup(inst, nodeEl)) {
             e.preventDefault();
             const id = nodeEl.getAttribute('data-node-id');
             const isLocked = nodeEl.getAttribute('data-locked') === 'true';
@@ -505,6 +553,31 @@ window.tmDiagramEditor = {
                 else inst.selectedIds.add(id);
                 this._updateSelection(inst);
                 inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                return;
+            }
+
+            if (inst.toolMode === 'edge' && !inst.readOnly) {
+                const rect = this._nodeRect(inst, id);
+                if (rect) {
+                    const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    const dx = docPt.x - (rect.x + rect.w / 2);
+                    const dy = docPt.y - (rect.y + rect.h / 2);
+                    const adx = Math.abs(dx);
+                    const ady = Math.abs(dy);
+                    let side = null;
+                    let offset = 0.5;
+                    if (rect.w > 0 && rect.h > 0 && (adx > 0 || ady > 0)) {
+                        if (adx / rect.w > ady / rect.h) {
+                            side = dx > 0 ? 'right' : 'left';
+                            offset = Math.max(0, Math.min(1, (docPt.y - rect.y) / rect.h));
+                        } else {
+                            side = dy > 0 ? 'bottom' : 'top';
+                            offset = Math.max(0, Math.min(1, (docPt.x - rect.x) / rect.w));
+                        }
+                    }
+                    this._startEdgeDraw(inst, id, null, e.clientX, e.clientY, side, offset);
+                }
+                e.preventDefault();
                 return;
             }
 
@@ -525,7 +598,7 @@ window.tmDiagramEditor = {
                 if (inst.htmlLayer) {
                     inst.htmlLayer.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
                         const cid = childEl.getAttribute('data-node-id');
-                        if (cid) allIds.add(cid);
+                        if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
                     });
                 }
             });
@@ -542,6 +615,14 @@ window.tmDiagramEditor = {
             });
             inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
             inst.container.style.cursor = 'grabbing';
+            return;
+        }
+
+        // Edge tool: cancel on empty canvas click
+        if (inst.toolMode === 'edge') {
+            inst.toolMode = 'select';
+            inst.container.style.cursor = '';
+            if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
             return;
         }
 
@@ -571,6 +652,51 @@ window.tmDiagramEditor = {
         if (inst.isDraggingWaypoint) {
             const pt = this._screenToDoc(inst, e.clientX, e.clientY);
             this._updateWaypointVisuals(inst, inst.dragWaypointEdgeId, inst.dragWaypointIndex, pt.x, pt.y);
+            return;
+        }
+
+        if (inst.isDraggingJetty && inst.dragJettyEdgeId) {
+            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const nodeRect = this._nodeRect(inst, inst.dragJettyNodeId);
+            if (nodeRect) {
+                const side = inst.dragJettySide;
+                let newSpacing = 0;
+                if (side === 'left') newSpacing = nodeRect.x - pt.x;
+                else if (side === 'right') newSpacing = pt.x - (nodeRect.x + nodeRect.w);
+                else if (side === 'top') newSpacing = nodeRect.y - pt.y;
+                else if (side === 'bottom') newSpacing = pt.y - (nodeRect.y + nodeRect.h);
+                newSpacing = Math.max(0, Math.round(newSpacing));
+                const sourceSpacing = inst.dragJettyType === 'source' ? newSpacing : null;
+                const targetSpacing = inst.dragJettyType === 'target' ? newSpacing : null;
+                inst.dotNetRef.invokeMethodAsync('OnEdgeSpacingChanged', inst.dragJettyEdgeId, sourceSpacing, targetSpacing);
+            }
+            return;
+        }
+
+        if (inst.isDraggingEdgeLabel && inst.dragEdgeLabelId) {
+            const edgeId = inst.dragEdgeLabelId;
+            const pathEl = inst.svg.querySelector('.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]') || inst.svg.querySelector('path[data-edge-id="' + edgeId + '"]');
+            if (pathEl) {
+                const len = pathEl.getTotalLength();
+                const rect = inst.container.getBoundingClientRect();
+                const screenPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
+                // Find closest point on path
+                let bestT = 0;
+                let bestDist = Infinity;
+                const samples = 50;
+                for (let i = 0; i <= samples; i++) {
+                    const t = i / samples;
+                    const p = pathEl.getPointAtLength(t * len);
+                    const dx = p.x - screenPt.x;
+                    const dy = p.y - screenPt.y;
+                    const d = dx * dx + dy * dy;
+                    if (d < bestDist) {
+                        bestDist = d;
+                        bestT = t;
+                    }
+                }
+                inst.dotNetRef.invokeMethodAsync('OnEdgeLabelMoved', edgeId, bestT);
+            }
             return;
         }
 
@@ -619,6 +745,17 @@ window.tmDiagramEditor = {
             const dyDoc = dyScreen / inst.scale;
             this._setViewBox(inst, vb.x - dxDoc, vb.y - dyDoc, vb.w, vb.h);
         }
+
+        // Ruler cursor
+        if (inst.dotNetRef) {
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
+        }
+
+        // Connection hover icons
+        if (!inst.readOnly && !inst.isDrawingEdge && !inst.isDragging && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isPanning && !inst.isRubberBand) {
+            this._updateConnectHoverIcons(inst, e.clientX, e.clientY);
+        }
     },
 
     // ── Mouse up ─────────────────────────────────────────────────────────────
@@ -631,11 +768,11 @@ window.tmDiagramEditor = {
                 if (nodeEl) {
                     const targetNodeId = nodeEl.getAttribute('data-node-id');
                     const targetPortId = portEl.getAttribute('data-port-id');
-                    if (targetNodeId !== inst.drawSource.nodeId || targetPortId !== inst.drawSource.portId) {
-                        inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
-                            inst.drawSource.nodeId, inst.drawSource.portId,
-                            targetNodeId, targetPortId);
-                    }
+                    // Allow self-connections (loop edges)
+                    inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                        inst.drawSource.nodeId, inst.drawSource.portId,
+                        targetNodeId, targetPortId,
+                        inst.drawSource.side, inst.drawSource.offset, null, 0.5);
                 }
             }
             this._cancelEdgeDraw(inst);
@@ -651,6 +788,23 @@ window.tmDiagramEditor = {
             inst.dragWaypointIndex = null;
             inst.dragWaypointStartScreen = null;
             inst.dragWaypointStartDoc = null;
+            return;
+        }
+
+        if (inst.isDraggingJetty) {
+            inst.isDraggingJetty = false;
+            inst.dragJettyEdgeId = null;
+            inst.dragJettyType = null;
+            inst.dragJettySide = null;
+            inst.dragJettyNodeId = null;
+            inst.dragJettyStartDoc = null;
+            return;
+        }
+
+        if (inst.isDraggingEdgeLabel) {
+            inst.isDraggingEdgeLabel = false;
+            inst.dragEdgeLabelId = null;
+            inst.dragEdgeLabelStart = null;
             return;
         }
 
@@ -700,6 +854,7 @@ window.tmDiagramEditor = {
                     const hits = [];
                     if (inst.htmlLayer) {
                         inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+                            if (!this._isNodeInActiveGroup(inst, el)) return;
                             const id = el.getAttribute('data-node-id');
                             const r = this._nodeRect(inst, id);
                             if (!r) return;
@@ -827,7 +982,7 @@ window.tmDiagramEditor = {
             inst.longPressStart = { x: t.clientX, y: t.clientY };
             inst.longPressTimer = setTimeout(() => {
                 if (inst.longPressNodeId && inst.dotNetRef) {
-                    inst.dotNetRef.invokeMethodAsync('OnContextMenu', inst.longPressNodeId, inst.longPressStart.x, inst.longPressStart.y);
+                    inst.dotNetRef.invokeMethodAsync('OnNodeContextMenu', inst.longPressNodeId, inst.longPressStart.x, inst.longPressStart.y);
                 }
                 inst.longPressTimer = null;
                 inst.longPressNodeId = null;
@@ -973,10 +1128,10 @@ window.tmDiagramEditor = {
 
     // ── Edge drawing helpers ─────────────────────────────────────────────────
 
-    _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY) {
+    _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY, side, offset) {
         inst.isDrawingEdge = true;
         const docPt = this._screenToDoc(inst, clientX, clientY);
-        inst.drawSource = { nodeId: nodeId, portId: portId, x: docPt.x, y: docPt.y };
+        inst.drawSource = { nodeId: nodeId, portId: portId, side: side || null, offset: offset || 0.5, x: docPt.x, y: docPt.y };
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('class', 'tm-diagram-edge-draw-path');
@@ -996,11 +1151,26 @@ window.tmDiagramEditor = {
     _updateEdgeDraw: function (inst, clientX, clientY) {
         if (!inst.drawTempPath || !inst.drawSource) return;
         const docPt = this._screenToDoc(inst, clientX, clientY);
-        const d = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y + ' L ' + docPt.x + ' ' + docPt.y;
+        let endX = docPt.x;
+        let endY = docPt.y;
+
+        // Magnet snapping: find nearest node perimeter point
+        const el = document.elementFromPoint(clientX, clientY);
+        const nodeEl = el ? el.closest('[data-node-id]') : null;
+        if (nodeEl) {
+            const nid = nodeEl.getAttribute('data-node-id');
+            const rect = this._nodeRect(inst, nid);
+            if (rect) {
+                const snap = this._snapToNodePerimeter(rect, docPt.x, docPt.y);
+                endX = snap.x;
+                endY = snap.y;
+            }
+        }
+
+        const d = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y + ' L ' + endX + ' ' + endY;
         inst.drawTempPath.setAttribute('d', d);
 
         // Port snapping highlight
-        const el = document.elementFromPoint(clientX, clientY);
         const portEl = el ? el.closest('.tm-diagram-port') : null;
         inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
         if (portEl) {
@@ -1010,6 +1180,101 @@ window.tmDiagramEditor = {
                 portEl.classList.add('tm-diagram-port--target');
             }
         }
+    },
+
+    _snapToNodePerimeter: function (rect, x, y) {
+        // Find closest point on rectangle perimeter
+        let cx = Math.max(rect.x, Math.min(x, rect.x + rect.w));
+        let cy = Math.max(rect.y, Math.min(y, rect.y + rect.h));
+        const dx = cx - x;
+        const dy = cy - y;
+        // If inside, project to nearest edge
+        if (dx === 0 && dy === 0) {
+            const dl = x - rect.x;
+            const dr = rect.x + rect.w - x;
+            const dt = y - rect.y;
+            const db = rect.y + rect.h - y;
+            const min = Math.min(dl, dr, dt, db);
+            if (min === dl) return { x: rect.x, y: y };
+            if (min === dr) return { x: rect.x + rect.w, y: y };
+            if (min === dt) return { x: x, y: rect.y };
+            return { x: x, y: rect.y + rect.h };
+        }
+        return { x: cx, y: cy };
+    },
+
+    _updateConnectHoverIcons: function (inst, clientX, clientY) {
+        if (inst.isDrawingEdge || inst.isDragging || inst.isDraggingWaypoint || inst.isDraggingJetty || inst.isDraggingEdgeLabel || inst.isPanning || inst.isRubberBand) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const el = document.elementFromPoint(clientX, clientY);
+        const nodeEl = el ? el.closest('[data-node-id]') : null;
+        if (!nodeEl || !this._isNodeInActiveGroup(inst, nodeEl)) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const nodeId = nodeEl.getAttribute('data-node-id');
+        const rect = this._nodeRect(inst, nodeId);
+        if (!rect) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        const dx = Math.max(rect.x - docPt.x, 0, docPt.x - (rect.x + rect.w));
+        const dy = Math.max(rect.y - docPt.y, 0, docPt.y - (rect.y + rect.h));
+        const distPx = Math.max(dx, dy) * inst.scale;
+        if (distPx > 15) {
+            this._hideConnectHoverIcons(inst);
+            return;
+        }
+        this._showConnectHoverIcons(inst, nodeId, rect, nodeEl);
+    },
+
+    _showConnectHoverIcons: function (inst, nodeId, rect, nodeEl) {
+        if (inst.hoverConnectNodeId === nodeId) return;
+        this._hideConnectHoverIcons(inst);
+        inst.hoverConnectNodeId = nodeId;
+        const dirs = [
+            { css: 'n', side: 'top' },
+            { css: 'e', side: 'right' },
+            { css: 's', side: 'bottom' },
+            { css: 'w', side: 'left' },
+        ];
+        dirs.forEach(d => {
+            const btn = document.createElement('div');
+            btn.className = 'tm-diagram-hover-connect tm-diagram-hover-connect--' + d.css;
+            btn.setAttribute('data-hover-side', d.side);
+            btn.style.cssText = 'position:absolute;width:22px;height:22px;border-radius:50%;background:#fff;border:1px solid var(--tm-color-primary,#3b82f6);display:flex;align-items:center;justify-content:center;cursor:crosshair;z-index:50;box-shadow:0 1px 3px rgba(0,0,0,0.12);pointer-events:all;';
+            if (d.css === 'n') { btn.style.top = '-24px'; btn.style.left = 'calc(50% - 11px)'; }
+            else if (d.css === 'e') { btn.style.top = 'calc(50% - 11px)'; btn.style.right = '-24px'; }
+            else if (d.css === 's') { btn.style.bottom = '-24px'; btn.style.left = 'calc(50% - 11px)'; }
+            else if (d.css === 'w') { btn.style.top = 'calc(50% - 11px)'; btn.style.left = '-24px'; }
+            btn.innerHTML = '<span style="font-size:12px;color:var(--tm-color-primary,#3b82f6);transform:rotate(' + (d.css === 'n' ? '-90deg' : d.css === 's' ? '90deg' : d.css === 'w' ? '180deg' : '0deg') + ')">→</span>';
+            btn.onmousedown = (e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+                let offset = 0.5;
+                if (d.side === 'top' || d.side === 'bottom') {
+                    offset = Math.max(0, Math.min(1, (docPt.x - rect.x) / rect.w));
+                } else {
+                    offset = Math.max(0, Math.min(1, (docPt.y - rect.y) / rect.h));
+                }
+                this._startEdgeDraw(inst, nodeId, null, e.clientX, e.clientY, d.side, offset);
+            };
+            nodeEl.appendChild(btn);
+            if (!inst.hoverConnectEls) inst.hoverConnectEls = [];
+            inst.hoverConnectEls.push(btn);
+        });
+    },
+
+    _hideConnectHoverIcons: function (inst) {
+        if (inst.hoverConnectEls) {
+            inst.hoverConnectEls.forEach(el => { if (el.parentNode) el.parentNode.removeChild(el); });
+            inst.hoverConnectEls = null;
+        }
+        inst.hoverConnectNodeId = null;
     },
 
     _cancelEdgeDraw: function (inst) {
@@ -1024,6 +1289,13 @@ window.tmDiagramEditor = {
             inst.drawSource = null;
         }
         inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+
+        // Return to select mode after using edge tool
+        if (inst.toolMode === 'edge') {
+            inst.toolMode = 'select';
+            inst.container.style.cursor = '';
+            if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+        }
     },
 
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
@@ -1093,6 +1365,80 @@ window.tmDiagramEditor = {
                     e.preventDefault();
                     inst.dotNetRef.invokeMethodAsync('OnShowSearch');
                     return;
+                case 'h':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnShowReplace');
+                    return;
+                case 'b':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleBold');
+                    return;
+                case 'i':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleItalic');
+                    return;
+                case 'u':
+                    e.preventDefault();
+                    if (ids.length > 0) inst.dotNetRef.invokeMethodAsync('OnToggleUnderline');
+                    return;
+                case 'home':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnNavigateToCorner', 'top-left');
+                    return;
+                case 'end':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnNavigateToCorner', 'bottom-right');
+                    return;
+                case 'pageup':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnSwitchPage', -1);
+                    return;
+                case 'pagedown':
+                    e.preventDefault();
+                    inst.dotNetRef.invokeMethodAsync('OnSwitchPage', 1);
+                    return;
+                case 'g':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        if (ids.length === 1) {
+                            const selId = ids[0];
+                            const el = this._nodeEl(inst, selId);
+                            if (el && el.getAttribute('data-stencil-id') === 'general.group') {
+                                inst.dotNetRef.invokeMethodAsync('OnEnterGroup', selId);
+                                return;
+                            }
+                        }
+                        if (ids.length > 1) inst.dotNetRef.invokeMethodAsync('OnGroupSelected');
+                    }
+                    return;
+                case 'f':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        inst.dotNetRef.invokeMethodAsync('OnExitGroup');
+                    }
+                    return;
+                case 'l':
+                    if (e.shiftKey) {
+                        e.preventDefault();
+                        inst.dotNetRef.invokeMethodAsync('OnLockSelected');
+                    }
+                    return;
+            }
+        }
+
+        // Quick-insert stencils (A,S,D,F,R)
+        if (!e.ctrlKey && !e.metaKey && !e.target.matches('input,textarea,select')) {
+            const stencilMap = {
+                'KeyA': 'general.text',
+                'KeyS': 'general.sticky-note',
+                'KeyD': 'general.rectangle',
+                'KeyF': 'general.ellipse',
+                'KeyR': 'general.rhombus'
+            };
+            if (stencilMap[e.code]) {
+                e.preventDefault();
+                inst.dotNetRef.invokeMethodAsync('OnQuickInsert', stencilMap[e.code]);
+                return;
             }
         }
 
@@ -1122,6 +1468,13 @@ window.tmDiagramEditor = {
                 inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
                 return;
             }
+            if (e.code === 'KeyL' || e.code === 'KeyC') {
+                e.preventDefault();
+                inst.toolMode = 'edge';
+                inst.container.style.cursor = 'crosshair';
+                inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'edge');
+                return;
+            }
         }
 
         // Arrow nudge
@@ -1133,14 +1486,22 @@ window.tmDiagramEditor = {
             const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
             const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
 
-            ids.forEach(id => {
+            // Filter to active group and include group nodes
+            let nudgeIds = ids.filter(id => {
+                const el = this._nodeEl(inst, id);
+                return this._isNodeInActiveGroup(inst, el);
+            });
+            nudgeIds = this._includeGroupNodes(inst, nudgeIds);
+
+            nudgeIds.forEach(id => {
                 const r = this._nodeRect(inst, id);
                 if (!r) return;
-                this._setNodeTranslate(inst, id, r.x + dx, r.y + dy);
+                const clamped = this._clampChildPosition(inst, id, r.x + dx, r.y + dy);
+                this._setNodeTranslate(inst, id, clamped.x, clamped.y);
             });
             this._updateSelection(inst);
 
-            const moves = ids.map(id => {
+            const moves = nudgeIds.map(id => {
                 const r = this._nodeRect(inst, id);
                 return r ? { id, x: r.x, y: r.y } : null;
             }).filter(Boolean);
@@ -1235,15 +1596,217 @@ window.tmDiagramEditor = {
         return el;
     },
 
+    // ── Obstacle-avoiding orthogonal router ─────────────────────────────────
+
+    _simplifyWaypoints: function (waypoints) {
+        if (!waypoints || waypoints.length < 3) return waypoints;
+        const result = [waypoints[0]];
+        for (let i = 1; i < waypoints.length - 1; i++) {
+            const prev = result[result.length - 1];
+            const curr = waypoints[i];
+            const next = waypoints[i + 1];
+            if ((prev[0] === curr[0] && curr[0] === next[0]) || (prev[1] === curr[1] && curr[1] === next[1])) {
+                continue;
+            }
+            result.push(curr);
+        }
+        result.push(waypoints[waypoints.length - 1]);
+        return result;
+    },
+
+    _computeObstacleAvoidingWaypoints: function (sx1, sy1, sx2, sy2, obstacles) {
+        if (!obstacles || obstacles.length === 0) return null;
+
+        const margin = 12;
+        const expanded = obstacles.map(function (o) {
+            return {
+                x: o.x - margin,
+                y: o.y - margin,
+                w: o.w + margin * 2,
+                h: o.h + margin * 2
+            };
+        });
+
+        const xSet = new Set();
+        const ySet = new Set();
+        xSet.add(sx1);
+        xSet.add(sx2);
+        ySet.add(sy1);
+        ySet.add(sy2);
+
+        for (let i = 0; i < expanded.length; i++) {
+            const o = expanded[i];
+            xSet.add(o.x);
+            xSet.add(o.x + o.w);
+            ySet.add(o.y);
+            ySet.add(o.y + o.h);
+        }
+
+        let xs = Array.from(xSet).sort(function (a, b) { return a - b; });
+        let ys = Array.from(ySet).sort(function (a, b) { return a - b; });
+
+        // Add midpoints between adjacent coordinates to ensure narrow channels are represented
+        const augmentedXs = [];
+        for (let i = 0; i < xs.length; i++) {
+            augmentedXs.push(xs[i]);
+            if (i < xs.length - 1 && xs[i + 1] - xs[i] > 1) {
+                augmentedXs.push((xs[i] + xs[i + 1]) / 2);
+            }
+        }
+        const augmentedYs = [];
+        for (let i = 0; i < ys.length; i++) {
+            augmentedYs.push(ys[i]);
+            if (i < ys.length - 1 && ys[i + 1] - ys[i] > 1) {
+                augmentedYs.push((ys[i] + ys[i + 1]) / 2);
+            }
+        }
+
+        xs = augmentedXs.sort(function (a, b) { return a - b; });
+        ys = augmentedYs.sort(function (a, b) { return a - b; });
+
+        const xToIdx = {};
+        const yToIdx = {};
+        for (let i = 0; i < xs.length; i++) xToIdx[xs[i]] = i;
+        for (let i = 0; i < ys.length; i++) yToIdx[ys[i]] = i;
+
+        const startX = xToIdx[sx1];
+        const startY = yToIdx[sy1];
+        const endX = xToIdx[sx2];
+        const endY = yToIdx[sy2];
+
+        function intersectsObstacle(x1, y1, x2, y2) {
+            const minX = Math.min(x1, x2);
+            const maxX = Math.max(x1, x2);
+            const minY = Math.min(y1, y2);
+            const maxY = Math.max(y1, y2);
+            for (let i = 0; i < expanded.length; i++) {
+                const o = expanded[i];
+                const ox1 = o.x, oy1 = o.y, ox2 = o.x + o.w, oy2 = o.y + o.h;
+                if (maxX <= ox1 || minX >= ox2 || maxY <= oy1 || minY >= oy2) continue;
+                if (y1 === y2) {
+                    if (y1 > oy1 && y1 < oy2 && maxX > ox1 && minX < ox2) return true;
+                } else if (x1 === x2) {
+                    if (x1 > ox1 && x1 < ox2 && maxY > oy1 && minY < oy2) return true;
+                }
+            }
+            return false;
+        }
+
+        // A* with turn penalty
+        const open = [];
+        const closed = new Set();
+        const gScore = {};
+        const fScore = {};
+        const cameFrom = {};
+
+        function makeKey(x, y) { return x + ',' + y; }
+
+        function pushOpen(k, f) {
+            open.push({ k: k, f: f });
+            open.sort(function (a, b) { return a.f - b.f; });
+        }
+
+        function popOpen() {
+            return open.shift().k;
+        }
+
+        const sKey = makeKey(startX, startY);
+        gScore[sKey] = 0;
+        fScore[sKey] = Math.abs(sx2 - sx1) + Math.abs(sy2 - sy1);
+        pushOpen(sKey, fScore[sKey]);
+
+        while (open.length > 0) {
+            const current = popOpen();
+            if (current === makeKey(endX, endY)) {
+                const path = [];
+                let c = current;
+                while (c) {
+                    const parts = c.split(',');
+                    const cx = parseInt(parts[0], 10);
+                    const cy = parseInt(parts[1], 10);
+                    path.push([xs[cx], ys[cy]]);
+                    c = cameFrom[c];
+                }
+                path.reverse();
+                return this._simplifyWaypoints(path);
+            }
+
+            closed.add(current);
+
+            const parts = current.split(',');
+            const cx = parseInt(parts[0], 10);
+            const cy = parseInt(parts[1], 10);
+            const cxVal = xs[cx];
+            const cyVal = ys[cy];
+
+            const neighbors = [];
+            if (cx > 0) neighbors.push([cx - 1, cy, xs[cx - 1], cyVal]);
+            if (cx < xs.length - 1) neighbors.push([cx + 1, cy, xs[cx + 1], cyVal]);
+            if (cy > 0) neighbors.push([cx, cy - 1, cxVal, ys[cy - 1]]);
+            if (cy < ys.length - 1) neighbors.push([cx, cy + 1, cxVal, ys[cy + 1]]);
+
+            for (let i = 0; i < neighbors.length; i++) {
+                const n = neighbors[i];
+                const nx = n[0], ny = n[1], nxVal = n[2], nyVal = n[3];
+                const nKey = makeKey(nx, ny);
+                if (closed.has(nKey)) continue;
+                if (intersectsObstacle(cxVal, cyVal, nxVal, nyVal)) continue;
+
+                const moveDist = Math.abs(nxVal - cxVal) + Math.abs(nyVal - cyVal);
+                let turnPenalty = 0;
+                if (cameFrom[current]) {
+                    const cparts = cameFrom[current].split(',');
+                    const px = parseInt(cparts[0], 10);
+                    const py = parseInt(cparts[1], 10);
+                    const dx1 = cx - px;
+                    const dy1 = cy - py;
+                    const dx2 = nx - cx;
+                    const dy2 = ny - cy;
+                    if (dx1 !== dx2 || dy1 !== dy2) turnPenalty = 40;
+                }
+
+                const tentativeG = gScore[current] + moveDist + turnPenalty;
+                if (!(nKey in gScore) || tentativeG < gScore[nKey]) {
+                    cameFrom[nKey] = current;
+                    gScore[nKey] = tentativeG;
+                    fScore[nKey] = tentativeG + Math.abs(nxVal - sx2) + Math.abs(nyVal - sy2);
+                    pushOpen(nKey, fScore[nKey]);
+                }
+            }
+        }
+
+        return null;
+    },
+
     // ── Orthogonal router ────────────────────────────────────────────────────
 
-    _computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing) {
+    _computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles) {
         routing = (routing || 'orthogonal').toLowerCase();
         sourceSpacing = sourceSpacing || 0;
         targetSpacing = targetSpacing || 0;
 
-        const s1 = (side1 || '').toLowerCase();
-        const s2 = (side2 || '').toLowerCase();
+        let s1 = (side1 || '').toLowerCase();
+        let s2 = (side2 || '').toLowerCase();
+
+        // Swimlane-aware routing: force entry direction based on swimlane orientation
+        if (srcBounds && srcBounds.isSwimlane) {
+            if (srcBounds.isHorizontal) {
+                // Force left/right exit for horizontal swimlane
+                if (s1 !== 'left' && s1 !== 'right') s1 = x1 < x2 ? 'right' : 'left';
+            } else {
+                // Force top/bottom exit for vertical swimlane
+                if (s1 !== 'top' && s1 !== 'bottom') s1 = y1 < y2 ? 'bottom' : 'top';
+            }
+        }
+        if (tgtBounds && tgtBounds.isSwimlane) {
+            if (tgtBounds.isHorizontal) {
+                // Force left/right entry for horizontal swimlane
+                if (s2 !== 'left' && s2 !== 'right') s2 = x1 < x2 ? 'left' : 'right';
+            } else {
+                // Force top/bottom entry for vertical swimlane
+                if (s2 !== 'top' && s2 !== 'bottom') s2 = y1 < y2 ? 'top' : 'bottom';
+            }
+        }
 
         const dx1 = s1 === 'left' ? -1 : s1 === 'right' ? 1 : 0;
         const dy1 = s1 === 'top' ? -1 : s1 === 'bottom' ? 1 : 0;
@@ -1293,6 +1856,15 @@ window.tmDiagramEditor = {
         }
 
         // orthogonal (default) and rounded
+        if (routing === 'orthogonal' || routing === 'rounded') {
+            const obstaclePath = this._computeObstacleAvoidingWaypoints(sx1, sy1, sx2, sy2, obstacles);
+            if (obstaclePath && obstaclePath.length >= 2) {
+                // obstaclePath includes start and end; we need intermediate waypoints only
+                return obstaclePath.slice(1, obstaclePath.length - 1);
+            }
+        }
+
+        // Simple fallback for orthogonal, rounded, and any other routing
         if (dx1 !== 0 && dx2 !== 0) {
             const midX = (sx1 + sx2) / 2;
             return [[midX, sy1], [midX, sy2]];
@@ -1318,6 +1890,12 @@ window.tmDiagramEditor = {
         if (!inst) return;
         inst.selectedIds = new Set(ids || []);
         this._updateSelection(inst);
+    },
+
+    setActiveGroupId: function (container, activeGroupId) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.activeGroupId = activeGroupId || null;
     },
 
     zoomTo: function (container, scale) {
@@ -1410,6 +1988,15 @@ window.tmDiagramEditor = {
             inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
     },
 
+    addPageViewMargin: function (container, margin) {
+        const inst = this.instances.get(container ? container.id : null);
+        if (!inst || !inst.svg) return;
+        const vb = this._getViewBox(inst);
+        this._setViewBox(inst, vb.x - margin, vb.y - margin, vb.w + margin * 2, vb.h + margin * 2);
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x - margin, vb.y - margin, vb.w + margin * 2, vb.h + margin * 2);
+    },
+
     // ── Toolbox drag init ─────────────────────────────────────────────────────
 
     initToolbox: function (toolboxElement) {
@@ -1495,8 +2082,8 @@ window.tmDiagramEditor = {
         document.addEventListener('mouseup', up);
     },
 
-    computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing) {
-        return this._computeOrthogonalWaypoints(x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing);
+    computeOrthogonalWaypoints: function (x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles) {
+        return this._computeOrthogonalWaypoints(x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles);
     },
 
     screenToDoc: function (container, clientX, clientY) {
@@ -1525,7 +2112,7 @@ window.tmDiagramEditor = {
 
     _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
         const threshold = 8 / inst.scale; // 8 screen px
-        const guides = { x: null, y: null };
+        const guides = { x: null, y: null, distances: { x: null, y: null } };
         if (!inst.htmlLayer) return guides;
 
         const draggedRects = dragNodeIds.map(id => {
@@ -1585,7 +2172,76 @@ window.tmDiagramEditor = {
 
         if (xBest) guides.x = xBest;
         if (yBest) guides.y = yBest;
+
+        // Distance guides
+        if (draggedRects.length > 0) {
+            const dragBounds = {
+                left: Math.min(...draggedRects.map(r => r.left)),
+                right: Math.max(...draggedRects.map(r => r.right)),
+                top: Math.min(...draggedRects.map(r => r.top)),
+                bottom: Math.max(...draggedRects.map(r => r.bottom)),
+            };
+            const distThreshold = 500; // document px max distance to show label
+
+            // X axis distances
+            let leftNeighbor = null;
+            let rightNeighbor = null;
+            let minLeftGap = Infinity;
+            let minRightGap = Infinity;
+            for (const t of allRects) {
+                const gapLeft = dragBounds.left - t.right;
+                const gapRight = t.left - dragBounds.right;
+                if (gapLeft >= 0 && gapLeft < minLeftGap) { minLeftGap = gapLeft; leftNeighbor = t; }
+                if (gapRight >= 0 && gapRight < minRightGap) { minRightGap = gapRight; rightNeighbor = t; }
+            }
+            if (leftNeighbor && minLeftGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== leftNeighbor && Math.abs((dragBounds.left - t.right) - minLeftGap) < 1);
+                guides.distances.x = { value: minLeftGap, from: leftNeighbor.right, to: dragBounds.left, side: 'left', consistent };
+            } else if (rightNeighbor && minRightGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== rightNeighbor && Math.abs((t.left - dragBounds.right) - minRightGap) < 1);
+                guides.distances.x = { value: minRightGap, from: dragBounds.right, to: rightNeighbor.left, side: 'right', consistent };
+            }
+
+            // Y axis distances
+            let topNeighbor = null;
+            let bottomNeighbor = null;
+            let minTopGap = Infinity;
+            let minBottomGap = Infinity;
+            for (const t of allRects) {
+                const gapTop = dragBounds.top - t.bottom;
+                const gapBottom = t.top - dragBounds.bottom;
+                if (gapTop >= 0 && gapTop < minTopGap) { minTopGap = gapTop; topNeighbor = t; }
+                if (gapBottom >= 0 && gapBottom < minBottomGap) { minBottomGap = gapBottom; bottomNeighbor = t; }
+            }
+            if (topNeighbor && minTopGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== topNeighbor && Math.abs((dragBounds.top - t.bottom) - minTopGap) < 1);
+                guides.distances.y = { value: minTopGap, from: topNeighbor.bottom, to: dragBounds.top, side: 'top', consistent };
+            } else if (bottomNeighbor && minBottomGap <= distThreshold) {
+                const consistent = allRects.some(t => t !== bottomNeighbor && Math.abs((t.top - dragBounds.bottom) - minBottomGap) < 1);
+                guides.distances.y = { value: minBottomGap, from: dragBounds.bottom, to: bottomNeighbor.top, side: 'bottom', consistent };
+            }
+        }
+
         return guides;
+    },
+
+    _formatDistance: function (inst, px) {
+        const unit = (inst.rulerUnit || 'px').toLowerCase();
+        const scale = inst.pageScale || 1.0;
+        const dpi = 96.0;
+        let factor = 1.0;
+        switch (unit) {
+            case 'pt': factor = 72.0 / dpi; break;
+            case 'in': factor = 1.0 / dpi; break;
+            case 'mm': factor = 25.4 / dpi; break;
+            case 'm': factor = 0.0254 / dpi; break;
+        }
+        const val = px * factor / scale;
+        let s = val.toFixed(2);
+        if (s.endsWith('.00')) s = s.slice(0, -3);
+        else if (s.endsWith('0')) s = s.slice(0, -1);
+        if (s === '-0') s = '0';
+        return s + ' ' + unit;
     },
 
     _drawGuideLines: function (inst, guides) {
@@ -1622,6 +2278,56 @@ window.tmDiagramEditor = {
             line.setAttribute('stroke-dasharray', (4 / inst.scale) + ',' + (4 / inst.scale));
             g.appendChild(line);
         }
+
+        // Distance guide lines & labels
+        if (guides.distances) {
+            if (guides.distances.x) {
+                const d = guides.distances.x;
+                const midY = vb.y + vb.h / 2;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', d.from);
+                line.setAttribute('y1', midY);
+                line.setAttribute('x2', d.to);
+                line.setAttribute('y2', midY);
+                line.setAttribute('stroke', '#10b981'); // emerald-500
+                line.setAttribute('stroke-width', 1 / inst.scale);
+                line.setAttribute('marker-start', 'url(#arrow-emerald)');
+                line.setAttribute('marker-end', 'url(#arrow-emerald)');
+                g.appendChild(line);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', (d.from + d.to) / 2);
+                text.setAttribute('y', midY - (4 / inst.scale));
+                text.setAttribute('text-anchor', 'middle');
+                text.setAttribute('class', 'tm-diagram-distance-label');
+                text.setAttribute('font-size', (11 / inst.scale));
+                text.textContent = this._formatDistance(inst, d.value);
+                g.appendChild(text);
+            }
+            if (guides.distances.y) {
+                const d = guides.distances.y;
+                const midX = vb.x + vb.w / 2;
+                const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+                line.setAttribute('x1', midX);
+                line.setAttribute('y1', d.from);
+                line.setAttribute('x2', midX);
+                line.setAttribute('y2', d.to);
+                line.setAttribute('stroke', '#10b981');
+                line.setAttribute('stroke-width', 1 / inst.scale);
+                line.setAttribute('marker-start', 'url(#arrow-emerald)');
+                line.setAttribute('marker-end', 'url(#arrow-emerald)');
+                g.appendChild(line);
+                const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+                text.setAttribute('x', midX + (4 / inst.scale));
+                text.setAttribute('y', (d.from + d.to) / 2);
+                text.setAttribute('text-anchor', 'start');
+                text.setAttribute('dominant-baseline', 'middle');
+                text.setAttribute('class', 'tm-diagram-distance-label');
+                text.setAttribute('font-size', (11 / inst.scale));
+                text.textContent = this._formatDistance(inst, d.value);
+                g.appendChild(text);
+            }
+        }
+
         if (g.childNodes.length > 0) {
             inst.svg.appendChild(g);
         }
@@ -1665,6 +2371,169 @@ window.tmDiagramEditor = {
         g.nodes().forEach(function(v) {
             const node = g.node(v);
             result.push({ id: v, x: node.x - node.width / 2, y: node.y - node.height / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Tree Layout (d3-hierarchy) ───────────────────────────────────────────
+
+    runTreeLayout: function (container, nodes, edges, direction) {
+        if (typeof d3 === 'undefined' || !d3.tree) {
+            console.warn('d3-hierarchy not loaded');
+            return null;
+        }
+        const nodeMap = new Map(nodes.map(n => [n.id, n]));
+        const inDegree = new Map();
+        nodes.forEach(n => inDegree.set(n.id, 0));
+        edges.forEach(e => {
+            if (inDegree.has(e.target)) inDegree.set(e.target, inDegree.get(e.target) + 1);
+        });
+
+        const roots = nodes.filter(n => inDegree.get(n.id) === 0).map(n => n.id);
+
+        let hierarchyData;
+        if (roots.length === 0) {
+            // Cycle: pick arbitrary root
+            hierarchyData = { name: nodes[0].id, children: this._buildTreeChildren(nodes[0].id, nodeMap, edges, new Set()) };
+        } else if (roots.length === 1) {
+            hierarchyData = { name: roots[0], children: this._buildTreeChildren(roots[0], nodeMap, edges, new Set()) };
+        } else {
+            const children = roots.map(r => ({ name: r, children: this._buildTreeChildren(r, nodeMap, edges, new Set()) }));
+            hierarchyData = { name: '__virtual_root__', children: children };
+        }
+
+        const root = d3.hierarchy(hierarchyData);
+        const nodeCount = nodes.length;
+        const avgSize = Math.max(60, nodes.reduce((s, n) => s + n.width + n.height, 0) / (nodeCount * 2));
+        const sizeW = nodeCount * avgSize * 1.5;
+        const sizeH = nodeCount * avgSize * 1.2;
+
+        const isHorizontal = direction === 'LR' || direction === 'RL';
+        const treeLayout = d3.tree().size(isHorizontal ? [sizeH, sizeW] : [sizeW, sizeH]);
+        treeLayout(root);
+
+        const result = [];
+        root.descendants().forEach(d => {
+            if (d.data.name === '__virtual_root__') return;
+            const n = nodeMap.get(d.data.name);
+            if (!n) return;
+            let x = d.x;
+            let y = d.y;
+            if (direction === 'BT') {
+                y = sizeH - y;
+            } else if (direction === 'RL') {
+                x = sizeW - x;
+            }
+            result.push({ id: d.data.name, x: x - n.width / 2, y: y - n.height / 2 });
+        });
+
+        return result;
+    },
+
+    _buildTreeChildren: function (parentId, nodeMap, edges, visited) {
+        visited.add(parentId);
+        const children = [];
+        edges.forEach(e => {
+            if (e.source === parentId && !visited.has(e.target)) {
+                children.push({
+                    name: e.target,
+                    children: this._buildTreeChildren(e.target, nodeMap, edges, visited)
+                });
+            }
+        });
+        return children;
+    },
+
+    // ── Force-directed Layout (d3-force) ─────────────────────────────────────
+
+    runForceLayout: function (container, nodes, edges, options) {
+        if (typeof d3 === 'undefined' || !d3.forceSimulation) {
+            console.warn('d3-force not loaded');
+            return null;
+        }
+        const opts = options || {};
+        const width = opts.width || 800;
+        const height = opts.height || 600;
+        const linkDistance = opts.linkDistance || 100;
+        const chargeStrength = opts.chargeStrength || -300;
+        const collideRadius = opts.collideRadius || 40;
+        const ticks = opts.ticks || 300;
+
+        const nodeMap = new Map();
+        const simNodes = nodes.map(n => {
+            const sn = { id: n.id, x: width / 2 + (Math.random() - 0.5) * 50, y: height / 2 + (Math.random() - 0.5) * 50, width: n.width, height: n.height };
+            nodeMap.set(n.id, sn);
+            return sn;
+        });
+
+        const simLinks = edges.map(e => ({
+            source: nodeMap.get(e.source),
+            target: nodeMap.get(e.target)
+        })).filter(l => l.source && l.target);
+
+        const simulation = d3.forceSimulation(simNodes)
+            .force('link', d3.forceLink(simLinks).id(d => d.id).distance(linkDistance))
+            .force('charge', d3.forceManyBody().strength(chargeStrength))
+            .force('center', d3.forceCenter(width / 2, height / 2))
+            .force('collide', d3.forceCollide().radius(d => collideRadius))
+            .stop();
+
+        for (let i = 0; i < ticks; i++) {
+            simulation.tick();
+        }
+
+        const result = [];
+        simNodes.forEach(n => {
+            const original = nodes.find(x => x.id === n.id);
+            const w = original ? original.width : 0;
+            const h = original ? original.height : 0;
+            const x = Number.isFinite(n.x) ? n.x : width / 2;
+            const y = Number.isFinite(n.y) ? n.y : height / 2;
+            result.push({ id: n.id, x: x - w / 2, y: y - h / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Circle Layout ────────────────────────────────────────────────────────
+
+    runCircleLayout: function (container, nodes, options) {
+        const opts = options || {};
+        const maxSize = Math.max(60, ...nodes.map(n => Math.max(n.width, n.height)));
+        const radius = opts.radius || (maxSize * nodes.length / (2 * Math.PI) + maxSize);
+        const centerX = opts.centerX || radius + maxSize;
+        const centerY = opts.centerY || radius + maxSize;
+        const startAngle = opts.startAngle || 0;
+
+        const result = [];
+        const count = nodes.length;
+        nodes.forEach((n, i) => {
+            const angle = startAngle + (2 * Math.PI * i / count);
+            const x = centerX + radius * Math.cos(angle);
+            const y = centerY + radius * Math.sin(angle);
+            result.push({ id: n.id, x: x - n.width / 2, y: y - n.height / 2 });
+        });
+
+        return result;
+    },
+
+    // ── Grid / Matrix Layout ─────────────────────────────────────────────────
+
+    runGridLayout: function (container, nodes, options) {
+        const opts = options || {};
+        const cellWidth = opts.cellWidth || 180;
+        const cellHeight = opts.cellHeight || 120;
+        const padding = opts.padding || 20;
+        const columns = opts.columns || Math.ceil(Math.sqrt(nodes.length));
+
+        const result = [];
+        nodes.forEach((n, i) => {
+            const col = n.gridColumn !== undefined ? n.gridColumn : (i % columns);
+            const row = n.gridRow !== undefined ? n.gridRow : Math.floor(i / columns);
+            const x = padding + col * (cellWidth + padding);
+            const y = padding + row * (cellHeight + padding);
+            result.push({ id: n.id, x: x, y: y });
         });
 
         return result;

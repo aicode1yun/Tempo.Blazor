@@ -23,10 +23,52 @@ public partial class TmDiagramSearchPanel : ComponentBase
     /// <summary>Fires when the panel should close.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
 
+    /// <summary>When true, search spans all pages instead of just the active one.</summary>
+    [Parameter] public bool SearchAllPages { get; set; }
+
+    /// <summary>Fires when the "search all pages" toggle changes.</summary>
+    [Parameter] public EventCallback<bool> SearchAllPagesChanged { get; set; }
+
+    /// <summary>Current replacement text.</summary>
+    [Parameter] public string ReplaceQuery { get; set; } = string.Empty;
+
+    /// <summary>Fires when the replacement text changes.</summary>
+    [Parameter] public EventCallback<string> ReplaceQueryChanged { get; set; }
+
+    /// <summary>When true, the query is treated as a regular expression.</summary>
+    [Parameter] public bool UseRegex { get; set; }
+
+    /// <summary>Fires when the regex toggle changes.</summary>
+    [Parameter] public EventCallback<bool> UseRegexChanged { get; set; }
+
+    /// <summary>Error message displayed when the regex pattern is invalid.</summary>
+    [Parameter] public string? RegexError { get; set; }
+
+    /// <summary>Fires when the user clicks the Replace button.</summary>
+    [Parameter] public EventCallback OnReplace { get; set; }
+
+    /// <summary>Fires when the user clicks the Replace All button.</summary>
+    [Parameter] public EventCallback OnReplaceAll { get; set; }
+
+    private bool CanReplace => ResultsCount > 0 && !string.IsNullOrEmpty(Query) && string.IsNullOrEmpty(RegexError);
+    private bool CanReplaceAll => ResultsCount > 0 && !string.IsNullOrEmpty(Query) && string.IsNullOrEmpty(RegexError);
+
     private async Task OnQueryChanged(string value)
     {
         Query = value;
         await QueryChanged.InvokeAsync(value);
+    }
+
+    private async Task OnReplaceQueryChanged(string value)
+    {
+        ReplaceQuery = value;
+        await ReplaceQueryChanged.InvokeAsync(value);
+    }
+
+    private async Task OnUseRegexChanged(bool value)
+    {
+        UseRegex = value;
+        await UseRegexChanged.InvokeAsync(value);
     }
 
     private async Task OnPreviousClick()
@@ -45,4 +87,22 @@ public partial class TmDiagramSearchPanel : ComponentBase
 
     private async Task OnCloseClick()
         => await OnClose.InvokeAsync();
+
+    private async Task OnSearchAllPagesChanged(bool value)
+    {
+        SearchAllPages = value;
+        await SearchAllPagesChanged.InvokeAsync(value);
+    }
+
+    private async Task OnReplaceClick()
+    {
+        if (CanReplace)
+            await OnReplace.InvokeAsync();
+    }
+
+    private async Task OnReplaceAllClick()
+    {
+        if (CanReplaceAll)
+            await OnReplaceAll.InvokeAsync();
+    }
 }

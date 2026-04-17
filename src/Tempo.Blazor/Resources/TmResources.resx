@@ -591,11 +591,15 @@
   <data name="TmDiagramEditor_SelectTool" xml:space="preserve"><value>Select tool (V)</value></data>
   <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Pan tool (H)</value></data>
   <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Pan tool (H) — or hold Space</value></data>
+  <data name="TmDiagramEditor_EdgeTool" xml:space="preserve"><value>Edge tool (L)</value></data>
+  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Edge tool (L / C) — click a node to start drawing a connector</value></data>
   <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Undo</value></data>
   <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Redo</value></data>
   <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
   <data name="TmDiagramEditor_ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
   <data name="TmDiagramEditor_FitToView" xml:space="preserve"><value>Fit to view</value></data>
+  <data name="TmDiagramEditor_ToggleRulers" xml:space="preserve"><value>Toggle rulers</value></data>
+  <data name="TmDiagramEditor_RulerUnitLabel" xml:space="preserve"><value>Ruler unit</value></data>
   <data name="TmDiagramEditor_CanvasWidth" xml:space="preserve"><value>Canvas width</value></data>
   <data name="TmDiagramEditor_CanvasHeight" xml:space="preserve"><value>Canvas height</value></data>
   <data name="TmDiagramEditor_Apply" xml:space="preserve"><value>Apply</value></data>
@@ -607,6 +611,17 @@
   <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
   <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
+  <data name="TmDiagramEditor_ImportSql" xml:space="preserve"><value>Import SQL → ER</value></data>
+  <data name="TmDiagramSqlImportDialog_Title" xml:space="preserve"><value>Import SQL to ER Diagram</value></data>
+  <data name="TmDiagramSqlImportDialog_SqlLabel" xml:space="preserve"><value>SQL DDL</value></data>
+  <data name="TmDiagramSqlImportDialog_SqlPlaceholder" xml:space="preserve"><value>Paste CREATE TABLE statements here...</value></data>
+  <data name="TmDiagramSqlImportDialog_LayoutLabel" xml:space="preserve"><value>Layout direction</value></data>
+  <data name="TmDiagramSqlImportDialog_PreviewTables" xml:space="preserve"><value>Tables: {0}</value></data>
+  <data name="TmDiagramSqlImportDialog_PreviewRelations" xml:space="preserve"><value>Relations: {0}</value></data>
+  <data name="TmDiagramSqlImportDialog_ImportButton" xml:space="preserve"><value>Import</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorEmpty" xml:space="preserve"><value>Please enter SQL DDL.</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorNoTables" xml:space="preserve"><value>No tables found in the provided SQL.</value></data>
+  <data name="TmDiagramSqlImportDialog_ErrorParse" xml:space="preserve"><value>Failed to parse SQL: {0}</value></data>
   <data name="TmDiagramEditor_SwitchToEditMode" xml:space="preserve"><value>Switch to edit mode</value></data>
   <data name="TmDiagramEditor_SwitchToReadOnlyMode" xml:space="preserve"><value>Switch to read-only mode</value></data>
   <data name="TmDiagramEditor_ReadOnly" xml:space="preserve"><value>Read-only</value></data>
@@ -672,6 +687,11 @@
   <data name="TmDiagramProperties_ConnectorType" xml:space="preserve"><value>Connector type</value></data>
   <data name="TmDiagramProperties_ConnectorType_Association" xml:space="preserve"><value>Association</value></data>
   <data name="TmDiagramProperties_ConnectorType_Dependency" xml:space="preserve"><value>Dependency</value></data>
+  <data name="TmDiagramEditor_AddPage" xml:space="preserve"><value>Add page</value></data>
+  <data name="TmDiagramEditor_ClosePage" xml:space="preserve"><value>Close page "{0}"</value></data>
+  <data name="TmDiagramEditor_PageName" xml:space="preserve"><value>Page</value></data>
+  <data name="TmDiagramEditor_DuplicatePage" xml:space="preserve"><value>Duplicate page</value></data>
+  <data name="TmDiagramEditor_CopySuffix" xml:space="preserve"><value>copy</value></data>
   <data name="TmDiagramProperties_ConnectorType_Inheritance" xml:space="preserve"><value>Inheritance</value></data>
   <data name="TmDiagramProperties_ConnectorType_Composition" xml:space="preserve"><value>Composition</value></data>
   <data name="TmDiagramProperties_ConnectorType_Aggregation" xml:space="preserve"><value>Aggregation</value></data>
@@ -682,6 +702,7 @@
   <data name="TmDiagramEditor_ConnectArrowRight" xml:space="preserve"><value>Connect right</value></data>
   <data name="TmDiagramEditor_ConnectArrowBottom" xml:space="preserve"><value>Connect bottom</value></data>
   <data name="TmDiagramEditor_ConnectArrowLeft" xml:space="preserve"><value>Connect left</value></data>
+  <data name="TmDiagramEditor_ConnectTransaction" xml:space="preserve"><value>Connect shape</value></data>
   <data name="TmDiagramEditor_SelectStencilTitle" xml:space="preserve"><value>Select shape to connect</value></data>
 
   <!-- ═══════════════ TmDiagramEditor History ═══════════════ -->
@@ -706,6 +727,18 @@
   <data name="TmDiagramProperties_Arrowhead_Oval" xml:space="preserve"><value>Oval</value></data>
   <data name="TmDiagramProperties_Arrowhead_Diamond" xml:space="preserve"><value>Diamond</value></data>
   <data name="TmDiagramProperties_Arrowhead_Async" xml:space="preserve"><value>Async</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Crow" xml:space="preserve"><value>Crow's Foot</value></data>
+  <data name="TmDiagramProperties_Arrowhead_One" xml:space="preserve"><value>One</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Many</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Zero or One</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ZeroMany" xml:space="preserve"><value>Zero or Many</value></data>
+  <data name="TmDiagramProperties_Cardinality_None" xml:space="preserve"><value>None</value></data>
+  <data name="TmDiagramProperties_Cardinality_One" xml:space="preserve"><value>One</value></data>
+  <data name="TmDiagramProperties_Cardinality_Many" xml:space="preserve"><value>Many</value></data>
+  <data name="TmDiagramProperties_Cardinality_ZeroOne" xml:space="preserve"><value>Zero or One</value></data>
+  <data name="TmDiagramProperties_Cardinality_ZeroMany" xml:space="preserve"><value>Zero or Many</value></data>
+  <data name="TmDiagramProperties_SourceCardinality" xml:space="preserve"><value>Source Cardinality</value></data>
+  <data name="TmDiagramProperties_TargetCardinality" xml:space="preserve"><value>Target Cardinality</value></data>
   <data name="TmDiagramProperties_StrokeColor" xml:space="preserve"><value>Line Color</value></data>
   <data name="TmDiagramProperties_StrokeWidth" xml:space="preserve"><value>Line Width</value></data>
   <data name="TmDiagramProperties_JumpSize" xml:space="preserve"><value>Jump Size</value></data>
@@ -749,6 +782,7 @@
   <data name="TmDiagramProperties_VerticalAlign_Top" xml:space="preserve"><value>Top</value></data>
   <data name="TmDiagramProperties_VerticalAlign_Middle" xml:space="preserve"><value>Middle</value></data>
   <data name="TmDiagramProperties_VerticalAlign_Bottom" xml:space="preserve"><value>Bottom</value></data>
+  <data name="TmDiagram_EnableMathJax" xml:space="preserve"><value>MathJax</value></data>
   <data name="TmDiagramProperties_BringToFront" xml:space="preserve"><value>Bring to Front</value></data>
   <data name="TmDiagramProperties_SendToBack" xml:space="preserve"><value>Send to Back</value></data>
   <data name="TmDiagramProperties_Group" xml:space="preserve"><value>Group</value></data>
@@ -767,6 +801,18 @@
   <data name="TmDiagram_Layout" xml:space="preserve"><value>Layout</value></data>
   <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchical Top-Down</value></data>
   <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchical Left-Right</value></data>
+  <data name="TmDiagram_LayoutHierarchicalTopDown_Tooltip" xml:space="preserve"><value>Hierarchical top-down layout using Dagre</value></data>
+  <data name="TmDiagram_LayoutHierarchicalLeftRight_Tooltip" xml:space="preserve"><value>Hierarchical left-right layout using Dagre</value></data>
+  <data name="TmDiagram_LayoutTree" xml:space="preserve"><value>Tree</value></data>
+  <data name="TmDiagram_LayoutTreeLR" xml:space="preserve"><value>Tree Left-Right</value></data>
+  <data name="TmDiagram_LayoutTree_Tooltip" xml:space="preserve"><value>Tree layout using d3-hierarchy</value></data>
+  <data name="TmDiagram_LayoutTreeLR_Tooltip" xml:space="preserve"><value>Tree left-right layout using d3-hierarchy</value></data>
+  <data name="TmDiagram_LayoutForce" xml:space="preserve"><value>Force</value></data>
+  <data name="TmDiagram_LayoutForce_Tooltip" xml:space="preserve"><value>Force-directed organic layout using d3-force</value></data>
+  <data name="TmDiagram_LayoutCircle" xml:space="preserve"><value>Circle</value></data>
+  <data name="TmDiagram_LayoutCircle_Tooltip" xml:space="preserve"><value>Circle layout for context diagrams</value></data>
+  <data name="TmDiagram_LayoutGrid" xml:space="preserve"><value>Grid</value></data>
+  <data name="TmDiagram_LayoutGrid_Tooltip" xml:space="preserve"><value>Grid matrix layout</value></data>
 
   <!-- ═══════════════ TmDiagramEditor Format Painter ═══════════════ -->
   <data name="TmDiagramEditor_CopyStyle" xml:space="preserve"><value>Copy style (Ctrl+Shift+C)</value></data>
@@ -784,5 +830,124 @@
   <data name="TmDiagram_SearchPrevious" xml:space="preserve"><value>Previous result</value></data>
   <data name="TmDiagram_SearchNext" xml:space="preserve"><value>Next result</value></data>
   <data name="TmDiagram_SearchClose" xml:space="preserve"><value>Close search</value></data>
+  <data name="TmDiagram_SearchAllPages" xml:space="preserve"><value>All pages</value></data>
+  <data name="TmDiagram_ReplacePlaceholder" xml:space="preserve"><value>Replace with...</value></data>
+  <data name="TmDiagram_Replace" xml:space="preserve"><value>Replace</value></data>
+  <data name="TmDiagram_ReplaceAll" xml:space="preserve"><value>Replace All</value></data>
+  <data name="TmDiagram_UseRegex" xml:space="preserve"><value>Use regular expressions</value></data>
+  <data name="TmDiagram_RegexError" xml:space="preserve"><value>Invalid regex: {0}</value></data>
+  <data name="TmDiagram_ReplaceNoMatches" xml:space="preserve"><value>No replaceable matches</value></data>
+
+  <!-- ═══════════════ TmDiagramProperties Page ═══════════════ -->
+  <data name="TmDiagramProperties_Page" xml:space="preserve"><value>Page</value></data>
+  <data name="TmDiagramProperties_PageSize" xml:space="preserve"><value>Page Size</value></data>
+  <data name="TmDiagramProperties_PageOrientation" xml:space="preserve"><value>Orientation</value></data>
+  <data name="TmDiagramProperties_Portrait" xml:space="preserve"><value>Portrait</value></data>
+  <data name="TmDiagramProperties_Landscape" xml:space="preserve"><value>Landscape</value></data>
+  <data name="TmDiagramProperties_PageSize_A4" xml:space="preserve"><value>A4</value></data>
+  <data name="TmDiagramProperties_PageSize_Letter" xml:space="preserve"><value>Letter</value></data>
+  <data name="TmDiagramProperties_PageSize_Legal" xml:space="preserve"><value>Legal</value></data>
+  <data name="TmDiagramProperties_PageSize_A3" xml:space="preserve"><value>A3</value></data>
+  <data name="TmDiagramProperties_PageSize_A5" xml:space="preserve"><value>A5</value></data>
+  <data name="TmDiagramProperties_PageSize_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="TmDiagramProperties_Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="TmDiagramProperties_Link" xml:space="preserve"><value>Link</value></data>
+  <data name="TmDiagramProperties_LinkPlaceholder" xml:space="preserve"><value>https://...</value></data>
+  <data name="TmDiagramProperties_LinkType_None" xml:space="preserve"><value>None</value></data>
+  <data name="TmDiagramProperties_ExternalUrl" xml:space="preserve"><value>External URL</value></data>
+  <data name="TmDiagramProperties_PageLink" xml:space="preserve"><value>Page Link</value></data>
+  <data name="TmDiagramProperties_PlaceholdersHint" xml:space="preserve"><value>Placeholders: %page%, %pagenumber%, %totalpages%, %date%</value></data>
+  <data name="TmDiagramProperties_Swimlane" xml:space="preserve"><value>Swimlane</value></data>
+  <data name="TmDiagramProperties_AddRow" xml:space="preserve"><value>Add Row</value></data>
+  <data name="TmDiagramProperties_RemoveRow" xml:space="preserve"><value>Remove Row</value></data>
+  <data name="TmDiagramProperties_AddColumn" xml:space="preserve"><value>Add Column</value></data>
+  <data name="TmDiagramProperties_RemoveColumn" xml:space="preserve"><value>Remove Column</value></data>
+  <data name="TmDiagramProperties_RowHeights" xml:space="preserve"><value>Row Heights</value></data>
+  <data name="TmDiagramProperties_ColumnWidths" xml:space="preserve"><value>Column Widths</value></data>
+  <data name="TmDiagramProperties_Table" xml:space="preserve"><value>Table</value></data>
+  <data name="TmDiagramProperties_TableCellSelection" xml:space="preserve"><value>Cell Selection</value></data>
+  <data name="TmDiagramProperties_MergeCells" xml:space="preserve"><value>Merge Cells</value></data>
+  <data name="TmDiagramProperties_SplitCell" xml:space="preserve"><value>Split Cell</value></data>
+  <data name="TmDiagramProperties_CellText" xml:space="preserve"><value>Cell Text</value></data>
+  <data name="TmDiagramProperties_CellBackground" xml:space="preserve"><value>Background</value></data>
+  <data name="TmDiagramProperties_CellBorder" xml:space="preserve"><value>Border</value></data>
+  <data name="TmDiagramEditor_InsertRowAbove" xml:space="preserve"><value>Insert Row Above</value></data>
+  <data name="TmDiagramEditor_InsertRowBelow" xml:space="preserve"><value>Insert Row Below</value></data>
+  <data name="TmDiagramEditor_InsertColumnLeft" xml:space="preserve"><value>Insert Column Left</value></data>
+  <data name="TmDiagramEditor_InsertColumnRight" xml:space="preserve"><value>Insert Column Right</value></data>
+
+  <!-- ═══════════════ Canvas Context Menu ═══════════════ -->
+  <data name="TmDiagramEditor_Cut" xml:space="preserve"><value>Cut</value></data>
+  <data name="TmDiagramEditor_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="TmDiagramEditor_Duplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="TmDiagramEditor_Paste" xml:space="preserve"><value>Paste</value></data>
+  <data name="TmDiagramEditor_SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="TmDiagramEditor_Lock" xml:space="preserve"><value>Lock</value></data>
+  <data name="TmDiagramEditor_Unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="TmDiagramEditor_Group" xml:space="preserve"><value>Group</value></data>
+  <data name="TmDiagramEditor_Ungroup" xml:space="preserve"><value>Ungroup</value></data>
+  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Paste Style</value></data>
+  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Paste Size</value></data>
+  <data name="TmDiagramEditor_ChangeShape" xml:space="preserve"><value>Change Shape</value></data>
+  <data name="TmDiagramEditor_Rectangle" xml:space="preserve"><value>Rectangle</value></data>
+  <data name="TmDiagramEditor_Ellipse" xml:space="preserve"><value>Ellipse</value></data>
+  <data name="TmDiagramEditor_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmDiagramEditor_Diamond" xml:space="preserve"><value>Diamond</value></data>
+  <data name="TmDiagramEditor_EditLabel" xml:space="preserve"><value>Edit Label</value></data>
+  <data name="TmDiagramEditor_Connector" xml:space="preserve"><value>Connector</value></data>
+  <data name="TmDiagramEditor_Straight" xml:space="preserve"><value>Straight</value></data>
+  <data name="TmDiagramEditor_Orthogonal" xml:space="preserve"><value>Orthogonal</value></data>
+  <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Curved</value></data>
+  <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Start Arrow</value></data>
+  <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>End Arrow</value></data>
+  <data name="TmDiagramEditor_ArrowNone" xml:space="preserve"><value>None</value></data>
+  <data name="TmDiagramEditor_ArrowClassic" xml:space="preserve"><value>Classic</value></data>
+  <data name="TmDiagramEditor_ArrowBlock" xml:space="preserve"><value>Block</value></data>
+  <data name="TmDiagramEditor_ArrowCrow" xml:space="preserve"><value>Crow</value></data>
+  <data name="TmDiagramEditor_LineStyle" xml:space="preserve"><value>Line Style</value></data>
+  <data name="TmDiagramEditor_LineSolid" xml:space="preserve"><value>Solid</value></data>
+  <data name="TmDiagramEditor_LineDashed" xml:space="preserve"><value>Dashed</value></data>
+  <data name="TmDiagramEditor_LineDotted" xml:space="preserve"><value>Dotted</value></data>
+  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDiagramEditor_Layout" xml:space="preserve"><value>Layout</value></data>
+  <data name="TmDiagramEditor_LayoutDagreTb" xml:space="preserve"><value>Dagre Top-Bottom</value></data>
+  <data name="TmDiagramEditor_LayoutDagreLr" xml:space="preserve"><value>Dagre Left-Right</value></data>
+  <data name="TmDiagramEditor_LayoutTree" xml:space="preserve"><value>Tree</value></data>
+  <data name="TmDiagramEditor_LayoutForce" xml:space="preserve"><value>Force</value></data>
+  <data name="TmDiagramEditor_LayoutCircle" xml:space="preserve"><value>Circle</value></data>
+  <data name="TmDiagramEditor_ShowGrid" xml:space="preserve"><value>Show Grid</value></data>
+  <data name="TmDiagramEditor_HideGrid" xml:space="preserve"><value>Hide Grid</value></data>
+  <data name="TmDiagramEditor_ShowPageView" xml:space="preserve"><value>Show Page View</value></data>
+  <data name="TmDiagramEditor_HidePageView" xml:space="preserve"><value>Hide Page View</value></data>
+  <data name="TmDiagramEditor_EnableSnap" xml:space="preserve"><value>Enable Snap to Grid</value></data>
+  <data name="TmDiagramEditor_DisableSnap" xml:space="preserve"><value>Disable Snap to Grid</value></data>
+  <data name="TmDiagramEditor_MergeCells" xml:space="preserve"><value>Merge Cells</value></data>
+  <data name="TmDiagramEditor_SplitCell" xml:space="preserve"><value>Split Cell</value></data>
+  <data name="TmDiagramEditor_FormatCell" xml:space="preserve"><value>Format Cell</value></data>
+  <data name="TmDiagramEditor_CellWhite" xml:space="preserve"><value>White</value></data>
+  <data name="TmDiagramEditor_CellLightGray" xml:space="preserve"><value>Light Gray</value></data>
+  <data name="TmDiagramEditor_CellGray" xml:space="preserve"><value>Gray</value></data>
+  <data name="TmDiagramEditor_ImportCsv" xml:space="preserve"><value>Import CSV</value></data>
+  <data name="TmDiagramEditor_Templates" xml:space="preserve"><value>Templates</value></data>
+  <data name="TmDiagramTemplateGallery_Title" xml:space="preserve"><value>Choose a Template</value></data>
+  <data name="TmDiagramTemplateGallery_SearchPlaceholder" xml:space="preserve"><value>Search templates...</value></data>
+  <data name="TmDiagramTemplateGallery_All" xml:space="preserve"><value>All</value></data>
+  <data name="TmDiagramTemplateGallery_NoResults" xml:space="preserve"><value>No templates match your search.</value></data>
+  <data name="TmDiagramTemplateGallery_CreateButton" xml:space="preserve"><value>Create</value></data>
+  <data name="TmDiagramCsvImportDialog_Title" xml:space="preserve"><value>Import CSV to Diagram</value></data>
+  <data name="TmDiagramCsvImportDialog_CsvLabel" xml:space="preserve"><value>CSV Data</value></data>
+  <data name="TmDiagramCsvImportDialog_CsvPlaceholder" xml:space="preserve"><value>Paste CSV data here...</value></data>
+  <data name="TmDiagramCsvImportDialog_TypeLabel" xml:space="preserve"><value>Diagram type</value></data>
+  <data name="TmDiagramCsvImportDialog_MappingsTitle" xml:space="preserve"><value>Column mapping</value></data>
+  <data name="TmDiagramCsvImportDialog_SelectColumn" xml:space="preserve"><value>Select column</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewTitle" xml:space="preserve"><value>Preview (first 5 rows)</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewNodes" xml:space="preserve"><value>Nodes: {0}</value></data>
+  <data name="TmDiagramCsvImportDialog_PreviewEdges" xml:space="preserve"><value>Edges: {0}</value></data>
+  <data name="TmDiagramCsvImportDialog_ImportButton" xml:space="preserve"><value>Import</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorEmpty" xml:space="preserve"><value>Please enter CSV data.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorNoData" xml:space="preserve"><value>No data rows found in the provided CSV.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorMinColumns" xml:space="preserve"><value>CSV must contain at least 2 columns.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorMappings" xml:space="preserve"><value>Please map all required columns.</value></data>
+  <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Failed to parse CSV: {0}</value></data>
 
 </root>

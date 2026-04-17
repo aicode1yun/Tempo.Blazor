@@ -33,4 +33,10 @@ public sealed class DiagramExportOptions
 
     /// <summary>Whether to include the grid in the exported image.</summary>
     public bool IncludeGrid { get; set; }
+
+    /// <summary>Zero-based index of the page to export. Null = active page.</summary>
+    public int? PageIndex { get; set; }
+
+    /// <summary>When true and exporting to PDF, all pages are exported as separate PDF pages.</summary>
+    public bool ExportAllPages { get; set; }
 }

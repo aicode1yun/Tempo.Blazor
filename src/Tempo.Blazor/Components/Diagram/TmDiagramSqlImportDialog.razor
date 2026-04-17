@@ -1,0 +1,133 @@
+@namespace Tempo.Blazor.Components.Diagram
+@using Tempo.Blazor.Components.Buttons
+@using Tempo.Blazor.Components.Feedback
+@using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Components.Diagram.Services
+@using Tempo.Blazor.Models
+
+<TmModal Show="@Show"
+         OnClose="OnClose"
+         Title="@Loc["TmDiagramSqlImportDialog_Title"]"
+         ShowDefaultFooterButtons="false"
+         Size="ModalSize.Large"
+         CloseOnOverlayClick="true"
+         CloseOnEscape="true">
+    <ChildContent>
+        <div class="tm-diagram-sql-import">
+            <div class="tm-diagram-sql-import__field">
+                <label class="tm-diagram-sql-import__label" for="sql-ddl">@Loc["TmDiagramSqlImportDialog_SqlLabel"]</label>
+                <TmTextArea Id="sql-ddl"
+                            @bind-Value="_sql"
+                            Rows="10"
+                            Placeholder="@Loc["TmDiagramSqlImportDialog_SqlPlaceholder"]"
+                            Class="tm-diagram-sql-import__textarea" />
+            </div>
+
+            <div class="tm-diagram-sql-import__field">
+                <label class="tm-diagram-sql-import__label" for="layout-select">@Loc["TmDiagramSqlImportDialog_LayoutLabel"]</label>
+                <TmSelect Id="layout-select"
+                          @bind-Value="_layout"
+                          Options="_layoutOptions"
+                          Class="tm-diagram-sql-import__select" />
+            </div>
+
+            @if (_previewTables >= 0)
+            {
+                <div class="tm-diagram-sql-import__preview">
+                    <span>@Loc["TmDiagramSqlImportDialog_PreviewTables", _previewTables]</span>
+                    <span>@Loc["TmDiagramSqlImportDialog_PreviewRelations", _previewRelations]</span>
+                </div>
+            }
+
+            @if (!string.IsNullOrEmpty(_errorMessage))
+            {
+                <TmAlert Severity="AlertSeverity.Error" Dismissable="false" Class="tm-diagram-sql-import__error">
+                    @_errorMessage
+                </TmAlert>
+            }
+        </div>
+    </ChildContent>
+    <Footer>
+        <TmButton Variant="ButtonVariant.Ghost" OnClick="OnClose">
+            @Loc["Tm_Cancel"]
+        </TmButton>
+        <TmButton Variant="ButtonVariant.Primary"
+                  OnClick="OnImportClick"
+                  Disabled="string.IsNullOrWhiteSpace(_sql)">
+            @Loc["TmDiagramSqlImportDialog_ImportButton"]
+        </TmButton>
+    </Footer>
+</TmModal>
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<SqlImportResult> OnImport { get; set; }
+
+    private string _sql = string.Empty;
+    private string _layout = "TB";
+    private int _previewTables = -1;
+    private int _previewRelations = -1;
+    private string? _errorMessage;
+
+    private readonly List<SelectOption<string>> _layoutOptions = new()
+    {
+        new() { Value = "TB", Label = "Top-Bottom" },
+        new() { Value = "LR", Label = "Left-Right" }
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (!Show)
+        {
+            _sql = string.Empty;
+            _layout = "TB";
+            _previewTables = -1;
+            _previewRelations = -1;
+            _errorMessage = null;
+        }
+    }
+
+    private void UpdatePreview()
+    {
+        try
+        {
+            var tables = SqlParser.Parse(_sql);
+            _previewTables = tables.Count;
+            _previewRelations = tables.Sum(t => t.ForeignKeys.Count);
+            _errorMessage = null;
+        }
+        catch
+        {
+            _previewTables = -1;
+            _previewRelations = -1;
+        }
+    }
+
+    private async Task OnImportClick()
+    {
+        if (string.IsNullOrWhiteSpace(_sql))
+        {
+            _errorMessage = Loc["TmDiagramSqlImportDialog_ErrorEmpty"];
+            return;
+        }
+
+        try
+        {
+            var tables = SqlParser.Parse(_sql);
+            if (tables.Count == 0)
+            {
+                _errorMessage = Loc["TmDiagramSqlImportDialog_ErrorNoTables"];
+                return;
+            }
+
+            var doc = SqlToErDiagramGenerator.Generate(tables);
+            await OnImport.InvokeAsync(new SqlImportResult(doc, _layout));
+            _errorMessage = null;
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = string.Format(Loc["TmDiagramSqlImportDialog_ErrorParse"], ex.Message);
+        }
+    }
+}

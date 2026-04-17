@@ -16,7 +16,7 @@
          viewBox="@_viewBox"
          xmlns="http://www.w3.org/2000/svg"
          aria-label="@Loc["TmDiagramCanvas_AriaLabel"]"
-         style="width:100%;height:100%;display:block;overflow:hidden;">
+         style="width:100%;height:100%;display:block;overflow:hidden;transform:scale(@(F(Document?.ActivePage?.Scale ?? 1.0)));transform-origin:0 0;">
 
         <defs>
             @if (ShowGrid)
@@ -28,6 +28,13 @@
                     <rect width="@_gl" height="@_gl" fill="url(#@_gridSmallId)" />
                     <path d="M @_gl 0 L 0 0 0 @_gl" fill="none" stroke="#d1d5db" stroke-width="1" />
                 </pattern>
+            }
+
+            @if (ShowPageView)
+            {
+                <filter id="@_pageShadowFilterId" x="-50%" y="-50%" width="200%" height="200%">
+                    <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.15)" />
+                </filter>
             }
 
             @foreach (var marker in GetRequiredMarkers())
@@ -49,12 +56,21 @@
                     }
                 </marker>
             }
+            <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+                <path d="M0,0 L0,6 L9,3 z" fill="#10b981" />
+            </marker>
         </defs>
 
-        @* Canvas background + grid *@
+        @* Canvas background + page view + grid *@
+        @if (ShowPageView)
+        {
+            <rect x="-100000" y="-100000" width="200000" height="200000" fill="#f3f4f6" />
+        }
         <rect x="0" y="0"
               width="@(Document?.Width ?? 3000)" height="@(Document?.Height ?? 2000)"
-              fill="white" stroke="#d1d5db" stroke-width="1" rx="4" />
+              fill="white" stroke="#d1d5db" stroke-width="1"
+              rx="@(ShowPageView ? 0 : 4)"
+              filter="@(ShowPageView ? $"url(#{_pageShadowFilterId})" : null)" />
         @if (ShowGrid)
         {
             <rect x="0" y="0"
@@ -72,6 +88,11 @@
                 .ToList();
             @foreach (var g in groups)
             {
+                // Only show bounds for groups whose container is at the current level
+                var container = Document.Nodes.FirstOrDefault(n => n.Id == g.Key && n.StencilId == "general.group");
+                var isAtCurrentLevel = container?.ParentGroupId == ActiveGroupId;
+                var hasOldStyleGroup = container is null && string.IsNullOrEmpty(ActiveGroupId);
+                if (!isAtCurrentLevel && !hasOldStyleGroup) continue;
                 var minX = g.Min(n => n.X);
                 var minY = g.Min(n => n.Y);
                 var maxX = g.Max(n => n.X + n.W);
@@ -112,28 +133,38 @@
                           marker-end="@GetEdgeMarkerEnd(edge)" />
                     @* Edge label *@
                     @{
-                        var mid = ComputeEdgeMidpoint(edge);
+                        var labelPos = ComputeEdgePointAtT(edge, edge.LabelPositionT);
                     }
                     <g class="tm-diagram-edge-label-group" @onclick:stopPropagation="true" @onclick="() => OnEdgeLabelClicked(edge.Id)">
                         <rect class="tm-diagram-edge-label-hit"
-                              x="@F(mid.X - 24)"
-                              y="@F(mid.Y - 12)"
+                              x="@F(labelPos.X - 24)"
+                              y="@F(labelPos.Y - 12)"
                               width="48"
                               height="24"
-                              fill="transparent" />
+                              fill="transparent"
+                              data-edge-id="@edge.Id"
+                              data-label-handle="true" />
                         @if (!string.IsNullOrEmpty(edge.Label))
                         {
-                            @((Microsoft.AspNetCore.Components.Rendering.RenderTreeBuilder __b) =>
-                            {
-                                __b.AddMarkupContent(0,
-                                    $"<text class='tm-diagram-edge-label' x='{F(mid.X)}' y='{F(mid.Y)}' text-anchor='middle' dominant-baseline='middle'>" +
-                                    $"{System.Net.WebUtility.HtmlEncode(edge.Label)}</text>");
-                            })
+                            <foreignObject x="@F(labelPos.X - 80)" y="@F(labelPos.Y - 14)" width="160" height="28">
+                                <div xmlns="http://www.w3.org/1999/xhtml"
+                                     class="tm-diagram-edge-label"
+                                     style="display:flex;align-items:center;justify-content:center;height:100%;font-size:12px;line-height:1;">
+                                    @if (edge.Style?.EnableMathJax == true && ContainsMath(edge.Label))
+                                    {
+                                        <span class="tm-diagram-math">@edge.Label</span>
+                                    }
+                                    else
+                                    {
+                                        @edge.Label
+                                    }
+                                </div>
+                            </foreignObject>
                         }
                     </g>
                     @if (_editingEdgeLabelId == edge.Id)
                     {
-                        <foreignObject x="@F(mid.X - 60)" y="@F(mid.Y - 14)" width="120" height="28">
+                        <foreignObject x="@F(labelPos.X - 60)" y="@F(labelPos.Y - 14)" width="120" height="28">
                             <input @ref="_labelInputRef"
                                    class="tm-diagram-edge-label-input"
                                    value="@_editingLabelValue"
@@ -150,7 +181,7 @@
                     @* Selection handles (control points) *@
                     @if (isSelected)
                     {
-                        var pts = GetEdgePoints(edge);
+                        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
                         for (int i = 0; i < pts.Length; i++)
                         {
                             var pt = pts[i];
@@ -165,6 +196,31 @@
                                     @ondblclick:stopPropagation="true"
                                     @ondblclick="() => OnEdgeWaypointDelete(edge.Id, i)" />
                         }
+                        @if (edge.Routing == "orthogonal")
+                        {
+                            var srcNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
+                            var tgtNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
+                            if (srcNode is not null && string.IsNullOrEmpty(edge.SourceEdgeId))
+                            {
+                                var srcPort = edge.SourcePortId is not null
+                                    ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
+                                    : srcNode.Ports.FirstOrDefault();
+                                var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
+                                <circle class="tm-diagram-edge-handle tm-diagram-edge-handle--jetty"
+                                        cx="@F(pts[0].X)" cy="@F(pts[0].Y)" r="4"
+                                        data-edge-id="@edge.Id" data-jetty="source" data-jetty-side="@sPort.Side.ToString().ToLowerInvariant()" data-node-id="@edge.SourceNodeId" />
+                            }
+                            if (tgtNode is not null && string.IsNullOrEmpty(edge.TargetEdgeId))
+                            {
+                                var tgtPort = edge.TargetPortId is not null
+                                    ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
+                                    : tgtNode.Ports.FirstOrDefault();
+                                var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
+                                <circle class="tm-diagram-edge-handle tm-diagram-edge-handle--jetty"
+                                        cx="@F(pts[^1].X)" cy="@F(pts[^1].Y)" r="4"
+                                        data-edge-id="@edge.Id" data-jetty="target" data-jetty-side="@tPort.Side.ToString().ToLowerInvariant()" data-node-id="@edge.TargetNodeId" />
+                            }
+                        }
                     }
                 </g>
             }
@@ -174,23 +230,30 @@
 
     @* HTML overlay layer: nodes *@
     <div class="tm-diagram-canvas__overlay">
-        <div class="tm-diagram-transform-layer">
+        <div class="tm-diagram-transform-layer" style="transform:scale(@(F(Document?.ActivePage?.Scale ?? 1.0)));transform-origin:0 0;">
             @if (Document is not null)
             {
                 @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
                 {
                     <div class="tm-diagram-node @(_activeSearchResultId == node.Id ? "tm-diagram-search-match" : "")"
                          data-node-id="@node.Id"
+                         data-stencil-id="@node.StencilId"
                          data-w="@node.W"
                          data-h="@node.H"
                          data-group-id="@node.GroupId"
                          data-parent-id="@node.ParentNodeId"
+                         data-parent-group-id="@node.ParentGroupId"
                          data-locked="@(IsNodeLocked(node) ? "true" : "false")"
+                         data-link="@node.Link"
                          style="transform: translate(@(F(node.X))px, @(F(node.Y))px) rotate(@(F(node.Rotation))deg); width: @(F(node.W))px; height: @(F(node.H))px; z-index: @node.ZIndex;">
                         <TmDiagramStencilShape Node="node"
                                                IsSelected="_currentSelectionIds.Contains(node.Id)"
                                                OnPortMouseDownEvent="(portId) => HandlePortMouseDown(node.Id, portId)"
-                                               OnSectionEdit="(args) => HandleSectionEdit(node.Id, args.DataKey, args.Value)" />
+                                               OnSectionEdit="(args) => HandleSectionEdit(node.Id, args.DataKey, args.Value)"
+                                               SelectedTableCells="SelectedTableCells"
+                                               OnTableCellSelect="(args) => HandleTableCellSelect(node.Id, args.Row, args.Column, args.IsCtrlHeld)"
+                                               Page="Document?.ActivePage"
+                                               Document="Document" />
 
                         @if (node.IsCollapsible && !ReadOnly)
                         {
@@ -210,7 +273,7 @@
                             {
                                 if (node is { IsCollapsible: true, Collapsed: true } && port.Side is not (PortSide.Top or PortSide.Bottom))
                                     continue;
-                                var (absX, absY) = ComputePortPosition(node, port);
+                                var (absX, absY) = DiagramGeometryHelper.ComputePortPosition(node, port);
                                 var px = absX - node.X;
                                 var py = absY - node.Y;
                                 <div class="tm-diagram-port"

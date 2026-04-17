@@ -1,3 +1,4 @@
+using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
@@ -13,32 +14,83 @@ public sealed class PasteNodesCommand : IDiagramCommand
     private readonly IJSRuntime? _js;
     private readonly ElementReference? _containerRef;
     private readonly string? _clipboardJson;
-    private readonly double _offsetX;
-    private readonly double _offsetY;
+    private double _offsetX;
+    private double _offsetY;
+    private readonly bool _useTarget;
+    private readonly double _targetX;
+    private readonly double _targetY;
+    private readonly string? _parentGroupId;
     private readonly List<DiagramNode> _pastedNodes = [];
     private readonly List<DiagramEdge> _pastedEdges = [];
 
     /// <summary>Node IDs from the most recent paste operation.</summary>
     public static List<string> LastPastedNodeIds { get; } = [];
 
-    public PasteNodesCommand(DiagramDocument doc, DiagramCommandStack? stack, IJSRuntime? js, ElementReference? containerRef)
+    public PasteNodesCommand(DiagramDocument doc, DiagramCommandStack? stack, IJSRuntime? js, ElementReference? containerRef, string? parentGroupId = null)
     {
         _doc = doc;
         _stack = stack;
         _js = js;
         _containerRef = containerRef;
+        _parentGroupId = parentGroupId;
         _clipboardJson = CopyNodesCommand.SharedClipboardJson;
         _offsetX = 16;
         _offsetY = 16;
         PreparePaste();
     }
 
-    public PasteNodesCommand(DiagramDocument doc, string clipboardJson, double offsetX, double offsetY)
+    public PasteNodesCommand(DiagramDocument doc, string clipboardJson, double offsetX, double offsetY, string? parentGroupId = null)
     {
         _doc = doc;
         _clipboardJson = clipboardJson;
         _offsetX = offsetX;
         _offsetY = offsetY;
+        _parentGroupId = parentGroupId;
+        PreparePaste();
+    }
+
+    /// <summary>Pastes from the internal static clipboard without requiring JS interop.</summary>
+    public PasteNodesCommand(DiagramDocument doc, double offsetX, double offsetY, bool useInternalClipboard, string? parentGroupId = null)
+    {
+        _doc = doc;
+        _offsetX = offsetX;
+        _offsetY = offsetY;
+        _parentGroupId = parentGroupId;
+        if (useInternalClipboard && DiagramClipboard.HasNodes)
+        {
+            _clipboardJson = JsonSerializer.Serialize(new DiagramClipboardData
+            {
+                Nodes = DiagramClipboard.Nodes,
+                Edges = DiagramClipboard.Edges
+            }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+        else
+        {
+            _clipboardJson = CopyNodesCommand.SharedClipboardJson;
+        }
+        PreparePaste();
+    }
+
+    /// <summary>Pastes at a specific canvas location ("Paste here").</summary>
+    public PasteNodesCommand(DiagramDocument doc, double targetX, double targetY, bool useInternalClipboard, bool pasteHere, string? parentGroupId = null)
+    {
+        _doc = doc;
+        _useTarget = pasteHere;
+        _targetX = targetX;
+        _targetY = targetY;
+        _parentGroupId = parentGroupId;
+        if (useInternalClipboard && DiagramClipboard.HasNodes)
+        {
+            _clipboardJson = JsonSerializer.Serialize(new DiagramClipboardData
+            {
+                Nodes = DiagramClipboard.Nodes,
+                Edges = DiagramClipboard.Edges
+            }, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
+        }
+        else
+        {
+            _clipboardJson = CopyNodesCommand.SharedClipboardJson;
+        }
         PreparePaste();
     }
 
@@ -52,6 +104,16 @@ public sealed class PasteNodesCommand : IDiagramCommand
         var payload = JsonSerializer.Deserialize<DiagramClipboardData>(json, new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase });
         if (payload is null) return;
 
+        if (_useTarget && payload.Nodes.Count > 0)
+        {
+            var minX = payload.Nodes.Min(n => n.X);
+            var maxX = payload.Nodes.Max(n => n.X + n.W);
+            var minY = payload.Nodes.Min(n => n.Y);
+            var maxY = payload.Nodes.Max(n => n.Y + n.H);
+            _offsetX = _targetX - (minX + maxX) / 2.0;
+            _offsetY = _targetY - (minY + maxY) / 2.0;
+        }
+
         var idMap = new Dictionary<string, string>();
 
         foreach (var src in payload.Nodes)
@@ -59,6 +121,11 @@ public sealed class PasteNodesCommand : IDiagramCommand
             var copy = DeepCopyNode(src);
             copy.X += _offsetX;
             copy.Y += _offsetY;
+            if (_parentGroupId is not null)
+            {
+                copy.ParentGroupId = _parentGroupId;
+                copy.GroupId = _parentGroupId;
+            }
             idMap[src.Id] = copy.Id;
             _pastedNodes.Add(copy);
         }

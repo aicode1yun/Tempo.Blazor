@@ -22,6 +22,7 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="CsvHelper" Version="33.0.1" />
     <PackageReference Include="FluentValidation" Version="12.1.1" />
   </ItemGroup>
 
@@ -124,14 +125,8 @@ catch (Exception ex)
     </Task>
   </UsingTask>
 
-  <Target Name="BundleCssFiles"
-          BeforeTargets="ResolveProjectStaticWebAssets;GenerateNuspec;Pack"
-          Inputs="wwwroot\css\tempo-blazor.css;@(CssBundleInputs)"
-          Outputs="wwwroot\css\tempo-blazor.bundled.css">
-    <BundleCss
-      InputFile="$(MSBuildProjectDirectory)\wwwroot\css\tempo-blazor.css"
-      OutputFile="$(MSBuildProjectDirectory)\wwwroot\css\tempo-blazor.bundled.css"
-      Minify="true" />
+  <Target Name="BundleCssFiles" BeforeTargets="ResolveProjectStaticWebAssets;GenerateNuspec;Pack" Inputs="wwwroot\css\tempo-blazor.css;@(CssBundleInputs)" Outputs="wwwroot\css\tempo-blazor.bundled.css">
+    <BundleCss InputFile="$(MSBuildProjectDirectory)\wwwroot\css\tempo-blazor.css" OutputFile="$(MSBuildProjectDirectory)\wwwroot\css\tempo-blazor.bundled.css" Minify="true" />
   </Target>
 
   <Target Name="CleanBundledCss" BeforeTargets="Clean">

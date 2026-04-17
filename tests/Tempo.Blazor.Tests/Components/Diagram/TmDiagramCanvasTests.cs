@@ -97,4 +97,34 @@ public class TmDiagramCanvasTests : LocalizationTestBase
         captured.Value.NodeId.Should().Be(node.Id);
         captured.Value.Direction.Should().Be("e");
     }
+
+    [Fact]
+    public void ShowPageView_RendersDropShadowFilterAndGrayBackground()
+    {
+        var doc = new DiagramDocument { Width = 800, Height = 600 };
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ShowPageView, true));
+
+        var svg = cut.Find("svg");
+        var viewBox = svg.GetAttribute("viewBox");
+        viewBox.Should().StartWith("-200 -200 ");
+
+        var defs = cut.Find("defs");
+        defs.InnerHtml.ToLowerInvariant().Should().Contain("fedropshadow");
+    }
+
+    [Fact]
+    public void HidePageView_UsesExactDocumentDimensions()
+    {
+        var doc = new DiagramDocument { Width = 800, Height = 600 };
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ShowPageView, false));
+
+        var svg = cut.Find("svg");
+        svg.GetAttribute("viewBox").Should().Be("0 0 800 600");
+    }
 }

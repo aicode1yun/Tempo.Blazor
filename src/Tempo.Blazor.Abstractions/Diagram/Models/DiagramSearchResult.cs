@@ -30,4 +30,15 @@ public sealed class DiagramSearchResult
 
     /// <summary>The matching text fragment (useful for highlighting).</summary>
     public string MatchedText { get; set; } = string.Empty;
+
+    /// <summary>When searching all pages, the index of the page containing the match.</summary>
+    public int? PageIndex { get; set; }
+
+    /// <summary>
+    /// For <see cref="DiagramSearchMatchType.Data"/> matches, the dictionary key that was matched.
+    /// For <see cref="DiagramSearchMatchType.Label"/> on edges, this is <c>"Label"</c>.
+    /// Null for <see cref="DiagramSearchMatchType.Id"/>, <see cref="DiagramSearchMatchType.StencilId"/>
+    /// and <see cref="DiagramSearchMatchType.Data"/> when matched on an edge connector type.
+    /// </summary>
+    public string? DataKey { get; set; }
 }

@@ -1,0 +1,37 @@
+.tm-diagram-sql-import {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-4);
+}
+
+.tm-diagram-sql-import__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}
+
+.tm-diagram-sql-import__label {
+    font-weight: 600;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+}
+
+.tm-diagram-sql-import__textarea {
+    font-family: var(--tm-font-mono, monospace);
+    font-size: var(--tm-text-sm);
+}
+
+.tm-diagram-sql-import__select {
+    max-width: 200px;
+}
+
+.tm-diagram-sql-import__preview {
+    display: flex;
+    gap: var(--tm-space-4);
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text-muted);
+}
+
+.tm-diagram-sql-import__error {
+    margin-top: var(--tm-space-2);
+}

@@ -20,8 +20,8 @@ public class DiagramSerializerTests
         json.Should().NotBeNullOrWhiteSpace();
         json.Should().Contain("\"version\"");
         json.Should().Contain("\"title\"");
-        json.Should().Contain("\"nodes\"");
-        json.Should().Contain("\"edges\"");
+        json.Should().Contain("\"pages\"");
+        json.Should().Contain("\"activePageIndex\"");
     }
 
     [Fact]
@@ -79,8 +79,9 @@ public class DiagramSerializerTests
 
         doc.Should().NotBeNull();
         doc.Title.Should().Be("UML Diagram");
-        doc.Version.Should().Be("1.0");
+        doc.Version.Should().Be("2.0"); // migrated from 1.0
         doc.Width.Should().Be(3000);
+        doc.Pages.Should().HaveCount(1);
     }
 
     [Fact]

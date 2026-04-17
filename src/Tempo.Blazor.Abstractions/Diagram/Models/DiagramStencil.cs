@@ -30,6 +30,12 @@ public sealed class DiagramStencil
     /// <summary>Whether nodes created from this stencil support collapse/expand.</summary>
     public bool IsCollapsible { get; set; }
 
+    /// <summary>Whether nodes created from this stencil act as swimlane containers.</summary>
+    public bool IsSwimlane { get; set; }
+
+    /// <summary>Whether nodes created from this stencil act as tables.</summary>
+    public bool IsTable { get; set; }
+
     /// <summary>Default data values for nodes created from this stencil.</summary>
     public Dictionary<string, object> DefaultData { get; set; } = [];
 }

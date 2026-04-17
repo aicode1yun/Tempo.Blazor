@@ -20,6 +20,8 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
             GeneralSet(),
             UmlSet(),
             BpmnSet(),
+            SwimlaneSet(),
+            TableSet(),
             FlowchartSet(),
             ErdSet(),
             NetworkSet(),
@@ -66,10 +68,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 60,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -97,10 +99,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 60,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -128,10 +130,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 80,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -216,6 +218,38 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                 },
                 new()
                 {
+                    Id = "general.rhombus",
+                    Name = "Rhombus",
+                    Category = "General",
+                    IconSvg = "<polygon points='16,4 28,16 16,28 4,16' fill='none' stroke='currentColor' stroke-width='2'/>",
+                    DefaultWidth = 120,
+                    DefaultHeight = 80,
+                    Ports =
+                    [
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
+                    ],
+                    Layout = new()
+                    {
+                        BackgroundShape = "diamond",
+                        ShapeSvg = "<polygon points='50,0 100,50 50,100 0,50' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke'/>",
+                        Sections =
+                        [
+                            new()
+                            {
+                                Type = "text",
+                                DataKey = "label",
+                                DefaultText = "Rhombus",
+                                TextStyle = new() { TextAlign = StencilTextAlign.Center }
+                            }
+                        ]
+                    },
+                    DefaultData = new() { ["label"] = "Rhombus" }
+                },
+                new()
+                {
                     Id = "general.cylinder",
                     Name = "Cylinder",
                     Category = "General",
@@ -224,10 +258,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 120,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -257,10 +291,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 60,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -282,6 +316,40 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                 },
                 new()
                 {
+                    Id = "general.group",
+                    Name = "Group",
+                    Category = "General",
+                    IconSvg = "<rect x='4' y='8' width='24' height='16' rx='2' fill='none' stroke='currentColor' stroke-width='2' stroke-dasharray='4,2'/><text x='16' y='17' text-anchor='middle' font-size='6' fill='currentColor'>G</text>",
+                    DefaultWidth = 160,
+                    DefaultHeight = 120,
+                    Ports =
+                    [
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                    ],
+                    Layout = new()
+                    {
+                        BackgroundShape = "rectangle",
+                        Fill = "transparent",
+                        ShapeSvg = "<rect x='0' y='0' width='100' height='100' rx='2' fill='var(--stencil-fill)' stroke='var(--stencil-stroke)' stroke-width='var(--stencil-stroke-width)' vector-effect='non-scaling-stroke' stroke-dasharray='4,2'/>",
+                        Sections =
+                        [
+                            new()
+                            {
+                                Type = "text",
+                                DataKey = "label",
+                                DefaultText = "Group",
+                                Padding = 8,
+                                TextStyle = new() { TextAlign = StencilTextAlign.Left, FontSize = 12 }
+                            }
+                        ]
+                    },
+                    DefaultData = new() { ["label"] = "Group" }
+                },
+                new()
+                {
                     Id = "general.triangle",
                     Name = "Triangle",
                     Category = "General",
@@ -290,10 +358,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 90,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -323,10 +391,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 100,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -356,10 +424,10 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     DefaultHeight = 100,
                     Ports =
                     [
-                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
-                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
-                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
-                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5, MagnetStrategy = "perimeter" },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5, MagnetStrategy = "perimeter" }
                     ],
                     Layout = new()
                     {
@@ -2137,6 +2205,145 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                         ]
                     },
                     DefaultData = new() { ["label"] = "Data Store" }
+                }
+            ]
+        };
+    }
+
+    private static DiagramStencilSet SwimlaneSet()
+    {
+        return new DiagramStencilSet
+        {
+            Id = "swimlane",
+            Name = "Swimlanes",
+            Stencils =
+            [
+                new()
+                {
+                    Id = "swimlane.horizontal",
+                    Name = "Horizontal Swimlane",
+                    Category = "Swimlanes",
+                    IconSvg = "<rect x='4' y='4' width='24' height='20' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><line x1='4' y1='12' x2='28' y2='12' stroke='currentColor' stroke-width='2'/><line x1='4' y1='20' x2='28' y2='20' stroke='currentColor' stroke-width='2'/><text x='7' y='10' font-size='4' fill='currentColor'>A</text><text x='7' y='18' font-size='4' fill='currentColor'>B</text>",
+                    DefaultWidth = 400,
+                    DefaultHeight = 200,
+                    IsSwimlane = true,
+                    Ports =
+                    [
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                    ],
+                    Layout = new()
+                    {
+                        BackgroundShape = "swimlane-horizontal",
+                        Sections =
+                        [
+                            new()
+                            {
+                                Type = "swimlane",
+                                DataKey = "swimlane",
+                                DefaultText = "Swimlane",
+                                Padding = 0
+                            }
+                        ]
+                    },
+                    DefaultData = new()
+                    {
+                        ["swimlane"] = "Swimlane"
+                    }
+                },
+                new()
+                {
+                    Id = "swimlane.vertical",
+                    Name = "Vertical Swimlane",
+                    Category = "Swimlanes",
+                    IconSvg = "<rect x='4' y='4' width='20' height='24' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><line x1='12' y1='4' x2='12' y2='28' stroke='currentColor' stroke-width='2'/><line x1='20' y1='4' x2='20' y2='28' stroke='currentColor' stroke-width='2'/><text x='10' y='10' font-size='4' fill='currentColor' transform='rotate(-90 10 10)'>A</text><text x='18' y='10' font-size='4' fill='currentColor' transform='rotate(-90 18 10)'>B</text>",
+                    DefaultWidth = 300,
+                    DefaultHeight = 300,
+                    IsSwimlane = true,
+                    Ports =
+                    [
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                    ],
+                    Layout = new()
+                    {
+                        BackgroundShape = "swimlane-vertical",
+                        Sections =
+                        [
+                            new()
+                            {
+                                Type = "swimlane",
+                                DataKey = "swimlane",
+                                DefaultText = "Swimlane",
+                                Padding = 0
+                            }
+                        ]
+                    },
+                    DefaultData = new()
+                    {
+                        ["swimlane"] = "Swimlane"
+                    }
+                }
+            ]
+        };
+    }
+
+    private static DiagramStencilSet TableSet()
+    {
+        return new DiagramStencilSet
+        {
+            Id = "table",
+            Name = "Tables",
+            Stencils =
+            [
+                new()
+                {
+                    Id = "table.basic",
+                    Name = "Basic Table",
+                    Category = "Tables",
+                    IconSvg = "<rect x='4' y='6' width='24' height='20' rx='1' fill='none' stroke='currentColor' stroke-width='2'/><line x1='4' y1='14' x2='28' y2='14' stroke='currentColor' stroke-width='2'/><line x1='12' y1='14' x2='12' y2='26' stroke='currentColor' stroke-width='2'/><line x1='20' y1='14' x2='20' y2='26' stroke='currentColor' stroke-width='2'/>",
+                    DefaultWidth = 240,
+                    DefaultHeight = 160,
+                    IsTable = true,
+                    Ports =
+                    [
+                        new() { Name = "top", Side = PortSide.Top, Offset = 0.5 },
+                        new() { Name = "right", Side = PortSide.Right, Offset = 0.5 },
+                        new() { Name = "bottom", Side = PortSide.Bottom, Offset = 0.5 },
+                        new() { Name = "left", Side = PortSide.Left, Offset = 0.5 }
+                    ],
+                    Layout = new()
+                    {
+                        BackgroundShape = "table",
+                        Sections =
+                        [
+                            new()
+                            {
+                                Type = "table",
+                                DataKey = "table",
+                                DefaultText = "Table",
+                                Padding = 0
+                            }
+                        ]
+                    },
+                    DefaultData = new()
+                    {
+                        ["rowCount"] = 3,
+                        ["columnCount"] = 2,
+                        ["cells"] = new List<DiagramTableCellData>
+                        {
+                            new() { Row = 0, Column = 0, Text = "Header 1", Style = new() { FontWeight = "bold", BackgroundColor = "#f3f4f6" } },
+                            new() { Row = 0, Column = 1, Text = "Header 2", Style = new() { FontWeight = "bold", BackgroundColor = "#f3f4f6" } },
+                            new() { Row = 1, Column = 0, Text = "Row 1 Col 1" },
+                            new() { Row = 1, Column = 1, Text = "Row 1 Col 2" },
+                            new() { Row = 2, Column = 0, Text = "Row 2 Col 1" },
+                            new() { Row = 2, Column = 1, Text = "Row 2 Col 2" }
+                        }
+                    }
                 }
             ]
         };

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Diagram Editor Layout Tests</title>
+    <style>
+        body { font-family: sans-serif; margin: 20px; }
+        .pass { color: green; }
+        .fail { color: red; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <h1>Diagram Editor Layout JS Tests</h1>
+    <div id="results"></div>
+    <div id="dummy-container" style="display:none"></div>
+
+    <script src="js/d3-hierarchy.min.js"></script>
+    <script src="js/d3-force.min.js"></script>
+    <script src="js/diagram-editor.js"></script>
+    <script>
+        const results = document.getElementById('results');
+        let passCount = 0;
+        let failCount = 0;
+
+        function assert(condition, message) {
+            if (condition) {
+                passCount++;
+                results.innerHTML += '<div class="pass">PASS: ' + message + '</div>';
+            } else {
+                failCount++;
+                results.innerHTML += '<div class="fail">FAIL: ' + message + '</div>';
+            }
+        }
+
+        function assertFinite(value, name) {
+            assert(Number.isFinite(value), name + ' is finite (' + value + ')');
+        }
+
+        // ── Tree Layout Test ───────────────────────────────────────────────────
+        (function() {
+            const container = document.getElementById('dummy-container');
+            const nodes = [
+                { id: 'root', width: 100, height: 60 },
+                { id: 'child1', width: 100, height: 60 },
+                { id: 'child2', width: 100, height: 60 },
+                { id: 'grandchild1', width: 100, height: 60 }
+            ];
+            const edges = [
+                { source: 'root', target: 'child1' },
+                { source: 'root', target: 'child2' },
+                { source: 'child1', target: 'grandchild1' }
+            ];
+
+            const result = window.tmDiagramEditor.runTreeLayout(container, nodes, edges, 'TB');
+            assert(Array.isArray(result) && result.length === 4, 'Tree layout returns 4 positions');
+            if (Array.isArray(result)) {
+                result.forEach(r => {
+                    assertFinite(r.x, 'Tree node ' + r.id + ' x');
+                    assertFinite(r.y, 'Tree node ' + r.id + ' y');
+                });
+                const rootPos = result.find(r => r.id === 'root');
+                const child1Pos = result.find(r => r.id === 'child1');
+                const grandchild1Pos = result.find(r => r.id === 'grandchild1');
+                if (rootPos && child1Pos) {
+                    assert(child1Pos.y > rootPos.y, 'Tree layout: child1 is below root');
+                }
+                if (child1Pos && grandchild1Pos) {
+                    assert(grandchild1Pos.y > child1Pos.y, 'Tree layout: grandchild1 is below child1');
+                }
+            }
+        })();
+
+        // ── Force Layout Test ──────────────────────────────────────────────────
+        (function() {
+            const container = document.getElementById('dummy-container');
+            const nodes = [
+                { id: 'a', width: 100, height: 60 },
+                { id: 'b', width: 100, height: 60 },
+                { id: 'c', width: 100, height: 60 },
+                { id: 'd', width: 100, height: 60 }
+            ];
+            const edges = [
+                { source: 'a', target: 'b' },
+                { source: 'b', target: 'c' },
+                { source: 'c', target: 'd' }
+            ];
+
+            const result = window.tmDiagramEditor.runForceLayout(container, nodes, edges, { width: 800, height: 600, ticks: 300 });
+            assert(Array.isArray(result) && result.length === 4, 'Force layout returns 4 positions');
+            if (Array.isArray(result)) {
+                result.forEach(r => {
+                    assertFinite(r.x, 'Force node ' + r.id + ' x');
+                    assertFinite(r.y, 'Force node ' + r.id + ' y');
+                });
+            }
+        })();
+
+        // ── Circle Layout Test ─────────────────────────────────────────────────
+        (function() {
+            const container = document.getElementById('dummy-container');
+            const nodes = [
+                { id: 'a', width: 100, height: 60 },
+                { id: 'b', width: 100, height: 60 },
+                { id: 'c', width: 100, height: 60 }
+            ];
+
+            const result = window.tmDiagramEditor.runCircleLayout(container, nodes, { radius: 200 });
+            assert(Array.isArray(result) && result.length === 3, 'Circle layout returns 3 positions');
+            if (Array.isArray(result)) {
+                result.forEach(r => {
+                    assertFinite(r.x, 'Circle node ' + r.id + ' x');
+                    assertFinite(r.y, 'Circle node ' + r.id + ' y');
+                });
+            }
+        })();
+
+        // ── Grid Layout Test ───────────────────────────────────────────────────
+        (function() {
+            const container = document.getElementById('dummy-container');
+            const nodes = [
+                { id: 'a', width: 100, height: 60 },
+                { id: 'b', width: 100, height: 60 },
+                { id: 'c', width: 100, height: 60, gridRow: 1, gridColumn: 1 },
+                { id: 'd', width: 100, height: 60, gridRow: 0, gridColumn: 0 }
+            ];
+
+            const result = window.tmDiagramEditor.runGridLayout(container, nodes, { cellWidth: 150, cellHeight: 100, padding: 10 });
+            assert(Array.isArray(result) && result.length === 4, 'Grid layout returns 4 positions');
+            if (Array.isArray(result)) {
+                const dPos = result.find(r => r.id === 'd');
+                const cPos = result.find(r => r.id === 'c');
+                if (dPos && cPos) {
+                    assert(dPos.x === 10 && dPos.y === 10, 'Grid layout: custom grid position for d');
+                    assert(cPos.x === 180 && cPos.y === 120, 'Grid layout: custom grid position for c');
+                }
+            }
+        })();
+
+        // ── Summary ────────────────────────────────────────────────────────────
+        results.innerHTML += '<hr><strong>Passed: ' + passCount + '</strong> | <strong>Failed: ' + failCount + '</strong>';
+        if (failCount > 0) {
+            document.body.style.background = '#fff0f0';
+        } else {
+            document.body.style.background = '#f0fff0';
+        }
+    </script>
+</body>
+</html>

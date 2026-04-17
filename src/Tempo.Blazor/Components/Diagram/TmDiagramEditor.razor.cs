@@ -2,7 +2,9 @@ using System.Net.Http;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Serialization;
@@ -22,6 +24,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     [Inject] private IJSRuntime JS { get; set; } = default!;
     [Inject] private IHttpClientFactory HttpClientFactory { get; set; } = default!;
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
+    [Inject] private NavigationManager NavigationManager { get; set; } = default!;
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
@@ -55,6 +58,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     /// <summary>Snap-to-grid cell size in pixels. 0 = disabled.</summary>
     [Parameter] public int GridSize { get; set; } = 8;
 
+    /// <summary>Show page view with shadow and boundaries on the canvas.</summary>
+    [Parameter] public bool ShowPageView { get; set; } = true;
+
     /// <summary>Optional named HttpClient to use for SVG/PNG/PDF export calls.</summary>
     [Parameter] public string ExportHttpClientName { get; set; } = "";
 
@@ -67,13 +73,34 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private ElementReference _downloadAnchor;
 
     // ── Command stack ────────────────────────────────────────────────────────
+    // One isolated stack per page so undo/redo is scoped to the active page.
 
-    private readonly DiagramCommandStack _commandStack = new();
+    private readonly Dictionary<string, DiagramCommandStack> _pageCommandStacks = new();
+
+    private DiagramCommandStack ActiveCommandStack
+    {
+        get
+        {
+            var pageId = _document?.ActivePage?.Id;
+            if (pageId is null)
+                return new DiagramCommandStack(); // fallback, should never happen
+
+            if (!_pageCommandStacks.TryGetValue(pageId, out var stack))
+            {
+                stack = new DiagramCommandStack();
+                stack.OnStackChanged += OnStackChanged;
+                _pageCommandStacks[pageId] = stack;
+            }
+            return stack;
+        }
+    }
 
     // ── Derived / UI state ───────────────────────────────────────────────────
 
     private DiagramDocument? _document;
     private string[] _selectedIds = [];
+    private readonly Stack<string> _groupStack = new();
+    private string? ActiveGroupId => _groupStack.Any() ? _groupStack.Peek() : null;
 
     private double _zoomLevel = 1.0;
     private string _zoomLabel => $"{(int)Math.Round(_zoomLevel * 100)}%";
@@ -92,6 +119,23 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private string _toolMode = "select";
 
+    private bool _showRulers;
+    private double _rulerViewportX;
+    private double _rulerViewportY;
+    private double _rulerViewportW;
+    private double _rulerViewportH;
+    private double _rulerCursorX;
+    private double _rulerCursorY;
+
+    private static readonly IReadOnlyList<SelectOption<MeasurementUnit>> _rulerUnitOptions =
+    [
+        new() { Value = MeasurementUnit.Px, Label = "px" },
+        new() { Value = MeasurementUnit.Pt, Label = "pt" },
+        new() { Value = MeasurementUnit.In, Label = "in" },
+        new() { Value = MeasurementUnit.Mm, Label = "mm" },
+        new() { Value = MeasurementUnit.M, Label = "m" },
+    ];
+
     private bool _canvasSizeEditing;
     private string _canvasWInput = "";
     private string _canvasHInput = "";
@@ -101,41 +145,91 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private string? _connectSourceNodeId;
     private string? _connectDirection;
 
+    // SQL import dialog state
+    private bool _sqlImportDialogOpen;
+    private bool _csvImportDialogOpen;
+
+    // Template gallery state
+    private bool _showTemplateGallery;
+
     // ── Context menu ─────────────────────────────────────────────────────────
 
+    private enum ContextMenuType { None, Node, Edge, Canvas, TableCell }
+
     private bool _contextMenuOpen;
+    private ContextMenuType _contextMenuType;
     private string? _contextMenuNodeId;
+    private string? _contextMenuEdgeId;
+    private (int Row, int Column)? _contextMenuTableCell;
     private double _contextMenuScreenX;
     private double _contextMenuScreenY;
+    private double _contextMenuCanvasX;
+    private double _contextMenuCanvasY;
+
+    private readonly List<(int Row, int Column)> _selectedTableCells = [];
+
+    // ── Page tabs state ──────────────────────────────────────────────────────
+
+    private string? _pageRenamingId;
+    private string _pageRenameInput = "";
+    private ElementReference _pageRenameInputRef;
+    private string? _pageDragId;
+    private string? _pageDragOverId;
 
     // ── Search panel ─────────────────────────────────────────────────────────
 
     private bool _showSearchPanel;
     private string _searchQuery = "";
+    private string _replaceQuery = "";
     private List<DiagramSearchResult> _searchResults = [];
     private int _searchCurrentIndex;
+    private bool _searchAllPages;
+    private bool _searchUseRegex;
+    private string? _regexError;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override void OnInitialized()
     {
-        _commandStack.OnStackChanged += OnStackChanged;
         _document = Document ?? CreateEmptyDocument();
+        if (_document.Pages.Count == 1 && _document.Pages[0].Name == "Page 1")
+        {
+            _document.Pages[0].Name = $"{Loc["TmDiagramEditor_PageName"]} 1";
+        }
+        EnsureCommandStackForActivePage();
     }
 
     protected override void OnParametersSet()
     {
         if (Document is not null && !ReferenceEquals(Document, _document))
         {
+            DetachAllStacks();
+            _pageCommandStacks.Clear();
+            _groupStack.Clear();
             _document = Document;
-            _commandStack.Clear();
+            _document.EnsurePages();
             _selectedIds = [];
+            EnsureCommandStackForActivePage();
         }
     }
 
     public void Dispose()
     {
-        _commandStack.OnStackChanged -= OnStackChanged;
+        DetachAllStacks();
+    }
+
+    private void EnsureCommandStackForActivePage()
+    {
+        _document?.EnsurePages();
+        var _ = ActiveCommandStack; // triggers creation and attachment
+    }
+
+    private void DetachAllStacks()
+    {
+        foreach (var stack in _pageCommandStacks.Values)
+        {
+            stack.OnStackChanged -= OnStackChanged;
+        }
     }
 
     // ── Stack change → re-render ─────────────────────────────────────────────
@@ -174,13 +268,17 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     // ── Context menu ─────────────────────────────────────────────────────────
 
-    private async Task OnContextMenu((string NodeId, double ScreenX, double ScreenY) args)
+    private async Task OnNodeContextMenu((string NodeId, double ScreenX, double ScreenY) args)
     {
         if (ReadOnly) return;
+        _contextMenuType = ContextMenuType.Node;
         _contextMenuOpen = true;
         _contextMenuNodeId = args.NodeId;
+        _contextMenuEdgeId = null;
+        _contextMenuTableCell = null;
         _contextMenuScreenX = args.ScreenX;
         _contextMenuScreenY = args.ScreenY;
+        ClampContextMenuPosition();
 
         if (!_selectedIds.Contains(args.NodeId) && _canvas is not null)
         {
@@ -190,14 +288,221 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OnEdgeContextMenu((string EdgeId, double ScreenX, double ScreenY) args)
+    {
+        if (ReadOnly) return;
+        _contextMenuType = ContextMenuType.Edge;
+        _contextMenuOpen = true;
+        _contextMenuEdgeId = args.EdgeId;
+        _contextMenuNodeId = null;
+        _contextMenuTableCell = null;
+        _contextMenuScreenX = args.ScreenX;
+        _contextMenuScreenY = args.ScreenY;
+        ClampContextMenuPosition();
+        StateHasChanged();
+    }
+
+    private void OnTableCellContextMenu((string NodeId, int Row, int Column, double ScreenX, double ScreenY) args)
+    {
+        if (ReadOnly) return;
+        _contextMenuType = ContextMenuType.TableCell;
+        _contextMenuOpen = true;
+        _contextMenuNodeId = args.NodeId;
+        _contextMenuEdgeId = null;
+        _contextMenuTableCell = (args.Row, args.Column);
+        _contextMenuScreenX = args.ScreenX;
+        _contextMenuScreenY = args.ScreenY;
+        ClampContextMenuPosition();
+        StateHasChanged();
+    }
+
+    private void OnCanvasContextMenu((double CanvasX, double CanvasY, double ScreenX, double ScreenY) args)
+    {
+        if (ReadOnly) return;
+        _contextMenuType = ContextMenuType.Canvas;
+        _contextMenuOpen = true;
+        _contextMenuNodeId = null;
+        _contextMenuEdgeId = null;
+        _contextMenuTableCell = null;
+        _contextMenuCanvasX = args.CanvasX;
+        _contextMenuCanvasY = args.CanvasY;
+        _contextMenuScreenX = args.ScreenX;
+        _contextMenuScreenY = args.ScreenY;
+        ClampContextMenuPosition();
+        StateHasChanged();
+    }
+
+    private void ClampContextMenuPosition()
+    {
+        // Estimate menu size: 220px width, 320px max height
+        const double menuW = 220;
+        const double menuH = 320;
+        var w = 1920d;
+        var h = 1080d;
+        if (_contextMenuScreenX + menuW > w) _contextMenuScreenX = Math.Max(0, w - menuW - 8);
+        if (_contextMenuScreenY + menuH > h) _contextMenuScreenY = Math.Max(0, h - menuH - 8);
+    }
+
     private void CloseContextMenu() => _contextMenuOpen = false;
+
+    private async Task HandleTableCellSelect((string NodeId, int Row, int Column, bool IsCtrlHeld) args)
+    {
+        if (ReadOnly) return;
+        if (!args.IsCtrlHeld)
+        {
+            _selectedTableCells.Clear();
+            _selectedTableCells.Add((args.Row, args.Column));
+        }
+        else
+        {
+            var existing = _selectedTableCells.FirstOrDefault(s => s.Row == args.Row && s.Column == args.Column);
+            if (existing != default)
+                _selectedTableCells.Remove(existing);
+            else
+                _selectedTableCells.Add((args.Row, args.Column));
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnSelectedTableCellsChanged(List<(int Row, int Column)> cells)
+    {
+        _selectedTableCells.Clear();
+        _selectedTableCells.AddRange(cells);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private bool IsTableNode(string? nodeId)
+    {
+        if (nodeId is null) return false;
+        var node = _document?.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null) return false;
+        var stencil = StencilRegistry.GetStencil(node.StencilId);
+        return stencil?.IsTable == true;
+    }
+
+    private bool GetContextMenuNodeLocked()
+    {
+        if (_contextMenuNodeId is null || _document is null) return false;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId);
+        return node?.IsLocked ?? false;
+    }
+
+    private bool CanContextMenuGroup()
+    {
+        if (_document is null) return false;
+        return _selectedIds.Length > 1 && _selectedIds.All(id => _document.Nodes.Any(n => n.Id == id));
+    }
+
+    private bool CanContextMenuUngroup()
+    {
+        if (_document is null || _selectedIds.Length != 1) return false;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _selectedIds[0]);
+        return !string.IsNullOrEmpty(node?.GroupId) || node?.StencilId == "general.group";
+    }
+
+    private bool CanContextMenuMergeCells()
+    {
+        if (_contextMenuNodeId is null || _document is null) return false;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId);
+        return node is not null && Services.TableLayoutService.CanMerge(node, _selectedTableCells);
+    }
+
+    private bool CanContextMenuSplitCell()
+    {
+        if (_contextMenuTableCell is null || _contextMenuNodeId is null || _document is null) return false;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId);
+        return node is not null && Services.TableLayoutService.CanSplit(node, _contextMenuTableCell.Value.Row, _contextMenuTableCell.Value.Column);
+    }
+
+    // ── Node actions ─────────────────────────────────────────────────────────
+
+    private async Task ContextMenuCut()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        ActiveCommandStack.Push(new CutNodesCommand(_document, ids));
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuCopy()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        new CopyNodesCommand(_document, ids).Execute();
+    }
+
+    private async Task ContextMenuDuplicate()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        ActiveCommandStack.Push(new DuplicateNodesCommand(_document, ids));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuPaste()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        var cmd = new PasteNodesCommand(_document, 16, 16, useInternalClipboard: true, parentGroupId: ActiveGroupId);
+        if (cmd.PastedNodes.Count == 0) return;
+        ActiveCommandStack.Push(cmd);
+        _selectedIds = cmd.PastedNodes.Select(n => n.Id).ToArray();
+        if (_canvas is not null) await _canvas.SetSelection(_selectedIds);
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuPasteHere()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        var cmd = new PasteNodesCommand(_document, _contextMenuCanvasX, _contextMenuCanvasY, useInternalClipboard: true, pasteHere: true, parentGroupId: ActiveGroupId);
+        if (cmd.PastedNodes.Count == 0) return;
+        ActiveCommandStack.Push(cmd);
+        _selectedIds = cmd.PastedNodes.Select(n => n.Id).ToArray();
+        if (_canvas is not null) await _canvas.SetSelection(_selectedIds);
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuSelectAll()
+    {
+        _contextMenuOpen = false;
+        if (_document is null) return;
+        _selectedIds = _document.Nodes.Select(n => n.Id).ToArray();
+        if (_canvas is not null) await _canvas.SetSelection(_selectedIds);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ContextMenuUndo()
+    {
+        _contextMenuOpen = false;
+        if (ActiveCommandStack.CanUndo)
+        {
+            ActiveCommandStack.Undo();
+            await OnDocumentChanged(_document!);
+        }
+    }
+
+    private async Task ContextMenuRedo()
+    {
+        _contextMenuOpen = false;
+        if (ActiveCommandStack.CanRedo)
+        {
+            ActiveCommandStack.Redo();
+            await OnDocumentChanged(_document!);
+        }
+    }
 
     private async Task ContextMenuDelete()
     {
         _contextMenuOpen = false;
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
-        var ids = new[] { _contextMenuNodeId };
-        _commandStack.Push(new RemoveNodesCommand(_document, ids));
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        ActiveCommandStack.Push(new RemoveNodesCommand(_document, ids));
         _selectedIds = [];
         if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);
@@ -207,14 +512,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _contextMenuOpen = false;
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
-        var node = _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId);
-        if (node is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        var before = ids.ToDictionary(id => id, id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.ZIndex ?? 0);
         var maxZ = _document.Nodes.Count > 0 ? _document.Nodes.Max(n => n.ZIndex) : 0;
-        if (node.ZIndex == maxZ) return;
-
-        var before = new Dictionary<string, int> { [_contextMenuNodeId] = node.ZIndex };
-        var after = new Dictionary<string, int> { [_contextMenuNodeId] = maxZ + 1 };
-        _commandStack.Push(new UpdateZIndexCommand(_document, before, after));
+        var after = ids.ToDictionary(id => id, id => maxZ + 1);
+        ActiveCommandStack.Push(new UpdateZIndexCommand(_document, before, after));
         await OnDocumentChanged(_document);
     }
 
@@ -222,15 +524,300 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _contextMenuOpen = false;
         if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        var before = ids.ToDictionary(id => id, id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.ZIndex ?? 0);
+        var minZ = _document.Nodes.Count > 0 ? _document.Nodes.Min(n => n.ZIndex) : 0;
+        var after = ids.ToDictionary(id => id, id => minZ - 1);
+        ActiveCommandStack.Push(new UpdateZIndexCommand(_document, before, after));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuLock()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        ActiveCommandStack.Push(new LockNodesCommand(_document, ids));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuUnlock()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        ActiveCommandStack.Push(new UnlockNodesCommand(_document, ids));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuGroup()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        if (!CanContextMenuGroup()) return;
+        ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuUngroup()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        if (!CanContextMenuUngroup()) return;
+        var node = _document.Nodes.FirstOrDefault(n => n.Id == _selectedIds[0]);
+        var groupId = node?.StencilId == "general.group" ? node.Id : node?.GroupId;
+        if (string.IsNullOrEmpty(groupId)) return;
+        ActiveCommandStack.Push(new UngroupNodesCommand(_document, groupId));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuPasteStyle()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        if (DiagramClipboard.Style is null) return;
+        ActiveCommandStack.Push(new PasteStyleCommand(_document, ids));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuPasteSize()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var ids = _selectedIds.Contains(_contextMenuNodeId) ? _selectedIds : [_contextMenuNodeId];
+        if (DiagramClipboard.Width is null || DiagramClipboard.Height is null) return;
+        ActiveCommandStack.Push(new PasteSizeCommand(_document, ids));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuReplaceShape(string stencilId)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        if (stencil is null) return;
         var node = _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId);
         if (node is null) return;
-        var minZ = _document.Nodes.Count > 0 ? _document.Nodes.Min(n => n.ZIndex) : 0;
-        if (node.ZIndex == minZ) return;
-
-        var before = new Dictionary<string, int> { [_contextMenuNodeId] = node.ZIndex };
-        var after = new Dictionary<string, int> { [_contextMenuNodeId] = minZ - 1 };
-        _commandStack.Push(new UpdateZIndexCommand(_document, before, after));
+        var newPorts = stencil.Ports.Select(p => new DiagramPort
+        {
+            Id = Guid.NewGuid().ToString("N")[..8],
+            Name = p.Name,
+            Side = p.Side,
+            Offset = p.Offset,
+            IsInput = p.IsInput,
+            IsOutput = p.IsOutput
+        }).ToList();
+        ActiveCommandStack.Push(new ReplaceShapeCommand(_document, _contextMenuNodeId, stencilId, newPorts, stencil.DefaultWidth, stencil.DefaultHeight));
         await OnDocumentChanged(_document);
+    }
+
+    // ── Edge actions ─────────────────────────────────────────────────────────
+
+    private async Task ContextMenuDeleteEdge()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        ActiveCommandStack.Push(new RemoveEdgesCommand(_document, [_contextMenuEdgeId]));
+        await OnDocumentChanged(_document);
+    }
+
+    private void ContextMenuEditEdgeLabel()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || _contextMenuEdgeId is null) return;
+        // Trigger inline label editing via the canvas
+        _canvas?.StartEdgeLabelEdit(_contextMenuEdgeId);
+    }
+
+    private async Task ContextMenuChangeEdgeConnector(string routing)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+        if (edge is null || edge.Routing == routing) return;
+        ActiveCommandStack.Push(new UpdateEdgeRoutingCommand(_document, _contextMenuEdgeId, edge.Routing, routing, edge.Waypoints.ToList(), []));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuChangeEdgeArrowheadStart(string arrowhead)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        ActiveCommandStack.Push(new UpdateEdgeArrowheadsCommand(_document, [_contextMenuEdgeId], newStartArrow: arrowhead));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuChangeEdgeArrowheadEnd(string arrowhead)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        ActiveCommandStack.Push(new UpdateEdgeArrowheadsCommand(_document, [_contextMenuEdgeId], newEndArrow: arrowhead));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuChangeEdgeLineStyle(string? dasharray)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        ActiveCommandStack.Push(new UpdateEdgeLineStyleCommand(_document, [_contextMenuEdgeId], dasharray));
+        await OnDocumentChanged(_document);
+    }
+
+    // ── Table cell actions ───────────────────────────────────────────────────
+
+    private async Task ContextMenuInsertRowAbove()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var row = _contextMenuTableCell?.Row ?? 0;
+        using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertRowAbove"]))
+        {
+            ActiveCommandStack.Push(new InsertTableRowCommand(_document, _contextMenuNodeId, row));
+        }
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuInsertRowBelow()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var row = (_contextMenuTableCell?.Row ?? 0) + 1;
+        var rowCount = Services.TableLayoutService.GetRowCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
+        if (row > rowCount) row = rowCount;
+        using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertRowBelow"]))
+        {
+            ActiveCommandStack.Push(new InsertTableRowCommand(_document, _contextMenuNodeId, row));
+        }
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuInsertColumnLeft()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var col = _contextMenuTableCell?.Column ?? 0;
+        using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertColumnLeft"]))
+        {
+            ActiveCommandStack.Push(new InsertTableColumnCommand(_document, _contextMenuNodeId, col));
+        }
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuInsertColumnRight()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var col = (_contextMenuTableCell?.Column ?? 0) + 1;
+        var colCount = Services.TableLayoutService.GetColumnCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
+        if (col > colCount) col = colCount;
+        using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertColumnRight"]))
+        {
+            ActiveCommandStack.Push(new InsertTableColumnCommand(_document, _contextMenuNodeId, col));
+        }
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuMergeCells()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (!CanContextMenuMergeCells()) return;
+        ActiveCommandStack.Push(new MergeTableCellsCommand(_document, _contextMenuNodeId, _selectedTableCells));
+        _selectedTableCells.Clear();
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuSplitCell()
+    {
+        _contextMenuOpen = false;
+        if (_contextMenuTableCell is null || _document is null || ReadOnly || _contextMenuNodeId is null) return;
+        var (row, col) = _contextMenuTableCell.Value;
+        ActiveCommandStack.Push(new SplitTableCellCommand(_document, _contextMenuNodeId, row, col));
+        await OnDocumentChanged(_document);
+    }
+
+    private void ContextMenuEditTableCellText()
+    {
+        _contextMenuOpen = false;
+        if (_contextMenuTableCell is null) return;
+        // The stencil shape handles inline editing via double-click; we can't easily trigger it remotely.
+        // For now we rely on the Properties panel for inline text editing.
+    }
+
+    private async Task ContextMenuFormatTableCell(string backgroundColor, string borderColor)
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || _contextMenuTableCell is null) return;
+        var (row, col) = _contextMenuTableCell.Value;
+        var cell = Services.TableLayoutService.GetCells(_document.Nodes.First(n => n.Id == _contextMenuNodeId))
+            .FirstOrDefault(c => c.Row == row && c.Column == col);
+        var newStyle = new DiagramTableCellStyle
+        {
+            BackgroundColor = backgroundColor,
+            BorderColor = borderColor,
+            TextAlign = cell?.Style?.TextAlign,
+            FontWeight = cell?.Style?.FontWeight
+        };
+        ActiveCommandStack.Push(new UpdateTableCellStyleCommand(_document, _contextMenuNodeId, row, col, newStyle));
+        await OnDocumentChanged(_document);
+    }
+
+    // ── Canvas actions ───────────────────────────────────────────────────────
+
+    private async Task ContextMenuInsertText()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        var node = new DiagramNode { StencilId = "general.text", X = _contextMenuCanvasX, Y = _contextMenuCanvasY, W = 80, H = 30 };
+        node.Data["text"] = "Text";
+        ActiveCommandStack.Push(new AddNodeCommand(_document, node));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuInsertRectangle()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        var node = new DiagramNode { StencilId = "general.rectangle", X = _contextMenuCanvasX, Y = _contextMenuCanvasY };
+        ActiveCommandStack.Push(new AddNodeCommand(_document, node));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuInsertEllipse()
+    {
+        _contextMenuOpen = false;
+        if (_document is null || ReadOnly) return;
+        var node = new DiagramNode { StencilId = "general.ellipse", X = _contextMenuCanvasX, Y = _contextMenuCanvasY };
+        ActiveCommandStack.Push(new AddNodeCommand(_document, node));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task ContextMenuRunLayout(string algorithm, string direction)
+    {
+        _contextMenuOpen = false;
+        await RunLayout(algorithm, direction);
+    }
+
+    private void ContextMenuToggleGrid()
+    {
+        _contextMenuOpen = false;
+        ShowGrid = !ShowGrid;
+        StateHasChanged();
+    }
+
+    private void ContextMenuTogglePageView()
+    {
+        _contextMenuOpen = false;
+        ShowPageView = !ShowPageView;
+        StateHasChanged();
+    }
+
+    private void ContextMenuToggleSnapToGrid()
+    {
+        _contextMenuOpen = false;
+        GridSize = GridSize == 0 ? 8 : 0;
+        StateHasChanged();
     }
 
     // ── Search panel ─────────────────────────────────────────────────────────
@@ -239,8 +826,29 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _showSearchPanel = true;
         _searchQuery = "";
+        _replaceQuery = "";
         _searchResults = [];
         _searchCurrentIndex = 0;
+        _searchAllPages = false;
+        _searchUseRegex = false;
+        _regexError = null;
+        if (_canvas is not null)
+            _ = _canvas.SetActiveSearchResult(null);
+    }
+
+    private void OpenReplacePanel()
+    {
+        _showSearchPanel = true;
+        if (string.IsNullOrEmpty(_searchQuery))
+        {
+            _searchQuery = "";
+            _replaceQuery = "";
+            _searchResults = [];
+            _searchCurrentIndex = 0;
+            _searchAllPages = false;
+            _searchUseRegex = false;
+            _regexError = null;
+        }
         if (_canvas is not null)
             _ = _canvas.SetActiveSearchResult(null);
     }
@@ -249,8 +857,12 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _showSearchPanel = false;
         _searchQuery = "";
+        _replaceQuery = "";
         _searchResults = [];
         _searchCurrentIndex = 0;
+        _searchAllPages = false;
+        _searchUseRegex = false;
+        _regexError = null;
         if (_canvas is not null)
             _ = _canvas.SetActiveSearchResult(null);
     }
@@ -258,9 +870,48 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private void OnSearchQueryChanged(string query)
     {
         _searchQuery = query;
-        _searchResults = string.IsNullOrWhiteSpace(query)
-            ? []
-            : DiagramSearchService.Search(_document, query);
+        ValidateRegex();
+        ExecuteSearch();
+    }
+
+    private void OnReplaceQueryChanged(string query)
+    {
+        _replaceQuery = query;
+    }
+
+    private void OnSearchUseRegexChanged(bool value)
+    {
+        _searchUseRegex = value;
+        ValidateRegex();
+        ExecuteSearch();
+    }
+
+    private void ValidateRegex()
+    {
+        _regexError = null;
+        if (_searchUseRegex && !string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            if (!DiagramSearchService.TryCreateRegex(_searchQuery.Trim(), out _, out var error))
+            {
+                _regexError = error;
+            }
+        }
+    }
+
+    private void ExecuteSearch()
+    {
+        if (string.IsNullOrWhiteSpace(_searchQuery) || !string.IsNullOrEmpty(_regexError))
+        {
+            _searchResults = [];
+            _searchCurrentIndex = 0;
+            if (_canvas is not null)
+                _ = _canvas.SetActiveSearchResult(null);
+            return;
+        }
+
+        _searchResults = _searchAllPages
+            ? DiagramSearchService.SearchAllPages(_document, _searchQuery, _searchUseRegex)
+            : DiagramSearchService.Search(_document, _searchQuery, _searchUseRegex);
         _searchCurrentIndex = _searchResults.Count > 0 ? 0 : 0;
         if (_canvas is not null)
         {
@@ -277,6 +928,18 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         if (_searchResults.Count == 0 || _canvas is null) return;
 
         var result = _searchResults[index];
+
+        if (_searchAllPages && result.PageIndex.HasValue && result.PageIndex.Value != _document?.ActivePageIndex)
+        {
+            if (_document is not null)
+            {
+                _document.ActivePageIndex = result.PageIndex.Value;
+                EnsureCommandStackForActivePage();
+                _selectedIds = [];
+                await RerenderCanvas();
+            }
+        }
+
         var activeId = result.NodeId ?? result.EdgeId;
         await _canvas.SetActiveSearchResult(activeId);
 
@@ -293,6 +956,106 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
+    private void OnSearchAllPagesChanged(bool value)
+    {
+        _searchAllPages = value;
+        if (!string.IsNullOrWhiteSpace(_searchQuery))
+        {
+            ExecuteSearch();
+        }
+    }
+
+    private async Task OnReplace()
+    {
+        if (_searchResults.Count == 0 || _searchCurrentIndex < 0 || _searchCurrentIndex >= _searchResults.Count)
+            return;
+        if (!DiagramSearchService.TryCreateRegex(_searchQuery.Trim(), out var regex, out _))
+            return;
+
+        var result = _searchResults[_searchCurrentIndex];
+        var page = result.PageIndex.HasValue && _document is not null
+            ? _document.Pages[result.PageIndex.Value]
+            : _document?.ActivePage;
+        if (page is null) return;
+
+        var replaceResult = DiagramSearchService.ReplaceInResult(_document!, result, regex!, _replaceQuery);
+        if (replaceResult is null) return;
+
+        if (result.NodeId is not null)
+        {
+            var node = page.Nodes.FirstOrDefault(n => n.Id == result.NodeId);
+            if (node is null) return;
+            var oldData = DeepCopy(node.Data);
+            var newData = DeepCopy(node.Data);
+            newData[replaceResult.DataKey] = replaceResult.NewValue;
+            ActiveCommandStack.Push(new UpdateNodeDataCommand(_document!, result.NodeId, oldData, newData));
+        }
+        else if (result.EdgeId is not null)
+        {
+            var edge = page.Edges.FirstOrDefault(e => e.Id == result.EdgeId);
+            if (edge is null) return;
+            ActiveCommandStack.Push(new UpdateEdgeLabelCommand(_document!, result.EdgeId, replaceResult.OldValue, replaceResult.NewValue));
+        }
+
+        ExecuteSearch();
+        if (_searchResults.Count > 0)
+        {
+            var nextIndex = Math.Min(_searchCurrentIndex, _searchResults.Count - 1);
+            await OnSearchIndexChanged(nextIndex);
+        }
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task OnReplaceAll()
+    {
+        if (_searchResults.Count == 0 || !DiagramSearchService.TryCreateRegex(_searchQuery.Trim(), out var regex, out _))
+            return;
+        if (_document is null) return;
+
+        using var tx = ActiveCommandStack.TransactionScope("Replace all");
+
+        var processed = new HashSet<string>();
+        foreach (var result in _searchResults)
+        {
+            var replaceResult = DiagramSearchService.ReplaceInResult(_document, result, regex!, _replaceQuery);
+            if (replaceResult is null) continue;
+
+            var key = result.NodeId is not null ? $"node:{result.NodeId}:{replaceResult.DataKey}" : $"edge:{result.EdgeId}:{replaceResult.DataKey}";
+            if (!processed.Add(key)) continue;
+
+            var page = result.PageIndex.HasValue
+                ? _document.Pages[result.PageIndex.Value]
+                : _document.ActivePage;
+            if (page is null) continue;
+
+            if (result.NodeId is not null)
+            {
+                var node = page.Nodes.FirstOrDefault(n => n.Id == result.NodeId);
+                if (node is null) continue;
+                var oldData = DeepCopy(node.Data);
+                var newData = DeepCopy(node.Data);
+                newData[replaceResult.DataKey] = regex!.Replace(replaceResult.OldValue, _replaceQuery);
+                ActiveCommandStack.Push(new UpdateNodeDataCommand(_document, result.NodeId, oldData, newData));
+            }
+            else if (result.EdgeId is not null)
+            {
+                var edge = page.Edges.FirstOrDefault(e => e.Id == result.EdgeId);
+                if (edge is null) continue;
+                ActiveCommandStack.Push(new UpdateEdgeLabelCommand(_document, result.EdgeId, replaceResult.OldValue, regex!.Replace(replaceResult.OldValue, _replaceQuery)));
+            }
+        }
+        ExecuteSearch();
+        if (_searchResults.Count > 0)
+            await OnSearchIndexChanged(0);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static Dictionary<string, object> DeepCopy(Dictionary<string, object> source)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(source);
+        return System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(json) ?? [];
+    }
+
     private void OnCanvasZoomChanged(double scale)
     {
         _zoomLevel = scale;
@@ -302,6 +1065,33 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private void OnCanvasViewportChanged(DiagramMinimapViewport vp)
     {
         _minimapViewport = vp;
+        _rulerViewportX = vp.X;
+        _rulerViewportY = vp.Y;
+        _rulerViewportW = vp.Width;
+        _rulerViewportH = vp.Height;
+    }
+
+    private void ToggleRulers() => _showRulers = !_showRulers;
+
+    private void OnRulerCursorMoved((double X, double Y) args)
+    {
+        _rulerCursorX = args.X;
+        _rulerCursorY = args.Y;
+        StateHasChanged();
+    }
+
+    private void OnRulerUnitChanged(MeasurementUnit unit)
+    {
+        if (_document?.ActivePage is null) return;
+        _document.ActivePage.RulerUnit = unit;
+        StateHasChanged();
+    }
+
+    private void OnPageScaleChanged(double scale)
+    {
+        if (_document?.ActivePage is null || scale <= 0) return;
+        _document.ActivePage.PageScale = scale;
+        StateHasChanged();
     }
 
     private async Task OnMinimapNavigate(DiagramMinimapNavigateArgs args)
@@ -343,19 +1133,27 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await OnDocumentChanged(_document);
     }
 
+    private async Task HandlePageSizeChanged()
+    {
+        if (_document is null) return;
+        if (_canvas is not null)
+            await _canvas.UpdateCanvasSize(_document.Width, _document.Height);
+        await OnDocumentChanged(_document);
+    }
+
     // ── Toolbar: Undo / Redo ─────────────────────────────────────────────────
 
     private async Task OnUndoClicked()
     {
         if (ReadOnly) return;
-        _commandStack.Undo();
+        ActiveCommandStack.Undo();
         await RerenderCanvas();
     }
 
     private async Task OnRedoClicked()
     {
         if (ReadOnly) return;
-        _commandStack.Redo();
+        ActiveCommandStack.Redo();
         await RerenderCanvas();
     }
 
@@ -372,14 +1170,14 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task OnPasteStyle()
     {
         if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
-        _commandStack.Push(new PasteStyleCommand(_document, _selectedIds));
+        ActiveCommandStack.Push(new PasteStyleCommand(_document, _selectedIds));
         await OnDocumentChanged(_document);
     }
 
     private async Task OnPasteSize()
     {
         if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
-        _commandStack.Push(new PasteSizeCommand(_document, _selectedIds));
+        ActiveCommandStack.Push(new PasteSizeCommand(_document, _selectedIds));
         await OnDocumentChanged(_document);
     }
 
@@ -421,11 +1219,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private void ToggleLayoutMenu() => _layoutMenuOpen = !_layoutMenuOpen;
 
-    private async Task RunLayout(string direction)
+    private async Task RunLayout(string algorithm, string direction = "TB")
     {
         _layoutMenuOpen = false;
         if (_canvas is null) return;
-        await _canvas.RunLayoutAsync(direction);
+        await _canvas.RunLayoutAsync(algorithm, direction);
     }
 
     // ── Toolbar: Export ──────────────────────────────────────────────────────
@@ -459,7 +1257,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await ExportToServerAsync("pdf", "application/pdf", ".pdf");
     }
 
-    private async Task ExportToServerAsync(string format, string mimeType, string extension)
+    private async Task ExportToServerAsync(string format, string mimeType, string extension, bool exportAllPages = false)
     {
         if (_document is null) return;
 
@@ -473,7 +1271,18 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
                 ? HttpClientFactory.CreateClient()
                 : HttpClientFactory.CreateClient(ExportHttpClientName);
 
-            var response = await client.PostAsJsonAsync($"/api/diagram/export/{format}", _document);
+            var request = new
+            {
+                Document = _document,
+                Options = new
+                {
+                    PageIndex = _document.ActivePageIndex,
+                    ExportAllPages = exportAllPages,
+                    Padding = 20,
+                }
+            };
+
+            var response = await client.PostAsJsonAsync($"/api/diagram/export/{format}", request);
             response.EnsureSuccessStatusCode();
 
             byte[] data;
@@ -522,7 +1331,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             }
 
             _document = doc;
-            _commandStack.Clear();
+            ActiveCommandStack.Clear();
             _selectedIds = [];
             await DocumentChanged.InvokeAsync(_document);
             await RerenderCanvas();
@@ -582,10 +1391,43 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
                 Offset = portDef.Offset,
                 IsInput = portDef.IsInput,
                 IsOutput = portDef.IsOutput,
+                MagnetStrategy = portDef.MagnetStrategy,
             });
         }
 
-        _commandStack.Push(new AddNodeCommand(_document, node));
+        // Swimlane drop detection
+        double cx = x + w / 2;
+        double cy = y + h / 2;
+        foreach (var candidate in _document.Nodes
+            .Where(n => n.SwimlaneData is not null)
+            .OrderByDescending(n => n.ZIndex))
+        {
+            if (Services.SwimlaneLayoutService.ComputeCell(candidate, cx, cy) is var cell && cell.HasValue)
+            {
+                node.ParentNodeId = candidate.Id;
+                node.SwimlaneRow = cell.Value.Row;
+                node.SwimlaneColumn = cell.Value.Column;
+                Services.SwimlaneLayoutService.ArrangeChild(candidate, node);
+                break;
+            }
+        }
+
+        // Initialize swimlane data for swimlane stencils
+        if (stencil?.IsSwimlane == true)
+        {
+            node.SwimlaneData = new()
+            {
+                IsHorizontal = stencil.Layout.BackgroundShape == "swimlane-horizontal",
+                RowCount = 2,
+                ColumnCount = 1,
+                HeaderSize = 30,
+                RowSizes = [],
+                ColumnSizes = [],
+                CellLabels = ["Lane 1", "Lane 2"]
+            };
+        }
+
+        ActiveCommandStack.Push(new AddNodeCommand(_document, node));
         await OnDocumentChanged(_document);
         if (_canvas is not null)
         {
@@ -601,19 +1443,49 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         // Edge drawing is handled in JS; this is a hook for future extensions
     }
 
-    private async Task OnEdgeCreated((string SourceNodeId, string SourcePortId, string TargetNodeId, string TargetPortId) args)
+    private async Task OnEdgeCreated((string SourceNodeId, string? SourcePortId, string TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset) args)
     {
         if (_document is null || ReadOnly) return;
+
+        var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == args.SourceNodeId);
+        var targetNode = _document.Nodes.FirstOrDefault(n => n.Id == args.TargetNodeId);
+        if (sourceNode is null || targetNode is null) return;
+
+        string? sourcePortId = args.SourcePortId;
+        if (sourcePortId is null && !string.IsNullOrEmpty(args.SourceSide))
+        {
+            var side = Enum.Parse<PortSide>(args.SourceSide, true);
+            var port = sourceNode.Ports.FirstOrDefault(p => p.Side == side);
+            if (port is null)
+            {
+                port = new DiagramPort { Side = side, Offset = args.SourceOffset, IsInput = false, IsOutput = true };
+                sourceNode.Ports.Add(port);
+            }
+            sourcePortId = port.Id;
+        }
+
+        string? targetPortId = args.TargetPortId;
+        if (targetPortId is null && !string.IsNullOrEmpty(args.TargetSide))
+        {
+            var side = Enum.Parse<PortSide>(args.TargetSide, true);
+            var port = targetNode.Ports.FirstOrDefault(p => p.Side == side);
+            if (port is null)
+            {
+                port = new DiagramPort { Side = side, Offset = args.TargetOffset, IsInput = true, IsOutput = false };
+                targetNode.Ports.Add(port);
+            }
+            targetPortId = port.Id;
+        }
 
         var edge = new DiagramEdge
         {
             SourceNodeId = args.SourceNodeId,
-            SourcePortId = args.SourcePortId,
+            SourcePortId = sourcePortId,
             TargetNodeId = args.TargetNodeId,
-            TargetPortId = args.TargetPortId,
+            TargetPortId = targetPortId,
         };
 
-        _commandStack.Push(new AddEdgeCommand(_document, edge));
+        ActiveCommandStack.Push(new AddEdgeCommand(_document, edge));
         await OnDocumentChanged(_document);
 
         // Select the new edge
@@ -642,7 +1514,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         }
 
         var newWaypoints = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
-        _commandStack.Push(new UpdateEdgeRoutingCommand(_document, edge.Id, args.OldRouting, args.NewRouting, oldWaypoints, newWaypoints));
+        ActiveCommandStack.Push(new UpdateEdgeRoutingCommand(_document, edge.Id, args.OldRouting, args.NewRouting, oldWaypoints, newWaypoints));
         await OnDocumentChanged(_document);
     }
 
@@ -662,6 +1534,125 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _connectModalOpen = false;
         _connectSourceNodeId = null;
         _connectDirection = null;
+    }
+
+    private void OpenSqlImportDialog()
+    {
+        if (ReadOnly) return;
+        _sqlImportDialogOpen = true;
+    }
+
+    private void CloseSqlImportDialog()
+    {
+        _sqlImportDialogOpen = false;
+    }
+
+    private async Task OnSqlImport(SqlImportResult result)
+    {
+        _sqlImportDialogOpen = false;
+        if (ReadOnly) return;
+
+        Document = result.Document;
+        _document = result.Document;
+        _selectedIds = [];
+        _selectedTableCells.Clear();
+        _pageCommandStacks.Clear();
+        ActiveCommandStack.Clear();
+
+        await OnDocumentChanged(_document);
+
+        if (_canvas is not null && result.Document.ActivePage.Nodes.Count > 0)
+        {
+            await _canvas.SetSelection([]);
+            if (result.LayoutDirection.Equals("LR", StringComparison.OrdinalIgnoreCase))
+                await RunLayout("dagre", "LR");
+            else
+                await RunLayout("dagre", "TB");
+        }
+    }
+
+    private void OpenCsvImportDialog()
+    {
+        if (ReadOnly) return;
+        _csvImportDialogOpen = true;
+    }
+
+    private void CloseCsvImportDialog()
+    {
+        _csvImportDialogOpen = false;
+    }
+
+    private async Task OnCsvImport(CsvImportResult result)
+    {
+        _csvImportDialogOpen = false;
+        if (ReadOnly) return;
+
+        Document = result.Document;
+        _document = result.Document;
+        _selectedIds = [];
+        _selectedTableCells.Clear();
+        _pageCommandStacks.Clear();
+        ActiveCommandStack.Clear();
+
+        await OnDocumentChanged(_document);
+
+        if (_canvas is not null && result.Document.ActivePage.Nodes.Count > 0)
+        {
+            await _canvas.SetSelection([]);
+            if (!string.IsNullOrWhiteSpace(result.LayoutAlgorithm))
+                await RunLayout(result.LayoutAlgorithm, "TB");
+        }
+    }
+
+    // ── Template gallery ─────────────────────────────────────────────────────
+
+    private void OpenTemplateGallery()
+    {
+        _showTemplateGallery = true;
+    }
+
+    private void CloseTemplateGallery()
+    {
+        _showTemplateGallery = false;
+    }
+
+    private async Task OnTemplateSelected(Tempo.Blazor.Components.Diagram.Templates.DiagramTemplate template)
+    {
+        _showTemplateGallery = false;
+        if (ReadOnly) return;
+
+        DiagramDocument? doc = null;
+        if (!string.IsNullOrWhiteSpace(template.DocumentJson))
+        {
+            DiagramSerializer.TryDeserialize(template.DocumentJson, out doc);
+        }
+
+        if (doc is not null)
+        {
+            doc = doc.CloneWithNewIds();
+        }
+        else
+        {
+            doc = CreateEmptyDocument();
+        }
+
+        doc.Title = template.Name;
+
+        Document = doc;
+        _document = doc;
+        _selectedIds = [];
+        _selectedTableCells.Clear();
+        _pageCommandStacks.Clear();
+        ActiveCommandStack.Clear();
+        EnsureCommandStackForActivePage();
+
+        await OnDocumentChanged(_document);
+
+        if (_canvas is not null)
+        {
+            await _canvas.SetSelection([]);
+            await _canvas.FitToView();
+        }
     }
 
     private async Task OnStencilSelectedForConnect(string stencilId)
@@ -705,24 +1696,27 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             });
         }
 
-        _commandStack.Push(new AddNodeCommand(_document, newNode));
-
-        // Determine ports based on direction
-        var (sourcePort, targetPort) = ResolveConnectPorts(sourceNode, newNode, _connectDirection);
-
-        var edge = new DiagramEdge
+        using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_ConnectTransaction"]))
         {
-            SourceNodeId = sourceNode.Id,
-            SourcePortId = sourcePort?.Id,
-            TargetNodeId = newNode.Id,
-            TargetPortId = targetPort?.Id,
-        };
+            ActiveCommandStack.Push(new AddNodeCommand(_document, newNode));
 
-        _commandStack.Push(new AddEdgeCommand(_document, edge));
+            // Determine ports based on direction
+            var (sourcePort, targetPort) = ResolveConnectPorts(sourceNode, newNode, _connectDirection);
 
-        if (_canvas is not null)
-        {
-            edge.Waypoints = await _canvas.ComputeOrthogonalWaypointsAsync(edge);
+            var edge = new DiagramEdge
+            {
+                SourceNodeId = sourceNode.Id,
+                SourcePortId = sourcePort?.Id,
+                TargetNodeId = newNode.Id,
+                TargetPortId = targetPort?.Id,
+            };
+
+            ActiveCommandStack.Push(new AddEdgeCommand(_document, edge));
+
+            if (_canvas is not null)
+            {
+                edge.Waypoints = await _canvas.ComputeOrthogonalWaypointsAsync(edge);
+            }
         }
 
         _selectedIds = [newNode.Id];
@@ -773,6 +1767,174 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         return (sp, tp);
     }
 
+    // ── Page tabs ────────────────────────────────────────────────────────────
+
+    private void AddPage()
+    {
+        if (_document is null || ReadOnly) return;
+
+        var newPage = new DiagramPage
+        {
+            Name = $"{Loc["TmDiagramEditor_PageName"]} {_document.Pages.Count + 1}",
+            Width = _document.ActivePage.Width,
+            Height = _document.ActivePage.Height,
+        };
+        _document.Pages.Add(newPage);
+        _document.ActivePageIndex = _document.Pages.Count - 1;
+        EnsureCommandStackForActivePage();
+        _selectedIds = [];
+        _ = RerenderCanvas();
+    }
+
+    private void RemovePage(string pageId)
+    {
+        if (_document is null || ReadOnly || _document.Pages.Count <= 1) return;
+
+        var index = _document.Pages.FindIndex(p => p.Id == pageId);
+        if (index < 0) return;
+
+        if (_pageCommandStacks.TryGetValue(pageId, out var stack))
+        {
+            stack.OnStackChanged -= OnStackChanged;
+            _pageCommandStacks.Remove(pageId);
+        }
+
+        _document.Pages.RemoveAt(index);
+        if (_document.ActivePageIndex >= _document.Pages.Count)
+            _document.ActivePageIndex = _document.Pages.Count - 1;
+        if (_document.ActivePageIndex < 0)
+            _document.ActivePageIndex = 0;
+
+        EnsureCommandStackForActivePage();
+        _selectedIds = [];
+        _ = RerenderCanvas();
+    }
+
+    private void DuplicatePage(string pageId)
+    {
+        if (_document is null || ReadOnly) return;
+
+        var source = _document.Pages.FirstOrDefault(p => p.Id == pageId);
+        if (source is null) return;
+
+        var json = System.Text.Json.JsonSerializer.Serialize(source);
+        var copy = System.Text.Json.JsonSerializer.Deserialize<DiagramPage>(json);
+        if (copy is null) return;
+
+        copy.Id = Guid.NewGuid().ToString();
+        copy.Name = $"{source.Name} ({Loc["TmDiagramEditor_CopySuffix"] ?? "copy"})";
+
+        var index = _document.Pages.FindIndex(p => p.Id == pageId);
+        _document.Pages.Insert(index + 1, copy);
+        _document.ActivePageIndex = index + 1;
+        EnsureCommandStackForActivePage();
+        _selectedIds = [];
+        _ = RerenderCanvas();
+    }
+
+    private void SelectPage(string pageId)
+    {
+        if (_document is null) return;
+        var index = _document.Pages.FindIndex(p => p.Id == pageId);
+        if (index < 0 || index == _document.ActivePageIndex) return;
+
+        _document.ActivePageIndex = index;
+        EnsureCommandStackForActivePage();
+        _selectedIds = [];
+        _groupStack.Clear();
+        _ = RerenderCanvas();
+    }
+
+    private void StartRenamePage(string pageId)
+    {
+        if (ReadOnly) return;
+        var page = _document?.Pages.FirstOrDefault(p => p.Id == pageId);
+        if (page is null) return;
+
+        _pageRenamingId = pageId;
+        _pageRenameInput = page.Name;
+        _ = FocusRenameInputAsync();
+    }
+
+    private async Task FocusRenameInputAsync()
+    {
+        await Task.Yield();
+        try
+        {
+            await _pageRenameInputRef.FocusAsync();
+        }
+        catch
+        {
+            // ignore if element not yet rendered
+        }
+    }
+
+    private void CommitRenamePage(string pageId)
+    {
+        if (_document is null || ReadOnly) return;
+        var page = _document.Pages.FirstOrDefault(p => p.Id == pageId);
+        if (page is not null && !string.IsNullOrWhiteSpace(_pageRenameInput))
+        {
+            page.Name = _pageRenameInput.Trim();
+        }
+        _pageRenamingId = null;
+        _pageRenameInput = "";
+        _ = RerenderCanvas();
+    }
+
+    private void OnRenamePageKeyDown(KeyboardEventArgs e, string pageId)
+    {
+        if (e.Key == "Enter")
+        {
+            CommitRenamePage(pageId);
+        }
+        else if (e.Key == "Escape")
+        {
+            _pageRenamingId = null;
+            _pageRenameInput = "";
+            _ = RerenderCanvas();
+        }
+    }
+
+    private void OnPageTabDragStart(string pageId)
+    {
+        if (ReadOnly) return;
+        _pageDragId = pageId;
+    }
+
+    private void OnPageTabDragEnter(string pageId)
+    {
+        if (ReadOnly || _pageDragId is null || _pageDragId == pageId) return;
+        _pageDragOverId = pageId;
+        StateHasChanged();
+    }
+
+    private void OnPageTabDragLeave()
+    {
+        _pageDragOverId = null;
+        StateHasChanged();
+    }
+
+    private void OnPageTabDrop(string targetPageId)
+    {
+        if (ReadOnly || _pageDragId is null || _pageDragId == targetPageId) return;
+
+        var sourceIndex = _document?.Pages.FindIndex(p => p.Id == _pageDragId) ?? -1;
+        var targetIndex = _document?.Pages.FindIndex(p => p.Id == targetPageId) ?? -1;
+
+        if (_document is not null && sourceIndex >= 0 && targetIndex >= 0)
+        {
+            var page = _document.Pages[sourceIndex];
+            _document.Pages.RemoveAt(sourceIndex);
+            _document.Pages.Insert(targetIndex, page);
+            _document.ActivePageIndex = targetIndex;
+        }
+
+        _pageDragId = null;
+        _pageDragOverId = null;
+        _ = RerenderCanvas();
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private async Task RerenderCanvas()
@@ -782,8 +1944,194 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             await DocumentChanged.InvokeAsync(_document);
     }
 
+    #region Keyboard shortcuts handlers
+
+    private async Task HandleQuickInsert(string stencilId)
+    {
+        if (_document is null || ReadOnly) return;
+        var stencil = StencilRegistry.GetStencil(stencilId);
+        var w = stencil?.DefaultWidth ?? 120;
+        var h = stencil?.DefaultHeight ?? 60;
+        var page = _document.Pages[_document.ActivePageIndex];
+        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+        await OnToolboxDrop((stencilId, x, y));
+    }
+
+    private async Task HandleNavigateToCorner(string corner)
+    {
+        if (_document is null || _canvas is null) return;
+        var page = _document.Pages[_document.ActivePageIndex];
+        var (cx, cy) = corner switch
+        {
+            "top-left" => (0.0, 0.0),
+            "bottom-right" => (page.Width, page.Height),
+            _ => (page.Width / 2, page.Height / 2)
+        };
+        await _canvas.ScrollTo(cx, cy);
+    }
+
+    private async Task HandleSwitchPage(int delta)
+    {
+        if (_document is null || _document.Pages.Count <= 1) return;
+        var newIndex = (_document.ActivePageIndex + delta) % _document.Pages.Count;
+        if (newIndex < 0) newIndex += _document.Pages.Count;
+        SelectPage(_document.Pages[newIndex].Id);
+        await Task.CompletedTask;
+    }
+
+    private async Task HandleGroupSelected()
+    {
+        if (_document is null || ReadOnly) return;
+        if (!CanContextMenuGroup()) return;
+        ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task HandleLockSelected()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        var anyLocked = _selectedIds.Any(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked == true);
+        if (anyLocked)
+        {
+            ActiveCommandStack.Push(new UnlockNodesCommand(_document, _selectedIds));
+        }
+        else
+        {
+            ActiveCommandStack.Push(new LockNodesCommand(_document, _selectedIds));
+        }
+        await OnDocumentChanged(_document);
+    }
+
+    private async Task HandleToggleBold()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        await ToggleStyleFlag(s => s.IsBold == true, s => s.IsBold = true, s => s.IsBold = false);
+    }
+
+    private async Task HandleToggleItalic()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        await ToggleStyleFlag(s => s.IsItalic == true, s => s.IsItalic = true, s => s.IsItalic = false);
+    }
+
+    private async Task HandleToggleUnderline()
+    {
+        if (_document is null || ReadOnly || _selectedIds.Length == 0) return;
+        await ToggleStyleFlag(s => s.IsUnderline == true, s => s.IsUnderline = true, s => s.IsUnderline = false);
+    }
+
+    private async Task HandleNodeLinkClicked((string NodeId, string Link) args)
+    {
+        var link = args.Link;
+        if (string.IsNullOrEmpty(link)) return;
+
+        if (link.StartsWith("page://", StringComparison.OrdinalIgnoreCase))
+        {
+            var rest = link[7..];
+            var parts = rest.Split('/', 2);
+            var pageId = parts[0];
+            var targetNodeId = parts.Length > 1 ? parts[1] : null;
+
+            if (_document?.Pages.FirstOrDefault(p => p.Id == pageId) is { } page)
+            {
+                SelectPage(pageId);
+                if (!string.IsNullOrEmpty(targetNodeId) && _canvas is not null)
+                {
+                    _ = _canvas.FocusOnNode(targetNodeId);
+                    _selectedIds = [targetNodeId];
+                    await _canvas.SetSelection(_selectedIds);
+                }
+            }
+        }
+        else
+        {
+            NavigationManager.NavigateTo(link, forceLoad: true);
+        }
+    }
+
+    private async Task HandleEnterGroup(string groupId)
+    {
+        if (_document is null) return;
+        var container = _document.Nodes.FirstOrDefault(n => n.Id == groupId && n.StencilId == "general.group");
+        if (container is null) return;
+        _groupStack.Push(groupId);
+        _selectedIds = [];
+        if (_canvas is not null) _ = _canvas.SetSelection(_selectedIds);
+        _ = _canvas?.ZoomToRect(container.X, container.Y, container.W, container.H, 40);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleExitGroup()
+    {
+        if (_groupStack.Count == 0 || _document is null) return;
+        var groupId = _groupStack.Pop();
+        _selectedIds = [groupId];
+        if (_canvas is not null) _ = _canvas.SetSelection(_selectedIds);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ToggleStyleFlag(Func<DiagramStyle, bool> isActive, Action<DiagramStyle> apply, Action<DiagramStyle> remove)
+    {
+        if (_document is null) return;
+        var nodes = _selectedIds.Select(id => _document.Nodes.FirstOrDefault(n => n.Id == id)).Where(n => n is not null).ToList();
+        if (nodes.Count == 0) return;
+        var allActive = nodes.All(n => isActive(n!.Style));
+        var beforeStyles = nodes.Select(n => new DiagramStyle
+        {
+            Fill = n!.Style.Fill,
+            Stroke = n.Style.Stroke,
+            StrokeWidth = n.Style.StrokeWidth,
+            StrokeDasharray = n.Style.StrokeDasharray,
+            StrokeDashPattern = n.Style.StrokeDashPattern,
+            Color = n.Style.Color,
+            FontFamily = n.Style.FontFamily,
+            FontSize = n.Style.FontSize,
+            Opacity = n.Style.Opacity,
+            Radius = n.Style.Radius,
+            TextAlign = n.Style.TextAlign,
+            VerticalAlign = n.Style.VerticalAlign,
+            IsBold = n.Style.IsBold,
+            IsItalic = n.Style.IsItalic,
+            IsUnderline = n.Style.IsUnderline,
+            HasShadow = n.Style.HasShadow
+        }).ToList();
+        var afterStyle = new DiagramStyle();
+        foreach (var n in nodes)
+        {
+            if (allActive) remove(n!.Style); else apply(n.Style);
+        }
+        afterStyle.IsBold = nodes[0]!.Style.IsBold;
+        afterStyle.IsItalic = nodes[0]!.Style.IsItalic;
+        afterStyle.IsUnderline = nodes[0]!.Style.IsUnderline;
+        // Copy other properties from first node so UpdateNodesStyleCommand has complete after style
+        afterStyle.Fill = nodes[0]!.Style.Fill;
+        afterStyle.Stroke = nodes[0]!.Style.Stroke;
+        afterStyle.StrokeWidth = nodes[0]!.Style.StrokeWidth;
+        afterStyle.StrokeDasharray = nodes[0]!.Style.StrokeDasharray;
+        afterStyle.StrokeDashPattern = nodes[0]!.Style.StrokeDashPattern;
+        afterStyle.Color = nodes[0]!.Style.Color;
+        afterStyle.FontFamily = nodes[0]!.Style.FontFamily;
+        afterStyle.FontSize = nodes[0]!.Style.FontSize;
+        afterStyle.Opacity = nodes[0]!.Style.Opacity;
+        afterStyle.Radius = nodes[0]!.Style.Radius;
+        afterStyle.TextAlign = nodes[0]!.Style.TextAlign;
+        afterStyle.VerticalAlign = nodes[0]!.Style.VerticalAlign;
+        afterStyle.HasShadow = nodes[0]!.Style.HasShadow;
+
+        ActiveCommandStack.Push(new UpdateNodesStyleCommand(_document, _selectedIds, beforeStyles, afterStyle));
+        await OnDocumentChanged(_document);
+    }
+
+    #endregion
+
     private static DiagramDocument CreateEmptyDocument()
-        => new() { Title = "Untitled diagram", Width = 3000, Height = 2000 };
+    {
+        var doc = new DiagramDocument { Title = "Untitled diagram" };
+        doc.Pages.Add(new DiagramPage { Name = "Page 1", Width = 3000, Height = 2000 });
+        doc.ActivePageIndex = 0;
+        return doc;
+    }
 
     private static string SanitizeFileName(string name)
     {

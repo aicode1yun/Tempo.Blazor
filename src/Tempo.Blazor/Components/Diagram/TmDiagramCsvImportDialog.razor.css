@@ -1,0 +1,113 @@
+.tm-diagram-csv-import {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-4);
+}
+
+.tm-diagram-csv-import__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}
+
+.tm-diagram-csv-import__label {
+    font-weight: 600;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+}
+
+.tm-diagram-csv-import__textarea {
+    font-family: var(--tm-font-mono, monospace);
+    font-size: var(--tm-text-sm);
+}
+
+.tm-diagram-csv-import__select {
+    max-width: 220px;
+}
+
+.tm-diagram-csv-import__mappings {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+}
+
+.tm-diagram-csv-import__mappings-title {
+    font-weight: 600;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+}
+
+.tm-diagram-csv-import__mappings-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: var(--tm-space-3);
+}
+
+.tm-diagram-csv-import__mapping-row {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-1);
+}
+
+.tm-diagram-csv-import__mapping-label {
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+}
+
+.tm-diagram-csv-import__required {
+    color: var(--tm-color-danger);
+    margin-left: var(--tm-space-1);
+}
+
+.tm-diagram-csv-import__mapping-select {
+    width: 100%;
+}
+
+.tm-diagram-csv-import__preview-table-wrap {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+    max-height: 160px;
+    overflow: auto;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    padding: var(--tm-space-2);
+}
+
+.tm-diagram-csv-import__preview-title {
+    font-weight: 600;
+    font-size: var(--tm-text-xs);
+    color: var(--tm-color-text-muted);
+    text-transform: uppercase;
+}
+
+.tm-diagram-csv-import__preview-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: var(--tm-text-xs);
+    font-family: var(--tm-font-mono, monospace);
+}
+
+.tm-diagram-csv-import__preview-table th,
+.tm-diagram-csv-import__preview-table td {
+    border: 1px solid var(--tm-color-border);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.tm-diagram-csv-import__preview-table th {
+    background: var(--tm-color-surface-elevated);
+    font-weight: 600;
+}
+
+.tm-diagram-csv-import__preview {
+    display: flex;
+    gap: var(--tm-space-4);
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text-muted);
+}
+
+.tm-diagram-csv-import__error {
+    margin-top: var(--tm-space-2);
+}

@@ -1,14 +1,38 @@
 @namespace Tempo.Blazor.Components.Diagram
 @using Tempo.Blazor.Components.Inputs
 @using Tempo.Blazor.Components.Icons
+@using Tempo.Blazor.Components.Buttons
 
 <div class="tm-diagram-search-panel">
-    <div class="tm-diagram-search-panel__input-wrap">
-        <TmSearchInput Value="Query"
-                       ValueChanged="OnQueryChanged"
-                       Placeholder="@Loc["TmDiagram_SearchPlaceholder"]"
-                       Clearable="true" />
+    <div class="tm-diagram-search-panel__inputs">
+        <div class="tm-diagram-search-panel__input-wrap">
+            <TmSearchInput Value="Query"
+                           ValueChanged="OnQueryChanged"
+                           Placeholder="@Loc["TmDiagram_SearchPlaceholder"]"
+                           Clearable="true" />
+        </div>
+        <div class="tm-diagram-search-panel__input-wrap">
+            <TmSearchInput Value="ReplaceQuery"
+                           ValueChanged="OnReplaceQueryChanged"
+                           Placeholder="@Loc["TmDiagram_ReplacePlaceholder"]"
+                           Clearable="true" />
+        </div>
+        @if (!string.IsNullOrEmpty(RegexError))
+        {
+            <span class="tm-diagram-search-panel__error">@RegexError</span>
+        }
     </div>
+    <label class="tm-diagram-search-panel__all-pages">
+        <input type="checkbox"
+               checked="@SearchAllPages"
+               @onchange="e => OnSearchAllPagesChanged((bool)(e.Value ?? false))" />
+        <span>@Loc["TmDiagram_SearchAllPages"]</span>
+    </label>
+    <TmToggle Value="UseRegex"
+              ValueChanged="OnUseRegexChanged"
+              Label=".*"
+              Class="tm-diagram-search-panel__regex-toggle"
+              title="@Loc["TmDiagram_UseRegex"]" />
     <span class="tm-diagram-search-panel__counter">
         @if (ResultsCount > 0)
         {
@@ -19,6 +43,20 @@
             @Loc["TmDiagram_SearchNoResults"]
         }
     </span>
+    <div class="tm-diagram-search-panel__actions">
+        <TmButton Variant="ButtonVariant.Default"
+                  Size="ButtonSize.Sm"
+                  OnClick="OnReplaceClick"
+                  Disabled="@(!CanReplace)">
+            @Loc["TmDiagram_Replace"]
+        </TmButton>
+        <TmButton Variant="ButtonVariant.Primary"
+                  Size="ButtonSize.Sm"
+                  OnClick="OnReplaceAllClick"
+                  Disabled="@(!CanReplaceAll)">
+            @Loc["TmDiagram_ReplaceAll"]
+        </TmButton>
+    </div>
     <button type="button"
             class="tm-diagram-search-panel__nav"
             aria-label="@Loc["TmDiagram_SearchPrevious"]"

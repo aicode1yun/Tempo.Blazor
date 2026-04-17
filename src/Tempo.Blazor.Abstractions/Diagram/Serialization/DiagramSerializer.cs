@@ -15,6 +15,7 @@ public static class DiagramSerializer
     public static string Serialize(DiagramDocument document)
     {
         ArgumentNullException.ThrowIfNull(document);
+        document.EnsurePages();
         document.ModifiedAt = DateTime.UtcNow;
         return JsonSerializer.Serialize(document, DiagramJsonOptions.Default);
     }
@@ -43,6 +44,7 @@ public static class DiagramSerializer
         if (document is null)
             throw new DiagramDeserializationException("Diagram JSON deserialized to null.");
 
+        document.EnsurePages();
         return document;
     }
 
