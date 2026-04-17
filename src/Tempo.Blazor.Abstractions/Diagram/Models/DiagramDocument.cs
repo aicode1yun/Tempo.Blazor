@@ -92,4 +92,21 @@ public sealed class DiagramDocument
             ActivePageIndex = 0;
         }
     }
+
+    /// <summary>Snap all node positions and sizes to the given grid size.</summary>
+    /// <param name="gridSize">Grid cell size in pixels. 0 or negative disables snapping.</param>
+    public void SnapToGrid(int gridSize)
+    {
+        if (gridSize <= 0) return;
+        foreach (var page in Pages)
+        {
+            foreach (var node in page.Nodes)
+            {
+                node.X = Math.Round(node.X / gridSize) * gridSize;
+                node.Y = Math.Round(node.Y / gridSize) * gridSize;
+                node.W = Math.Max(gridSize, Math.Round(node.W / gridSize) * gridSize);
+                node.H = Math.Max(gridSize, Math.Round(node.H / gridSize) * gridSize);
+            }
+        }
+    }
 }

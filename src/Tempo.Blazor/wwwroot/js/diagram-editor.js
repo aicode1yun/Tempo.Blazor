@@ -817,8 +817,6 @@ window.tmDiagramEditor = {
         if (inst.dotNetRef && !inst.isDragging && !inst.isPanning && !inst.isRubberBand && !inst.isDrawingEdge && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel) {
             const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
             inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
-        } else if (inst.dotNetRef) {
-            console.log('[JS] Ruler cursor SKIPPED', 'drag=' + inst.isDragging, 'pan=' + inst.isPanning);
         }
 
         // Connection hover icons

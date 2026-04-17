@@ -54,6 +54,7 @@ public static class CsvToTimelineGenerator
             page.Nodes.Add(node);
         }
 
+        doc.SnapToGrid(8);
         return doc;
     }
 

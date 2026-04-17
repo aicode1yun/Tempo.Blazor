@@ -98,6 +98,7 @@ public static class CsvToFlowchartGenerator
             });
         }
 
+        doc.SnapToGrid(8);
         return doc;
     }
 

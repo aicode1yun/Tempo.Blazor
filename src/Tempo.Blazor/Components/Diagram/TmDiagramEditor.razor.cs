@@ -197,6 +197,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         {
             _document.Pages[0].Name = $"{Loc["TmDiagramEditor_PageName"]} 1";
         }
+        _document.SnapToGrid(GridSize);
         EnsureCommandStackForActivePage();
     }
 
@@ -209,6 +210,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             _groupStack.Clear();
             _document = Document;
             _document.EnsurePages();
+            _document.SnapToGrid(GridSize);
             _selectedIds = [];
             EnsureCommandStackForActivePage();
         }
@@ -1373,6 +1375,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             }
 
             _document = doc;
+            _document.SnapToGrid(GridSize);
             ActiveCommandStack.Clear();
             _selectedIds = [];
             await DocumentChanged.InvokeAsync(_document);

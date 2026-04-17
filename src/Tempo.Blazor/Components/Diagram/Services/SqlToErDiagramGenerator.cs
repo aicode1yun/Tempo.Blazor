@@ -143,6 +143,7 @@ public static class SqlToErDiagramGenerator
             });
         }
 
+        doc.SnapToGrid(8);
         return doc;
     }
 }
