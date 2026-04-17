@@ -417,7 +417,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private bool CanContextMenuGroup()
     {
         if (_document is null) return false;
-        return _selectedIds.Length > 1 && _selectedIds.All(id => _document.Nodes.Any(n => n.Id == id));
+        return _selectedIds.Length > 1
+            && _selectedIds.All(id => _document.Nodes.Any(n => n.Id == id && !n.IsLocked));
     }
 
     private bool CanContextMenuUngroup()
@@ -599,7 +600,9 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await CloseContextMenu();
         if (_document is null || ReadOnly) return;
         if (!CanContextMenuGroup()) return;
-        ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
+        var ids = _selectedIds.Where(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked != true).ToArray();
+        if (ids.Length < 2) return;
+        ActiveCommandStack.Push(new GroupNodesCommand(_document, ids));
         await OnDocumentChanged(_document);
     }
 
@@ -611,6 +614,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         var node = _document.Nodes.FirstOrDefault(n => n.Id == _selectedIds[0]);
         var groupId = node?.StencilId == "general.group" ? node.Id : node?.GroupId;
         if (string.IsNullOrEmpty(groupId)) return;
+        // Block ungroup if any child is locked
+        if (_document.Nodes.Any(n => n.ParentGroupId == groupId && n.IsLocked)) return;
         ActiveCommandStack.Push(new UngroupNodesCommand(_document, groupId));
         await OnDocumentChanged(_document);
     }
@@ -2119,7 +2124,10 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ToggleStyleFlag(Func<DiagramStyle, bool> isActive, Action<DiagramStyle> apply, Action<DiagramStyle> remove)
     {
         if (_document is null) return;
-        var nodes = _selectedIds.Select(id => _document.Nodes.FirstOrDefault(n => n.Id == id)).Where(n => n is not null).ToList();
+        var nodes = _selectedIds
+            .Select(id => _document.Nodes.FirstOrDefault(n => n.Id == id))
+            .Where(n => n is not null && !n.IsLocked)
+            .ToList();
         if (nodes.Count == 0) return;
         var allActive = nodes.All(n => isActive(n!.Style));
         var beforeStyles = nodes.Select(n => new DiagramStyle

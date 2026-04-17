@@ -822,6 +822,7 @@
   <!-- ═══════════════ TmDiagramNode Collapse / Expand ═══════════════ -->
   <data name="TmDiagramNode_Collapse" xml:space="preserve"><value>Collapse</value></data>
   <data name="TmDiagramNode_Expand" xml:space="preserve"><value>Expand</value></data>
+  <data name="TmDiagramNode_Locked" xml:space="preserve"><value>Locked</value></data>
 
   <!-- ═══════════════ TmDiagram Search ═══════════════ -->
   <data name="TmDiagram_SearchPlaceholder" xml:space="preserve"><value>Search diagram...</value></data>

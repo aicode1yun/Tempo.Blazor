@@ -570,25 +570,29 @@ window.tmDiagramEditor = {
             }
             const jettyType = handleEl.getAttribute('data-jetty');
             if (jettyType) {
+                const jettyNodeId = handleEl.getAttribute('data-node-id');
+                const jettyNodeEl = jettyNodeId ? this._nodeEl(inst, jettyNodeId) : null;
+                if (jettyNodeEl && jettyNodeEl.getAttribute('data-locked') === 'true') return;
                 e.preventDefault();
                 e.stopPropagation();
                 inst.isDraggingJetty = true;
                 inst.dragJettyEdgeId = handleEl.getAttribute('data-edge-id');
                 inst.dragJettyType = jettyType;
                 inst.dragJettySide = handleEl.getAttribute('data-jetty-side');
-                inst.dragJettyNodeId = handleEl.getAttribute('data-node-id');
+                inst.dragJettyNodeId = jettyNodeId;
                 const pt = this._screenToDoc(inst, e.clientX, e.clientY);
                 inst.dragJettyStartDoc = pt;
                 return;
             }
         }
 
-        // Port clicked? -> start edge drawing
+        // Port clicked? -> start edge drawing (skip if node is locked)
         const portEl = e.target.closest('.tm-diagram-port');
         if (portEl && !inst.readOnly) {
+            const nodeEl = portEl.closest('[data-node-id]');
+            if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
             e.preventDefault();
             e.stopPropagation();
-            const nodeEl = portEl.closest('[data-node-id]');
             if (nodeEl) {
                 this._startEdgeDraw(inst, nodeEl.getAttribute('data-node-id'), portEl.getAttribute('data-port-id'), e.clientX, e.clientY);
             }
@@ -1579,9 +1583,10 @@ window.tmDiagramEditor = {
             const dx = e.key === 'ArrowLeft' ? -step : e.key === 'ArrowRight' ? step : 0;
             const dy = e.key === 'ArrowUp' ? -step : e.key === 'ArrowDown' ? step : 0;
 
-            // Filter to active group and include group nodes
+            // Filter to active group, skip locked nodes, and include group nodes
             let nudgeIds = ids.filter(id => {
                 const el = this._nodeEl(inst, id);
+                if (!el || el.getAttribute('data-locked') === 'true') return false;
                 return this._isNodeInActiveGroup(inst, el);
             });
             nudgeIds = this._includeGroupNodes(inst, nudgeIds);

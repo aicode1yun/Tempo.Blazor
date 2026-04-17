@@ -798,6 +798,7 @@
   <!-- ═══════════════ TmDiagramNode Collapse / Expand ═══════════════ -->
   <data name="TmDiagramNode_Collapse" xml:space="preserve"><value>Sbalit</value></data>
   <data name="TmDiagramNode_Expand" xml:space="preserve"><value>Rozbalit</value></data>
+  <data name="TmDiagramNode_Locked" xml:space="preserve"><value>Uzamčeno</value></data>
 
   <!-- ═══════════════ TmDiagram Search ═══════════════ -->
   <data name="TmDiagram_SearchPlaceholder" xml:space="preserve"><value>Hledat v diagramu...</value></data>

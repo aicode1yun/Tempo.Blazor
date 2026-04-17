@@ -279,6 +279,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     public async Task OnElementMoved(string id, double x, double y)
     {
         if (Document is null || ReadOnly) return;
+        var movedNode = Document.Nodes.FirstOrDefault(n => n.Id == id);
+        if (movedNode is not null && IsNodeLocked(movedNode)) return;
 
         var before = _dragStartPositions is not null && _dragStartPositions.TryGetValue(id, out var bp)
             ? new Dictionary<string, NodeMoveState> { [id] = bp }
@@ -296,6 +298,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     public async Task OnElementsMoved(ElementMove[] moves)
     {
         if (Document is null || ReadOnly) return;
+        if (moves.Any(m => Document.Nodes.FirstOrDefault(n => n.Id == m.Id) is { } node && IsNodeLocked(node))) return;
 
         var before = _dragStartPositions;
         var after = moves.ToDictionary(
@@ -393,6 +396,9 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     private void HandleConnectArrowClicked(string nodeId, string direction)
     {
+        if (Document is null) return;
+        var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
+        if (node is null || IsNodeLocked(node)) return;
         _ = OnConnectArrowClicked.InvokeAsync((nodeId, direction));
     }
 
@@ -400,7 +406,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         if (ReadOnly || Document is null) return;
         var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is null) return;
+        if (node is null || IsNodeLocked(node)) return;
 
         _resizeNodeId = nodeId;
         _resizeHandle = handle;
@@ -412,16 +418,16 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         if (ReadOnly || Document is null) return;
         var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is null || !_jsInitialized) return;
+        if (node is null || IsNodeLocked(node) || !_jsInitialized) return;
         _ = JS.InvokeVoidAsync("tmDiagramEditor.startRotate", _containerRef, nodeId, e.ClientX, e.ClientY, node.Rotation, RotateSnap);
     }
 
     [JSInvokable]
     public async Task OnRotateEnded(string nodeId, double angle)
     {
-        if (Document is null) return;
+        if (Document is null || ReadOnly) return;
         var node = Document.Nodes.FirstOrDefault(n => n.Id == nodeId);
-        if (node is null) return;
+        if (node is null || IsNodeLocked(node)) return;
         var before = node.Rotation;
         node.Rotation = angle;
         if (CommandStack is not null && Math.Abs(angle - before) > 0.001)
@@ -605,7 +611,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var targetIds = _currentSelectionIds.Length > 0 ? _currentSelectionIds : ids;
         if (targetIds.Length == 0) return;
 
-        var nodeIds = targetIds.Where(id => Document.Nodes.Any(n => n.Id == id)).ToArray();
+        var nodeIds = targetIds.Where(id => Document.Nodes.Any(n => n.Id == id && !IsNodeLocked(n))).ToArray();
         var edgeIds = targetIds.Where(id => Document.Edges.Any(e => e.Id == id)).ToArray();
 
         if (CommandStack is not null)
@@ -848,8 +854,10 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private bool IsNodeLocked(DiagramNode node)
     {
         if (node.IsLocked) return true;
-        if (node.LayerId is null) return false;
-        var layer = Document?.Layers.FirstOrDefault(l => l.Id == node.LayerId);
+        var layerId = node.LayerId;
+        if (layerId is null && Document?.Layers.Count > 0)
+            layerId = Document.Layers.OrderBy(l => l.Order).First().Id;
+        var layer = Document?.Layers.FirstOrDefault(l => l.Id == layerId);
         return layer?.IsLocked ?? false;
     }
 
@@ -864,7 +872,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         foreach (var id in ids)
         {
             var src = Document.Nodes.FirstOrDefault(n => n.Id == id);
-            if (src is null) continue;
+            if (src is null || IsNodeLocked(src)) continue;
             var copy = DeepCopyNode(src);
             copy.X += offset; copy.Y += offset;
             copy.ZIndex = ++maxZ;
