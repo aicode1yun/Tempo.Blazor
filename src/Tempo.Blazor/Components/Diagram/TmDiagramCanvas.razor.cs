@@ -800,7 +800,17 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
         // Filter by active group
         if (node.ParentGroupId != ActiveGroupId)
+        {
+            // At root level, show grouped nodes whose container is also at root level
+            // (visual grouping: nodes remain visible inside their group container)
+            if (ActiveGroupId == null && !string.IsNullOrEmpty(node.ParentGroupId))
+            {
+                var container = Document.Nodes.FirstOrDefault(n => n.Id == node.ParentGroupId);
+                if (container?.ParentGroupId == null)
+                    return true;
+            }
             return false;
+        }
 
         // Hide children of collapsed containers
         var current = node;

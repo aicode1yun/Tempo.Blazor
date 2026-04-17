@@ -411,15 +411,33 @@ window.tmDiagramEditor = {
         const groupIds = new Set();
         ids.forEach(nid => {
             const el = this._nodeEl(inst, nid);
-            const gid = el ? el.getAttribute('data-group-id') : null;
+            if (!el) return;
+            // If selected node is a group container, find its children by parent-group-id
+            if (el.getAttribute('data-stencil-id') === 'general.group') {
+                groupIds.add(nid);
+            }
+            // Also check if the node itself is a member of a group
+            const gid = el.getAttribute('data-group-id');
             if (gid) groupIds.add(gid);
         });
         if (groupIds.size > 0 && inst.htmlLayer) {
-            inst.htmlLayer.querySelectorAll('[data-group-id]').forEach(el => {
-                if (!this._isNodeInActiveGroup(inst, el)) return;
-                const gid = el.getAttribute('data-group-id');
+            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
                 const nid = el.getAttribute('data-node-id');
-                if (gid && groupIds.has(gid) && nid) allIds.add(nid);
+                if (!nid || allIds.has(nid)) return;
+                const parentGroupId = el.getAttribute('data-parent-group-id') || null;
+                const groupId = el.getAttribute('data-group-id') || null;
+                // Include if this node belongs to any selected group
+                if (parentGroupId && groupIds.has(parentGroupId)) {
+                    allIds.add(nid);
+                }
+                // Also include by legacy group-id matching
+                else if (groupId && groupIds.has(groupId)) {
+                    const pgid = el.getAttribute('data-parent-group-id') || null;
+                    const isVisible = !inst.activeGroupId
+                        ? !pgid || pgid === groupId
+                        : pgid === inst.activeGroupId;
+                    if (isVisible) allIds.add(nid);
+                }
             });
         }
         return [...allIds];
@@ -2250,22 +2268,6 @@ window.tmDiagramEditor = {
     },
 
     // ── Magnetic guidelines ────────────────────────────────────────────────
-
-    _includeGroupNodes: function (inst, nodeIds) {
-        const all = new Set(nodeIds);
-        const addChildren = (parentId) => {
-            if (!inst.htmlLayer) return;
-            inst.htmlLayer.querySelectorAll('[data-parent-id="' + parentId + '"]').forEach(childEl => {
-                const cid = childEl.getAttribute('data-node-id');
-                if (cid && !all.has(cid)) {
-                    all.add(cid);
-                    addChildren(cid);
-                }
-            });
-        };
-        nodeIds.forEach(id => addChildren(id));
-        return [...all];
-    },
 
     _computeSnapGuides: function (inst, dragNodeIds, dragStartPositions, dxDoc, dyDoc) {
         const threshold = 8 / inst.scale; // 8 screen px
