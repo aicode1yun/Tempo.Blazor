@@ -38,40 +38,7 @@
                 </filter>
             }
 
-            @foreach (var marker in GetRequiredMarkers())
-            {
-                var def = DiagramArrowheadRegistry.Get(marker.Arrowhead);
-                if (def is null || def.FillMode == "none") continue;
-                <marker id="@marker.Id" markerWidth="@F(def.Width)" markerHeight="@F(def.Height)" refX="@F(def.RefX)" refY="@F(def.RefY)" orient="auto-start-reverse" markerUnits="strokeWidth">
-                    @if (def.FillMode == "line")
-                    {
-                        <path d="@def.PathData" fill="none" stroke="@marker.Color" stroke-width="1.5" />
-                        @if (!string.IsNullOrEmpty(def.ExtraPath))
-                        {
-                            <path d="@def.ExtraPath" fill="none" stroke="@marker.Color" stroke-width="1.5" />
-                        }
-                    }
-                    else if (marker.Fill)
-                    {
-                        <path d="@def.PathData" fill="@marker.Color" />
-                        @if (!string.IsNullOrEmpty(def.ExtraPath))
-                        {
-                            <path d="@def.ExtraPath" fill="@marker.Color" />
-                        }
-                    }
-                    else
-                    {
-                        <path d="@def.PathData" fill="white" stroke="@marker.Color" stroke-width="1" />
-                        @if (!string.IsNullOrEmpty(def.ExtraPath))
-                        {
-                            <path d="@def.ExtraPath" fill="white" stroke="@marker.Color" stroke-width="1" />
-                        }
-                    }
-                </marker>
-            }
-            <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
-                <path d="M0,0 L0,6 L9,3 z" fill="#10b981" />
-            </marker>
+            @* Arrowheads are rendered as standalone SVG paths, not markers *@
         </defs>
 
         @* Canvas background + page view + grid *@
@@ -155,8 +122,8 @@
                                   stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
                                   fill="none" />
                         }
-                        @((MarkupString)GetLinkArrowheadSvg(edge, true))
-                        @((MarkupString)GetLinkArrowheadSvg(edge, false))
+                        @((MarkupString)GetArrowheadSvg(edge, true))
+                        @((MarkupString)GetArrowheadSvg(edge, false))
                     }
                     else if (edge.Shape == "pipe")
                     {
@@ -165,9 +132,7 @@
                               stroke="@GetEdgeColor(edge)"
                               stroke-width="@F(GetEdgeStrokeWidth(edge))"
                               stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
-                              stroke-linecap="butt"
-                              marker-start="@GetEdgeMarkerStart(edge)"
-                              marker-end="@GetEdgeMarkerEnd(edge)" />
+                              stroke-linecap="butt" />
                         <path d="@pathD"
                               stroke="white"
                               stroke-width="@F(Math.Max(1, GetEdgeStrokeWidth(edge) - 4))"
@@ -175,6 +140,8 @@
                               stroke-linecap="butt"
                               fill="none"
                               pointer-events="none" />
+                        @((MarkupString)GetArrowheadSvg(edge, true))
+                        @((MarkupString)GetArrowheadSvg(edge, false))
                     }
                     else
                     {
@@ -183,8 +150,9 @@
                               stroke="@GetEdgeColor(edge)"
                               stroke-width="@F(GetEdgeStrokeWidth(edge))"
                               stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
-                              marker-start="@GetEdgeMarkerStart(edge)"
-                              marker-end="@GetEdgeMarkerEnd(edge)" />
+ />
+                        @((MarkupString)GetArrowheadSvg(edge, true))
+                        @((MarkupString)GetArrowheadSvg(edge, false))
                     }
                     @* Edge label *@
                     @{
