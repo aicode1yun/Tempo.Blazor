@@ -737,6 +737,37 @@
   <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Many</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Zero or One</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroMany" xml:space="preserve"><value>Zero or Many</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ClassicThin" xml:space="preserve"><value>Classic Thin</value></data>
+  <data name="TmDiagramProperties_Arrowhead_BlockThin" xml:space="preserve"><value>Block Thin</value></data>
+  <data name="TmDiagramProperties_Arrowhead_OpenThin" xml:space="preserve"><value>Open Thin</value></data>
+  <data name="TmDiagramProperties_Arrowhead_OpenAsync" xml:space="preserve"><value>Open Async</value></data>
+  <data name="TmDiagramProperties_Arrowhead_HalfCircle" xml:space="preserve"><value>Half Circle</value></data>
+  <data name="TmDiagramProperties_Arrowhead_CirclePlus" xml:space="preserve"><value>Circle Plus</value></data>
+  <data name="TmDiagramProperties_Arrowhead_BaseDash" xml:space="preserve"><value>Base Dash</value></data>
+  <data name="TmDiagramProperties_Arrowhead_DoubleBlock" xml:space="preserve"><value>Double Block</value></data>
+  <data name="TmDiagramProperties_Arrowhead_DoubleBlockFilled" xml:space="preserve"><value>Double Block Filled</value></data>
+  <data name="TmDiagramProperties_Arrowhead_EROne" xml:space="preserve"><value>ER One</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERMandOne" xml:space="preserve"><value>ER Mandatory One</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERMany" xml:space="preserve"><value>ER Many</value></data>
+  <data name="TmDiagramProperties_Arrowhead_EROneToMany" xml:space="preserve"><value>ER One to Many</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERZeroToOne" xml:space="preserve"><value>ER Zero to One</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERZeroToMany" xml:space="preserve"><value>ER Zero to Many</value></data>
+  <data name="TmDiagramProperties_FillArrow" xml:space="preserve"><value>Fill</value></data>
+  <data name="TmDiagramProperties_EdgePreset" xml:space="preserve"><value>Preset</value></data>
+  <data name="TmDiagramProperties_Preset_Custom" xml:space="preserve"><value>Custom</value></data>
+  <data name="TmDiagramProperties_Preset_ArrowRight" xml:space="preserve"><value>→ Arrow</value></data>
+  <data name="TmDiagramProperties_Preset_Line" xml:space="preserve"><value>─ Line</value></data>
+  <data name="TmDiagramProperties_Preset_DoubleArrow" xml:space="preserve"><value>⇒ Double Arrow</value></data>
+  <data name="TmDiagramProperties_Preset_CrossArrow" xml:space="preserve"><value>⊣→ Cross Arrow</value></data>
+  <data name="TmDiagramProperties_Preset_DoubleLine" xml:space="preserve"><value>═ Double Line</value></data>
+  <data name="TmDiagramProperties_Preset_ThickDoubleLine" xml:space="preserve"><value>══ Thick Double</value></data>
+  <data name="TmDiagramProperties_Preset_Dashed" xml:space="preserve"><value>- - Dashed</value></data>
+  <data name="TmDiagramProperties_EdgeShape" xml:space="preserve"><value>Connection</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Connector" xml:space="preserve"><value>Connector</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Link" xml:space="preserve"><value>Double Line</value></data>
+  <data name="TmDiagramProperties_EdgeShape_FilledEdge" xml:space="preserve"><value>Filled Bar</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Pipe" xml:space="preserve"><value>Pipe</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Wire" xml:space="preserve"><value>Wire</value></data>
   <data name="TmDiagramProperties_Cardinality_None" xml:space="preserve"><value>None</value></data>
   <data name="TmDiagramProperties_Cardinality_One" xml:space="preserve"><value>One</value></data>
   <data name="TmDiagramProperties_Cardinality_Many" xml:space="preserve"><value>Many</value></data>

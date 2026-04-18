@@ -483,6 +483,16 @@
                         }
 
                         <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_EdgePreset"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgePreset()" ValueChanged="OnEdgePresetChanged" Options="@_edgePresetOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_EdgeShape"]</label>
+                            <TmSelect TValue="string" Value="@GetEdgeShape()" ValueChanged="OnEdgeShapeChanged" Options="@_edgeShapeOptions" />
+                        </div>
+
+                        <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_Routing"]</label>
                             <TmSelect TValue="string" Value="@GetEdgeRouting()" ValueChanged="HandleEdgeRoutingChanged" Options="@_routingOptions" />
                         </div>
@@ -492,15 +502,25 @@
                             <TmSelect TValue="string" Value="@GetEdgeConnectorType()" ValueChanged="HandleConnectorTypeChanged" Options="@_connectorTypeOptions" />
                         </div>
 
-                        <div class="tm-diagram-properties__row">
-                            <div class="tm-diagram-properties__field">
-                                <label>@Loc["TmDiagramProperties_StartArrow"]</label>
-                                <TmSelect TValue="string" Value="@GetEdgeStartArrow()" ValueChanged="OnEdgeStartArrowChanged" Options="@_arrowheadOptions" />
-                            </div>
-                            <div class="tm-diagram-properties__field">
-                                <label>@Loc["TmDiagramProperties_EndArrow"]</label>
-                                <TmSelect TValue="string" Value="@GetEdgeEndArrow()" ValueChanged="OnEdgeEndArrowChanged" Options="@_arrowheadOptions" />
-                            </div>
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_StartArrow"]</label>
+                            <TmDiagramArrowSelect Value="@GetEdgeStartArrow()" ValueChanged="OnEdgeStartArrowChanged" Options="@_arrowheadOptions" />
+                            @if (CanToggleStartArrowFill())
+                            {
+                                <div class="tm-diagram-properties__field--inline tm-diagram-properties__arrow-fill">
+                                    <TmCheckbox Value="@GetEdgeStartArrowFill()" ValueChanged="OnEdgeStartArrowFillChanged" Label="@Loc["TmDiagramProperties_FillArrow"]" />
+                                </div>
+                            }
+                        </div>
+                        <div class="tm-diagram-properties__field">
+                            <label>@Loc["TmDiagramProperties_EndArrow"]</label>
+                            <TmDiagramArrowSelect Value="@GetEdgeEndArrow()" ValueChanged="OnEdgeEndArrowChanged" Options="@_arrowheadOptions" />
+                            @if (CanToggleEndArrowFill())
+                            {
+                                <div class="tm-diagram-properties__field--inline tm-diagram-properties__arrow-fill">
+                                    <TmCheckbox Value="@GetEdgeEndArrowFill()" ValueChanged="OnEdgeEndArrowFillChanged" Label="@Loc["TmDiagramProperties_FillArrow"]" />
+                                </div>
+                            }
                         </div>
 
                         <div class="tm-diagram-properties__field">
@@ -528,7 +548,7 @@
 
                         <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_StrokeDashPattern"]</label>
-                            <TmSelect TValue="string" Value="@GetEdgeStrokeDashPattern()" ValueChanged="OnEdgeStrokeDashPatternChanged" Options="@_dashPatternOptions" />
+                            <TmDiagramArrowSelect Value="@GetEdgeStrokeDashPattern()" ValueChanged="OnEdgeStrokeDashPatternChanged" Options="@_dashPatternOptions" PreviewRenderer="GetDashPreviewSvg" />
                         </div>
 
                         <div class="tm-diagram-properties__field">

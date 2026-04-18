@@ -713,6 +713,37 @@
   <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Mnoho</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Nula nebo jeden</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroMany" xml:space="preserve"><value>Nula nebo mnoho</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ClassicThin" xml:space="preserve"><value>Klasická tenká</value></data>
+  <data name="TmDiagramProperties_Arrowhead_BlockThin" xml:space="preserve"><value>Blok tenký</value></data>
+  <data name="TmDiagramProperties_Arrowhead_OpenThin" xml:space="preserve"><value>Otevřená tenká</value></data>
+  <data name="TmDiagramProperties_Arrowhead_OpenAsync" xml:space="preserve"><value>Otevřená asynchronní</value></data>
+  <data name="TmDiagramProperties_Arrowhead_HalfCircle" xml:space="preserve"><value>Půlkruh</value></data>
+  <data name="TmDiagramProperties_Arrowhead_CirclePlus" xml:space="preserve"><value>Kruh s plus</value></data>
+  <data name="TmDiagramProperties_Arrowhead_BaseDash" xml:space="preserve"><value>Čárka u základny</value></data>
+  <data name="TmDiagramProperties_Arrowhead_DoubleBlock" xml:space="preserve"><value>Dvojitý blok</value></data>
+  <data name="TmDiagramProperties_Arrowhead_DoubleBlockFilled" xml:space="preserve"><value>Dvojitý blok vyplněný</value></data>
+  <data name="TmDiagramProperties_Arrowhead_EROne" xml:space="preserve"><value>ER Jeden</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERMandOne" xml:space="preserve"><value>ER Povinný jeden</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERMany" xml:space="preserve"><value>ER Mnoho</value></data>
+  <data name="TmDiagramProperties_Arrowhead_EROneToMany" xml:space="preserve"><value>ER Jeden k mnoha</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERZeroToOne" xml:space="preserve"><value>ER Nula k jednomu</value></data>
+  <data name="TmDiagramProperties_Arrowhead_ERZeroToMany" xml:space="preserve"><value>ER Nula k mnoha</value></data>
+  <data name="TmDiagramProperties_FillArrow" xml:space="preserve"><value>Vyplnit</value></data>
+  <data name="TmDiagramProperties_EdgePreset" xml:space="preserve"><value>Předvolba</value></data>
+  <data name="TmDiagramProperties_Preset_Custom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmDiagramProperties_Preset_ArrowRight" xml:space="preserve"><value>→ Šipka</value></data>
+  <data name="TmDiagramProperties_Preset_Line" xml:space="preserve"><value>─ Čára</value></data>
+  <data name="TmDiagramProperties_Preset_DoubleArrow" xml:space="preserve"><value>⇒ Dvojitá šipka</value></data>
+  <data name="TmDiagramProperties_Preset_CrossArrow" xml:space="preserve"><value>⊣→ Křížek šipka</value></data>
+  <data name="TmDiagramProperties_Preset_DoubleLine" xml:space="preserve"><value>═ Dvojitá čára</value></data>
+  <data name="TmDiagramProperties_Preset_ThickDoubleLine" xml:space="preserve"><value>══ Tlustá dvojitá</value></data>
+  <data name="TmDiagramProperties_Preset_Dashed" xml:space="preserve"><value>- - Čárkovaná</value></data>
+  <data name="TmDiagramProperties_EdgeShape" xml:space="preserve"><value>Typ připojení</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Connector" xml:space="preserve"><value>Spojnice</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Link" xml:space="preserve"><value>Dvojitá čára</value></data>
+  <data name="TmDiagramProperties_EdgeShape_FilledEdge" xml:space="preserve"><value>Vyplněný pruh</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Pipe" xml:space="preserve"><value>Roura</value></data>
+  <data name="TmDiagramProperties_EdgeShape_Wire" xml:space="preserve"><value>Vodič</value></data>
   <data name="TmDiagramProperties_Cardinality_None" xml:space="preserve"><value>Žádná</value></data>
   <data name="TmDiagramProperties_Cardinality_One" xml:space="preserve"><value>Jeden</value></data>
   <data name="TmDiagramProperties_Cardinality_Many" xml:space="preserve"><value>Mnoho</value></data>

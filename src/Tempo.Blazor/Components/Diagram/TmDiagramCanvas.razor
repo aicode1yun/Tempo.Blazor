@@ -43,7 +43,15 @@
                 var def = DiagramArrowheadRegistry.Get(marker.Arrowhead);
                 if (def is null || def.FillMode == "none") continue;
                 <marker id="@marker.Id" markerWidth="@F(def.Width)" markerHeight="@F(def.Height)" refX="@F(def.RefX)" refY="@F(def.RefY)" orient="auto-start-reverse" markerUnits="strokeWidth">
-                    @if (def.FillMode == "filled")
+                    @if (def.FillMode == "line")
+                    {
+                        <path d="@def.PathData" fill="none" stroke="@marker.Color" stroke-width="1.5" />
+                        @if (!string.IsNullOrEmpty(def.ExtraPath))
+                        {
+                            <path d="@def.ExtraPath" fill="none" stroke="@marker.Color" stroke-width="1.5" />
+                        }
+                    }
+                    else if (marker.Fill)
                     {
                         <path d="@def.PathData" fill="@marker.Color" />
                         @if (!string.IsNullOrEmpty(def.ExtraPath))
@@ -51,20 +59,12 @@
                             <path d="@def.ExtraPath" fill="@marker.Color" />
                         }
                     }
-                    else if (def.FillMode == "empty")
+                    else
                     {
                         <path d="@def.PathData" fill="white" stroke="@marker.Color" stroke-width="1" />
                         @if (!string.IsNullOrEmpty(def.ExtraPath))
                         {
                             <path d="@def.ExtraPath" fill="white" stroke="@marker.Color" stroke-width="1" />
-                        }
-                    }
-                    else if (def.FillMode == "line")
-                    {
-                        <path d="@def.PathData" fill="none" stroke="@marker.Color" stroke-width="1.5" />
-                        @if (!string.IsNullOrEmpty(def.ExtraPath))
-                        {
-                            <path d="@def.ExtraPath" fill="none" stroke="@marker.Color" stroke-width="1.5" />
                         }
                     }
                 </marker>
@@ -137,13 +137,55 @@
                           @onclick="e => OnEdgeClicked(edge.Id, e)"
                           @ondblclick="e => OnEdgeDoubleClicked(edge.Id, e)" />
                     @* Visible path *@
-                    <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
-                          d="@pathD"
-                          stroke="@GetEdgeColor(edge)"
-                          stroke-width="@F(GetEdgeStrokeWidth(edge))"
-                          stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
-                          marker-start="@GetEdgeMarkerStart(edge)"
-                          marker-end="@GetEdgeMarkerEnd(edge)" />
+                    @if (edge.Shape == "link")
+                    {
+                        var offsetPathD = ComputeEdgeOffsetPath(edge, 3);
+                        <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
+                              d="@pathD"
+                              stroke="@GetEdgeColor(edge)"
+                              stroke-width="@F(GetEdgeStrokeWidth(edge))"
+                              stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                              marker-start="@GetEdgeMarkerStart(edge)"
+                              marker-end="@GetEdgeMarkerEnd(edge)" />
+                        @if (!string.IsNullOrEmpty(offsetPathD))
+                        {
+                            <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
+                                  d="@offsetPathD"
+                                  stroke="@GetEdgeColor(edge)"
+                                  stroke-width="@F(GetEdgeStrokeWidth(edge))"
+                                  stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                                  marker-start="@GetEdgeMarkerStart(edge)"
+                                  marker-end="@GetEdgeMarkerEnd(edge)" />
+                        }
+                    }
+                    else if (edge.Shape == "pipe")
+                    {
+                        <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
+                              d="@pathD"
+                              stroke="@GetEdgeColor(edge)"
+                              stroke-width="@F(GetEdgeStrokeWidth(edge))"
+                              stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                              stroke-linecap="butt"
+                              marker-start="@GetEdgeMarkerStart(edge)"
+                              marker-end="@GetEdgeMarkerEnd(edge)" />
+                        <path d="@pathD"
+                              stroke="white"
+                              stroke-width="@F(Math.Max(1, GetEdgeStrokeWidth(edge) - 4))"
+                              stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                              stroke-linecap="butt"
+                              fill="none"
+                              pointer-events="none" />
+                    }
+                    else
+                    {
+                        <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
+                              d="@pathD"
+                              stroke="@GetEdgeColor(edge)"
+                              stroke-width="@F(GetEdgeStrokeWidth(edge))"
+                              stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
+                              marker-start="@GetEdgeMarkerStart(edge)"
+                              marker-end="@GetEdgeMarkerEnd(edge)" />
+                    }
                     @* Edge label *@
                     @{
                         var labelPos = ComputeEdgePointAtT(edge, edge.LabelPositionT);

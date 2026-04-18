@@ -1449,6 +1449,15 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     margin-bottom: 0;
 }
 
+.tm-diagram-properties__arrow-fill {
+    margin-top: 4px;
+    margin-bottom: 0;
+}
+
+.tm-diagram-properties__arrow-fill .tm-checkbox__label {
+    font-size: var(--tm-font-size-xs, 12px);
+}
+
 .tm-diagram-properties__empty {
     font-size: var(--tm-font-size-sm, 14px);
     color: var(--tm-color-text-muted, #6b7280);

@@ -30,6 +30,9 @@ public sealed class DiagramEdge
     /// <summary>Connector semantic type. (e.g. "association", "inheritance", "dependency", "composition", "aggregation").</summary>
     public string ConnectorType { get; set; } = "association";
 
+    /// <summary>Edge shape type. Supported: "connector", "link", "filledEdge", "pipe", "wire".</summary>
+    public string Shape { get; set; } = "connector";
+
     /// <summary>Intermediate waypoints for the edge path. Empty for straight lines.</summary>
     public List<DiagramPoint> Waypoints { get; set; } = [];
 
@@ -47,6 +50,12 @@ public sealed class DiagramEdge
 
     /// <summary>End arrowhead size in pixels.</summary>
     public double? EndArrowSize { get; set; }
+
+    /// <summary>Whether the start arrowhead is filled. Null = use default based on arrowhead type.</summary>
+    public bool? StartArrowFill { get; set; }
+
+    /// <summary>Whether the end arrowhead is filled. Null = use default based on arrowhead type.</summary>
+    public bool? EndArrowFill { get; set; }
 
     /// <summary>Whether to use rounded corners on the edge path.</summary>
     public bool Rounded { get; set; }

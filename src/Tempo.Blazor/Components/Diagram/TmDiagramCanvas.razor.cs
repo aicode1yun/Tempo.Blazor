@@ -1815,9 +1815,17 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
     }
 
-    private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Style.StrokeWidth ?? 1.5;
+    private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Shape switch
+    {
+        "filledEdge" => edge.Style.StrokeWidth ?? 8,
+        "pipe" => edge.Style.StrokeWidth ?? 10,
+        "wire" => edge.Style.StrokeWidth ?? 2,
+        _ => edge.Style.StrokeWidth ?? 1.5,
+    };
+
     private static string GetEdgeStrokeDasharray(DiagramEdge edge)
     {
+        if (edge.Shape == "wire") return "8,8";
         var pattern = edge.Style.StrokeDashPattern;
         if (string.IsNullOrEmpty(pattern)) return edge.ConnectorType == "dependency" ? "5,5" : "";
         return pattern switch
@@ -1831,10 +1839,69 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     private static string GetEdgeColor(DiagramEdge edge)
-        => edge.Style.Stroke ?? "#111827";
+        => edge.Shape == "wire" ? "#ff0000" : (edge.Style.Stroke ?? "#111827");
 
     private static double GetEdgeOpacity(DiagramEdge edge)
         => edge.Style.Opacity ?? 1.0;
+
+    /// <summary>Computes an offset path parallel to the main edge path (for "link" double-line shape).</summary>
+    private string ComputeEdgeOffsetPath(DiagramEdge edge, double offset)
+    {
+        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
+        if (pts.Length < 2) return string.Empty;
+
+        // Inset endpoints for arrowhead markers
+        var startInset = edge.StartArrow == "none" ? 0 : (edge.StartArrowSize ?? 10) / 2.0;
+        var endInset = edge.EndArrow == "none" ? 0 : (edge.EndArrowSize ?? 10) / 2.0;
+        if (startInset > 0)
+            pts[0] = ShortenToward(pts[0], pts[1], startInset);
+        if (endInset > 0)
+            pts[^1] = ShortenToward(pts[^1], pts[^2], endInset);
+
+        var offsetPts = OffsetPolyline(pts, offset);
+        if (offsetPts.Length < 2) return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"M {F(offsetPts[0].X)} {F(offsetPts[0].Y)}");
+        for (int i = 1; i < offsetPts.Length; i++)
+            sb.Append($" L {F(offsetPts[i].X)} {F(offsetPts[i].Y)}");
+        return sb.ToString();
+    }
+
+    /// <summary>Offsets each point of a polyline perpendicular to its local direction.</summary>
+    private static (double X, double Y)[] OffsetPolyline((double X, double Y)[] pts, double offset)
+    {
+        if (pts.Length < 2) return pts;
+        var result = new (double X, double Y)[pts.Length];
+        for (int i = 0; i < pts.Length; i++)
+        {
+            (double X, double Y) prev = i > 0 ? pts[i - 1] : pts[0];
+            (double X, double Y) next = i < pts.Length - 1 ? pts[i + 1] : pts[^1];
+            (double X, double Y) before = i > 0 ? pts[i - 1] : (pts[0].X * 2 - pts[1].X, pts[0].Y * 2 - pts[1].Y);
+            (double X, double Y) after = i < pts.Length - 1 ? pts[i + 1] : (pts[^1].X * 2 - pts[^2].X, pts[^1].Y * 2 - pts[^2].Y);
+
+            double dx = after.X - before.X;
+            double dy = after.Y - before.Y;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001)
+            {
+                result[i] = pts[i];
+                continue;
+            }
+            // Perpendicular vector (rotated 90° clockwise)
+            double px = dy / len * offset;
+            double py = -dx / len * offset;
+            result[i] = (pts[i].X + px, pts[i].Y + py);
+        }
+        return result;
+    }
+
+    private static bool GetEdgeArrowFill(DiagramEdge edge, bool isStart)
+    {
+        var arrow = isStart ? edge.StartArrow : edge.EndArrow;
+        var userFill = isStart ? edge.StartArrowFill : edge.EndArrowFill;
+        return DiagramArrowheadRegistry.GetEffectiveFill(arrow, userFill);
+    }
 
     private string GetEdgeMarkerEnd(DiagramEdge edge)
     {
@@ -1842,7 +1909,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (arrow == "none") return "";
         var color = GetEdgeColor(edge);
         var size = edge.EndArrowSize ?? 10;
-        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size);
+        var fill = GetEdgeArrowFill(edge, false);
+        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size, fill);
         return $"url(#{id})";
     }
 
@@ -1852,11 +1920,12 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (arrow == "none") return "";
         var color = GetEdgeColor(edge);
         var size = edge.StartArrowSize ?? 10;
-        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size);
+        var fill = GetEdgeArrowFill(edge, true);
+        var id = DiagramArrowheadRegistry.GetMarkerId(arrow, color, size, fill);
         return $"url(#{id})";
     }
 
-    private record MarkerRef(string Id, string Arrowhead, string Color);
+    private record MarkerRef(string Id, string Arrowhead, string Color, bool Fill);
 
     private IEnumerable<MarkerRef> GetRequiredMarkers()
     {
@@ -1868,16 +1937,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             if (!string.IsNullOrEmpty(edge.StartArrow) && edge.StartArrow != "none")
             {
                 var size = edge.StartArrowSize ?? 10;
-                var id = DiagramArrowheadRegistry.GetMarkerId(edge.StartArrow, color, size);
+                var fill = GetEdgeArrowFill(edge, true);
+                var id = DiagramArrowheadRegistry.GetMarkerId(edge.StartArrow, color, size, fill);
                 if (seen.Add(id))
-                    yield return new MarkerRef(id, edge.StartArrow, color);
+                    yield return new MarkerRef(id, edge.StartArrow, color, fill);
             }
             if (!string.IsNullOrEmpty(edge.EndArrow) && edge.EndArrow != "none")
             {
                 var size = edge.EndArrowSize ?? 10;
-                var id = DiagramArrowheadRegistry.GetMarkerId(edge.EndArrow, color, size);
+                var fill = GetEdgeArrowFill(edge, false);
+                var id = DiagramArrowheadRegistry.GetMarkerId(edge.EndArrow, color, size, fill);
                 if (seen.Add(id))
-                    yield return new MarkerRef(id, edge.EndArrow, color);
+                    yield return new MarkerRef(id, edge.EndArrow, color, fill);
             }
         }
     }

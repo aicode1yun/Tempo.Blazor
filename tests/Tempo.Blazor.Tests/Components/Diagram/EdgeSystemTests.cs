@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using Bunit;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -5,6 +6,7 @@ using Tempo.Blazor.Components.Diagram;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.Diagram;
@@ -409,5 +411,320 @@ public class EdgeSystemTests : LocalizationTestBase
 
         cut.Instance.JsOnMathSvgCached(n1.Id, "<svg></svg>");
         n1.Data["__mathSvg"].Should().Be("<svg></svg>");
+    }
+
+    [Fact]
+    public void ComputeEdgePath_WithEndArrowFillFalse_HasUnfilledMarkerId()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            EndArrow = "classic",
+            EndArrowFill = false,
+            Style = new DiagramStyle { Stroke = "#000000" }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var path = cut.Find("path.tm-diagram-edge-path");
+        var markerEnd = path.GetAttribute("marker-end");
+        markerEnd.Should().Contain("-e)");
+    }
+
+    [Fact]
+    public void ComputeEdgePath_WithEndArrowFillTrue_HasFilledMarkerId()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            EndArrow = "classic",
+            EndArrowFill = true,
+            Style = new DiagramStyle { Stroke = "#000000" }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var path = cut.Find("path.tm-diagram-edge-path");
+        var markerEnd = path.GetAttribute("marker-end");
+        markerEnd.Should().Contain("-f)");
+    }
+
+    [Fact]
+    public void GetEffectiveFill_WithUserOverride_ReturnsUserValue()
+    {
+        DiagramArrowheadRegistry.GetEffectiveFill("classic", false).Should().BeFalse();
+        DiagramArrowheadRegistry.GetEffectiveFill("classic", true).Should().BeTrue();
+        DiagramArrowheadRegistry.GetEffectiveFill("classic", null).Should().BeTrue(); // default for filled
+        DiagramArrowheadRegistry.GetEffectiveFill("open", null).Should().BeFalse(); // default for empty
+    }
+
+    [Fact]
+    public void CanToggleFill_ForLineArrowheads_ReturnsFalse()
+    {
+        DiagramArrowheadRegistry.CanToggleFill("async").Should().BeFalse();
+        DiagramArrowheadRegistry.CanToggleFill("cross").Should().BeFalse();
+        DiagramArrowheadRegistry.CanToggleFill("none").Should().BeFalse();
+        DiagramArrowheadRegistry.CanToggleFill("classic").Should().BeTrue();
+        DiagramArrowheadRegistry.CanToggleFill("open").Should().BeTrue();
+    }
+
+    [Fact]
+    public void UpdateEdgeStyleCommand_SnapshotIncludesArrowFill()
+    {
+        var doc = new DiagramDocument();
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = "a",
+            TargetNodeId = "b",
+            StartArrow = "classic",
+            StartArrowFill = false,
+            EndArrow = "block",
+            EndArrowFill = true,
+        };
+        doc.Edges.Add(edge);
+
+        var snapshot = DiagramEdgeStyleSnapshot.FromEdge(edge);
+        snapshot.StartArrowFill.Should().BeFalse();
+        snapshot.EndArrowFill.Should().BeTrue();
+
+        // Modify edge and apply snapshot back
+        edge.StartArrowFill = true;
+        edge.EndArrowFill = false;
+        snapshot.ApplyTo(edge);
+        edge.StartArrowFill.Should().BeFalse();
+        edge.EndArrowFill.Should().BeTrue();
+    }
+
+    [Fact]
+    public void LinkShape_RendersTwoPaths()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Shape = "link",
+            Style = new DiagramStyle { Stroke = "#000000" }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var paths = cut.FindAll("path.tm-diagram-edge-path");
+        paths.Count.Should().Be(2, "link shape should render two parallel paths");
+    }
+
+    [Fact]
+    public void FilledEdgeShape_RendersThickPath()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Shape = "filledEdge",
+            Style = new DiagramStyle { Stroke = "#000000" }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var path = cut.Find("path.tm-diagram-edge-path");
+        var strokeWidth = path.GetAttribute("stroke-width");
+        strokeWidth.Should().Be("8");
+    }
+
+    [Fact]
+    public void PipeShape_RendersHollowThickPath()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Shape = "pipe",
+            Style = new DiagramStyle { Stroke = "#000000", StrokeWidth = 10 }
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var paths = cut.FindAll("path");
+        // Find the white inner path (hollow center) among all paths in the edge group
+        var whitePath = paths.FirstOrDefault(p => p.GetAttribute("stroke") == "white");
+        whitePath.Should().NotBeNull("pipe shape should render a white inner path for hollow effect");
+    }
+
+    [Fact]
+    public void WireShape_ForcesRedColorAndDashPattern()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Shape = "wire",
+            Style = new DiagramStyle { Stroke = "#000000" } // should be overridden
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var path = cut.Find("path.tm-diagram-edge-path");
+        path.GetAttribute("stroke").Should().Be("#ff0000");
+        path.GetAttribute("stroke-dasharray").Should().Be("8,8");
+    }
+
+    [Fact]
+    public void EdgeZIndex_HigherValueRendersLaterInDOM()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edgeLow = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            ZIndex = 1,
+            Shape = "connector",
+            Style = new DiagramStyle { Stroke = "#000000" }
+        };
+        var edgeHigh = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            ZIndex = 5,
+            Shape = "link",
+            Style = new DiagramStyle { Stroke = "#ff0000" }
+        };
+        doc.Edges.Add(edgeLow);
+        doc.Edges.Add(edgeHigh);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var paths = cut.FindAll("path.tm-diagram-edge-path");
+        // The higher Z-index edge should render after the lower one in DOM order
+        // With link shape (2 paths) + connector (1 path) = 3 paths total
+        paths.Count.Should().Be(3);
+        // Last path should belong to the high Z-index edge (red color)
+        paths[^1].GetAttribute("stroke").Should().Be("#ff0000");
+    }
+
+    [Fact]
+    public void DoubleLine_WithJumpStyleArc_RendersJumps()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 50, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 50, W = 100, H = 50 };
+        var n3 = new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 0, W = 50, H = 150 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+        doc.Nodes.Add(n3);
+
+        // Horizontal edge crossing vertical edge area
+        var edgeH = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Shape = "link",
+            Routing = "orthogonal",
+            JumpStyle = "arc",
+            Waypoints = [new DiagramPoint(50, 75), new DiagramPoint(150, 75)]
+        };
+        var edgeV = new DiagramEdge
+        {
+            SourceNodeId = n3.Id,
+            TargetNodeId = n3.Id, // self-reference, just for crossing test
+            Routing = "orthogonal",
+            Waypoints = [new DiagramPoint(125, 0), new DiagramPoint(125, 150)]
+        };
+        doc.Edges.Add(edgeH);
+        doc.Edges.Add(edgeV);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        // link shape should still render 2 paths even with jump style
+        var paths = cut.FindAll("path.tm-diagram-edge-path");
+        paths.Count.Should().BeGreaterThanOrEqualTo(2);
+    }
+
+    [Fact]
+    public void ArrowSelect_RendersButtonTriggerWithSvg()
+    {
+        var cut = RenderComponent<TmDiagramArrowSelect>(p => p
+            .Add(c => c.Value, "classic")
+            .Add(c => c.Options, new List<SelectOption<string>>
+            {
+                new() { Value = "none", Label = "None" },
+                new() { Value = "classic", Label = "Classic" }
+            }));
+
+        cut.Render();
+        var trigger = cut.Find("button.tm-diagram-arrow-select__trigger");
+        trigger.Should().NotBeNull();
+        trigger.InnerHtml.Should().Contain("svg");
     }
 }

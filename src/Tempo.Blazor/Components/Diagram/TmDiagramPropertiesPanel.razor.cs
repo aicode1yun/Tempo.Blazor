@@ -78,6 +78,15 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
+    /// <summary>Returns a small SVG preview for a dash pattern option.</summary>
+    private static string GetDashPreviewSvg(string? pattern) => pattern switch
+    {
+        "dashed" => """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 4" width="22" height="5" style="display:block;"><line x1="0" y1="2" x2="28" y2="2" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,2"/></svg>""",
+        "dotted" => """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 4" width="22" height="5" style="display:block;"><line x1="0" y1="2" x2="28" y2="2" stroke="#374151" stroke-width="1.5" stroke-dasharray="1,2.5" stroke-linecap="round"/></svg>""",
+        "dash-dot" => """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 4" width="22" height="5" style="display:block;"><line x1="0" y1="2" x2="28" y2="2" stroke="#374151" stroke-width="1.5" stroke-dasharray="4,2,1,2"/></svg>""",
+        _ => """<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 28 4" width="22" height="5" style="display:block;"><line x1="0" y1="2" x2="28" y2="2" stroke="#374151" stroke-width="1.5"/></svg>"""
+    };
+
     // ── Mixed value helpers ──────────────────────────────────────────────────
 
     private static string? GetCommonString(IEnumerable<string?> values)
@@ -589,8 +598,35 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         await DocumentChanged.InvokeAsync(Document);
     }
 
+    private string GetEdgeShape() => GetCommonString(SelectedEdges.Select(e => e.Shape)) ?? "connector";
     private string GetEdgeStartArrow() => GetCommonString(SelectedEdges.Select(e => e.StartArrow)) ?? "none";
     private string GetEdgeEndArrow() => GetCommonString(SelectedEdges.Select(e => e.EndArrow)) ?? "classic";
+
+    private bool GetEdgeStartArrowFill()
+    {
+        var arrow = GetCommonString(SelectedEdges.Select(e => e.StartArrow)) ?? "none";
+        var commonFill = GetCommonBool(SelectedEdges.Select(e => e.StartArrowFill));
+        return commonFill ?? DiagramArrowheadRegistry.GetDefaultFill(arrow);
+    }
+
+    private bool GetEdgeEndArrowFill()
+    {
+        var arrow = GetCommonString(SelectedEdges.Select(e => e.EndArrow)) ?? "classic";
+        var commonFill = GetCommonBool(SelectedEdges.Select(e => e.EndArrowFill));
+        return commonFill ?? DiagramArrowheadRegistry.GetDefaultFill(arrow);
+    }
+
+    private bool CanToggleStartArrowFill()
+    {
+        var arrow = GetCommonString(SelectedEdges.Select(e => e.StartArrow)) ?? "none";
+        return DiagramArrowheadRegistry.CanToggleFill(arrow);
+    }
+
+    private bool CanToggleEndArrowFill()
+    {
+        var arrow = GetCommonString(SelectedEdges.Select(e => e.EndArrow)) ?? "classic";
+        return DiagramArrowheadRegistry.CanToggleFill(arrow);
+    }
     private string GetEdgeStrokeColor() => GetCommonString(SelectedEdges.Select(e => e.Style.Stroke)) ?? "#111827";
     private double GetEdgeStrokeWidth() => GetCommonDouble(SelectedEdges.Select(e => e.Style.StrokeWidth)) ?? 1.5;
     private double GetEdgeOpacity() => (GetCommonDouble(SelectedEdges.Select(e => e.Style.Opacity)) ?? 1.0) * 100;
@@ -605,6 +641,13 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private int GetEdgeZIndex() => GetCommonInt(SelectedEdges.Select(e => e.ZIndex)) ?? 0;
     private string? GetEdgeLayerId() => GetCommonString(SelectedEdges.Select(e => e.LayerId)) ?? "";
 
+    private async Task OnEdgeShapeChanged(string value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(e => e.Shape = value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     private async Task OnEdgeStartArrowChanged(string value)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
@@ -616,6 +659,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     {
         if (Document is null || SelectedEdges.Count == 0) return;
         ApplyEdgeStyleChange(e => e.EndArrow = value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeStartArrowFillChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(e => e.StartArrowFill = value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeEndArrowFillChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(e => e.EndArrowFill = value);
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -766,7 +823,111 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         }
     }
 
+    // ── Presets ──────────────────────────────────────────────────────────────
+
+    private string GetEdgePreset()
+    {
+        if (SelectedEdges.Count == 0) return "custom";
+        var first = SelectedEdges[0];
+        bool allSame = SelectedEdges.All(e =>
+            e.Shape == first.Shape &&
+            e.StartArrow == first.StartArrow &&
+            e.EndArrow == first.EndArrow &&
+            (e.Style.StrokeDashPattern ?? "") == (first.Style.StrokeDashPattern ?? "") &&
+            (e.Style.StrokeWidth ?? 1.5) == (first.Style.StrokeWidth ?? 1.5));
+        if (!allSame) return "custom";
+        return (first.Shape, first.StartArrow, first.EndArrow, first.Style.StrokeDashPattern ?? "", first.Style.StrokeWidth ?? 1.5) switch
+        {
+            ("connector", "none", "classic", "", _) => "arrow-right",
+            ("connector", "none", "none", "", _) => "line",
+            ("connector", "none", "doubleBlock", "", _) => "double-arrow",
+            ("connector", "cross", "classic", "", _) => "cross-arrow",
+            ("link", "none", "none", "", 4.0) => "thick-double-line",
+            ("link", "none", "none", "", _) => "double-line",
+            ("connector", "none", "none", "dashed", _) => "dashed",
+            _ => "custom"
+        };
+    }
+
+    private async Task OnEdgePresetChanged(string preset)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        foreach (var edge in SelectedEdges)
+        {
+            switch (preset)
+            {
+                case "arrow-right":
+                    edge.Shape = "connector"; edge.StartArrow = "none"; edge.EndArrow = "classic";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
+                    break;
+                case "line":
+                    edge.Shape = "connector"; edge.StartArrow = "none"; edge.EndArrow = "none";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
+                    break;
+                case "double-arrow":
+                    edge.Shape = "connector"; edge.StartArrow = "none"; edge.EndArrow = "doubleBlock";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
+                    break;
+                case "cross-arrow":
+                    edge.Shape = "connector"; edge.StartArrow = "cross"; edge.EndArrow = "classic";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
+                    break;
+                case "double-line":
+                    edge.Shape = "link"; edge.StartArrow = "none"; edge.EndArrow = "none";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
+                    break;
+                case "thick-double-line":
+                    edge.Shape = "link"; edge.StartArrow = "none"; edge.EndArrow = "none";
+                    edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = 4;
+                    break;
+                case "dashed":
+                    edge.Shape = "connector"; edge.StartArrow = "none"; edge.EndArrow = "none";
+                    edge.Style.StrokeDashPattern = "dashed"; edge.Style.StrokeWidth = null;
+                    break;
+            }
+        }
+        if (SelectedEdges.Count == 1)
+        {
+            var edge = SelectedEdges[0];
+            var before = DiagramEdgeStyleSnapshot.FromEdge(edge);
+            // snapshot already mutated above
+            var after = DiagramEdgeStyleSnapshot.FromEdge(edge);
+            if (CommandStack is not null)
+                CommandStack.Push(new UpdateEdgeStyleCommand(Document, edge.Id, before, after));
+        }
+        else
+        {
+            var ids = SelectedEdges.Select(e => e.Id).ToList();
+            var beforeSnapshots = SelectedEdges.Select(e => DiagramEdgeStyleSnapshot.FromEdge(e)).ToList();
+            var afterSnapshot = DiagramEdgeStyleSnapshot.FromEdge(SelectedEdges[0]);
+            if (CommandStack is not null)
+                CommandStack.Push(new UpdateEdgesStyleCommand(Document, ids, beforeSnapshots, afterSnapshot));
+        }
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     // ── Options ──────────────────────────────────────────────────────────────
+
+    private IReadOnlyList<SelectOption<string>> _edgePresetOptions =>
+    [
+        new SelectOption<string> { Value = "custom", Label = Loc["TmDiagramProperties_Preset_Custom"] },
+        new SelectOption<string> { Value = "arrow-right", Label = Loc["TmDiagramProperties_Preset_ArrowRight"] },
+        new SelectOption<string> { Value = "line", Label = Loc["TmDiagramProperties_Preset_Line"] },
+        new SelectOption<string> { Value = "double-arrow", Label = Loc["TmDiagramProperties_Preset_DoubleArrow"] },
+        new SelectOption<string> { Value = "cross-arrow", Label = Loc["TmDiagramProperties_Preset_CrossArrow"] },
+        new SelectOption<string> { Value = "double-line", Label = Loc["TmDiagramProperties_Preset_DoubleLine"] },
+        new SelectOption<string> { Value = "thick-double-line", Label = Loc["TmDiagramProperties_Preset_ThickDoubleLine"] },
+        new SelectOption<string> { Value = "dashed", Label = Loc["TmDiagramProperties_Preset_Dashed"] }
+    ];
+
+    private IReadOnlyList<SelectOption<string>> _edgeShapeOptions =>
+    [
+        new SelectOption<string> { Value = "connector", Label = Loc["TmDiagramProperties_EdgeShape_Connector"] },
+        new SelectOption<string> { Value = "link", Label = Loc["TmDiagramProperties_EdgeShape_Link"] },
+        new SelectOption<string> { Value = "filledEdge", Label = Loc["TmDiagramProperties_EdgeShape_FilledEdge"] },
+        new SelectOption<string> { Value = "pipe", Label = Loc["TmDiagramProperties_EdgeShape_Pipe"] },
+        new SelectOption<string> { Value = "wire", Label = Loc["TmDiagramProperties_EdgeShape_Wire"] }
+    ];
 
     private IReadOnlyList<SelectOption<string>> _routingOptions =>
     [
@@ -788,23 +949,41 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private IReadOnlyList<SelectOption<string>> _arrowheadOptions =>
     [
+        // ── Basic ──
         new SelectOption<string> { Value = "none", Label = Loc["TmDiagramProperties_Arrowhead_None"] },
         new SelectOption<string> { Value = "classic", Label = Loc["TmDiagramProperties_Arrowhead_Classic"] },
+        new SelectOption<string> { Value = "classicThin", Label = Loc["TmDiagramProperties_Arrowhead_ClassicThin"] },
         new SelectOption<string> { Value = "block", Label = Loc["TmDiagramProperties_Arrowhead_Block"] },
+        new SelectOption<string> { Value = "blockThin", Label = Loc["TmDiagramProperties_Arrowhead_BlockThin"] },
         new SelectOption<string> { Value = "open", Label = Loc["TmDiagramProperties_Arrowhead_Open"] },
+        new SelectOption<string> { Value = "openThin", Label = Loc["TmDiagramProperties_Arrowhead_OpenThin"] },
         new SelectOption<string> { Value = "oval", Label = Loc["TmDiagramProperties_Arrowhead_Oval"] },
         new SelectOption<string> { Value = "circle", Label = Loc["TmDiagramProperties_Arrowhead_Circle"] },
         new SelectOption<string> { Value = "diamond", Label = Loc["TmDiagramProperties_Arrowhead_Diamond"] },
         new SelectOption<string> { Value = "box", Label = Loc["TmDiagramProperties_Arrowhead_Box"] },
         new SelectOption<string> { Value = "async", Label = Loc["TmDiagramProperties_Arrowhead_Async"] },
+        new SelectOption<string> { Value = "openAsync", Label = Loc["TmDiagramProperties_Arrowhead_OpenAsync"] },
+        new SelectOption<string> { Value = "doubleBlock", Label = Loc["TmDiagramProperties_Arrowhead_DoubleBlock"] },
+        new SelectOption<string> { Value = "doubleBlockFilled", Label = Loc["TmDiagramProperties_Arrowhead_DoubleBlockFilled"] },
+        // ── Special ──
         new SelectOption<string> { Value = "crow", Label = Loc["TmDiagramProperties_Arrowhead_Crow"] },
         new SelectOption<string> { Value = "dash", Label = Loc["TmDiagramProperties_Arrowhead_Dash"] },
         new SelectOption<string> { Value = "cross", Label = Loc["TmDiagramProperties_Arrowhead_Cross"] },
         new SelectOption<string> { Value = "double", Label = Loc["TmDiagramProperties_Arrowhead_Double"] },
+        new SelectOption<string> { Value = "halfCircle", Label = Loc["TmDiagramProperties_Arrowhead_HalfCircle"] },
+        new SelectOption<string> { Value = "circlePlus", Label = Loc["TmDiagramProperties_Arrowhead_CirclePlus"] },
+        new SelectOption<string> { Value = "baseDash", Label = Loc["TmDiagramProperties_Arrowhead_BaseDash"] },
+        // ── Cardinality (ER) ──
         new SelectOption<string> { Value = "one", Label = Loc["TmDiagramProperties_Arrowhead_One"] },
         new SelectOption<string> { Value = "many", Label = Loc["TmDiagramProperties_Arrowhead_Many"] },
         new SelectOption<string> { Value = "zero-one", Label = Loc["TmDiagramProperties_Arrowhead_ZeroOne"] },
-        new SelectOption<string> { Value = "zero-many", Label = Loc["TmDiagramProperties_Arrowhead_ZeroMany"] }
+        new SelectOption<string> { Value = "zero-many", Label = Loc["TmDiagramProperties_Arrowhead_ZeroMany"] },
+        new SelectOption<string> { Value = "ERone", Label = Loc["TmDiagramProperties_Arrowhead_EROne"] },
+        new SelectOption<string> { Value = "ERmandOne", Label = Loc["TmDiagramProperties_Arrowhead_ERMandOne"] },
+        new SelectOption<string> { Value = "ERmany", Label = Loc["TmDiagramProperties_Arrowhead_ERMany"] },
+        new SelectOption<string> { Value = "ERoneToMany", Label = Loc["TmDiagramProperties_Arrowhead_EROneToMany"] },
+        new SelectOption<string> { Value = "ERzeroToOne", Label = Loc["TmDiagramProperties_Arrowhead_ERZeroToOne"] },
+        new SelectOption<string> { Value = "ERzeroToMany", Label = Loc["TmDiagramProperties_Arrowhead_ERZeroToMany"] }
     ];
 
     private IReadOnlyList<SelectOption<string>> _cardinalityOptions =>

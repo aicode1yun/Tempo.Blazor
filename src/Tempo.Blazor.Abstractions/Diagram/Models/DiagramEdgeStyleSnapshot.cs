@@ -5,8 +5,11 @@ public sealed class DiagramEdgeStyleSnapshot
 {
     public string StartArrow { get; set; } = "none";
     public string EndArrow { get; set; } = "classic";
+    public string Shape { get; set; } = "connector";
     public double? StartArrowSize { get; set; }
     public double? EndArrowSize { get; set; }
+    public bool? StartArrowFill { get; set; }
+    public bool? EndArrowFill { get; set; }
     public bool Rounded { get; set; }
     public string? JumpStyle { get; set; }
     public double? JumpSize { get; set; }
@@ -25,8 +28,11 @@ public sealed class DiagramEdgeStyleSnapshot
     {
         StartArrow = edge.StartArrow,
         EndArrow = edge.EndArrow,
+        Shape = edge.Shape,
         StartArrowSize = edge.StartArrowSize,
         EndArrowSize = edge.EndArrowSize,
+        StartArrowFill = edge.StartArrowFill,
+        EndArrowFill = edge.EndArrowFill,
         Rounded = edge.Rounded,
         JumpStyle = edge.JumpStyle,
         JumpSize = edge.JumpSize,
@@ -57,8 +63,11 @@ public sealed class DiagramEdgeStyleSnapshot
     {
         edge.StartArrow = StartArrow;
         edge.EndArrow = EndArrow;
+        edge.Shape = Shape;
         edge.StartArrowSize = StartArrowSize;
         edge.EndArrowSize = EndArrowSize;
+        edge.StartArrowFill = StartArrowFill;
+        edge.EndArrowFill = EndArrowFill;
         edge.Rounded = Rounded;
         edge.JumpStyle = JumpStyle;
         edge.JumpSize = JumpSize;
