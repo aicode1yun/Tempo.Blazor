@@ -81,7 +81,7 @@
 
                         <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_StrokeWidth"]</label>
-                            <input class="tm-text-input" type="number" step="0.5" min="0" value="@GetNodeStrokeWidth()" @onchange="OnNodeStrokeWidthChanged" />
+                            <input class="tm-text-input" type="number" step="0.5" min="0" value="@N(GetNodeStrokeWidth())" @onchange="OnNodeStrokeWidthChanged" />
                         </div>
 
                         <div class="tm-diagram-properties__field">
@@ -93,7 +93,7 @@
                         {
                             <div class="tm-diagram-properties__field">
                                 <label>@Loc["TmDiagramProperties_Radius"]</label>
-                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetNodeRadius()" @onchange="OnNodeRadiusChanged" />
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@N(GetNodeRadius())" @onchange="OnNodeRadiusChanged" />
                             </div>
                         }
 
@@ -178,7 +178,7 @@
 
                         <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_FontSize"]</label>
-                            <input class="tm-text-input" type="number" step="1" min="6" value="@GetNodeFontSize()" @onchange="OnNodeFontSizeChanged" />
+                            <input class="tm-text-input" type="number" step="1" min="6" value="@N(GetNodeFontSize())" @onchange="OnNodeFontSizeChanged" />
                         </div>
 
                         <div class="tm-diagram-properties__field">
@@ -230,22 +230,22 @@
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
                                 <label>X</label>
-                                <input class="tm-text-input" type="number" step="1" value="@(FirstSelectedNode?.X ?? 0)" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
+                                <input class="tm-text-input" type="number" step="1" value="@N(FirstSelectedNode?.X ?? 0)" @onchange="e => OnNodeXChanged(e.Value?.ToString())" />
                             </div>
                             <div class="tm-diagram-properties__field">
                                 <label>Y</label>
-                                <input class="tm-text-input" type="number" step="1" value="@(FirstSelectedNode?.Y ?? 0)" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
+                                <input class="tm-text-input" type="number" step="1" value="@N(FirstSelectedNode?.Y ?? 0)" @onchange="e => OnNodeYChanged(e.Value?.ToString())" />
                             </div>
                         </div>
 
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
                                 <label>W</label>
-                                <input class="tm-text-input" type="number" step="1" min="20" value="@(FirstSelectedNode?.W ?? 0)" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
+                                <input class="tm-text-input" type="number" step="1" min="20" value="@N(FirstSelectedNode?.W ?? 0)" @onchange="e => OnNodeWChanged(e.Value?.ToString())" />
                             </div>
                             <div class="tm-diagram-properties__field">
                                 <label>H</label>
-                                <input class="tm-text-input" type="number" step="1" min="20" value="@(FirstSelectedNode?.H ?? 0)" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
+                                <input class="tm-text-input" type="number" step="1" min="20" value="@N(FirstSelectedNode?.H ?? 0)" @onchange="e => OnNodeHChanged(e.Value?.ToString())" />
                             </div>
                         </div>
 
@@ -358,7 +358,7 @@
                                         <div class="tm-diagram-properties__row">
                                             <span>Row @(idx + 1)</span>
                                             <input class="tm-text-input" type="number" step="1" min="20"
-                                                   value="@GetSwimlaneRowSize(idx)"
+                                                   value="@N(GetSwimlaneRowSize(idx))"
                                                    @onchange="e => OnSwimlaneRowSizeChanged(idx, e.Value?.ToString())" />
                                         </div>
                                     }
@@ -374,7 +374,7 @@
                                         <div class="tm-diagram-properties__row">
                                             <span>Col @(idx + 1)</span>
                                             <input class="tm-text-input" type="number" step="1" min="20"
-                                                   value="@GetSwimlaneColumnSize(idx)"
+                                                   value="@N(GetSwimlaneColumnSize(idx))"
                                                    @onchange="e => OnSwimlaneColumnSizeChanged(idx, e.Value?.ToString())" />
                                         </div>
                                     }
@@ -513,11 +513,11 @@
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
                                 <label>@Loc["TmDiagramProperties_StrokeWidth"]</label>
-                                <input class="tm-text-input" type="number" step="0.5" min="0.5" value="@GetEdgeStrokeWidth()" @onchange="OnEdgeStrokeWidthChanged" />
+                                <input class="tm-text-input" type="number" step="0.5" min="0.5" value="@N(GetEdgeStrokeWidth())" @onchange="OnEdgeStrokeWidthChanged" />
                             </div>
                             <div class="tm-diagram-properties__field">
                                 <label>@Loc["TmDiagramProperties_JumpSize"]</label>
-                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeJumpSize()" @onchange="OnEdgeJumpSizeChanged" />
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@N(GetEdgeJumpSize())" @onchange="OnEdgeJumpSizeChanged" />
                             </div>
                         </div>
 
@@ -539,11 +539,11 @@
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">
                                 <label>@Loc["TmDiagramProperties_SourceSpacing"]</label>
-                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeSourceSpacing()" @onchange="OnEdgeSourceSpacingChanged" />
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@N(GetEdgeSourceSpacing())" @onchange="OnEdgeSourceSpacingChanged" />
                             </div>
                             <div class="tm-diagram-properties__field">
                                 <label>@Loc["TmDiagramProperties_TargetSpacing"]</label>
-                                <input class="tm-text-input" type="number" step="1" min="0" value="@GetEdgeTargetSpacing()" @onchange="OnEdgeTargetSpacingChanged" />
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@N(GetEdgeTargetSpacing())" @onchange="OnEdgeTargetSpacingChanged" />
                             </div>
                         </div>
 
@@ -630,7 +630,7 @@
                         </div>
                         <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_Scale"]</label>
-                            <input class="tm-text-input" type="number" step="0.1" min="0.1" value="@GetCurrentPageScale()" @onchange="OnPageScaleChanged" />
+                            <input class="tm-text-input" type="number" step="0.1" min="0.1" value="@N(GetCurrentPageScale())" @onchange="OnPageScaleChanged" />
                         </div>
                         <div class="tm-diagram-properties__hint">
                             <span>@Loc["TmDiagramProperties_PlaceholdersHint"]</span>

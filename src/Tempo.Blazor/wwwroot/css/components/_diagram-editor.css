@@ -767,8 +767,7 @@
 }
 
 path.tm-diagram-edge-path.tm-diagram-search-match {
-    stroke: var(--tm-color-primary, #3b82f6);
-    stroke-width: 3;
+    stroke: var(--tm-color-primary, #3b82f6);    
     animation: tm-diagram-search-pulse-svg 1.5s ease-in-out infinite;
     filter: drop-shadow(0 0 4px var(--tm-color-primary, #3b82f6));
 }
@@ -832,8 +831,6 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 /* ── Edge path ────────────────────────────────────────────────────────────── */
 .tm-diagram-edge-path {
     fill: none;
-    stroke: var(--tm-color-text-muted, #6b7280);
-    stroke-width: 1.5;
     pointer-events: stroke;
 }
 
@@ -847,7 +844,6 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 
 .tm-diagram-edge-path--selected {
     stroke: var(--tm-color-primary, #3b82f6);
-    stroke-width: 2.5;
 }
 
 .tm-diagram-edge-handle {

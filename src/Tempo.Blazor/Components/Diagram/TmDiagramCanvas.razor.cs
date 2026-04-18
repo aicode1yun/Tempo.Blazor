@@ -1815,7 +1815,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
     }
 
-    private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Style.StrokeWidth ?? 1;
+    private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Style.StrokeWidth ?? 1.5;
     private static string GetEdgeStrokeDasharray(DiagramEdge edge)
     {
         var pattern = edge.Style.StrokeDashPattern;

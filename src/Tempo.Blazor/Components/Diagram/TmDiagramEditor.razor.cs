@@ -245,6 +245,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _document = doc;
         await DocumentChanged.InvokeAsync(doc);
+        await InvokeAsync(StateHasChanged);
     }
 
     // ── Selection ────────────────────────────────────────────────────────────

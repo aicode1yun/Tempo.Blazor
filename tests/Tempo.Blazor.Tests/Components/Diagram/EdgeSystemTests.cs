@@ -72,8 +72,8 @@ public class EdgeSystemTests : LocalizationTestBase
         cut.Render();
         var path = cut.Find("path.tm-diagram-edge-path");
         var markerEnd = path.GetAttribute("marker-end");
-        markerEnd.Should().Contain("arrow-end-");
-        markerEnd.Should().Contain(edge.Id);
+        markerEnd.Should().StartWith("url(#arrow-");
+        markerEnd.Should().Contain("classic");
     }
 
     [Fact]

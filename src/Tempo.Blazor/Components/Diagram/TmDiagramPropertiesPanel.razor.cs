@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
@@ -65,6 +66,9 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private bool CanLayout => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
 
     private void ToggleCollapse() => _collapsed = !_collapsed;
+
+    /// <summary>Formats a double for HTML input type="number" using invariant culture (dot decimal separator).</summary>
+    private static string N(double value) => value.ToString("0.##", CultureInfo.InvariantCulture);
     private void ToggleSection(string section)
     {
         if (!_expandedSections.Add(section)) _expandedSections.Remove(section);
