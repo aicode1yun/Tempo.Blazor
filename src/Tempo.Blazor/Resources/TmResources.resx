@@ -727,7 +727,12 @@
   <data name="TmDiagramProperties_Arrowhead_Oval" xml:space="preserve"><value>Oval</value></data>
   <data name="TmDiagramProperties_Arrowhead_Diamond" xml:space="preserve"><value>Diamond</value></data>
   <data name="TmDiagramProperties_Arrowhead_Async" xml:space="preserve"><value>Async</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Circle" xml:space="preserve"><value>Circle</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Box" xml:space="preserve"><value>Box</value></data>
   <data name="TmDiagramProperties_Arrowhead_Crow" xml:space="preserve"><value>Crow's Foot</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Dash" xml:space="preserve"><value>Dash</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Cross" xml:space="preserve"><value>Cross</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Double" xml:space="preserve"><value>Double Arrow</value></data>
   <data name="TmDiagramProperties_Arrowhead_One" xml:space="preserve"><value>One</value></data>
   <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Many</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Zero or One</value></data>

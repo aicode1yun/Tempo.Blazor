@@ -703,7 +703,12 @@
   <data name="TmDiagramProperties_Arrowhead_Oval" xml:space="preserve"><value>Oválná</value></data>
   <data name="TmDiagramProperties_Arrowhead_Diamond" xml:space="preserve"><value>Kosočtverec</value></data>
   <data name="TmDiagramProperties_Arrowhead_Async" xml:space="preserve"><value>Asynchronní</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Circle" xml:space="preserve"><value>Kruh</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Box" xml:space="preserve"><value>Čtverec</value></data>
   <data name="TmDiagramProperties_Arrowhead_Crow" xml:space="preserve"><value>Vraní noha</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Dash" xml:space="preserve"><value>Čárka</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Cross" xml:space="preserve"><value>Křížek</value></data>
+  <data name="TmDiagramProperties_Arrowhead_Double" xml:space="preserve"><value>Dvojitá šipka</value></data>
   <data name="TmDiagramProperties_Arrowhead_One" xml:space="preserve"><value>Jeden</value></data>
   <data name="TmDiagramProperties_Arrowhead_Many" xml:space="preserve"><value>Mnoho</value></data>
   <data name="TmDiagramProperties_Arrowhead_ZeroOne" xml:space="preserve"><value>Nula nebo jeden</value></data>

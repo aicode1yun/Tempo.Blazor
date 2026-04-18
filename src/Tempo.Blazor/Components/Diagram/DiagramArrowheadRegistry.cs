@@ -9,6 +9,7 @@ public static class DiagramArrowheadRegistry
     public sealed class ArrowheadDef
     {
         public string PathData { get; init; } = "";
+        public string? ExtraPath { get; init; }
         public string FillMode { get; init; } = "filled"; // filled, empty, line
         public double Width { get; init; } = 10;
         public double Height { get; init; } = 10;
@@ -77,6 +78,52 @@ public static class DiagramArrowheadRegistry
             PathData = "M0,0 L10,5 L0,10 M10,0 L10,10",
             FillMode = "line",
             Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["dash"] = new()
+        {
+            PathData = "M4,0 L4,10",
+            FillMode = "line",
+            Width = 8,
+            Height = 10,
+            RefX = 4,
+            RefY = 5,
+        },
+        ["cross"] = new()
+        {
+            PathData = "M0,0 L10,10 M0,10 L10,0",
+            FillMode = "line",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["circle"] = new()
+        {
+            PathData = "M0,5 a5,5 0 1,0 10,0 a5,5 0 1,0 -10,0",
+            FillMode = "filled",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["box"] = new()
+        {
+            PathData = "M0,0 L10,0 L10,10 L0,10 z",
+            FillMode = "filled",
+            Width = 10,
+            Height = 10,
+            RefX = 10,
+            RefY = 5,
+        },
+        ["double"] = new()
+        {
+            PathData = "M0,2 L0,8 L7,5 z",
+            ExtraPath = "M4,0 L4,10",
+            FillMode = "filled",
+            Width = 12,
             Height = 10,
             RefX = 10,
             RefY = 5,

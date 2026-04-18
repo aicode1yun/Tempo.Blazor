@@ -42,22 +42,34 @@
             {
                 var def = DiagramArrowheadRegistry.Get(marker.Arrowhead);
                 if (def is null || def.FillMode == "none") continue;
-                <marker id="@marker.Id" markerWidth="@F(def.Width)" markerHeight="@F(def.Height)" refX="@F(def.RefX)" refY="@F(def.RefY)" orient="auto" markerUnits="strokeWidth">
+                <marker id="@marker.Id" markerWidth="@F(def.Width)" markerHeight="@F(def.Height)" refX="@F(def.RefX)" refY="@F(def.RefY)" orient="auto-start-reverse" markerUnits="strokeWidth">
                     @if (def.FillMode == "filled")
                     {
                         <path d="@def.PathData" fill="@marker.Color" />
+                        @if (!string.IsNullOrEmpty(def.ExtraPath))
+                        {
+                            <path d="@def.ExtraPath" fill="@marker.Color" />
+                        }
                     }
                     else if (def.FillMode == "empty")
                     {
                         <path d="@def.PathData" fill="white" stroke="@marker.Color" stroke-width="1" />
+                        @if (!string.IsNullOrEmpty(def.ExtraPath))
+                        {
+                            <path d="@def.ExtraPath" fill="white" stroke="@marker.Color" stroke-width="1" />
+                        }
                     }
                     else if (def.FillMode == "line")
                     {
                         <path d="@def.PathData" fill="none" stroke="@marker.Color" stroke-width="1.5" />
+                        @if (!string.IsNullOrEmpty(def.ExtraPath))
+                        {
+                            <path d="@def.ExtraPath" fill="none" stroke="@marker.Color" stroke-width="1.5" />
+                        }
                     }
                 </marker>
             }
-            <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
+            <marker id="arrow-emerald" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto-start-reverse" markerUnits="strokeWidth">
                 <path d="M0,0 L0,6 L9,3 z" fill="#10b981" />
             </marker>
         </defs>
