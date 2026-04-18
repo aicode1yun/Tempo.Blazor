@@ -1673,19 +1673,17 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return (from.X + dx * t, from.Y + dy * t);
     }
 
-    /// <summary>Computes how much an endpoint must be inset so the arrowhead
-    /// does not overflow past the target node.  For "link" + "open" we need a
-    /// larger inset because the arrowhead extends further (tipDist = size * 0.9).</summary>
+    /// <summary>Returns how much to shorten the line end for the arrowhead.
+    /// For "connector" (single-line) we return 0 — the SVG marker's refX controls placement.
+    /// For "link" (double-line) we use the arrowhead's LinkInset so the base sits at the line end.</summary>
     private static double GetArrowheadInset(DiagramEdge edge, bool isStart)
     {
+        if (edge.Shape != "link") return 0;
         var arrow = isStart ? edge.StartArrow : edge.EndArrow;
-        if (arrow == "none") return 0;
+        var def = DiagramArrowheadRegistry.Get(arrow);
+        if (def is null || def.LinkInset <= 0) return 0;
         var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
-        // "link" shape with open arrowheads: the tip is size * 0.9 past the line end,
-        // so we inset by that amount so the tip lands exactly on the original endpoint.
-        if (edge.Shape == "link" && arrow is "open" or "openThin")
-            return size * 0.9;
-        return size / 2.0;
+        return def.LinkInset * size;
     }
 
     private static ((double X, double Y) cp1, (double X, double Y) cp2)[] GetCurvedControlPoints((double X, double Y)[] pts)
@@ -1966,11 +1964,11 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var color = GetEdgeColor(edge);
         var strokeWidth = GetEdgeStrokeWidth(edge);
 
-        // ── Open arrowheads: draw two "wings" with a perpendicular base ──
+        // ── Open arrowheads: draw two wings with a perpendicular base ──
         //  main ─────┐
-        //             │← perpendicular base
+        //             │← perpendicular base (between the parallel lines)
         //             ╲
-        //              ╲ ← tip
+        //              ╲ ← tip (outside the node)
         //             ╱
         //  offset ───┘
         if (arrow is "open" or "openThin")
@@ -1992,17 +1990,22 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                 perpY /= perpLen;
             }
 
-            // Direction of the edge (outward for end, inward for start)
+            // Direction of the edge — outward from the node.
+            // We want the tip to point AWAY from the node.
+            // For start: pts[1] is further along the edge, pts[0] is on the node.
+            //            Direction outward = pts[1] → pts[0] reversed = pts[0] → pts[1] = AWAY from node.
+            // For end:   pts[^1] is on the target node, pts[^2] is further back.
+            //            Direction outward = pts[^1] → pts[^2] = AWAY from node.
             double dirX, dirY;
             if (isStart)
             {
-                dirX = pts[0].X - pts[1].X;
-                dirY = pts[0].Y - pts[1].Y;
+                dirX = pts[1].X - pts[0].X;
+                dirY = pts[1].Y - pts[0].Y;
             }
             else
             {
-                dirX = pts[^1].X - pts[^2].X;
-                dirY = pts[^1].Y - pts[^2].Y;
+                dirX = pts[^2].X - pts[^1].X;
+                dirY = pts[^2].Y - pts[^1].Y;
             }
             var dirLen = Math.Sqrt(dirX * dirX + dirY * dirY);
             if (dirLen > 0.001)
@@ -2011,15 +2014,16 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                 dirY /= dirLen;
             }
 
-            // Wing base length (how far the perpendicular bar sticks out)
+            // Wing base length (how far the perpendicular bar sticks out past the lines)
             var wingBase = 5.0;
             // Tip is placed further out along the edge direction
             var tipDist = size * 0.9;
 
             var mx = (pMain.X + pOff.X) / 2;
             var my = (pMain.Y + pOff.Y) / 2;
-            var tipX = mx + dirX * tipDist;
-            var tipY = my + dirY * tipDist;
+            // Invert direction so the tip points outward from the node
+            var tipX = mx - dirX * tipDist;
+            var tipY = my - dirY * tipDist;
 
             var baseMainX = pMain.X + perpX * wingBase;
             var baseMainY = pMain.Y + perpY * wingBase;
@@ -2031,27 +2035,35 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                    $"fill=\"none\" stroke=\"{color}\" stroke-width=\"{F(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
         }
 
-        // ── Filled / other arrowheads: use a transformed path (legacy behaviour) ──
+        // ── Filled / other arrowheads: scaled path centred on the double-line axis ──
+        var offPts2 = OffsetPolyline(pts, 3);
         var isFilled = GetEdgeArrowFill(edge, isStart);
-        double x, y, angleDeg;
+        double angleDeg;
         if (isStart)
         {
-            x = pts[0].X;
-            y = pts[0].Y;
             var next = pts[1];
-            angleDeg = Math.Atan2(next.Y - y, next.X - x) * 180 / Math.PI + 180;
+            angleDeg = Math.Atan2(next.Y - pts[0].Y, next.X - pts[0].X) * 180 / Math.PI + 180;
         }
         else
         {
-            x = pts[^1].X;
-            y = pts[^1].Y;
             var prev = pts[^2];
-            angleDeg = Math.Atan2(y - prev.Y, x - prev.X) * 180 / Math.PI;
+            angleDeg = Math.Atan2(pts[^1].Y - prev.Y, pts[^1].X - prev.X) * 180 / Math.PI;
         }
+
+        // Place the arrowhead on the axis between the two parallel lines
+        var pM = isStart ? pts[0] : pts[^1];
+        var pO = isStart ? offPts2[0] : offPts2[^1];
+        var cx = (pM.X + pO.X) / 2;
+        var cy = (pM.Y + pO.Y) / 2;
 
         var fill = def.FillMode == "line" ? "none" : (isFilled ? color : "none");
         var sw = def.FillMode == "line" ? F(strokeWidth) : (isFilled ? "0" : F(strokeWidth));
-        var transform = $"translate({F(x)},{F(y)}) rotate({F(angleDeg)}) translate(-{F(def.RefX)},-{F(def.RefY)})";
+        var headScale = 1.3;
+
+        // Symmetric arrowheads (circle, box, diamond, cross, dash…) have RefX on the
+        // right edge, so we shift back by (Width/2 - RefX) to centre them on the axis.
+        var centerShift = def.IsSymmetric ? (def.Width / 2.0 - def.RefX) : 0;
+        var transform = $"translate({F(cx)},{F(cy)}) rotate({F(angleDeg)}) scale({F(headScale)}) translate(-{F(def.RefX + centerShift)},-{F(def.RefY)})";
 
         var sb = new System.Text.StringBuilder();
         sb.Append($"<path d=\"{def.PathData}\" fill=\"{fill}\" stroke=\"{color}\" stroke-width=\"{sw}\" stroke-linejoin=\"round\" transform=\"{transform}\" />");

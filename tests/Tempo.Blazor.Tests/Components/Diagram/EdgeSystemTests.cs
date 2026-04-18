@@ -187,7 +187,7 @@ public class EdgeSystemTests : LocalizationTestBase
         // Source port is at (100,25), spacing 20 to right => (120,25)
         // Target port is at (200,25), spacing 15 to left => (185,25)
         d.Should().Contain("M 120 25");
-        d.Should().Contain("L 180 25"); // 185 - 5px arrowhead inset for default classic arrow
+        d.Should().Contain("L 185 25"); // line ends exactly at target spacing (no automatic inset)
     }
 
     [Fact]

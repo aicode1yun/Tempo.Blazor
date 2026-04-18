@@ -13,8 +13,20 @@ public static class DiagramArrowheadRegistry
         public string FillMode { get; init; } = "filled"; // filled, empty, line
         public double Width { get; init; } = 10;
         public double Height { get; init; } = 10;
+        /// <summary>Reference X for SVG marker placement on single-line (connector) edges.
+        /// For directed arrowheads this is usually the tip (Width) so the arrow is visible above the HTML node overlay.
+        /// For symmetric arrowheads this is the centre (Width/2).</summary>
         public double RefX { get; init; } = 9;
         public double RefY { get; init; } = 5;
+        /// <summary>For double-line (link) edges: how much to shorten the line in px per 10 units of size.
+        /// 0 = line goes to the node border; 0.9 = line is shortened by 90% of arrowhead length.</summary>
+        public double LinkInset { get; init; } = 0;
+        /// <summary>If true, the arrowhead should be centred on the axis (used for "link" double-line).
+        /// The transform is shifted by (Width/2 - RefX) so the visual centre lands on the line axis.</summary>
+        public bool IsSymmetric { get; init; }
+        /// <summary>If false, the arrowhead is hidden from the dropdown when the edge shape is "link".
+        /// Arrowheads that look poor on double-lines (box, doubleBlock, ER notations, etc.) are excluded.</summary>
+        public bool IsSupportedForDoubleLine { get; init; } = true;
     }
 
     private static readonly Dictionary<string, ArrowheadDef> _defs = new(StringComparer.OrdinalIgnoreCase)
@@ -36,6 +48,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 9,
             RefY = 5,
+            LinkInset = 0.9,
+            IsSupportedForDoubleLine = true,
         },
         ["block"] = new()
         {
@@ -45,6 +59,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            LinkInset = 0.9,
+            IsSupportedForDoubleLine = true,
         },
         ["open"] = new()
         {
@@ -54,6 +70,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            LinkInset = 0.9,
+            IsSupportedForDoubleLine = true,
         },
         ["oval"] = new()
         {
@@ -63,6 +81,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["diamond"] = new()
         {
@@ -72,6 +92,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["async"] = new()
         {
@@ -81,6 +103,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["dash"] = new()
         {
@@ -90,6 +113,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 4,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["cross"] = new()
         {
@@ -99,6 +124,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["circle"] = new()
         {
@@ -108,6 +135,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["box"] = new()
         {
@@ -117,6 +146,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = false,
         },
         ["double"] = new()
         {
@@ -127,6 +158,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["crow"] = new()
         {
@@ -136,6 +168,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["one"] = new()
         {
@@ -145,6 +178,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 8,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["many"] = new()
         {
@@ -154,6 +188,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["zero-one"] = new()
         {
@@ -163,6 +198,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["zero-many"] = new()
         {
@@ -172,6 +208,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 14,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["classicThin"] = new()
         {
@@ -181,6 +218,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 7,
             RefY = 5,
+            LinkInset = 0.7,
+            IsSupportedForDoubleLine = true,
         },
         ["openThin"] = new()
         {
@@ -190,6 +229,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 7,
             RefY = 5,
+            LinkInset = 0.7,
+            IsSupportedForDoubleLine = true,
         },
         ["blockThin"] = new()
         {
@@ -199,6 +240,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 7,
             RefY = 5,
+            LinkInset = 0.7,
+            IsSupportedForDoubleLine = true,
         },
         ["openAsync"] = new()
         {
@@ -209,6 +252,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 8,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["halfCircle"] = new()
         {
@@ -218,6 +262,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 5,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["circlePlus"] = new()
         {
@@ -228,6 +274,8 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSymmetric = true,
+            IsSupportedForDoubleLine = true,
         },
         ["baseDash"] = new()
         {
@@ -237,6 +285,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 0,
             RefY = 5,
+            IsSupportedForDoubleLine = true,
         },
         ["doubleBlock"] = new()
         {
@@ -246,6 +295,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["doubleBlockFilled"] = new()
         {
@@ -255,6 +305,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERone"] = new()
         {
@@ -264,6 +315,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 8,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERmandOne"] = new()
         {
@@ -274,6 +326,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERmany"] = new()
         {
@@ -284,6 +337,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERoneToMany"] = new()
         {
@@ -294,6 +348,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERzeroToOne"] = new()
         {
@@ -304,6 +359,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
         ["ERzeroToMany"] = new()
         {
@@ -314,6 +370,7 @@ public static class DiagramArrowheadRegistry
             Height = 10,
             RefX = 10,
             RefY = 5,
+            IsSupportedForDoubleLine = false,
         },
     };
 
@@ -324,6 +381,12 @@ public static class DiagramArrowheadRegistry
 
     public static bool Contains(string? id)
         => id is not null && _defs.ContainsKey(id);
+
+    /// <summary>
+    /// Returns the list of arrowhead IDs that are supported for double-line ("link") edges.
+    /// </summary>
+    public static IEnumerable<string> GetSupportedForDoubleLine()
+        => _defs.Where(kv => kv.Value.IsSupportedForDoubleLine).Select(kv => kv.Key);
 
     /// <summary>
     /// Returns whether the arrowhead supports fill/unfill toggle.

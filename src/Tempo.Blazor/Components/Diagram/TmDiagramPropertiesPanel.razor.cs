@@ -644,7 +644,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnEdgeShapeChanged(string value)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
-        ApplyEdgeStyleChange(e => e.Shape = value);
+        var supported = value == "link"
+            ? DiagramArrowheadRegistry.GetSupportedForDoubleLine().ToHashSet(StringComparer.OrdinalIgnoreCase)
+            : null;
+        ApplyEdgeStyleChange(e =>
+        {
+            e.Shape = value;
+            if (value == "link" && supported is not null)
+            {
+                if (!supported.Contains(e.StartArrow ?? ""))
+                    e.StartArrow = "none";
+                if (!supported.Contains(e.EndArrow ?? ""))
+                    e.EndArrow = "none";
+            }
+        });
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -947,44 +960,57 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         new SelectOption<string> { Value = "aggregation", Label = Loc["TmDiagramProperties_ConnectorType_Aggregation"] }
     ];
 
-    private IReadOnlyList<SelectOption<string>> _arrowheadOptions =>
-    [
-        // ── Basic ──
-        new SelectOption<string> { Value = "none", Label = Loc["TmDiagramProperties_Arrowhead_None"] },
-        new SelectOption<string> { Value = "classic", Label = Loc["TmDiagramProperties_Arrowhead_Classic"] },
-        new SelectOption<string> { Value = "classicThin", Label = Loc["TmDiagramProperties_Arrowhead_ClassicThin"] },
-        new SelectOption<string> { Value = "block", Label = Loc["TmDiagramProperties_Arrowhead_Block"] },
-        new SelectOption<string> { Value = "blockThin", Label = Loc["TmDiagramProperties_Arrowhead_BlockThin"] },
-        new SelectOption<string> { Value = "open", Label = Loc["TmDiagramProperties_Arrowhead_Open"] },
-        new SelectOption<string> { Value = "openThin", Label = Loc["TmDiagramProperties_Arrowhead_OpenThin"] },
-        new SelectOption<string> { Value = "oval", Label = Loc["TmDiagramProperties_Arrowhead_Oval"] },
-        new SelectOption<string> { Value = "circle", Label = Loc["TmDiagramProperties_Arrowhead_Circle"] },
-        new SelectOption<string> { Value = "diamond", Label = Loc["TmDiagramProperties_Arrowhead_Diamond"] },
-        new SelectOption<string> { Value = "box", Label = Loc["TmDiagramProperties_Arrowhead_Box"] },
-        new SelectOption<string> { Value = "async", Label = Loc["TmDiagramProperties_Arrowhead_Async"] },
-        new SelectOption<string> { Value = "openAsync", Label = Loc["TmDiagramProperties_Arrowhead_OpenAsync"] },
-        new SelectOption<string> { Value = "doubleBlock", Label = Loc["TmDiagramProperties_Arrowhead_DoubleBlock"] },
-        new SelectOption<string> { Value = "doubleBlockFilled", Label = Loc["TmDiagramProperties_Arrowhead_DoubleBlockFilled"] },
-        // ── Special ──
-        new SelectOption<string> { Value = "crow", Label = Loc["TmDiagramProperties_Arrowhead_Crow"] },
-        new SelectOption<string> { Value = "dash", Label = Loc["TmDiagramProperties_Arrowhead_Dash"] },
-        new SelectOption<string> { Value = "cross", Label = Loc["TmDiagramProperties_Arrowhead_Cross"] },
-        new SelectOption<string> { Value = "double", Label = Loc["TmDiagramProperties_Arrowhead_Double"] },
-        new SelectOption<string> { Value = "halfCircle", Label = Loc["TmDiagramProperties_Arrowhead_HalfCircle"] },
-        new SelectOption<string> { Value = "circlePlus", Label = Loc["TmDiagramProperties_Arrowhead_CirclePlus"] },
-        new SelectOption<string> { Value = "baseDash", Label = Loc["TmDiagramProperties_Arrowhead_BaseDash"] },
-        // ── Cardinality (ER) ──
-        new SelectOption<string> { Value = "one", Label = Loc["TmDiagramProperties_Arrowhead_One"] },
-        new SelectOption<string> { Value = "many", Label = Loc["TmDiagramProperties_Arrowhead_Many"] },
-        new SelectOption<string> { Value = "zero-one", Label = Loc["TmDiagramProperties_Arrowhead_ZeroOne"] },
-        new SelectOption<string> { Value = "zero-many", Label = Loc["TmDiagramProperties_Arrowhead_ZeroMany"] },
-        new SelectOption<string> { Value = "ERone", Label = Loc["TmDiagramProperties_Arrowhead_EROne"] },
-        new SelectOption<string> { Value = "ERmandOne", Label = Loc["TmDiagramProperties_Arrowhead_ERMandOne"] },
-        new SelectOption<string> { Value = "ERmany", Label = Loc["TmDiagramProperties_Arrowhead_ERMany"] },
-        new SelectOption<string> { Value = "ERoneToMany", Label = Loc["TmDiagramProperties_Arrowhead_EROneToMany"] },
-        new SelectOption<string> { Value = "ERzeroToOne", Label = Loc["TmDiagramProperties_Arrowhead_ERZeroToOne"] },
-        new SelectOption<string> { Value = "ERzeroToMany", Label = Loc["TmDiagramProperties_Arrowhead_ERZeroToMany"] }
-    ];
+    private IReadOnlyList<SelectOption<string>> _arrowheadOptions
+    {
+        get
+        {
+            var isLink = GetEdgeShape() == "link";
+            var all = new (string Value, string LabelKey)[]
+            {
+                ("none", "TmDiagramProperties_Arrowhead_None"),
+                ("classic", "TmDiagramProperties_Arrowhead_Classic"),
+                ("classicThin", "TmDiagramProperties_Arrowhead_ClassicThin"),
+                ("block", "TmDiagramProperties_Arrowhead_Block"),
+                ("blockThin", "TmDiagramProperties_Arrowhead_BlockThin"),
+                ("open", "TmDiagramProperties_Arrowhead_Open"),
+                ("openThin", "TmDiagramProperties_Arrowhead_OpenThin"),
+                ("oval", "TmDiagramProperties_Arrowhead_Oval"),
+                ("circle", "TmDiagramProperties_Arrowhead_Circle"),
+                ("diamond", "TmDiagramProperties_Arrowhead_Diamond"),
+                ("box", "TmDiagramProperties_Arrowhead_Box"),
+                ("async", "TmDiagramProperties_Arrowhead_Async"),
+                ("openAsync", "TmDiagramProperties_Arrowhead_OpenAsync"),
+                ("doubleBlock", "TmDiagramProperties_Arrowhead_DoubleBlock"),
+                ("doubleBlockFilled", "TmDiagramProperties_Arrowhead_DoubleBlockFilled"),
+                ("crow", "TmDiagramProperties_Arrowhead_Crow"),
+                ("dash", "TmDiagramProperties_Arrowhead_Dash"),
+                ("cross", "TmDiagramProperties_Arrowhead_Cross"),
+                ("double", "TmDiagramProperties_Arrowhead_Double"),
+                ("halfCircle", "TmDiagramProperties_Arrowhead_HalfCircle"),
+                ("circlePlus", "TmDiagramProperties_Arrowhead_CirclePlus"),
+                ("baseDash", "TmDiagramProperties_Arrowhead_BaseDash"),
+                ("one", "TmDiagramProperties_Arrowhead_One"),
+                ("many", "TmDiagramProperties_Arrowhead_Many"),
+                ("zero-one", "TmDiagramProperties_Arrowhead_ZeroOne"),
+                ("zero-many", "TmDiagramProperties_Arrowhead_ZeroMany"),
+                ("ERone", "TmDiagramProperties_Arrowhead_EROne"),
+                ("ERmandOne", "TmDiagramProperties_Arrowhead_ERMandOne"),
+                ("ERmany", "TmDiagramProperties_Arrowhead_ERMany"),
+                ("ERoneToMany", "TmDiagramProperties_Arrowhead_EROneToMany"),
+                ("ERzeroToOne", "TmDiagramProperties_Arrowhead_ERZeroToOne"),
+                ("ERzeroToMany", "TmDiagramProperties_Arrowhead_ERZeroToMany")
+            };
+
+            var supported = isLink
+                ? DiagramArrowheadRegistry.GetSupportedForDoubleLine().ToHashSet(StringComparer.OrdinalIgnoreCase)
+                : null;
+
+            return all
+                .Where(a => !isLink || supported?.Contains(a.Value) == true)
+                .Select(a => new SelectOption<string> { Value = a.Value, Label = Loc[a.LabelKey] })
+                .ToList();
+        }
+    }
 
     private IReadOnlyList<SelectOption<string>> _cardinalityOptions =>
     [
