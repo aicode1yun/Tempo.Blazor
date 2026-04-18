@@ -2715,3 +2715,72 @@ window.tmDiagramEditor = {
         return result;
     },
 };
+
+// ── TmDiagramArrowSelect helpers ─────────────────────────────────────────────
+
+window.tmDiagramArrowSelect = {
+    _refs: new Map(),
+
+    init: function (menuId, dotNetRef, focusedIndex) {
+        const menu = document.getElementById(menuId);
+        if (!menu) return;
+
+        // Clean up any previous instance for this menu
+        this.destroy(menuId);
+
+        // Move focus into the menu so key events target it
+        menu.focus();
+
+        // Capture-phase keydown handler so we intercept ArrowUp/ArrowDown
+        // BEFORE they bubble up and scroll the parent panel
+        const handler = function (e) {
+            switch (e.key) {
+                case 'ArrowDown':
+                case 'ArrowUp':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    if (e.key === 'ArrowDown')
+                        dotNetRef.invokeMethodAsync('OnArrowDown');
+                    else
+                        dotNetRef.invokeMethodAsync('OnArrowUp');
+                    break;
+                case 'Enter':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dotNetRef.invokeMethodAsync('OnEnter');
+                    break;
+                case 'Escape':
+                    e.preventDefault();
+                    e.stopPropagation();
+                    dotNetRef.invokeMethodAsync('OnEscape');
+                    break;
+            }
+        };
+
+        menu.addEventListener('keydown', handler, true);
+        this._refs.set(menuId, { handler: handler, dotNetRef: dotNetRef });
+
+        // Auto-scroll to currently selected value
+        const selected = menu.children[focusedIndex];
+        if (selected) {
+            selected.scrollIntoView({ block: 'nearest' });
+        }
+    },
+
+    destroy: function (menuId) {
+        const menu = document.getElementById(menuId);
+        const entry = this._refs.get(menuId);
+        if (menu && entry) {
+            menu.removeEventListener('keydown', entry.handler, true);
+        }
+        this._refs.delete(menuId);
+    },
+
+    scrollToOption: function (menuId, index) {
+        const menu = document.getElementById(menuId);
+        if (!menu || index < 0) return;
+        const child = menu.children[index];
+        if (!child) return;
+        child.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    }
+};
