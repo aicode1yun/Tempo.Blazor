@@ -1673,20 +1673,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return (from.X + dx * t, from.Y + dy * t);
     }
 
-    /// <summary>Returns how much to shorten the line end so the arrowhead has room.
-    /// Uses the arrowhead's LinkInset so the base sits at the line end and the tip points toward the node.
-    /// For open/openThin on single-line (connector) edges the line goes all the way to the node.</summary>
     private static double GetArrowheadInset(DiagramEdge edge, bool isStart)
-    {
-        var arrow = isStart ? edge.StartArrow : edge.EndArrow;
-        var def = DiagramArrowheadRegistry.Get(arrow);
-        if (def is null || def.LinkInset <= 0) return 0;
-        // Open-style arrowheads on single-line edges keep the line at the node border
-        if (edge.Shape != "link" && arrow is "open" or "openThin" or "async" or "openAsync")
-            return 0;
-        var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
-        return def.LinkInset * size;
-    }
+        => DiagramArrowheadRenderer.GetArrowheadInset(edge, isStart);
 
     private static ((double X, double Y) cp1, (double X, double Y) cp2)[] GetCurvedControlPoints((double X, double Y)[] pts)
     {
@@ -1872,7 +1860,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (endInset > 0)
             pts[^1] = ShortenToward(pts[^1], pts[^2], endInset);
 
-        var offsetPts = OffsetPolyline(pts, offset);
+        var offsetPts = DiagramArrowheadRenderer.OffsetPolyline(pts, offset);
         if (offsetPts.Length < 2) return string.Empty;
 
         var sb = new System.Text.StringBuilder();
@@ -1882,33 +1870,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return sb.ToString();
     }
 
-    /// <summary>Offsets each point of a polyline perpendicular to its local direction.</summary>
-    private static (double X, double Y)[] OffsetPolyline((double X, double Y)[] pts, double offset)
-    {
-        if (pts.Length < 2) return pts;
-        var result = new (double X, double Y)[pts.Length];
-        for (int i = 0; i < pts.Length; i++)
-        {
-            (double X, double Y) prev = i > 0 ? pts[i - 1] : pts[0];
-            (double X, double Y) next = i < pts.Length - 1 ? pts[i + 1] : pts[^1];
-            (double X, double Y) before = i > 0 ? pts[i - 1] : (pts[0].X * 2 - pts[1].X, pts[0].Y * 2 - pts[1].Y);
-            (double X, double Y) after = i < pts.Length - 1 ? pts[i + 1] : (pts[^1].X * 2 - pts[^2].X, pts[^1].Y * 2 - pts[^2].Y);
 
-            double dx = after.X - before.X;
-            double dy = after.Y - before.Y;
-            double len = Math.Sqrt(dx * dx + dy * dy);
-            if (len < 0.001)
-            {
-                result[i] = pts[i];
-                continue;
-            }
-            // Perpendicular vector (rotated 90° clockwise)
-            double px = dy / len * offset;
-            double py = -dx / len * offset;
-            result[i] = (pts[i].X + px, pts[i].Y + py);
-        }
-        return result;
-    }
 
     private static bool GetEdgeArrowFill(DiagramEdge edge, bool isStart)
     {
@@ -1917,183 +1879,13 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return DiagramArrowheadRegistry.GetEffectiveFill(arrow, userFill);
     }
 
-    /// <summary>Renders an arrowhead as a standalone SVG element.
-    /// The edge line is shortened by GetArrowheadInset so the arrowhead base sits at the line end.
-    /// For "open" / "openThin" we draw wings from a base point to the tip at the node border.
-    /// For filled arrowheads we transform the registry path so the base sits at the line end.</summary>
     private string GetArrowheadSvg(DiagramEdge edge, bool isStart)
     {
-        var arrow = isStart ? edge.StartArrow : edge.EndArrow;
-        if (string.IsNullOrEmpty(arrow) || arrow == "none") return "";
-
-        var def = DiagramArrowheadRegistry.Get(arrow);
-        if (def is null || def.FillMode == "none") return "";
-
         var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
-        if (pts.Length < 2) return "";
-
-        var startInset = GetArrowheadInset(edge, true);
-        var endInset = GetArrowheadInset(edge, false);
-        if (startInset > 0)
-            pts[0] = ShortenToward(pts[0], pts[1], startInset);
-        if (endInset > 0)
-            pts[^1] = ShortenToward(pts[^1], pts[^2], endInset);
-
-        var color = GetEdgeColor(edge);
-        var strokeWidth = GetEdgeStrokeWidth(edge);
-        var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
-
-        // Arrow point (shortened line end) and previous point
-        (double X, double Y) p;
-        (double X, double Y) prev;
-        if (isStart)
-        {
-            p = pts[0];
-            prev = pts[1];
-        }
-        else
-        {
-            p = pts[^1];
-            prev = pts[^2];
-        }
-
-        // Direction from prev toward p (toward the node)
-        double dirX = p.X - prev.X;
-        double dirY = p.Y - prev.Y;
-        var dirLen = Math.Sqrt(dirX * dirX + dirY * dirY);
-        if (dirLen > 0.001)
-        {
-            dirX /= dirLen;
-            dirY /= dirLen;
-        }
-
-        double perpX = -dirY;
-        double perpY = dirX;
-
-        // ── Open arrowheads ──
-        if (arrow is "open" or "openThin")
-        {
-            var wingBase = size * 0.35;
-            var tipDist = size * 0.9;
-
-            // tip at the node border (p), base is outside the node
-            var tipX = p.X;
-            var tipY = p.Y;
-            var baseCenterX = p.X - dirX * tipDist;
-            var baseCenterY = p.Y - dirY * tipDist;
-
-            // For link shape draw two wings from both parallel lines
-            if (edge.Shape == "link")
-            {
-                var offsetPts = OffsetPolyline(pts, 3);
-                if (offsetPts.Length < 2) return "";
-
-                var pMain = isStart ? pts[0] : pts[^1];
-                var pOff  = isStart ? offsetPts[0] : offsetPts[^1];
-
-                double perpOffX = pOff.X - pMain.X;
-                double perpOffY = pOff.Y - pMain.Y;
-                var perpOffLen = Math.Sqrt(perpOffX * perpOffX + perpOffY * perpOffY);
-                if (perpOffLen > 0.001)
-                {
-                    perpOffX /= perpOffLen;
-                    perpOffY /= perpOffLen;
-                }
-
-                // Direction outward from the node (same convention as original GetLinkArrowheadSvg)
-                double dirOutX, dirOutY;
-                if (isStart)
-                {
-                    dirOutX = pts[1].X - pts[0].X;
-                    dirOutY = pts[1].Y - pts[0].Y;
-                }
-                else
-                {
-                    dirOutX = pts[^2].X - pts[^1].X;
-                    dirOutY = pts[^2].Y - pts[^1].Y;
-                }
-                var dirOutLen = Math.Sqrt(dirOutX * dirOutX + dirOutY * dirOutY);
-                if (dirOutLen > 0.001)
-                {
-                    dirOutX /= dirOutLen;
-                    dirOutY /= dirOutLen;
-                }
-
-                var wingBaseLink = 5.0;
-                var tipDistLink = size * 0.9;
-
-                var mx = (pMain.X + pOff.X) / 2;
-                var my = (pMain.Y + pOff.Y) / 2;
-                // tip points toward the node (minus because dirOut points away)
-                var tX = mx - dirOutX * tipDistLink;
-                var tY = my - dirOutY * tipDistLink;
-
-                var bMainX = pMain.X + perpOffX * wingBaseLink;
-                var bMainY = pMain.Y + perpOffY * wingBaseLink;
-                var bOffX  = pOff.X  - perpOffX * wingBaseLink;
-                var bOffY  = pOff.Y  - perpOffY * wingBaseLink;
-
-                return $"<path d=\"M {F(pMain.X)} {F(pMain.Y)} L {F(bMainX)} {F(bMainY)} L {F(tX)} {F(tY)} " +
-                       $"M {F(pOff.X)} {F(pOff.Y)} L {F(bOffX)} {F(bOffY)} L {F(tX)} {F(tY)}\" " +
-                       $"fill=\"none\" stroke=\"{color}\" stroke-width=\"{F(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
-            }
-
-            // Single-line open arrowhead
-            var baseLeftX = baseCenterX + perpX * wingBase;
-            var baseLeftY = baseCenterY + perpY * wingBase;
-            var baseRightX = baseCenterX - perpX * wingBase;
-            var baseRightY = baseCenterY - perpY * wingBase;
-
-            return $"<path d=\"M {F(baseLeftX)} {F(baseLeftY)} L {F(tipX)} {F(tipY)} L {F(baseRightX)} {F(baseRightY)}\" " +
-                   $"fill=\"none\" stroke=\"{color}\" stroke-width=\"{F(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
-        }
-
-        // ── Filled / other arrowheads ──
-        var angleDeg = Math.Atan2(dirY, dirX) * 180 / Math.PI;
-        var headScale = size / 10.0 * 1.3;
-
-        // Place the arrowhead so its base sits at the shortened line end (p)
-        double cx, cy;
-        if (edge.Shape == "link")
-        {
-            var offsetPts = OffsetPolyline(pts, 3);
-            var pM = isStart ? pts[0] : pts[^1];
-            var pO = isStart ? offsetPts[0] : offsetPts[^1];
-            cx = (pM.X + pO.X) / 2;
-            cy = (pM.Y + pO.Y) / 2;
-        }
-        else
-        {
-            cx = p.X;
-            cy = p.Y;
-        }
-
-        // Tip-based arrowheads (async, openAsync, crow) place their tip at the line end.
-        // All others place their base (or centre for symmetric) at the line end.
-        double offsetX;
-        if (arrow is "async" or "openAsync" or "crow" or "crowFilled")
-        {
-            var centerShift = def.IsSymmetric ? (def.Width / 2.0 - def.RefX) : 0;
-            offsetX = -(def.RefX + centerShift);
-        }
-        else
-        {
-            offsetX = def.IsSymmetric ? -def.Width / 2.0 : 0;
-        }
-
-        var transform = $"translate({F(cx)},{F(cy)}) rotate({F(angleDeg)}) scale({F(headScale)}) translate({F(offsetX)},-{F(def.RefY)})";
-
         var isFilled = GetEdgeArrowFill(edge, isStart);
-        var fill = def.FillMode == "line" ? "none" : (isFilled ? color : "none");
-        var sw = def.FillMode == "line" ? F(strokeWidth) : (isFilled ? "0" : F(strokeWidth));
-
-        var sb = new System.Text.StringBuilder();
-        sb.Append($"<path d=\"{def.PathData}\" fill=\"{fill}\" stroke=\"{color}\" stroke-width=\"{sw}\" stroke-linejoin=\"round\" transform=\"{transform}\" />");
-        if (!string.IsNullOrEmpty(def.ExtraPath))
-        {
-            sb.Append($"<path d=\"{def.ExtraPath}\" fill=\"{fill}\" stroke=\"{color}\" stroke-width=\"{sw}\" stroke-linejoin=\"round\" transform=\"{transform}\" />");
-        }
-        return sb.ToString();
+        var strokeWidth = GetEdgeStrokeWidth(edge);
+        var color = GetEdgeColor(edge);
+        return DiagramArrowheadRenderer.RenderArrowhead(edge, isStart, pts, isFilled, strokeWidth, color);
     }
 
     // ── Helper DTOs ──────────────────────────────────────────────────────────

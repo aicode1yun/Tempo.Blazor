@@ -49,7 +49,7 @@ public class EdgeSystemTests : LocalizationTestBase
     }
 
     [Fact]
-    public void ComputeEdgePath_WithEndArrowClassic_HasMarkerEndAttribute()
+    public void ComputeEdgePath_WithEndArrowClassic_RendersStandaloneArrowhead()
     {
         var doc = new DiagramDocument();
         var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
@@ -72,10 +72,9 @@ public class EdgeSystemTests : LocalizationTestBase
             .Add(c => c.ReadOnly, false));
 
         cut.Render();
-        var path = cut.Find("path.tm-diagram-edge-path");
-        var markerEnd = path.GetAttribute("marker-end");
-        markerEnd.Should().StartWith("url(#arrow-");
-        markerEnd.Should().Contain("classic");
+        var arrowhead = cut.Find("path.tm-diagram-arrowhead");
+        arrowhead.Should().NotBeNull();
+        arrowhead.GetAttribute("d").Should().Be("M0,0 L0,10 L9,5 z");
     }
 
     [Fact]
@@ -173,7 +172,8 @@ public class EdgeSystemTests : LocalizationTestBase
             SourceNodeId = n1.Id,
             TargetNodeId = n2.Id,
             SourceSpacing = 20,
-            TargetSpacing = 15
+            TargetSpacing = 15,
+            EndArrow = "none"
         };
         doc.Edges.Add(edge);
 
@@ -414,7 +414,7 @@ public class EdgeSystemTests : LocalizationTestBase
     }
 
     [Fact]
-    public void ComputeEdgePath_WithEndArrowFillFalse_HasUnfilledMarkerId()
+    public void ComputeEdgePath_WithEndArrowFillFalse_RendersUnfilledArrowhead()
     {
         var doc = new DiagramDocument();
         var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
@@ -437,13 +437,13 @@ public class EdgeSystemTests : LocalizationTestBase
             .Add(c => c.ReadOnly, false));
 
         cut.Render();
-        var path = cut.Find("path.tm-diagram-edge-path");
-        var markerEnd = path.GetAttribute("marker-end");
-        markerEnd.Should().Contain("-e)");
+        var arrowhead = cut.Find("path.tm-diagram-arrowhead");
+        arrowhead.Should().NotBeNull();
+        arrowhead.GetAttribute("fill").Should().Be("none");
     }
 
     [Fact]
-    public void ComputeEdgePath_WithEndArrowFillTrue_HasFilledMarkerId()
+    public void ComputeEdgePath_WithEndArrowFillTrue_RendersFilledArrowhead()
     {
         var doc = new DiagramDocument();
         var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
@@ -466,9 +466,9 @@ public class EdgeSystemTests : LocalizationTestBase
             .Add(c => c.ReadOnly, false));
 
         cut.Render();
-        var path = cut.Find("path.tm-diagram-edge-path");
-        var markerEnd = path.GetAttribute("marker-end");
-        markerEnd.Should().Contain("-f)");
+        var arrowhead = cut.Find("path.tm-diagram-arrowhead");
+        arrowhead.Should().NotBeNull();
+        arrowhead.GetAttribute("fill").Should().Be("#000000");
     }
 
     [Fact]
