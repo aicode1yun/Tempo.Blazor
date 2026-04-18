@@ -145,8 +145,7 @@
                               stroke="@GetEdgeColor(edge)"
                               stroke-width="@F(GetEdgeStrokeWidth(edge))"
                               stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
-                              marker-start="@GetEdgeMarkerStart(edge)"
-                              marker-end="@GetEdgeMarkerEnd(edge)" />
+                              fill="none" />
                         @if (!string.IsNullOrEmpty(offsetPathD))
                         {
                             <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
@@ -154,9 +153,10 @@
                                   stroke="@GetEdgeColor(edge)"
                                   stroke-width="@F(GetEdgeStrokeWidth(edge))"
                                   stroke-dasharray="@GetEdgeStrokeDasharray(edge)"
-                                  marker-start="@GetEdgeMarkerStart(edge)"
-                                  marker-end="@GetEdgeMarkerEnd(edge)" />
+                                  fill="none" />
                         }
+                        @((MarkupString)GetLinkArrowheadSvg(edge, true))
+                        @((MarkupString)GetLinkArrowheadSvg(edge, false))
                     }
                     else if (edge.Shape == "pipe")
                     {

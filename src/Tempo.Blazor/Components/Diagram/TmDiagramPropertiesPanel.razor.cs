@@ -840,7 +840,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         {
             ("connector", "none", "classic", "", _) => "arrow-right",
             ("connector", "none", "none", "", _) => "line",
-            ("connector", "none", "doubleBlock", "", _) => "double-arrow",
+            ("link", "none", "open", "", _) => "double-arrow",
             ("connector", "cross", "classic", "", _) => "cross-arrow",
             ("link", "none", "none", "", 4.0) => "thick-double-line",
             ("link", "none", "none", "", _) => "double-line",
@@ -865,7 +865,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
                     edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
                     break;
                 case "double-arrow":
-                    edge.Shape = "connector"; edge.StartArrow = "none"; edge.EndArrow = "doubleBlock";
+                    edge.Shape = "link"; edge.StartArrow = "none"; edge.EndArrow = "open";
                     edge.Style.StrokeDashPattern = ""; edge.Style.StrokeWidth = null;
                     break;
                 case "cross-arrow":

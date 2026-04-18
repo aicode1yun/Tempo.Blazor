@@ -1576,8 +1576,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
 
         // Inset endpoints to leave room for arrowhead markers
-        var startInset = edge.StartArrow == "none" ? 0 : (edge.StartArrowSize ?? 10) / 2.0;
-        var endInset = edge.EndArrow == "none" ? 0 : (edge.EndArrowSize ?? 10) / 2.0;
+        var startInset = GetArrowheadInset(edge, true);
+        var endInset = GetArrowheadInset(edge, false);
         if (startInset > 0)
             pts[0] = ShortenToward(pts[0], pts[1], startInset);
         if (endInset > 0)
@@ -1671,6 +1671,21 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (len == 0) return from;
         var t = Math.Min(r / len, 0.5);
         return (from.X + dx * t, from.Y + dy * t);
+    }
+
+    /// <summary>Computes how much an endpoint must be inset so the arrowhead
+    /// does not overflow past the target node.  For "link" + "open" we need a
+    /// larger inset because the arrowhead extends further (tipDist = size * 0.9).</summary>
+    private static double GetArrowheadInset(DiagramEdge edge, bool isStart)
+    {
+        var arrow = isStart ? edge.StartArrow : edge.EndArrow;
+        if (arrow == "none") return 0;
+        var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
+        // "link" shape with open arrowheads: the tip is size * 0.9 past the line end,
+        // so we inset by that amount so the tip lands exactly on the original endpoint.
+        if (edge.Shape == "link" && arrow is "open" or "openThin")
+            return size * 0.9;
+        return size / 2.0;
     }
 
     private static ((double X, double Y) cp1, (double X, double Y) cp2)[] GetCurvedControlPoints((double X, double Y)[] pts)
@@ -1850,9 +1865,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
         if (pts.Length < 2) return string.Empty;
 
-        // Inset endpoints for arrowhead markers
-        var startInset = edge.StartArrow == "none" ? 0 : (edge.StartArrowSize ?? 10) / 2.0;
-        var endInset = edge.EndArrow == "none" ? 0 : (edge.EndArrowSize ?? 10) / 2.0;
+        var startInset = GetArrowheadInset(edge, true);
+        var endInset = GetArrowheadInset(edge, false);
         if (startInset > 0)
             pts[0] = ShortenToward(pts[0], pts[1], startInset);
         if (endInset > 0)
@@ -1926,6 +1940,127 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     private record MarkerRef(string Id, string Arrowhead, string Color, bool Fill);
+
+    /// <summary>Renders an arrowhead as a standalone SVG element for "link" double-line edges.
+    /// For "open" / "openThin" we draw two lines from the ends of both parallel paths
+    /// meeting at a single tip — this looks natural because the arrowhead "grows" out of
+    /// both lines.  For filled arrowheads we fall back to a transformed path.</summary>
+    private string GetLinkArrowheadSvg(DiagramEdge edge, bool isStart)
+    {
+        var arrow = isStart ? edge.StartArrow : edge.EndArrow;
+        if (string.IsNullOrEmpty(arrow) || arrow == "none") return "";
+
+        var def = DiagramArrowheadRegistry.Get(arrow);
+        if (def is null || def.FillMode == "none") return "";
+
+        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
+        if (pts.Length < 2) return "";
+
+        var startInset = GetArrowheadInset(edge, true);
+        var endInset = GetArrowheadInset(edge, false);
+        if (startInset > 0)
+            pts[0] = ShortenToward(pts[0], pts[1], startInset);
+        if (endInset > 0)
+            pts[^1] = ShortenToward(pts[^1], pts[^2], endInset);
+
+        var color = GetEdgeColor(edge);
+        var strokeWidth = GetEdgeStrokeWidth(edge);
+
+        // ── Open arrowheads: draw two "wings" with a perpendicular base ──
+        //  main ─────┐
+        //             │← perpendicular base
+        //             ╲
+        //              ╲ ← tip
+        //             ╱
+        //  offset ───┘
+        if (arrow is "open" or "openThin")
+        {
+            var offsetPts = OffsetPolyline(pts, 3);
+            if (offsetPts.Length < 2) return "";
+            var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
+
+            var pMain = isStart ? pts[0] : pts[^1];
+            var pOff  = isStart ? offsetPts[0] : offsetPts[^1];
+
+            // Normalised vector perpendicular to the edge (from main toward offset)
+            double perpX = pOff.X - pMain.X;
+            double perpY = pOff.Y - pMain.Y;
+            var perpLen = Math.Sqrt(perpX * perpX + perpY * perpY);
+            if (perpLen > 0.001)
+            {
+                perpX /= perpLen;
+                perpY /= perpLen;
+            }
+
+            // Direction of the edge (outward for end, inward for start)
+            double dirX, dirY;
+            if (isStart)
+            {
+                dirX = pts[0].X - pts[1].X;
+                dirY = pts[0].Y - pts[1].Y;
+            }
+            else
+            {
+                dirX = pts[^1].X - pts[^2].X;
+                dirY = pts[^1].Y - pts[^2].Y;
+            }
+            var dirLen = Math.Sqrt(dirX * dirX + dirY * dirY);
+            if (dirLen > 0.001)
+            {
+                dirX /= dirLen;
+                dirY /= dirLen;
+            }
+
+            // Wing base length (how far the perpendicular bar sticks out)
+            var wingBase = 5.0;
+            // Tip is placed further out along the edge direction
+            var tipDist = size * 0.9;
+
+            var mx = (pMain.X + pOff.X) / 2;
+            var my = (pMain.Y + pOff.Y) / 2;
+            var tipX = mx + dirX * tipDist;
+            var tipY = my + dirY * tipDist;
+
+            var baseMainX = pMain.X + perpX * wingBase;
+            var baseMainY = pMain.Y + perpY * wingBase;
+            var baseOffX  = pOff.X  - perpX * wingBase;
+            var baseOffY  = pOff.Y  - perpY * wingBase;
+
+            return $"<path d=\"M {F(pMain.X)} {F(pMain.Y)} L {F(baseMainX)} {F(baseMainY)} L {F(tipX)} {F(tipY)} " +
+                   $"M {F(pOff.X)} {F(pOff.Y)} L {F(baseOffX)} {F(baseOffY)} L {F(tipX)} {F(tipY)}\" " +
+                   $"fill=\"none\" stroke=\"{color}\" stroke-width=\"{F(strokeWidth)}\" stroke-linecap=\"round\" stroke-linejoin=\"round\" />";
+        }
+
+        // ── Filled / other arrowheads: use a transformed path (legacy behaviour) ──
+        var isFilled = GetEdgeArrowFill(edge, isStart);
+        double x, y, angleDeg;
+        if (isStart)
+        {
+            x = pts[0].X;
+            y = pts[0].Y;
+            var next = pts[1];
+            angleDeg = Math.Atan2(next.Y - y, next.X - x) * 180 / Math.PI + 180;
+        }
+        else
+        {
+            x = pts[^1].X;
+            y = pts[^1].Y;
+            var prev = pts[^2];
+            angleDeg = Math.Atan2(y - prev.Y, x - prev.X) * 180 / Math.PI;
+        }
+
+        var fill = def.FillMode == "line" ? "none" : (isFilled ? color : "none");
+        var sw = def.FillMode == "line" ? F(strokeWidth) : (isFilled ? "0" : F(strokeWidth));
+        var transform = $"translate({F(x)},{F(y)}) rotate({F(angleDeg)}) translate(-{F(def.RefX)},-{F(def.RefY)})";
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"<path d=\"{def.PathData}\" fill=\"{fill}\" stroke=\"{color}\" stroke-width=\"{sw}\" stroke-linejoin=\"round\" transform=\"{transform}\" />");
+        if (!string.IsNullOrEmpty(def.ExtraPath))
+        {
+            sb.Append($"<path d=\"{def.ExtraPath}\" fill=\"{fill}\" stroke=\"{color}\" stroke-width=\"{sw}\" stroke-linejoin=\"round\" transform=\"{transform}\" />");
+        }
+        return sb.ToString();
+    }
 
     private IEnumerable<MarkerRef> GetRequiredMarkers()
     {
