@@ -794,7 +794,15 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     transform: translate(-50%, -50%);
     cursor: crosshair;
     z-index: 10;
-    transition: transform 120ms, background 120ms;
+    opacity: 0;
+    transition: transform 120ms, background 120ms, opacity 120ms;
+}
+
+/* Ports visible on node hover, selected node, or during edge drawing */
+.tm-diagram-node:hover .tm-diagram-port,
+.tm-diagram-node--selected .tm-diagram-port,
+.tm-diagram-canvas--edge-drawing .tm-diagram-port {
+    opacity: 1;
 }
 
 .tm-diagram-port:hover {

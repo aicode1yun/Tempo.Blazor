@@ -841,10 +841,10 @@ window.tmDiagramEditor = {
             inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
         }
 
-        // Connection hover icons
-        if (!inst.readOnly && !inst.isDrawingEdge && !inst.isDragging && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isPanning && !inst.isRubberBand) {
-            this._updateConnectHoverIcons(inst, e.clientX, e.clientY);
-        }
+        // Connection hover icons — disabled, ports now appear on hover via CSS
+        // if (!inst.readOnly && !inst.isDrawingEdge && !inst.isDragging && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isPanning && !inst.isRubberBand) {
+        //     this._updateConnectHoverIcons(inst, e.clientX, e.clientY);
+        // }
     },
 
     // ── Mouse up ─────────────────────────────────────────────────────────────
@@ -1227,6 +1227,7 @@ window.tmDiagramEditor = {
 
     _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY, side, offset) {
         inst.isDrawingEdge = true;
+        inst.container.classList.add('tm-diagram-canvas--edge-drawing');
         const docPt = this._screenToDoc(inst, clientX, clientY);
         inst.drawSource = { nodeId: nodeId, portId: portId, side: side || null, offset: offset || 0.5, x: docPt.x, y: docPt.y };
 
@@ -1380,6 +1381,7 @@ window.tmDiagramEditor = {
 
     _cancelEdgeDraw: function (inst) {
         inst.isDrawingEdge = false;
+        inst.container.classList.remove('tm-diagram-canvas--edge-drawing');
         if (inst.drawTempPath) {
             inst.drawTempPath.remove();
             inst.drawTempPath = null;
@@ -1631,10 +1633,16 @@ window.tmDiagramEditor = {
         this._clearSelectionOutlines(inst);
         if (!inst.htmlLayer) return;
 
+        // Sync selected class on node elements for port visibility
+        inst.htmlLayer.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
+            el.classList.remove('tm-diagram-node--selected');
+        });
+
         inst.selectedIds.forEach(id => {
+            const nodeEl = this._nodeEl(inst, id);
+            if (nodeEl) nodeEl.classList.add('tm-diagram-node--selected');
             const r = this._nodeRect(inst, id);
             if (!r) return;
-            const nodeEl = this._nodeEl(inst, id);
             const rot = this._getNodeRotation(nodeEl);
             const el = document.createElement('div');
             el.className = 'tm-diagram-selection-outline';
