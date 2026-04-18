@@ -1681,8 +1681,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var arrow = isStart ? edge.StartArrow : edge.EndArrow;
         var def = DiagramArrowheadRegistry.Get(arrow);
         if (def is null || def.LinkInset <= 0) return 0;
-        // Open arrowheads on single-line edges keep the line at the node border
-        if (edge.Shape != "link" && arrow is "open" or "openThin")
+        // Open-style arrowheads on single-line edges keep the line at the node border
+        if (edge.Shape != "link" && arrow is "open" or "openThin" or "async" or "openAsync")
             return 0;
         var size = (isStart ? edge.StartArrowSize : edge.EndArrowSize) ?? 10;
         return def.LinkInset * size;
@@ -2068,9 +2068,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             cy = p.Y;
         }
 
-        // For standalone rendering we want the base at (cx,cy), not the tip.
-        // Base is at x=0 for most directed arrowheads; centre for symmetric ones.
-        double offsetX = def.IsSymmetric ? -def.Width / 2.0 : 0;
+        // Tip-based arrowheads (async, openAsync, crow) place their tip at the line end.
+        // All others place their base (or centre for symmetric) at the line end.
+        double offsetX;
+        if (arrow is "async" or "openAsync" or "crow" or "crowFilled")
+        {
+            var centerShift = def.IsSymmetric ? (def.Width / 2.0 - def.RefX) : 0;
+            offsetX = -(def.RefX + centerShift);
+        }
+        else
+        {
+            offsetX = def.IsSymmetric ? -def.Width / 2.0 : 0;
+        }
 
         var transform = $"translate({F(cx)},{F(cy)}) rotate({F(angleDeg)}) scale({F(headScale)}) translate({F(offsetX)},-{F(def.RefY)})";
 
