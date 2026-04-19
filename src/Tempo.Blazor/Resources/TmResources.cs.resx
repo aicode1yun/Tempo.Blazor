@@ -925,6 +925,7 @@
   <data name="TmDiagramEditor_Connector" xml:space="preserve"><value>Spojnice</value></data>
   <data name="TmDiagramEditor_Straight" xml:space="preserve"><value>Přímá</value></data>
   <data name="TmDiagramEditor_Orthogonal" xml:space="preserve"><value>Orthogonální</value></data>
+  <data name="TmDiagramEditor_Elbow" xml:space="preserve"><value>Lomená</value></data>
   <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Křivka</value></data>
   <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Počáteční šipka</value></data>
   <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>Koncová šipka</value></data>

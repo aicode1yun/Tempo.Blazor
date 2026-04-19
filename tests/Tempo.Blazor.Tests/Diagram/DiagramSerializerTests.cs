@@ -271,4 +271,34 @@ public class DiagramSerializerTests
         restored.Edges.Should().HaveCount(1);
         restored.Edges[0].Waypoints.Should().HaveCount(2);
     }
+
+    [Fact]
+    public void Serialize_IsManuallyRouted_IsIncludedWhenTrue()
+    {
+        var doc = new DiagramDocument();
+        doc.Edges.Add(new DiagramEdge { SourceNodeId = "a", TargetNodeId = "b", IsManuallyRouted = true });
+
+        var json = DiagramSerializer.Serialize(doc);
+
+        json.Should().Contain("\"isManuallyRouted\": true");
+    }
+
+    [Fact]
+    public void Deserialize_IsManuallyRouted_MapsCorrectly()
+    {
+        var json = """
+            {
+              "version": "2.0",
+              "title": "Test",
+              "nodes": [],
+              "edges": [
+                { "id": "e1", "sourceNodeId": "a", "targetNodeId": "b", "isManuallyRouted": true }
+              ]
+            }
+            """;
+
+        var doc = DiagramSerializer.Deserialize(json);
+
+        doc.Edges[0].IsManuallyRouted.Should().BeTrue();
+    }
 }

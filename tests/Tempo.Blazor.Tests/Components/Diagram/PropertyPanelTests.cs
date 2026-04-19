@@ -170,4 +170,64 @@ public class PropertyPanelTests : LocalizationTestBase
         doc.Width.Should().Be(1123);
         doc.Height.Should().Be(794);
     }
+
+    [Fact]
+    public void EdgeLabelOffsetX_Change_UpdatesOffset()
+    {
+        var doc = new DiagramDocument();
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = "n1",
+            TargetNodeId = "n2",
+            Label = "Test",
+            LabelOffsetX = 0,
+            LabelOffsetY = 0
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.SelectedIds, [edge.Id])
+            .Add(c => c.ReadOnly, false));
+
+        var offsetXField = cut.FindAll(".tm-diagram-properties__field")
+            .FirstOrDefault(f => f.QuerySelector("label")?.TextContent.Contains("Offset X") == true
+                              || f.QuerySelector("label")?.TextContent.Contains("Posun popisku X") == true);
+        offsetXField.Should().NotBeNull();
+        var offsetXInput = offsetXField!.QuerySelector("input[type='number']");
+        offsetXInput.Should().NotBeNull();
+        offsetXInput!.Change("12");
+
+        edge.LabelOffsetX.Should().Be(12);
+    }
+
+    [Fact]
+    public void EdgeLabelOffsetY_Change_UpdatesOffset()
+    {
+        var doc = new DiagramDocument();
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = "n1",
+            TargetNodeId = "n2",
+            Label = "Test",
+            LabelOffsetX = 0,
+            LabelOffsetY = 0
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramPropertiesPanel>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.SelectedIds, [edge.Id])
+            .Add(c => c.ReadOnly, false));
+
+        var offsetYField = cut.FindAll(".tm-diagram-properties__field")
+            .FirstOrDefault(f => f.QuerySelector("label")?.TextContent.Contains("Offset Y") == true
+                              || f.QuerySelector("label")?.TextContent.Contains("Posun popisku Y") == true);
+        offsetYField.Should().NotBeNull();
+        var offsetYInput = offsetYField!.QuerySelector("input[type='number']");
+        offsetYInput.Should().NotBeNull();
+        offsetYInput!.Change("-5");
+
+        edge.LabelOffsetY.Should().Be(-5);
+    }
 }

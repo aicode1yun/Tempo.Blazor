@@ -1659,7 +1659,34 @@ window.tmDiagramEditor = {
         }
 
         // Edge-to-edge: detect hover over existing edge
-        const hitEl = el ? el.closest('.tm-diagram-edge-hit-path') : null;
+        let hitEl = el ? el.closest('.tm-diagram-edge-hit-path') : null;
+        if (!hitEl && el) {
+            const edgeGroup = el.closest('.tm-diagram-edge-group');
+            if (edgeGroup) {
+                hitEl = edgeGroup.querySelector('.tm-diagram-edge-hit-path');
+            }
+        }
+        // Fallback: if elementFromPoint didn't find an edge (e.g. label group or foreignObject on top),
+        // check all edges by geometric distance
+        if (!hitEl) {
+            const toleranceDoc = 20 / inst.scale;
+            let bestDist = Infinity;
+            let bestPath = null;
+            const allPaths = inst.svg.querySelectorAll('.tm-diagram-edge-hit-path');
+            for (let i = 0; i < allPaths.length; i++) {
+                const path = allPaths[i];
+                const eid = path.getAttribute('data-edge-id');
+                if (!eid || eid === inst.drawSource.edgeId) continue;
+                const closest = this._findClosestPointOnEdge(path, docPt.x, docPt.y);
+                if (closest && closest.dist < bestDist) {
+                    bestDist = closest.dist;
+                    bestPath = path;
+                }
+            }
+            if (bestPath && bestDist < toleranceDoc) {
+                hitEl = bestPath;
+            }
+        }
         if (hitEl) {
             const edgeId = hitEl.getAttribute('data-edge-id');
             if (edgeId && edgeId !== inst.drawSource.edgeId) {

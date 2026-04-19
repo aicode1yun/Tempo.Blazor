@@ -949,6 +949,7 @@
   <data name="TmDiagramEditor_Connector" xml:space="preserve"><value>Connector</value></data>
   <data name="TmDiagramEditor_Straight" xml:space="preserve"><value>Straight</value></data>
   <data name="TmDiagramEditor_Orthogonal" xml:space="preserve"><value>Orthogonal</value></data>
+  <data name="TmDiagramEditor_Elbow" xml:space="preserve"><value>Elbow</value></data>
   <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Curved</value></data>
   <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Start Arrow</value></data>
   <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>End Arrow</value></data>

@@ -84,4 +84,31 @@ public class TmDiagramEditorConnectTests : LocalizationTestBase
         edge.SourceNodeId.Should().Be(doc.Nodes[0].Id);
         edge.TargetNodeId.Should().Be(doc.Nodes[1].Id);
     }
+
+    [Fact]
+    public async Task EdgeToEdgeCreation_SetsTargetEdgeIdAndT()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 40, H = 40 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 100, W = 40, H = 40 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var targetEdge = new DiagramEdge { SourceNodeId = n1.Id, TargetNodeId = n2.Id };
+        doc.Edges.Add(targetEdge);
+
+        var cut = RenderComponent<TmDiagramEditor>(p => p
+            .Add(e => e.Document, doc)
+            .Add(e => e.ReadOnly, false));
+
+        var canvas = cut.FindComponent<TmDiagramCanvas>();
+        await cut.InvokeAsync(async () => await canvas.Instance.JsOnEdgeCreated(n1.Id, null, null, null, "right", 0.5, null, 0.5, targetEdge.Id, 0.75));
+
+        doc.Edges.Count.Should().Be(2);
+        var newEdge = doc.Edges[1];
+        newEdge.SourceNodeId.Should().Be(n1.Id);
+        newEdge.TargetNodeId.Should().BeNull();
+        newEdge.TargetEdgeId.Should().Be(targetEdge.Id);
+        newEdge.TargetEdgeT.Should().Be(0.75);
+    }
 }

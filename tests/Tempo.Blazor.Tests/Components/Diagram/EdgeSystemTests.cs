@@ -318,7 +318,8 @@ public class EdgeSystemTests : LocalizationTestBase
             .LastOrDefault();
 
         invocation.Should().NotBeNull();
-        var obstacles = invocation.Arguments.Last() as System.Collections.Generic.IEnumerable<object>;
+        // Arguments: x1, y1, side1, x2, y2, side2, routing, sourceSpacing, targetSpacing, srcBounds, tgtBounds, obstacles, elbowOrientation
+        var obstacles = invocation.Arguments[11] as System.Collections.Generic.IEnumerable<object>;
         obstacles.Should().NotBeNull();
         var obstacleList = obstacles!.ToList();
         obstacleList.Count.Should().Be(1);
@@ -726,5 +727,169 @@ public class EdgeSystemTests : LocalizationTestBase
         var trigger = cut.Find("button.tm-diagram-arrow-select__trigger");
         trigger.Should().NotBeNull();
         trigger.InnerHtml.Should().Contain("svg");
+    }
+
+    [Fact]
+    public void GetEdgePoints_WithTargetEdgeId_ResolvesToPointOnTargetEdge()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var targetEdge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Routing = "orthogonal",
+            Waypoints = [new DiagramPoint(120, 25), new DiagramPoint(180, 25)]
+        };
+        doc.Edges.Add(targetEdge);
+
+        var sourceEdge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetEdgeId = targetEdge.Id,
+            TargetEdgeT = 0.5,
+            Routing = "orthogonal",
+            Waypoints = []
+        };
+        doc.Edges.Add(sourceEdge);
+
+        var pts = DiagramGeometryHelper.GetEdgePoints(doc, sourceEdge);
+        pts.Should().HaveCount(2);
+        pts[1].X.Should().BeApproximately(150, 1);
+        pts[1].Y.Should().BeApproximately(25, 1);
+    }
+
+    [Fact]
+    public void GetEdgePoints_WithSourceEdgeId_ResolvesToPointOnSourceEdge()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var sourceEdge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Routing = "orthogonal",
+            Waypoints = [new DiagramPoint(120, 25), new DiagramPoint(180, 25)]
+        };
+        doc.Edges.Add(sourceEdge);
+
+        var childEdge = new DiagramEdge
+        {
+            SourceEdgeId = sourceEdge.Id,
+            SourceEdgeT = 0.5,
+            TargetNodeId = n2.Id,
+            Routing = "orthogonal",
+            Waypoints = []
+        };
+        doc.Edges.Add(childEdge);
+
+        var pts = DiagramGeometryHelper.GetEdgePoints(doc, childEdge);
+        pts.Should().HaveCount(2);
+        pts[0].X.Should().BeApproximately(150, 1);
+        pts[0].Y.Should().BeApproximately(25, 1);
+    }
+
+    [Fact]
+    public void EdgeToEdge_RendersPathInCanvas()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var targetEdge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Routing = "orthogonal",
+            Waypoints = [new DiagramPoint(120, 25), new DiagramPoint(180, 25)]
+        };
+        doc.Edges.Add(targetEdge);
+
+        var sourceEdge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetEdgeId = targetEdge.Id,
+            TargetEdgeT = 0.5,
+            Routing = "orthogonal",
+            Waypoints = []
+        };
+        doc.Edges.Add(sourceEdge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var paths = cut.FindAll("path.tm-diagram-edge-path");
+        paths.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void EdgeLabelOffset_RendersTransformInCanvas()
+    {
+        var doc = new DiagramDocument();
+        var n1 = new DiagramNode { StencilId = "general.rectangle", X = 0, Y = 0, W = 100, H = 50 };
+        var n2 = new DiagramNode { StencilId = "general.rectangle", X = 200, Y = 0, W = 100, H = 50 };
+        doc.Nodes.Add(n1);
+        doc.Nodes.Add(n2);
+
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = n1.Id,
+            TargetNodeId = n2.Id,
+            Label = "Test",
+            LabelPositionT = 0.5,
+            LabelOffsetX = 10,
+            LabelOffsetY = -5,
+            Routing = "straight",
+            EndArrow = "none"
+        };
+        doc.Edges.Add(edge);
+
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ReadOnly, false));
+
+        cut.Render();
+        var labelGroup = cut.Find("g.tm-diagram-edge-label-group");
+        labelGroup.Should().NotBeNull();
+        var transform = labelGroup.GetAttribute("transform");
+        transform.Should().Contain("translate(");
+        transform.Should().Contain("10");   // offsetX
+        transform.Should().Contain("-5");   // offsetY
+    }
+
+    [Fact]
+    public void UpdateEdgeLabelPositionCommand_ExecuteAndUndo()
+    {
+        var edge = new DiagramEdge
+        {
+            SourceNodeId = "a",
+            TargetNodeId = "b",
+            LabelPositionT = 0.5,
+            LabelOffsetX = 0,
+            LabelOffsetY = 0
+        };
+
+        var cmd = new UpdateEdgeLabelPositionCommand(edge, 0.7, 12, -8);
+        cmd.Execute();
+        edge.LabelPositionT.Should().Be(0.7);
+        edge.LabelOffsetX.Should().Be(12);
+        edge.LabelOffsetY.Should().Be(-8);
+
+        cmd.Undo();
+        edge.LabelPositionT.Should().Be(0.5);
+        edge.LabelOffsetX.Should().Be(0);
+        edge.LabelOffsetY.Should().Be(0);
     }
 }

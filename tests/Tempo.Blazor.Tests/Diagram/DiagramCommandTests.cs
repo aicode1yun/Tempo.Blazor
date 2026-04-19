@@ -154,4 +154,79 @@ public class DiagramCommandTests
         pasteCmd.Undo();
         doc.Nodes.Count.Should().Be(1);
     }
+
+    // ── IsManuallyRouted auto-set tests ───────────────────────────────────────
+
+    [Fact]
+    public void InsertEdgeWaypointCommand_SetsIsManuallyRouted()
+    {
+        var doc = new DiagramDocument { Title = "Test" };
+        var edge = new DiagramEdge { Id = "e1", SourceNodeId = "a", TargetNodeId = "b", IsManuallyRouted = false };
+        doc.Edges.Add(edge);
+
+        var cmd = new InsertEdgeWaypointCommand(doc, "e1", 0, new DiagramPoint(50, 50));
+        cmd.Execute();
+
+        edge.IsManuallyRouted.Should().BeTrue();
+        edge.Waypoints.Should().HaveCount(1);
+
+        cmd.Undo();
+        edge.IsManuallyRouted.Should().BeTrue(); // Undo removes waypoint but keeps manual flag (consistent with UX)
+        edge.Waypoints.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DeleteEdgeWaypointCommand_SetsIsManuallyRouted()
+    {
+        var doc = new DiagramDocument { Title = "Test" };
+        var edge = new DiagramEdge { Id = "e1", SourceNodeId = "a", TargetNodeId = "b", IsManuallyRouted = false };
+        edge.Waypoints.Add(new DiagramPoint(50, 50));
+        doc.Edges.Add(edge);
+
+        var cmd = new DeleteEdgeWaypointCommand(doc, "e1", 0, new DiagramPoint(50, 50));
+        cmd.Execute();
+
+        edge.IsManuallyRouted.Should().BeTrue();
+        edge.Waypoints.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void UpdateEdgeWaypointsCommand_SetsIsManuallyRouted()
+    {
+        var doc = new DiagramDocument { Title = "Test" };
+        var edge = new DiagramEdge { Id = "e1", SourceNodeId = "a", TargetNodeId = "b", IsManuallyRouted = false };
+        edge.Waypoints.Add(new DiagramPoint(50, 50));
+        doc.Edges.Add(edge);
+
+        var oldWp = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+        var newWp = new List<DiagramPoint> { new(60, 60) };
+
+        var cmd = new UpdateEdgeWaypointsCommand(doc, "e1", oldWp, newWp);
+        cmd.Execute();
+
+        edge.IsManuallyRouted.Should().BeTrue();
+        edge.Waypoints[0].X.Should().Be(60);
+
+        cmd.Undo();
+        edge.Waypoints[0].X.Should().Be(50);
+    }
+
+    [Fact]
+    public void ResetEdgeRoutingCommand_ClearsIsManuallyRoutedAndWaypoints()
+    {
+        var doc = new DiagramDocument { Title = "Test" };
+        var edge = new DiagramEdge { Id = "e1", SourceNodeId = "a", TargetNodeId = "b", IsManuallyRouted = true };
+        edge.Waypoints.Add(new DiagramPoint(50, 50));
+        doc.Edges.Add(edge);
+
+        var cmd = new ResetEdgeRoutingCommand(doc, "e1");
+        cmd.Execute();
+
+        edge.IsManuallyRouted.Should().BeFalse();
+        edge.Waypoints.Should().BeEmpty();
+
+        cmd.Undo();
+        edge.IsManuallyRouted.Should().BeTrue();
+        edge.Waypoints.Should().HaveCount(1);
+    }
 }

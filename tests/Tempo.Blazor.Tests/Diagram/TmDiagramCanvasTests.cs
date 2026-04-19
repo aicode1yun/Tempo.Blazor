@@ -22,7 +22,7 @@ public class TmDiagramCanvasTests : DiagramTestBase
             ],
             Edges =
             [
-                new DiagramEdge { Id = "e1", SourceNodeId = "n1", TargetNodeId = "n2", Routing = "curved" }
+                new DiagramEdge { Id = "e1", SourceNodeId = "n1", TargetNodeId = "n2", Routing = "curved", CubicBezier = true }
             ]
         };
 
