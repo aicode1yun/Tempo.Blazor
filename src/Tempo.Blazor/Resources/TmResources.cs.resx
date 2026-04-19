@@ -652,6 +652,8 @@
   <data name="TmDiagramProperties_NodeTitle" xml:space="preserve"><value>Uzel</value></data>
   <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Hrana</value></data>
   <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmDiagramProperties_LabelOffsetX" xml:space="preserve"><value>Posun popisku X</value></data>
+  <data name="TmDiagramProperties_LabelOffsetY" xml:space="preserve"><value>Posun popisku Y</value></data>
   <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Styl</value></data>
   <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Z-index</value></data>
   <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>Nic není vybráno</value></data>
@@ -660,6 +662,11 @@
   <data name="TmDiagramProperties_Routing_Straight" xml:space="preserve"><value>Přímé</value></data>
   <data name="TmDiagramProperties_Routing_Orthogonal" xml:space="preserve"><value>Ortogonální</value></data>
   <data name="TmDiagramProperties_Routing_Curved" xml:space="preserve"><value>Zakřivené</value></data>
+  <data name="TmDiagramProperties_Routing_Isometric" xml:space="preserve"><value>Isometrické</value></data>
+  <data name="TmDiagramProperties_Routing_EntityRelation" xml:space="preserve"><value>Entitní vztah</value></data>
+  <data name="TmDiagramProperties_CubicBezier" xml:space="preserve"><value>Kubická Bézierka</value></data>
+  <data name="TmDiagramProperties_ManualRouting" xml:space="preserve"><value>Ruční směrování</value></data>
+  <data name="TmDiagramProperties_ResetRouting" xml:space="preserve"><value>Obnovit automatické směrování</value></data>
   <data name="TmDiagramProperties_ConnectorType" xml:space="preserve"><value>Typ spojnice</value></data>
   <data name="TmDiagramProperties_ConnectorType_Association" xml:space="preserve"><value>Asociace</value></data>
   <data name="TmDiagramProperties_ConnectorType_Dependency" xml:space="preserve"><value>Závislost</value></data>
@@ -767,11 +774,19 @@
   <data name="TmDiagramProperties_JumpStyle_Line" xml:space="preserve"><value>Čára</value></data>
   <data name="TmDiagramProperties_SourceSpacing" xml:space="preserve"><value>Odsazení zdroje</value></data>
   <data name="TmDiagramProperties_TargetSpacing" xml:space="preserve"><value>Odsazení cíle</value></data>
+  <data name="TmDiagramProperties_SourceConstraint" xml:space="preserve"><value>Východzí constraint</value></data>
+  <data name="TmDiagramProperties_TargetConstraint" xml:space="preserve"><value>Cílový constraint</value></data>
+  <data name="TmDiagramProperties_Perimeter" xml:space="preserve"><value>Obvod</value></data>
   <data name="TmDiagramProperties_Rounded" xml:space="preserve"><value>Zaoblené rohy</value></data>
+  <data name="TmDiagramProperties_ArcSize" xml:space="preserve"><value>Poloměr zaoblení</value></data>
   <data name="TmDiagramProperties_EdgeStyle" xml:space="preserve"><value>Styl hrany</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Orthogonal" xml:space="preserve"><value>Orthogonální</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Elbow" xml:space="preserve"><value>Lomený</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Segment" xml:space="preserve"><value>Segmentový</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation" xml:space="preserve"><value>Orientace lomené čáry</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Horizontal" xml:space="preserve"><value>Nejprve vodorovně</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Vertical" xml:space="preserve"><value>Nejprve svisle</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Rounded" xml:space="preserve"><value>Zaoblený</value></data>
   <data name="TmDiagramProperties_Text" xml:space="preserve"><value>Text</value></data>
   <data name="TmDiagramProperties_Arrange" xml:space="preserve"><value>Uspořádání</value></data>
@@ -962,5 +977,6 @@
   <data name="TmDiagramCsvImportDialog_ErrorMinColumns" xml:space="preserve"><value>CSV musí obsahovat alespoň 2 sloupce.</value></data>
   <data name="TmDiagramCsvImportDialog_ErrorMappings" xml:space="preserve"><value>Přiřaďte všechny povinné sloupce.</value></data>
   <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Nepodařilo se zpracovat CSV: {0}</value></data>
+  <data name="TmDiagramEditor_VirtualBend" xml:space="preserve"><value>Virtuální ohyb</value></data>
 
 </root>

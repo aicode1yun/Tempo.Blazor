@@ -24,6 +24,7 @@ public sealed class InsertEdgeWaypointCommand : IDiagramCommand
     {
         var edge = _doc.Edges.FirstOrDefault(e => e.Id == _edgeId);
         if (edge is null) return;
+        edge.IsManuallyRouted = true;
         if (_index < 0 || _index > edge.Waypoints.Count)
             edge.Waypoints.Add(new DiagramPoint(_point.X, _point.Y));
         else

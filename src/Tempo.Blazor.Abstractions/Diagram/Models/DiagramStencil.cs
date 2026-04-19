@@ -24,6 +24,13 @@ public sealed class DiagramStencil
     /// <summary>Default ports generated for nodes created from this stencil.</summary>
     public List<DiagramStencilPortDef> Ports { get; set; } = [];
 
+    /// <summary>
+    /// Predefined fixed connection points on the stencil perimeter, draw.io style.
+    /// When populated, these render as hover dots and create edges with
+    /// <see cref="DiagramConnectionConstraint"/> instead of floating port snapping.
+    /// </summary>
+    public List<DiagramStencilConnectionPoint> ConnectionPoints { get; set; } = [];
+
     /// <summary>Declarative layout defining the visual appearance.</summary>
     public DiagramStencilLayout Layout { get; set; } = new();
 

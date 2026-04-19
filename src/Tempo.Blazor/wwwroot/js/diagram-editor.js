@@ -62,6 +62,7 @@ window.tmDiagramEditor = {
         const svg = container.querySelector('.tm-diagram-canvas__svg');
         const htmlLayer = container.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer');
         const interactionLayer = container.querySelector('.tm-diagram-canvas__interaction');
+        const selectionLayer = container.querySelector('.tm-diagram-selection-layer');
 
         if (!svg) throw new Error('TmDiagramCanvas requires an SVG element with class tm-diagram-canvas__svg');
 
@@ -71,6 +72,7 @@ window.tmDiagramEditor = {
             svg: svg,
             htmlLayer: htmlLayer,
             interactionLayer: interactionLayer,
+            selectionLayer: selectionLayer,
             dotNetRef: dotNetRef,
 
             readOnly: !!opts.readOnly,
@@ -550,6 +552,31 @@ window.tmDiagramEditor = {
             inst.isDraggingEdgeLabel = true;
             inst.dragEdgeLabelId = labelHitEl.getAttribute('data-edge-id');
             inst.dragEdgeLabelStart = { x: e.clientX, y: e.clientY };
+            const g = labelHitEl.closest('.tm-diagram-edge-label-group');
+            if (g) {
+                inst.dragEdgeLabelStartT = parseFloat(g.getAttribute('data-label-t')) || 0.5;
+                inst.dragEdgeLabelStartOx = parseFloat(g.getAttribute('data-label-ox')) || 0;
+                inst.dragEdgeLabelStartOy = parseFloat(g.getAttribute('data-label-oy')) || 0;
+            }
+            return;
+        }
+
+        // Edge virtual bend clicked?
+        const virtualBendEl = e.target.closest('.tm-diagram-edge-virtual-bend');
+        if (virtualBendEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            const edgeId = virtualBendEl.getAttribute('data-edge-id');
+            const segmentIndex = parseInt(virtualBendEl.getAttribute('data-segment-index'), 10);
+            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            (async () => {
+                const newIndex = await inst.dotNetRef.invokeMethodAsync('OnVirtualBendInsert', edgeId, segmentIndex, pt.x, pt.y);
+                inst.isDraggingWaypoint = true;
+                inst.dragWaypointEdgeId = edgeId;
+                inst.dragWaypointIndex = newIndex;
+                inst.dragWaypointStartScreen = { x: e.clientX, y: e.clientY };
+                inst.dragWaypointStartDoc = pt;
+            })();
             return;
         }
 
@@ -584,6 +611,53 @@ window.tmDiagramEditor = {
                 inst.dragJettyStartDoc = pt;
                 return;
             }
+            const danglingType = handleEl.getAttribute('data-dangling');
+            if (danglingType) {
+                e.preventDefault();
+                e.stopPropagation();
+                inst.isDraggingDangling = true;
+                inst.dragDanglingEdgeId = handleEl.getAttribute('data-edge-id');
+                inst.dragDanglingType = danglingType;
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dragDanglingStartDoc = pt;
+                inst.dragDanglingStartScreen = { x: e.clientX, y: e.clientY };
+                return;
+            }
+        }
+
+        // Segment handle clicked? (orthogonal edge segment drag)
+        const segmentHandleEl = e.target.closest('.tm-diagram-edge-segment-handle');
+        if (segmentHandleEl && !inst.readOnly) {
+            e.preventDefault();
+            e.stopPropagation();
+            const edgeId = segmentHandleEl.getAttribute('data-edge-id');
+            const segmentIndex = parseInt(segmentHandleEl.getAttribute('data-segment-index'), 10);
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            if (handles.length >= segmentIndex + 2) {
+                const x1 = parseFloat(handles[segmentIndex].getAttribute('cx'));
+                const y1 = parseFloat(handles[segmentIndex].getAttribute('cy'));
+                const x2 = parseFloat(handles[segmentIndex + 1].getAttribute('cx'));
+                const y2 = parseFloat(handles[segmentIndex + 1].getAttribute('cy'));
+                const isVertical = Math.abs(x1 - x2) < 0.5;
+                const isHorizontal = Math.abs(y1 - y2) < 0.5;
+                inst.isDraggingSegment = true;
+                inst.dragSegmentEdgeId = edgeId;
+                inst.dragSegmentIndex = segmentIndex;
+                inst.dragSegmentIsVertical = isVertical;
+                inst.dragSegmentIsHorizontal = isHorizontal;
+                inst.dragSegmentStartScreen = { x: e.clientX, y: e.clientY };
+                inst.dragSegmentHandlePositions = handles.map(function (h) {
+                    return {
+                        x: parseFloat(h.getAttribute('cx')),
+                        y: parseFloat(h.getAttribute('cy'))
+                    };
+                });
+                inst.container.style.cursor = isVertical ? 'col-resize' : 'row-resize';
+            }
+            return;
         }
 
         // Port clicked? -> start edge drawing (skip if node is locked)
@@ -595,6 +669,22 @@ window.tmDiagramEditor = {
             e.stopPropagation();
             if (nodeEl) {
                 this._startEdgeDraw(inst, nodeEl.getAttribute('data-node-id'), portEl.getAttribute('data-port-id'), e.clientX, e.clientY);
+            }
+            return;
+        }
+
+        // Connection point clicked? -> start edge drawing with fixed constraint
+        const cpEl = e.target.closest('.tm-diagram-connection-point');
+        if (cpEl && !inst.readOnly) {
+            const nodeEl = cpEl.closest('[data-node-id]');
+            if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
+            e.preventDefault();
+            e.stopPropagation();
+            if (nodeEl) {
+                const rx = parseFloat(cpEl.getAttribute('data-cp-rx'));
+                const ry = parseFloat(cpEl.getAttribute('data-cp-ry'));
+                const perimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
+                this._startEdgeDraw(inst, nodeEl.getAttribute('data-node-id'), null, e.clientX, e.clientY, null, 0.5, rx, ry, perimeter);
             }
             return;
         }
@@ -736,8 +826,121 @@ window.tmDiagramEditor = {
         }
 
         if (inst.isDraggingWaypoint) {
-            const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
             this._updateWaypointVisuals(inst, inst.dragWaypointEdgeId, inst.dragWaypointIndex, pt.x, pt.y);
+            return;
+        }
+
+        if (inst.isDraggingSegment) {
+            const dxScreen = e.clientX - inst.dragSegmentStartScreen.x;
+            const dyScreen = e.clientY - inst.dragSegmentStartScreen.y;
+            const dxDoc = dxScreen / inst.scale;
+            const dyDoc = dyScreen / inst.scale;
+
+            const positions = inst.dragSegmentHandlePositions.map(function (p) { return { x: p.x, y: p.y }; });
+            const idx = inst.dragSegmentIndex;
+
+            if (inst.dragSegmentIsVertical) {
+                positions[idx].x += dxDoc;
+                positions[idx + 1].x += dxDoc;
+            } else if (inst.dragSegmentIsHorizontal) {
+                positions[idx].y += dyDoc;
+                positions[idx + 1].y += dyDoc;
+            }
+
+            const edgeId = inst.dragSegmentEdgeId;
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            for (let i = 0; i < handles.length && i < positions.length; i++) {
+                handles[i].setAttribute('cx', positions[i].x);
+                handles[i].setAttribute('cy', positions[i].y);
+            }
+
+            // Also move segment handles
+            const segHandles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-segment-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-segment-index'), 10) - parseInt(b.getAttribute('data-segment-index'), 10);
+                });
+            for (let i = 0; i < segHandles.length && i < positions.length - 1; i++) {
+                const mx = (positions[i].x + positions[i + 1].x) / 2;
+                const my = (positions[i].y + positions[i + 1].y) / 2;
+                segHandles[i].setAttribute('cx', mx);
+                segHandles[i].setAttribute('cy', my);
+            }
+
+            let d = 'M ' + positions[0].x + ' ' + positions[0].y;
+            for (let i = 1; i < positions.length; i++) {
+                d += ' L ' + positions[i].x + ' ' + positions[i].y;
+            }
+            const hitPath = inst.svg.querySelector('path.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+            const visPath = inst.svg.querySelector('path.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]');
+            if (hitPath) hitPath.setAttribute('d', d);
+            if (visPath) visPath.setAttribute('d', d);
+
+            return;
+        }
+
+        if (inst.isDraggingDangling) {
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
+            this._updateDanglingVisuals(inst, inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
+
+            // Detect hover over node for reconnect
+            const el = document.elementFromPoint(e.clientX, e.clientY);
+            const nodeEl = el ? el.closest('[data-node-id]') : null;
+            if (nodeEl) {
+                const hoverNodeId = nodeEl.getAttribute('data-node-id');
+                if (inst.dragDanglingHoverNodeId !== hoverNodeId) {
+                    // Clear previous highlight and timer
+                    if (inst.dragDanglingHoverNodeId) {
+                        const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                        if (prev) {
+                            prev.classList.remove('tm-diagram-node--drop-target');
+                            prev.classList.remove('tm-diagram-node--outline-connect');
+                        }
+                    }
+                    if (inst.danglingOutlineTimer) {
+                        clearTimeout(inst.danglingOutlineTimer);
+                        inst.danglingOutlineTimer = null;
+                    }
+                    inst.danglingOutlineConnect = false;
+                    inst.dragDanglingHoverNodeId = hoverNodeId;
+                    nodeEl.classList.add('tm-diagram-node--drop-target');
+                    // Start 2s timer for outline connect
+                    inst.danglingOutlineTimer = setTimeout(function () {
+                        if (inst.dragDanglingHoverNodeId === hoverNodeId) {
+                            const stillNode = inst.htmlLayer.querySelector('[data-node-id="' + hoverNodeId + '"]');
+                            if (stillNode) stillNode.classList.add('tm-diagram-node--outline-connect');
+                            inst.danglingOutlineConnect = true;
+                        }
+                    }, 2000);
+                }
+            } else if (inst.dragDanglingHoverNodeId) {
+                const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                if (prev) {
+                    prev.classList.remove('tm-diagram-node--drop-target');
+                    prev.classList.remove('tm-diagram-node--outline-connect');
+                }
+                if (inst.danglingOutlineTimer) {
+                    clearTimeout(inst.danglingOutlineTimer);
+                    inst.danglingOutlineTimer = null;
+                }
+                inst.danglingOutlineConnect = false;
+                inst.dragDanglingHoverNodeId = null;
+            }
             return;
         }
 
@@ -761,27 +964,15 @@ window.tmDiagramEditor = {
 
         if (inst.isDraggingEdgeLabel && inst.dragEdgeLabelId) {
             const edgeId = inst.dragEdgeLabelId;
-            const pathEl = inst.svg.querySelector('.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]') || inst.svg.querySelector('path[data-edge-id="' + edgeId + '"]');
-            if (pathEl) {
-                const len = pathEl.getTotalLength();
-                const rect = inst.container.getBoundingClientRect();
-                const screenPt = { x: e.clientX - rect.left, y: e.clientY - rect.top };
-                // Find closest point on path
-                let bestT = 0;
-                let bestDist = Infinity;
-                const samples = 50;
-                for (let i = 0; i <= samples; i++) {
-                    const t = i / samples;
-                    const p = pathEl.getPointAtLength(t * len);
-                    const dx = p.x - screenPt.x;
-                    const dy = p.y - screenPt.y;
-                    const d = dx * dx + dy * dy;
-                    if (d < bestDist) {
-                        bestDist = d;
-                        bestT = t;
-                    }
-                }
-                inst.dotNetRef.invokeMethodAsync('OnEdgeLabelMoved', edgeId, bestT);
+            const g = inst.svg.querySelector('g.tm-diagram-edge-label-group[data-edge-id="' + edgeId + '"]');
+            if (g) {
+                const dxScreen = e.clientX - inst.dragEdgeLabelStart.x;
+                const dyScreen = e.clientY - inst.dragEdgeLabelStart.y;
+                const dxDoc = dxScreen / inst.scale;
+                const dyDoc = dyScreen / inst.scale;
+                const newOx = (inst.dragEdgeLabelStartOx || 0) + dxDoc;
+                const newOy = (inst.dragEdgeLabelStartOy || 0) + dyDoc;
+                g.setAttribute('transform', 'translate(' + newOx + ' ' + newOy + ')');
             }
             return;
         }
@@ -851,6 +1042,18 @@ window.tmDiagramEditor = {
 
     _onMouseUp: function (e, inst) {
         if (inst.isDrawingEdge) {
+            // Edge-to-edge connection takes priority
+            if (inst.drawHoverEdgeId && inst.drawHoverEdgeT !== null) {
+                inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                    inst.drawSource.nodeId, inst.drawSource.portId,
+                    null, null,
+                    inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                    inst.drawHoverEdgeId, inst.drawHoverEdgeT,
+                    inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                    null, null, null);
+                this._cancelEdgeDraw(inst);
+                return;
+            }
             const portEl = e.target.closest('.tm-diagram-port');
             if (portEl) {
                 const nodeEl = portEl.closest('[data-node-id]');
@@ -861,9 +1064,39 @@ window.tmDiagramEditor = {
                     inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                         inst.drawSource.nodeId, inst.drawSource.portId,
                         targetNodeId, targetPortId,
-                        inst.drawSource.side, inst.drawSource.offset, null, 0.5);
+                        inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                        null, 0.5,
+                        inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                        null, null, null);
                 }
             }
+            const cpEl = e.target.closest('.tm-diagram-connection-point');
+            if (cpEl) {
+                const nodeEl = cpEl.closest('[data-node-id]');
+                if (nodeEl) {
+                    const targetNodeId = nodeEl.getAttribute('data-node-id');
+                    const targetRx = parseFloat(cpEl.getAttribute('data-cp-rx'));
+                    const targetRy = parseFloat(cpEl.getAttribute('data-cp-ry'));
+                    const targetPerimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
+                    inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                        inst.drawSource.nodeId, inst.drawSource.portId,
+                        targetNodeId, null,
+                        inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                        null, 0.5,
+                        inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                        targetRx, targetRy, targetPerimeter);
+                }
+            }
+            // Dangling edge: drop on empty canvas
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                inst.drawSource.nodeId, inst.drawSource.portId,
+                null, null,
+                inst.drawSource.side, inst.drawSource.offset, null, 0.5,
+                null, 0.5,
+                inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
+                null, null, null,
+                docPt.x, docPt.y);
             this._cancelEdgeDraw(inst);
             return;
         }
@@ -880,6 +1113,76 @@ window.tmDiagramEditor = {
             return;
         }
 
+        if (inst.isDraggingSegment) {
+            const edgeId = inst.dragSegmentEdgeId;
+            const handles = Array.from(inst.svg.querySelectorAll('circle.tm-diagram-edge-handle[data-edge-id="' + edgeId + '"]'))
+                .sort(function (a, b) {
+                    return parseInt(a.getAttribute('data-handle-index'), 10) - parseInt(b.getAttribute('data-handle-index'), 10);
+                });
+            const positions = [];
+            for (let i = 0; i < handles.length; i++) {
+                positions.push({
+                    x: parseFloat(handles[i].getAttribute('cx')),
+                    y: parseFloat(handles[i].getAttribute('cy'))
+                });
+            }
+            // Extract waypoints (exclude first and last which are terminals)
+            const waypoints = [];
+            for (let i = 1; i < positions.length - 1; i++) {
+                waypoints.push({ x: positions[i].x, y: positions[i].y });
+            }
+            // Simplify collinear orthogonal waypoints
+            const simplified = this._simplifyEdgeWaypoints(waypoints);
+            inst.dotNetRef.invokeMethodAsync('OnEdgeSegmentDragged', edgeId, simplified);
+            inst.isDraggingSegment = false;
+            inst.dragSegmentEdgeId = null;
+            inst.dragSegmentIndex = null;
+            inst.dragSegmentIsVertical = false;
+            inst.dragSegmentIsHorizontal = false;
+            inst.dragSegmentStartScreen = null;
+            inst.dragSegmentHandlePositions = null;
+            inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            return;
+        }
+
+        if (inst.isDraggingDangling) {
+            if (inst.dragDanglingHoverNodeId) {
+                const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                if (nodeEl) {
+                    nodeEl.classList.remove('tm-diagram-node--drop-target');
+                    nodeEl.classList.remove('tm-diagram-node--outline-connect');
+                }
+                if (inst.danglingOutlineConnect) {
+                    // Outline connect: compute constraint from drop position relative to node bounds
+                    const rect = this._nodeRect(inst, inst.dragDanglingHoverNodeId);
+                    const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    let relX = rect.w > 0 ? Math.max(0, Math.min(1, (pt.x - rect.x) / rect.w)) : 0.5;
+                    let relY = rect.h > 0 ? Math.max(0, Math.min(1, (pt.y - rect.y) / rect.h)) : 0.5;
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalOutlineConnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, relX, relY);
+                } else {
+                    // Find closest port or default to null
+                    const portEl = e.target.closest('.tm-diagram-port');
+                    const portId = portEl ? portEl.getAttribute('data-port-id') : null;
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalReconnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, portId);
+                }
+                inst.dragDanglingHoverNodeId = null;
+            } else {
+                const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                inst.dotNetRef.invokeMethodAsync('OnDanglingTerminalMoved', inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
+            }
+            if (inst.danglingOutlineTimer) {
+                clearTimeout(inst.danglingOutlineTimer);
+                inst.danglingOutlineTimer = null;
+            }
+            inst.danglingOutlineConnect = false;
+            inst.isDraggingDangling = false;
+            inst.dragDanglingEdgeId = null;
+            inst.dragDanglingType = null;
+            inst.dragDanglingStartDoc = null;
+            inst.dragDanglingStartScreen = null;
+            return;
+        }
+
         if (inst.isDraggingJetty) {
             inst.isDraggingJetty = false;
             inst.dragJettyEdgeId = null;
@@ -891,9 +1194,52 @@ window.tmDiagramEditor = {
         }
 
         if (inst.isDraggingEdgeLabel) {
+            const edgeId = inst.dragEdgeLabelId;
+            if (edgeId) {
+                const g = inst.svg.querySelector('g.tm-diagram-edge-label-group[data-edge-id="' + edgeId + '"]');
+                const pathEl = inst.svg.querySelector('.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]') || inst.svg.querySelector('path[data-edge-id="' + edgeId + '"]');
+                if (g && pathEl) {
+                    const dxScreen = e.clientX - inst.dragEdgeLabelStart.x;
+                    const dyScreen = e.clientY - inst.dragEdgeLabelStart.y;
+                    const dxDoc = dxScreen / inst.scale;
+                    const dyDoc = dyScreen / inst.scale;
+                    const newOx = (inst.dragEdgeLabelStartOx || 0) + dxDoc;
+                    const newOy = (inst.dragEdgeLabelStartOy || 0) + dyDoc;
+
+                    // Compute new T from current absolute label position
+                    const len = pathEl.getTotalLength();
+                    const startT = inst.dragEdgeLabelStartT || 0.5;
+                    const basePt = pathEl.getPointAtLength(startT * len);
+                    const labelX = basePt.x + newOx;
+                    const labelY = basePt.y + newOy;
+
+                    let bestT = 0;
+                    let bestDist = Infinity;
+                    const samples = 50;
+                    for (let i = 0; i <= samples; i++) {
+                        const t = i / samples;
+                        const p = pathEl.getPointAtLength(t * len);
+                        const dx = p.x - labelX;
+                        const dy = p.y - labelY;
+                        const d = dx * dx + dy * dy;
+                        if (d < bestDist) {
+                            bestDist = d;
+                            bestT = t;
+                        }
+                    }
+                    const closest = pathEl.getPointAtLength(bestT * len);
+                    const finalOx = labelX - closest.x;
+                    const finalOy = labelY - closest.y;
+
+                    inst.dotNetRef.invokeMethodAsync('OnEdgeLabelMoved', edgeId, bestT, finalOx, finalOy);
+                }
+            }
             inst.isDraggingEdgeLabel = false;
             inst.dragEdgeLabelId = null;
             inst.dragEdgeLabelStart = null;
+            inst.dragEdgeLabelStartT = null;
+            inst.dragEdgeLabelStartOx = null;
+            inst.dragEdgeLabelStartOy = null;
             return;
         }
 
@@ -955,6 +1301,21 @@ window.tmDiagramEditor = {
                             }
                         });
                     }
+                    // Rubber-band edge selection: sample points along each edge path
+                    inst.svg.querySelectorAll('path.tm-diagram-edge-hit-path[data-edge-id]').forEach(function (pathEl) {
+                        const edgeId = pathEl.getAttribute('data-edge-id');
+                        if (!edgeId) return;
+                        var pathLen = pathEl.getTotalLength();
+                        if (pathLen === 0) return;
+                        var samples = Math.max(3, Math.floor(pathLen / 8));
+                        for (var s = 0; s <= samples; s++) {
+                            var samplePt = pathEl.getPointAtLength(pathLen * s / samples);
+                            if (samplePt.x >= left && samplePt.x <= left + width && samplePt.y >= top && samplePt.y <= top + height) {
+                                hits.push(edgeId);
+                                break;
+                            }
+                        }
+                    });
                     if (hits.length > 0) {
                         inst.selectedIds = new Set(hits);
                         this._updateSelection(inst);
@@ -1225,11 +1586,22 @@ window.tmDiagramEditor = {
 
     // ── Edge drawing helpers ─────────────────────────────────────────────────
 
-    _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY, side, offset) {
+    _startEdgeDraw: function (inst, nodeId, portId, clientX, clientY, side, offset, constraintRx, constraintRy, constraintPerimeter) {
         inst.isDrawingEdge = true;
         inst.container.classList.add('tm-diagram-canvas--edge-drawing');
         const docPt = this._screenToDoc(inst, clientX, clientY);
-        inst.drawSource = { nodeId: nodeId, portId: portId, side: side || null, offset: offset || 0.5, x: docPt.x, y: docPt.y };
+        inst.drawSource = {
+            nodeId: nodeId,
+            portId: portId,
+            side: side || null,
+            offset: offset || 0.5,
+            x: docPt.x,
+            y: docPt.y,
+            edgeId: null,
+            constraintRx: constraintRx !== undefined ? constraintRx : null,
+            constraintRy: constraintRy !== undefined ? constraintRy : null,
+            constraintPerimeter: constraintPerimeter !== undefined ? constraintPerimeter : null
+        };
 
         const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
         path.setAttribute('class', 'tm-diagram-edge-draw-path');
@@ -1244,6 +1616,13 @@ window.tmDiagramEditor = {
         // Highlight source port
         const portEl = inst.htmlLayer?.querySelector('.tm-diagram-port[data-port-id="' + portId + '"]');
         if (portEl) portEl.classList.add('tm-diagram-port--active');
+
+        // Highlight source connection point
+        if (inst.drawSource.constraintRx !== null) {
+            const cpSelector = '.tm-diagram-connection-point[data-cp-rx="' + inst.drawSource.constraintRx + '"][data-cp-ry="' + inst.drawSource.constraintRy + '"]'; 
+            const cpEls = nodeId ? inst.htmlLayer?.querySelectorAll('[data-node-id="' + nodeId + '"] ' + cpSelector) : null;
+            if (cpEls && cpEls.length > 0) cpEls[0].classList.add('tm-diagram-connection-point--active');
+        }
     },
 
     _updateEdgeDraw: function (inst, clientX, clientY) {
@@ -1278,6 +1657,29 @@ window.tmDiagramEditor = {
                 portEl.classList.add('tm-diagram-port--target');
             }
         }
+
+        // Edge-to-edge: detect hover over existing edge
+        const hitEl = el ? el.closest('.tm-diagram-edge-hit-path') : null;
+        if (hitEl) {
+            const edgeId = hitEl.getAttribute('data-edge-id');
+            if (edgeId && edgeId !== inst.drawSource.edgeId) {
+                const closest = this._findClosestPointOnEdge(hitEl, docPt.x, docPt.y);
+                if (closest && closest.dist < 20 / inst.scale) { // 20px screen tolerance
+                    inst.drawHoverEdgeId = edgeId;
+                    inst.drawHoverEdgeT = closest.t;
+                    endX = closest.x;
+                    endY = closest.y;
+                    this._highlightEdgeTarget(inst, edgeId);
+                    // Update temp path to snap to edge point
+                    const d2 = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y + ' L ' + endX + ' ' + endY;
+                    inst.drawTempPath.setAttribute('d', d2);
+                    return;
+                }
+            }
+        }
+        inst.drawHoverEdgeId = null;
+        inst.drawHoverEdgeT = null;
+        this._highlightEdgeTarget(inst, null);
     },
 
     _snapToNodePerimeter: function (rect, x, y) {
@@ -1299,6 +1701,58 @@ window.tmDiagramEditor = {
             return { x: x, y: rect.y + rect.h };
         }
         return { x: cx, y: cy };
+    },
+
+    _findClosestPointOnEdge: function (pathEl, x, y) {
+        if (!pathEl) return null;
+        try {
+            const len = pathEl.getTotalLength();
+            if (len === 0) return null;
+            let bestT = 0;
+            let bestDist = Infinity;
+            const samples = 50;
+            for (let i = 0; i <= samples; i++) {
+                const t = i / samples;
+                const pt = pathEl.getPointAtLength(t * len);
+                const dx = pt.x - x;
+                const dy = pt.y - y;
+                const d = dx * dx + dy * dy;
+                if (d < bestDist) {
+                    bestDist = d;
+                    bestT = t;
+                }
+            }
+            // Refine with binary search around bestT
+            let left = Math.max(0, bestT - 1 / samples);
+            let right = Math.min(1, bestT + 1 / samples);
+            for (let i = 0; i < 8; i++) {
+                const m1 = left + (right - left) * 0.33;
+                const m2 = left + (right - left) * 0.67;
+                const p1 = pathEl.getPointAtLength(m1 * len);
+                const p2 = pathEl.getPointAtLength(m2 * len);
+                const d1 = (p1.x - x) * (p1.x - x) + (p1.y - y) * (p1.y - y);
+                const d2 = (p2.x - x) * (p2.x - x) + (p2.y - y) * (p2.y - y);
+                if (d1 < d2) {
+                    right = m2;
+                    if (d1 < bestDist) { bestDist = d1; bestT = m1; }
+                } else {
+                    left = m1;
+                    if (d2 < bestDist) { bestDist = d2; bestT = m2; }
+                }
+            }
+            const bestPt = pathEl.getPointAtLength(bestT * len);
+            return { x: bestPt.x, y: bestPt.y, t: bestT, dist: Math.sqrt(bestDist) };
+        } catch (e) {
+            return null;
+        }
+    },
+
+    _highlightEdgeTarget: function (inst, edgeId) {
+        inst.svg?.querySelectorAll('.tm-diagram-edge--target').forEach(el => el.classList.remove('tm-diagram-edge--target'));
+        if (edgeId) {
+            const g = inst.svg?.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+            if (g) g.classList.add('tm-diagram-edge--target');
+        }
     },
 
     _updateConnectHoverIcons: function (inst, clientX, clientY) {
@@ -1389,8 +1843,13 @@ window.tmDiagramEditor = {
         if (inst.drawSource) {
             const portEl = inst.htmlLayer?.querySelector('.tm-diagram-port[data-port-id="' + inst.drawSource.portId + '"]');
             if (portEl) portEl.classList.remove('tm-diagram-port--active');
+            // Remove connection point active highlight
+            inst.htmlLayer?.querySelectorAll('.tm-diagram-connection-point--active').forEach(cp => cp.classList.remove('tm-diagram-connection-point--active'));
             inst.drawSource = null;
         }
+        inst.drawHoverEdgeId = null;
+        inst.drawHoverEdgeT = null;
+        this._highlightEdgeTarget(inst, null);
         inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
 
         // Return to select mode after using edge tool
@@ -1422,6 +1881,15 @@ window.tmDiagramEditor = {
             e.preventDefault();
             if (inst.isDrawingEdge) {
                 this._cancelEdgeDraw(inst);
+                return;
+            }
+            if (inst.isDraggingWaypoint && inst.dotNetRef) {
+                inst.isDraggingWaypoint = false;
+                inst.dragWaypointEdgeId = null;
+                inst.dragWaypointIndex = null;
+                inst.dragWaypointStartScreen = null;
+                inst.dragWaypointStartDoc = null;
+                inst.dotNetRef.invokeMethodAsync('OnCancelEdgeEdit');
                 return;
             }
             inst.selectedIds.clear();
@@ -1656,7 +2124,8 @@ window.tmDiagramEditor = {
             el.style.pointerEvents = 'none';
             el.style.boxSizing = 'border-box';
             el.setAttribute('data-sel-for', id);
-            inst.htmlLayer.appendChild(el);
+            var selLayer = inst.htmlLayer.querySelector('.tm-diagram-selection-layer');
+            (selLayer || inst.htmlLayer).appendChild(el);
         });
     },
 
@@ -1703,6 +2172,30 @@ window.tmDiagramEditor = {
         }
     },
 
+    _updateDanglingVisuals: function (inst, edgeId, type, x, y) {
+        const svg = inst.svg;
+        if (!svg) return;
+        const handle = svg.querySelector('rect.tm-diagram-edge-handle--dangling[data-edge-id="' + edgeId + '"][data-dangling="' + type + '"]');
+        if (handle) {
+            handle.setAttribute('x', x - 4);
+            handle.setAttribute('y', y - 4);
+        }
+        const hitPath = svg.querySelector('path.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+        const visPath = svg.querySelector('path.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]');
+        if (!hitPath || !visPath) return;
+        const d = hitPath.getAttribute('d');
+        if (!d) return;
+        if (type === 'source') {
+            const newD = d.replace(/^M\s+[\d\-.]+\s+[\d\-.]+/, 'M ' + x + ' ' + y);
+            hitPath.setAttribute('d', newD);
+            visPath.setAttribute('d', newD);
+        } else {
+            const newD = d.replace(/L\s+[\d\-.]+\s+[\d\-.]+$/, 'L ' + x + ' ' + y);
+            hitPath.setAttribute('d', newD);
+            visPath.setAttribute('d', newD);
+        }
+    },
+
     // ── Rubber band helper ───────────────────────────────────────────────────
 
     _createRubberEl: function (inst, x, y) {
@@ -1729,6 +2222,23 @@ window.tmDiagramEditor = {
             const curr = waypoints[i];
             const next = waypoints[i + 1];
             if ((prev[0] === curr[0] && curr[0] === next[0]) || (prev[1] === curr[1] && curr[1] === next[1])) {
+                continue;
+            }
+            result.push(curr);
+        }
+        result.push(waypoints[waypoints.length - 1]);
+        return result;
+    },
+
+    _simplifyEdgeWaypoints: function (waypoints) {
+        if (!waypoints || waypoints.length < 3) return waypoints;
+        const result = [waypoints[0]];
+        for (let i = 1; i < waypoints.length - 1; i++) {
+            const prev = result[result.length - 1];
+            const curr = waypoints[i];
+            const next = waypoints[i + 1];
+            if ((Math.abs(prev.x - curr.x) < 0.5 && Math.abs(curr.x - next.x) < 0.5) ||
+                (Math.abs(prev.y - curr.y) < 0.5 && Math.abs(curr.y - next.y) < 0.5)) {
                 continue;
             }
             result.push(curr);
@@ -1943,6 +2453,22 @@ window.tmDiagramEditor = {
         const sy2 = y2 + dy2 * targetSpacing;
 
         if (routing === 'elbow') {
+            var orient = (arguments[12] || 'auto').toLowerCase();
+            if (orient === 'horizontal') {
+                if (dx1 !== 0 && dx2 !== 0) {
+                    const midX = (sx1 + sx2) / 2;
+                    return [[midX, sy1], [midX, sy2]];
+                }
+                return [[sx2, sy1]];
+            }
+            if (orient === 'vertical') {
+                if (dy1 !== 0 && dy2 !== 0) {
+                    const midY = (sy1 + sy2) / 2;
+                    return [[sx1, midY], [sx2, midY]];
+                }
+                return [[sx1, sy2]];
+            }
+            // auto
             if (dx1 !== 0 && dx2 !== 0) {
                 const midX = (sx1 + sx2) / 2;
                 return [[midX, sy1], [midX, sy2]];
@@ -1976,6 +2502,30 @@ window.tmDiagramEditor = {
                 return [[sx1, sy2]];
             }
             return [[sx1, sy2]];
+        }
+
+        if (routing === 'isometric') {
+            const dx = sx2 - sx1;
+            const dy = sy2 - sy1;
+            const absDx = Math.abs(dx);
+            const absDy = Math.abs(dy);
+            if (absDx > absDy) {
+                // Horizontal arms with diagonal connector
+                return [[sx1 + dx * 0.3, sy1], [sx1 + dx * 0.7, sy2]];
+            } else {
+                // Vertical arms with diagonal connector
+                return [[sx1, sy1 + dy * 0.3], [sx2, sy1 + dy * 0.7]];
+            }
+        }
+
+        if (routing === 'entityrelation') {
+            const arm = 30;
+            const midY = (sy1 + sy2) / 2;
+            if (dx1 > 0) {
+                return [[sx1 + arm, sy1], [sx1 + arm, midY], [sx2 - arm, midY], [sx2 - arm, sy2]];
+            } else {
+                return [[sx1 - arm, sy1], [sx1 - arm, midY], [sx2 + arm, midY], [sx2 + arm, sy2]];
+            }
         }
 
         // orthogonal (default) and rounded

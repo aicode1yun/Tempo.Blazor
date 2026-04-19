@@ -480,6 +480,16 @@
                                 <label>@Loc["TmDiagramProperties_Label"]</label>
                                 <TmTextInput Value="@GetEdgeLabel()" ValueChanged="OnEdgeLabelChanged" />
                             </div>
+                            <div class="tm-diagram-properties__row">
+                                <div class="tm-diagram-properties__field">
+                                    <label>@Loc["TmDiagramProperties_LabelOffsetX"]</label>
+                                    <input class="tm-text-input" type="number" step="1" value="@N(GetEdgeLabelOffsetX())" @onchange="OnEdgeLabelOffsetXChanged" />
+                                </div>
+                                <div class="tm-diagram-properties__field">
+                                    <label>@Loc["TmDiagramProperties_LabelOffsetY"]</label>
+                                    <input class="tm-text-input" type="number" step="1" value="@N(GetEdgeLabelOffsetY())" @onchange="OnEdgeLabelOffsetYChanged" />
+                                </div>
+                            </div>
                         }
 
                         <div class="tm-diagram-properties__field">
@@ -496,6 +506,32 @@
                             <label>@Loc["TmDiagramProperties_Routing"]</label>
                             <TmSelect TValue="string" Value="@GetEdgeRouting()" ValueChanged="HandleEdgeRoutingChanged" Options="@_routingOptions" />
                         </div>
+
+                        @if (SelectedEdges.Any(e => e.Routing == "elbow"))
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_ElbowOrientation"]</label>
+                                <TmSelect TValue="string" Value="@GetEdgeElbowOrientation()" ValueChanged="OnEdgeElbowOrientationChanged" Options="@_elbowOrientationOptions" />
+                            </div>
+                        }
+
+                        @if (SelectedEdges.Any(e => e.Routing == "curved"))
+                        {
+                            <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
+                                <TmCheckbox Value="@GetEdgeCubicBezier()" ValueChanged="OnEdgeCubicBezierChanged" Label="@Loc["TmDiagramProperties_CubicBezier"]" />
+                            </div>
+                        }
+
+                        <div class="tm-diagram-properties__field">
+                            <TmCheckbox Value="@GetEdgeIsManuallyRouted()" ValueChanged="HandleEdgeIsManuallyRoutedChanged" Label="@Loc["TmDiagramProperties_ManualRouting"]" />
+                        </div>
+
+                        @if (GetEdgeIsManuallyRouted() && SelectedEdges.All(e => e.Routing is "orthogonal" or "elbow" or "segment"))
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" OnClick="HandleResetEdgeRouting">@Loc["TmDiagramProperties_ResetRouting"]</TmButton>
+                            </div>
+                        }
 
                         <div class="tm-diagram-properties__field">
                             <label>@Loc["TmDiagramProperties_ConnectorType"]</label>
@@ -567,9 +603,60 @@
                             </div>
                         </div>
 
+                        @if (IsSingleEdge)
+                        {
+                            @* ── Source Constraint ─────────────────────────── *@
+                            <div class="tm-diagram-properties__section tm-diagram-properties__section--nested">
+                                <div class="tm-diagram-properties__section-header tm-diagram-properties__section-header--small">
+                                    <span>@Loc["TmDiagramProperties_SourceConstraint"]</span>
+                                </div>
+                                <div class="tm-diagram-properties__row">
+                                    <div class="tm-diagram-properties__field">
+                                        <label>X</label>
+                                        <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeSourceConstraintX())" @onchange="OnEdgeSourceConstraintXChanged" />
+                                    </div>
+                                    <div class="tm-diagram-properties__field">
+                                        <label>Y</label>
+                                        <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeSourceConstraintY())" @onchange="OnEdgeSourceConstraintYChanged" />
+                                    </div>
+                                </div>
+                                <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
+                                    <TmCheckbox Value="@GetEdgeSourceConstraintPerimeter()" ValueChanged="OnEdgeSourceConstraintPerimeterChanged" Label="@Loc["TmDiagramProperties_Perimeter"]" />
+                                </div>
+                            </div>
+
+                            @* ── Target Constraint ─────────────────────────── *@
+                            <div class="tm-diagram-properties__section tm-diagram-properties__section--nested">
+                                <div class="tm-diagram-properties__section-header tm-diagram-properties__section-header--small">
+                                    <span>@Loc["TmDiagramProperties_TargetConstraint"]</span>
+                                </div>
+                                <div class="tm-diagram-properties__row">
+                                    <div class="tm-diagram-properties__field">
+                                        <label>X</label>
+                                        <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeTargetConstraintX())" @onchange="OnEdgeTargetConstraintXChanged" />
+                                    </div>
+                                    <div class="tm-diagram-properties__field">
+                                        <label>Y</label>
+                                        <input class="tm-text-input" type="number" step="0.01" min="0" max="1" value="@N(GetEdgeTargetConstraintY())" @onchange="OnEdgeTargetConstraintYChanged" />
+                                    </div>
+                                </div>
+                                <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
+                                    <TmCheckbox Value="@GetEdgeTargetConstraintPerimeter()" ValueChanged="OnEdgeTargetConstraintPerimeterChanged" Label="@Loc["TmDiagramProperties_Perimeter"]" />
+                                </div>
+                            </div>
+                        }
+
                         <div class="tm-diagram-properties__field tm-diagram-properties__field--inline">
                             <TmCheckbox Value="@GetEdgeRounded()" ValueChanged="OnEdgeRoundedChanged" Label="@Loc["TmDiagramProperties_Rounded"]" />
                         </div>
+
+                        @if (SelectedEdges.Any(e => e.Rounded))
+                        {
+                            <div class="tm-diagram-properties__field">
+                                <label>@Loc["TmDiagramProperties_ArcSize"]</label>
+                                <input class="tm-text-input" type="number" step="1" min="0" value="@N(GetEdgeArcSize())" @onchange="OnEdgeArcSizeChanged" />
+                            </div>
+                        }
 
                         <div class="tm-diagram-properties__row">
                             <div class="tm-diagram-properties__field">

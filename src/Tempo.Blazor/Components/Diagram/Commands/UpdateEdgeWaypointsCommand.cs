@@ -45,6 +45,7 @@ public sealed class UpdateEdgeWaypointsCommand : IDiagramCommand
     {
         var edge = _doc.Edges.FirstOrDefault(e => e.Id == _edgeId);
         if (edge is null) return;
+        edge.IsManuallyRouted = true;
         edge.Waypoints = _newWaypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
         RecalculateAttachedTs(edge);
     }

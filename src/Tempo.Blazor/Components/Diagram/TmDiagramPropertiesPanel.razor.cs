@@ -560,7 +560,47 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         await DocumentChanged.InvokeAsync(Document);
     }
 
+    private double GetEdgeLabelOffsetX() => FirstSelectedEdge?.LabelOffsetX ?? 0;
+    private double GetEdgeLabelOffsetY() => FirstSelectedEdge?.LabelOffsetY ?? 0;
+
+    private async Task OnEdgeLabelOffsetXChanged(ChangeEventArgs e)
+    {
+        if (FirstSelectedEdge is null || Document is null) return;
+        var newValue = double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
+        var oldValue = FirstSelectedEdge.LabelOffsetX;
+        if (Math.Abs(oldValue - newValue) < 0.001) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeLabelPositionCommand(FirstSelectedEdge, FirstSelectedEdge.LabelPositionT, newValue, FirstSelectedEdge.LabelOffsetY));
+        else
+            FirstSelectedEdge.LabelOffsetX = newValue;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeLabelOffsetYChanged(ChangeEventArgs e)
+    {
+        if (FirstSelectedEdge is null || Document is null) return;
+        var newValue = double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 0;
+        var oldValue = FirstSelectedEdge.LabelOffsetY;
+        if (Math.Abs(oldValue - newValue) < 0.001) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeLabelPositionCommand(FirstSelectedEdge, FirstSelectedEdge.LabelPositionT, FirstSelectedEdge.LabelOffsetX, newValue));
+        else
+            FirstSelectedEdge.LabelOffsetY = newValue;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     private string GetEdgeRouting() => GetCommonString(SelectedEdges.Select(e => e.Routing)) ?? "straight";
+    private bool GetEdgeIsManuallyRouted() => GetCommonBool(SelectedEdges.Select(e => e.IsManuallyRouted)) ?? false;
+
+    private string GetEdgeElbowOrientation() => GetCommonString(SelectedEdges.Where(e => e.Routing == "elbow").Select(e => e.ElbowOrientation)) ?? "auto";
+
+    private async Task OnEdgeElbowOrientationChanged(string value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        foreach (var edge in SelectedEdges.Where(e => e.Routing == "elbow"))
+            edge.ElbowOrientation = value;
+        await DocumentChanged.InvokeAsync(Document);
+    }
 
     private async Task HandleEdgeRoutingChanged(string value)
     {
@@ -584,6 +624,39 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         else
         {
             foreach (var edge in SelectedEdges) edge.Routing = value;
+            await DocumentChanged.InvokeAsync(Document);
+        }
+    }
+
+    private async Task HandleEdgeIsManuallyRoutedChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        foreach (var edge in SelectedEdges) edge.IsManuallyRouted = value;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task HandleResetEdgeRouting()
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        if (IsSingleEdge && FirstSelectedEdge is not null)
+        {
+            var edge = FirstSelectedEdge;
+            if (CommandStack is not null)
+                CommandStack.Push(new ResetEdgeRoutingCommand(Document, edge.Id));
+            else
+            {
+                edge.IsManuallyRouted = false;
+                edge.Waypoints.Clear();
+            }
+            await OnEdgeRoutingChanged.InvokeAsync((edge.Id, edge.Routing, edge.Routing));
+        }
+        else
+        {
+            foreach (var edge in SelectedEdges)
+            {
+                edge.IsManuallyRouted = false;
+                edge.Waypoints.Clear();
+            }
             await DocumentChanged.InvokeAsync(Document);
         }
     }
@@ -636,8 +709,21 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private double GetEdgeSourceSpacing() => GetCommonDouble(SelectedEdges.Select(e => e.SourceSpacing)) ?? 0;
     private double GetEdgeTargetSpacing() => GetCommonDouble(SelectedEdges.Select(e => e.TargetSpacing)) ?? 0;
     private bool GetEdgeRounded() => GetCommonBool(SelectedEdges.Select(e => e.Rounded)) ?? false;
+    private double GetEdgeArcSize() => GetCommonDouble(SelectedEdges.Where(e => e.Rounded).Select(e => e.ArcSize)) ?? 8;
+    private bool GetEdgeCubicBezier() => GetCommonBool(SelectedEdges.Where(e => e.Routing == "curved").Select(e => e.CubicBezier)) ?? false;
     private string GetEdgeSourceCardinality() => GetCommonString(SelectedEdges.Select(e => e.SourceCardinality)) ?? "";
     private string GetEdgeTargetCardinality() => GetCommonString(SelectedEdges.Select(e => e.TargetCardinality)) ?? "";
+
+    // Source constraint getters
+    private double GetEdgeSourceConstraintX() => FirstSelectedEdge?.SourceConstraint?.RelativeX ?? 0.5;
+    private double GetEdgeSourceConstraintY() => FirstSelectedEdge?.SourceConstraint?.RelativeY ?? 0.5;
+    private bool GetEdgeSourceConstraintPerimeter() => FirstSelectedEdge?.SourceConstraint?.Perimeter ?? false;
+
+    // Target constraint getters
+    private double GetEdgeTargetConstraintX() => FirstSelectedEdge?.TargetConstraint?.RelativeX ?? 0.5;
+    private double GetEdgeTargetConstraintY() => FirstSelectedEdge?.TargetConstraint?.RelativeY ?? 0.5;
+    private bool GetEdgeTargetConstraintPerimeter() => FirstSelectedEdge?.TargetConstraint?.Perimeter ?? false;
+
     private int GetEdgeZIndex() => GetCommonInt(SelectedEdges.Select(e => e.ZIndex)) ?? 0;
     private string? GetEdgeLayerId() => GetCommonString(SelectedEdges.Select(e => e.LayerId)) ?? "";
 
@@ -746,10 +832,91 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         await DocumentChanged.InvokeAsync(Document);
     }
 
+    private async Task OnEdgeSourceConstraintXChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.SourceConstraint ??= new DiagramConnectionConstraint();
+            edge.SourceConstraint.RelativeX = Math.Clamp(value, 0.0, 1.0);
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeSourceConstraintYChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.SourceConstraint ??= new DiagramConnectionConstraint();
+            edge.SourceConstraint.RelativeY = Math.Clamp(value, 0.0, 1.0);
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeSourceConstraintPerimeterChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.SourceConstraint ??= new DiagramConnectionConstraint();
+            edge.SourceConstraint.Perimeter = value;
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeTargetConstraintXChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.TargetConstraint ??= new DiagramConnectionConstraint();
+            edge.TargetConstraint.RelativeX = Math.Clamp(value, 0.0, 1.0);
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeTargetConstraintYChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0 || !double.TryParse(e.Value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var value)) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.TargetConstraint ??= new DiagramConnectionConstraint();
+            edge.TargetConstraint.RelativeY = Math.Clamp(value, 0.0, 1.0);
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeTargetConstraintPerimeterChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(edge =>
+        {
+            edge.TargetConstraint ??= new DiagramConnectionConstraint();
+            edge.TargetConstraint.Perimeter = value;
+        });
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
     private async Task OnEdgeRoundedChanged(bool value)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
         ApplyEdgeStyleChange(e => e.Rounded = value);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeArcSizeChanged(ChangeEventArgs e)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        var newValue = double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, System.Globalization.CultureInfo.InvariantCulture, out var v) ? v : 8;
+        ApplyEdgeStyleChange(edge => edge.ArcSize = newValue);
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnEdgeCubicBezierChanged(bool value)
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        ApplyEdgeStyleChange(edge => edge.CubicBezier = value);
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -948,7 +1115,16 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         new SelectOption<string> { Value = "orthogonal", Label = Loc["TmDiagramProperties_Routing_Orthogonal"] },
         new SelectOption<string> { Value = "curved", Label = Loc["TmDiagramProperties_Routing_Curved"] },
         new SelectOption<string> { Value = "elbow", Label = Loc["TmDiagramProperties_EdgeStyle_Elbow"] },
-        new SelectOption<string> { Value = "segment", Label = Loc["TmDiagramProperties_EdgeStyle_Segment"] }
+        new SelectOption<string> { Value = "segment", Label = Loc["TmDiagramProperties_EdgeStyle_Segment"] },
+        new SelectOption<string> { Value = "isometric", Label = Loc["TmDiagramProperties_Routing_Isometric"] },
+        new SelectOption<string> { Value = "entityrelation", Label = Loc["TmDiagramProperties_Routing_EntityRelation"] }
+    ];
+
+    private IReadOnlyList<SelectOption<string>> _elbowOrientationOptions =>
+    [
+        new SelectOption<string> { Value = "auto", Label = Loc["TmDiagramProperties_ElbowOrientation_Auto"] },
+        new SelectOption<string> { Value = "horizontal", Label = Loc["TmDiagramProperties_ElbowOrientation_Horizontal"] },
+        new SelectOption<string> { Value = "vertical", Label = Loc["TmDiagramProperties_ElbowOrientation_Vertical"] }
     ];
 
     private IReadOnlyList<SelectOption<string>> _connectorTypeOptions =>

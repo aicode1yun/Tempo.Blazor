@@ -676,6 +676,8 @@
   <data name="TmDiagramProperties_NodeTitle" xml:space="preserve"><value>Node</value></data>
   <data name="TmDiagramProperties_EdgeTitle" xml:space="preserve"><value>Edge</value></data>
   <data name="TmDiagramProperties_Label" xml:space="preserve"><value>Label</value></data>
+  <data name="TmDiagramProperties_LabelOffsetX" xml:space="preserve"><value>Label Offset X</value></data>
+  <data name="TmDiagramProperties_LabelOffsetY" xml:space="preserve"><value>Label Offset Y</value></data>
   <data name="TmDiagramProperties_Style" xml:space="preserve"><value>Style</value></data>
   <data name="TmDiagramProperties_ZIndex" xml:space="preserve"><value>Z-Index</value></data>
   <data name="TmDiagramProperties_Empty" xml:space="preserve"><value>No selection</value></data>
@@ -684,6 +686,11 @@
   <data name="TmDiagramProperties_Routing_Straight" xml:space="preserve"><value>Straight</value></data>
   <data name="TmDiagramProperties_Routing_Orthogonal" xml:space="preserve"><value>Orthogonal</value></data>
   <data name="TmDiagramProperties_Routing_Curved" xml:space="preserve"><value>Curved</value></data>
+  <data name="TmDiagramProperties_Routing_Isometric" xml:space="preserve"><value>Isometric</value></data>
+  <data name="TmDiagramProperties_Routing_EntityRelation" xml:space="preserve"><value>Entity Relation</value></data>
+  <data name="TmDiagramProperties_CubicBezier" xml:space="preserve"><value>Cubic Bézier</value></data>
+  <data name="TmDiagramProperties_ManualRouting" xml:space="preserve"><value>Manual routing</value></data>
+  <data name="TmDiagramProperties_ResetRouting" xml:space="preserve"><value>Reset to auto routing</value></data>
   <data name="TmDiagramProperties_ConnectorType" xml:space="preserve"><value>Connector type</value></data>
   <data name="TmDiagramProperties_ConnectorType_Association" xml:space="preserve"><value>Association</value></data>
   <data name="TmDiagramProperties_ConnectorType_Dependency" xml:space="preserve"><value>Dependency</value></data>
@@ -791,11 +798,19 @@
   <data name="TmDiagramProperties_JumpStyle_Line" xml:space="preserve"><value>Line</value></data>
   <data name="TmDiagramProperties_SourceSpacing" xml:space="preserve"><value>Source Spacing</value></data>
   <data name="TmDiagramProperties_TargetSpacing" xml:space="preserve"><value>Target Spacing</value></data>
+  <data name="TmDiagramProperties_SourceConstraint" xml:space="preserve"><value>Source Constraint</value></data>
+  <data name="TmDiagramProperties_TargetConstraint" xml:space="preserve"><value>Target Constraint</value></data>
+  <data name="TmDiagramProperties_Perimeter" xml:space="preserve"><value>Perimeter</value></data>
   <data name="TmDiagramProperties_Rounded" xml:space="preserve"><value>Rounded Corners</value></data>
+  <data name="TmDiagramProperties_ArcSize" xml:space="preserve"><value>Corner Radius</value></data>
   <data name="TmDiagramProperties_EdgeStyle" xml:space="preserve"><value>Edge Style</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Orthogonal" xml:space="preserve"><value>Orthogonal</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Elbow" xml:space="preserve"><value>Elbow</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Segment" xml:space="preserve"><value>Segment</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation" xml:space="preserve"><value>Elbow Orientation</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Auto" xml:space="preserve"><value>Auto</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Horizontal" xml:space="preserve"><value>Horizontal First</value></data>
+  <data name="TmDiagramProperties_ElbowOrientation_Vertical" xml:space="preserve"><value>Vertical First</value></data>
   <data name="TmDiagramProperties_EdgeStyle_Rounded" xml:space="preserve"><value>Rounded</value></data>
   <data name="TmDiagramProperties_Text" xml:space="preserve"><value>Text</value></data>
   <data name="TmDiagramProperties_Arrange" xml:space="preserve"><value>Arrange</value></data>
@@ -986,5 +1001,6 @@
   <data name="TmDiagramCsvImportDialog_ErrorMinColumns" xml:space="preserve"><value>CSV must contain at least 2 columns.</value></data>
   <data name="TmDiagramCsvImportDialog_ErrorMappings" xml:space="preserve"><value>Please map all required columns.</value></data>
   <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Failed to parse CSV: {0}</value></data>
+  <data name="TmDiagramEditor_VirtualBend" xml:space="preserve"><value>Virtual bend</value></data>
 
 </root>

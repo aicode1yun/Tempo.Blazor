@@ -96,7 +96,14 @@
             {
                 var pathD = ComputeEdgePath(edge);
                 var isSelected = _currentSelectionIds.Contains(edge.Id);
-                <g opacity="@F(GetEdgeOpacity(edge))">
+                <g class="tm-diagram-edge-group" data-edge-id="@edge.Id" opacity="@F(GetEdgeOpacity(edge))">
+                    @* Selection outline (rendered behind the edge) *@
+                    @if (isSelected)
+                    {
+                        <path class="tm-diagram-edge-path--selected-outline"
+                              d="@pathD"
+                              fill="none" />
+                    }
                     @* Invisible hit path *@
                     <path class="tm-diagram-edge-hit-path"
                           d="@pathD"
@@ -143,6 +150,16 @@
                         @((MarkupString)GetArrowheadSvg(edge, true))
                         @((MarkupString)GetArrowheadSvg(edge, false))
                     }
+                    else if (edge.Shape is "blockArrow" or "doubleArrow" or "flexArrow")
+                    {
+                        var polygonD = ComputeBlockArrowPolygon(edge);
+                        <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
+                              d="@polygonD"
+                              stroke="@GetEdgeColor(edge)"
+                              stroke-width="1"
+                              stroke-linejoin="round"
+                              fill="@GetEdgeColor(edge)" />
+                    }
                     else
                     {
                         <path class="tm-diagram-edge-path @(isSelected ? "tm-diagram-edge-path--selected" : "") @(_activeSearchResultId == edge.Id ? "tm-diagram-search-match" : "")"
@@ -159,6 +176,11 @@
                         var labelPos = ComputeEdgePointAtT(edge, edge.LabelPositionT);
                     }
                     <g class="tm-diagram-edge-label-group"
+                       transform="translate(@F(edge.LabelOffsetX), @F(edge.LabelOffsetY))"
+                       data-edge-id="@edge.Id"
+                       data-label-t="@F(edge.LabelPositionT)"
+                       data-label-ox="@F(edge.LabelOffsetX)"
+                       data-label-oy="@F(edge.LabelOffsetY)"
                        @onclick:stopPropagation="true" @onclick="() => OnEdgeLabelSelect(edge.Id)"
                        @ondblclick:stopPropagation="true" @ondblclick="() => OnEdgeLabelEdit(edge.Id)">
                         <rect class="tm-diagram-edge-label-hit"
@@ -203,6 +225,17 @@
                                    placeholder="@Loc["TmDiagramProperties_Label"]" />
                         </foreignObject>
                     }
+                    @* Cardinality symbols *@
+                    @if (!string.IsNullOrEmpty(edge.SourceCardinality))
+                    {
+                        var srcCard = ComputeCardinalityPosition(edge, true);
+                        @((MarkupString)$"<text x=\"{F(srcCard.X)}\" y=\"{F(srcCard.Y)}\" text-anchor=\"{srcCard.TextAnchor}\" dominant-baseline=\"{srcCard.Baseline}\" class=\"tm-diagram-edge-cardinality\">{edge.SourceCardinality}</text>")
+                    }
+                    @if (!string.IsNullOrEmpty(edge.TargetCardinality))
+                    {
+                        var tgtCard = ComputeCardinalityPosition(edge, false);
+                        @((MarkupString)$"<text x=\"{F(tgtCard.X)}\" y=\"{F(tgtCard.Y)}\" text-anchor=\"{tgtCard.TextAnchor}\" dominant-baseline=\"{tgtCard.Baseline}\" class=\"tm-diagram-edge-cardinality\">{edge.TargetCardinality}</text>")
+                    }
                     @* Selection handles (control points) *@
                     @if (isSelected)
                     {
@@ -219,7 +252,37 @@
                                     data-handle-index="@i"
                                     data-waypoint="@(isWaypoint.ToString().ToLowerInvariant())"
                                     @ondblclick:stopPropagation="true"
-                                    @ondblclick="() => OnEdgeWaypointDelete(edge.Id, i)" />
+                                    @ondblclick="() => OnEdgeWaypointDoubleClick(edge.Id, i)" />
+                        }
+                        @if (edge.Routing is "orthogonal" or "elbow" or "segment")
+                        {
+                            @for (int i = 0; i < pts.Length - 1; i++)
+                            {
+                                var midX = (pts[i].X + pts[i + 1].X) / 2.0;
+                                var midY = (pts[i].Y + pts[i + 1].Y) / 2.0;
+                                var isVert = Math.Abs(pts[i].X - pts[i + 1].X) < 0.5;
+                                <circle class="tm-diagram-edge-handle tm-diagram-edge-segment-handle"
+                                        cx="@F(midX)"
+                                        cy="@F(midY)"
+                                        r="4"
+                                        data-edge-id="@edge.Id"
+                                        data-segment-index="@i"
+                                        style="cursor: @(isVert ? "col-resize" : "row-resize")" />
+                            }
+                        }
+                        else
+                        {
+                            @for (int i = 0; i < pts.Length - 1; i++)
+                            {
+                                var midX = (pts[i].X + pts[i + 1].X) / 2.0;
+                                var midY = (pts[i].Y + pts[i + 1].Y) / 2.0;
+                                <circle class="tm-diagram-edge-handle tm-diagram-edge-virtual-bend"
+                                        cx="@F(midX)"
+                                        cy="@F(midY)"
+                                        r="4"
+                                        data-edge-id="@edge.Id"
+                                        data-segment-index="@i" />
+                            }
                         }
                         @if (edge.Routing == "orthogonal")
                         {
@@ -245,6 +308,19 @@
                                         cx="@F(pts[^1].X)" cy="@F(pts[^1].Y)" r="4"
                                         data-edge-id="@edge.Id" data-jetty="target" data-jetty-side="@tPort.Side.ToString().ToLowerInvariant()" data-node-id="@edge.TargetNodeId" />
                             }
+                        }
+                        @* Dangling terminal handles (visible for all routing types when end is not attached to a node or edge) *@
+                        @if (string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId) && edge.SourcePoint is not null)
+                        {
+                            <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
+                                  x="@F(pts[0].X - 4)" y="@F(pts[0].Y - 4)" width="8" height="8"
+                                  data-edge-id="@edge.Id" data-dangling="source" />
+                        }
+                        @if (string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId) && edge.TargetPoint is not null)
+                        {
+                            <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
+                                  x="@F(pts[^1].X - 4)" y="@F(pts[^1].Y - 4)" width="8" height="8"
+                                  data-edge-id="@edge.Id" data-dangling="target" />
                         }
                     }
                 </g>
@@ -310,6 +386,22 @@
                                      @onmouseenter="() => HandlePortMouseEnter(node.Id, port.Id)"
                                      @onmouseleave="() => HandlePortMouseLeave(node.Id, port.Id)">
                                 </div>
+                            }
+
+                            var stencil = StencilRegistry.GetStencil(node.StencilId);
+                            if (stencil?.ConnectionPoints.Count > 0)
+                            {
+                                foreach (var cp in stencil.ConnectionPoints)
+                                {
+                                    var (cpx, cpy) = GetConnectionPointPosition(node, cp);
+                                    <div class="tm-diagram-connection-point"
+                                         data-cp-rx="@F(cp.RelativeX)"
+                                         data-cp-ry="@F(cp.RelativeY)"
+                                         data-cp-perimeter="@(cp.Perimeter.ToString().ToLowerInvariant())"
+                                         style="left: @(F(cpx))px; top: @(F(cpy))px;"
+                                         title="@cp.Name">
+                                    </div>
+                                }
                             }
                         }
 

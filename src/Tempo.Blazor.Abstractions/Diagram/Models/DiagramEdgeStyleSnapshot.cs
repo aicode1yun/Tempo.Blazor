@@ -11,6 +11,7 @@ public sealed class DiagramEdgeStyleSnapshot
     public bool? StartArrowFill { get; set; }
     public bool? EndArrowFill { get; set; }
     public bool Rounded { get; set; }
+    public double? ArcSize { get; set; }
     public string? JumpStyle { get; set; }
     public double? JumpSize { get; set; }
     public double? SourceSpacing { get; set; }
@@ -34,6 +35,7 @@ public sealed class DiagramEdgeStyleSnapshot
         StartArrowFill = edge.StartArrowFill,
         EndArrowFill = edge.EndArrowFill,
         Rounded = edge.Rounded,
+        ArcSize = edge.ArcSize,
         JumpStyle = edge.JumpStyle,
         JumpSize = edge.JumpSize,
         SourceSpacing = edge.SourceSpacing,
@@ -69,6 +71,7 @@ public sealed class DiagramEdgeStyleSnapshot
         edge.StartArrowFill = StartArrowFill;
         edge.EndArrowFill = EndArrowFill;
         edge.Rounded = Rounded;
+        edge.ArcSize = ArcSize;
         edge.JumpStyle = JumpStyle;
         edge.JumpSize = JumpSize;
         edge.SourceSpacing = SourceSpacing;

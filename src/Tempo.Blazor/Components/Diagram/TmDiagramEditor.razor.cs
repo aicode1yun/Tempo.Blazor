@@ -1494,13 +1494,12 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         // Edge drawing is handled in JS; this is a hook for future extensions
     }
 
-    private async Task OnEdgeCreated((string SourceNodeId, string? SourcePortId, string TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset) args)
+    private async Task OnEdgeCreated((string SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY) args)
     {
         if (_document is null || ReadOnly) return;
 
         var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == args.SourceNodeId);
-        var targetNode = _document.Nodes.FirstOrDefault(n => n.Id == args.TargetNodeId);
-        if (sourceNode is null || targetNode is null) return;
+        if (sourceNode is null) return;
 
         string? sourcePortId = args.SourcePortId;
         if (sourcePortId is null && !string.IsNullOrEmpty(args.SourceSide))
@@ -1515,26 +1514,70 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             sourcePortId = port.Id;
         }
 
-        string? targetPortId = args.TargetPortId;
-        if (targetPortId is null && !string.IsNullOrEmpty(args.TargetSide))
-        {
-            var side = Enum.Parse<PortSide>(args.TargetSide, true);
-            var port = targetNode.Ports.FirstOrDefault(p => p.Side == side);
-            if (port is null)
-            {
-                port = new DiagramPort { Side = side, Offset = args.TargetOffset, IsInput = true, IsOutput = false };
-                targetNode.Ports.Add(port);
-            }
-            targetPortId = port.Id;
-        }
-
         var edge = new DiagramEdge
         {
             SourceNodeId = args.SourceNodeId,
             SourcePortId = sourcePortId,
-            TargetNodeId = args.TargetNodeId,
-            TargetPortId = targetPortId,
         };
+
+        // Fixed connection point (constraint) takes priority over port
+        if (args.SourceConstraintRx is not null && args.SourceConstraintRy is not null)
+        {
+            edge.SourceConstraint = new DiagramConnectionConstraint
+            {
+                RelativeX = args.SourceConstraintRx.Value,
+                RelativeY = args.SourceConstraintRy.Value,
+                Perimeter = args.SourceConstraintPerimeter ?? true
+            };
+            edge.SourcePortId = null;
+        }
+
+        if (!string.IsNullOrEmpty(args.TargetEdgeId))
+        {
+            // Edge-to-edge connection
+            edge.TargetEdgeId = args.TargetEdgeId;
+            edge.TargetEdgeT = args.TargetEdgeT;
+        }
+        else if (!string.IsNullOrEmpty(args.TargetNodeId))
+        {
+            var targetNode = _document.Nodes.FirstOrDefault(n => n.Id == args.TargetNodeId);
+            if (targetNode is null) return;
+
+            string? targetPortId = args.TargetPortId;
+            if (targetPortId is null && !string.IsNullOrEmpty(args.TargetSide))
+            {
+                var side = Enum.Parse<PortSide>(args.TargetSide, true);
+                var port = targetNode.Ports.FirstOrDefault(p => p.Side == side);
+                if (port is null)
+                {
+                    port = new DiagramPort { Side = side, Offset = args.TargetOffset, IsInput = true, IsOutput = false };
+                    targetNode.Ports.Add(port);
+                }
+                targetPortId = port.Id;
+            }
+
+            edge.TargetNodeId = args.TargetNodeId;
+            edge.TargetPortId = targetPortId;
+
+            if (args.TargetConstraintRx is not null && args.TargetConstraintRy is not null)
+            {
+                edge.TargetConstraint = new DiagramConnectionConstraint
+                {
+                    RelativeX = args.TargetConstraintRx.Value,
+                    RelativeY = args.TargetConstraintRy.Value,
+                    Perimeter = args.TargetConstraintPerimeter ?? true
+                };
+                edge.TargetPortId = null;
+            }
+        }
+        else if (args.TargetPointX is not null && args.TargetPointY is not null)
+        {
+            edge.TargetPoint = new DiagramPoint(args.TargetPointX.Value, args.TargetPointY.Value);
+        }
+        else
+        {
+            return; // No valid target
+        }
 
         ActiveCommandStack.Push(new AddEdgeCommand(_document, edge));
         await OnDocumentChanged(_document);

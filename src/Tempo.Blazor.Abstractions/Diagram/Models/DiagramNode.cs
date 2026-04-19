@@ -9,6 +9,9 @@ public sealed class DiagramNode
     /// <summary>Stencil type identifier – must match a registered stencil definition. (e.g. "uml.class").</summary>
     public string StencilId { get; set; } = string.Empty;
 
+    /// <summary>Background shape type for perimeter projection. E.g. "rectangle", "ellipse", "diamond".</summary>
+    public string? BackgroundShape { get; set; }
+
     /// <summary>X position of the node's top-left corner in pixels.</summary>
     public double X { get; set; }
 

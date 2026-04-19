@@ -44,6 +44,9 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
             {
                 if (noCornerRadiusShapes.Contains(stencil.Layout.BackgroundShape))
                     stencil.Layout.SupportsCornerRadius = false;
+
+                if (stencil.ConnectionPoints.Count == 0)
+                    stencil.ConnectionPoints = GetConnectionPointsForShape(stencil.Layout.BackgroundShape);
             }
         }
 
@@ -5239,5 +5242,196 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                 }
             ]
         };
+    }
+
+    private static List<DiagramStencilConnectionPoint> GetConnectionPointsForShape(string? shape)
+    {
+        var s = shape?.ToLowerInvariant() ?? "rectangle";
+
+        // Ellipse / double-ellipse / half-ellipse / cylinder-top-ish shapes: 8 points on perimeter
+        if (s is "ellipse" or "double-ellipse" or "half-ellipse" or "use-case")
+        {
+            return
+            [
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NE", RelativeX = 0.85, RelativeY = 0.15, Perimeter = true },
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.15, RelativeY = 0.15, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.15, RelativeY = 0.85, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SE", RelativeX = 0.85, RelativeY = 0.85, Perimeter = true }
+            ];
+        }
+
+        // Diamond / rhombus: 4 corners + center
+        if (s is "diamond" or "rhombus")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "C",  RelativeX = 0.5, RelativeY = 0.5, Perimeter = false }
+            ];
+        }
+
+        // Triangle: 3 corners + 3 midpoints
+        if (s is "triangle")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 0.75, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 0.75, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.25, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.25, RelativeY = 0.5, Perimeter = true }
+            ];
+        }
+
+        // Hexagon: 6 corners + top/bottom midpoints
+        if (s is "hexagon")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 0.875, RelativeY = 0.25, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 0.875, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.125, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.125, RelativeY = 0.25, Perimeter = true }
+            ];
+        }
+
+        // Star: 8 cardinal-ish points on bounding box
+        if (s is "star")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.25, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 1.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.25, Perimeter = true }
+            ];
+        }
+
+        // Parallelogram: 4 corners + 4 midpoints
+        if (s is "parallelogram")
+        {
+            return
+            [
+                new() { Name = "NW", RelativeX = 0.15, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "N",  RelativeX = 0.575, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "E",  RelativeX = 0.85, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 0.85, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.425, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.0, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.15, RelativeY = 0.5, Perimeter = true }
+            ];
+        }
+
+        // Pentagon: 5 corners + top midpoint
+        if (s is "pentagon")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.35, Perimeter = true },
+                new() { Name = "E",  RelativeX = 0.95, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "SE", RelativeX = 0.7, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.3, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.05, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.35, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.15, RelativeY = 0.5, Perimeter = true }
+            ];
+        }
+
+        // Actor: bounding box with 8 points (perimeter projects to bounding box)
+        if (s is "actor")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.25, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 1.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.25, Perimeter = true }
+            ];
+        }
+
+        // Cloud: bounding box with 8 points
+        if (s is "cloud")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.25, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 1.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.0, RelativeY = 0.75, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.25, Perimeter = true }
+            ];
+        }
+
+        // Cylinder: bounding box with 8 points
+        if (s is "cylinder")
+        {
+            return
+            [
+                new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.15, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 1.0, RelativeY = 0.85, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.0, RelativeY = 0.85, Perimeter = true },
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.15, Perimeter = true }
+            ];
+        }
+
+        // Lollipop: left end + circle perimeter points
+        if (s is "lollipop")
+        {
+            return
+            [
+                new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "NW", RelativeX = 0.6, RelativeY = 0.1, Perimeter = true },
+                new() { Name = "N",  RelativeX = 0.8, RelativeY = 0.0, Perimeter = true },
+                new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.1, Perimeter = true },
+                new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+                new() { Name = "SE", RelativeX = 1.0, RelativeY = 0.9, Perimeter = true },
+                new() { Name = "S",  RelativeX = 0.8, RelativeY = 1.0, Perimeter = true },
+                new() { Name = "SW", RelativeX = 0.6, RelativeY = 0.9, Perimeter = true }
+            ];
+        }
+
+        // Default (rectangle, rounded, table, swimlane, group, package, note, document, component, cube, etc.):
+        // 9 points = 4 corners + 4 midpoints + center
+        return
+        [
+            new() { Name = "NW", RelativeX = 0.0, RelativeY = 0.0, Perimeter = true },
+            new() { Name = "N",  RelativeX = 0.5, RelativeY = 0.0, Perimeter = true },
+            new() { Name = "NE", RelativeX = 1.0, RelativeY = 0.0, Perimeter = true },
+            new() { Name = "E",  RelativeX = 1.0, RelativeY = 0.5, Perimeter = true },
+            new() { Name = "C",  RelativeX = 0.5, RelativeY = 0.5, Perimeter = false },
+            new() { Name = "W",  RelativeX = 0.0, RelativeY = 0.5, Perimeter = true },
+            new() { Name = "SW", RelativeX = 0.0, RelativeY = 1.0, Perimeter = true },
+            new() { Name = "S",  RelativeX = 0.5, RelativeY = 1.0, Perimeter = true },
+            new() { Name = "SE", RelativeX = 1.0, RelativeY = 1.0, Perimeter = true }
+        ];
     }
 }

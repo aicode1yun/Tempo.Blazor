@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
+using Tempo.Blazor.Components.Diagram.Stencils;
 
 namespace Tempo.Blazor.Components.Diagram;
 
@@ -17,6 +18,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+    [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
     // ── Cascaded command stack ───────────────────────────────────────────────
 
@@ -172,6 +174,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private const double ViewportMargin = 200;
     private string? _editingEdgeLabelId;
     private string _editingLabelValue = "";
+    private (string EdgeId, int WaypointIndex)? _pendingVirtualBend;
 
     public TmDiagramCanvas()
     {
@@ -523,31 +526,116 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         return (x, y, w, h);
     }
 
-    /// <summary>Calls the JS Manhattan router for an edge and returns new waypoints.</summary>
+    /// <summary>Calls the JS Manhattan router for an edge and returns new waypoints.
+    /// Returns existing waypoints unchanged when <see cref="DiagramEdge.IsManuallyRouted"/> is true.</summary>
     public async Task<List<DiagramPoint>> ComputeOrthogonalWaypointsAsync(DiagramEdge edge)
     {
         if (Document is null) return [];
+        if (edge.IsManuallyRouted) return edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
 
-        var srcNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
-        var tgtNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
-        if (srcNode is null || tgtNode is null) return [];
+        double x1, y1, x2, y2;
+        string side1, side2;
+        object? srcBounds = null, tgtBounds = null;
 
-        var srcPort = edge.SourcePortId is not null
-            ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
-            : srcNode.Ports.FirstOrDefault();
-        var tgtPort = edge.TargetPortId is not null
-            ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
-            : tgtNode.Ports.FirstOrDefault();
+        if (!string.IsNullOrEmpty(edge.SourceEdgeId))
+        {
+            var srcEdge = Document.Edges.FirstOrDefault(e => e.Id == edge.SourceEdgeId);
+            if (srcEdge is null) return [];
+            (x1, y1) = DiagramGeometryHelper.ComputeEdgePointAtT(Document, srcEdge, edge.SourceEdgeT ?? 0.5);
+            side1 = "right";
+        }
+        else if (!string.IsNullOrEmpty(edge.SourceNodeId))
+        {
+            var srcNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
+            if (srcNode is null) return [];
 
-        var (x1, y1) = DiagramGeometryHelper.ComputePortPosition(srcNode, srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 });
-        var (x2, y2) = DiagramGeometryHelper.ComputePortPosition(tgtNode, tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 });
+            if (edge.SourceConstraint is not null)
+            {
+                var c = edge.SourceConstraint;
+                if (c.Perimeter)
+                {
+                    var (px, py) = DiagramGeometryHelper.ProjectToPerimeter(srcNode.W, srcNode.H, c.RelativeX, c.RelativeY, srcNode.BackgroundShape);
+                    x1 = srcNode.X + px + c.Dx;
+                    y1 = srcNode.Y + py + c.Dy;
+                }
+                else
+                {
+                    x1 = srcNode.X + srcNode.W * c.RelativeX + c.Dx;
+                    y1 = srcNode.Y + srcNode.H * c.RelativeY + c.Dy;
+                }
+                side1 = DiagramGeometryHelper.InferSideFromConstraint(c.RelativeX, c.RelativeY).ToString().ToLowerInvariant();
+            }
+            else
+            {
+                var srcPort = edge.SourcePortId is not null
+                    ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
+                    : srcNode.Ports.FirstOrDefault();
+                var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
+                (x1, y1) = DiagramGeometryHelper.ComputePortPosition(srcNode, sPort);
+                side1 = sPort.Side.ToString().ToLowerInvariant();
+            }
+            srcBounds = new { x = srcNode.X, y = srcNode.Y, w = srcNode.W, h = srcNode.H, isSwimlane = srcNode.SwimlaneData is not null, isHorizontal = srcNode.SwimlaneData?.IsHorizontal ?? false };
+        }
+        else if (edge.SourcePoint is not null)
+        {
+            x1 = edge.SourcePoint.X;
+            y1 = edge.SourcePoint.Y;
+            side1 = "right"; // default direction for dangling source end
+        }
+        else
+        {
+            return [];
+        }
 
-        var side1 = (srcPort?.Side ?? PortSide.Right).ToString().ToLowerInvariant();
-        var side2 = (tgtPort?.Side ?? PortSide.Left).ToString().ToLowerInvariant();
+        if (!string.IsNullOrEmpty(edge.TargetEdgeId))
+        {
+            var tgtEdge = Document.Edges.FirstOrDefault(e => e.Id == edge.TargetEdgeId);
+            if (tgtEdge is null) return [];
+            (x2, y2) = DiagramGeometryHelper.ComputeEdgePointAtT(Document, tgtEdge, edge.TargetEdgeT ?? 0.5);
+            side2 = "left";
+        }
+        else if (!string.IsNullOrEmpty(edge.TargetNodeId))
+        {
+            var tgtNode = Document.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
+            if (tgtNode is null) return [];
 
-        // Swimlane-aware bounds
-        var srcBounds = new { x = srcNode.X, y = srcNode.Y, w = srcNode.W, h = srcNode.H, isSwimlane = srcNode.SwimlaneData is not null, isHorizontal = srcNode.SwimlaneData?.IsHorizontal ?? false };
-        var tgtBounds = new { x = tgtNode.X, y = tgtNode.Y, w = tgtNode.W, h = tgtNode.H, isSwimlane = tgtNode.SwimlaneData is not null, isHorizontal = tgtNode.SwimlaneData?.IsHorizontal ?? false };
+            if (edge.TargetConstraint is not null)
+            {
+                var c = edge.TargetConstraint;
+                if (c.Perimeter)
+                {
+                    var (px, py) = DiagramGeometryHelper.ProjectToPerimeter(tgtNode.W, tgtNode.H, c.RelativeX, c.RelativeY, tgtNode.BackgroundShape);
+                    x2 = tgtNode.X + px + c.Dx;
+                    y2 = tgtNode.Y + py + c.Dy;
+                }
+                else
+                {
+                    x2 = tgtNode.X + tgtNode.W * c.RelativeX + c.Dx;
+                    y2 = tgtNode.Y + tgtNode.H * c.RelativeY + c.Dy;
+                }
+                side2 = DiagramGeometryHelper.InferSideFromConstraint(c.RelativeX, c.RelativeY).ToString().ToLowerInvariant();
+            }
+            else
+            {
+                var tgtPort = edge.TargetPortId is not null
+                    ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
+                    : tgtNode.Ports.FirstOrDefault();
+                var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
+                (x2, y2) = DiagramGeometryHelper.ComputePortPosition(tgtNode, tPort);
+                side2 = tPort.Side.ToString().ToLowerInvariant();
+            }
+            tgtBounds = new { x = tgtNode.X, y = tgtNode.Y, w = tgtNode.W, h = tgtNode.H, isSwimlane = tgtNode.SwimlaneData is not null, isHorizontal = tgtNode.SwimlaneData?.IsHorizontal ?? false };
+        }
+        else if (edge.TargetPoint is not null)
+        {
+            x2 = edge.TargetPoint.X;
+            y2 = edge.TargetPoint.Y;
+            side2 = "left"; // default direction for dangling target end
+        }
+        else
+        {
+            return [];
+        }
 
         // Collect obstacles from visible nodes at the current group level
         var obstacles = Document.Nodes
@@ -556,7 +644,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             .Select(n => new { x = n.X, y = n.Y, w = n.W, h = n.H })
             .ToList();
 
-        var result = await JS.InvokeAsync<double[][]>("tmDiagramEditor.computeOrthogonalWaypoints", x1, y1, side1, x2, y2, side2, edge.Routing, edge.SourceSpacing ?? 0, edge.TargetSpacing ?? 0, srcBounds, tgtBounds, obstacles);
+        var result = await JS.InvokeAsync<double[][]>("tmDiagramEditor.computeOrthogonalWaypoints", x1, y1, side1, x2, y2, side2, edge.Routing, edge.SourceSpacing ?? 0, edge.TargetSpacing ?? 0, srcBounds, tgtBounds, obstacles, edge.ElbowOrientation);
         if (result is null) return [];
         return result.Select(r => new DiagramPoint(r[0], r[1])).ToList();
     }
@@ -565,7 +653,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     {
         if (Document is null) return;
         var affectedEdges = Document.Edges
-            .Where(e => e.Routing == "orthogonal" &&
+            .Where(e => e.Routing == "orthogonal" && !e.IsManuallyRouted &&
                 (nodeIds.Contains(e.SourceNodeId) || nodeIds.Contains(e.TargetNodeId)))
             .ToList();
 
@@ -1041,7 +1129,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     [Parameter] public EventCallback<(string StencilId, double X, double Y)> OnToolboxDrop { get; set; }
 
-    [Parameter] public EventCallback<(string SourceNodeId, string? SourcePortId, string TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset)> OnEdgeCreated { get; set; }
+    [Parameter] public EventCallback<(string SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY)> OnEdgeCreated { get; set; }
 
     // ── Port interactions ────────────────────────────────────────────────────
 
@@ -1056,13 +1144,34 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private void HandlePortMouseEnter(string nodeId, string portId) { }
     private void HandlePortMouseLeave(string nodeId, string portId) { }
 
+    /// <summary>
+    /// Computes the absolute position of a stencil connection point relative to the node's top-left corner.
+    /// When <paramref name="cp.Perimeter"/> is true, the point is projected onto the node perimeter.
+    /// </summary>
+    private static (double Px, double Py) GetConnectionPointPosition(DiagramNode node, DiagramStencilConnectionPoint cp)
+    {
+        if (cp.Perimeter)
+        {
+            var (px, py) = DiagramGeometryHelper.ProjectToPerimeter(node.W, node.H, cp.RelativeX, cp.RelativeY, node.BackgroundShape);
+            return (px, py);
+        }
+        return (node.W * cp.RelativeX, node.H * cp.RelativeY);
+    }
+
     [JSInvokable]
     public async Task JsOnEdgeCreated(
-        string sourceNodeId, string? sourcePortId, string targetNodeId, string? targetPortId,
-        string? sourceSide = null, double sourceOffset = 0.5, string? targetSide = null, double targetOffset = 0.5)
+        string sourceNodeId, string? sourcePortId, string? targetNodeId, string? targetPortId,
+        string? sourceSide = null, double sourceOffset = 0.5, string? targetSide = null, double targetOffset = 0.5,
+        string? targetEdgeId = null, double targetEdgeT = 0.5,
+        double? sourceConstraintRx = null, double? sourceConstraintRy = null, bool? sourceConstraintPerimeter = null,
+        double? targetConstraintRx = null, double? targetConstraintRy = null, bool? targetConstraintPerimeter = null,
+        double? targetPointX = null, double? targetPointY = null)
     {
         if (ReadOnly || Document is null) return;
-        await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset));
+        await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset, targetEdgeId, targetEdgeT,
+            sourceConstraintRx, sourceConstraintRy, sourceConstraintPerimeter,
+            targetConstraintRx, targetConstraintRy, targetConstraintPerimeter,
+            targetPointX, targetPointY));
     }
 
     // ── Edge interactions ────────────────────────────────────────────────────
@@ -1083,6 +1192,8 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             _currentSelectionIds = [edgeId];
             await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
         }
+        await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
+        await InvokeAsync(StateHasChanged);
         await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
     }
 
@@ -1145,6 +1256,41 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         public double Y { get; set; }
     }
 
+    private async Task OnEdgeWaypointDoubleClick(string edgeId, int handleIndex)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        // Elbow flip: double-clicking the single bend handle flips orientation
+        if (edge.Routing == "elbow" && edge.Waypoints.Count > 0)
+        {
+            var oldOrientation = edge.ElbowOrientation;
+            var newOrientation = oldOrientation == "horizontal" ? "vertical" : "horizontal";
+
+            // Temporarily set orientation to compute new waypoints
+            edge.ElbowOrientation = newOrientation;
+            var newWaypoints = await ComputeOrthogonalWaypointsAsync(edge);
+            edge.ElbowOrientation = oldOrientation; // restore for command
+
+            if (CommandStack is not null)
+                CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+            else
+            {
+                edge.ElbowOrientation = newOrientation;
+                edge.Waypoints.Clear();
+                foreach (var wp in newWaypoints)
+                    edge.Waypoints.Add(wp);
+            }
+            await NotifyAndRender();
+        }
+        else
+        {
+            // Fallback to delete for other routing types
+            await OnEdgeWaypointDelete(edgeId, handleIndex);
+        }
+    }
+
     private async Task OnEdgeWaypointDelete(string edgeId, int waypointIndex)
     {
         if (ReadOnly || Document is null) return;
@@ -1163,11 +1309,245 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     [JSInvokable]
+    public async Task<int> OnVirtualBendInsert(string edgeId, int segmentIndex, double x, double y)
+    {
+        if (ReadOnly || Document is null) return -1;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return -1;
+
+        var insertIndex = segmentIndex + 1;
+        if (GridSize > 0)
+        {
+            x = Math.Round(x / GridSize) * GridSize;
+            y = Math.Round(y / GridSize) * GridSize;
+        }
+
+        if (CommandStack is not null)
+        {
+            CommandStack.BeginTransaction(Loc["TmDiagramEditor_VirtualBend"]);
+            CommandStack.Push(new InsertEdgeWaypointCommand(Document, edgeId, insertIndex, new DiagramPoint(x, y)));
+        }
+        else
+        {
+            edge.Waypoints.Insert(insertIndex, new DiagramPoint(x, y));
+        }
+
+        _pendingVirtualBend = (edgeId, insertIndex - 1);
+        _currentSelectionIds = [edgeId];
+        await OnSelectionChanged.InvokeAsync(_currentSelectionIds);
+        await NotifyAndRender();
+
+        return insertIndex - 1; // return as 0-based waypoint index for JS
+    }
+
+    [JSInvokable]
+    public async Task OnEdgeSegmentDragged(string edgeId, List<DiagramPoint> waypoints)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        var before = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+        edge.Waypoints = waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+        edge.IsManuallyRouted = true;
+        var after = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateEdgeSegmentOffsetCommand(Document, edgeId, before, after));
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnDanglingTerminalMoved(string edgeId, string type, double x, double y)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        if (GridSize > 0)
+        {
+            x = Math.Round(x / GridSize) * GridSize;
+            y = Math.Round(y / GridSize) * GridSize;
+        }
+
+        var isSource = type == "source";
+        var oldNodeId = isSource ? edge.SourceNodeId : edge.TargetNodeId;
+        var oldPortId = isSource ? edge.SourcePortId : edge.TargetPortId;
+        var oldPoint = isSource
+            ? (edge.SourcePoint is not null ? new DiagramPoint(edge.SourcePoint.X, edge.SourcePoint.Y) : null)
+            : (edge.TargetPoint is not null ? new DiagramPoint(edge.TargetPoint.X, edge.TargetPoint.Y) : null);
+        var oldConstraint = isSource ? edge.SourceConstraint?.Clone() : edge.TargetConstraint?.Clone();
+
+        if (isSource)
+        {
+            edge.SourceNodeId = null;
+            edge.SourcePortId = null;
+            edge.SourcePoint = new DiagramPoint(x, y);
+            edge.SourceConstraint = null;
+        }
+        else
+        {
+            edge.TargetNodeId = null;
+            edge.TargetPortId = null;
+            edge.TargetPoint = new DiagramPoint(x, y);
+            edge.TargetConstraint = null;
+        }
+
+        if (CommandStack is not null)
+        {
+            CommandStack.Push(new UpdateEdgeTerminalCommand(
+                Document, edgeId, isSource,
+                oldNodeId, oldPortId, oldPoint, oldConstraint,
+                null, null, new DiagramPoint(x, y), null));
+        }
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnEdgeTerminalReconnected(string edgeId, string type, string nodeId, string? portId)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        var isSource = type == "source";
+        var oldNodeId = isSource ? edge.SourceNodeId : edge.TargetNodeId;
+        var oldPortId = isSource ? edge.SourcePortId : edge.TargetPortId;
+        var oldPoint = isSource
+            ? (edge.SourcePoint is not null ? new DiagramPoint(edge.SourcePoint.X, edge.SourcePoint.Y) : null)
+            : (edge.TargetPoint is not null ? new DiagramPoint(edge.TargetPoint.X, edge.TargetPoint.Y) : null);
+        var oldConstraint = isSource ? edge.SourceConstraint?.Clone() : edge.TargetConstraint?.Clone();
+
+        if (isSource)
+        {
+            edge.SourceNodeId = nodeId;
+            edge.SourcePortId = portId;
+            edge.SourcePoint = null;
+            edge.SourceConstraint = null;
+        }
+        else
+        {
+            edge.TargetNodeId = nodeId;
+            edge.TargetPortId = portId;
+            edge.TargetPoint = null;
+            edge.TargetConstraint = null;
+        }
+
+        if (CommandStack is not null)
+        {
+            CommandStack.Push(new UpdateEdgeTerminalCommand(
+                Document, edgeId, isSource,
+                oldNodeId, oldPortId, oldPoint, oldConstraint,
+                nodeId, portId, null, null));
+        }
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnEdgeTerminalOutlineConnected(string edgeId, string type, string nodeId, double relativeX, double relativeY)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        var isSource = type == "source";
+        var oldNodeId = isSource ? edge.SourceNodeId : edge.TargetNodeId;
+        var oldPortId = isSource ? edge.SourcePortId : edge.TargetPortId;
+        var oldPoint = isSource
+            ? (edge.SourcePoint is not null ? new DiagramPoint(edge.SourcePoint.X, edge.SourcePoint.Y) : null)
+            : (edge.TargetPoint is not null ? new DiagramPoint(edge.TargetPoint.X, edge.TargetPoint.Y) : null);
+        var oldConstraint = isSource ? edge.SourceConstraint?.Clone() : edge.TargetConstraint?.Clone();
+
+        var newConstraint = new DiagramConnectionConstraint
+        {
+            RelativeX = relativeX,
+            RelativeY = relativeY,
+            Perimeter = false
+        };
+
+        if (isSource)
+        {
+            edge.SourceNodeId = nodeId;
+            edge.SourcePortId = null;
+            edge.SourcePoint = null;
+            edge.SourceConstraint = newConstraint;
+        }
+        else
+        {
+            edge.TargetNodeId = nodeId;
+            edge.TargetPortId = null;
+            edge.TargetPoint = null;
+            edge.TargetConstraint = newConstraint;
+        }
+
+        if (CommandStack is not null)
+        {
+            CommandStack.Push(new UpdateEdgeTerminalCommand(
+                Document, edgeId, isSource,
+                oldNodeId, oldPortId, oldPoint, oldConstraint,
+                nodeId, null, null, newConstraint));
+        }
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
     public async Task OnEdgeWaypointMoved(string edgeId, int waypointIndex, double x, double y)
     {
         if (ReadOnly || Document is null) return;
         var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
         if (edge is null || waypointIndex < 0 || waypointIndex >= edge.Waypoints.Count) return;
+
+        var wasVirtualBend = _pendingVirtualBend is { EdgeId: var vbEdge, WaypointIndex: var vbWp }
+            && vbEdge == edgeId && vbWp == waypointIndex;
+
+        // Smart removal: if dropped onto a straight line between neighbours, delete it
+        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
+        var actualIndex = waypointIndex + 1; // +1 because GetEdgePoints includes source at 0
+        if (actualIndex > 0 && actualIndex < pts.Length - 1)
+        {
+            var prev = pts[actualIndex - 1];
+            var curr = (x, y);
+            var next = pts[actualIndex + 1];
+            if (DiagramGeometryHelper.IsCollinear(prev, curr, next))
+            {
+                var removed = edge.Waypoints[waypointIndex];
+                if (CommandStack is not null)
+                    CommandStack.Push(new DeleteEdgeWaypointCommand(Document, edgeId, waypointIndex, removed));
+                else
+                    edge.Waypoints.RemoveAt(waypointIndex);
+                _pendingVirtualBend = null;
+                if (wasVirtualBend && CommandStack?.IsInTransaction == true)
+                    CommandStack.CommitTransaction();
+                await NotifyAndRender();
+                return;
+            }
+        }
+
+        // Merge removal: if dropped onto another waypoint (within 5px), delete it
+        for (int i = 0; i < edge.Waypoints.Count; i++)
+        {
+            if (i == waypointIndex) continue;
+            var other = edge.Waypoints[i];
+            var dx = other.X - x;
+            var dy = other.Y - y;
+            if (dx * dx + dy * dy < 25) // 5px tolerance squared
+            {
+                var removed = edge.Waypoints[waypointIndex];
+                if (CommandStack is not null)
+                    CommandStack.Push(new DeleteEdgeWaypointCommand(Document, edgeId, waypointIndex, removed));
+                else
+                    edge.Waypoints.RemoveAt(waypointIndex);
+                _pendingVirtualBend = null;
+                if (wasVirtualBend && CommandStack?.IsInTransaction == true)
+                    CommandStack.CommitTransaction();
+                await NotifyAndRender();
+                return;
+            }
+        }
 
         var before = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
         edge.Waypoints[waypointIndex] = new DiagramPoint(x, y);
@@ -1176,6 +1556,21 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (CommandStack is not null)
             CommandStack.Push(new UpdateEdgeWaypointsCommand(Document, edgeId, before, after));
 
+        _pendingVirtualBend = null;
+        if (wasVirtualBend && CommandStack?.IsInTransaction == true)
+            CommandStack.CommitTransaction();
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
+    public async Task OnCancelEdgeEdit()
+    {
+        if (CommandStack?.IsInTransaction == true)
+        {
+            CommandStack.RollbackTransaction();
+        }
+        _pendingVirtualBend = null;
         await NotifyAndRender();
     }
 
@@ -1198,16 +1593,21 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     [JSInvokable]
-    public async Task OnEdgeLabelMoved(string edgeId, double t)
+    public async Task OnEdgeLabelMoved(string edgeId, double t, double offsetX, double offsetY)
     {
         if (ReadOnly || Document is null) return;
         var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
         if (edge is null) return;
 
+        var clampedT = Math.Clamp(t, 0, 1);
         if (CommandStack is not null)
-            CommandStack.Push(new UpdateEdgeLabelPositionCommand(edge, Math.Clamp(t, 0, 1)));
+            CommandStack.Push(new UpdateEdgeLabelPositionCommand(edge, clampedT, offsetX, offsetY));
         else
-            edge.LabelPositionT = Math.Clamp(t, 0, 1);
+        {
+            edge.LabelPositionT = clampedT;
+            edge.LabelOffsetX = offsetX;
+            edge.LabelOffsetY = offsetY;
+        }
 
         await NotifyAndRender();
     }
@@ -1420,12 +1820,15 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     public async Task SetSelection(params string[] ids)
     {
-        if (!_jsInitialized) return;
         _currentSelectionIds = ids;
-        var nodeIds = Document is null
-            ? ids
-            : ids.Where(id => Document.Nodes.Any(n => n.Id == id)).ToArray();
-        await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, nodeIds);
+        if (_jsInitialized)
+        {
+            var nodeIds = Document is null
+                ? ids
+                : ids.Where(id => Document.Nodes.Any(n => n.Id == id)).ToArray();
+            await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, nodeIds);
+        }
+        await InvokeAsync(StateHasChanged);
     }
 
     public async Task SetToolMode(string mode)
@@ -1495,6 +1898,33 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private (double X, double Y, string TextAnchor, string Baseline) ComputeCardinalityPosition(DiagramEdge edge, bool isSource)
+    {
+        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
+        if (pts.Length < 2) return (0, 0, "middle", "middle");
+
+        var (x1, y1) = isSource ? pts[0] : pts[^2];
+        var (x2, y2) = isSource ? pts[1] : pts[^1];
+
+        var dx = x2 - x1;
+        var dy = y2 - y1;
+        var len = Math.Sqrt(dx * dx + dy * dy);
+        if (len < 0.001)
+            return (x1, y1 - 15, "middle", "auto");
+
+        // Perpendicular offset (~15px)
+        var perpX = (-dy / len) * 15;
+        var perpY = (dx / len) * 15;
+
+        var tx = (isSource ? pts[0].X : pts[^1].X) + perpX;
+        var ty = (isSource ? pts[0].Y : pts[^1].Y) + perpY;
+
+        var anchor = perpX > 2 ? "start" : perpX < -2 ? "end" : "middle";
+        var baseline = perpY > 2 ? "hanging" : perpY < -2 ? "auto" : "middle";
+
+        return (tx, ty, anchor, baseline);
+    }
 
     private double GetCurrentScale()
     {
@@ -1593,22 +2023,40 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                 var (x2, y2) = pts[1];
                 var dx = Math.Abs(x2 - x1);
                 var dy = Math.Abs(y2 - y1);
-                double c1x, c1y, c2x, c2y;
-                if (dx > dy)
+                if (edge.CubicBezier)
                 {
-                    c1x = x1 + dx * 0.5;
-                    c1y = y1;
-                    c2x = x2 - dx * 0.5;
-                    c2y = y2;
+                    double c1x, c1y, c2x, c2y;
+                    if (dx > dy)
+                    {
+                        c1x = x1 + dx * 0.5;
+                        c1y = y1;
+                        c2x = x2 - dx * 0.5;
+                        c2y = y2;
+                    }
+                    else
+                    {
+                        c1x = x1;
+                        c1y = y1 + dy * 0.5;
+                        c2x = x2;
+                        c2y = y2 - dy * 0.5;
+                    }
+                    sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
                 }
                 else
                 {
-                    c1x = x1;
-                    c1y = y1 + dy * 0.5;
-                    c2x = x2;
-                    c2y = y2 - dy * 0.5;
+                    double cx, cy;
+                    if (dx > dy)
+                    {
+                        cx = x1 + (x2 - x1) * 0.5;
+                        cy = y1;
+                    }
+                    else
+                    {
+                        cx = x1;
+                        cy = y1 + (y2 - y1) * 0.5;
+                    }
+                    sb.Append($" Q {F(cx)} {F(cy)} {F(x2)} {F(y2)}");
                 }
-                sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
             }
             else
             {
@@ -1617,13 +2065,22 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                 {
                     var (cp1, cp2) = cps[i - 1];
                     var curr = pts[i];
-                    sb.Append($" C {F(cp1.X)} {F(cp1.Y)} {F(cp2.X)} {F(cp2.Y)} {F(curr.X)} {F(curr.Y)}");
+                    if (edge.CubicBezier)
+                    {
+                        sb.Append($" C {F(cp1.X)} {F(cp1.Y)} {F(cp2.X)} {F(cp2.Y)} {F(curr.X)} {F(curr.Y)}");
+                    }
+                    else
+                    {
+                        var qcx = (cp1.X + cp2.X) / 2;
+                        var qcy = (cp1.Y + cp2.Y) / 2;
+                        sb.Append($" Q {F(qcx)} {F(qcy)} {F(curr.X)} {F(curr.Y)}");
+                    }
                 }
             }
         }
         else if (edge.Rounded && pts.Length > 2)
         {
-            const double r = 8.0;
+            var r = edge.ArcSize ?? 8.0;
             for (int i = 1; i < pts.Length; i++)
             {
                 var prev = pts[i - 1];
@@ -1660,6 +2117,188 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             for (int i = 1; i < pts.Length; i++)
                 sb.Append($" L {F(pts[i].X)} {F(pts[i].Y)}");
         }
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Computes a filled polygon path for block-arrow, double-arrow and flex-arrow edge shapes.
+    /// </summary>
+    private string ComputeBlockArrowPolygon(DiagramEdge edge)
+    {
+        var pts = DiagramGeometryHelper.GetEdgePoints(Document, edge);
+        if (pts.Length < 2) return string.Empty;
+
+        double shaftWidth = edge.Style.StrokeWidth ?? 8;
+        double arrowSize = edge.EndArrowSize ?? 10;
+
+        return edge.Shape switch
+        {
+            "flexArrow" => ComputeTaperedPolygon(pts, shaftWidth, 0),
+            "blockArrow" => ComputeConstantWidthPolygon(pts, shaftWidth, arrowSize, false, true),
+            "doubleArrow" => ComputeConstantWidthPolygon(pts, shaftWidth, arrowSize, true, true),
+            _ => string.Empty
+        };
+    }
+
+    /// <summary>
+    /// Builds a closed polygon path with constant shaft width and optional triangular arrowheads.
+    /// </summary>
+    private static string ComputeConstantWidthPolygon((double X, double Y)[] pts, double shaftWidth, double arrowSize, bool startArrow, bool endArrow)
+    {
+        if (pts.Length < 2) return string.Empty;
+
+        var left = new List<(double X, double Y)>();
+        var right = new List<(double X, double Y)>();
+
+        for (int i = 0; i < pts.Length; i++)
+        {
+            (double X, double Y) before = i > 0 ? pts[i - 1] : (pts[0].X * 2 - pts[1].X, pts[0].Y * 2 - pts[1].Y);
+            (double X, double Y) after = i < pts.Length - 1 ? pts[i + 1] : (pts[^1].X * 2 - pts[^2].X, pts[^1].Y * 2 - pts[^2].Y);
+
+            double dx = after.X - before.X;
+            double dy = after.Y - before.Y;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001)
+            {
+                left.Add(pts[i]);
+                right.Add(pts[i]);
+                continue;
+            }
+
+            double nx = dy / len * (shaftWidth / 2);
+            double ny = -dx / len * (shaftWidth / 2);
+
+            left.Add((pts[i].X + nx, pts[i].Y + ny));
+            right.Add((pts[i].X - nx, pts[i].Y - ny));
+        }
+
+        var poly = new List<(double X, double Y)>();
+
+        // Start arrowhead or rectangular end
+        if (startArrow && pts.Length >= 2)
+        {
+            double dx = pts[1].X - pts[0].X;
+            double dy = pts[1].Y - pts[0].Y;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len > 0.001)
+            {
+                double dirX = dx / len;
+                double dirY = dy / len;
+                double perpX = -dirY;
+                double perpY = dirX;
+                double baseCX = pts[0].X + dirX * arrowSize;
+                double baseCY = pts[0].Y + dirY * arrowSize;
+                double baseLX = baseCX + perpX * (shaftWidth / 2);
+                double baseLY = baseCY + perpY * (shaftWidth / 2);
+                double baseRX = baseCX - perpX * (shaftWidth / 2);
+                double baseRY = baseCY - perpY * (shaftWidth / 2);
+                poly.Add((pts[0].X, pts[0].Y));
+                poly.Add((baseRX, baseRY));
+            }
+            else
+            {
+                poly.Add(left[0]);
+            }
+        }
+        else
+        {
+            poly.Add(left[0]);
+        }
+
+        // Left side forward
+        int startIdx = startArrow ? 1 : 0;
+        for (int i = startIdx; i < left.Count; i++)
+            poly.Add(left[i]);
+
+        // End arrowhead or rectangular end
+        if (endArrow && pts.Length >= 2)
+        {
+            double dx = pts[^1].X - pts[^2].X;
+            double dy = pts[^1].Y - pts[^2].Y;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len > 0.001)
+            {
+                double dirX = dx / len;
+                double dirY = dy / len;
+                double perpX = -dirY;
+                double perpY = dirX;
+                double baseCX = pts[^1].X - dirX * arrowSize;
+                double baseCY = pts[^1].Y - dirY * arrowSize;
+                double baseLX = baseCX + perpX * (shaftWidth / 2);
+                double baseLY = baseCY + perpY * (shaftWidth / 2);
+                double baseRX = baseCX - perpX * (shaftWidth / 2);
+                double baseRY = baseCY - perpY * (shaftWidth / 2);
+                poly.Add((baseLX, baseLY));
+                poly.Add((pts[^1].X, pts[^1].Y));
+                poly.Add((baseRX, baseRY));
+            }
+            else
+            {
+                poly.Add(right[^1]);
+            }
+        }
+        else
+        {
+            poly.Add(right[^1]);
+        }
+
+        // Right side backward
+        int endIdx = endArrow ? right.Count - 2 : right.Count - 1;
+        for (int i = endIdx; i >= 0; i--)
+            poly.Add(right[i]);
+
+        if (poly.Count == 0) return string.Empty;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"M {F(poly[0].X)} {F(poly[0].Y)}");
+        for (int i = 1; i < poly.Count; i++)
+            sb.Append($" L {F(poly[i].X)} {F(poly[i].Y)}");
+        sb.Append(" Z");
+        return sb.ToString();
+    }
+
+    /// <summary>
+    /// Builds a closed polygon path that linearly tapers from <paramref name="startWidth"/> to <paramref name="endWidth"/>.
+    /// </summary>
+    private static string ComputeTaperedPolygon((double X, double Y)[] pts, double startWidth, double endWidth)
+    {
+        if (pts.Length < 2) return string.Empty;
+
+        var left = new List<(double X, double Y)>();
+        var right = new List<(double X, double Y)>();
+
+        for (int i = 0; i < pts.Length; i++)
+        {
+            double t = pts.Length > 1 ? (double)i / (pts.Length - 1) : 0;
+            double width = startWidth * (1 - t) + endWidth * t;
+
+            (double X, double Y) before = i > 0 ? pts[i - 1] : (pts[0].X * 2 - pts[1].X, pts[0].Y * 2 - pts[1].Y);
+            (double X, double Y) after = i < pts.Length - 1 ? pts[i + 1] : (pts[^1].X * 2 - pts[^2].X, pts[^1].Y * 2 - pts[^2].Y);
+
+            double dx = after.X - before.X;
+            double dy = after.Y - before.Y;
+            double len = Math.Sqrt(dx * dx + dy * dy);
+            if (len < 0.001)
+            {
+                left.Add(pts[i]);
+                right.Add(pts[i]);
+                continue;
+            }
+
+            double nx = dy / len * (width / 2);
+            double ny = -dx / len * (width / 2);
+
+            left.Add((pts[i].X + nx, pts[i].Y + ny));
+            right.Add((pts[i].X - nx, pts[i].Y - ny));
+        }
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"M {F(left[0].X)} {F(left[0].Y)}");
+        for (int i = 1; i < left.Count; i++)
+            sb.Append($" L {F(left[i].X)} {F(left[i].Y)}");
+        for (int i = right.Count - 1; i >= 0; i--)
+            sb.Append($" L {F(right[i].X)} {F(right[i].Y)}");
+        sb.Append(" Z");
         return sb.ToString();
     }
 
@@ -1821,6 +2460,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private static double GetEdgeStrokeWidth(DiagramEdge edge) => edge.Shape switch
     {
         "filledEdge" => edge.Style.StrokeWidth ?? 8,
+        "blockArrow" or "doubleArrow" or "flexArrow" => edge.Style.StrokeWidth ?? 8,
         "pipe" => edge.Style.StrokeWidth ?? 10,
         "wire" => edge.Style.StrokeWidth ?? 2,
         _ => edge.Style.StrokeWidth ?? 1.5,

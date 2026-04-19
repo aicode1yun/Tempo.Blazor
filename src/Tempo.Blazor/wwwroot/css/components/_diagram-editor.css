@@ -467,6 +467,18 @@
     cursor: move;
 }
 
+.tm-diagram-node--drop-target {
+    outline: 2px solid var(--tm-color-primary, #3b82f6);
+    outline-offset: 2px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
+.tm-diagram-node--outline-connect {
+    outline: 2px dashed var(--tm-color-success, #10b981);
+    outline-offset: 3px;
+    border-radius: var(--tm-radius-sm, 4px);
+}
+
 .tm-diagram-node__shape {
     width: 100%;
     height: 100%;
@@ -828,10 +840,44 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     transform: translate(-50%, -50%) scale(1.5);
 }
 
+/* ── Connection points (draw.io style fixed constraint points) ────────────── */
+.tm-diagram-connection-point {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    background: var(--tm-color-surface, #ffffff);
+    border: 1.5px solid var(--tm-color-primary, #3b82f6);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    cursor: crosshair;
+    z-index: 11;
+    opacity: 0;
+    transition: transform 120ms, background 120ms, opacity 120ms;
+    pointer-events: auto;
+}
+
+/* Visible on node hover, selected node, or during edge drawing */
+.tm-diagram-node:hover .tm-diagram-connection-point,
+.tm-diagram-node--selected .tm-diagram-connection-point,
+.tm-diagram-canvas--edge-drawing .tm-diagram-connection-point {
+    opacity: 1;
+}
+
+.tm-diagram-connection-point:hover {
+    background: var(--tm-color-primary, #3b82f6);
+    transform: translate(-50%, -50%) scale(1.3);
+}
+
+.tm-diagram-connection-point--active {
+    background: var(--tm-color-primary, #3b82f6);
+    transform: translate(-50%, -50%) scale(1.4);
+    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+}
+
 /* ── Edge path ────────────────────────────────────────────────────────────── */
 .tm-diagram-edge-path {
     fill: none;
-    pointer-events: stroke;
+    pointer-events: none;
 }
 
 .tm-diagram-edge-hit-path {
@@ -846,6 +892,23 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     stroke: var(--tm-color-primary, #3b82f6);
 }
 
+.tm-diagram-edge-path--selected-outline {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 4px;
+    stroke-dasharray: 4, 4;
+    stroke-linecap: round;
+    opacity: 0.5;
+    pointer-events: none;
+}
+
+.tm-diagram-edge-cardinality {
+    font-size: 12px;
+    font-family: var(--tm-font-sans, sans-serif);
+    fill: var(--tm-color-text, #111827);
+    pointer-events: none;
+    user-select: none;
+}
+
 .tm-diagram-edge-handle {
     fill: var(--tm-color-primary, #3b82f6);
     stroke: #ffffff;
@@ -858,6 +921,43 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: all;
     cursor: move;
     fill: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-diagram-edge-handle--dangling {
+    pointer-events: all;
+    cursor: move;
+    fill: var(--tm-color-primary, #3b82f6);
+    stroke: #ffffff;
+    stroke-width: 2;
+}
+
+.tm-diagram-edge--target .tm-diagram-edge-path {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 3;
+    filter: drop-shadow(0 0 4px var(--tm-color-primary, #3b82f6));
+}
+
+.tm-diagram-edge-virtual-bend {
+    pointer-events: all;
+    cursor: crosshair;
+    fill: var(--tm-color-primary, #3b82f6);
+    opacity: 0.2;
+    transition: opacity 0.15s ease;
+}
+
+.tm-diagram-edge-virtual-bend:hover {
+    opacity: 0.8;
+}
+
+.tm-diagram-edge-segment-handle {
+    pointer-events: all;
+    fill: var(--tm-color-primary, #3b82f6);
+    opacity: 0.25;
+    transition: opacity 0.15s ease;
+}
+
+.tm-diagram-edge-segment-handle:hover {
+    opacity: 0.9;
 }
 
 .tm-diagram-hover-connect {

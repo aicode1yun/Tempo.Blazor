@@ -38,6 +38,17 @@ public static class DiagramGeometryHelper
         return (node.X + x, node.Y + y);
     }
 
+    public static PortSide InferSideFromConstraint(double cx, double cy)
+    {
+        // Heuristic: determine closest side from relative constraint (0-1)
+        if (cx <= 0.25) return PortSide.Left;
+        if (cx >= 0.75) return PortSide.Right;
+        if (cy <= 0.25) return PortSide.Top;
+        if (cy >= 0.75) return PortSide.Bottom;
+        // Default to Right when constraint is near center
+        return PortSide.Right;
+    }
+
     public static (double X, double Y)[] GetEdgePoints(DiagramDocument doc, DiagramEdge edge)
     {
         if (doc is null) return [];
@@ -52,17 +63,45 @@ public static class DiagramGeometryHelper
             p1 = ComputeEdgePointAtT(doc, srcEdge, edge.SourceEdgeT ?? 0.5);
             sSide = PortSide.Right;
         }
-        else
+        else if (!string.IsNullOrEmpty(edge.SourceNodeId))
         {
             var srcNode = doc.Nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
             if (srcNode is null) return [];
-            var srcPort = edge.SourcePortId is not null
-                ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
-                : srcNode.Ports.FirstOrDefault();
-            var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
-            p1 = ComputePortPosition(srcNode, sPort);
-            sSide = sPort.Side;
+
+            if (edge.SourceConstraint is not null)
+            {
+                var c = edge.SourceConstraint;
+                if (c.Perimeter)
+                {
+                    var (px, py) = ProjectToPerimeter(srcNode.W, srcNode.H, c.RelativeX, c.RelativeY, srcNode.BackgroundShape);
+                    p1 = (srcNode.X + px + c.Dx, srcNode.Y + py + c.Dy);
+                }
+                else
+                {
+                    p1 = (srcNode.X + srcNode.W * c.RelativeX + c.Dx, srcNode.Y + srcNode.H * c.RelativeY + c.Dy);
+                }
+                sSide = InferSideFromConstraint(c.RelativeX, c.RelativeY);
+            }
+            else
+            {
+                var srcPort = edge.SourcePortId is not null
+                    ? srcNode.Ports.FirstOrDefault(p => p.Id == edge.SourcePortId)
+                    : srcNode.Ports.FirstOrDefault();
+                var sPort = srcPort ?? new DiagramPort { Side = PortSide.Right, Offset = 0.5 };
+                p1 = ComputePortPosition(srcNode, sPort);
+                sSide = sPort.Side;
+            }
             p1 = ApplyPortSpacing(p1, sSide, edge.SourceSpacing ?? 0);
+        }
+        else if (edge.SourcePoint is not null)
+        {
+            // Dangling source end (absolute point in document coordinates)
+            p1 = (edge.SourcePoint.X, edge.SourcePoint.Y);
+            sSide = PortSide.Right; // default direction; spacing ignored for dangling ends
+        }
+        else
+        {
+            return [];
         }
 
         (double X, double Y) p2;
@@ -75,17 +114,45 @@ public static class DiagramGeometryHelper
             p2 = ComputeEdgePointAtT(doc, tgtEdge, edge.TargetEdgeT ?? 0.5);
             tSide = PortSide.Left;
         }
-        else
+        else if (!string.IsNullOrEmpty(edge.TargetNodeId))
         {
             var tgtNode = doc.Nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
             if (tgtNode is null) return [];
-            var tgtPort = edge.TargetPortId is not null
-                ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
-                : tgtNode.Ports.FirstOrDefault();
-            var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
-            p2 = ComputePortPosition(tgtNode, tPort);
-            tSide = tPort.Side;
+
+            if (edge.TargetConstraint is not null)
+            {
+                var c = edge.TargetConstraint;
+                if (c.Perimeter)
+                {
+                    var (px, py) = ProjectToPerimeter(tgtNode.W, tgtNode.H, c.RelativeX, c.RelativeY, tgtNode.BackgroundShape);
+                    p2 = (tgtNode.X + px + c.Dx, tgtNode.Y + py + c.Dy);
+                }
+                else
+                {
+                    p2 = (tgtNode.X + tgtNode.W * c.RelativeX + c.Dx, tgtNode.Y + tgtNode.H * c.RelativeY + c.Dy);
+                }
+                tSide = InferSideFromConstraint(c.RelativeX, c.RelativeY);
+            }
+            else
+            {
+                var tgtPort = edge.TargetPortId is not null
+                    ? tgtNode.Ports.FirstOrDefault(p => p.Id == edge.TargetPortId)
+                    : tgtNode.Ports.FirstOrDefault();
+                var tPort = tgtPort ?? new DiagramPort { Side = PortSide.Left, Offset = 0.5 };
+                p2 = ComputePortPosition(tgtNode, tPort);
+                tSide = tPort.Side;
+            }
             p2 = ApplyPortSpacing(p2, tSide, edge.TargetSpacing ?? 0);
+        }
+        else if (edge.TargetPoint is not null)
+        {
+            // Dangling target end (absolute point in document coordinates)
+            p2 = (edge.TargetPoint.X, edge.TargetPoint.Y);
+            tSide = PortSide.Left; // default direction; spacing ignored for dangling ends
+        }
+        else
+        {
+            return [];
         }
 
         var pts = new List<(double X, double Y)> { p1 };
@@ -185,6 +252,92 @@ public static class DiagramGeometryHelper
         }
 
         return bestT;
+    }
+
+    /// <summary>Determines whether three points are collinear within the given tolerance (in pixels).</summary>
+    public static bool IsCollinear((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, double tolerance = 2.0)
+    {
+        var dx1 = b.X - a.X;
+        var dy1 = b.Y - a.Y;
+        var dx2 = c.X - b.X;
+        var dy2 = c.Y - b.Y;
+
+        if (Math.Abs(dx1) < 0.001 && Math.Abs(dx2) < 0.001) return true; // vertical
+        if (Math.Abs(dy1) < 0.001 && Math.Abs(dy2) < 0.001) return true; // horizontal
+
+        var cross = dx1 * dy2 - dy1 * dx2;
+        if (Math.Abs(cross) < 0.001) return true; // same slope
+
+        var area = Math.Abs(dx1 * (c.Y - a.Y) - dy1 * (c.X - a.X));
+        var baseLen = Math.Sqrt(dx1 * dx1 + dy1 * dy1);
+        var dist = baseLen > 0.001 ? area / baseLen : 0;
+        return dist <= tolerance;
+    }
+
+    /// <summary>Projects a relative constraint point onto the perimeter of a node shape.</summary>
+    public static (double X, double Y) ProjectToPerimeter(double w, double h, double rx, double ry, string? shapeType)
+    {
+        var cx = w * rx;
+        var cy = h * ry;
+        var halfW = w / 2.0;
+        var halfH = h / 2.0;
+
+        switch (shapeType?.ToLowerInvariant())
+        {
+            case "ellipse":
+            case "double-ellipse":
+            case "half-ellipse":
+                {
+                    // Ray from center to point, intersect with ellipse
+                    var dx = cx - halfW;
+                    var dy = cy - halfH;
+                    if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                        return (halfW, 0); // center -> top
+                    var angle = Math.Atan2(dy / halfH, dx / halfW);
+                    return (halfW + halfW * Math.Cos(angle), halfH + halfH * Math.Sin(angle));
+                }
+
+            case "diamond":
+                {
+                    // Ray from center to point, intersect with diamond edges
+                    var dx = cx - halfW;
+                    var dy = cy - halfH;
+                    if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                        return (halfW, 0);
+                    var absDx = Math.Abs(dx);
+                    var absDy = Math.Abs(dy);
+                    var scale = absDx / halfW + absDy / halfH;
+                    if (scale < 0.001) return (halfW, 0);
+                    return (halfW + dx / scale, halfH + dy / scale);
+                }
+
+            case "rectangle":
+            case "rounded":
+            case "sticky-note":
+            case "note":
+            case "document":
+            case "package":
+            case "component":
+            case "cube":
+            case "cylinder":
+            case "swimlane-horizontal":
+            case "swimlane-vertical":
+            case "table":
+            case "pool":
+            case "weak-entity":
+            default:
+                {
+                    // Ray from center to point, intersect with rectangle boundary
+                    var dx = cx - halfW;
+                    var dy = cy - halfH;
+                    if (Math.Abs(dx) < 0.001 && Math.Abs(dy) < 0.001)
+                        return (halfW, 0);
+                    var tx = Math.Abs(halfW / dx);
+                    var ty = Math.Abs(halfH / dy);
+                    var t = Math.Min(tx, ty);
+                    return (halfW + dx * t, halfH + dy * t);
+                }
+        }
     }
 
     public static (double X, double Y) ApplyPortSpacing((double X, double Y) point, PortSide side, double spacing)

@@ -24,6 +24,7 @@ public sealed class DeleteEdgeWaypointCommand : IDiagramCommand
     {
         var edge = _doc.Edges.FirstOrDefault(e => e.Id == _edgeId);
         if (edge is null) return;
+        edge.IsManuallyRouted = true;
         if (_index >= 0 && _index < edge.Waypoints.Count)
             edge.Waypoints.RemoveAt(_index);
     }

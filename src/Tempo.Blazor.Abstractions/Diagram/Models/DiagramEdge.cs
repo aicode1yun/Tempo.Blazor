@@ -6,11 +6,11 @@ public sealed class DiagramEdge
     /// <summary>Unique identifier (short Guid, e.g. "a3f8c21b").</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString("N")[..8];
 
-    /// <summary>Source node identifier.</summary>
-    public string SourceNodeId { get; set; } = string.Empty;
+    /// <summary>Source node identifier. Null when the edge has a free-floating source.</summary>
+    public string? SourceNodeId { get; set; }
 
-    /// <summary>Target node identifier.</summary>
-    public string TargetNodeId { get; set; } = string.Empty;
+    /// <summary>Target node identifier. Null when the edge has a free-floating target.</summary>
+    public string? TargetNodeId { get; set; }
 
     /// <summary>Optional source port identifier.</summary>
     public string? SourcePortId { get; set; }
@@ -24,8 +24,14 @@ public sealed class DiagramEdge
     /// <summary>Optional target edge identifier (for edge-to-edge connections).</summary>
     public string? TargetEdgeId { get; set; }
 
-    /// <summary>Edge routing type. Supported: "straight", "orthogonal", "curved".</summary>
+    /// <summary>Edge routing type. Supported: "straight", "orthogonal", "elbow", "segment", "curved".</summary>
     public string Routing { get; set; } = "straight";
+
+    /// <summary>Elbow orientation. "auto" (default), "horizontal" (horizontal-first L-shape), or "vertical" (vertical-first L-shape).</summary>
+    public string ElbowOrientation { get; set; } = "auto";
+
+    /// <summary>Whether this edge uses manually placed waypoints and should not be auto-routed.</summary>
+    public bool IsManuallyRouted { get; set; }
 
     /// <summary>Connector semantic type. (e.g. "association", "inheritance", "dependency", "composition", "aggregation").</summary>
     public string ConnectorType { get; set; } = "association";
@@ -60,6 +66,12 @@ public sealed class DiagramEdge
     /// <summary>Whether to use rounded corners on the edge path.</summary>
     public bool Rounded { get; set; }
 
+    /// <summary>Whether curved routing uses cubic Bézier (C command) instead of quadratic (Q command).</summary>
+    public bool CubicBezier { get; set; }
+
+    /// <summary>Corner radius in pixels for rounded edges. Null = use default (8px).</summary>
+    public double? ArcSize { get; set; }
+
     /// <summary>Line jump style when edges cross. Supported: arc, gap, sharp, line.</summary>
     public string? JumpStyle { get; set; }
 
@@ -72,6 +84,18 @@ public sealed class DiagramEdge
     /// <summary>Spacing between target node boundary and edge end.</summary>
     public double? TargetSpacing { get; set; }
 
+    /// <summary>Absolute position of the free-floating source point. Used when <see cref="SourceNodeId"/> is null.</summary>
+    public DiagramPoint? SourcePoint { get; set; }
+
+    /// <summary>Absolute position of the free-floating target point. Used when <see cref="TargetNodeId"/> is null.</summary>
+    public DiagramPoint? TargetPoint { get; set; }
+
+    /// <summary>Source connection constraint. When set, overrides port-based connection.</summary>
+    public DiagramConnectionConstraint? SourceConstraint { get; set; }
+
+    /// <summary>Target connection constraint. When set, overrides port-based connection.</summary>
+    public DiagramConnectionConstraint? TargetConstraint { get; set; }
+
     /// <summary>Parameter t (0-1) along the source edge for edge-to-edge connections.</summary>
     public double? SourceEdgeT { get; set; }
 
@@ -80,6 +104,12 @@ public sealed class DiagramEdge
 
     /// <summary>Label position along the edge path as parameter t (0-1). Default 0.5.</summary>
     public double LabelPositionT { get; set; } = 0.5;
+
+    /// <summary>Horizontal offset of the label from the point on the edge path (px).</summary>
+    public double LabelOffsetX { get; set; }
+
+    /// <summary>Vertical offset of the label from the point on the edge path (px).</summary>
+    public double LabelOffsetY { get; set; }
 
     /// <summary>Source cardinality for ER diagrams.</summary>
     public string? SourceCardinality { get; set; }
@@ -101,4 +131,12 @@ public sealed class DiagramEdge
 
     /// <summary>Optional hyperlink target (external URL or page:// link).</summary>
     public string? Link { get; set; }
+
+    /// <summary>Validates that at least one end of the edge is connected (to a node or edge) or has an absolute point.</summary>
+    public bool IsValid()
+    {
+        bool hasSourceConnection = !string.IsNullOrEmpty(SourceNodeId) || !string.IsNullOrEmpty(SourceEdgeId) || SourcePoint is not null;
+        bool hasTargetConnection = !string.IsNullOrEmpty(TargetNodeId) || !string.IsNullOrEmpty(TargetEdgeId) || TargetPoint is not null;
+        return hasSourceConnection && hasTargetConnection;
+    }
 }
