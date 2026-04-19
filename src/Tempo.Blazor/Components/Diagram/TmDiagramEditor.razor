@@ -558,10 +558,20 @@
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuEditEdgeLabel">@Loc["TmDiagramEditor_EditLabel"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
                             <span class="tm-diagram-editor__context-heading">@Loc["TmDiagramEditor_Connector"]</span>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeConnector("straight")'>@Loc["TmDiagramEditor_Straight"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeConnector("orthogonal")'>@Loc["TmDiagramEditor_Orthogonal"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeConnector("elbow")'>@Loc["TmDiagramEditor_Elbow"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeConnector("curved")'>@Loc["TmDiagramEditor_Curved"]</button>
+                            <div class="tm-diagram-edge-routing-picker">
+                                @{
+                                    var ctxEdge = _document?.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+                                }
+                                @foreach (var routing in new[] { "straight", "orthogonal", "elbow", "segment", "curved" })
+                                {
+                                    <TmDiagramRoutingPreview Routing="@routing"
+                                                             IsSelected="@(ctxEdge?.Routing == routing)"
+                                                             OnClick="() => ContextMenuChangeEdgeConnector(routing)" />
+                                }
+                            </div>
+                            <div class="tm-diagram-editor__context-sep" role="separator"></div>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuFlipEdge">@Loc["TmDiagramEditor_FlipEdge"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuClearWaypoints">@Loc["TmDiagramEditor_ClearWaypoints"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
                             <span class="tm-diagram-editor__context-heading">@Loc["TmDiagramEditor_StartArrow"]</span>
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeArrowheadStart("none")'>@Loc["TmDiagramEditor_ArrowNone"]</button>

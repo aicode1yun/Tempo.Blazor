@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.Diagram
+
+<button class="tm-diagram-routing-preview @(_isSelected ? "tm-diagram-routing-preview--selected" : "")"
+        data-routing="@Routing"
+        @onclick="OnClick"
+        title="@Routing"
+        type="button">
+    <svg width="32" height="20" viewBox="0 0 32 20">
+        @switch (Routing)
+        {
+            case "straight":
+                <path d="M 2 10 L 30 10" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+            case "orthogonal":
+                <path d="M 2 10 L 16 10 L 16 10 L 30 10" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+            case "elbow":
+                <path d="M 2 18 L 16 18 L 16 2 L 30 2" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+            case "segment":
+                <path d="M 2 10 L 10 10 L 16 2 L 24 2 L 30 10" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+            case "curved":
+                <path d="M 2 10 Q 16 2 30 10" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+            default:
+                <path d="M 2 10 L 30 10" fill="none" stroke="currentColor" stroke-width="2" />
+                break;
+        }
+    </svg>
+</button>
+
+@code {
+    [Parameter] public string Routing { get; set; } = "straight";
+    [Parameter] public bool IsSelected { get; set; }
+    [Parameter] public EventCallback OnClick { get; set; }
+
+    private bool _isSelected => IsSelected;
+}

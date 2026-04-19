@@ -1495,6 +1495,90 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     }
 
     [JSInvokable]
+    public async Task OnWholeEdgeDragged(string edgeId, double dx, double dy)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        if (CommandStack is not null)
+            CommandStack.Push(new DragWholeEdgeCommand(Document, edgeId, dx, dy));
+        else
+        {
+            // Direct execution when no command stack is available
+            var cmd = new DragWholeEdgeCommand(Document, edgeId, dx, dy);
+            cmd.Execute();
+        }
+
+        await NotifyAndRender();
+    }
+
+    public async Task OnEdgeToolbarAction(string edgeId, string action)
+    {
+        if (ReadOnly || Document is null) return;
+        var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
+        if (edge is null) return;
+
+        switch (action)
+        {
+            case "flip":
+                if (edge.Routing == "elbow" && edge.Waypoints.Count > 0)
+                {
+                    var oldOrientation = edge.ElbowOrientation;
+                    var newOrientation = oldOrientation == "horizontal" ? "vertical" : "horizontal";
+                    edge.ElbowOrientation = newOrientation;
+                    var newWaypoints = await ComputeOrthogonalWaypointsAsync(edge);
+                    edge.ElbowOrientation = oldOrientation;
+                    if (CommandStack is not null)
+                        CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+                    else
+                    {
+                        edge.ElbowOrientation = newOrientation;
+                        edge.Waypoints.Clear();
+                        foreach (var wp in newWaypoints)
+                            edge.Waypoints.Add(wp);
+                    }
+                }
+                break;
+
+            case "clearWaypoints":
+                if (CommandStack is not null)
+                    CommandStack.Push(new ResetEdgeRoutingCommand(Document, edgeId));
+                else
+                {
+                    edge.IsManuallyRouted = false;
+                    edge.Waypoints.Clear();
+                }
+                break;
+
+            case "straight":
+            case "orthogonal":
+            case "elbow":
+            case "segment":
+            case "curved":
+                {
+                    var oldRouting = edge.Routing;
+                    edge.Routing = action;
+                    List<DiagramPoint> oldWaypoints = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+                    if (action is "orthogonal" or "elbow" or "segment")
+                    {
+                        edge.Waypoints = await ComputeOrthogonalWaypointsAsync(edge);
+                    }
+                    else
+                    {
+                        edge.Waypoints.Clear();
+                    }
+                    var newWaypoints = edge.Waypoints.Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+                    if (CommandStack is not null)
+                        CommandStack.Push(new UpdateEdgeRoutingCommand(Document, edgeId, oldRouting, action, oldWaypoints, newWaypoints));
+                }
+                break;
+        }
+
+        await NotifyAndRender();
+    }
+
+    [JSInvokable]
     public async Task OnEdgeWaypointMoved(string edgeId, int waypointIndex, double x, double y)
     {
         if (ReadOnly || Document is null) return;

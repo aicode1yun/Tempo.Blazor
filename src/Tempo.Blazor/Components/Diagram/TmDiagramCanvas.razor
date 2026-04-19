@@ -309,14 +309,16 @@
                                         data-edge-id="@edge.Id" data-jetty="target" data-jetty-side="@tPort.Side.ToString().ToLowerInvariant()" data-node-id="@edge.TargetNodeId" />
                             }
                         }
-                        @* Dangling terminal handles (visible for all routing types when end is not attached to a node or edge) *@
-                        @if (string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId) && edge.SourcePoint is not null)
+                        @* Dangling terminal handles: visible when end is dangling, OR when edge is selected and end is connected to a node (allows connected terminal drag) *@
+                        @if ((string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId) && edge.SourcePoint is not null) ||
+                             (_currentSelectionIds.Contains(edge.Id) && !string.IsNullOrEmpty(edge.SourceNodeId) && string.IsNullOrEmpty(edge.SourceEdgeId)))
                         {
                             <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
                                   x="@F(pts[0].X - 4)" y="@F(pts[0].Y - 4)" width="8" height="8"
                                   data-edge-id="@edge.Id" data-dangling="source" />
                         }
-                        @if (string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId) && edge.TargetPoint is not null)
+                        @if ((string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId) && edge.TargetPoint is not null) ||
+                             (_currentSelectionIds.Contains(edge.Id) && !string.IsNullOrEmpty(edge.TargetNodeId) && string.IsNullOrEmpty(edge.TargetEdgeId)))
                         {
                             <rect class="tm-diagram-edge-handle tm-diagram-edge-handle--dangling"
                                   x="@F(pts[^1].X - 4)" y="@F(pts[^1].Y - 4)" width="8" height="8"
@@ -325,6 +327,27 @@
                     }
                 </g>
             }
+        }
+
+        @* Inline toolbar for selected edge *@
+        @{
+            var _toolbarEdge = Document?.Edges.FirstOrDefault(e => _currentSelectionIds.Contains(e.Id));
+        }
+        @if (_toolbarEdge is not null && _currentSelectionIds.Length == 1 && Document is not null)
+        {
+            var _toolbarPts = DiagramGeometryHelper.GetEdgePoints(Document, _toolbarEdge);
+            var _toolbarMidX = (_toolbarPts[0].X + _toolbarPts[^1].X) / 2;
+            var _toolbarMidY = (_toolbarPts[0].Y + _toolbarPts[^1].Y) / 2;
+            <foreignObject x="@F(_toolbarMidX - 75)" y="@F(_toolbarMidY - 48)" width="150" height="36">
+                <div class="tm-diagram-edge-toolbar" xmlns="http://www.w3.org/1999/xhtml">
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "flip")' data-action="flip" title="Flip">↔</button>
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "clearWaypoints")' data-action="clearWaypoints" title="Clear waypoints">⬡</button>
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "straight")' data-action="straight" title="Straight">─</button>
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "orthogonal")' data-action="orthogonal" title="Orthogonal">┐</button>
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "elbow")' data-action="elbow" title="Elbow">└</button>
+                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "curved")' data-action="curved" title="Curved">~</button>
+                </div>
+            </foreignObject>
         }
 
     </svg>

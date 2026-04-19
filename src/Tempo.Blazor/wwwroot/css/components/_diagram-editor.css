@@ -937,6 +937,73 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     filter: drop-shadow(0 0 4px var(--tm-color-primary, #3b82f6));
 }
 
+.tm-diagram-edge-toolbar {
+    display: flex;
+    gap: 2px;
+    background: var(--tm-surface-elevated, #ffffff);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: 6px;
+    padding: 3px;
+    box-shadow: var(--tm-shadow-md, 0 4px 6px -1px rgba(0,0,0,0.1));
+    pointer-events: all;
+}
+
+.tm-diagram-edge-toolbar button {
+    width: 22px;
+    height: 22px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-primary, #374151);
+    font-size: 12px;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s ease;
+}
+
+.tm-diagram-edge-toolbar button:hover {
+    background: var(--tm-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-edge-toolbar button:active {
+    background: var(--tm-surface-active, #e5e7eb);
+}
+
+.tm-diagram-edge-routing-picker {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+    padding: 8px;
+}
+
+.tm-diagram-routing-preview {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 28px;
+    padding: 2px;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    background: transparent;
+    color: var(--tm-text-primary, #374151);
+    transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.tm-diagram-routing-preview:hover {
+    background: var(--tm-surface-hover, #f3f4f6);
+}
+
+.tm-diagram-routing-preview--selected {
+    border-color: var(--tm-color-primary, #3b82f6);
+    background: var(--tm-color-primary-subtle, #eff6ff);
+}
+
 .tm-diagram-edge-virtual-bend {
     pointer-events: all;
     cursor: crosshair;

@@ -121,6 +121,12 @@ window.tmDiagramEditor = {
             dragJettyNodeId: null,
             dragJettyStartDoc: null,
 
+            // whole-edge drag
+            isDraggingWholeEdge: false,
+            dragWholeEdgeId: null,
+            dragWholeEdgeStartDoc: null,
+            dragWholeEdgeDeltaDoc: { x: 0, y: 0 },
+
             // pinch zoom
             pinchStartDist: 0,
             pinchStartScale: 1,
@@ -660,6 +666,30 @@ window.tmDiagramEditor = {
             return;
         }
 
+        // Left-click on edge hit-path? -> start whole-edge drag
+        if (!isRightClick && !inst.readOnly) {
+            const edgeHitEl = e.target.closest('.tm-diagram-edge-hit-path');
+            if (edgeHitEl) {
+                const edgeId = edgeHitEl.getAttribute('data-edge-id');
+                if (edgeId) {
+                    if (!inst.selectedIds.has(edgeId)) {
+                        inst.selectedIds = new Set([edgeId]);
+                        this._updateSelection(inst);
+                        inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', [...inst.selectedIds]);
+                    }
+                    e.preventDefault();
+                    e.stopPropagation();
+                    inst.isDraggingWholeEdge = true;
+                    inst.dragWholeEdgeId = edgeId;
+                    const pt = this._screenToDoc(inst, e.clientX, e.clientY);
+                    inst.dragWholeEdgeStartDoc = pt;
+                    inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+                    inst.container.style.cursor = 'grabbing';
+                    return;
+                }
+            }
+        }
+
         // Port clicked? -> start edge drawing (skip if node is locked)
         const portEl = e.target.closest('.tm-diagram-port');
         if (portEl && !inst.readOnly) {
@@ -977,6 +1007,26 @@ window.tmDiagramEditor = {
             return;
         }
 
+        if (inst.isDraggingWholeEdge && inst.dragWholeEdgeId) {
+            e.preventDefault();
+            e.stopPropagation();
+            let pt = this._screenToDoc(inst, e.clientX, e.clientY);
+            if (inst.gridSize > 0 && !e.altKey) {
+                pt = {
+                    x: Math.round(pt.x / inst.gridSize) * inst.gridSize,
+                    y: Math.round(pt.y / inst.gridSize) * inst.gridSize
+                };
+            }
+            const dx = pt.x - inst.dragWholeEdgeStartDoc.x;
+            const dy = pt.y - inst.dragWholeEdgeStartDoc.y;
+            inst.dragWholeEdgeDeltaDoc = { x: dx, y: dy };
+            const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + inst.dragWholeEdgeId + '"]');
+            if (group) {
+                group.setAttribute('transform', 'translate(' + dx + ' ' + dy + ')');
+            }
+            return;
+        }
+
         if (inst.isDragging && inst.dragNodeIds.length > 0) {
             e.preventDefault();
             e.stopPropagation();
@@ -1027,7 +1077,7 @@ window.tmDiagramEditor = {
         }
 
         // Ruler cursor (skip during drag/pan/rubber-band to avoid Blazor re-render fighting with JS direct DOM updates)
-        if (inst.dotNetRef && !inst.isDragging && !inst.isPanning && !inst.isRubberBand && !inst.isDrawingEdge && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel) {
+        if (inst.dotNetRef && !inst.isDragging && !inst.isPanning && !inst.isRubberBand && !inst.isDrawingEdge && !inst.isDraggingWaypoint && !inst.isDraggingJetty && !inst.isDraggingEdgeLabel && !inst.isDraggingWholeEdge) {
             const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
             inst.dotNetRef.invokeMethodAsync('OnRulerCursorMoved', docPt.x, docPt.y);
         }
@@ -1240,6 +1290,25 @@ window.tmDiagramEditor = {
             inst.dragEdgeLabelStartT = null;
             inst.dragEdgeLabelStartOx = null;
             inst.dragEdgeLabelStartOy = null;
+            return;
+        }
+
+        if (inst.isDraggingWholeEdge) {
+            const edgeId = inst.dragWholeEdgeId;
+            const dx = inst.dragWholeEdgeDeltaDoc.x;
+            const dy = inst.dragWholeEdgeDeltaDoc.y;
+            const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+            if (group) {
+                group.removeAttribute('transform');
+            }
+            if (edgeId && (dx !== 0 || dy !== 0)) {
+                inst.dotNetRef.invokeMethodAsync('OnWholeEdgeDragged', edgeId, dx, dy);
+            }
+            inst.isDraggingWholeEdge = false;
+            inst.dragWholeEdgeId = null;
+            inst.dragWholeEdgeStartDoc = null;
+            inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+            inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
             return;
         }
 
@@ -1783,7 +1852,7 @@ window.tmDiagramEditor = {
     },
 
     _updateConnectHoverIcons: function (inst, clientX, clientY) {
-        if (inst.isDrawingEdge || inst.isDragging || inst.isDraggingWaypoint || inst.isDraggingJetty || inst.isDraggingEdgeLabel || inst.isPanning || inst.isRubberBand) {
+        if (inst.isDrawingEdge || inst.isDragging || inst.isDraggingWaypoint || inst.isDraggingJetty || inst.isDraggingEdgeLabel || inst.isDraggingWholeEdge || inst.isPanning || inst.isRubberBand) {
             this._hideConnectHoverIcons(inst);
             return;
         }
@@ -1917,6 +1986,19 @@ window.tmDiagramEditor = {
                 inst.dragWaypointStartScreen = null;
                 inst.dragWaypointStartDoc = null;
                 inst.dotNetRef.invokeMethodAsync('OnCancelEdgeEdit');
+                return;
+            }
+            if (inst.isDraggingWholeEdge) {
+                const edgeId = inst.dragWholeEdgeId;
+                const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+                if (group) {
+                    group.removeAttribute('transform');
+                }
+                inst.isDraggingWholeEdge = false;
+                inst.dragWholeEdgeId = null;
+                inst.dragWholeEdgeStartDoc = null;
+                inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+                inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
                 return;
             }
             inst.selectedIds.clear();

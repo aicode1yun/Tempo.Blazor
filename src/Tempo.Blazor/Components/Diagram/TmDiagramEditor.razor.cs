@@ -690,6 +690,24 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await OnDocumentChanged(_document);
     }
 
+    private async Task ContextMenuFlipEdge()
+    {
+        await CloseContextMenu();
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+        if (edge is null) return;
+        await _canvas?.OnEdgeToolbarAction(_contextMenuEdgeId, "flip")!;
+    }
+
+    private async Task ContextMenuClearWaypoints()
+    {
+        await CloseContextMenu();
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+        if (edge is null) return;
+        await _canvas?.OnEdgeToolbarAction(_contextMenuEdgeId, "clearWaypoints")!;
+    }
+
     private async Task ContextMenuChangeEdgeArrowheadStart(string arrowhead)
     {
         await CloseContextMenu();
