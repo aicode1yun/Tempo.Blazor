@@ -29,7 +29,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
 
     private bool _collapsed;
-    private readonly HashSet<string> _expandedSections = new() { "style", "text", "arrange", "page" };
+    private readonly HashSet<string> _expandedSections = new() { "style", "text", "arrange", "page", "edgeStyle" };
 
     private bool IsSingleNode => SelectedNodes.Count == 1 && SelectedEdges.Count == 0;
     private bool IsSingleEdge => SelectedNodes.Count == 0 && SelectedEdges.Count == 1;
@@ -75,6 +75,23 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     }
 
     private bool IsSectionExpanded(string section) => _expandedSections.Contains(section);
+
+    private void SetSectionExpanded(string section, bool expanded)
+    {
+        if (expanded) _expandedSections.Add(section);
+        else _expandedSections.Remove(section);
+    }
+
+    private bool IsNodeLocked(DiagramNode? node) => node?.IsLocked ?? false;
+
+    private void OnStyleCollapsedChanged(bool collapsed) => SetSectionExpanded("style", !collapsed);
+    private void OnReplaceShapeCollapsedChanged(bool collapsed) => SetSectionExpanded("replaceShape", !collapsed);
+    private void OnTextCollapsedChanged(bool collapsed) => SetSectionExpanded("text", !collapsed);
+    private void OnArrangeCollapsedChanged(bool collapsed) => SetSectionExpanded("arrange", !collapsed);
+    private void OnSwimlaneCollapsedChanged(bool collapsed) => SetSectionExpanded("swimlane", !collapsed);
+    private void OnTableCollapsedChanged(bool collapsed) => SetSectionExpanded("table", !collapsed);
+    private void OnEdgeStyleCollapsedChanged(bool collapsed) => SetSectionExpanded("edgeStyle", !collapsed);
+    private void OnPageCollapsedChanged(bool collapsed) => SetSectionExpanded("page", !collapsed);
 
     private static string Capitalize(string s) => string.IsNullOrEmpty(s) ? s : char.ToUpperInvariant(s[0]) + s[1..];
 
@@ -411,6 +428,38 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
         {
             foreach (var node in Document.Nodes.Where(n => n.GroupId == groupId)) node.GroupId = null;
         }
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnToggleLock()
+    {
+        if (Document is null || FirstSelectedNode is null) return;
+        if (FirstSelectedNode.IsLocked)
+        {
+            var ids = SelectedNodes.Where(n => n.IsLocked).Select(n => n.Id).ToArray();
+            if (CommandStack is not null)
+                CommandStack.Push(new UnlockNodesCommand(Document, ids));
+            else
+                foreach (var n in SelectedNodes.Where(n => n.IsLocked)) n.IsLocked = false;
+        }
+        else
+        {
+            var ids = SelectedNodes.Where(n => !n.IsLocked).Select(n => n.Id).ToArray();
+            if (CommandStack is not null)
+                CommandStack.Push(new LockNodesCommand(Document, ids));
+            else
+                foreach (var n in SelectedNodes.Where(n => !n.IsLocked)) n.IsLocked = true;
+        }
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnToggleCollapse()
+    {
+        if (Document is null || FirstSelectedNode is null || !FirstSelectedNode.IsCollapsible) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new ToggleCollapseCommand(Document, FirstSelectedNode.Id));
+        else
+            new ToggleCollapseCommand(Document, FirstSelectedNode.Id).Execute();
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -977,6 +1026,25 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
             CommandStack.Push(new UpdateEdgeZIndexCommand(Document, before, after));
         foreach (var edge in SelectedEdges)
             edge.ZIndex = minZ - 1;
+        await DocumentChanged.InvokeAsync(Document);
+    }
+
+    private async Task OnClearEdgeWaypoints()
+    {
+        if (Document is null || SelectedEdges.Count == 0) return;
+        if (CommandStack is not null)
+        {
+            foreach (var edge in SelectedEdges)
+                CommandStack.Push(new ResetEdgeRoutingCommand(Document, edge.Id));
+        }
+        else
+        {
+            foreach (var edge in SelectedEdges)
+            {
+                edge.IsManuallyRouted = false;
+                edge.Waypoints.Clear();
+            }
+        }
         await DocumentChanged.InvokeAsync(Document);
     }
 

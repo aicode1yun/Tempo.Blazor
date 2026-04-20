@@ -1225,6 +1225,65 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await RerenderCanvas();
     }
 
+    // ── Toolbar: Edit operations ─────────────────────────────────────────────
+
+    private async Task OnCutClicked()
+    {
+        if (_canvas is null || ReadOnly || _selectedIds.Length == 0) return;
+        await _canvas.OnCopy(_selectedIds);
+        await _canvas.OnDeleteSelected(_selectedIds);
+    }
+
+    private async Task OnCopyClicked()
+    {
+        if (_canvas is null || ReadOnly || _selectedIds.Length == 0) return;
+        await _canvas.OnCopy(_selectedIds);
+    }
+
+    private async Task OnPasteClicked()
+    {
+        if (_canvas is null || ReadOnly) return;
+        await _canvas.OnPaste();
+    }
+
+    private async Task OnDuplicateClicked()
+    {
+        if (_canvas is null || ReadOnly || _selectedIds.Length == 0) return;
+        await _canvas.OnDuplicate(_selectedIds);
+    }
+
+    private async Task OnDeleteClicked()
+    {
+        if (_canvas is null || ReadOnly || _selectedIds.Length == 0) return;
+        await _canvas.OnDeleteSelected(_selectedIds);
+    }
+
+    private void OnSearchClicked()
+    {
+        _showSearchPanel = true;
+        _searchQuery = string.Empty;
+        _searchResults = [];
+        _searchCurrentIndex = -1;
+    }
+
+    private void OnToggleGrid()
+    {
+        ShowGrid = !ShowGrid;
+        StateHasChanged();
+    }
+
+    private void OnToggleSnap()
+    {
+        GridSize = GridSize == 0 ? 8 : 0;
+        StateHasChanged();
+    }
+
+    private void OnTogglePageView()
+    {
+        ShowPageView = !ShowPageView;
+        StateHasChanged();
+    }
+
     // ── Toolbar: Format Painter ──────────────────────────────────────────────
 
     private void OnCopyStyle()
@@ -1292,6 +1351,40 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _layoutMenuOpen = false;
         if (_canvas is null) return;
         await _canvas.RunLayoutAsync(algorithm, direction);
+    }
+
+    private async Task HandleLayoutSelect(string value)
+    {
+        switch (value)
+        {
+            case "dagre-tb": await RunLayout("dagre", "TB"); break;
+            case "dagre-lr": await RunLayout("dagre", "LR"); break;
+            case "tree-tb": await RunLayout("tree", "TB"); break;
+            case "tree-lr": await RunLayout("tree", "LR"); break;
+            case "force": await RunLayout("force"); break;
+            case "circle": await RunLayout("circle"); break;
+            case "grid": await RunLayout("grid"); break;
+        }
+    }
+
+    private async Task HandleExportSelect(string value)
+    {
+        switch (value)
+        {
+            case "json": await ExportJson(); break;
+            case "svg": await ExportSvg(); break;
+            case "png": await ExportPng(); break;
+            case "pdf": await ExportPdf(); break;
+        }
+    }
+
+    private void HandleImportSelect(string value)
+    {
+        switch (value)
+        {
+            case "sql": OpenSqlImportDialog(); break;
+            case "csv": OpenCsvImportDialog(); break;
+        }
     }
 
     // ── Toolbar: Export ──────────────────────────────────────────────────────

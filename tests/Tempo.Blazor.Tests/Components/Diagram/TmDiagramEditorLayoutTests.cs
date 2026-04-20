@@ -38,7 +38,7 @@ public class TmDiagramEditorLayoutTests : LocalizationTestBase
         layoutBtn!.Click();
         cut.Render();
 
-        var menuItems = cut.FindAll(".tm-dropdown__item");
+        var menuItems = cut.FindAll(".tm-dropdown-item");
         var texts = menuItems.Select(m => m.TextContent).ToList();
 
         texts.Should().ContainEquivalentOf("[TmDiagram_LayoutHierarchicalTopDown]");

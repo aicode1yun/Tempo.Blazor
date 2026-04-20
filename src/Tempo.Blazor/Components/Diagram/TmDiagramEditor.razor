@@ -2,6 +2,8 @@
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Commands
 @using Microsoft.AspNetCore.Components.Forms
+@using Tempo.Blazor.Components.Toolbar
+@using Tempo.Blazor.Components.Dropdowns
 
 <CascadingValue Value="ActiveCommandStack" IsFixed="false">
 
@@ -79,286 +81,271 @@
     {
         <div class="tm-diagram-editor__toolbar" role="toolbar" aria-label="@Loc["TmDiagramEditor_ToolbarAriaLabel"]">
 
-            @* Title *@
-            <input class="tm-diagram-editor__title"
-                   type="text"
-                   value="@_document?.Title"
-                   placeholder="@Loc["TmDiagramEditor_UntitledPlaceholder"]"
-                   aria-label="@Loc["TmDiagramEditor_DocumentTitleLabel"]"
-                   @onchange="OnTitleChanged"
-                   disabled="@ReadOnly"
-                   title="@Loc["TmDiagramEditor_DocumentTitleLabel"]" />
+            @* ── Row 1: Document title + Edit tools + Navigation tools *@
+            <div class="tm-diagram-editor__toolbar-row">
 
-            @* Tool mode: Select / Pan / Edge *@
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_toolMode == "select" ? "tm-diagram-editor__btn--active" : "")"
-                    aria-label="@Loc["TmDiagramEditor_SelectTool"]"
-                    aria-pressed="@(_toolMode == "select")"
-                    title="@Loc["TmDiagramEditor_SelectTool"]"
-                    disabled="@ReadOnly"
-                    @onclick='() => SetToolMode("select")'>
-                ↖
-            </button>
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_toolMode == "pan" ? "tm-diagram-editor__btn--active" : "")"
-                    aria-label="@Loc["TmDiagramEditor_PanTool"]"
-                    aria-pressed="@(_toolMode == "pan")"
-                    title="@Loc["TmDiagramEditor_PanToolHint"]"
-                    @onclick='() => SetToolMode("pan")'>
-                ✋
-            </button>
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_toolMode == "edge" ? "tm-diagram-editor__btn--active" : "")"
-                    aria-label="@Loc["TmDiagramEditor_EdgeTool"]"
-                    aria-pressed="@(_toolMode == "edge")"
-                    title="@Loc["TmDiagramEditor_EdgeToolHint"]"
-                    disabled="@ReadOnly"
-                    @onclick='() => SetToolMode("edge")'>
-                ➡
-            </button>
+                @* Title *@
+                <input class="tm-diagram-editor__title"
+                       type="text"
+                       value="@_document?.Title"
+                       placeholder="@Loc["TmDiagramEditor_UntitledPlaceholder"]"
+                       aria-label="@Loc["TmDiagramEditor_DocumentTitleLabel"]"
+                       @onchange="OnTitleChanged"
+                       disabled="@ReadOnly"
+                       title="@Loc["TmDiagramEditor_DocumentTitleLabel"]" />
 
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+                <TmToolbarDivider />
 
-            @* Undo / Redo *@
-            <button class="tm-diagram-editor__btn"
-                    aria-label="@Loc["TmDiagramEditor_Undo"] @ActiveCommandStack.NextUndoName"
-                    title="@Loc["TmDiagramEditor_Undo"] (@ActiveCommandStack.NextUndoName)"
-                    disabled="@(!ActiveCommandStack.CanUndo || ReadOnly)"
-                    @onclick="OnUndoClicked">
-                ↩
-            </button>
-            <button class="tm-diagram-editor__btn"
-                    aria-label="@Loc["TmDiagramEditor_Redo"] @ActiveCommandStack.NextRedoName"
-                    title="@Loc["TmDiagramEditor_Redo"] (@ActiveCommandStack.NextRedoName)"
-                    disabled="@(!ActiveCommandStack.CanRedo || ReadOnly)"
-                    @onclick="OnRedoClicked">
-                ↪
-            </button>
+                @* Undo / Redo *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.RotateCcw"
+                                     Tooltip="@($"{Loc["TmDiagramEditor_Undo"]} {ActiveCommandStack.NextUndoName}")"
+                                     Disabled="@(!ActiveCommandStack.CanUndo || ReadOnly)"
+                                     OnClick="OnUndoClicked" />
+                    <TmToolbarButton Icon="@IconNames.RotateCw"
+                                     Tooltip="@($"{Loc["TmDiagramEditor_Redo"]} {ActiveCommandStack.NextRedoName}")"
+                                     Disabled="@(!ActiveCommandStack.CanRedo || ReadOnly)"
+                                     OnClick="OnRedoClicked" />
+                </div>
 
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+                @* Edit: Cut / Copy / Paste / Duplicate / Delete *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.Scissors"
+                                     Tooltip="@Loc["TmDiagramEditor_Cut"]"
+                                     Disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                                     OnClick="OnCutClicked" />
+                    <TmToolbarButton Icon="@IconNames.Copy"
+                                     Tooltip="@Loc["TmDiagramEditor_Copy"]"
+                                     Disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                                     OnClick="OnCopyClicked" />
+                    <TmToolbarButton Icon="@IconNames.Clipboard"
+                                     Tooltip="@Loc["TmDiagramEditor_Paste"]"
+                                     Disabled="@ReadOnly"
+                                     OnClick="OnPasteClicked" />
+                    <TmToolbarButton Icon="@IconNames.Copy"
+                                     Tooltip="@Loc["TmDiagramEditor_Duplicate"]"
+                                     Disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                                     OnClick="OnDuplicateClicked" />
+                    <TmToolbarButton Icon="@IconNames.Trash"
+                                     Tooltip="@Loc["TmDiagramEditor_Delete"]"
+                                     Disabled="@(_selectedIds.Length == 0 || ReadOnly)"
+                                     OnClick="OnDeleteClicked" />
+                </div>
 
-            @* Format Painter *@
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
-                    aria-label="@Loc["TmDiagramEditor_CopyStyle"]"
-                    title="@Loc["TmDiagramEditor_CopyStyle"]"
-                    disabled="@ReadOnly"
-                    @onclick="OnCopyStyle">
-                <TmIcon Name="@IconNames.Brush" />
-            </button>
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
-                    aria-label="@Loc["TmDiagramEditor_PasteStyle"]"
-                    title="@Loc["TmDiagramEditor_PasteStyle"]"
-                    disabled="@ReadOnly"
-                    @onclick="OnPasteStyle">
-                <TmIcon Name="@IconNames.Brush" Color="IconColor.Primary" />
-            </button>
-            <button class="tm-diagram-editor__btn"
-                    aria-label="@Loc["TmDiagramEditor_PasteSize"]"
-                    title="@Loc["TmDiagramEditor_PasteSize"]"
-                    disabled="@ReadOnly"
-                    @onclick="OnPasteSize">
-                @Loc["TmDiagramEditor_PasteSize"]
-            </button>
+                @* Tool mode: Select / Pan / Edge *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.MousePointer"
+                                     Tooltip="@Loc["TmDiagramEditor_SelectTool"]"
+                                     Class="@(_toolMode == "select" ? "tm-toolbar-btn--active" : "")"
+                                     Disabled="@ReadOnly"
+                                     OnClick='() => SetToolMode("select")' />
+                    <TmToolbarButton Icon="@IconNames.Hand"
+                                     Tooltip="@Loc["TmDiagramEditor_PanToolHint"]"
+                                     Class="@(_toolMode == "pan" ? "tm-toolbar-btn--active" : "")"
+                                     OnClick='() => SetToolMode("pan")' />
+                    <TmToolbarButton Icon="@IconNames.ArrowRight"
+                                     Tooltip="@Loc["TmDiagramEditor_EdgeToolHint"]"
+                                     Class="@(_toolMode == "edge" ? "tm-toolbar-btn--active" : "")"
+                                     Disabled="@ReadOnly"
+                                     OnClick='() => SetToolMode("edge")' />
+                </div>
 
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+                @* Format Painter *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.Brush"
+                                     Tooltip="@Loc["TmDiagramEditor_CopyStyle"]"
+                                     Disabled="@ReadOnly"
+                                     OnClick="OnCopyStyle" />
+                    <TmToolbarButton Icon="@IconNames.Brush"
+                                     Tooltip="@Loc["TmDiagramEditor_PasteStyle"]"
+                                     Disabled="@ReadOnly"
+                                     OnClick="OnPasteStyle" />
+                    <TmToolbarButton Text="@Loc["TmDiagramEditor_PasteSize"]"
+                                     Tooltip="@Loc["TmDiagramEditor_PasteSize"]"
+                                     Disabled="@ReadOnly"
+                                     OnClick="OnPasteSize" />
+                </div>
 
-            @* Zoom *@
-            <button class="tm-diagram-editor__btn" aria-label="@Loc["TmDiagramEditor_ZoomOut"]" title="@Loc["TmDiagramEditor_ZoomOut"]" @onclick="ZoomOut">−</button>
-            <span class="tm-diagram-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
-            <button class="tm-diagram-editor__btn" aria-label="@Loc["TmDiagramEditor_ZoomIn"]" title="@Loc["TmDiagramEditor_ZoomIn"]" @onclick="ZoomIn">+</button>
-            <button class="tm-diagram-editor__btn" aria-label="@Loc["TmDiagramEditor_FitToView"]" title="@Loc["TmDiagramEditor_FitToView"]" @onclick="FitToView">@Loc["TmDiagramEditor_FitToView"]</button>
+                <div class="tm-diagram-editor__toolbar-spacer"></div>
 
-            @* Rulers toggle *@
-            <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_showRulers ? "tm-diagram-editor__btn--active" : "")"
-                    aria-label="@Loc["TmDiagramEditor_ToggleRulers"]"
-                    title="@Loc["TmDiagramEditor_ToggleRulers"]"
-                    @onclick="ToggleRulers">
-                📏
-            </button>
+                @* Search *@
+                <TmToolbarButton Icon="@IconNames.Search"
+                                 Tooltip="@Loc["TmDiagramEditor_Search"]"
+                                 OnClick="OnSearchClicked" />
 
-            @* Ruler unit *@
-            <select class="tm-diagram-editor__unit-select"
-                    aria-label="@Loc["TmDiagramEditor_RulerUnitLabel"]"
-                    title="@Loc["TmDiagramEditor_RulerUnitLabel"]"
-                    value="@(_document?.ActivePage?.RulerUnit ?? MeasurementUnit.Px)"
-                    @onchange='e => OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
-                @foreach (var opt in _rulerUnitOptions)
-                {
-                    <option value="@opt.Value">@opt.Label</option>
-                }
-            </select>
-
-            @* Canvas size *@
-            @if (_canvasSizeEditing)
-            {
-                <input class="tm-diagram-editor__props-input"
-                       type="number" min="100" max="9999" step="1"
-                       aria-label="@Loc["TmDiagramEditor_CanvasWidth"]"
-                       value="@_canvasWInput"
-                       @oninput="e => _canvasWInput = e.Value?.ToString() ?? _canvasWInput"
-                       style="width:70px;" />
-                <span>×</span>
-                <input class="tm-diagram-editor__props-input"
-                       type="number" min="100" max="9999" step="1"
-                       aria-label="@Loc["TmDiagramEditor_CanvasHeight"]"
-                       value="@_canvasHInput"
-                       @oninput="e => _canvasHInput = e.Value?.ToString() ?? _canvasHInput"
-                       style="width:70px;" />
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
-                        aria-label="@Loc["TmDiagramEditor_Apply"]"
-                        title="@Loc["TmDiagramEditor_Apply"]"
-                        @onclick="ApplyCanvasSize">✓</button>
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon"
-                        aria-label="@Loc["TmDiagramEditor_Cancel"]"
-                        title="@Loc["TmDiagramEditor_Cancel"]"
-                        @onclick="() => _canvasSizeEditing = false">✕</button>
-            }
-            else
-            {
-                <button class="tm-diagram-editor__btn"
-                        aria-label="@Loc["TmDiagramEditor_ChangeCanvasSize"], current @((int)(_document?.Width ?? 3000))×@((int)(_document?.Height ?? 2000))"
-                        title="@Loc["TmDiagramEditor_ChangeCanvasSize"]"
-                        @onclick="OpenCanvasSize">
-                    @((int)(_document?.Width ?? 3000))×@((int)(_document?.Height ?? 2000))
-                </button>
-            }
-
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
-
-            @* Layout *@
-            <div style="position:relative;">
-                <button class="tm-diagram-editor__btn"
-                        aria-label="@Loc["TmDiagram_Layout"]"
-                        aria-haspopup="true"
-                        aria-expanded="@_layoutMenuOpen"
-                        @onclick="ToggleLayoutMenu"
-                        title="@Loc["TmDiagram_Layout"]">
-                    <span>@Loc["TmDiagram_Layout"] ▾</span>
-                </button>
-                @if (_layoutMenuOpen)
-                {
-                    <div class="tm-dropdown__menu" role="menu" aria-label="@Loc["TmDiagram_Layout"]" style="position:absolute;top:100%;left:0;z-index:100;min-width:220px;">
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("dagre", "TB")' title="@Loc["TmDiagram_LayoutHierarchicalTopDown_Tooltip"]">@Loc["TmDiagram_LayoutHierarchicalTopDown"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("dagre", "LR")' title="@Loc["TmDiagram_LayoutHierarchicalLeftRight_Tooltip"]">@Loc["TmDiagram_LayoutHierarchicalLeftRight"]</button>
-                        <div class="tm-dropdown__divider" role="separator"></div>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("tree", "TB")' title="@Loc["TmDiagram_LayoutTree_Tooltip"]">@Loc["TmDiagram_LayoutTree"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("tree", "LR")' title="@Loc["TmDiagram_LayoutTreeLR_Tooltip"]">@Loc["TmDiagram_LayoutTreeLR"]</button>
-                        <div class="tm-dropdown__divider" role="separator"></div>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("force")' title="@Loc["TmDiagram_LayoutForce_Tooltip"]">@Loc["TmDiagram_LayoutForce"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("circle")' title="@Loc["TmDiagram_LayoutCircle_Tooltip"]">@Loc["TmDiagram_LayoutCircle"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick='() => RunLayout("grid")' title="@Loc["TmDiagram_LayoutGrid_Tooltip"]">@Loc["TmDiagram_LayoutGrid"]</button>
-                    </div>
-                }
+                @* Panel toggles *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    @if (ShowToolbox)
+                    {
+                        <TmToolbarButton Icon="@IconNames.Sidebar"
+                                         Tooltip="@Loc["TmDiagramEditor_ToggleToolbox"]"
+                                         Class="@(!_toolboxCollapsed ? "tm-toolbar-btn--active" : "")"
+                                         OnClick="() => _toolboxCollapsed = !_toolboxCollapsed" />
+                    }
+                    @if (ShowPropertiesPanel)
+                    {
+                        <TmToolbarButton Icon="@IconNames.Sliders"
+                                         Tooltip="@Loc["TmDiagramEditor_ToggleProperties"]"
+                                         Class="@(!_propsCollapsed ? "tm-toolbar-btn--active" : "")"
+                                         OnClick="() => _propsCollapsed = !_propsCollapsed" />
+                    }
+                    @if (ShowLayersPanel)
+                    {
+                        <TmToolbarButton Icon="@IconNames.Layers"
+                                         Tooltip="@Loc["TmDiagramEditor_ToggleLayers"]"
+                                         Class="@(!_layersCollapsed ? "tm-toolbar-btn--active" : "")"
+                                         OnClick="() => _layersCollapsed = !_layersCollapsed" />
+                    }
+                    @if (ShowMinimap)
+                    {
+                        <TmToolbarButton Icon="@IconNames.Map"
+                                         Tooltip="@Loc["TmDiagramEditor_ToggleMinimap"]"
+                                         Class="@(!_minimapCollapsed ? "tm-toolbar-btn--active" : "")"
+                                         OnClick="() => _minimapCollapsed = !_minimapCollapsed" />
+                    }
+                </div>
             </div>
 
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
+            @* ── Row 2: Zoom + View + Layout + Import/Export *@
+            <div class="tm-diagram-editor__toolbar-row">
 
-            @* Export *@
-            <div style="position:relative;">
-                <button class="tm-diagram-editor__btn"
-                        aria-label="@Loc["TmDiagramEditor_Export"]"
-                        aria-haspopup="true"
-                        aria-expanded="@_exportMenuOpen"
-                        @onclick="ToggleExportMenu"
-                        title="@Loc["TmDiagramEditor_Export"]"
-                        disabled="@_exporting">
-                    @if (_exporting)
+                @* Zoom *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.Minus"
+                                     Tooltip="@Loc["TmDiagramEditor_ZoomOut"]"
+                                     OnClick="ZoomOut" />
+                    <span class="tm-diagram-editor__zoom-label" role="status" aria-live="polite" aria-label="Zoom @_zoomLabel">@_zoomLabel</span>
+                    <TmToolbarButton Icon="@IconNames.Plus"
+                                     Tooltip="@Loc["TmDiagramEditor_ZoomIn"]"
+                                     OnClick="ZoomIn" />
+                    <TmToolbarButton Icon="@IconNames.Maximize2"
+                                     Tooltip="@Loc["TmDiagramEditor_FitToView"]"
+                                     OnClick="FitToView" />
+                </div>
+
+                @* View toggles: Grid / Snap / PageView / Rulers *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.Grid"
+                                     Tooltip="@Loc[ShowGrid ? "TmDiagramEditor_HideGrid" : "TmDiagramEditor_ShowGrid"]"
+                                     Class="@(ShowGrid ? "tm-toolbar-btn--active" : "")"
+                                     OnClick="OnToggleGrid" />
+                    <TmToolbarButton Icon="@IconNames.PlusCircle"
+                                     Tooltip="@Loc[GridSize == 0 ? "TmDiagramEditor_EnableSnap" : "TmDiagramEditor_DisableSnap"]"
+                                     Class="@(GridSize != 0 ? "tm-toolbar-btn--active" : "")"
+                                     OnClick="OnToggleSnap" />
+                    <TmToolbarButton Icon="@IconNames.FileText"
+                                     Tooltip="@Loc[ShowPageView ? "TmDiagramEditor_HidePageView" : "TmDiagramEditor_ShowPageView"]"
+                                     Class="@(ShowPageView ? "tm-toolbar-btn--active" : "")"
+                                     OnClick="OnTogglePageView" />
+                    <TmToolbarButton Icon="@IconNames.Sliders"
+                                     Tooltip="@Loc["TmDiagramEditor_ToggleRulers"]"
+                                     Class="@(_showRulers ? "tm-toolbar-btn--active" : "")"
+                                     OnClick="ToggleRulers" />
+                </div>
+
+                @* Canvas size + Ruler unit *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <select class="tm-diagram-editor__unit-select"
+                            aria-label="@Loc["TmDiagramEditor_RulerUnitLabel"]"
+                            title="@Loc["TmDiagramEditor_RulerUnitLabel"]"
+                            value="@(_document?.ActivePage?.RulerUnit ?? MeasurementUnit.Px)"
+                            @onchange='e => OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
+                        @foreach (var opt in _rulerUnitOptions)
+                        {
+                            <option value="@opt.Value">@opt.Label</option>
+                        }
+                    </select>
+                    @if (_canvasSizeEditing)
                     {
-                        <TmSpinner Size="SpinnerSize.Xs" Class="tm-diagram-editor__btn-spinner" />
+                        <input class="tm-diagram-editor__props-input"
+                               type="number" min="100" max="9999" step="1"
+                               aria-label="@Loc["TmDiagramEditor_CanvasWidth"]"
+                               value="@_canvasWInput"
+                               @oninput="e => _canvasWInput = e.Value?.ToString() ?? _canvasWInput"
+                               style="width:60px;" />
+                        <span style="font-size:12px;color:var(--tm-color-text-muted);">×</span>
+                        <input class="tm-diagram-editor__props-input"
+                               type="number" min="100" max="9999" step="1"
+                               aria-label="@Loc["TmDiagramEditor_CanvasHeight"]"
+                               value="@_canvasHInput"
+                               @oninput="e => _canvasHInput = e.Value?.ToString() ?? _canvasHInput"
+                               style="width:60px;" />
+                        <TmToolbarButton Icon="@IconNames.Check"
+                                         Tooltip="@Loc["TmDiagramEditor_Apply"]"
+                                         OnClick="ApplyCanvasSize" />
+                        <TmToolbarButton Icon="@IconNames.X"
+                                         Tooltip="@Loc["TmDiagramEditor_Cancel"]"
+                                         OnClick="() => _canvasSizeEditing = false" />
                     }
                     else
                     {
-                        <span>@Loc["TmDiagramEditor_Export"] ▾</span>
+                        <TmToolbarButton Text="@($"{(int)(_document?.Width ?? 3000)}×{(int)(_document?.Height ?? 2000)}")"
+                                         Tooltip="@Loc["TmDiagramEditor_ChangeCanvasSize"]"
+                                         OnClick="OpenCanvasSize" />
                     }
-                </button>
-                @if (_exportMenuOpen && !_exporting)
-                {
-                    <div class="tm-dropdown__menu" role="menu" aria-label="@Loc["TmDiagramEditor_Export"]" style="position:absolute;top:100%;left:0;z-index:100;min-width:140px;">
-                        <button class="tm-dropdown__item" role="menuitem" @onclick="ExportJson">@Loc["TmDiagramEditor_ExportJson"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick="ExportSvg">@Loc["TmDiagramEditor_ExportSvg"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick="ExportPng">@Loc["TmDiagramEditor_ExportPng"]</button>
-                        <button class="tm-dropdown__item" role="menuitem" @onclick="ExportPdf">@Loc["TmDiagramEditor_ExportPdf"]</button>
-                    </div>
-                }
+                </div>
+
+                <TmToolbarDivider />
+
+                @* Layout dropdown *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmDropdown Text="@Loc["TmDiagram_Layout"]" Icon="@IconNames.Layout" OnSelect="HandleLayoutSelect">
+                        <TmDropdownItem Value="dagre-tb" Icon="@IconNames.ArrowDown">@Loc["TmDiagram_LayoutHierarchicalTopDown"]</TmDropdownItem>
+                        <TmDropdownItem Value="dagre-lr" Icon="@IconNames.ArrowRight">@Loc["TmDiagram_LayoutHierarchicalLeftRight"]</TmDropdownItem>
+                        <TmDropdownItem Value="tree-tb" Icon="@IconNames.FolderOpen">@Loc["TmDiagram_LayoutTree"]</TmDropdownItem>
+                        <TmDropdownItem Value="tree-lr" Icon="@IconNames.FolderOpen">@Loc["TmDiagram_LayoutTreeLR"]</TmDropdownItem>
+                        <TmDropdownItem Value="force" Icon="@IconNames.Zap">@Loc["TmDiagram_LayoutForce"]</TmDropdownItem>
+                        <TmDropdownItem Value="circle" Icon="@IconNames.Circle">@Loc["TmDiagram_LayoutCircle"]</TmDropdownItem>
+                        <TmDropdownItem Value="grid" Icon="@IconNames.Grid">@Loc["TmDiagram_LayoutGrid"]</TmDropdownItem>
+                    </TmDropdown>
+                </div>
+
+                @* Export dropdown *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmDropdown Text="@Loc["TmDiagramEditor_Export"]" Icon="@IconNames.Download" Disabled="@_exporting" OnSelect="HandleExportSelect">
+                        @if (_exporting)
+                        {
+                            <TmSpinner Size="SpinnerSize.Xs" />
+                        }
+                        <TmDropdownItem Value="json" Icon="@IconNames.FileText">@Loc["TmDiagramEditor_ExportJson"]</TmDropdownItem>
+                        <TmDropdownItem Value="svg" Icon="@IconNames.Image">@Loc["TmDiagramEditor_ExportSvg"]</TmDropdownItem>
+                        <TmDropdownItem Value="png" Icon="@IconNames.Image">@Loc["TmDiagramEditor_ExportPng"]</TmDropdownItem>
+                        <TmDropdownItem Value="pdf" Icon="@IconNames.File">@Loc["TmDiagramEditor_ExportPdf"]</TmDropdownItem>
+                    </TmDropdown>
+                </div>
+
+                @* Templates *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@IconNames.FolderOpen"
+                                     Text="@Loc["TmDiagramEditor_Templates"]"
+                                     Tooltip="@Loc["TmDiagramEditor_Templates"]"
+                                     OnClick="OpenTemplateGallery" />
+                </div>
+
+                @* Import dropdown *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmDropdown Text="@Loc["TmDiagramEditor_Import"]" Icon="@IconNames.Upload" OnSelect="HandleImportSelect">
+                        <label class="tm-dropdown-item" style="cursor:pointer;margin:0;" title="@Loc["TmDiagramEditor_ImportJson"]" aria-label="@Loc["TmDiagramEditor_ImportJson"]">
+                            <TmIcon Name="@IconNames.FileText" Size="IconSize.Sm" />
+                            <span>@Loc["TmDiagramEditor_ImportJson"]</span>
+                            <InputFile style="display:none;" OnChange="OnImportFile" accept=".json,.diagram.json" />
+                        </label>
+                        <TmDropdownItem Value="sql" Icon="@IconNames.Database">@Loc["TmDiagramEditor_ImportSql"]</TmDropdownItem>
+                        <TmDropdownItem Value="csv" Icon="@IconNames.FileText">@Loc["TmDiagramEditor_ImportCsv"]</TmDropdownItem>
+                    </TmDropdown>
+                </div>
+
+                <div class="tm-diagram-editor__toolbar-spacer"></div>
+
+                @* Read-only toggle *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmToolbarButton Icon="@(ReadOnly ? IconNames.Lock : IconNames.Unlock)"
+                                     Text="@(ReadOnly ? Loc["TmDiagramEditor_ReadOnly"] : Loc["TmDiagramEditor_Edit"])"
+                                     Tooltip="@(ReadOnly ? Loc["TmDiagramEditor_SwitchToEditMode"] : Loc["TmDiagramEditor_SwitchToReadOnlyMode"])"
+                                     Class="@(ReadOnly ? "tm-toolbar-btn--active" : "")"
+                                     OnClick="ToggleReadOnly" />
+                </div>
             </div>
-
-            @* Templates *@
-            <button class="tm-diagram-editor__btn"
-                    title="@Loc["TmDiagramEditor_Templates"]"
-                    aria-label="@Loc["TmDiagramEditor_Templates"]"
-                    @onclick="OpenTemplateGallery">
-                @Loc["TmDiagramEditor_Templates"]
-            </button>
-
-            <div class="tm-diagram-editor__toolbar-sep" role="separator"></div>
-
-            @* Import *@
-            <label class="tm-diagram-editor__btn" title="@Loc["TmDiagramEditor_ImportJson"]" aria-label="@Loc["TmDiagramEditor_ImportJson"]">
-                @Loc["TmDiagramEditor_ImportJson"]
-                <InputFile style="display:none;" OnChange="OnImportFile" accept=".json,.diagram.json" />
-            </label>
-            <button class="tm-diagram-editor__btn"
-                    title="@Loc["TmDiagramEditor_ImportSql"]"
-                    aria-label="@Loc["TmDiagramEditor_ImportSql"]"
-                    @onclick="OpenSqlImportDialog">
-                @Loc["TmDiagramEditor_ImportSql"]
-            </button>
-            <button class="tm-diagram-editor__btn"
-                    title="@Loc["TmDiagramEditor_ImportCsv"]"
-                    aria-label="@Loc["TmDiagramEditor_ImportCsv"]"
-                    @onclick="OpenCsvImportDialog">
-                @Loc["TmDiagramEditor_ImportCsv"]
-            </button>
-
-            <div class="tm-diagram-editor__toolbar-spacer"></div>
-
-            @* Read-only toggle *@
-            <button class="tm-diagram-editor__btn @(ReadOnly ? "tm-diagram-editor__btn--active" : "")"
-                    aria-label="@(ReadOnly ? Loc["TmDiagramEditor_SwitchToEditMode"] : Loc["TmDiagramEditor_SwitchToReadOnlyMode"])"
-                    aria-pressed="@ReadOnly"
-                    title="@(ReadOnly ? Loc["TmDiagramEditor_SwitchToEditMode"] : Loc["TmDiagramEditor_SwitchToReadOnlyMode"])"
-                    @onclick="ToggleReadOnly">
-                @(ReadOnly ? "🔒 " + Loc["TmDiagramEditor_ReadOnly"] : "✏ " + Loc["TmDiagramEditor_Edit"])
-            </button>
-
-            @* Panel toggles *@
-            @if (ShowToolbox)
-            {
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_toolboxCollapsed ? "" : "tm-diagram-editor__btn--active")"
-                        aria-label="@(_toolboxCollapsed ? Loc["TmDiagramEditor_ShowToolbox"] : Loc["TmDiagramEditor_HideToolbox"])"
-                        aria-pressed="@(!_toolboxCollapsed)"
-                        title="@Loc["TmDiagramEditor_ToggleToolbox"]"
-                        @onclick="() => _toolboxCollapsed = !_toolboxCollapsed">
-                    ◧
-                </button>
-            }
-            @if (ShowPropertiesPanel)
-            {
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_propsCollapsed ? "" : "tm-diagram-editor__btn--active")"
-                        aria-label="@(_propsCollapsed ? Loc["TmDiagramEditor_ShowProperties"] : Loc["TmDiagramEditor_HideProperties"])"
-                        aria-pressed="@(!_propsCollapsed)"
-                        title="@Loc["TmDiagramEditor_ToggleProperties"]"
-                        @onclick="() => _propsCollapsed = !_propsCollapsed">
-                    ◨
-                </button>
-            }
-            @if (ShowLayersPanel)
-            {
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_layersCollapsed ? "" : "tm-diagram-editor__btn--active")"
-                        aria-label="@(_layersCollapsed ? Loc["TmDiagramEditor_ShowLayers"] : Loc["TmDiagramEditor_HideLayers"])"
-                        aria-pressed="@(!_layersCollapsed)"
-                        title="@Loc["TmDiagramEditor_ToggleLayers"]"
-                        @onclick="() => _layersCollapsed = !_layersCollapsed">
-                    ☰
-                </button>
-            }
-            @if (ShowMinimap)
-            {
-                <button class="tm-diagram-editor__btn tm-diagram-editor__btn--icon @(_minimapCollapsed ? "" : "tm-diagram-editor__btn--active")"
-                        aria-label="@(_minimapCollapsed ? Loc["TmDiagramEditor_ShowMinimap"] : Loc["TmDiagramEditor_HideMinimap"])"
-                        aria-pressed="@(!_minimapCollapsed)"
-                        title="@Loc["TmDiagramEditor_ToggleMinimap"]"
-                        @onclick="() => _minimapCollapsed = !_minimapCollapsed">
-                    ⊡
-                </button>
-            }
         </div>
     }
 

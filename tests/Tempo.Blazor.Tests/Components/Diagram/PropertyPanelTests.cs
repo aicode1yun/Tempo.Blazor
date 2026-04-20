@@ -67,7 +67,7 @@ public class PropertyPanelTests : LocalizationTestBase
             .Add(c => c.ReadOnly, false));
 
         // Panel should render without errors for multi-selection
-        cut.FindAll(".tm-diagram-properties__section--collapsible").Count.Should().BeGreaterThan(0);
+        cut.FindAll(".tm-section--collapsible").Count.Should().BeGreaterThan(0);
     }
 
     [Fact]
@@ -130,7 +130,7 @@ public class PropertyPanelTests : LocalizationTestBase
             .Add(c => c.SelectedIds, Array.Empty<string>())
             .Add(c => c.ReadOnly, false));
 
-        cut.FindAll(".tm-diagram-properties__section-header")
+        cut.FindAll(".tm-section-title")
            .Any(h => h.TextContent.Contains("Page") || h.TextContent.Contains("Stránka"))
            .Should().BeTrue();
     }
@@ -162,7 +162,7 @@ public class PropertyPanelTests : LocalizationTestBase
             .Add(c => c.SelectedIds, Array.Empty<string>())
             .Add(c => c.ReadOnly, false));
 
-        var buttons = cut.FindAll(".tm-diagram-properties__toggle-btn");
+        var buttons = cut.FindAll(".tm-diagram-properties__segmented-btn");
         var landscapeBtn = buttons.FirstOrDefault(b => b.GetAttribute("title")?.Contains("Landscape") == true || b.GetAttribute("title")?.Contains("šířku") == true);
         landscapeBtn.Should().NotBeNull();
         landscapeBtn!.Click();

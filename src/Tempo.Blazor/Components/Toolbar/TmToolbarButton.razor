@@ -5,6 +5,7 @@
 <button type="button"
         class="tm-toolbar-btn tm-toolbar-btn--@Variant.ToString().ToLowerInvariant() @Class"
         title="@Tooltip"
+        aria-label="@Tooltip"
         disabled="@Disabled"
         @attributes="AdditionalAttributes"
         @onclick="async () => await OnClick.InvokeAsync()">

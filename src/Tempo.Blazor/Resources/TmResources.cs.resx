@@ -587,7 +587,14 @@
   <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
   <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
+  <data name="TmDiagramEditor_Import" xml:space="preserve"><value>Import</value></data>
   <data name="TmDiagramEditor_ImportSql" xml:space="preserve"><value>Import SQL → ER</value></data>
+  <data name="TmDiagramEditor_ShowGrid" xml:space="preserve"><value>Zobrazit mřížku</value></data>
+  <data name="TmDiagramEditor_HideGrid" xml:space="preserve"><value>Skrýt mřížku</value></data>
+  <data name="TmDiagramEditor_EnableSnap" xml:space="preserve"><value>Zapnout přichycení k mřížce</value></data>
+  <data name="TmDiagramEditor_DisableSnap" xml:space="preserve"><value>Vypnout přichycení k mřížce</value></data>
+  <data name="TmDiagramEditor_ShowPageView" xml:space="preserve"><value>Zobrazit zobrazení stránky</value></data>
+  <data name="TmDiagramEditor_HidePageView" xml:space="preserve"><value>Skrýt zobrazení stránky</value></data>
   <data name="TmDiagramSqlImportDialog_Title" xml:space="preserve"><value>Import SQL do ER diagramu</value></data>
   <data name="TmDiagramSqlImportDialog_SqlLabel" xml:space="preserve"><value>SQL DDL</value></data>
   <data name="TmDiagramSqlImportDialog_SqlPlaceholder" xml:space="preserve"><value>Vložte příkazy CREATE TABLE...</value></data>
@@ -605,6 +612,7 @@
   <data name="TmDiagramEditor_ShowToolbox" xml:space="preserve"><value>Zobrazit panel nástrojů</value></data>
   <data name="TmDiagramEditor_HideToolbox" xml:space="preserve"><value>Skrýt panel nástrojů</value></data>
   <data name="TmDiagramEditor_ToggleToolbox" xml:space="preserve"><value>Přepnout panel nástrojů</value></data>
+  <data name="TmDiagramEditor_Search" xml:space="preserve"><value>Hledat</value></data>
   <data name="TmDiagramEditor_ShowProperties" xml:space="preserve"><value>Zobrazit vlastnosti</value></data>
   <data name="TmDiagramEditor_HideProperties" xml:space="preserve"><value>Skrýt vlastnosti</value></data>
   <data name="TmDiagramEditor_ToggleProperties" xml:space="preserve"><value>Přepnout vlastnosti</value></data>
@@ -914,8 +922,7 @@
   <data name="TmDiagramEditor_Unlock" xml:space="preserve"><value>Odemknout</value></data>
   <data name="TmDiagramEditor_Group" xml:space="preserve"><value>Seskupit</value></data>
   <data name="TmDiagramEditor_Ungroup" xml:space="preserve"><value>Rozdělit skupinu</value></data>
-  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Vložit styl</value></data>
-  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Vložit velikost</value></data>
+
   <data name="TmDiagramEditor_ChangeShape" xml:space="preserve"><value>Změnit tvar</value></data>
   <data name="TmDiagramEditor_Rectangle" xml:space="preserve"><value>Obdélník</value></data>
   <data name="TmDiagramEditor_Ellipse" xml:space="preserve"><value>Elipsa</value></data>
@@ -946,12 +953,6 @@
   <data name="TmDiagramEditor_LayoutTree" xml:space="preserve"><value>Strom</value></data>
   <data name="TmDiagramEditor_LayoutForce" xml:space="preserve"><value>Síla</value></data>
   <data name="TmDiagramEditor_LayoutCircle" xml:space="preserve"><value>Kruh</value></data>
-  <data name="TmDiagramEditor_ShowGrid" xml:space="preserve"><value>Zobrazit mřížku</value></data>
-  <data name="TmDiagramEditor_HideGrid" xml:space="preserve"><value>Skrýt mřížku</value></data>
-  <data name="TmDiagramEditor_ShowPageView" xml:space="preserve"><value>Zobrazit stránku</value></data>
-  <data name="TmDiagramEditor_HidePageView" xml:space="preserve"><value>Skrýt stránku</value></data>
-  <data name="TmDiagramEditor_EnableSnap" xml:space="preserve"><value>Zapnout přichycení</value></data>
-  <data name="TmDiagramEditor_DisableSnap" xml:space="preserve"><value>Vypnout přichycení</value></data>
   <data name="TmDiagramEditor_MergeCells" xml:space="preserve"><value>Sloučit buňky</value></data>
   <data name="TmDiagramEditor_SplitCell" xml:space="preserve"><value>Rozdělit buňku</value></data>
   <data name="TmDiagramEditor_FormatCell" xml:space="preserve"><value>Formátovat buňku</value></data>

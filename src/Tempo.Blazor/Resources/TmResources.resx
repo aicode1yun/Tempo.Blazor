@@ -610,6 +610,7 @@
   <data name="TmDiagramEditor_ExportSvg" xml:space="preserve"><value>Export SVG</value></data>
   <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
   <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDiagramEditor_Import" xml:space="preserve"><value>Import</value></data>
   <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
   <data name="TmDiagramEditor_ImportSql" xml:space="preserve"><value>Import SQL → ER</value></data>
   <data name="TmDiagramSqlImportDialog_Title" xml:space="preserve"><value>Import SQL to ER Diagram</value></data>
@@ -629,6 +630,7 @@
   <data name="TmDiagramEditor_ShowToolbox" xml:space="preserve"><value>Show toolbox</value></data>
   <data name="TmDiagramEditor_HideToolbox" xml:space="preserve"><value>Hide toolbox</value></data>
   <data name="TmDiagramEditor_ToggleToolbox" xml:space="preserve"><value>Toggle toolbox</value></data>
+  <data name="TmDiagramEditor_Search" xml:space="preserve"><value>Search</value></data>
   <data name="TmDiagramEditor_ShowProperties" xml:space="preserve"><value>Show properties panel</value></data>
   <data name="TmDiagramEditor_HideProperties" xml:space="preserve"><value>Hide properties panel</value></data>
   <data name="TmDiagramEditor_ToggleProperties" xml:space="preserve"><value>Toggle properties panel</value></data>
@@ -938,8 +940,7 @@
   <data name="TmDiagramEditor_Unlock" xml:space="preserve"><value>Unlock</value></data>
   <data name="TmDiagramEditor_Group" xml:space="preserve"><value>Group</value></data>
   <data name="TmDiagramEditor_Ungroup" xml:space="preserve"><value>Ungroup</value></data>
-  <data name="TmDiagramEditor_PasteStyle" xml:space="preserve"><value>Paste Style</value></data>
-  <data name="TmDiagramEditor_PasteSize" xml:space="preserve"><value>Paste Size</value></data>
+
   <data name="TmDiagramEditor_ChangeShape" xml:space="preserve"><value>Change Shape</value></data>
   <data name="TmDiagramEditor_Rectangle" xml:space="preserve"><value>Rectangle</value></data>
   <data name="TmDiagramEditor_Ellipse" xml:space="preserve"><value>Ellipse</value></data>
@@ -970,12 +971,6 @@
   <data name="TmDiagramEditor_LayoutTree" xml:space="preserve"><value>Tree</value></data>
   <data name="TmDiagramEditor_LayoutForce" xml:space="preserve"><value>Force</value></data>
   <data name="TmDiagramEditor_LayoutCircle" xml:space="preserve"><value>Circle</value></data>
-  <data name="TmDiagramEditor_ShowGrid" xml:space="preserve"><value>Show Grid</value></data>
-  <data name="TmDiagramEditor_HideGrid" xml:space="preserve"><value>Hide Grid</value></data>
-  <data name="TmDiagramEditor_ShowPageView" xml:space="preserve"><value>Show Page View</value></data>
-  <data name="TmDiagramEditor_HidePageView" xml:space="preserve"><value>Hide Page View</value></data>
-  <data name="TmDiagramEditor_EnableSnap" xml:space="preserve"><value>Enable Snap to Grid</value></data>
-  <data name="TmDiagramEditor_DisableSnap" xml:space="preserve"><value>Disable Snap to Grid</value></data>
   <data name="TmDiagramEditor_MergeCells" xml:space="preserve"><value>Merge Cells</value></data>
   <data name="TmDiagramEditor_SplitCell" xml:space="preserve"><value>Split Cell</value></data>
   <data name="TmDiagramEditor_FormatCell" xml:space="preserve"><value>Format Cell</value></data>

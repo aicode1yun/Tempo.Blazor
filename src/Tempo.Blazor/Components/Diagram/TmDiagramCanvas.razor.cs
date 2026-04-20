@@ -164,6 +164,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private string? _resizeHandle;
     private (double X, double Y) _resizeStartScreen;
     private (double X, double Y, double W, double H) _resizeStartRect;
+    private Dictionary<string, (double X, double Y, double W, double H)>? _resizeGroupMemberStartRects;
     private const double MinNodeSize = 20;
     private const double RotateSnap = 15.0;
 
@@ -405,6 +406,11 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _ = OnConnectArrowClicked.InvokeAsync((nodeId, direction));
     }
 
+    private static bool IsGroupContainer(DiagramNode node) => node.StencilId == "general.group";
+
+    private List<DiagramNode> GetGroupMembers(string groupId) =>
+        Document?.Nodes.Where(n => n.ParentGroupId == groupId).ToList() ?? [];
+
     private void OnResizeStart(MouseEventArgs e, string nodeId, string handle)
     {
         if (ReadOnly || Document is null) return;
@@ -415,6 +421,16 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _resizeHandle = handle;
         _resizeStartScreen = (e.ClientX, e.ClientY);
         _resizeStartRect = (node.X, node.Y, node.W, node.H);
+        _resizeGroupMemberStartRects = null;
+
+        if (IsGroupContainer(node))
+        {
+            _resizeGroupMemberStartRects = [];
+            foreach (var member in GetGroupMembers(nodeId))
+            {
+                _resizeGroupMemberStartRects[member.Id] = (member.X, member.Y, member.W, member.H);
+            }
+        }
     }
 
     private void OnRotateStartJs(MouseEventArgs e, string nodeId)
@@ -433,10 +449,34 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         if (node is null || IsNodeLocked(node)) return;
         var before = node.Rotation;
         node.Rotation = angle;
-        if (CommandStack is not null && Math.Abs(angle - before) > 0.001)
+
+        if (IsGroupContainer(node))
         {
-            CommandStack.Push(new RotateNodeCommand(Document, nodeId, before, angle));
-            await DocumentChanged.InvokeAsync(Document);
+            var members = GetGroupMembers(nodeId);
+            var delta = angle - before;
+            var oldRotations = new Dictionary<string, double> { [nodeId] = before };
+            var newRotations = new Dictionary<string, double> { [nodeId] = angle };
+
+            foreach (var member in members)
+            {
+                oldRotations[member.Id] = member.Rotation;
+                member.Rotation += delta;
+                newRotations[member.Id] = member.Rotation;
+            }
+
+            if (CommandStack is not null && Math.Abs(delta) > 0.001)
+            {
+                CommandStack.Push(new RotateGroupCommand(Document, oldRotations, newRotations));
+                await DocumentChanged.InvokeAsync(Document);
+            }
+        }
+        else
+        {
+            if (CommandStack is not null && Math.Abs(angle - before) > 0.001)
+            {
+                CommandStack.Push(new RotateNodeCommand(Document, nodeId, before, angle));
+                await DocumentChanged.InvokeAsync(Document);
+            }
         }
     }
 
@@ -461,6 +501,25 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         resizeNode.Y = y;
         resizeNode.W = w;
         resizeNode.H = h;
+
+        if (IsGroupContainer(resizeNode) && _resizeGroupMemberStartRects is not null)
+        {
+            var scaleX = _resizeStartRect.W > 0 ? w / _resizeStartRect.W : 1;
+            var scaleY = _resizeStartRect.H > 0 ? h / _resizeStartRect.H : 1;
+
+            foreach (var (memberId, memberStart) in _resizeGroupMemberStartRects)
+            {
+                var member = Document.Nodes.FirstOrDefault(n => n.Id == memberId);
+                if (member is null) continue;
+                var relX = memberStart.X - _resizeStartRect.X;
+                var relY = memberStart.Y - _resizeStartRect.Y;
+                member.X = x + relX * scaleX;
+                member.Y = y + relY * scaleY;
+                member.W = memberStart.W * scaleX;
+                member.H = memberStart.H * scaleY;
+            }
+        }
+
         StateHasChanged();
 
         // Re-sync JS selection outline to follow the new bounds
@@ -480,15 +539,41 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             if (Math.Abs(node.X - _resizeStartRect.X) > 0.001 || Math.Abs(node.Y - _resizeStartRect.Y) > 0.001 ||
                 Math.Abs(node.W - _resizeStartRect.W) > 0.001 || Math.Abs(node.H - _resizeStartRect.H) > 0.001)
             {
-                CommandStack.Push(new ResizeNodeCommand(Document, _resizeNodeId,
-                    _resizeStartRect.X, _resizeStartRect.Y, _resizeStartRect.W, _resizeStartRect.H,
-                    node.X, node.Y, node.W, node.H));
+                if (IsGroupContainer(node) && _resizeGroupMemberStartRects is not null)
+                {
+                    var oldRects = new Dictionary<string, NodeRect>
+                    {
+                        [node.Id] = new NodeRect(_resizeStartRect.X, _resizeStartRect.Y, _resizeStartRect.W, _resizeStartRect.H)
+                    };
+                    foreach (var (mid, rect) in _resizeGroupMemberStartRects)
+                        oldRects[mid] = new NodeRect(rect.X, rect.Y, rect.W, rect.H);
+
+                    var newRects = new Dictionary<string, NodeRect>
+                    {
+                        [node.Id] = new NodeRect(node.X, node.Y, node.W, node.H)
+                    };
+                    foreach (var (mid, _) in _resizeGroupMemberStartRects)
+                    {
+                        var m = Document.Nodes.FirstOrDefault(n => n.Id == mid);
+                        if (m is not null)
+                            newRects[mid] = new NodeRect(m.X, m.Y, m.W, m.H);
+                    }
+
+                    CommandStack.Push(new ResizeGroupCommand(Document, oldRects, newRects));
+                }
+                else
+                {
+                    CommandStack.Push(new ResizeNodeCommand(Document, _resizeNodeId,
+                        _resizeStartRect.X, _resizeStartRect.Y, _resizeStartRect.W, _resizeStartRect.H,
+                        node.X, node.Y, node.W, node.H));
+                }
                 _ = DocumentChanged.InvokeAsync(Document);
             }
         }
 
         _resizeNodeId = null;
         _resizeHandle = null;
+        _resizeGroupMemberStartRects = null;
     }
 
     private (double X, double Y, double W, double H) ComputeResize(

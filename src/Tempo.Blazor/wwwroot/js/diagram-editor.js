@@ -2983,9 +2983,23 @@ window.tmDiagramEditor = {
         inst.rotateCenterDoc = { x: r.x + r.w / 2, y: r.y + r.h / 2 };
         inst.rotateStartNodeRotation = initialRotation;
         inst.rotateSnap = snap || 0;
+        inst.rotateGroupMembers = null;
 
         const startPt = this._screenToDoc(inst, clientX, clientY);
         inst.rotateStartAngle = Math.atan2(startPt.y - inst.rotateCenterDoc.y, startPt.x - inst.rotateCenterDoc.x) * 180 / Math.PI;
+
+        // If rotating a group, cache member start rotations for real-time updates
+        const nodeEl = this._nodeEl(inst, nodeId);
+        if (nodeEl && nodeEl.getAttribute('data-stencil-id') === 'general.group' && inst.htmlLayer) {
+            inst.rotateGroupMembers = [];
+            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+                if (el.getAttribute('data-parent-group-id') === nodeId) {
+                    const memberId = el.getAttribute('data-node-id');
+                    const memberRot = this._getNodeRotation(el);
+                    inst.rotateGroupMembers.push({ id: memberId, startRotation: memberRot });
+                }
+            });
+        }
 
         const self = this;
         const move = function (e) {
@@ -2999,6 +3013,12 @@ window.tmDiagramEditor = {
                 rot = Math.round(rot / inst.rotateSnap) * inst.rotateSnap;
             }
             self._applyNodeRotation(inst, inst.rotateNodeId, rot);
+            if (inst.rotateGroupMembers) {
+                const groupDelta = rot - inst.rotateStartNodeRotation;
+                inst.rotateGroupMembers.forEach(function (m) {
+                    self._applyNodeRotation(inst, m.id, m.startRotation + groupDelta);
+                });
+            }
         };
         const up = function (e) {
             if (!inst.isRotating) return;
@@ -3011,6 +3031,7 @@ window.tmDiagramEditor = {
                 inst.dotNetRef.invokeMethodAsync('OnRotateEnded', inst.rotateNodeId, rot);
             }
             inst.rotateNodeId = null;
+            inst.rotateGroupMembers = null;
         };
 
         document.addEventListener('mousemove', move);
