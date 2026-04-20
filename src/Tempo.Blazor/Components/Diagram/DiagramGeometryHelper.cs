@@ -255,7 +255,7 @@ public static class DiagramGeometryHelper
     }
 
     /// <summary>Determines whether three points are collinear within the given tolerance (in pixels).</summary>
-    public static bool IsCollinear((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, double tolerance = 2.0)
+    public static bool IsCollinear((double X, double Y) a, (double X, double Y) b, (double X, double Y) c, double tolerance = 5.0)
     {
         var dx1 = b.X - a.X;
         var dy1 = b.Y - a.Y;

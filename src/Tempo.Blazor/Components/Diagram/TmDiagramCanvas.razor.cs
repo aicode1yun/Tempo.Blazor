@@ -2124,7 +2124,16 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
                 var c1y = y1 + vy * 0.5 + py * offset;
                 var c2x = x2 - vx * 0.5 + px * offset;
                 var c2y = y2 - vy * 0.5 + py * offset;
-                sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
+                if (edge.CubicBezier)
+                {
+                    sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
+                }
+                else
+                {
+                    var qcx = (c1x + c2x) / 2;
+                    var qcy = (c1y + c2y) / 2;
+                    sb.Append($" Q {F(qcx)} {F(qcy)} {F(x2)} {F(y2)}");
+                }
             }
             else
             {
