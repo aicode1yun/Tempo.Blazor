@@ -878,6 +878,8 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 .tm-diagram-edge-path {
     fill: none;
     pointer-events: none;
+    stroke-linejoin: round;
+    stroke-linecap: round;
 }
 
 .tm-diagram-edge-hit-path {

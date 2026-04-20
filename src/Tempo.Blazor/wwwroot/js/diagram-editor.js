@@ -699,6 +699,16 @@ window.tmDiagramEditor = {
                     const pt = this._screenToDoc(inst, e.clientX, e.clientY);
                     inst.dragWholeEdgeStartDoc = pt;
                     inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
+                    // Cache edge endpoint positions for guideline snapping
+                    const pathEl = inst.svg.querySelector('.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
+                    if (pathEl) {
+                        const len = pathEl.getTotalLength();
+                        const p1 = pathEl.getPointAtLength(0);
+                        const p2 = pathEl.getPointAtLength(len);
+                        inst.dragWholeEdgeStartPts = { source: { x: p1.x, y: p1.y }, target: { x: p2.x, y: p2.y } };
+                    } else {
+                        inst.dragWholeEdgeStartPts = null;
+                    }
                     inst.container.style.cursor = 'grabbing';
                     return;
                 }
@@ -951,9 +961,16 @@ window.tmDiagramEditor = {
             this._drawGuideLines(inst, guides);
             this._updateDanglingVisuals(inst, inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
 
-            // Detect hover over node for reconnect
-            const el = document.elementFromPoint(e.clientX, e.clientY);
-            const nodeEl = el ? el.closest('[data-node-id]') : null;
+            // Detect hover over node for reconnect (use elementsFromPoint because the dangling SVG handle blocks elementFromPoint)
+            const els = document.elementsFromPoint(e.clientX, e.clientY);
+            let nodeEl = null;
+            for (let i = 0; i < els.length; i++) {
+                const candidate = els[i].closest('[data-node-id]');
+                if (candidate) {
+                    nodeEl = candidate;
+                    break;
+                }
+            }
             if (nodeEl) {
                 const hoverNodeId = nodeEl.getAttribute('data-node-id');
                 if (inst.dragDanglingHoverNodeId !== hoverNodeId) {
@@ -1040,8 +1057,33 @@ window.tmDiagramEditor = {
                     y: Math.round(pt.y / inst.gridSize) * inst.gridSize
                 };
             }
-            const dx = pt.x - inst.dragWholeEdgeStartDoc.x;
-            const dy = pt.y - inst.dragWholeEdgeStartDoc.y;
+            // Compute delta
+            let dx = pt.x - inst.dragWholeEdgeStartDoc.x;
+            let dy = pt.y - inst.dragWholeEdgeStartDoc.y;
+            // Snap guidelines against edge endpoints, not mouse cursor
+            if (inst.dragWholeEdgeStartPts) {
+                const sPt = { x: inst.dragWholeEdgeStartPts.source.x + dx, y: inst.dragWholeEdgeStartPts.source.y + dy };
+                const tPt = { x: inst.dragWholeEdgeStartPts.target.x + dx, y: inst.dragWholeEdgeStartPts.target.y + dy };
+                const sGuides = this._computeSnapGuidesForPoint(inst, sPt.x, sPt.y);
+                const tGuides = this._computeSnapGuidesForPoint(inst, tPt.x, tPt.y);
+                // Merge: prefer the guide with the smallest delta
+                const guides = { x: null, y: null };
+                if (sGuides.x && tGuides.x) {
+                    guides.x = Math.abs(sGuides.x.delta) < Math.abs(tGuides.x.delta) ? sGuides.x : tGuides.x;
+                } else if (sGuides.x || tGuides.x) {
+                    guides.x = sGuides.x || tGuides.x;
+                }
+                if (sGuides.y && tGuides.y) {
+                    guides.y = Math.abs(sGuides.y.delta) < Math.abs(tGuides.y.delta) ? sGuides.y : tGuides.y;
+                } else if (sGuides.y || tGuides.y) {
+                    guides.y = sGuides.y || tGuides.y;
+                }
+                if (guides.x) { dx += guides.x.delta; pt.x += guides.x.delta; }
+                if (guides.y) { dy += guides.y.delta; pt.y += guides.y.delta; }
+                this._drawGuideLines(inst, guides);
+            } else {
+                this._drawGuideLines(inst, { x: null, y: null });
+            }
             inst.dragWholeEdgeDeltaDoc = { x: dx, y: dy };
             const group = inst.svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + inst.dragWholeEdgeId + '"]');
             if (group) {
@@ -1234,8 +1276,16 @@ window.tmDiagramEditor = {
                     let relY = rect.h > 0 ? Math.max(0, Math.min(1, (pt.y - rect.y) / rect.h)) : 0.5;
                     inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalOutlineConnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, relX, relY);
                 } else {
-                    // Find closest port or default to null
-                    const portEl = e.target.closest('.tm-diagram-port');
+                    // Find closest port under cursor (elementsFromPoint because dangling SVG handle blocks elementFromPoint)
+                    const els = document.elementsFromPoint(e.clientX, e.clientY);
+                    let portEl = null;
+                    for (let i = 0; i < els.length; i++) {
+                        const candidate = els[i].closest('.tm-diagram-port');
+                        if (candidate) {
+                            portEl = candidate;
+                            break;
+                        }
+                    }
                     const portId = portEl ? portEl.getAttribute('data-port-id') : null;
                     inst.dotNetRef.invokeMethodAsync('OnEdgeTerminalReconnected', inst.dragDanglingEdgeId, inst.dragDanglingType, inst.dragDanglingHoverNodeId, portId);
                 }
@@ -2316,8 +2366,9 @@ window.tmDiagramEditor = {
             handle.setAttribute('x', x - 4);
             handle.setAttribute('y', y - 4);
         }
-        const hitPath = svg.querySelector('path.tm-diagram-edge-hit-path[data-edge-id="' + edgeId + '"]');
-        const visPath = svg.querySelector('path.tm-diagram-edge-path[data-edge-id="' + edgeId + '"]');
+        const group = svg.querySelector('g.tm-diagram-edge-group[data-edge-id="' + edgeId + '"]');
+        const hitPath = group ? group.querySelector('path.tm-diagram-edge-hit-path') : null;
+        const visPath = group ? group.querySelector('path.tm-diagram-edge-path') : null;
         if (!hitPath || !visPath) return;
         const d = hitPath.getAttribute('d');
         if (!d) return;
@@ -3107,9 +3158,55 @@ window.tmDiagramEditor = {
     },
 
     _computeSnapGuidesForPoint: function (inst, x, y) {
-        const fakeId = '__point__';
-        const fakeStart = { x: x, y: y, w: 0, h: 0 };
-        return this._computeSnapGuides(inst, [fakeId], { [fakeId]: fakeStart }, 0, 0);
+        const threshold = 8 / inst.scale;
+        const guides = { x: null, y: null, distances: { x: null, y: null } };
+        if (!inst.htmlLayer) return guides;
+
+        let xBest = null;
+        let yBest = null;
+        const self = this;
+
+        inst.htmlLayer.querySelectorAll('.tm-diagram-node').forEach(function (el) {
+            const id = el.getAttribute('data-node-id');
+            if (!id) return;
+            const r = self._nodeRect(inst, id);
+            if (!r) return;
+
+            const xTargets = [
+                { val: r.left, prop: 'left' },
+                { val: r.right, prop: 'right' },
+                { val: r.left + r.w / 2, prop: 'centerX' }
+            ];
+            for (let i = 0; i < xTargets.length; i++) {
+                const t = xTargets[i];
+                const delta = t.val - x;
+                if (Math.abs(delta) <= threshold) {
+                    if (!xBest || Math.abs(delta) < Math.abs(xBest.delta)) {
+                        xBest = { delta: delta, dProp: 'centerX', tProp: t.prop, dVal: x, tVal: t.val };
+                    }
+                }
+            }
+
+            const yTargets = [
+                { val: r.top, prop: 'top' },
+                { val: r.bottom, prop: 'bottom' },
+                { val: r.top + r.h / 2, prop: 'centerY' }
+            ];
+            for (let i = 0; i < yTargets.length; i++) {
+                const t = yTargets[i];
+                const delta = t.val - y;
+                if (Math.abs(delta) <= threshold) {
+                    if (!yBest || Math.abs(delta) < Math.abs(yBest.delta)) {
+                        yBest = { delta: delta, dProp: 'centerY', tProp: t.prop, dVal: y, tVal: t.val };
+                    }
+                }
+            }
+        });
+
+        if (xBest) guides.x = xBest;
+        if (yBest) guides.y = yBest;
+
+        return guides;
     },
 
     _drawGuideLines: function (inst, guides) {
