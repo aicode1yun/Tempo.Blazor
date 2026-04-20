@@ -281,6 +281,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnElementMoved(string id, double x, double y)
     {
+        System.Console.WriteLine($"[OnElementMoved] id={id} x={x} y={y}");
         if (Document is null || ReadOnly) return;
         var movedNode = Document.Nodes.FirstOrDefault(n => n.Id == id);
         if (movedNode is not null && IsNodeLocked(movedNode)) return;
@@ -1167,6 +1168,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         double? targetConstraintRx = null, double? targetConstraintRy = null, bool? targetConstraintPerimeter = null,
         double? targetPointX = null, double? targetPointY = null)
     {
+        System.Console.WriteLine($"[JsOnEdgeCreated] targetNodeId={targetNodeId} targetPortId={targetPortId} targetEdgeId={targetEdgeId} targetPoint=({targetPointX},{targetPointY})");
         if (ReadOnly || Document is null) return;
         await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset, targetEdgeId, targetEdgeT,
             sourceConstraintRx, sourceConstraintRy, sourceConstraintPerimeter,
@@ -1408,6 +1410,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnEdgeTerminalReconnected(string edgeId, string type, string nodeId, string? portId)
     {
+        System.Console.WriteLine($"[OnEdgeTerminalReconnected] edge={edgeId} type={type} node={nodeId} port={portId}");
         if (ReadOnly || Document is null) return;
         var edge = Document.Edges.FirstOrDefault(e => e.Id == edgeId);
         if (edge is null) return;

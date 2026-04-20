@@ -1050,6 +1050,7 @@ window.tmDiagramEditor = {
         if (inst.isDraggingWholeEdge && inst.dragWholeEdgeId) {
             e.preventDefault();
             e.stopPropagation();
+            console.log('[WholeEdgeDrag] mousemove edge=' + inst.dragWholeEdgeId);
             let pt = this._screenToDoc(inst, e.clientX, e.clientY);
             if (inst.gridSize > 0 && !e.altKey) {
                 pt = {
@@ -1060,24 +1061,17 @@ window.tmDiagramEditor = {
             // Compute delta
             let dx = pt.x - inst.dragWholeEdgeStartDoc.x;
             let dy = pt.y - inst.dragWholeEdgeStartDoc.y;
-            // Snap guidelines against edge endpoints, not mouse cursor
+            // Snap guidelines using bounding box of both endpoints (like node-drag snapping)
             if (inst.dragWholeEdgeStartPts) {
                 const sPt = { x: inst.dragWholeEdgeStartPts.source.x + dx, y: inst.dragWholeEdgeStartPts.source.y + dy };
                 const tPt = { x: inst.dragWholeEdgeStartPts.target.x + dx, y: inst.dragWholeEdgeStartPts.target.y + dy };
-                const sGuides = this._computeSnapGuidesForPoint(inst, sPt.x, sPt.y);
-                const tGuides = this._computeSnapGuidesForPoint(inst, tPt.x, tPt.y);
-                // Merge: prefer the guide with the smallest delta
-                const guides = { x: null, y: null };
-                if (sGuides.x && tGuides.x) {
-                    guides.x = Math.abs(sGuides.x.delta) < Math.abs(tGuides.x.delta) ? sGuides.x : tGuides.x;
-                } else if (sGuides.x || tGuides.x) {
-                    guides.x = sGuides.x || tGuides.x;
-                }
-                if (sGuides.y && tGuides.y) {
-                    guides.y = Math.abs(sGuides.y.delta) < Math.abs(tGuides.y.delta) ? sGuides.y : tGuides.y;
-                } else if (sGuides.y || tGuides.y) {
-                    guides.y = sGuides.y || tGuides.y;
-                }
+                const minX = Math.min(sPt.x, tPt.x);
+                const minY = Math.min(sPt.y, tPt.y);
+                const maxX = Math.max(sPt.x, tPt.x);
+                const maxY = Math.max(sPt.y, tPt.y);
+                const fakeId = '__edge__';
+                const fakeStart = { x: minX, y: minY, w: Math.max(1, maxX - minX), h: Math.max(1, maxY - minY) };
+                const guides = this._computeSnapGuides(inst, [fakeId], { [fakeId]: fakeStart }, 0, 0);
                 if (guides.x) { dx += guides.x.delta; pt.x += guides.x.delta; }
                 if (guides.y) { dy += guides.y.delta; pt.y += guides.y.delta; }
                 this._drawGuideLines(inst, guides);
@@ -1165,16 +1159,20 @@ window.tmDiagramEditor = {
                     inst.drawSource.side, inst.drawSource.offset, null, 0.5,
                     inst.drawHoverEdgeId, inst.drawHoverEdgeT,
                     inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
-                    null, null, null);
+                    null, null, null,
+                    null, null);
                 this._cancelEdgeDraw(inst);
                 return;
             }
-            const portEl = e.target.closest('.tm-diagram-port');
+            // Use elementFromPoint because e.target may hit SVG grid/path instead of HTML port overlay
+            const hitEl = document.elementFromPoint(e.clientX, e.clientY);
+            const portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
             if (portEl) {
                 const nodeEl = portEl.closest('[data-node-id]');
                 if (nodeEl) {
                     const targetNodeId = nodeEl.getAttribute('data-node-id');
                     const targetPortId = portEl.getAttribute('data-port-id');
+                    console.log('[EdgeDraw] Port connect -> nodeId=' + targetNodeId + ' portId=' + targetPortId);
                     // Allow self-connections (loop edges)
                     inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                         inst.drawSource.nodeId, inst.drawSource.portId,
@@ -1182,10 +1180,13 @@ window.tmDiagramEditor = {
                         inst.drawSource.side, inst.drawSource.offset, null, 0.5,
                         null, 0.5,
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
-                        null, null, null);
+                        null, null, null,
+                        null, null);
+                    this._cancelEdgeDraw(inst);
+                    return;
                 }
             }
-            const cpEl = e.target.closest('.tm-diagram-connection-point');
+            const cpEl = hitEl ? hitEl.closest('.tm-diagram-connection-point') : null;
             if (cpEl) {
                 const nodeEl = cpEl.closest('[data-node-id]');
                 if (nodeEl) {
@@ -1193,17 +1194,22 @@ window.tmDiagramEditor = {
                     const targetRx = parseFloat(cpEl.getAttribute('data-cp-rx'));
                     const targetRy = parseFloat(cpEl.getAttribute('data-cp-ry'));
                     const targetPerimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
+                    console.log('[EdgeDraw] CP connect -> nodeId=' + targetNodeId);
                     inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                         inst.drawSource.nodeId, inst.drawSource.portId,
                         targetNodeId, null,
                         inst.drawSource.side, inst.drawSource.offset, null, 0.5,
                         null, 0.5,
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
-                        targetRx, targetRy, targetPerimeter);
+                        targetRx, targetRy, targetPerimeter,
+                        null, null);
+                    this._cancelEdgeDraw(inst);
+                    return;
                 }
             }
             // Dangling edge: drop on empty canvas
             const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            console.log('[EdgeDraw] Dangling -> pt=' + docPt.x + ',' + docPt.y);
             inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                 inst.drawSource.nodeId, inst.drawSource.portId,
                 null, null,
@@ -3160,7 +3166,7 @@ window.tmDiagramEditor = {
     _computeSnapGuidesForPoint: function (inst, x, y) {
         const threshold = 8 / inst.scale;
         const guides = { x: null, y: null, distances: { x: null, y: null } };
-        if (!inst.htmlLayer) return guides;
+        if (!inst.htmlLayer) { console.log('[SnapPoint] no htmlLayer'); return guides; }
 
         let xBest = null;
         let yBest = null;
@@ -3205,12 +3211,13 @@ window.tmDiagramEditor = {
 
         if (xBest) guides.x = xBest;
         if (yBest) guides.y = yBest;
-
+        console.log('[SnapPoint] x=' + x + ' y=' + y + ' hasX=' + !!guides.x + ' hasY=' + !!guides.y);
         return guides;
     },
 
     _drawGuideLines: function (inst, guides) {
         this._clearGuideLines(inst);
+        console.log('[DrawGuides] hasX=' + !!guides.x + ' hasY=' + !!guides.y);
         if (!inst.svg) return;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.id = 'tm-diagram-snap-guides';
