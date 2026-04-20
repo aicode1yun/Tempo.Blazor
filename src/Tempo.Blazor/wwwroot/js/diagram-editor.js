@@ -494,6 +494,21 @@ window.tmDiagramEditor = {
         inst.groupBoundsEls = [];
     },
 
+    // ── Hit-path helper (HTML overlay may block SVG hit-path, use elementFromPoint fallback)
+    _findHitPath: function (e) {
+        let el = e.target.closest('.tm-diagram-edge-hit-path');
+        if (el) return el;
+        if (typeof document.elementsFromPoint === 'function') {
+            const all = document.elementsFromPoint(e.clientX, e.clientY);
+            for (let i = 0; i < all.length; i++) {
+                if (all[i].classList && all[i].classList.contains('tm-diagram-edge-hit-path')) {
+                    return all[i];
+                }
+            }
+        }
+        return null;
+    },
+
     // ── Mouse down ───────────────────────────────────────────────────────────
 
     _onMouseDown: function (e, inst) {
@@ -522,7 +537,7 @@ window.tmDiagramEditor = {
 
         // Right-click on edge or label -> select edge
         if (isRightClick) {
-            const edgeEl = e.target.closest('.tm-diagram-edge-hit-path');
+            const edgeEl = this._findHitPath(e);
             if (edgeEl) {
                 const edgeId = edgeEl.getAttribute('data-edge-id');
                 if (edgeId) {
@@ -668,7 +683,7 @@ window.tmDiagramEditor = {
 
         // Left-click on edge hit-path? -> start whole-edge drag
         if (!isRightClick && !inst.readOnly) {
-            const edgeHitEl = e.target.closest('.tm-diagram-edge-hit-path');
+            const edgeHitEl = this._findHitPath(e);
             if (edgeHitEl) {
                 const edgeId = edgeHitEl.getAttribute('data-edge-id');
                 if (edgeId) {
@@ -863,6 +878,10 @@ window.tmDiagramEditor = {
                     y: Math.round(pt.y / inst.gridSize) * inst.gridSize
                 };
             }
+            const guides = this._computeSnapGuidesForPoint(inst, pt.x, pt.y);
+            if (guides.x) pt.x += guides.x.delta;
+            if (guides.y) pt.y += guides.y.delta;
+            this._drawGuideLines(inst, guides);
             this._updateWaypointVisuals(inst, inst.dragWaypointEdgeId, inst.dragWaypointIndex, pt.x, pt.y);
             return;
         }
@@ -926,6 +945,10 @@ window.tmDiagramEditor = {
                     y: Math.round(pt.y / inst.gridSize) * inst.gridSize
                 };
             }
+            const guides = this._computeSnapGuidesForPoint(inst, pt.x, pt.y);
+            if (guides.x) pt.x += guides.x.delta;
+            if (guides.y) pt.y += guides.y.delta;
+            this._drawGuideLines(inst, guides);
             this._updateDanglingVisuals(inst, inst.dragDanglingEdgeId, inst.dragDanglingType, pt.x, pt.y);
 
             // Detect hover over node for reconnect
@@ -1160,6 +1183,7 @@ window.tmDiagramEditor = {
             inst.dragWaypointIndex = null;
             inst.dragWaypointStartScreen = null;
             inst.dragWaypointStartDoc = null;
+            this._clearGuideLines(inst);
             return;
         }
 
@@ -1230,6 +1254,7 @@ window.tmDiagramEditor = {
             inst.dragDanglingType = null;
             inst.dragDanglingStartDoc = null;
             inst.dragDanglingStartScreen = null;
+            this._clearGuideLines(inst);
             return;
         }
 
@@ -1240,6 +1265,7 @@ window.tmDiagramEditor = {
             inst.dragJettySide = null;
             inst.dragJettyNodeId = null;
             inst.dragJettyStartDoc = null;
+            this._clearGuideLines(inst);
             return;
         }
 
@@ -1309,6 +1335,7 @@ window.tmDiagramEditor = {
             inst.dragWholeEdgeStartDoc = null;
             inst.dragWholeEdgeDeltaDoc = { x: 0, y: 0 };
             inst.container.style.cursor = inst.toolMode === 'pan' ? 'grab' : '';
+            this._clearGuideLines(inst);
             return;
         }
 
@@ -3077,6 +3104,12 @@ window.tmDiagramEditor = {
         else if (s.endsWith('0')) s = s.slice(0, -1);
         if (s === '-0') s = '0';
         return s + ' ' + unit;
+    },
+
+    _computeSnapGuidesForPoint: function (inst, x, y) {
+        const fakeId = '__point__';
+        const fakeStart = { x: x, y: y, w: 0, h: 0 };
+        return this._computeSnapGuides(inst, [fakeId], { [fakeId]: fakeStart }, 0, 0);
     },
 
     _drawGuideLines: function (inst, guides) {

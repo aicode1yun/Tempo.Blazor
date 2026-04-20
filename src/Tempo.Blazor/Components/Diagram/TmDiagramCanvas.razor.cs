@@ -2105,42 +2105,26 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             {
                 var (x1, y1) = pts[0];
                 var (x2, y2) = pts[1];
-                var dx = Math.Abs(x2 - x1);
-                var dy = Math.Abs(y2 - y1);
-                if (edge.CubicBezier)
+                var vx = x2 - x1;
+                var vy = y2 - y1;
+                var len = Math.Sqrt(vx * vx + vy * vy);
+                double px, py;
+                if (len > 0.001)
                 {
-                    double c1x, c1y, c2x, c2y;
-                    if (dx > dy)
-                    {
-                        c1x = x1 + dx * 0.5;
-                        c1y = y1;
-                        c2x = x2 - dx * 0.5;
-                        c2y = y2;
-                    }
-                    else
-                    {
-                        c1x = x1;
-                        c1y = y1 + dy * 0.5;
-                        c2x = x2;
-                        c2y = y2 - dy * 0.5;
-                    }
-                    sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
+                    px = -vy / len;
+                    py = vx / len;
                 }
                 else
                 {
-                    double cx, cy;
-                    if (dx > dy)
-                    {
-                        cx = x1 + (x2 - x1) * 0.5;
-                        cy = y1;
-                    }
-                    else
-                    {
-                        cx = x1;
-                        cy = y1 + (y2 - y1) * 0.5;
-                    }
-                    sb.Append($" Q {F(cx)} {F(cy)} {F(x2)} {F(y2)}");
+                    px = 0;
+                    py = -1;
                 }
+                var offset = Math.Min(Math.Max(len * 0.3, 20), 80);
+                var c1x = x1 + vx * 0.5 + px * offset;
+                var c1y = y1 + vy * 0.5 + py * offset;
+                var c2x = x2 - vx * 0.5 + px * offset;
+                var c2y = y2 - vy * 0.5 + py * offset;
+                sb.Append($" C {F(c1x)} {F(c1y)} {F(c2x)} {F(c2y)} {F(x2)} {F(y2)}");
             }
             else
             {
