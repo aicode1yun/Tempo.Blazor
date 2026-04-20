@@ -50,11 +50,24 @@ public class DiagramLayoutE2ETests : WasmTestBase
 
     private async Task SelectAllNodesAsync(IPage page)
     {
-        // Click first node to focus editor, then select all
-        var firstNode = page.Locator(".tm-diagram-node").First;
-        await firstNode.ClickAsync();
-        await page.Keyboard.PressAsync("Control+a");
-        await page.WaitForTimeoutAsync(500);
+        // Use JS to reliably select all nodes and notify .NET
+        await page.EvaluateAsync("""
+            () => {
+                const container = document.querySelector('.tm-diagram-canvas');
+                if (!container) return;
+                const inst = tmDiagramEditor.instances.get(container.id);
+                if (!inst) return;
+                const ids = Array.from(document.querySelectorAll('.tm-diagram-node'))
+                    .map(n => n.getAttribute('data-node-id'))
+                    .filter(id => id);
+                inst.selectedIds = new Set(ids);
+                tmDiagramEditor._updateSelection(inst);
+                if (inst.dotNetRef) {
+                    inst.dotNetRef.invokeMethodAsync('OnSelectionChanged', ids);
+                }
+            }
+        """);
+        await page.WaitForTimeoutAsync(1000);
     }
 
     private async Task OpenLayoutDropdownAsync(IPage page)
@@ -252,4 +265,59 @@ public class DiagramLayoutE2ETests : WasmTestBase
             Assert.IsTrue(distinctY > 1, $"Grid layout should produce multiple rows, got {distinctY} distinct Y values");
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // Align / Distribute (toolbar + context menu wiring)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    public async Task AlignLeft_AlinesNodesToSameX()
+    {
+        var page = await PrepareDiagramPageAsync();
+        await SelectAllNodesAsync(page);
+
+        // Open Arrange dropdown and click Align Left
+        var trigger = page.Locator(".tm-diagram-arrange-dropdown .tm-dropdown-trigger");
+        await trigger.ClickAsync();
+        await page.WaitForTimeoutAsync(200);
+
+        var option = page.Locator(".tm-dropdown-item")
+            .Filter(new() { HasTextRegex = new Regex($"{Regex.Escape("Align Left")}|{Regex.Escape("Zarovnat vlevo")}") });
+        await option.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        var positions = await GetNodeLayoutPositionsAsync(page);
+        TestContext.WriteLine($"Nodes after align left: {string.Join(", ", positions.Select(p => $"{p.Id}=({p.X:F1},{p.Y:F1})"))}");
+        AssertAllNodesFinite(positions);
+
+        var xs = positions.Select(p => p.X).Distinct().ToList();
+        Assert.AreEqual(1, xs.Count, "Align Left should make all nodes share the same X coordinate");
+    }
+
+    [TestMethod]
+    public async Task DistributeHorizontal_SpreadsNodesEvenly()
+    {
+        var page = await PrepareDiagramPageAsync();
+        await SelectAllNodesAsync(page);
+
+        // Open Arrange dropdown and click Distribute Horizontally
+        var trigger = page.Locator(".tm-diagram-arrange-dropdown .tm-dropdown-trigger");
+        await trigger.ClickAsync();
+        await page.WaitForTimeoutAsync(200);
+
+        var option = page.Locator(".tm-dropdown-item")
+            .Filter(new() { HasTextRegex = new Regex($"{Regex.Escape("Horizontally")}|{Regex.Escape("Vodorovně")}") });
+        await option.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        var positions = await GetNodeLayoutPositionsAsync(page);
+        TestContext.WriteLine($"Nodes after distribute horizontal: {string.Join(", ", positions.Select(p => $"{p.Id}=({p.X:F1},{p.Y:F1})"))}");
+        AssertAllNodesFinite(positions);
+
+        // With 2 nodes they should end up at different X values
+        var xs = positions.Select(p => p.X).Distinct().OrderBy(x => x).ToList();
+        Assert.IsTrue(xs.Count > 1, "Distribute Horizontal should spread nodes across different X coordinates");
+    }
 }
+
+

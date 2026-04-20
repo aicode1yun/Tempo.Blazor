@@ -166,6 +166,22 @@
                                      OnClick="OnPasteSize" />
                 </div>
 
+                @* Arrange: Align / Distribute *@
+                <div class="tm-diagram-editor__toolbar-group">
+                    <TmDropdown Text="@Loc["TmDiagramProperties_Distribute"]" Icon="@IconNames.Layout" Disabled="@(!CanAlign || ReadOnly)" OnSelect="HandleArrangeSelect" Class="tm-diagram-arrange-dropdown">
+                        <TmDropdownItem Value="align-left" Icon="@IconNames.AlignLeft">@Loc["TmDiagramProperties_AlignLeft"]</TmDropdownItem>
+                        <TmDropdownItem Value="align-center" Icon="@IconNames.AlignCenter">@Loc["TmDiagramProperties_AlignCenter"]</TmDropdownItem>
+                        <TmDropdownItem Value="align-right" Icon="@IconNames.AlignRight">@Loc["TmDiagramProperties_AlignRight"]</TmDropdownItem>
+                        <div class="tm-dropdown-sep" role="separator"></div>
+                        <TmDropdownItem Value="align-top" Icon="@IconNames.AlignLeft">@Loc["TmDiagramProperties_AlignTop"]</TmDropdownItem>
+                        <TmDropdownItem Value="align-middle" Icon="@IconNames.AlignCenter">@Loc["TmDiagramProperties_AlignMiddle"]</TmDropdownItem>
+                        <TmDropdownItem Value="align-bottom" Icon="@IconNames.AlignRight">@Loc["TmDiagramProperties_AlignBottom"]</TmDropdownItem>
+                        <div class="tm-dropdown-sep" role="separator"></div>
+                        <TmDropdownItem Value="distribute-horizontal">@Loc["TmDiagramProperties_DistributeHorizontal"]</TmDropdownItem>
+                        <TmDropdownItem Value="distribute-vertical">@Loc["TmDiagramProperties_DistributeVertical"]</TmDropdownItem>
+                    </TmDropdown>
+                </div>
+
                 <div class="tm-diagram-editor__toolbar-spacer"></div>
 
                 @* Search *@
@@ -515,6 +531,23 @@
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuBringToFront">@Loc["TmDiagramEditor_BringToFront"]</button>
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuSendToBack">@Loc["TmDiagramEditor_SendToBack"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
+                            @if (CanAlign)
+                            {
+                                <span class="tm-diagram-editor__context-heading">@Loc["TmDiagramProperties_Distribute"]</span>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("left")'>@Loc["TmDiagramProperties_AlignLeft"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("center")'>@Loc["TmDiagramProperties_AlignCenter"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("right")'>@Loc["TmDiagramProperties_AlignRight"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("top")'>@Loc["TmDiagramProperties_AlignTop"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("middle")'>@Loc["TmDiagramProperties_AlignMiddle"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnAlign("bottom")'>@Loc["TmDiagramProperties_AlignBottom"]</button>
+                                <div class="tm-diagram-editor__context-sep" role="separator"></div>
+                            }
+                            @if (CanDistribute)
+                            {
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnDistribute("horizontal")'>@Loc["TmDiagramProperties_DistributeHorizontal"]</button>
+                                <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => OnDistribute("vertical")'>@Loc["TmDiagramProperties_DistributeVertical"]</button>
+                                <div class="tm-diagram-editor__context-sep" role="separator"></div>
+                            }
                             @if (GetContextMenuNodeLocked())
                             {
                                 <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuUnlock">@Loc["TmDiagramEditor_Unlock"]</button>

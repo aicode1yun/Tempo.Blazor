@@ -105,6 +105,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private double _zoomLevel = 1.0;
     private string _zoomLabel => $"{(int)Math.Round(_zoomLevel * 100)}%";
 
+    private bool CanArrange => _selectedIds.Length > 1;
+
     private bool _toolboxCollapsed;
     private bool _propsCollapsed;
     private bool _layersCollapsed;
@@ -1258,6 +1260,29 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await _canvas.OnDeleteSelected(_selectedIds);
     }
 
+    private bool CanAlign => _document?.Nodes.Count(n => _selectedIds.Contains(n.Id)) > 1 && _selectedIds.All(id => _document?.Nodes.Any(n => n.Id == id) == true);
+    private bool CanDistribute => _document?.Nodes.Count(n => _selectedIds.Contains(n.Id)) > 2 && _selectedIds.All(id => _document?.Nodes.Any(n => n.Id == id) == true);
+
+    private async Task OnAlign(string alignment)
+    {
+        if (_document is null || ReadOnly || !CanAlign) return;
+        var ids = _document.Nodes.Where(n => _selectedIds.Contains(n.Id)).Select(n => n.Id).ToList();
+        if (ids.Count <= 1) return;
+        var cmd = new AlignNodesCommand(_document, ids, alignment);
+        ActiveCommandStack.Push(cmd);
+        await DocumentChanged.InvokeAsync(_document);
+    }
+
+    private async Task OnDistribute(string axis)
+    {
+        if (_document is null || ReadOnly || !CanDistribute) return;
+        var ids = _document.Nodes.Where(n => _selectedIds.Contains(n.Id)).Select(n => n.Id).ToList();
+        if (ids.Count <= 2) return;
+        var cmd = new DistributeNodesCommand(_document, ids, axis);
+        ActiveCommandStack.Push(cmd);
+        await DocumentChanged.InvokeAsync(_document);
+    }
+
     private void OnSearchClicked()
     {
         _showSearchPanel = true;
@@ -1364,6 +1389,21 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             case "force": await RunLayout("force"); break;
             case "circle": await RunLayout("circle"); break;
             case "grid": await RunLayout("grid"); break;
+        }
+    }
+
+    private async Task HandleArrangeSelect(string value)
+    {
+        switch (value)
+        {
+            case "align-left": await OnAlign("left"); break;
+            case "align-center": await OnAlign("center"); break;
+            case "align-right": await OnAlign("right"); break;
+            case "align-top": await OnAlign("top"); break;
+            case "align-middle": await OnAlign("middle"); break;
+            case "align-bottom": await OnAlign("bottom"); break;
+            case "distribute-horizontal": await OnDistribute("horizontal"); break;
+            case "distribute-vertical": await OnDistribute("vertical"); break;
         }
     }
 
