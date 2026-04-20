@@ -3520,8 +3520,8 @@ window.tmDiagramEditor = {
 
         const result = [];
         nodes.forEach((n, i) => {
-            const col = n.gridColumn !== undefined ? n.gridColumn : (i % columns);
-            const row = n.gridRow !== undefined ? n.gridRow : Math.floor(i / columns);
+            const col = n.gridColumn != null ? n.gridColumn : (i % columns);
+            const row = n.gridRow != null ? n.gridRow : Math.floor(i / columns);
             const x = padding + col * (cellWidth + padding);
             const y = padding + row * (cellHeight + padding);
             result.push({ id: n.id, x: x, y: y });
