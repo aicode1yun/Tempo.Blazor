@@ -1050,7 +1050,7 @@ window.tmDiagramEditor = {
         if (inst.isDraggingWholeEdge && inst.dragWholeEdgeId) {
             e.preventDefault();
             e.stopPropagation();
-            console.log('[WholeEdgeDrag] mousemove edge=' + inst.dragWholeEdgeId);
+
             let pt = this._screenToDoc(inst, e.clientX, e.clientY);
             if (inst.gridSize > 0 && !e.altKey) {
                 pt = {
@@ -1194,7 +1194,7 @@ window.tmDiagramEditor = {
                     const targetRx = parseFloat(cpEl.getAttribute('data-cp-rx'));
                     const targetRy = parseFloat(cpEl.getAttribute('data-cp-ry'));
                     const targetPerimeter = cpEl.getAttribute('data-cp-perimeter') === 'true';
-                    console.log('[EdgeDraw] CP connect -> nodeId=' + targetNodeId);
+
                     inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                         inst.drawSource.nodeId, inst.drawSource.portId,
                         targetNodeId, null,
@@ -3166,7 +3166,7 @@ window.tmDiagramEditor = {
     _computeSnapGuidesForPoint: function (inst, x, y) {
         const threshold = 8 / inst.scale;
         const guides = { x: null, y: null, distances: { x: null, y: null } };
-        if (!inst.htmlLayer) { console.log('[SnapPoint] no htmlLayer'); return guides; }
+        if (!inst.htmlLayer) return guides;
 
         let xBest = null;
         let yBest = null;
@@ -3211,13 +3211,11 @@ window.tmDiagramEditor = {
 
         if (xBest) guides.x = xBest;
         if (yBest) guides.y = yBest;
-        console.log('[SnapPoint] x=' + x + ' y=' + y + ' hasX=' + !!guides.x + ' hasY=' + !!guides.y);
         return guides;
     },
 
     _drawGuideLines: function (inst, guides) {
         this._clearGuideLines(inst);
-        console.log('[DrawGuides] hasX=' + !!guides.x + ' hasY=' + !!guides.y);
         if (!inst.svg) return;
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
         g.id = 'tm-diagram-snap-guides';

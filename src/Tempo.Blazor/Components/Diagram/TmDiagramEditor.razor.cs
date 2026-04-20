@@ -1514,7 +1514,6 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task OnEdgeCreated((string SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY) args)
     {
-        System.Console.WriteLine($"[OnEdgeCreated] src={args.SourceNodeId}:{args.SourcePortId} tgtNode={args.TargetNodeId} tgtPort={args.TargetPortId} tgtPoint=({args.TargetPointX},{args.TargetPointY})");
         if (_document is null || ReadOnly) return;
 
         var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == args.SourceNodeId);
