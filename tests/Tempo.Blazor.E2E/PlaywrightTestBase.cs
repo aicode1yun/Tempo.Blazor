@@ -84,7 +84,8 @@ public abstract class PlaywrightTestBase
         return await Browser.NewContextAsync(new BrowserNewContextOptions
         {
             ViewportSize = new ViewportSize { Width = 1280, Height = 720 },
-            Locale = "en-US"
+            Locale = "en-US",
+            IgnoreHTTPSErrors = true
         });
     }
 

@@ -110,6 +110,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private bool _toolboxCollapsed;
     private bool _propsCollapsed;
     private bool _layersCollapsed;
+    private bool _showTableInserter;
     private bool _minimapCollapsed;
     private bool _exportMenuOpen;
     private bool _exporting;
@@ -1405,6 +1406,88 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             case "distribute-horizontal": await OnDistribute("horizontal"); break;
             case "distribute-vertical": await OnDistribute("vertical"); break;
         }
+    }
+
+    private async Task HandleInsertSelect(string value)
+    {
+        Console.WriteLine($"[HandleInsertSelect] value={value}, _showTableInserter before={_showTableInserter}");
+        switch (value)
+        {
+            case "table": _showTableInserter = true; await InvokeAsync(StateHasChanged); break;
+            case "text": await InsertText(); break;
+            case "group": await InsertGroup(); break;
+        }
+        Console.WriteLine($"[HandleInsertSelect] _showTableInserter after={_showTableInserter}");
+    }
+
+    private async Task HandleTableInsert((int Rows, int Columns) args)
+    {
+        _showTableInserter = false;
+        await InsertTable(args.Rows, args.Columns);
+    }
+
+    private async Task InsertTable(int rows, int columns)
+    {
+        if (_document is null || ReadOnly) return;
+        var stencil = StencilRegistry.GetStencil("table.basic");
+        if (stencil is null) return;
+
+        var w = columns * 80 + 20;
+        var h = rows * 30 + 20;
+        var page = _document.Pages[_document.ActivePageIndex];
+        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+
+        var node = new DiagramNode
+        {
+            StencilId = "table.basic",
+            X = x,
+            Y = y,
+            W = w,
+            H = h,
+            ZIndex = _document.Nodes.Count > 0 ? _document.Nodes.Max(n => n.ZIndex) + 1 : 0,
+            LayerId = _activeLayerId,
+            IsCollapsible = false,
+        };
+
+        var cells = new List<DiagramTableCellData>();
+        for (int r = 0; r < rows; r++)
+        {
+            for (int c = 0; c < columns; c++)
+            {
+                cells.Add(new DiagramTableCellData
+                {
+                    Row = r,
+                    Column = c,
+                    Text = r == 0 ? $"Header {c + 1}" : $"Cell {r},{c}",
+                    Style = r == 0 ? new DiagramTableCellStyle { FontWeight = "bold", BackgroundColor = "#f3f4f6" } : null
+                });
+            }
+        }
+
+        node.Data["rowCount"] = rows;
+        node.Data["columnCount"] = columns;
+        node.Data["cells"] = cells;
+
+        ActiveCommandStack.Push(new AddNodeCommand(_document, node));
+        await OnDocumentChanged(_document);
+        if (_canvas is not null)
+        {
+            await _canvas.SetSelection(node.Id);
+            await OnSelectionChanged([node.Id]);
+        }
+    }
+
+    private async Task InsertText()
+    {
+        if (_document is null || ReadOnly) return;
+        await HandleQuickInsert("general.text");
+    }
+
+    private async Task InsertGroup()
+    {
+        if (_document is null || ReadOnly) return;
+        await HandleQuickInsert("general.group");
     }
 
     private async Task HandleExportSelect(string value)

@@ -833,6 +833,11 @@
   <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Svisle</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Smíšené</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> vybraných položek</value></data>
+  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmDiagramEditor_InsertTable" xml:space="preserve"><value>Tabulku</value></data>
+  <data name="TmDiagramEditor_InsertText" xml:space="preserve"><value>Text</value></data>
+  <data name="TmDiagramEditor_InsertGroup" xml:space="preserve"><value>Skupinu</value></data>
+  <data name="TmDiagramTableInserter_Title" xml:space="preserve"><value>Vložit tabulku</value></data>
   <data name="TmDiagram_Layout" xml:space="preserve"><value>Rozložit</value></data>
   <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchicky shora dolů</value></data>
   <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchicky zleva doprava</value></data>
@@ -946,7 +951,6 @@
   <data name="TmDiagramEditor_LineSolid" xml:space="preserve"><value>Souvislá</value></data>
   <data name="TmDiagramEditor_LineDashed" xml:space="preserve"><value>Čárkovaná</value></data>
   <data name="TmDiagramEditor_LineDotted" xml:space="preserve"><value>Tečkovaná</value></data>
-  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Vložit</value></data>
   <data name="TmDiagramEditor_Layout" xml:space="preserve"><value>Rozvržení</value></data>
   <data name="TmDiagramEditor_LayoutDagreTb" xml:space="preserve"><value>Dagre shora dolů</value></data>
   <data name="TmDiagramEditor_LayoutDagreLr" xml:space="preserve"><value>Dagre zleva doprava</value></data>

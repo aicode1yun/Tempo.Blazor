@@ -851,6 +851,11 @@
   <data name="TmDiagramProperties_DistributeVertical" xml:space="preserve"><value>Vertically</value></data>
   <data name="TmDiagramProperties_Mixed" xml:space="preserve"><value>Mixed</value></data>
   <data name="TmDiagramProperties_MultiSelection" xml:space="preserve"><value> items selected</value></data>
+  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDiagramEditor_InsertTable" xml:space="preserve"><value>Table</value></data>
+  <data name="TmDiagramEditor_InsertText" xml:space="preserve"><value>Text</value></data>
+  <data name="TmDiagramEditor_InsertGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="TmDiagramTableInserter_Title" xml:space="preserve"><value>Insert table</value></data>
   <data name="TmDiagram_Layout" xml:space="preserve"><value>Layout</value></data>
   <data name="TmDiagram_LayoutHierarchicalTopDown" xml:space="preserve"><value>Hierarchical Top-Down</value></data>
   <data name="TmDiagram_LayoutHierarchicalLeftRight" xml:space="preserve"><value>Hierarchical Left-Right</value></data>
@@ -964,7 +969,6 @@
   <data name="TmDiagramEditor_LineSolid" xml:space="preserve"><value>Solid</value></data>
   <data name="TmDiagramEditor_LineDashed" xml:space="preserve"><value>Dashed</value></data>
   <data name="TmDiagramEditor_LineDotted" xml:space="preserve"><value>Dotted</value></data>
-  <data name="TmDiagramEditor_Insert" xml:space="preserve"><value>Insert</value></data>
   <data name="TmDiagramEditor_Layout" xml:space="preserve"><value>Layout</value></data>
   <data name="TmDiagramEditor_LayoutDagreTb" xml:space="preserve"><value>Dagre Top-Bottom</value></data>
   <data name="TmDiagramEditor_LayoutDagreLr" xml:space="preserve"><value>Dagre Left-Right</value></data>
@@ -1000,5 +1004,89 @@
   <data name="TmDiagramCsvImportDialog_ErrorMappings" xml:space="preserve"><value>Please map all required columns.</value></data>
   <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Failed to parse CSV: {0}</value></data>
   <data name="TmDiagramEditor_VirtualBend" xml:space="preserve"><value>Virtual bend</value></data>
+
+  <!-- ═══════════════ TmNotionEditor ═══════════════ -->
+  <data name="TmNotionEditor_SidebarLabel"       xml:space="preserve"><value>Navigation</value></data>
+  <data name="TmNotionEditor_ToggleSidebar"      xml:space="preserve"><value>Toggle sidebar</value></data>
+  <data name="TmNotionEditor_NavigateBack"       xml:space="preserve"><value>Back</value></data>
+  <data name="TmNotionEditor_Locked"             xml:space="preserve"><value>Read-only</value></data>
+  <data name="TmNotionEditor_Loading"            xml:space="preserve"><value>Loading page…</value></data>
+  <data name="TmNotionEditor_LoadError"          xml:space="preserve"><value>Failed to load page. {0}</value></data>
+  <data name="TmNotionEditor_Untitled"           xml:space="preserve"><value>Untitled</value></data>
+  <data name="TmNotionPage_TitlePlaceholder"     xml:space="preserve"><value>Untitled</value></data>
+  <data name="TmNotionPage_WriteHint"            xml:space="preserve"><value>Press Enter or click here to start writing…</value></data>
+  <data name="TmNotionPage_BlocksLoadError"      xml:space="preserve"><value>Failed to load content. {0}</value></data>
+  <data name="TmNotionPage_AddCover"             xml:space="preserve"><value>Add cover</value></data>
+  <data name="TmNotionPage_AddIcon"              xml:space="preserve"><value>Add icon</value></data>
+  <data name="TmNotionPage_ChangeCover"          xml:space="preserve"><value>Change cover</value></data>
+  <data name="TmNotionPage_RemoveCover"          xml:space="preserve"><value>Remove cover</value></data>
+  <data name="TmNotionPage_IconLabel"            xml:space="preserve"><value>Page icon</value></data>
+  <data name="TmNotionPage_CommentsLabel"                    xml:space="preserve"><value>Comments</value></data>
+  <data name="TmNotionPage_NoComments"                       xml:space="preserve"><value>No comments yet</value></data>
+  <data name="TmNotionPageHeader_DragToReposition"           xml:space="preserve"><value>Drag to reposition</value></data>
+  <data name="TmNotionPageHeader_CoverDialogTitle"           xml:space="preserve"><value>Change cover</value></data>
+  <data name="TmNotionPageHeader_CoverUrl"                   xml:space="preserve"><value>Image URL</value></data>
+  <data name="TmNotionPageHeader_SetCover"                   xml:space="preserve"><value>Set cover</value></data>
+  <data name="TmNotionPageHeader_CoverPresets"               xml:space="preserve"><value>Color presets</value></data>
+  <data name="TmNotionPageHeader_AddDescription"             xml:space="preserve"><value>Add description</value></data>
+  <data name="TmNotionPageHeader_DescriptionPlaceholder"     xml:space="preserve"><value>Add a description…</value></data>
+  <data name="TmNotionPageHeader_RemoveDescription"          xml:space="preserve"><value>Remove description</value></data>
+  <data name="TmNotionPageHeader_EmojiPickerTitle"           xml:space="preserve"><value>Choose icon</value></data>
+  <data name="TmNotionPageHeader_EmojiSearch"                xml:space="preserve"><value>Search emoji…</value></data>
+  <data name="TmNotionPageHeader_RemoveIcon"                 xml:space="preserve"><value>Remove icon</value></data>
+  <data name="TmNotionBlock_AddBlock"                        xml:space="preserve"><value>Add block below</value></data>
+  <data name="TmNotionBlock_DragHandle"                      xml:space="preserve"><value>Drag to reorder</value></data>
+  <data name="TmNotionBlock_ParagraphPlaceholder"            xml:space="preserve"><value>Type '/' for commands…</value></data>
+  <data name="TmNotionBlock_HeadingPlaceholder"              xml:space="preserve"><value>Heading</value></data>
+  <data name="TmNotionBlock_QuotePlaceholder"                xml:space="preserve"><value>Empty quote</value></data>
+  <data name="TmNotionBlock_CalloutPlaceholder"              xml:space="preserve"><value>Callout</value></data>
+  <data name="TmNotionBlock_ListPlaceholder"                 xml:space="preserve"><value>List item</value></data>
+  <data name="TmNotionBlock_TogglePlaceholder"               xml:space="preserve"><value>Toggle</value></data>
+  <data name="TmNotionBlock_CopyCode"                        xml:space="preserve"><value>Copy</value></data>
+  <data name="TmNotionBlock_Copied"                          xml:space="preserve"><value>Copied!</value></data>
+  <data name="TmNotionBlock_MediaUrlPlaceholder"             xml:space="preserve"><value>Paste a URL and press Enter…</value></data>
+  <data name="TmNotionBlock_EquationPlaceholder"             xml:space="preserve"><value>Enter a LaTeX expression…</value></data>
+  <data name="TmNotionBlock_Unsupported"                     xml:space="preserve"><value>Unsupported block type</value></data>
+
+  <!-- Phase 34: Heading Block -->
+  <data name="TmNotionHeadingBlock_ToggleSection"            xml:space="preserve"><value>Toggle section</value></data>
+  <data name="TmNotionHeadingBlock_Placeholder"              xml:space="preserve"><value>Heading</value></data>
+
+  <!-- Phase 32: Block Handle -->
+  <data name="TmNotionBlockHandle_DragToReorder"             xml:space="preserve"><value>Drag to reorder</value></data>
+  <data name="TmNotionBlockHandle_OpenMenu"                  xml:space="preserve"><value>Block options</value></data>
+
+  <!-- Phase 32: Block Context Menu -->
+  <data name="TmNotionBlockContextMenu_Delete"               xml:space="preserve"><value>Delete</value></data>
+  <data name="TmNotionBlockContextMenu_Duplicate"            xml:space="preserve"><value>Duplicate</value></data>
+  <data name="TmNotionBlockContextMenu_TurnInto"             xml:space="preserve"><value>Turn into</value></data>
+  <data name="TmNotionBlockContextMenu_MoveTo"               xml:space="preserve"><value>Move to</value></data>
+  <data name="TmNotionBlockContextMenu_CopyLink"             xml:space="preserve"><value>Copy link to block</value></data>
+  <data name="TmNotionBlockContextMenu_Comment"              xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionBlockContextMenu_Color"                xml:space="preserve"><value>Color</value></data>
+  <data name="TmNotionBlockContextMenu_TextColor"            xml:space="preserve"><value>Color</value></data>
+  <data name="TmNotionBlockContextMenu_Background"           xml:space="preserve"><value>Background</value></data>
+  <data name="TmNotionBlockContextMenu_ColorDefault"         xml:space="preserve"><value>Default</value></data>
+  <data name="TmNotionBlockContextMenu_ColorGray"            xml:space="preserve"><value>Gray</value></data>
+  <data name="TmNotionBlockContextMenu_ColorBrown"           xml:space="preserve"><value>Brown</value></data>
+  <data name="TmNotionBlockContextMenu_ColorOrange"          xml:space="preserve"><value>Orange</value></data>
+  <data name="TmNotionBlockContextMenu_ColorYellow"          xml:space="preserve"><value>Yellow</value></data>
+  <data name="TmNotionBlockContextMenu_ColorGreen"           xml:space="preserve"><value>Green</value></data>
+  <data name="TmNotionBlockContextMenu_ColorBlue"            xml:space="preserve"><value>Blue</value></data>
+  <data name="TmNotionBlockContextMenu_ColorPurple"          xml:space="preserve"><value>Purple</value></data>
+  <data name="TmNotionBlockContextMenu_ColorPink"            xml:space="preserve"><value>Pink</value></data>
+  <data name="TmNotionBlockContextMenu_ColorRed"             xml:space="preserve"><value>Red</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoText"         xml:space="preserve"><value>Text</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoH1"           xml:space="preserve"><value>Heading 1</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoH2"           xml:space="preserve"><value>Heading 2</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoH3"           xml:space="preserve"><value>Heading 3</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoQuote"        xml:space="preserve"><value>Quote</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoCallout"      xml:space="preserve"><value>Callout</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoBullet"       xml:space="preserve"><value>Bulleted list</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoNumbered"     xml:space="preserve"><value>Numbered list</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoTodo"         xml:space="preserve"><value>To-do list</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoToggle"       xml:space="preserve"><value>Toggle list</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoCode"         xml:space="preserve"><value>Code</value></data>
+  <data name="TmNotionBlockContextMenu_TurnIntoDivider"      xml:space="preserve"><value>Divider</value></data>
 
 </root>

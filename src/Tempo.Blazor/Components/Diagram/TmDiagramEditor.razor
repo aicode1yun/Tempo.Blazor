@@ -166,6 +166,24 @@
                                      OnClick="OnPasteSize" />
                 </div>
 
+                @* Insert: Table / Text / Group *@
+                <div class="tm-diagram-insert-dropdown-wrapper">
+                    <div class="tm-diagram-editor__toolbar-group tm-diagram-insert-dropdown">
+                        <TmDropdown Text="@Loc["TmDiagramEditor_Insert"]" Icon="@IconNames.Plus" Disabled="@ReadOnly" OnSelect="HandleInsertSelect">
+                            <TmDropdownItem Value="table" Icon="@IconNames.Grid">@Loc["TmDiagramEditor_InsertTable"]</TmDropdownItem>
+                            <TmDropdownItem Value="text" Icon="@IconNames.Type">@Loc["TmDiagramEditor_InsertText"]</TmDropdownItem>
+                            <TmDropdownItem Value="group" Icon="@IconNames.Users">@Loc["TmDiagramEditor_InsertGroup"]</TmDropdownItem>
+                        </TmDropdown>
+                    </div>
+
+                    @if (_showTableInserter)
+                    {
+                        <div class="tm-diagram-table-inserter-popover">
+                            <TmDiagramTableInserter OnInsert="HandleTableInsert" />
+                        </div>
+                    }
+                </div>
+
                 @* Arrange: Align / Distribute *@
                 <div class="tm-diagram-editor__toolbar-group">
                     <TmDropdown Text="@Loc["TmDiagramProperties_Distribute"]" Icon="@IconNames.Layout" Disabled="@(!CanAlign || ReadOnly)" OnSelect="HandleArrangeSelect" Class="tm-diagram-arrange-dropdown">

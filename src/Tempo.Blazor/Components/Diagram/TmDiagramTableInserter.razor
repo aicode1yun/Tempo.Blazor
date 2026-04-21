@@ -1,0 +1,59 @@
+@namespace Tempo.Blazor.Components.Diagram
+
+<div class="tm-diagram-table-inserter">
+    <div class="tm-diagram-table-inserter__title">@Loc["TmDiagramTableInserter_Title"]</div>
+    <div class="tm-diagram-table-inserter__grid"
+         @onmouseleave="OnGridMouseLeave">
+        @for (int r = 0; r < _rows; r++)
+        {
+            int row = r;
+            @for (int c = 0; c < _cols; c++)
+            {
+                int col = c;
+                bool highlighted = col <= _hoverCol && row <= _hoverRow;
+                <button type="button"
+                        class="tm-diagram-table-inserter__cell @(highlighted ? "tm-diagram-table-inserter__cell--highlighted" : "")"
+                        @onmouseover="() => OnCellHover(col, row)"
+                        @onclick="() => OnCellClick(col, row)"
+                        aria-label="@($"{row + 1} × {col + 1}")">
+                </button>
+            }
+        }
+    </div>
+    <div class="tm-diagram-table-inserter__dims">
+        @(_hoverRow + 1) × @(_hoverCol + 1)
+    </div>
+</div>
+
+@code {
+    private const int _cols = 10;
+    private const int _rows = 8;
+
+    private int _hoverCol = 2;
+    private int _hoverRow = 2;
+
+    /// <summary>Fires when user clicks a cell, passing selected rows and columns (1-based).</summary>
+    [Parameter] public EventCallback<(int Rows, int Columns)> OnInsert { get; set; }
+
+    private void OnCellHover(int col, int row)
+    {
+        _hoverCol = col;
+        _hoverRow = row;
+    }
+
+    private void OnCellClick(int col, int row)
+    {
+        _hoverCol = col;
+        _hoverRow = row;
+        if (OnInsert.HasDelegate)
+        {
+            _ = OnInsert.InvokeAsync((row + 1, col + 1));
+        }
+    }
+
+    private void OnGridMouseLeave()
+    {
+        _hoverCol = 2;
+        _hoverRow = 2;
+    }
+}
