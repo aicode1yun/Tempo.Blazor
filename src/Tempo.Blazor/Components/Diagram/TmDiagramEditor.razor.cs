@@ -327,6 +327,17 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         _contextMenuScreenX = args.ScreenX;
         _contextMenuScreenY = args.ScreenY;
         ClampContextMenuPosition();
+
+        // Make the right-clicked cell visibly the target of the context menu.
+        // If it isn't already in the multi-selection, replace the selection with
+        // just this cell so the user sees which cell will be affected by
+        // "Insert row / column", "Format cell", etc.
+        if (!_selectedTableCells.Any(c => c.Row == args.Row && c.Column == args.Column))
+        {
+            _selectedTableCells.Clear();
+            _selectedTableCells.Add((args.Row, args.Column));
+        }
+
         await InvokeAsync(StateHasChanged);
         if (_canvas is not null)
             await JS.InvokeVoidAsync("tmDiagramEditor.openContextMenu", _canvas.GetContainerRef(), _contextMenuRef);
@@ -399,6 +410,15 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _selectedTableCells.Clear();
         _selectedTableCells.AddRange(cells);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>First-stage Escape cascade: clears the table cell sub-selection only,
+    /// leaving the parent node selected (draw.io-style drill-out).</summary>
+    private async Task HandleClearTableCellSelection()
+    {
+        if (_selectedTableCells.Count == 0) return;
+        _selectedTableCells.Clear();
         await InvokeAsync(StateHasChanged);
     }
 

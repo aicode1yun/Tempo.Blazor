@@ -1,3 +1,4 @@
+using System.Text.Json;
 using Tempo.Blazor.Components.Diagram.Models;
 
 namespace Tempo.Blazor.Components.Diagram.Services;
@@ -5,6 +6,12 @@ namespace Tempo.Blazor.Components.Diagram.Services;
 /// <summary>Provides table cell manipulation helpers for diagram table nodes.</summary>
 public static class TableLayoutService
 {
+    // Round-trips through UpdateNodeDataCommand.DeepCopy produce PascalCase
+    // JsonElement payloads, while external sources may use camelCase — accept
+    // both via case-insensitive matching.
+    private static readonly JsonSerializerOptions s_cellJsonOptions =
+        new() { PropertyNameCaseInsensitive = true };
+
     public static int GetRowCount(DiagramNode node)
     {
         if (node.Data.TryGetValue("rowCount", out var value) && value is not null)
@@ -32,25 +39,16 @@ public static class TableLayoutService
         if (node.Data.TryGetValue("cells", out var value) && value is not null)
         {
             if (value is List<DiagramTableCellData> list) return list;
-            if (value is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Array)
+            if (value is JsonElement je && je.ValueKind == JsonValueKind.Array)
             {
-                return je.EnumerateArray().Select(e => new DiagramTableCellData
+                try
                 {
-                    Row = e.GetProperty("row").GetInt32(),
-                    Column = e.GetProperty("column").GetInt32(),
-                    RowSpan = e.TryGetProperty("rowSpan", out var rs) ? rs.GetInt32() : 1,
-                    ColSpan = e.TryGetProperty("colSpan", out var cs) ? cs.GetInt32() : 1,
-                    Text = e.TryGetProperty("text", out var t) ? t.GetString() ?? "" : "",
-                    Style = e.TryGetProperty("style", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.Object
-                        ? new DiagramTableCellStyle
-                        {
-                            BackgroundColor = s.TryGetProperty("backgroundColor", out var bc) ? bc.GetString() : null,
-                            BorderColor = s.TryGetProperty("borderColor", out var boc) ? boc.GetString() : null,
-                            TextAlign = s.TryGetProperty("textAlign", out var ta) ? ta.GetString() : null,
-                            FontWeight = s.TryGetProperty("fontWeight", out var fw) ? fw.GetString() : null,
-                        }
-                        : null
-                }).ToList();
+                    return je.Deserialize<List<DiagramTableCellData>>(s_cellJsonOptions) ?? [];
+                }
+                catch
+                {
+                    return [];
+                }
             }
         }
         return [];

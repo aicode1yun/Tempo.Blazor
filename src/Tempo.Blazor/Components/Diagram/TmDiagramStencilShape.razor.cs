@@ -1,4 +1,5 @@
 using System.Globalization;
+using System.Text.Json;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
@@ -8,13 +9,12 @@ using Tempo.Blazor.Components.Diagram.Stencils;
 namespace Tempo.Blazor.Components.Diagram;
 
 /// <summary>Renders a diagram stencil shape inside a node.</summary>
-public partial class TmDiagramStencilShape : ComponentBase, IDisposable
+public partial class TmDiagramStencilShape : ComponentBase, IAsyncDisposable
 {
     [Parameter] public DiagramNode Node { get; set; } = default!;
     [Parameter] public bool IsSelected { get; set; }
     [Parameter] public EventCallback<string> OnPortMouseDownEvent { get; set; }
     [Parameter] public EventCallback<(string DataKey, object Value)> OnSectionEdit { get; set; }
-    [Parameter] public EventCallback<(int Row, int Column, bool IsCtrlHeld)> OnTableCellSelect { get; set; }
     [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
     [Parameter] public DiagramPage? Page { get; set; }
     [Parameter] public DiagramDocument? Document { get; set; }
@@ -40,6 +40,13 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
     private bool _editTableFocusPending;
     private ElementReference _editTableInputRef;
     private ElementReference _shapeRef;
+
+    // Per-node DotNetRef registered with the JS layer so that global mousedown /
+    // dblclick handlers on the canvas container can address THIS shape directly
+    // (e.g. trigger cell edit from JS dblclick bypass Blazor's @ondblclick which
+    // is unreliable during SignalR re-renders).
+    private DotNetObjectReference<TmDiagramStencilShape>? _dotNetRef;
+    private string? _registeredNodeId;
 
     protected override void OnParametersSet()
     {
@@ -82,9 +89,23 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
             catch { }
         }
 
-        // Table cell dblclick is handled via @ondblclick in the Razor markup
-        // (JS interop inside SVG foreignObject is unreliable, but our tables
-        // render in the HTML overlay where Blazor events work natively).
+        // Register this shape's DotNetRef with the JS layer so the canvas-level
+        // dblclick / drill-in handlers can address it directly by Node.Id.
+        // Happens on first render and whenever Node.Id changes.
+        if (Node.Id != _registeredNodeId)
+        {
+            await UnregisterWithJsAsync();
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("tmDiagramStencilShape.register", Node.Id, _dotNetRef);
+                _registeredNodeId = Node.Id;
+            }
+            catch
+            {
+                // JS interop may fail during prerendering or circuit tear-down; ignore.
+            }
+        }
     }
 
     private void StartEdit(string? dataKey, string text)
@@ -353,30 +374,31 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
         return null;
     }
 
+    // Cached JsonSerializerOptions for table-cell deserialisation. Using
+    // PropertyNameCaseInsensitive = true lets us read back JsonElement values
+    // regardless of whether they were serialised with PascalCase defaults
+    // (UpdateNodeDataCommand.DeepCopy does a round-trip with defaults, yielding
+    // "Row"/"Column") or camelCase from external sources (disk, remote APIs).
+    private static readonly JsonSerializerOptions s_cellJsonOptions =
+        new() { PropertyNameCaseInsensitive = true };
+
     private List<DiagramTableCellData> GetTableCells()
     {
         if (Node.Data.TryGetValue("cells", out var value) && value is not null)
         {
             if (value is List<DiagramTableCellData> list) return list;
-            if (value is System.Text.Json.JsonElement je && je.ValueKind == System.Text.Json.JsonValueKind.Array)
+            if (value is JsonElement je && je.ValueKind == JsonValueKind.Array)
             {
-                return je.EnumerateArray().Select(e => new DiagramTableCellData
+                try
                 {
-                    Row = e.GetProperty("row").GetInt32(),
-                    Column = e.GetProperty("column").GetInt32(),
-                    RowSpan = e.TryGetProperty("rowSpan", out var rs) ? rs.GetInt32() : 1,
-                    ColSpan = e.TryGetProperty("colSpan", out var cs) ? cs.GetInt32() : 1,
-                    Text = e.TryGetProperty("text", out var t) ? t.GetString() ?? "" : "",
-                    Style = e.TryGetProperty("style", out var s) && s.ValueKind == System.Text.Json.JsonValueKind.Object
-                        ? new DiagramTableCellStyle
-                        {
-                            BackgroundColor = s.TryGetProperty("backgroundColor", out var bc) ? bc.GetString() : null,
-                            BorderColor = s.TryGetProperty("borderColor", out var boc) ? boc.GetString() : null,
-                            TextAlign = s.TryGetProperty("textAlign", out var ta) ? ta.GetString() : null,
-                            FontWeight = s.TryGetProperty("fontWeight", out var fw) ? fw.GetString() : null,
-                        }
-                        : null
-                }).ToList();
+                    return je.Deserialize<List<DiagramTableCellData>>(s_cellJsonOptions) ?? [];
+                }
+                catch
+                {
+                    // Malformed payload — fall through to empty list rather than throw
+                    // during a Blazor render pass (which would crash the whole component).
+                    return [];
+                }
             }
         }
         return [];
@@ -429,12 +451,6 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
         _editTableFocusPending = true;
     }
 
-    private void OnTableCellDblClick(int row, int column, string text)
-    {
-        if (ReadOnly || Node.IsLocked) return;
-        StartTableCellEdit(row, column, text);
-    }
-
     private void SaveTableCellEdit()
     {
         if (ReadOnly || Node.IsLocked) return;
@@ -471,12 +487,6 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
         }
     }
 
-    private async Task OnTableCellClick(int row, int column, MouseEventArgs e)
-    {
-        if (ReadOnly || Node.IsLocked) return;
-        await OnTableCellSelect.InvokeAsync((row, column, e.CtrlKey));
-    }
-
     private string GetTableCellSelectedClass(int row, int column)
     {
         return SelectedTableCells.Any(c => c.Row == row && c.Column == column)
@@ -484,18 +494,37 @@ public partial class TmDiagramStencilShape : ComponentBase, IDisposable
             : "";
     }
 
+    /// <summary>Invoked from JS when the user double-clicks a table cell on the canvas.</summary>
     [JSInvokable]
     public void StartTableCellEditFromJs(int row, int column)
     {
-        if (ReadOnly) return;
+        if (ReadOnly || Node.IsLocked) return;
         var cell = GetTableCellAt(row, column);
         StartTableCellEdit(row, column, cell?.Text ?? string.Empty);
         StateHasChanged();
     }
 
-    public void Dispose()
+    private async ValueTask UnregisterWithJsAsync()
     {
-        // No async JS cleanup needed — table dblclick uses native Blazor events.
+        if (_registeredNodeId is null) return;
+        var id = _registeredNodeId;
+        _registeredNodeId = null;
+        try
+        {
+            await JS.InvokeVoidAsync("tmDiagramStencilShape.unregister", id);
+        }
+        catch
+        {
+            // Circuit may be disconnected; ignore.
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        await UnregisterWithJsAsync();
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
     }
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);

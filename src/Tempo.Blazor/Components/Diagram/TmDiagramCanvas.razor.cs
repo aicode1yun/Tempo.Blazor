@@ -118,6 +118,11 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Raised when a table cell is right-clicked to open a context menu.</summary>
     [Parameter] public EventCallback<(string NodeId, int Row, int Column, double ScreenX, double ScreenY)> OnTableCellContextMenu { get; set; }
 
+    /// <summary>Raised when the user presses Escape and there is a table cell sub-selection
+    /// that should be cleared before the node selection. Used to implement the draw.io-style
+    /// "drill-out" cascade (first Escape exits cell mode, second Escape clears node selection).</summary>
+    [Parameter] public EventCallback OnClearTableCellSelection { get; set; }
+
     /// <summary>Raised when the empty canvas is right-clicked to open a context menu.</summary>
     [Parameter] public EventCallback<(double CanvasX, double CanvasY, double ScreenX, double ScreenY)> OnCanvasContextMenu { get; set; }
 
@@ -831,6 +836,15 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnClearSelection()
     {
+        // draw.io-style cascade: if a table cell is currently sub-selected, the first
+        // Escape only drops the cell selection and keeps the node selected. A second
+        // Escape (when no cells are selected) then clears the node selection.
+        if (SelectedTableCells is { Count: > 0 })
+        {
+            await OnClearTableCellSelection.InvokeAsync();
+            return;
+        }
+
         _currentSelectionIds = [];
         await OnSelectionChanged.InvokeAsync([]);
     }
@@ -926,6 +940,12 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     [JSInvokable("OnTableCellContextMenu")]
     public async Task JsOnTableCellContextMenu(string nodeId, int row, int column, double screenX, double screenY)
         => await OnTableCellContextMenu.InvokeAsync((nodeId, row, column, screenX, screenY));
+
+    /// <summary>Invoked from JS when the user left-clicks (without drag) on a table cell
+    /// of an already-selected node (drill-in pattern).</summary>
+    [JSInvokable("OnTableCellLeftClick")]
+    public async Task JsOnTableCellLeftClick(string nodeId, int row, int column, bool isCtrlHeld)
+        => await OnTableCellSelect.InvokeAsync((nodeId, row, column, isCtrlHeld));
 
     [JSInvokable("OnCanvasContextMenu")]
     public async Task JsOnCanvasContextMenu(double canvasX, double canvasY, double screenX, double screenY)
@@ -1959,11 +1979,6 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             return str.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries)
                       .Count(l => !string.IsNullOrWhiteSpace(l));
         return 1;
-    }
-
-    private async Task HandleTableCellSelect(string nodeId, int row, int column, bool isCtrlHeld)
-    {
-        await OnTableCellSelect.InvokeAsync((nodeId, row, column, isCtrlHeld));
     }
 
     private (double X, double Y) ComputeEdgePointAtT(DiagramEdge edge, double t)

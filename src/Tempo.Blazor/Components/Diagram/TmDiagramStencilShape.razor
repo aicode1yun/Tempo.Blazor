@@ -1,7 +1,7 @@
 @namespace Tempo.Blazor.Components.Diagram
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Stencils
-@implements IDisposable
+@implements IAsyncDisposable
 
 @{
     var contentBelow = _stencil?.Layout.ContentPosition == "below";
@@ -193,17 +193,12 @@
                                             continue;
                                         }
                                         var cell = GetTableCellAt(r, c);
-                                        var cellText = cell?.Text ?? string.Empty;
                                         <td class="tm-diagram-node__table-cell @GetTableCellSelectedClass(r, c)"
                                             data-row="@r"
                                             data-col="@c"
                                             rowspan="@(cell?.RowSpan ?? 1)"
                                             colspan="@(cell?.ColSpan ?? 1)"
-                                            style="@GetTableCellStyle(cell?.Style)"
-                                            @onclick:stopPropagation="true"
-                                            @onclick="e => OnTableCellClick(r, c, e)"
-                                            @ondblclick:stopPropagation="true"
-                                            @ondblclick="() => OnTableCellDblClick(r, c, cellText)">
+                                            style="@GetTableCellStyle(cell?.Style)">
                                             @if (_editingTableCell == (r, c))
                                             {
                                                 <input class="tm-diagram-node__inline-input"

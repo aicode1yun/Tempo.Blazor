@@ -207,6 +207,7 @@ window.tmDiagramEditor = {
         inst._onDrop = (e) => this._onDrop(e, inst);
         inst._onDragOver = (e) => { e.preventDefault(); };
         inst._onContextMenu = (e) => this._onContextMenu(e, inst);
+        inst._onDblClick = (e) => this._onDblClick(e, inst);
 
         inst.container.addEventListener('mousedown', inst._onMouseDown);
         inst.container.addEventListener('wheel', inst._onWheel, { passive: false });
@@ -217,6 +218,7 @@ window.tmDiagramEditor = {
         inst.container.addEventListener('drop', inst._onDrop);
         inst.container.addEventListener('dragover', inst._onDragOver);
         inst.container.addEventListener('contextmenu', inst._onContextMenu);
+        inst.container.addEventListener('dblclick', inst._onDblClick);
         document.addEventListener('mousemove', inst._onMouseMove, true);
         document.addEventListener('mouseup', inst._onMouseUp, true);
         document.addEventListener('keydown', inst._onKeyDown);
@@ -233,6 +235,7 @@ window.tmDiagramEditor = {
         inst.container.removeEventListener('drop', inst._onDrop);
         inst.container.removeEventListener('dragover', inst._onDragOver);
         inst.container.removeEventListener('contextmenu', inst._onContextMenu);
+        if (inst._onDblClick) inst.container.removeEventListener('dblclick', inst._onDblClick);
         document.removeEventListener('mousemove', inst._onMouseMove, true);
         document.removeEventListener('mouseup', inst._onMouseUp, true);
         document.removeEventListener('keydown', inst._onKeyDown);
@@ -770,6 +773,31 @@ window.tmDiagramEditor = {
             const id = nodeEl.getAttribute('data-node-id');
             const isLocked = nodeEl.getAttribute('data-locked') === 'true';
 
+            // ── Drill-in for table cells (draw.io pattern) ───────────────────
+            // If the mousedown landed on a <td> of an ALREADY-selected table and
+            // we're not in a special tool mode, enter a "pending cell click"
+            // state. On mouseup without meaningful movement this becomes a cell
+            // sub-select; on meaningful movement it escalates to a normal node
+            // drag so large tables remain movable.
+            if (!isRightClick && !inst.readOnly && inst.toolMode !== 'edge' && inst.selectedIds.has(id)) {
+                const cellEl = e.target.closest('.tm-diagram-node__table-cell');
+                if (cellEl) {
+                    const row = parseInt(cellEl.getAttribute('data-row'), 10);
+                    const col = parseInt(cellEl.getAttribute('data-col'), 10);
+                    if (!isNaN(row) && !isNaN(col)) {
+                        inst.pendingTableCellClick = {
+                            nodeId: id,
+                            row: row,
+                            col: col,
+                            ctrlKey: !!(e.ctrlKey || e.metaKey),
+                            startScreenX: e.clientX,
+                            startScreenY: e.clientY
+                        };
+                        return;
+                    }
+                }
+            }
+
             if (e.ctrlKey || e.metaKey) {
                 if (inst.selectedIds.has(id)) inst.selectedIds.delete(id);
                 else inst.selectedIds.add(id);
@@ -875,6 +903,23 @@ window.tmDiagramEditor = {
     // ── Mouse move ───────────────────────────────────────────────────────────
 
     _onMouseMove: function (e, inst) {
+        // Escalate a pending table-cell click into a node drag once the pointer
+        // has moved past a small threshold (so a tiny jitter does not cancel
+        // the sub-select while a deliberate drag still moves the whole table).
+        if (inst.pendingTableCellClick) {
+            const p = inst.pendingTableCellClick;
+            const dx = Math.abs(e.clientX - p.startScreenX);
+            const dy = Math.abs(e.clientY - p.startScreenY);
+            const DRAG_ESCALATE_PX = 4;
+            if (dx > DRAG_ESCALATE_PX || dy > DRAG_ESCALATE_PX) {
+                inst.pendingTableCellClick = null;
+                this._beginNodeDragFromCell(inst, p.nodeId, p.startScreenX, p.startScreenY);
+                // fall through so the current delta is also applied this frame
+            } else {
+                return;
+            }
+        }
+
         if (inst.isDrawingEdge) {
             this._updateEdgeDraw(inst, e.clientX, e.clientY);
             return;
@@ -1147,9 +1192,84 @@ window.tmDiagramEditor = {
         // }
     },
 
+    // ── Drill-in drag escalation ─────────────────────────────────────────────
+
+    /// Initialises a normal node drag starting from the screen position captured
+    /// when the user first pressed mouse down on a cell of an already-selected
+    /// table. Mirrors the drag-setup block from _onMouseDown.
+    _beginNodeDragFromCell: function (inst, nodeId, startScreenX, startScreenY) {
+        if (inst.readOnly) return;
+        const nodeEl = inst.htmlLayer ? inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]') : null;
+        if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
+        if (!inst.selectedIds.has(nodeId)) return;
+
+        inst.isDragging = true;
+        inst.dragNodeIds = [...inst.selectedIds];
+
+        const allIds = new Set(inst.dragNodeIds);
+        inst.dragNodeIds.forEach(nid => {
+            if (inst.htmlLayer) {
+                inst.htmlLayer.querySelectorAll('[data-parent-id="' + nid + '"]').forEach(childEl => {
+                    const cid = childEl.getAttribute('data-node-id');
+                    if (cid && this._isNodeInActiveGroup(inst, childEl)) allIds.add(cid);
+                });
+            }
+        });
+        inst.dragNodeIds = [...allIds];
+        inst.dragNodeIds = this._includeGroupNodes(inst, inst.dragNodeIds);
+
+        inst.dragStartScreen = { x: startScreenX, y: startScreenY };
+        inst.dragStartPositions = {};
+        inst.dragNodeIds.forEach(nid => {
+            const r = this._nodeRect(inst, nid);
+            if (r) inst.dragStartPositions[nid] = { x: r.x, y: r.y, w: r.w, h: r.h };
+        });
+        inst.dotNetRef.invokeMethodAsync('OnDragStarted', inst.dragNodeIds);
+        inst.container.style.cursor = 'grabbing';
+    },
+
+    // ── Double-click on table cells (start edit) ─────────────────────────────
+
+    _onDblClick: function (e, inst) {
+        if (inst.readOnly) return;
+        // Don't fight with an already-active inline editor.
+        const tag = e.target && e.target.tagName;
+        if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+
+        const cellEl = e.target.closest ? e.target.closest('.tm-diagram-node__table-cell') : null;
+        if (!cellEl) return;
+
+        const nodeEl = cellEl.closest('[data-node-id]');
+        if (!nodeEl || !this._isNodeInActiveGroup(inst, nodeEl)) return;
+        if (nodeEl.getAttribute('data-locked') === 'true') return;
+
+        const nodeId = nodeEl.getAttribute('data-node-id');
+        const row = parseInt(cellEl.getAttribute('data-row'), 10);
+        const col = parseInt(cellEl.getAttribute('data-col'), 10);
+        if (isNaN(row) || isNaN(col)) return;
+
+        e.preventDefault();
+        e.stopPropagation();
+
+        const ref = window.tmDiagramStencilShape && window.tmDiagramStencilShape.getRef(nodeId);
+        if (!ref) return;
+        ref.invokeMethodAsync('StartTableCellEditFromJs', row, col);
+    },
+
     // ── Mouse up ─────────────────────────────────────────────────────────────
 
     _onMouseUp: function (e, inst) {
+        // Pending table-cell click that never escalated into a drag → fire the
+        // cell sub-select up to Blazor. Ctrl held = multi-select toggle.
+        if (inst.pendingTableCellClick) {
+            const p = inst.pendingTableCellClick;
+            inst.pendingTableCellClick = null;
+            if (inst.dotNetRef) {
+                inst.dotNetRef.invokeMethodAsync('OnTableCellLeftClick', p.nodeId, p.row, p.col, !!p.ctrlKey);
+            }
+            return;
+        }
+
         if (inst.isDrawingEdge) {
             // Edge-to-edge connection takes priority
             if (inst.drawHoverEdgeId && inst.drawHoverEdgeT !== null) {
@@ -3600,24 +3720,28 @@ window.tmDiagramArrowSelect = {
     }
 };
 
-// ── Table cell double-click editing ───────────────────────────────────────
+// ── Per-node DotNetRef registry for table cells ───────────────────────────
+//
+// Each TmDiagramStencilShape registers its DotNetObjectReference keyed by
+// the diagram Node.Id. The canvas-level dblclick handler (installed in
+// _attachEvents) looks up the shape by nodeId and calls StartTableCellEditFromJs
+// directly, bypassing Blazor's @ondblclick — which is unreliable on Blazor
+// Server because the SignalR round-trip for the preceding click re-renders
+// the component and can eat the native dblclick.
 window.tmDiagramStencilShape = {
-    registerDblClick: function (element, dotNetRef) {
-        const handler = function (e) {
-            const cell = e.target.closest('.tm-diagram-node__table-cell');
-            if (!cell) return;
-            const row = parseInt(cell.dataset.row, 10);
-            const col = parseInt(cell.dataset.col, 10);
-            dotNetRef.invokeMethodAsync('StartTableCellEditFromJs', row, col);
-        };
-        element.addEventListener('dblclick', handler);
-        element._tmDblClickHandler = handler;
+    _refs: new Map(),
+
+    register: function (nodeId, dotNetRef) {
+        if (!nodeId || !dotNetRef) return;
+        this._refs.set(nodeId, dotNetRef);
     },
 
-    unregisterDblClick: function (element) {
-        if (element._tmDblClickHandler) {
-            element.removeEventListener('dblclick', element._tmDblClickHandler);
-            delete element._tmDblClickHandler;
-        }
+    unregister: function (nodeId) {
+        if (!nodeId) return;
+        this._refs.delete(nodeId);
+    },
+
+    getRef: function (nodeId) {
+        return this._refs.get(nodeId);
     }
 };

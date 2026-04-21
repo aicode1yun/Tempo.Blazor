@@ -1901,8 +1901,29 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 .tm-diagram-node__table-cell--selected {
-    outline: 2px solid var(--tm-color-primary, #3b82f6);
-    outline-offset: -2px;
+    /* Inset ring is clipped-safe (overflow:hidden on td and parents won't cut it).
+       Box-shadow wins over inline border/background-color because it layers on top. */
+    box-shadow: inset 0 0 0 2px var(--tm-color-primary, #3b82f6);
+    position: relative;
+    z-index: 1;
+}
+
+.tm-diagram-node__table-cell--selected::after {
+    /* Subtle tint so the selected cell is readable even when a background-color
+       is set via inline style. */
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--tm-color-primary, #3b82f6);
+    opacity: 0.12;
+    pointer-events: none;
+}
+
+.tm-diagram-node__table-cell--context-target {
+    /* Marks the cell that a right-click / context menu will operate on. */
+    box-shadow: inset 0 0 0 2px var(--tm-color-warning, #f59e0b);
+    position: relative;
+    z-index: 1;
 }
 /* Append to existing file */
 
