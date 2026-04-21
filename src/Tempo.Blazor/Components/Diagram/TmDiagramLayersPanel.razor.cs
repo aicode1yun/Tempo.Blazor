@@ -55,7 +55,7 @@ public partial class TmDiagramLayersPanel : ComponentBase
         if (Document is null) return;
         if (Document.Layers.Count == 0)
         {
-            var defaultLayer = new DiagramLayer { Name = "Default", Order = 0 };
+            var defaultLayer = new DiagramLayer { Name = Loc["TmDiagramLayers_DefaultLayer"], Order = 0 };
             Document.Layers.Add(defaultLayer);
             _defaultLayerId = defaultLayer.Id;
         }
@@ -63,6 +63,12 @@ public partial class TmDiagramLayersPanel : ComponentBase
         {
             _defaultLayerId = Document.Layers.OrderBy(l => l.Order).First().Id;
         }
+
+        // Ensure all nodes/edges without a layer are assigned to the default layer
+        foreach (var node in Document.Nodes.Where(n => string.IsNullOrEmpty(n.LayerId)))
+            node.LayerId = _defaultLayerId;
+        foreach (var edge in Document.Edges.Where(e => string.IsNullOrEmpty(e.LayerId)))
+            edge.LayerId = _defaultLayerId;
     }
 
     private void ToggleCollapse() => _collapsed = !_collapsed;

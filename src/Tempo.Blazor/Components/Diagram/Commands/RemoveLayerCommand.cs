@@ -26,8 +26,9 @@ public sealed class RemoveLayerCommand : IDiagramCommand
     public void Execute()
     {
         _doc.Layers.Remove(_layer);
+        var defaultLayerId = _doc.Layers.OrderBy(l => l.Order).FirstOrDefault()?.Id;
         foreach (var node in _doc.Nodes.Where(n => n.LayerId == _layer.Id))
-            node.LayerId = null;
+            node.LayerId = defaultLayerId;
     }
 
     public void Undo()

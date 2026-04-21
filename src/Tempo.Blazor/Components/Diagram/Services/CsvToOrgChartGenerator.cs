@@ -39,7 +39,7 @@ public static class CsvToOrgChartGenerator
                 Y = y,
                 W = 180,
                 H = 60,
-                LayerId = "default",
+                LayerId = null,
                 Data = new Dictionary<string, object> { ["label"] = name }
             };
             nodeIdByName[name] = node.Id;
@@ -100,17 +100,7 @@ public static class CsvToOrgChartGenerator
                     PageOrientation = DiagramPageOrientation.Landscape,
                     Width = 1123,
                     Height = 794,
-                    Layers =
-                    [
-                        new DiagramLayer
-                        {
-                            Id = "default",
-                            Name = "Default Layer",
-                            Order = 0,
-                            IsVisible = true,
-                            IsLocked = false
-                        }
-                    ]
+                    Layers = []
                 }
             ],
             ActivePageIndex = 0

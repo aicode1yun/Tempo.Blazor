@@ -226,8 +226,7 @@
 
                 <div class="tm-diagram-properties__field">
                     <label>@Loc["TmDiagramProperties_Layer"]</label>
-                    <select class="tm-text-input" value="@(FirstSelectedNode?.LayerId ?? "")" @onchange="OnNodeLayerChanged">
-                        <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                    <select class="tm-text-input" value="@(FirstSelectedNode?.LayerId ?? GetDefaultLayerId())" @onchange="OnNodeLayerChanged">
                         @foreach (var layer in SortedLayers)
                         {
                             <option value="@layer.Id">@layer.Name</option>
@@ -642,8 +641,7 @@
 
                 <div class="tm-diagram-properties__field">
                     <label>@Loc["TmDiagramProperties_Layer"]</label>
-                    <select class="tm-text-input" value="@GetEdgeLayerId()" @onchange="OnEdgeLayerChanged">
-                        <option value="">@Loc["TmDiagramLayers_DefaultLayer"]</option>
+                    <select class="tm-text-input" value="@(GetEdgeLayerId() ?? GetDefaultLayerId())" @onchange="OnEdgeLayerChanged">
                         @foreach (var layer in SortedLayers)
                         {
                             <option value="@layer.Id">@layer.Name</option>

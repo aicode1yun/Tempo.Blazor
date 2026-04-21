@@ -1136,7 +1136,7 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 .tm-diagram-editor__right-stack {
     display: flex;
     flex-direction: column;
-    width: 260px;
+    width: 280px;
     flex-shrink: 0;
     border-left: 1px solid var(--tm-color-border, #e5e7eb);
     background: var(--tm-color-surface-elevated, #f9fafb);
@@ -1803,13 +1803,13 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 /* ── Action Grid (Align, Distribute, Layout) ──────────────────────────────── */
 .tm-diagram-properties__action-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     gap: var(--tm-space-2, 8px);
 }
 
 .tm-diagram-properties__action-grid-2 {
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: var(--tm-space-2, 8px);
 }
 

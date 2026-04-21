@@ -59,6 +59,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private IEnumerable<DiagramLayer> SortedLayers =>
         Document?.Layers.OrderBy(l => l.Order).ThenBy(l => l.Name) ?? Enumerable.Empty<DiagramLayer>();
 
+    private string GetDefaultLayerId() => SortedLayers.FirstOrDefault()?.Id ?? "";
+
     private bool CanGroup => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
     private bool CanUngroup => SelectedNodes.Count == 1 && !string.IsNullOrEmpty(FirstSelectedNode?.GroupId);
     private bool CanAlign => SelectedNodes.Count > 1 && SelectedEdges.Count == 0;
@@ -374,8 +376,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnNodeLayerChanged(ChangeEventArgs e)
     {
         if (FirstSelectedNode is null || Document is null) return;
-        var layerId = e.Value?.ToString();
-        FirstSelectedNode.LayerId = string.IsNullOrEmpty(layerId) ? null : layerId;
+        var layerId = e.Value?.ToString() ?? GetDefaultLayerId();
+        FirstSelectedNode.LayerId = layerId;
         await DocumentChanged.InvokeAsync(Document);
     }
 
@@ -998,8 +1000,8 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private async Task OnEdgeLayerChanged(ChangeEventArgs e)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
-        var layerId = e.Value?.ToString();
-        ApplyEdgeStyleChange(edge => edge.LayerId = string.IsNullOrEmpty(layerId) ? null : layerId);
+        var layerId = e.Value?.ToString() ?? GetDefaultLayerId();
+        ApplyEdgeStyleChange(edge => edge.LayerId = layerId);
         await DocumentChanged.InvokeAsync(Document);
     }
 

@@ -200,6 +200,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         {
             _document.Pages[0].Name = $"{Loc["TmDiagramEditor_PageName"]} 1";
         }
+        EnsureDocumentLayers(_document);
         _document.SnapToGrid(GridSize);
         EnsureCommandStackForActivePage();
     }
@@ -213,10 +214,29 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             _groupStack.Clear();
             _document = Document;
             _document.EnsurePages();
+            EnsureDocumentLayers(_document);
             _document.SnapToGrid(GridSize);
             _selectedIds = [];
             EnsureCommandStackForActivePage();
         }
+    }
+
+    private void EnsureDocumentLayers(DiagramDocument doc)
+    {
+        if (doc is null) return;
+        var page = doc.ActivePage;
+        if (page.Layers.Count == 0)
+        {
+            var defaultLayer = new DiagramLayer { Name = Loc["TmDiagramLayers_DefaultLayer"], Order = 0 };
+            page.Layers.Add(defaultLayer);
+        }
+        var defaultLayerId = page.Layers.OrderBy(l => l.Order).First().Id;
+        foreach (var node in page.Nodes.Where(n => string.IsNullOrEmpty(n.LayerId)))
+            node.LayerId = defaultLayerId;
+        foreach (var edge in page.Edges.Where(e => string.IsNullOrEmpty(e.LayerId)))
+            edge.LayerId = defaultLayerId;
+        if (string.IsNullOrEmpty(_activeLayerId))
+            _activeLayerId = defaultLayerId;
     }
 
     public void Dispose()

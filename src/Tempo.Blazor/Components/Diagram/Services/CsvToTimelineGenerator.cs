@@ -48,7 +48,7 @@ public static class CsvToTimelineGenerator
                 Y = startY,
                 W = nodeW,
                 H = nodeH,
-                LayerId = "default",
+                LayerId = null,
                 Data = new Dictionary<string, object> { ["name"] = displayName }
             };
             page.Nodes.Add(node);
@@ -72,17 +72,7 @@ public static class CsvToTimelineGenerator
                     PageOrientation = DiagramPageOrientation.Landscape,
                     Width = 1123,
                     Height = 794,
-                    Layers =
-                    [
-                        new DiagramLayer
-                        {
-                            Id = "default",
-                            Name = "Default Layer",
-                            Order = 0,
-                            IsVisible = true,
-                            IsLocked = false
-                        }
-                    ]
+                    Layers = []
                 }
             ],
             ActivePageIndex = 0

@@ -20,17 +20,7 @@ public static class SqlToErDiagramGenerator
                     PageOrientation = DiagramPageOrientation.Landscape,
                     Width = 1123,
                     Height = 794,
-                    Layers =
-                    [
-                        new DiagramLayer
-                        {
-                            Id = "default",
-                            Name = "Default Layer",
-                            Order = 0,
-                            IsVisible = true,
-                            IsLocked = false
-                        }
-                    ]
+                    Layers = []
                 }
             ],
             ActivePageIndex = 0
@@ -59,7 +49,7 @@ public static class SqlToErDiagramGenerator
                 Y = y,
                 W = nodeW,
                 H = Math.Max(nodeHBase, 40 + table.Columns.Count * 18),
-                LayerId = "default",
+                LayerId = null,
                 Data = new Dictionary<string, object>
                 {
                     ["name"] = table.Name,

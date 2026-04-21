@@ -54,7 +54,7 @@ public static class CsvToFlowchartGenerator
                 Y = y,
                 W = 160,
                 H = 80,
-                LayerId = "default",
+                LayerId = null,
                 Data = new Dictionary<string, object> { ["label"] = name }
             };
             nodeIdByName[name] = node.Id;
@@ -116,17 +116,7 @@ public static class CsvToFlowchartGenerator
                     PageOrientation = DiagramPageOrientation.Landscape,
                     Width = 1123,
                     Height = 794,
-                    Layers =
-                    [
-                        new DiagramLayer
-                        {
-                            Id = "default",
-                            Name = "Default Layer",
-                            Order = 0,
-                            IsVisible = true,
-                            IsLocked = false
-                        }
-                    ]
+                    Layers = []
                 }
             ],
             ActivePageIndex = 0
