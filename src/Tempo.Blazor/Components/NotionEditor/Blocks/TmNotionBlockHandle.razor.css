@@ -1,0 +1,79 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionBlockHandle — left-side block handle (scoped)
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Handle wrapper ───────────────────────────────────────────── */
+
+.tm-notion-handle {
+    position:    absolute;
+    right:       100%;
+    top:         3px;
+    padding-right: 4px;
+    display:     flex;
+    align-items: center;
+    gap:         2px;
+    opacity:     0;
+    transition:  opacity var(--tm-notion-anim-fast);
+    user-select: none;
+    pointer-events: none;
+}
+
+/* Shown when parent block is hovered — parent injects this via ::deep */
+.tm-notion-handle--visible {
+    opacity:        1;
+    pointer-events: auto;
+}
+
+/* ── Shared button style ──────────────────────────────────────── */
+
+.tm-notion-handle__btn {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    width:           22px;
+    height:          22px;
+    border:          none;
+    background:      transparent;
+    color:           var(--tm-text-tertiary);
+    border-radius:   var(--tm-radius-sm);
+    cursor:          pointer;
+    padding:         0;
+    flex-shrink:     0;
+    transition:      background var(--tm-notion-anim-fast), color var(--tm-notion-anim-fast);
+}
+
+.tm-notion-handle__btn:hover,
+.tm-notion-handle__btn--active {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+/* ── Drag grip ────────────────────────────────────────────────── */
+
+.tm-notion-handle__drag {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    width:           22px;
+    height:          22px;
+    border-radius:   var(--tm-radius-sm);
+    color:           var(--tm-text-tertiary);
+    cursor:          grab;
+    flex-shrink:     0;
+    transition:      background var(--tm-notion-anim-fast), color var(--tm-notion-anim-fast);
+}
+
+.tm-notion-handle__drag:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-secondary);
+}
+
+.tm-notion-handle__drag:active {
+    cursor: grabbing;
+}
+
+/* ── Menu anchor (context menu portal root) ───────────────────── */
+
+.tm-notion-handle__menu-anchor {
+    position: relative;
+}

@@ -1555,7 +1555,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnAddTableRow()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         var rowCount = GetTableRowCount();
         CommandStack.Push(new InsertTableRowCommand(Document, FirstSelectedNode.Id, rowCount));
         await DocumentChanged.InvokeAsync(Document);
@@ -1563,7 +1563,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnRemoveTableRow()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         var rowCount = GetTableRowCount();
         if (rowCount <= 1) return;
         CommandStack.Push(new DeleteTableRowCommand(Document, FirstSelectedNode.Id, rowCount - 1));
@@ -1572,7 +1572,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnAddTableColumn()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         var colCount = GetTableColumnCount();
         CommandStack.Push(new InsertTableColumnCommand(Document, FirstSelectedNode.Id, colCount));
         await DocumentChanged.InvokeAsync(Document);
@@ -1580,7 +1580,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnRemoveTableColumn()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         var colCount = GetTableColumnCount();
         if (colCount <= 1) return;
         CommandStack.Push(new DeleteTableColumnCommand(Document, FirstSelectedNode.Id, colCount - 1));
@@ -1589,7 +1589,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnMergeTableCells()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         if (!CanMergeTableCells()) return;
         CommandStack.Push(new MergeTableCellsCommand(Document, FirstSelectedNode.Id, SelectedTableCells));
         SelectedTableCells.Clear();
@@ -1598,7 +1598,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task OnSplitTableCell()
     {
-        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1) return;
+        if (FirstSelectedNode is null || CommandStack is null || Document is null || SelectedTableCells.Count != 1 || ReadOnly || IsNodeLocked(FirstSelectedNode)) return;
         var (row, col) = SelectedTableCells[0];
         CommandStack.Push(new SplitTableCellCommand(Document, FirstSelectedNode.Id, row, col));
         SelectedTableCells.Clear();

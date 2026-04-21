@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.Diagram
 @using Tempo.Blazor.Components.Diagram.Models
 @using Tempo.Blazor.Components.Diagram.Stencils
+@implements IDisposable
 
 @{
     var contentBelow = _stencil?.Layout.ContentPosition == "below";
@@ -11,7 +12,8 @@
      data-content-position="@(_stencil?.Layout.ContentPosition ?? "overlay")"
      data-has-shape-svg="@(!string.IsNullOrEmpty(_stencil?.Layout.ShapeSvg) ? "true" : "false")"
      style="@GetShapeStyle(contentBelow)"
-     @onfocusout="OnEditFocusOut">
+     @onfocusout="OnEditFocusOut"
+     @ref="_shapeRef">
 
     @if (!string.IsNullOrEmpty(Node.Link))
     {
@@ -191,6 +193,7 @@
                                             continue;
                                         }
                                         var cell = GetTableCellAt(r, c);
+                                        var cellText = cell?.Text ?? string.Empty;
                                         <td class="tm-diagram-node__table-cell @GetTableCellSelectedClass(r, c)"
                                             data-row="@r"
                                             data-col="@c"
@@ -200,7 +203,7 @@
                                             @onclick:stopPropagation="true"
                                             @onclick="e => OnTableCellClick(r, c, e)"
                                             @ondblclick:stopPropagation="true"
-                                            @ondblclick="() => StartTableCellEdit(r, c, cell?.Text ?? string.Empty)">
+                                            @ondblclick="() => OnTableCellDblClick(r, c, cellText)">
                                             @if (_editingTableCell == (r, c))
                                             {
                                                 <input class="tm-diagram-node__inline-input"

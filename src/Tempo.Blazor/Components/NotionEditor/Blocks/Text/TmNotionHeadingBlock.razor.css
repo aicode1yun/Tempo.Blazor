@@ -1,0 +1,139 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionHeadingBlock — H1 / H2 / H3 editable heading (scoped)
+   Global typography (tm-notion-h1/h2/h3, tm-notion-editable,
+   tm-notion-align-*, tm-notion-bg-*, data-color) lives in
+   _notion-typography.css. This file adds toggle, wrapper layout,
+   and inline-formatting rules scoped to the component.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Heading wrapper ──────────────────────────────────────────── */
+
+.tm-notion-heading {
+    display:     flex;
+    align-items: flex-start;
+    gap:         4px;
+    width:       100%;
+}
+
+/* ── Semantic heading takes remaining width ───────────────────── */
+
+.tm-notion-heading h1,
+.tm-notion-heading h2,
+.tm-notion-heading h3 {
+    flex:      1;
+    min-width: 0;
+    margin:    0;
+}
+
+/* ── Toggle arrow button ──────────────────────────────────────── */
+
+.tm-notion-heading__toggle {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    flex-shrink:     0;
+    width:           20px;
+    height:          20px;
+    border:          none;
+    background:      transparent;
+    color:           var(--tm-text-tertiary);
+    border-radius:   var(--tm-radius-sm);
+    cursor:          pointer;
+    padding:         0;
+    transition:      transform var(--tm-notion-anim-fast), color var(--tm-notion-anim-fast),
+                     background var(--tm-notion-anim-fast);
+    transform:       rotate(-90deg);
+    /* align with cap-height of the heading text */
+    margin-top:      0.35em;
+}
+
+.tm-notion-heading--h1 .tm-notion-heading__toggle {
+    margin-top: 1.85rem;
+}
+
+.tm-notion-heading--h2 .tm-notion-heading__toggle {
+    margin-top: 1.6rem;
+}
+
+.tm-notion-heading--h3 .tm-notion-heading__toggle {
+    margin-top: 1.35rem;
+}
+
+.tm-notion-heading__toggle:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+.tm-notion-heading__toggle--open {
+    transform: rotate(0deg);
+}
+
+/* ── Closed state — visual indicator only ─────────────────────── */
+
+.tm-notion-heading--closed {
+    opacity: 0.7;
+}
+
+/* ── Inline formatting ────────────────────────────────────────── */
+
+.tm-notion-heading h1 b,
+.tm-notion-heading h1 strong,
+.tm-notion-heading h2 b,
+.tm-notion-heading h2 strong,
+.tm-notion-heading h3 b,
+.tm-notion-heading h3 strong {
+    font-weight: inherit;
+}
+
+.tm-notion-heading h1 i,
+.tm-notion-heading h1 em,
+.tm-notion-heading h2 i,
+.tm-notion-heading h2 em,
+.tm-notion-heading h3 i,
+.tm-notion-heading h3 em {
+    font-style: italic;
+}
+
+.tm-notion-heading h1 u,
+.tm-notion-heading h2 u,
+.tm-notion-heading h3 u {
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-heading h1 s,
+.tm-notion-heading h1 del,
+.tm-notion-heading h2 s,
+.tm-notion-heading h2 del,
+.tm-notion-heading h3 s,
+.tm-notion-heading h3 del {
+    text-decoration: line-through;
+}
+
+.tm-notion-heading h1 code,
+.tm-notion-heading h2 code,
+.tm-notion-heading h3 code {
+    font-family:   var(--tm-notion-font-mono);
+    font-size:     0.8em;
+    background:    var(--tm-notion-bg-code);
+    border:        1px solid var(--tm-notion-border-code);
+    border-radius: var(--tm-radius-xs, 3px);
+    padding:       0.05em 0.3em;
+    font-weight:   normal;
+}
+
+.tm-notion-heading h1 a,
+.tm-notion-heading h2 a,
+.tm-notion-heading h3 a {
+    color:           var(--tm-notion-link-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+/* ── Selection ────────────────────────────────────────────────── */
+
+.tm-notion-heading h1 ::selection,
+.tm-notion-heading h2 ::selection,
+.tm-notion-heading h3 ::selection {
+    background: var(--tm-notion-selection-bg);
+}

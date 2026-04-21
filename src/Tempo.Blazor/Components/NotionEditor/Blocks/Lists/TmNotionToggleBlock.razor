@@ -1,0 +1,68 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Lists
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+
+<div class="tm-notion-toggle @(_isOpen ? "tm-notion-toggle--open" : "") @_bgClass"
+     data-bg="@Content?.BackgroundColor">
+
+    <div class="tm-notion-toggle__header">
+
+        <button class="tm-notion-toggle__arrow"
+                type="button"
+                aria-label="@Loc["TmNotionToggleBlock_Expand"]"
+                aria-expanded="@_isOpen"
+                @onclick="HandleArrowClickAsync"
+                @onclick:stopPropagation="true">
+            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                <path d="M2 1l4 3-4 3" stroke="currentColor" stroke-width="1.5"
+                      stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </button>
+
+        <div class="tm-notion-toggle__text tm-notion-editable @_alignClass"
+             contenteditable="@(!ReadOnly ? "true" : "false")"
+             data-placeholder="@Placeholder"
+             data-color="@Content?.TextColor"
+             spellcheck="true"
+             @ref="_editableRef"
+             @oninput="() => _dirty = true"
+             @onblur="OnBlurAsync"
+             @onfocus="HandleFocusAsync">
+        </div>
+
+    </div>
+
+    @if (_isOpen)
+    {
+        <div class="tm-notion-toggle__children">
+
+            @if (_loadingChildren)
+            {
+                <div class="tm-notion-toggle__children-loading"
+                     role="status"
+                     aria-busy="true"
+                     aria-label="@Loc["TmNotionToggleBlock_ChildrenLoading"]">
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:82%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:65%"></div>
+                </div>
+            }
+            else
+            {
+                <TmNotionBlockList Blocks="_children"
+                                   ReadOnly="ReadOnly"
+                                   ActiveBlockId="_activeChildId"
+                                   OnReorder="HandleChildReorderAsync"
+                                   OnBlockFocused="HandleChildFocusedAsync"
+                                   OnBlockDeleted="HandleChildDeletedAsync"
+                                   OnBlockUpdated="HandleChildUpdatedAsync"
+                                   OnBlockDuplicated="HandleChildDuplicatedAsync"
+                                   OnConvertBlock="HandleChildConvertAsync"
+                                   OnAddBlockAfter="HandleChildAddAfterAsync"
+                                   OnAddBlockAtEnd="HandleChildAddAtEndAsync" />
+            }
+
+        </div>
+    }
+
+</div>

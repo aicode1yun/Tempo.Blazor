@@ -1,0 +1,41 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionDividerBlock — focusable divider wrapper (scoped)
+   The hr line style (.tm-notion-divider) lives in
+   _notion-typography.css. This file adds the wrapper,
+   focus/hover states, and click-target padding.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Wrapper — click target + focus context ───────────────────── */
+
+.tm-notion-divider-block {
+    display:        block;
+    width:          100%;
+    padding:        var(--tm-space-2) 0;
+    cursor:         pointer;
+    outline:        none;
+    border-radius:  var(--tm-radius-sm);
+    transition:     background var(--tm-notion-anim-fast);
+}
+
+/* ── Focused / selected state ─────────────────────────────────── */
+
+.tm-notion-divider-block--focused {
+    background: var(--tm-notion-bg-selected, rgba(35,131,226,0.08));
+}
+
+.tm-notion-divider-block--focused .tm-notion-divider {
+    background: var(--tm-notion-interactive-focus, var(--tm-color-primary, #2383e2));
+    opacity: 0.55;
+}
+
+/* ── Hover (unfocused) ────────────────────────────────────────── */
+
+.tm-notion-divider-block:hover:not(.tm-notion-divider-block--focused) {
+    background: var(--tm-notion-bg-block-hover);
+}
+
+/* ── Focus ring for keyboard navigation ───────────────────────── */
+
+.tm-notion-divider-block:focus-visible {
+    box-shadow: 0 0 0 2px var(--tm-notion-interactive-focus, var(--tm-color-primary, #2383e2));
+}

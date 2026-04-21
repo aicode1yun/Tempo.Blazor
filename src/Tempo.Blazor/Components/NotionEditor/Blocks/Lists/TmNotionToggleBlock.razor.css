@@ -1,0 +1,142 @@
+/* ── Block wrapper ───────────────────────────────────────────────────────── */
+.tm-notion-toggle {
+    display: flex;
+    flex-direction: column;
+    padding: 2px 0;
+}
+
+/* ── Header row (arrow + text) ───────────────────────────────────────────── */
+.tm-notion-toggle__header {
+    display: flex;
+    align-items: flex-start;
+    gap: 4px;
+}
+
+/* ── Arrow button ────────────────────────────────────────────────────────── */
+.tm-notion-toggle__arrow {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    margin-top: 0.15em;
+    padding: 0;
+    border: none;
+    background: transparent;
+    border-radius: 3px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+}
+
+.tm-notion-toggle__arrow:hover {
+    background: var(--tm-notion-interactive-hover, rgba(55,53,47,0.08));
+    color: var(--tm-text-primary);
+}
+
+.tm-notion-toggle__arrow:focus-visible {
+    outline: 2px solid var(--tm-notion-interactive-focus, #2383e2);
+    outline-offset: 1px;
+}
+
+/* Arrow SVG rotation — closed: pointing right, open: pointing down */
+.tm-notion-toggle__arrow svg {
+    transition: transform 200ms ease;
+    transform: rotate(0deg);
+    display: block;
+}
+
+.tm-notion-toggle--open .tm-notion-toggle__arrow svg {
+    transform: rotate(90deg);
+}
+
+/* ── Header text (editable) ──────────────────────────────────────────────── */
+.tm-notion-toggle__text {
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    line-height: var(--tm-notion-line-height, 1.6);
+    color: var(--tm-text-primary);
+    font-weight: 500;
+    word-break: break-word;
+    overflow-wrap: break-word;
+}
+
+.tm-notion-toggle__text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--tm-text-placeholder, rgba(55,53,47,0.35));
+    pointer-events: none;
+    font-weight: 400;
+}
+
+/* ── Text colour (via data-color) ────────────────────────────────────────── */
+.tm-notion-toggle__text[data-color="gray"]    { color: var(--tm-notion-color-gray); }
+.tm-notion-toggle__text[data-color="brown"]   { color: var(--tm-notion-color-brown); }
+.tm-notion-toggle__text[data-color="orange"]  { color: var(--tm-notion-color-orange); }
+.tm-notion-toggle__text[data-color="yellow"]  { color: var(--tm-notion-color-yellow); }
+.tm-notion-toggle__text[data-color="green"]   { color: var(--tm-notion-color-green); }
+.tm-notion-toggle__text[data-color="blue"]    { color: var(--tm-notion-color-blue); }
+.tm-notion-toggle__text[data-color="purple"]  { color: var(--tm-notion-color-purple); }
+.tm-notion-toggle__text[data-color="pink"]    { color: var(--tm-notion-color-pink); }
+.tm-notion-toggle__text[data-color="red"]     { color: var(--tm-notion-color-red); }
+
+/* ── Alignment ───────────────────────────────────────────────────────────── */
+.tm-notion-toggle__text.tm-notion-align-center { text-align: center; }
+.tm-notion-toggle__text.tm-notion-align-right  { text-align: right; }
+
+/* ── Inline formatting ───────────────────────────────────────────────────── */
+.tm-notion-toggle__text ::deep b,
+.tm-notion-toggle__text ::deep strong { font-weight: 700; }
+
+.tm-notion-toggle__text ::deep i,
+.tm-notion-toggle__text ::deep em     { font-style: italic; }
+
+.tm-notion-toggle__text ::deep u      { text-decoration: underline; }
+
+.tm-notion-toggle__text ::deep s      { text-decoration: line-through; }
+
+.tm-notion-toggle__text ::deep code {
+    font-family: var(--tm-notion-font-mono, monospace);
+    font-size: 0.875em;
+    background: var(--tm-notion-inline-code-bg, rgba(135,131,120,0.15));
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+}
+
+.tm-notion-toggle__text ::deep a {
+    color: var(--tm-notion-link-color, #2e8bff);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-toggle__text ::deep mark {
+    background: var(--tm-notion-highlight-bg, rgba(255,212,0,0.35));
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+.tm-notion-toggle__text ::deep ::selection {
+    background: var(--tm-notion-selection-bg, rgba(35,131,226,0.28));
+}
+
+/* ── Children area ───────────────────────────────────────────────────────── */
+.tm-notion-toggle__children {
+    padding-left: 24px;
+    padding-top: 2px;
+    padding-bottom: 2px;
+    border-left: 2px solid transparent;
+    transition: border-color 200ms ease;
+}
+
+.tm-notion-toggle--open .tm-notion-toggle__children {
+    border-left-color: var(--tm-notion-toggle-indent-line, rgba(55,53,47,0.09));
+}
+
+/* ── Children loading skeleton ───────────────────────────────────────────── */
+.tm-notion-toggle__children-loading {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 6px 0;
+}

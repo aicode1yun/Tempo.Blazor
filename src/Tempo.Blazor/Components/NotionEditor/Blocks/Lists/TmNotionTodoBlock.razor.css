@@ -1,0 +1,159 @@
+/* ── Block wrapper ───────────────────────────────────────────────────────── */
+.tm-notion-todo {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 2px 0;
+    cursor: default;
+}
+
+/* ── Checkbox wrap ───────────────────────────────────────────────────────── */
+.tm-notion-todo__check-wrap {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 0.2em;
+    position: relative;
+    width: 18px;
+    height: 18px;
+}
+
+/* Hide native input but keep it accessible for click target */
+.tm-notion-todo__input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    margin: 0;
+    cursor: pointer;
+    z-index: 1;
+}
+
+.tm-notion-todo__input:disabled {
+    cursor: default;
+}
+
+/* Custom box */
+.tm-notion-todo__box {
+    width: 16px;
+    height: 16px;
+    border: 1.5px solid var(--tm-notion-checkbox-border, rgba(55,53,47,0.35));
+    border-radius: 3px;
+    background: transparent;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 120ms ease, border-color 120ms ease;
+    pointer-events: none;
+}
+
+/* Hover (when not disabled) */
+.tm-notion-todo__input:not(:disabled):hover ~ .tm-notion-todo__box,
+.tm-notion-todo__input:not(:disabled):focus-visible ~ .tm-notion-todo__box {
+    border-color: var(--tm-notion-interactive-focus, #2383e2);
+    background: var(--tm-notion-checkbox-hover-bg, rgba(35,131,226,0.07));
+}
+
+/* Focus ring via label */
+.tm-notion-todo__input:focus-visible ~ .tm-notion-todo__box {
+    outline: 2px solid var(--tm-notion-interactive-focus, #2383e2);
+    outline-offset: 1px;
+}
+
+/* Checked state */
+.tm-notion-todo--checked .tm-notion-todo__box {
+    background: var(--tm-notion-interactive-focus, #2383e2);
+    border-color: var(--tm-notion-interactive-focus, #2383e2);
+}
+
+/* Check icon — hidden by default, shown when checked */
+.tm-notion-todo__check-icon {
+    width: 10px;
+    height: 10px;
+    color: #fff;
+    opacity: 0;
+    transform: scale(0.6);
+    transition: opacity 150ms ease, transform 150ms ease;
+}
+
+.tm-notion-todo--checked .tm-notion-todo__check-icon {
+    opacity: 1;
+    transform: scale(1);
+}
+
+/* ── Text area ───────────────────────────────────────────────────────────── */
+.tm-notion-todo__text {
+    flex: 1;
+    min-width: 0;
+    outline: none;
+    line-height: var(--tm-notion-line-height, 1.6);
+    color: var(--tm-text-primary);
+    word-break: break-word;
+    overflow-wrap: break-word;
+    transition: opacity 150ms ease;
+}
+
+/* Checked: strikethrough + fade */
+.tm-notion-todo--checked .tm-notion-todo__text {
+    text-decoration: line-through;
+    text-decoration-color: var(--tm-text-secondary, rgba(55,53,47,0.55));
+    opacity: 0.6;
+}
+
+.tm-notion-todo__text:empty::before {
+    content: attr(data-placeholder);
+    color: var(--tm-text-placeholder, rgba(55,53,47,0.35));
+    pointer-events: none;
+}
+
+/* ── Text colour (via data-color) ────────────────────────────────────────── */
+.tm-notion-todo__text[data-color="gray"]    { color: var(--tm-notion-color-gray); }
+.tm-notion-todo__text[data-color="brown"]   { color: var(--tm-notion-color-brown); }
+.tm-notion-todo__text[data-color="orange"]  { color: var(--tm-notion-color-orange); }
+.tm-notion-todo__text[data-color="yellow"]  { color: var(--tm-notion-color-yellow); }
+.tm-notion-todo__text[data-color="green"]   { color: var(--tm-notion-color-green); }
+.tm-notion-todo__text[data-color="blue"]    { color: var(--tm-notion-color-blue); }
+.tm-notion-todo__text[data-color="purple"]  { color: var(--tm-notion-color-purple); }
+.tm-notion-todo__text[data-color="pink"]    { color: var(--tm-notion-color-pink); }
+.tm-notion-todo__text[data-color="red"]     { color: var(--tm-notion-color-red); }
+
+/* ── Alignment ───────────────────────────────────────────────────────────── */
+.tm-notion-todo__text.tm-notion-align-center { text-align: center; }
+.tm-notion-todo__text.tm-notion-align-right  { text-align: right; }
+
+/* ── Inline formatting ───────────────────────────────────────────────────── */
+.tm-notion-todo__text ::deep b,
+.tm-notion-todo__text ::deep strong { font-weight: 600; }
+
+.tm-notion-todo__text ::deep i,
+.tm-notion-todo__text ::deep em     { font-style: italic; }
+
+.tm-notion-todo__text ::deep u      { text-decoration: underline; }
+
+.tm-notion-todo__text ::deep s      { text-decoration: line-through; }
+
+.tm-notion-todo__text ::deep code {
+    font-family: var(--tm-notion-font-mono, monospace);
+    font-size: 0.875em;
+    background: var(--tm-notion-inline-code-bg, rgba(135,131,120,0.15));
+    border-radius: 3px;
+    padding: 0.1em 0.35em;
+}
+
+.tm-notion-todo__text ::deep a {
+    color: var(--tm-notion-link-color, #2e8bff);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-todo__text ::deep mark {
+    background: var(--tm-notion-highlight-bg, rgba(255,212,0,0.35));
+    border-radius: 2px;
+    padding: 0 2px;
+}
+
+.tm-notion-todo__text ::deep ::selection {
+    background: var(--tm-notion-selection-bg, rgba(35,131,226,0.28));
+}

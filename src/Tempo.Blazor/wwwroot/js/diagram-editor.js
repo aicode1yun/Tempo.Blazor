@@ -3599,3 +3599,25 @@ window.tmDiagramArrowSelect = {
         child.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
     }
 };
+
+// ── Table cell double-click editing ───────────────────────────────────────
+window.tmDiagramStencilShape = {
+    registerDblClick: function (element, dotNetRef) {
+        const handler = function (e) {
+            const cell = e.target.closest('.tm-diagram-node__table-cell');
+            if (!cell) return;
+            const row = parseInt(cell.dataset.row, 10);
+            const col = parseInt(cell.dataset.col, 10);
+            dotNetRef.invokeMethodAsync('StartTableCellEditFromJs', row, col);
+        };
+        element.addEventListener('dblclick', handler);
+        element._tmDblClickHandler = handler;
+    },
+
+    unregisterDblClick: function (element) {
+        if (element._tmDblClickHandler) {
+            element.removeEventListener('dblclick', element._tmDblClickHandler);
+            delete element._tmDblClickHandler;
+        }
+    }
+};

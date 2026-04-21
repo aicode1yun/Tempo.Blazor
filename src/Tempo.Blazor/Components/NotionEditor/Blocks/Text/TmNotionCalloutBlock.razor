@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.Shared
+
+<div class="tm-notion-callout @_bgClass" data-bg="@Content?.BackgroundColor">
+
+    <div class="tm-notion-callout__icon-wrap">
+        <button class="tm-notion-callout__icon"
+                type="button"
+                disabled="@ReadOnly"
+                aria-label="@Loc["TmNotionCalloutBlock_ChangeIcon"]"
+                title="@Loc["TmNotionCalloutBlock_ChangeIcon"]"
+                @onclick="ToggleEmojiPicker"
+                @onclick:stopPropagation="true">
+            @_currentEmoji
+        </button>
+
+        @if (_showEmojiPicker && !ReadOnly)
+        {
+            <TmNotionEmojiPicker OnSelected="HandleEmojiSelectedAsync"
+                                  OnRemoved="HandleEmojiRemovedAsync"
+                                  OnClosed="CloseEmojiPicker"
+                                  ShowRemoveButton="true" />
+        }
+    </div>
+
+    <div class="tm-notion-callout__body tm-notion-editable @_alignClass"
+         contenteditable="@(!ReadOnly ? "true" : "false")"
+         data-placeholder="@Placeholder"
+         data-color="@Content?.TextColor"
+         spellcheck="true"
+         @ref="_editableRef"
+         @oninput="() => _dirty = true"
+         @onblur="OnBlurAsync"
+         @onfocus="HandleFocusAsync">
+    </div>
+
+</div>

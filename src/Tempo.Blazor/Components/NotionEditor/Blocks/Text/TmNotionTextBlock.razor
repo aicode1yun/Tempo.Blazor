@@ -1,0 +1,15 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-notion-paragraph tm-notion-editable @_alignClass @_bgClass"
+     contenteditable="@(!ReadOnly ? "true" : "false")"
+     data-placeholder="@Placeholder"
+     data-bg="@Content?.BackgroundColor"
+     data-color="@Content?.TextColor"
+     spellcheck="true"
+     @ref="_editableRef"
+     @oninput="() => _dirty = true"
+     @onblur="OnBlurAsync"
+     @onfocus="HandleFocusAsync">
+</div>

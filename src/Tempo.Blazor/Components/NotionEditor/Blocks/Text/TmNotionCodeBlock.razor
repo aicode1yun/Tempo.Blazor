@@ -1,0 +1,71 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-notion-code-block @_wrapClass" data-language="@_displayLanguage">
+
+    <div class="tm-notion-code-block__header">
+
+        @if (!ReadOnly)
+        {
+            <select class="tm-notion-code-block__lang-select"
+                    aria-label="@Loc["TmNotionCodeBlock_SelectLanguage"]"
+                    @bind="_selectedLanguage"
+                    @bind:after="HandleLanguageChangedAsync">
+                @foreach (var lang in _languages)
+                {
+                    <option value="@lang">@lang</option>
+                }
+            </select>
+        }
+        else
+        {
+            <span class="tm-notion-code-block__lang">@_displayLanguage</span>
+        }
+
+        <button class="tm-notion-code-block__copy @(_codeCopied ? "tm-notion-code-block__copy--copied" : "")"
+                type="button"
+                aria-label="@(_codeCopied ? Loc["TmNotionCodeBlock_Copied"] : Loc["TmNotionCodeBlock_CopyCode"])"
+                @onclick="CopyCodeAsync"
+                @onclick:stopPropagation="true">
+            @if (_codeCopied)
+            {
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 6l3 3 5-5" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            }
+            else
+            {
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <rect x="4" y="1" width="7" height="8" rx="1" stroke="currentColor" stroke-width="1.2"/>
+                    <path d="M1 4v6a1 1 0 001 1h6" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+                </svg>
+            }
+            @(_codeCopied ? Loc["TmNotionCodeBlock_Copied"] : Loc["TmNotionCodeBlock_CopyCode"])
+        </button>
+
+    </div>
+
+    <textarea class="tm-notion-code-block__content"
+              @ref="_textareaRef"
+              readonly="@ReadOnly"
+              spellcheck="false"
+              autocomplete="off"
+              autocorrect="off"
+              autocapitalize="off"
+              @oninput="() => _codeDirty = true"
+              @onblur="OnCodeBlurAsync"
+              @onfocus="HandleFocusAsync">
+    </textarea>
+
+    @if (_showCaption)
+    {
+        <div class="tm-notion-code-block__caption tm-notion-editable"
+             contenteditable="@(!ReadOnly ? "true" : "false")"
+             data-placeholder="@Loc["TmNotionCodeBlock_CaptionPlaceholder"]"
+             @ref="_captionRef"
+             @oninput="() => _captionDirty = true"
+             @onblur="OnCaptionBlurAsync">
+        </div>
+    }
+
+</div>

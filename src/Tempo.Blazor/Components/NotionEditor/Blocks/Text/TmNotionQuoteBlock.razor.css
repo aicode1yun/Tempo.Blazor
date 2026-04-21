@@ -1,0 +1,77 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionQuoteBlock — blockquote editable (scoped)
+   Global left-border and padding live in _notion-typography.css
+   (.tm-notion-quote). This file handles inline formatting overrides
+   scoped to the component.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Ensure the div fills its parent ─────────────────────────── */
+
+:host,
+.tm-notion-quote {
+    display: block;
+    width:   100%;
+}
+
+/* ── Placeholder focus opacity ────────────────────────────────── */
+
+.tm-notion-quote:focus::before {
+    opacity: 0.45;
+}
+
+/* ── Selection color ──────────────────────────────────────────── */
+
+.tm-notion-quote ::selection {
+    background: var(--tm-notion-selection-bg);
+}
+
+/* ── Inline formatting ────────────────────────────────────────── */
+
+.tm-notion-quote b,
+.tm-notion-quote strong {
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-notion-quote i,
+.tm-notion-quote em {
+    font-style: italic;
+}
+
+.tm-notion-quote u {
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-quote s,
+.tm-notion-quote del {
+    text-decoration: line-through;
+}
+
+.tm-notion-quote code {
+    font-family:   var(--tm-notion-font-mono);
+    font-size:     0.875em;
+    background:    var(--tm-notion-bg-code);
+    border:        1px solid var(--tm-notion-border-code);
+    border-radius: var(--tm-radius-xs, 3px);
+    padding:       0.1em 0.35em;
+    color:         var(--tm-color-error, #c7254e);
+}
+
+.tm-notion-quote a {
+    color:                 var(--tm-notion-link-color);
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+    transition:            color var(--tm-notion-anim-fast);
+}
+
+.tm-notion-quote a:hover {
+    color: var(--tm-notion-link-hover);
+}
+
+/* ── Highlight (comment marker) ───────────────────────────────── */
+
+.tm-notion-quote mark {
+    background:    var(--tm-notion-comment-highlight);
+    border-radius: 2px;
+    padding:       0 1px;
+}

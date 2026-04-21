@@ -1,0 +1,796 @@
+/**
+ * Tempo Blazor — Notion Editor JS Interop
+ *
+ * Sections:
+ *   26.1  Block lifecycle      — initBlock / destroyBlock / getHtml / setHtml / focus*
+ *   26.2  Selection/format     — getSelectionRange / getSelectionRect / applyFormat / …
+ *   26.3  Drag & drop          — initDragDrop / destroyDragDrop  (ghost + drop-indicator)
+ *   26.4  Slash menu           — getCaretCoords / getTextBeforeCaret
+ *   26.5  Keyboard handler     — initKeyboardHandler  (Enter / Backspace / Tab / markdown)
+ *   26.6  Inline math          — renderEquation / renderInlineMath  (KaTeX or fallback)
+ *   26.7  Clipboard            — handlePaste / copyBlocksToClipboard
+ *   26.8  Resize handle        — initResizeHandle / destroyResizeHandle
+ *   26.9  Scroll / nav         — scrollToBlock / initSmoothScrollSpy / destroyScrollSpy
+ *   30.1  Cover drag           — startCoverDrag
+ */
+window.tmNotionEditor = (function () {
+    'use strict';
+
+    // ── Internal registries ────────────────────────────────────────────────────
+    const _blocks       = new WeakMap(); // element → { dotNetRef, listeners: [] }
+    const _dragContainers = new WeakMap();
+    const _resizeHandles  = new WeakMap();
+    const _scrollSpies    = new WeakMap();
+
+    // ── Shared helpers ─────────────────────────────────────────────────────────
+
+    function _on(el, type, fn, opts) {
+        el.addEventListener(type, fn, opts);
+        return { el, type, fn, opts };
+    }
+
+    function _offAll(list) {
+        for (const l of list) l.el.removeEventListener(l.type, l.fn, l.opts);
+        list.length = 0;
+    }
+
+    function _range() {
+        const sel = window.getSelection();
+        return sel && sel.rangeCount > 0 ? sel.getRangeAt(0) : null;
+    }
+
+    function _applyRange(r) {
+        const sel = window.getSelection();
+        sel.removeAllRanges();
+        sel.addRange(r);
+    }
+
+    function _setCursorAtEnd(el) {
+        el.focus();
+        const r = document.createRange();
+        r.selectNodeContents(el);
+        r.collapse(false);
+        _applyRange(r);
+    }
+
+    function _setCursorAtStart(el) {
+        el.focus();
+        const r = document.createRange();
+        r.setStart(el, 0);
+        r.collapse(true);
+        _applyRange(r);
+    }
+
+    function _setCursorAtOffset(el, offset) {
+        el.focus();
+        const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+        let rem = offset;
+        let node;
+        while ((node = walker.nextNode())) {
+            if (rem <= node.length) {
+                const r = document.createRange();
+                r.setStart(node, rem);
+                r.collapse(true);
+                _applyRange(r);
+                return;
+            }
+            rem -= node.length;
+        }
+        _setCursorAtEnd(el);
+    }
+
+    function _isEmpty(el) {
+        return !el.textContent.trim() && !el.querySelector('img');
+    }
+
+    function _escHtml(s) {
+        return String(s)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;');
+    }
+
+    function _detectMarkdownShortcut(text) {
+        if (/^# $/.test(text))          return 'heading1';
+        if (/^## $/.test(text))         return 'heading2';
+        if (/^### $/.test(text))        return 'heading3';
+        if (/^[*\-] $/.test(text))      return 'bullet';
+        if (/^1\. $/.test(text))        return 'numbered';
+        if (/^\[\] $/.test(text))       return 'todo';
+        if (/^\[x\] $/.test(text))      return 'todoDone';
+        if (/^> $/.test(text))          return 'quote';
+        if (/^```$/.test(text.trim()))  return 'code';
+        if (/^---$/.test(text.trim()))  return 'divider';
+        return null;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.1 — Block lifecycle
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function initBlock(element, dotNetRef) {
+        if (!element) return;
+        if (_blocks.has(element)) destroyBlock(element);
+        _blocks.set(element, { dotNetRef, listeners: [] });
+    }
+
+    function destroyBlock(element) {
+        if (!element || !_blocks.has(element)) return;
+        const s = _blocks.get(element);
+        _offAll(s.listeners);
+        _blocks.delete(element);
+    }
+
+    function getHtml(element) {
+        return element ? element.innerHTML : '';
+    }
+
+    function setHtml(element, html) {
+        if (element) element.innerHTML = html ?? '';
+    }
+
+    function focus(element) {
+        element?.focus();
+    }
+
+    function focusAtEnd(element) {
+        if (element) _setCursorAtEnd(element);
+    }
+
+    function focusAtStart(element) {
+        if (element) _setCursorAtStart(element);
+    }
+
+    function focusAtOffset(element, offset) {
+        if (element) _setCursorAtOffset(element, offset);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.2 — Selection & formatting
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function getSelectionRange() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return null;
+        const r = sel.getRangeAt(0);
+        const anchor = r.startContainer.nodeType === Node.TEXT_NODE
+            ? r.startContainer.parentElement
+            : r.startContainer;
+        const blockElement = anchor?.closest?.('[data-notion-block]') ?? null;
+        return {
+            blockElement,
+            startOffset: r.startOffset,
+            endOffset: r.endOffset,
+            text: sel.toString()
+        };
+    }
+
+    function getSelectionRect() {
+        const r = _range();
+        if (!r) return null;
+        const rect = r.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+    }
+
+    function applyFormat(command, value) {
+        document.execCommand(command, false, value ?? null);
+    }
+
+    function queryFormatState(command) {
+        return document.queryCommandState(command);
+    }
+
+    function insertHtml(html) {
+        document.execCommand('insertHTML', false, html);
+    }
+
+    function insertLink(url, text) {
+        const label = _escHtml(text || url);
+        const href  = _escHtml(url);
+        document.execCommand('insertHTML', false,
+            `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    }
+
+    function wrapSelectionWithComment(commentId) {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
+        const r = sel.getRangeAt(0);
+        const mark = document.createElement('mark');
+        mark.className = 'tm-notion-comment-highlight';
+        mark.dataset.commentId = String(commentId);
+        try {
+            r.surroundContents(mark);
+        } catch {
+            const frag = r.extractContents();
+            mark.appendChild(frag);
+            r.insertNode(mark);
+        }
+        sel.removeAllRanges();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.3 — Drag & drop
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function initDragDrop(containerElement, dotNetRef) {
+        if (!containerElement) return;
+        if (_dragContainers.has(containerElement)) destroyDragDrop(containerElement);
+
+        let dragSrc    = null;
+        let dragGhost  = null;
+        let indicator  = null;
+        let dropTarget = null;
+
+        function _indicator() {
+            if (indicator) return indicator;
+            indicator = document.createElement('div');
+            indicator.className = 'tm-notion-drop-indicator';
+            indicator.style.cssText =
+                'position:fixed;height:2px;background:var(--tm-primary,#2383e2);border-radius:1px;' +
+                'pointer-events:none;z-index:9999;display:none;transition:top .06s;';
+            document.body.appendChild(indicator);
+            return indicator;
+        }
+
+        function _blocks(container) {
+            return Array.from(container.querySelectorAll('[data-notion-block]'));
+        }
+
+        function _blockAt(y) {
+            return _blocks(containerElement).find(b => {
+                const r = b.getBoundingClientRect();
+                return y >= r.top && y <= r.bottom;
+            }) ?? null;
+        }
+
+        function _indexOf(b) {
+            return _blocks(containerElement).indexOf(b);
+        }
+
+        function _onDragStart(e) {
+            if (!e.target.closest('[data-notion-drag-handle]')) return;
+            const b = e.target.closest('[data-notion-block]');
+            if (!b) return;
+            dragSrc = b;
+            dragSrc.classList.add('tm-notion-dragging');
+            dragGhost = b.cloneNode(true);
+            Object.assign(dragGhost.style, {
+                position: 'fixed', top: '-9999px', left: '-9999px',
+                width: b.offsetWidth + 'px', opacity: '0.88',
+                pointerEvents: 'none', boxShadow: '0 4px 20px rgba(0,0,0,.22)',
+                borderRadius: '4px', background: 'var(--tm-bg, #fff)', zIndex: '10000'
+            });
+            document.body.appendChild(dragGhost);
+            e.dataTransfer.setDragImage(dragGhost, 24, 24);
+            e.dataTransfer.effectAllowed = 'move';
+        }
+
+        function _onDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+            const b = _blockAt(e.clientY);
+            if (!b || b === dragSrc) { _indicator().style.display = 'none'; return; }
+            dropTarget = b;
+            const rect  = b.getBoundingClientRect();
+            const after = e.clientY > rect.top + rect.height / 2;
+            const ind   = _indicator();
+            const y     = after ? rect.bottom : rect.top;
+            Object.assign(ind.style, {
+                display: 'block',
+                top:   y - 1 + 'px',
+                left:  rect.left + 'px',
+                width: rect.width + 'px'
+            });
+        }
+
+        function _onDragLeave(e) {
+            if (!containerElement.contains(e.relatedTarget)) {
+                _indicator().style.display = 'none';
+            }
+        }
+
+        function _onDrop(e) {
+            e.preventDefault();
+            _indicator().style.display = 'none';
+            if (!dragSrc || !dropTarget || dropTarget === dragSrc) return;
+            const src = _indexOf(dragSrc);
+            const rect = dropTarget.getBoundingClientRect();
+            let dst  = _indexOf(dropTarget);
+            if (e.clientY > rect.top + rect.height / 2) dst++;
+            if (src !== -1 && dst !== -1 && src !== dst) {
+                dotNetRef.invokeMethodAsync('OnBlockReordered', src, dst).catch(console.error);
+            }
+        }
+
+        function _onDragEnd() {
+            dragSrc?.classList.remove('tm-notion-dragging');
+            dragGhost?.parentNode?.removeChild(dragGhost);
+            if (indicator) indicator.style.display = 'none';
+            dragSrc = dragGhost = dropTarget = null;
+        }
+
+        containerElement.addEventListener('dragstart',  _onDragStart);
+        containerElement.addEventListener('dragover',   _onDragOver);
+        containerElement.addEventListener('dragleave',  _onDragLeave);
+        containerElement.addEventListener('drop',       _onDrop);
+        containerElement.addEventListener('dragend',    _onDragEnd);
+
+        _dragContainers.set(containerElement, {
+            cleanup() {
+                containerElement.removeEventListener('dragstart',  _onDragStart);
+                containerElement.removeEventListener('dragover',   _onDragOver);
+                containerElement.removeEventListener('dragleave',  _onDragLeave);
+                containerElement.removeEventListener('drop',       _onDrop);
+                containerElement.removeEventListener('dragend',    _onDragEnd);
+                indicator?.parentNode?.removeChild(indicator);
+                indicator = null;
+            }
+        });
+    }
+
+    function destroyDragDrop(containerElement) {
+        if (!containerElement || !_dragContainers.has(containerElement)) return;
+        _dragContainers.get(containerElement).cleanup();
+        _dragContainers.delete(containerElement);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.4 — Slash menu positioning
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function getCaretCoords() {
+        const r = _range();
+        if (!r) return { top: 0, left: 0 };
+        const c = r.cloneRange();
+        c.collapse(true);
+        let rect = c.getBoundingClientRect();
+        if (rect.width === 0 && rect.height === 0) {
+            const span = document.createElement('span');
+            span.textContent = '\u200b';
+            c.insertNode(span);
+            rect = span.getBoundingClientRect();
+            span.parentNode?.removeChild(span);
+        }
+        return {
+            top:  rect.bottom + window.scrollY,
+            left: rect.left   + window.scrollX
+        };
+    }
+
+    function getTextBeforeCaret(element) {
+        if (!element) return '';
+        const r = _range();
+        if (!r) return '';
+        const pre = document.createRange();
+        pre.selectNodeContents(element);
+        pre.setEnd(r.startContainer, r.startOffset);
+        return pre.toString();
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.5 — Keyboard handler
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function initKeyboardHandler(element, dotNetRef) {
+        if (!element) return;
+        if (!_blocks.has(element)) _blocks.set(element, { dotNetRef, listeners: [] });
+        const state = _blocks.get(element);
+        state.dotNetRef = dotNetRef;
+
+        function _htmlAroundCaret() {
+            const r = _range();
+            if (!r) return { before: element.innerHTML, after: '' };
+            function _fragHtml(fr) {
+                const d = document.createElement('div');
+                d.appendChild(fr);
+                return d.innerHTML;
+            }
+            const beforeR = document.createRange();
+            beforeR.selectNodeContents(element);
+            beforeR.setEnd(r.startContainer, r.startOffset);
+            const afterR = document.createRange();
+            afterR.selectNodeContents(element);
+            afterR.setStart(r.endContainer, r.endOffset);
+            return {
+                before: _fragHtml(beforeR.cloneContents()),
+                after:  _fragHtml(afterR.cloneContents())
+            };
+        }
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                const { before, after } = _htmlAroundCaret();
+                dotNetRef.invokeMethodAsync('OnEnterPressed', before, after).catch(console.error);
+                return;
+            }
+            if (e.key === 'Backspace' && _isEmpty(element)) {
+                e.preventDefault();
+                dotNetRef.invokeMethodAsync('OnBackspaceOnEmpty').catch(console.error);
+                return;
+            }
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                dotNetRef.invokeMethodAsync('OnTabPressed', e.shiftKey).catch(console.error);
+                return;
+            }
+            if (e.key === 'ArrowUp'   && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                dotNetRef.invokeMethodAsync('OnArrowUp').catch(console.error);
+            }
+            if (e.key === 'ArrowDown' && !e.shiftKey && !e.ctrlKey && !e.metaKey) {
+                dotNetRef.invokeMethodAsync('OnArrowDown').catch(console.error);
+            }
+        };
+
+        const onInput = () => {
+            const text = element.textContent || '';
+
+            const shortcut = _detectMarkdownShortcut(text);
+            if (shortcut) {
+                element.innerHTML = '';
+                dotNetRef.invokeMethodAsync('OnMarkdownShortcut', shortcut).catch(console.error);
+                return;
+            }
+
+            const lastChar = text[text.length - 1];
+            const prevChar = text[text.length - 2];
+            const atWordBoundary = !prevChar || prevChar === ' ';
+
+            if (lastChar === '/' && atWordBoundary) {
+                const c = getCaretCoords();
+                dotNetRef.invokeMethodAsync('OnSlashTriggered', c.top, c.left).catch(console.error);
+            } else if (lastChar === '@' && atWordBoundary) {
+                const c = getCaretCoords();
+                dotNetRef.invokeMethodAsync('OnMentionTriggered', c.top, c.left).catch(console.error);
+            } else if (text.endsWith('[[')) {
+                const c = getCaretCoords();
+                dotNetRef.invokeMethodAsync('OnPageLinkTriggered', c.top, c.left).catch(console.error);
+            }
+        };
+
+        state.listeners.push(
+            _on(element, 'keydown', onKeyDown),
+            _on(element, 'input',   onInput)
+        );
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.6 — Inline math (KaTeX with plain-text fallback)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function renderEquation(element, latex) {
+        if (!element) return;
+        if (window.katex) {
+            try {
+                element.innerHTML = window.katex.renderToString(latex, {
+                    displayMode: true,
+                    throwOnError: false,
+                    output: 'html'
+                });
+                return;
+            } catch { /* fall through */ }
+        }
+        element.textContent = latex;
+        element.dataset.latex = latex;
+    }
+
+    function renderInlineMath(element, latex) {
+        if (!element) return;
+        if (window.katex) {
+            try {
+                element.innerHTML = window.katex.renderToString(latex, {
+                    displayMode: false,
+                    throwOnError: false,
+                    output: 'html'
+                });
+                return;
+            } catch { /* fall through */ }
+        }
+        element.textContent = latex;
+        element.dataset.latex = latex;
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.7 — Clipboard
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function handlePaste(element, dotNetRef) {
+        if (!element) return;
+        if (!_blocks.has(element)) _blocks.set(element, { dotNetRef, listeners: [] });
+        const state = _blocks.get(element);
+
+        const onPaste = (e) => {
+            e.preventDefault();
+            const cd = e.clipboardData || window.clipboardData;
+
+            // Image first
+            const imgItem = Array.from(cd.items || []).find(i => i.type.startsWith('image/'));
+            if (imgItem) {
+                const file = imgItem.getAsFile();
+                if (file) {
+                    const fr = new FileReader();
+                    fr.onload = () => dotNetRef.invokeMethodAsync(
+                        'OnImagePasted', fr.result, file.type, file.name || 'pasted-image'
+                    ).catch(console.error);
+                    fr.readAsDataURL(file);
+                    return;
+                }
+            }
+
+            // HTML
+            const html = cd.getData('text/html');
+            if (html?.trim()) {
+                dotNetRef.invokeMethodAsync('OnHtmlPasted', html).catch(console.error);
+                return;
+            }
+
+            // Plain text
+            const text = cd.getData('text/plain');
+            if (text) dotNetRef.invokeMethodAsync('OnTextPasted', text).catch(console.error);
+        };
+
+        state.listeners.push(_on(element, 'paste', onPaste));
+    }
+
+    function copyBlocksToClipboard(blocksJson) {
+        const text = blocksJson ?? '';
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(text).catch(console.error);
+        } else {
+            const ta = Object.assign(document.createElement('textarea'), {
+                value: text
+            });
+            Object.assign(ta.style, { position: 'fixed', opacity: '0' });
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+        }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.8 — Resize handle
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function initResizeHandle(element, dotNetRef) {
+        if (!element) return;
+        if (_resizeHandles.has(element)) _resizeHandles.get(element).cleanup();
+
+        const handle = document.createElement('div');
+        handle.className = 'tm-notion-resize-handle';
+        Object.assign(handle.style, {
+            position: 'absolute', right: '0', top: '0', bottom: '0',
+            width: '6px', cursor: 'ew-resize', zIndex: '10',
+            background: 'transparent', borderRadius: '0 3px 3px 0'
+        });
+
+        let isDown = false, startX = 0, startW = 0;
+
+        const onDown = (e) => {
+            e.preventDefault();
+            isDown  = true;
+            startX  = e.clientX;
+            startW  = element.offsetWidth;
+            document.body.style.cursor     = 'ew-resize';
+            document.body.style.userSelect = 'none';
+        };
+        const onMove = (e) => {
+            if (!isDown) return;
+            element.style.width = Math.max(80, startW + e.clientX - startX) + 'px';
+        };
+        const onUp = () => {
+            if (!isDown) return;
+            isDown = false;
+            document.body.style.cursor = document.body.style.userSelect = '';
+            dotNetRef.invokeMethodAsync('OnResize', element.offsetWidth, element.offsetHeight)
+                     .catch(console.error);
+        };
+
+        handle.addEventListener('mousedown', onDown);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+
+        if (getComputedStyle(element).position === 'static') element.style.position = 'relative';
+        element.appendChild(handle);
+
+        _resizeHandles.set(element, {
+            cleanup() {
+                handle.removeEventListener('mousedown', onDown);
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+                handle.parentNode?.removeChild(handle);
+            }
+        });
+    }
+
+    function destroyResizeHandle(element) {
+        if (!element || !_resizeHandles.has(element)) return;
+        _resizeHandles.get(element).cleanup();
+        _resizeHandles.delete(element);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.9 — Scroll & navigation
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function scrollToBlock(blockId) {
+        const el = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+        el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+
+    function initSmoothScrollSpy(containerElement, dotNetRef) {
+        if (!containerElement) return;
+        if (_scrollSpies.has(containerElement)) _scrollSpies.get(containerElement).cleanup();
+
+        let ticking    = false;
+        let activeId   = null;
+        const OFFSET   = 80;
+
+        const onScroll = () => {
+            if (ticking) return;
+            ticking = true;
+            requestAnimationFrame(() => {
+                ticking = false;
+                const headings = Array.from(
+                    containerElement.querySelectorAll('[data-notion-heading][data-block-id]')
+                );
+                let current = null;
+                for (const h of headings) {
+                    if (h.getBoundingClientRect().top <= OFFSET) current = h;
+                }
+                const newId = current?.dataset.blockId ?? null;
+                if (newId !== activeId) {
+                    activeId = newId;
+                    dotNetRef.invokeMethodAsync('OnScrollSpyBlockChanged', newId).catch(console.error);
+                }
+            });
+        };
+
+        const scrollRoot = containerElement.closest('[data-notion-scroll-root]') ?? containerElement;
+        scrollRoot.addEventListener('scroll', onScroll, { passive: true });
+        window.addEventListener('scroll',    onScroll, { passive: true });
+
+        _scrollSpies.set(containerElement, {
+            cleanup() {
+                scrollRoot.removeEventListener('scroll', onScroll);
+                window.removeEventListener('scroll',    onScroll);
+            }
+        });
+    }
+
+    function destroyScrollSpy(containerElement) {
+        if (!containerElement || !_scrollSpies.has(containerElement)) return;
+        _scrollSpies.get(containerElement).cleanup();
+        _scrollSpies.delete(containerElement);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 30.1 — Cover image drag repositioning
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function startCoverDrag(coverElement, dotNetRef, startClientY, startPositionY) {
+        if (!coverElement) return;
+
+        let currentPos = startPositionY ?? 50;
+
+        const onMouseMove = (e) => {
+            const rect  = coverElement.getBoundingClientRect();
+            const delta = e.clientY - startClientY;
+            currentPos  = Math.max(0, Math.min(100, startPositionY - (delta / rect.height * 100)));
+            coverElement.style.backgroundPositionY = currentPos.toFixed(1) + '%';
+        };
+
+        const onMouseUp = () => {
+            document.removeEventListener('mousemove', onMouseMove);
+            document.removeEventListener('mouseup',   onMouseUp);
+            document.body.style.cursor = '';
+            dotNetRef.invokeMethodAsync('OnCoverDragEnded', currentPos).catch(console.error);
+        };
+
+        document.body.style.cursor = 'ns-resize';
+        document.addEventListener('mousemove', onMouseMove);
+        document.addEventListener('mouseup',   onMouseUp);
+    }
+
+    // ── 32.1 Copy block link ───────────────────────────────────────────────────
+
+    function copyBlockLink(fragment) {
+        const url = window.location.href.split('#')[0] + fragment;
+        navigator.clipboard.writeText(url).catch(() => {});
+    }
+
+    // ── 37.1 Code block keyboard handler ──────────────────────────────────────
+
+    const CODE_TAB_SIZE = 4;
+
+    function _autoResizeTextarea(ta) {
+        ta.style.height = 'auto';
+        ta.style.height = ta.scrollHeight + 'px';
+    }
+
+    function initCodeKeyboardHandler(textarea, dotNetRef) {
+        if (!textarea) return;
+        if (_blocks.has(textarea)) destroyBlock(textarea);
+        _blocks.set(textarea, { dotNetRef, listeners: [] });
+        const state = _blocks.get(textarea);
+
+        const onKeyDown = (e) => {
+            if (e.key === 'Tab') {
+                e.preventDefault();
+                const start = textarea.selectionStart;
+                const end   = textarea.selectionEnd;
+                const val   = textarea.value;
+
+                if (e.shiftKey) {
+                    const lineStart = val.lastIndexOf('\n', start - 1) + 1;
+                    const spaces    = val.slice(lineStart).match(/^ {1,4}/)?.[0] ?? '';
+                    if (spaces.length > 0) {
+                        textarea.value = val.slice(0, lineStart) + val.slice(lineStart + spaces.length);
+                        textarea.selectionStart = textarea.selectionEnd = Math.max(lineStart, start - spaces.length);
+                    }
+                } else {
+                    const indent = ' '.repeat(CODE_TAB_SIZE);
+                    textarea.value = val.slice(0, start) + indent + val.slice(end);
+                    textarea.selectionStart = textarea.selectionEnd = start + CODE_TAB_SIZE;
+                }
+                textarea.dispatchEvent(new Event('input', { bubbles: true }));
+                _autoResizeTextarea(textarea);
+                return;
+            }
+
+            if (e.key === 'Backspace' && !textarea.value.trim()) {
+                e.preventDefault();
+                dotNetRef.invokeMethodAsync('OnBackspaceOnEmpty').catch(console.error);
+                return;
+            }
+        };
+
+        const onInput = () => _autoResizeTextarea(textarea);
+
+        state.listeners.push(
+            _on(textarea, 'keydown', onKeyDown),
+            _on(textarea, 'input',   onInput)
+        );
+    }
+
+    function getCode(textarea) {
+        return textarea ? textarea.value : '';
+    }
+
+    function setCode(textarea, code) {
+        if (!textarea) return;
+        textarea.value = code ?? '';
+        _autoResizeTextarea(textarea);
+    }
+
+    // ── Public API ─────────────────────────────────────────────────────────────
+    return {
+        // 26.1
+        initBlock, destroyBlock, getHtml, setHtml,
+        focus, focusAtEnd, focusAtStart, focusAtOffset,
+        // 26.2
+        getSelectionRange, getSelectionRect, applyFormat,
+        queryFormatState, insertHtml, insertLink, wrapSelectionWithComment,
+        // 26.3
+        initDragDrop, destroyDragDrop,
+        // 26.4
+        getCaretCoords, getTextBeforeCaret,
+        // 26.5
+        initKeyboardHandler,
+        // 26.6
+        renderEquation, renderInlineMath,
+        // 26.7
+        handlePaste, copyBlocksToClipboard,
+        // 26.8
+        initResizeHandle, destroyResizeHandle,
+        // 26.9
+        scrollToBlock, initSmoothScrollSpy, destroyScrollSpy,
+        // 30.1
+        startCoverDrag,
+        // 32.1
+        copyBlockLink,
+        // 37.1
+        initCodeKeyboardHandler, getCode, setCode
+    };
+})();

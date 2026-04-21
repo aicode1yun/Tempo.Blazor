@@ -1,0 +1,91 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionCalloutBlock — callout editable (scoped)
+   Global callout layout (.tm-notion-callout, __icon, __body) lives
+   in _notion-typography.css. This file adds icon-wrap positioning
+   context, button reset, and inline formatting for the body.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Icon wrapper — positioning context for emoji picker ─────── */
+
+.tm-notion-callout__icon-wrap {
+    position:    relative;
+    flex-shrink: 0;
+    align-self:  flex-start;
+}
+
+/* ── Icon button reset ────────────────────────────────────────── */
+
+.tm-notion-callout__icon {
+    border:      none;
+    padding:     2px 4px;
+    line-height: 1;
+}
+
+.tm-notion-callout__icon:disabled {
+    cursor: default;
+    opacity: 1;
+}
+
+/* ── Ensure body fills remaining width ────────────────────────── */
+
+.tm-notion-callout__body {
+    display: block;
+    width:   100%;
+}
+
+/* ── Selection color ──────────────────────────────────────────── */
+
+.tm-notion-callout__body ::selection {
+    background: var(--tm-notion-selection-bg);
+}
+
+/* ── Inline formatting ────────────────────────────────────────── */
+
+.tm-notion-callout__body b,
+.tm-notion-callout__body strong {
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-notion-callout__body i,
+.tm-notion-callout__body em {
+    font-style: italic;
+}
+
+.tm-notion-callout__body u {
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-callout__body s,
+.tm-notion-callout__body del {
+    text-decoration: line-through;
+}
+
+.tm-notion-callout__body code {
+    font-family:   var(--tm-notion-font-mono);
+    font-size:     0.875em;
+    background:    var(--tm-notion-bg-code);
+    border:        1px solid var(--tm-notion-border-code);
+    border-radius: var(--tm-radius-xs, 3px);
+    padding:       0.1em 0.35em;
+    color:         var(--tm-color-error, #c7254e);
+}
+
+.tm-notion-callout__body a {
+    color:                 var(--tm-notion-link-color);
+    text-decoration:       underline;
+    text-underline-offset: 2px;
+    transition:            color var(--tm-notion-anim-fast);
+}
+
+.tm-notion-callout__body a:hover {
+    color: var(--tm-notion-link-hover);
+}
+
+/* ── Highlight (comment marker) ───────────────────────────────── */
+
+.tm-notion-callout__body mark {
+    background:    var(--tm-notion-comment-highlight);
+    border-radius: 2px;
+    padding:       0 1px;
+}

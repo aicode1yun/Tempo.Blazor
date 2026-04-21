@@ -1,0 +1,35 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Lists
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<label class="tm-notion-todo @(_isChecked ? "tm-notion-todo--checked" : "") @_bgClass"
+       data-bg="@Content?.BackgroundColor">
+
+    <span class="tm-notion-todo__check-wrap" aria-hidden="true">
+        <input class="tm-notion-todo__input"
+               type="checkbox"
+               checked="@_isChecked"
+               disabled="@ReadOnly"
+               tabindex="-1"
+               @onchange="HandleCheckboxChangeAsync" />
+        <span class="tm-notion-todo__box">
+            <svg class="tm-notion-todo__check-icon" viewBox="0 0 12 12" fill="none"
+                 aria-hidden="true" focusable="false">
+                <polyline points="2,6 5,9 10,3" stroke="currentColor"
+                          stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+        </span>
+    </span>
+
+    <div class="tm-notion-todo__text tm-notion-editable @_alignClass"
+         contenteditable="@(!ReadOnly ? "true" : "false")"
+         data-placeholder="@Placeholder"
+         data-color="@Content?.TextColor"
+         spellcheck="true"
+         @ref="_editableRef"
+         @oninput="() => _dirty = true"
+         @onblur="OnBlurAsync"
+         @onfocus="HandleFocusAsync">
+    </div>
+
+</label>

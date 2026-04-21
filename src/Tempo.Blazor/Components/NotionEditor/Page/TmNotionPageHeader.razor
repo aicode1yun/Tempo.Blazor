@@ -1,0 +1,233 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+@* ── Cover image ─────────────────────────────────────────────────────────── *@
+@if (!string.IsNullOrEmpty(Page.CoverImageUrl))
+{
+    <div class="tm-notion-header-cover @(!ReadOnly ? "tm-notion-header-cover--editable" : "")"
+         style="@CoverStyle"
+         @ref="_coverRef"
+         @onmousedown="OnCoverMouseDownAsync"
+         @onmousedown:preventDefault="true">
+
+        @if (!ReadOnly)
+        {
+            <div class="tm-notion-header-cover__actions">
+                <button class="tm-notion-header-cover__btn"
+                        type="button"
+                        @onclick="ToggleCoverDialog"
+                        @onclick:stopPropagation="true"
+                        @onmousedown:stopPropagation="true">
+                    @Loc["TmNotionPage_ChangeCover"]
+                </button>
+                <button class="tm-notion-header-cover__btn tm-notion-header-cover__btn--remove"
+                        type="button"
+                        @onclick="RemoveCoverAsync"
+                        @onclick:stopPropagation="true"
+                        @onmousedown:stopPropagation="true">
+                    @Loc["TmNotionPage_RemoveCover"]
+                </button>
+            </div>
+            <div class="tm-notion-header-cover__drag-hint" aria-hidden="true">
+                @Loc["TmNotionPageHeader_DragToReposition"]
+            </div>
+        }
+    </div>
+}
+
+@* ── Cover dialog ─────────────────────────────────────────────────────────── *@
+@if (_showCoverDialog && !ReadOnly)
+{
+    <div class="tm-notion-cover-dialog" role="dialog"
+         aria-label="@Loc["TmNotionPageHeader_CoverDialogTitle"]"
+         aria-modal="true">
+        <div class="tm-notion-cover-dialog__header">
+            <span class="tm-notion-cover-dialog__title">@Loc["TmNotionPageHeader_CoverDialogTitle"]</span>
+            <button type="button"
+                    class="tm-notion-cover-dialog__close"
+                    aria-label="@Loc["Tm_Close"]"
+                    @onclick="() => _showCoverDialog = false">
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M2 2l10 10M12 2L2 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+        <div class="tm-notion-cover-dialog__body">
+            <p class="tm-notion-cover-dialog__label">@Loc["TmNotionPageHeader_CoverUrl"]</p>
+            <div class="tm-notion-cover-dialog__input-row">
+                <input class="tm-notion-cover-dialog__input"
+                       type="url"
+                       placeholder="https://..."
+                       @bind="_coverUrlInput"
+                       @bind:event="oninput"
+                       @onkeydown="OnCoverUrlKeyDown" />
+                <button class="tm-notion-cover-dialog__submit"
+                        type="button"
+                        disabled="@string.IsNullOrWhiteSpace(_coverUrlInput)"
+                        @onclick="SaveCoverUrlAsync">
+                    @Loc["TmNotionPageHeader_SetCover"]
+                </button>
+            </div>
+            <p class="tm-notion-cover-dialog__label">@Loc["TmNotionPageHeader_CoverPresets"]</p>
+            <div class="tm-notion-cover-dialog__presets"
+                 role="group"
+                 aria-label="@Loc["TmNotionPageHeader_CoverPresets"]">
+                @foreach (var preset in _coverPresets)
+                {
+                    <button class="tm-notion-cover-dialog__preset"
+                            type="button"
+                            title="@preset.Label"
+                            aria-label="@preset.Label"
+                            style="background:@preset.Background"
+                            @onclick="() => ApplyCoverPresetAsync(preset)">
+                    </button>
+                }
+            </div>
+        </div>
+    </div>
+    <div class="tm-notion-cover-dialog-backdrop"
+         aria-hidden="true"
+         @onclick="() => _showCoverDialog = false">
+    </div>
+}
+
+@* ── Page meta (icon + title + description) ───────────────────────────────── *@
+<div class="tm-notion-header-meta @(Page.CoverImageUrl is not null ? "tm-notion-header-meta--with-cover" : "")">
+
+    @* Icon *@
+    @if (!string.IsNullOrEmpty(Page.IconEmoji))
+    {
+        <button class="tm-notion-header-icon tm-notion-header-icon--emoji"
+                type="button"
+                disabled="@ReadOnly"
+                aria-label="@Loc["TmNotionPage_IconLabel"]"
+                title="@Loc["TmNotionPage_IconLabel"]"
+                @onclick="ToggleIconPicker">
+            @Page.IconEmoji
+        </button>
+    }
+    else if (!string.IsNullOrEmpty(Page.IconImageUrl))
+    {
+        <button class="tm-notion-header-icon tm-notion-header-icon--image"
+                type="button"
+                disabled="@ReadOnly"
+                aria-label="@Loc["TmNotionPage_IconLabel"]"
+                @onclick="ToggleIconPicker">
+            <img src="@Page.IconImageUrl" alt="" aria-hidden="true" />
+        </button>
+    }
+
+    @* Quick-add hover buttons *@
+    @if (!ReadOnly)
+    {
+        <div class="tm-notion-header-meta__add-row" aria-hidden="true">
+            @if (string.IsNullOrEmpty(Page.IconEmoji) && string.IsNullOrEmpty(Page.IconImageUrl))
+            {
+                <button class="tm-notion-header-meta__add-btn" type="button" @onclick="ToggleIconPicker">
+                    @Loc["TmNotionPage_AddIcon"]
+                </button>
+            }
+            @if (string.IsNullOrEmpty(Page.CoverImageUrl))
+            {
+                <button class="tm-notion-header-meta__add-btn" type="button" @onclick="ToggleCoverDialog">
+                    @Loc["TmNotionPage_AddCover"]
+                </button>
+            }
+            @if (!_showDescription && string.IsNullOrEmpty(Page.Description))
+            {
+                <button class="tm-notion-header-meta__add-btn" type="button" @onclick="ShowDescriptionAsync">
+                    @Loc["TmNotionPageHeader_AddDescription"]
+                </button>
+            }
+        </div>
+    }
+
+    @* Title *@
+    <h1 class="tm-notion-header-title tm-notion-editable tm-notion-h1
+               @(ReadOnly ? "" : "tm-notion-header-title--editable")"
+        contenteditable="@(!ReadOnly ? "true" : "false")"
+        data-placeholder="@Loc["TmNotionPage_TitlePlaceholder"]"
+        spellcheck="true"
+        aria-label="@Loc["TmNotionPage_TitlePlaceholder"]"
+        @ref="_titleRef"
+        @oninput="OnTitleInput"
+        @onblur="OnTitleBlurAsync"
+        @onkeydown="OnTitleKeyDownAsync">
+    </h1>
+
+    @* Description *@
+    @if (_showDescription || !string.IsNullOrEmpty(Page.Description))
+    {
+        <div class="tm-notion-header-description-wrap">
+            <div class="tm-notion-header-description tm-notion-editable"
+                 contenteditable="@(!ReadOnly ? "true" : "false")"
+                 data-placeholder="@Loc["TmNotionPageHeader_DescriptionPlaceholder"]"
+                 aria-label="@Loc["TmNotionPageHeader_DescriptionPlaceholder"]"
+                 @ref="_descRef"
+                 @oninput="OnDescriptionInput"
+                 @onblur="OnDescriptionBlurAsync">
+            </div>
+            @if (!ReadOnly && _showDescription && string.IsNullOrEmpty(Page.Description))
+            {
+                <button class="tm-notion-header-description-wrap__remove"
+                        type="button"
+                        aria-label="@Loc["TmNotionPageHeader_RemoveDescription"]"
+                        title="@Loc["TmNotionPageHeader_RemoveDescription"]"
+                        @onclick="HideDescriptionAsync">
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <path d="M2 2l8 8M10 2L2 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            }
+        </div>
+    }
+
+</div>
+
+@* ── Emoji picker ──────────────────────────────────────────────────────────── *@
+@if (_showIconPicker && !ReadOnly)
+{
+    <div class="tm-notion-emoji-picker"
+         role="dialog"
+         aria-label="@Loc["TmNotionPageHeader_EmojiPickerTitle"]"
+         aria-modal="true">
+        <div class="tm-notion-emoji-picker__header">
+            <input class="tm-notion-emoji-picker__search"
+                   type="search"
+                   placeholder="@Loc["TmNotionPageHeader_EmojiSearch"]"
+                   @bind="_emojiSearch"
+                   @bind:event="oninput"
+                   autofocus />
+            <button class="tm-notion-emoji-picker__remove"
+                    type="button"
+                    @onclick="RemoveIconAsync">
+                @Loc["TmNotionPageHeader_RemoveIcon"]
+            </button>
+        </div>
+        <div class="tm-notion-emoji-picker__body">
+            @foreach (var cat in FilteredCategories)
+            {
+                <div class="tm-notion-emoji-picker__category">
+                    <div class="tm-notion-emoji-picker__category-label">@cat.Name</div>
+                    <div class="tm-notion-emoji-picker__grid">
+                        @foreach (var emoji in cat.Emojis)
+                        {
+                            <button class="tm-notion-emoji-picker__btn"
+                                    type="button"
+                                    title="@emoji.Name"
+                                    aria-label="@emoji.Name"
+                                    @onclick="() => SelectEmojiAsync(emoji.Char)">
+                                @emoji.Char
+                            </button>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    </div>
+    <div class="tm-notion-emoji-picker-backdrop"
+         aria-hidden="true"
+         @onclick="() => _showIconPicker = false">
+    </div>
+}

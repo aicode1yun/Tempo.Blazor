@@ -1,0 +1,16 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionBlockList — Block list layout (scoped)
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-notion-block-list {
+    position:   relative;
+    width:      100%;
+    min-height: 40px;
+}
+
+/* Click area below blocks → adds new paragraph */
+.tm-notion-block-list__after {
+    width:      100%;
+    min-height: 60px;
+    cursor:     text;
+}

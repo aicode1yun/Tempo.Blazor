@@ -446,6 +446,12 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         return node is not null && Services.TableLayoutService.CanSplit(node, _contextMenuTableCell.Value.Row, _contextMenuTableCell.Value.Column);
     }
 
+    private bool IsContextMenuNodeLocked()
+    {
+        if (_contextMenuNodeId is null || _document is null) return false;
+        return _document.Nodes.FirstOrDefault(n => n.Id == _contextMenuNodeId)?.IsLocked ?? false;
+    }
+
     // ── Node actions ─────────────────────────────────────────────────────────
 
     private async Task ContextMenuCut()
@@ -740,7 +746,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuInsertRowAbove()
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         var row = _contextMenuTableCell?.Row ?? 0;
         using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertRowAbove"]))
         {
@@ -752,7 +758,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuInsertRowBelow()
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         var row = (_contextMenuTableCell?.Row ?? 0) + 1;
         var rowCount = Services.TableLayoutService.GetRowCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
         if (row > rowCount) row = rowCount;
@@ -766,7 +772,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuInsertColumnLeft()
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         var col = _contextMenuTableCell?.Column ?? 0;
         using (ActiveCommandStack.TransactionScope(Loc["TmDiagramEditor_InsertColumnLeft"]))
         {
@@ -778,7 +784,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuInsertColumnRight()
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         var col = (_contextMenuTableCell?.Column ?? 0) + 1;
         var colCount = Services.TableLayoutService.GetColumnCount(_document.Nodes.First(n => n.Id == _contextMenuNodeId));
         if (col > colCount) col = colCount;
@@ -792,7 +798,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuMergeCells()
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         if (!CanContextMenuMergeCells()) return;
         ActiveCommandStack.Push(new MergeTableCellsCommand(_document, _contextMenuNodeId, _selectedTableCells));
         _selectedTableCells.Clear();
@@ -802,7 +808,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuSplitCell()
     {
         await CloseContextMenu();
-        if (_contextMenuTableCell is null || _document is null || ReadOnly || _contextMenuNodeId is null) return;
+        if (_contextMenuTableCell is null || _document is null || ReadOnly || _contextMenuNodeId is null || IsContextMenuNodeLocked()) return;
         var (row, col) = _contextMenuTableCell.Value;
         ActiveCommandStack.Push(new SplitTableCellCommand(_document, _contextMenuNodeId, row, col));
         await OnDocumentChanged(_document);
@@ -819,7 +825,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private async Task ContextMenuFormatTableCell(string backgroundColor, string borderColor)
     {
         await CloseContextMenu();
-        if (_document is null || ReadOnly || _contextMenuNodeId is null || _contextMenuTableCell is null) return;
+        if (_document is null || ReadOnly || _contextMenuNodeId is null || _contextMenuTableCell is null || IsContextMenuNodeLocked()) return;
         var (row, col) = _contextMenuTableCell.Value;
         var cell = Services.TableLayoutService.GetCells(_document.Nodes.First(n => n.Id == _contextMenuNodeId))
             .FirstOrDefault(c => c.Row == row && c.Column == col);

@@ -1,0 +1,69 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-notion-handle" contenteditable="false" @onclick:stopPropagation="true">
+
+    @* ── Add block below ────────────────────────────────────────────────────── *@
+    <button class="tm-notion-handle__btn"
+            type="button"
+            title="@Loc["TmNotionBlock_AddBlock"]"
+            aria-label="@Loc["TmNotionBlock_AddBlock"]"
+            @onclick="HandleAddClickedAsync"
+            @onclick:stopPropagation="true">
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+            <path d="M7 2v10M2 7h10" stroke="currentColor" stroke-width="1.75" stroke-linecap="round"/>
+        </svg>
+    </button>
+
+    @* ── Drag grip ───────────────────────────────────────────────────────────── *@
+    <div class="tm-notion-handle__drag"
+         data-notion-drag-handle
+         draggable="true"
+         title="@Loc["TmNotionBlockHandle_DragToReorder"]"
+         aria-label="@Loc["TmNotionBlockHandle_DragToReorder"]"
+         role="button"
+         tabindex="-1">
+        <svg width="10" height="16" viewBox="0 0 10 16" fill="none" aria-hidden="true">
+            <circle cx="3" cy="3"  r="1.4" fill="currentColor"/>
+            <circle cx="7" cy="3"  r="1.4" fill="currentColor"/>
+            <circle cx="3" cy="8"  r="1.4" fill="currentColor"/>
+            <circle cx="7" cy="8"  r="1.4" fill="currentColor"/>
+            <circle cx="3" cy="13" r="1.4" fill="currentColor"/>
+            <circle cx="7" cy="13" r="1.4" fill="currentColor"/>
+        </svg>
+    </div>
+
+    @* ── Options menu button ─────────────────────────────────────────────────── *@
+    <div class="tm-notion-handle__menu-anchor">
+        <button class="tm-notion-handle__btn @(_showMenu ? "tm-notion-handle__btn--active" : "")"
+                type="button"
+                title="@Loc["TmNotionBlockHandle_OpenMenu"]"
+                aria-label="@Loc["TmNotionBlockHandle_OpenMenu"]"
+                aria-haspopup="true"
+                aria-expanded="@_showMenu.ToString().ToLower()"
+                @onclick="ToggleMenu"
+                @onclick:stopPropagation="true">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <circle cx="2.5" cy="6" r="1.25" fill="currentColor"/>
+                <circle cx="6"   cy="6" r="1.25" fill="currentColor"/>
+                <circle cx="9.5" cy="6" r="1.25" fill="currentColor"/>
+            </svg>
+        </button>
+
+        @if (_showMenu)
+        {
+            <TmNotionBlockContextMenu Block="Block"
+                                      OnClose="CloseMenu"
+                                      OnDelete="OnDelete"
+                                      OnDuplicate="OnDuplicate"
+                                      OnTurnInto="OnTurnInto"
+                                      OnMoveTo="OnMoveTo"
+                                      OnCopyLink="OnCopyLink"
+                                      OnComment="OnComment"
+                                      OnTextColorChange="OnTextColorChange"
+                                      OnBackgroundChange="OnBackgroundChange" />
+        }
+    </div>
+
+</div>

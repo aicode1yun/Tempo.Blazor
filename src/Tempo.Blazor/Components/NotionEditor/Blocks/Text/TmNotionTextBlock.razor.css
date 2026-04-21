@@ -1,0 +1,78 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionTextBlock — paragraph editable (scoped)
+   Global typography classes (tm-notion-paragraph, tm-notion-editable,
+   tm-notion-align-*, tm-notion-bg-*, data-color) live in
+   _notion-typography.css and are applied via unscoped class names.
+   This file handles only component-level overrides and additions.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Ensure the div fills its parent and has min-height ──────── */
+
+:host,
+.tm-notion-paragraph {
+    display:    block;
+    width:      100%;
+}
+
+/* ── Placeholder: hide when the element has content ──────────── */
+
+.tm-notion-paragraph:focus::before {
+    opacity: 0.45;
+}
+
+/* ── Selection color ──────────────────────────────────────────── */
+
+.tm-notion-paragraph ::selection {
+    background: var(--tm-notion-selection-bg);
+}
+
+/* ── Inline formatting ────────────────────────────────────────── */
+
+.tm-notion-paragraph b,
+.tm-notion-paragraph strong {
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-notion-paragraph i,
+.tm-notion-paragraph em {
+    font-style: italic;
+}
+
+.tm-notion-paragraph u {
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+
+.tm-notion-paragraph s,
+.tm-notion-paragraph del {
+    text-decoration: line-through;
+}
+
+.tm-notion-paragraph code {
+    font-family:      var(--tm-notion-font-mono);
+    font-size:        0.875em;
+    background:       var(--tm-notion-bg-code);
+    border:           1px solid var(--tm-notion-border-code);
+    border-radius:    var(--tm-radius-xs, 3px);
+    padding:          0.1em 0.35em;
+    color:            var(--tm-color-error, #c7254e);
+}
+
+.tm-notion-paragraph a {
+    color:           var(--tm-notion-link-color);
+    text-decoration: underline;
+    text-underline-offset: 2px;
+    transition:      color var(--tm-notion-anim-fast);
+}
+
+.tm-notion-paragraph a:hover {
+    color: var(--tm-notion-link-hover);
+}
+
+/* ── Highlight (comment marker) ───────────────────────────────── */
+
+.tm-notion-paragraph mark {
+    background: var(--tm-notion-comment-highlight);
+    border-radius: 2px;
+    padding: 0 1px;
+}

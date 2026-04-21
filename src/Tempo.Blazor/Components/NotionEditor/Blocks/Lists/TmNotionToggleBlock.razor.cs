@@ -1,0 +1,402 @@
+using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
+
+namespace Tempo.Blazor.Components.NotionEditor.Blocks.Lists;
+
+/// <summary>
+/// Self-contained toggle block. Owns the header contenteditable JS lifecycle and manages
+/// child blocks (lazy-loaded from <see cref="NotionEditorContext.BlockProvider"/>).
+/// Arrow click fires OnOpenChanged so the parent can persist the new IsOpen state.
+/// Enter on an empty header fires OnTypeConvert("paragraph") to escape the toggle.
+/// Enter on a non-empty header fires OnEnterSplit to create a new sibling block after.
+/// </summary>
+public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
+{
+    // ── DI ───────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Cascaded context ─────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
+
+    // ── Parameters ───────────────────────────────────────────────────────────
+
+    [Parameter, EditorRequired]
+    public IPageBlock Block { get; set; } = default!;
+
+    [Parameter] public IToggleBlockContent? Content     { get; set; }
+    [Parameter] public bool                 ReadOnly    { get; set; }
+    [Parameter] public bool                 IsFocused   { get; set; }
+    [Parameter] public string?              Placeholder { get; set; }
+
+    /// <summary>Fired on blur when header HTML has changed. Arg = new HTML.</summary>
+    [Parameter] public EventCallback<string>                    OnContentSaved    { get; set; }
+
+    /// <summary>Fired when Enter is pressed on a non-empty header. Arg = HTML after the split point.</summary>
+    [Parameter] public EventCallback<string>                    OnEnterSplit      { get; set; }
+
+    /// <summary>Fired when Backspace is pressed on an empty header.</summary>
+    [Parameter] public EventCallback                            OnDeleteRequested { get; set; }
+
+    /// <summary>
+    /// Fired when a markdown or conversion shortcut is detected.
+    /// Special value "paragraph" means the user pressed Enter on an empty header.
+    /// </summary>
+    [Parameter] public EventCallback<string>                    OnTypeConvert     { get; set; }
+
+    /// <summary>Fired when the header editable receives focus.</summary>
+    [Parameter] public EventCallback                            OnFocused         { get; set; }
+
+    /// <summary>Fired when the open/closed state changes. Arg = new IsOpen value.</summary>
+    [Parameter] public EventCallback<bool>                      OnOpenChanged     { get; set; }
+
+    /// <summary>Fired when '/' is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu       { get; set; }
+
+    /// <summary>Fired when '@' is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnMentionMenu     { get; set; }
+
+    /// <summary>Fired when '[[' is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
+
+    // ── State ────────────────────────────────────────────────────────────────
+
+    private ElementReference                              _editableRef;
+    private DotNetObjectReference<TmNotionToggleBlock>?  _dotNetRef;
+    private bool                                         _kbInitialized;
+    private bool                                         _dirty;
+    private string?                                      _lastHtml;
+    private IToggleBlockContent?                         _lastContent;
+    private bool                                         _isOpen;
+    private List<IPageBlock>                             _children       = [];
+    private bool                                         _loadingChildren;
+    private bool                                         _childrenLoaded;
+    private Guid?                                        _activeChildId;
+
+    // ── Computed CSS ─────────────────────────────────────────────────────────
+
+    private string _alignClass => Content?.Alignment switch
+    {
+        TextAlignment.Center => "tm-notion-align-center",
+        TextAlignment.Right  => "tm-notion-align-right",
+        _                    => string.Empty
+    };
+
+    private string _bgClass =>
+        string.IsNullOrEmpty(Content?.BackgroundColor)
+            ? string.Empty
+            : $"tm-notion-bg-{Content.BackgroundColor}";
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        if (ReferenceEquals(Content, _lastContent)) return;
+        _lastContent   = Content;
+        _dirty         = false;
+        _kbInitialized = false;
+        _lastHtml      = null;
+        _isOpen        = Content?.IsOpen ?? false;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!ReadOnly)
+        {
+            var html = Content?.Html ?? string.Empty;
+
+            if (!_kbInitialized)
+            {
+                _kbInitialized = true;
+                _lastHtml      = html;
+                _dotNetRef?.Dispose();
+                _dotNetRef = DotNetObjectReference.Create(this);
+                try
+                {
+                    await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
+                    await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
+                }
+                catch { }
+            }
+            else if (html != _lastHtml)
+            {
+                _lastHtml = html;
+                try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
+                catch { }
+            }
+        }
+
+        if (_isOpen && !_childrenLoaded && !_loadingChildren)
+            await LoadChildrenAsync();
+    }
+
+    // ── Arrow / open state ────────────────────────────────────────────────────
+
+    private async Task HandleArrowClickAsync()
+    {
+        _isOpen = !_isOpen;
+        await OnOpenChanged.InvokeAsync(_isOpen);
+    }
+
+    // ── Children loading ──────────────────────────────────────────────────────
+
+    private async Task LoadChildrenAsync()
+    {
+        _loadingChildren = true;
+        StateHasChanged();
+        try
+        {
+            var result = await Context.BlockProvider.GetChildBlocksAsync(Block.Id.ToString());
+            _children       = [.. result.OrderBy(b => b.Order)];
+            _childrenLoaded = true;
+        }
+        catch { }
+        finally
+        {
+            _loadingChildren = false;
+            StateHasChanged();
+        }
+    }
+
+    // ── Blur / focus ──────────────────────────────────────────────────────────
+
+    private async Task OnBlurAsync()
+    {
+        if (!_dirty || ReadOnly) return;
+        _dirty = false;
+        try
+        {
+            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
+            _lastHtml = html;
+            await OnContentSaved.InvokeAsync(html);
+        }
+        catch { }
+    }
+
+    private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
+
+    // ── JS keyboard callbacks — names MUST match notion-editor.js ─────────────
+
+    [JSInvokable]
+    public async Task OnEnterPressed(string beforeHtml, string afterHtml)
+    {
+        if (IsEmptyHtml(beforeHtml))
+        {
+            await OnTypeConvert.InvokeAsync("paragraph");
+            return;
+        }
+
+        _lastHtml = beforeHtml;
+        _dirty    = false;
+        await OnContentSaved.InvokeAsync(beforeHtml);
+        await OnEnterSplit.InvokeAsync(afterHtml);
+    }
+
+    [JSInvokable]
+    public async Task OnBackspaceOnEmpty() => await OnDeleteRequested.InvokeAsync();
+
+    [JSInvokable]
+    public void OnTabPressed(bool shiftKey) { }
+
+    [JSInvokable]
+    public void OnArrowUp() { }
+
+    [JSInvokable]
+    public void OnArrowDown() { }
+
+    [JSInvokable]
+    public async Task OnMarkdownShortcut(string shortcut) =>
+        await OnTypeConvert.InvokeAsync(shortcut);
+
+    [JSInvokable]
+    public async Task OnSlashTriggered(double top, double left) =>
+        await OnSlashMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnMentionTriggered(double top, double left) =>
+        await OnMentionMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnPageLinkTriggered(double top, double left) =>
+        await OnPageLinkMenu.InvokeAsync((top, left));
+
+    // ── Child block handlers ──────────────────────────────────────────────────
+
+    private async Task HandleChildReorderAsync((int source, int target) args)
+    {
+        if (args.source < 0 || args.source >= _children.Count) return;
+
+        var block            = _children[args.source];
+        var normalizedTarget = Math.Clamp(
+            args.source < args.target ? args.target - 1 : args.target,
+            0, _children.Count - 1);
+
+        _children.RemoveAt(args.source);
+        _children.Insert(normalizedTarget, block);
+        RenumberChildOrder();
+        StateHasChanged();
+
+        try
+        {
+            await Context.BlockProvider.ReorderBlocksAsync(
+                Block.PageId.ToString(),
+                _children.Select(b => b.Id.ToString()));
+        }
+        catch { await LoadChildrenAsync(); }
+    }
+
+    private Task HandleChildFocusedAsync(string childId)
+    {
+        if (Guid.TryParse(childId, out var id)) _activeChildId = id;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleChildDeletedAsync(string childId)
+    {
+        var child = _children.FirstOrDefault(b => b.Id.ToString() == childId);
+        if (child is null) return;
+        try
+        {
+            await Context.BlockProvider.DeleteBlockAsync(childId);
+            _children.Remove(child);
+            if (_activeChildId == child.Id) _activeChildId = null;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private Task HandleChildUpdatedAsync(IPageBlock updated)
+    {
+        var idx = _children.FindIndex(b => b.Id == updated.Id);
+        if (idx >= 0) _children[idx] = updated;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleChildDuplicatedAsync(IPageBlock source)
+    {
+        try
+        {
+            var duplicated = await Context.BlockProvider.DuplicateBlockAsync(source.Id.ToString());
+            var srcIdx     = _children.FindIndex(b => b.Id == source.Id);
+            _children.Insert(Math.Clamp(srcIdx + 1, 0, _children.Count), duplicated);
+            _activeChildId = duplicated.Id;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task HandleChildConvertAsync((string childId, BlockType newType) args)
+    {
+        var child = _children.FirstOrDefault(b => b.Id.ToString() == args.childId);
+        if (child is null) return;
+        try
+        {
+            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.childId, args.newType);
+            var idx       = _children.FindIndex(b => b.Id == child.Id);
+            if (idx >= 0) _children[idx] = converted;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task HandleChildAddAfterAsync(
+        (string AfterChildId, BlockType Type, string? InitialHtml) args)
+    {
+        var afterChild  = _children.FirstOrDefault(b => b.Id.ToString() == args.AfterChildId);
+        var insertOrder = afterChild is null
+            ? (_children.Count > 0 ? _children.Max(b => b.Order) + 1 : 0)
+            : afterChild.Order + 1;
+
+        var newBlock = new PageBlock
+        {
+            Id            = Guid.NewGuid(),
+            PageId        = Block.PageId,
+            ParentBlockId = Block.Id,
+            Type          = args.Type,
+            Order         = insertOrder,
+            Content       = CreateDefaultContent(args.Type, args.InitialHtml)
+        };
+
+        try
+        {
+            var created   = await Context.BlockProvider.CreateBlockAsync(
+                Block.PageId.ToString(), newBlock, args.AfterChildId);
+            var insertIdx = afterChild is null
+                ? _children.Count
+                : _children.IndexOf(afterChild) + 1;
+            _children.Insert(Math.Clamp(insertIdx, 0, _children.Count), created);
+            _activeChildId = created.Id;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task HandleChildAddAtEndAsync()
+    {
+        var newBlock = new PageBlock
+        {
+            Id            = Guid.NewGuid(),
+            PageId        = Block.PageId,
+            ParentBlockId = Block.Id,
+            Type          = BlockType.Paragraph,
+            Order         = _children.Count > 0 ? _children.Max(b => b.Order) + 1 : 0,
+            Content       = new TextBlockContent()
+        };
+        try
+        {
+            var created = await Context.BlockProvider.CreateBlockAsync(
+                Block.PageId.ToString(), newBlock, null);
+            _children.Add(created);
+            _activeChildId = created.Id;
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_kbInitialized)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlock", _editableRef); }
+            catch { }
+        }
+        _dotNetRef?.Dispose();
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void RenumberChildOrder()
+    {
+        for (var i = 0; i < _children.Count; i++)
+        {
+            if (_children[i] is PageBlock pb) pb.Order = i;
+        }
+    }
+
+    private static IBlockContent CreateDefaultContent(BlockType type, string? initialHtml = null) =>
+        type switch
+        {
+            BlockType.Heading1 => new HeadingBlockContent { Html = initialHtml ?? string.Empty, Level = 1 },
+            BlockType.Heading2 => new HeadingBlockContent { Html = initialHtml ?? string.Empty, Level = 2 },
+            BlockType.Heading3 => new HeadingBlockContent { Html = initialHtml ?? string.Empty, Level = 3 },
+            BlockType.Quote    => new TextBlockContent    { Html = initialHtml ?? string.Empty },
+            BlockType.Callout  => new CalloutBlockContent { Html = initialHtml ?? string.Empty },
+            BlockType.BulletList or BlockType.NumberedList =>
+                                  new ListBlockContent    { Html = initialHtml ?? string.Empty },
+            BlockType.TodoItem => new TodoBlockContent    { Html = initialHtml ?? string.Empty },
+            BlockType.Toggle   => new ToggleBlockContent  { Html = initialHtml ?? string.Empty },
+            BlockType.Code     => new CodeBlockContent(),
+            _                  => new TextBlockContent    { Html = initialHtml ?? string.Empty }
+        };
+
+    private static bool IsEmptyHtml(string html) =>
+        string.IsNullOrWhiteSpace(html) || html.Trim() is "" or "<br>" or "<br/>" or "&nbsp;";
+}

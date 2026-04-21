@@ -1,0 +1,84 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionCodeBlock — code editor (scoped)
+   Global structure (.tm-notion-code-block, __header, __lang-select,
+   __copy, __content) lives in _notion-typography.css.
+   This file adds textarea reset, auto-resize, caption, and
+   copy-button icon alignment.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Textarea reset — inherits font from global __content rule ── */
+
+textarea.tm-notion-code-block__content {
+    border:           none;
+    padding:          0;
+    margin:           0;
+    background:       transparent;
+    resize:           none;
+    outline:          none;
+    display:          block;
+    width:            100%;
+    min-height:       3em;
+    overflow-y:       hidden;
+    overflow-x:       auto;
+    /* typography — must match global .tm-notion-code-block__content */
+    font-family:      var(--tm-notion-font-mono);
+    font-size:        var(--tm-notion-code-size);
+    line-height:      1.7;
+    color:            var(--tm-text-primary);
+    tab-size:         4;
+    white-space:      pre;
+    caret-color:      var(--tm-text-primary);
+}
+
+/* Wrap mode overrides white-space on both the container and textarea */
+
+.tm-notion-code-block--wrap textarea.tm-notion-code-block__content {
+    white-space: pre-wrap;
+    overflow-x:  hidden;
+}
+
+/* Readonly textarea: no cursor, no selection highlight */
+
+textarea.tm-notion-code-block__content[readonly] {
+    cursor:     default;
+    user-select: text;
+    color:       var(--tm-text-secondary);
+}
+
+/* ── Copy button icon alignment ───────────────────────────────── */
+
+.tm-notion-code-block__copy svg {
+    flex-shrink: 0;
+}
+
+/* ── Caption (optional text below the block) ──────────────────── */
+
+.tm-notion-code-block__caption {
+    display:        block;
+    width:          100%;
+    margin-top:     var(--tm-space-2);
+    font-size:      var(--tm-font-size-sm);
+    color:          var(--tm-text-tertiary);
+    text-align:     center;
+    line-height:    var(--tm-notion-text-line-height);
+    min-height:     1.4em;
+    outline:        none;
+}
+
+.tm-notion-code-block__caption:focus {
+    color: var(--tm-text-secondary);
+}
+
+.tm-notion-code-block__caption ::selection {
+    background: var(--tm-notion-selection-bg);
+}
+
+/* ── Language label (read-only mode) ──────────────────────────── */
+
+.tm-notion-code-block__lang {
+    font-family:  var(--tm-notion-font-sans);
+    font-size:    var(--tm-font-size-xs);
+    font-weight:  var(--tm-font-weight-medium);
+    color:        var(--tm-text-secondary);
+    padding:      2px 0;
+}

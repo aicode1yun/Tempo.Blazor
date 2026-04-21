@@ -1,0 +1,12 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Text
+
+<div class="tm-notion-divider-block @(_isFocused ? "tm-notion-divider-block--focused" : "")"
+     role="separator"
+     tabindex="@(!ReadOnly ? "0" : "-1")"
+     aria-label="@Loc["TmNotionDividerBlock_Label"]"
+     @onclick="HandleClickAsync"
+     @onfocus="HandleFocusAsync"
+     @onblur="HandleBlurAsync"
+     @onkeydown="HandleKeyDownAsync">
+    <hr class="tm-notion-divider" aria-hidden="true" />
+</div>

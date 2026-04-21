@@ -1,0 +1,353 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionEditor — Root Layout (scoped)
+   Sidebar + page area shell, responsive breakpoints.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root shell ───────────────────────────────────────────────── */
+
+.tm-notion-editor {
+    display:          flex;
+    flex-direction:   row;
+    width:            100%;
+    height:           100%;
+    min-height:       0;
+    overflow:         hidden;
+    background:       var(--tm-notion-bg, var(--tm-bg-page));
+    font-family:      var(--tm-notion-font-sans, var(--tm-font-sans));
+    color:            var(--tm-text-primary);
+    position:         relative;
+}
+
+/* ── Sidebar panel ────────────────────────────────────────────── */
+
+.tm-notion-sidebar {
+    flex-shrink:      0;
+    width:            var(--tm-notion-sidebar-width, 260px);
+    height:           100%;
+    overflow-y:       auto;
+    overflow-x:       hidden;
+    background:       var(--tm-notion-bg-sidebar);
+    border-right:     1px solid var(--tm-notion-border, var(--tm-border-color));
+    display:          flex;
+    flex-direction:   column;
+    transition:       width var(--tm-notion-anim-normal, 200ms ease),
+                      transform var(--tm-notion-anim-normal, 200ms ease);
+    will-change:      width, transform;
+}
+
+.tm-notion-sidebar--hidden {
+    width:     0;
+    overflow:  hidden;
+    border:    none;
+}
+
+.tm-notion-sidebar::-webkit-scrollbar       { width: 4px; }
+.tm-notion-sidebar::-webkit-scrollbar-track  { background: transparent; }
+.tm-notion-sidebar::-webkit-scrollbar-thumb  {
+    background:    rgba(0, 0, 0, 0.15);
+    border-radius: 2px;
+}
+
+/* ── Main content area ────────────────────────────────────────── */
+
+.tm-notion-main {
+    flex:           1;
+    min-width:      0;
+    height:         100%;
+    overflow-y:     auto;
+    overflow-x:     hidden;
+    display:        flex;
+    flex-direction: column;
+    position:       relative;
+    scroll-behavior: smooth;
+}
+
+.tm-notion-main::-webkit-scrollbar       { width: 6px; }
+.tm-notion-main::-webkit-scrollbar-track  { background: transparent; }
+.tm-notion-main::-webkit-scrollbar-thumb  {
+    background:    rgba(0, 0, 0, 0.12);
+    border-radius: 3px;
+}
+
+/* ── Page content wrapper ─────────────────────────────────────── */
+
+.tm-notion-page-wrapper {
+    flex:            1;
+    width:           100%;
+    max-width:       var(--tm-notion-page-max-width, 900px);
+    margin-inline:   auto;
+    padding-left:    var(--tm-notion-page-padding-x, clamp(1.5rem, 8vw, 6rem));
+    padding-right:   var(--tm-notion-page-padding-x, clamp(1.5rem, 8vw, 6rem));
+    padding-top:     var(--tm-notion-page-padding-top, 3.5rem);
+    padding-bottom:  var(--tm-notion-page-padding-bottom, 8rem);
+    position:        relative;
+}
+
+/* Full-width mode — expands page to fill the main area */
+.tm-notion-editor--full-width .tm-notion-page-wrapper {
+    max-width:     var(--tm-notion-page-max-width-full, 100%);
+    padding-left:  var(--tm-notion-page-padding-x-narrow, 1rem);
+    padding-right: var(--tm-notion-page-padding-x-narrow, 1rem);
+}
+
+/* ── Locked overlay ───────────────────────────────────────────── */
+
+.tm-notion-editor--locked .tm-notion-page-wrapper {
+    pointer-events: none;
+    user-select:    text;
+}
+
+.tm-notion-locked-badge {
+    display:       inline-flex;
+    align-items:   center;
+    gap:           var(--tm-space-1);
+    font-size:     var(--tm-font-size-xs);
+    font-weight:   var(--tm-font-weight-medium);
+    color:         var(--tm-text-secondary);
+    background:    var(--tm-bg-muted);
+    border:        1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-full);
+    padding:       2px var(--tm-space-2);
+    user-select:   none;
+    pointer-events: auto;
+}
+
+/* ── Top breadcrumb / header bar ──────────────────────────────── */
+
+.tm-notion-topbar {
+    position:      sticky;
+    top:           0;
+    z-index:       var(--tm-notion-z-block-handle, 10);
+    display:       flex;
+    align-items:   center;
+    gap:           var(--tm-space-2);
+    height:        var(--tm-notion-header-height, 2.75rem);
+    padding-inline: var(--tm-space-4);
+    background:    var(--tm-notion-bg, var(--tm-bg-page));
+    border-bottom: 1px solid transparent;
+    transition:    border-color var(--tm-notion-anim-fast, 120ms ease),
+                   background var(--tm-notion-anim-fast, 120ms ease);
+}
+
+.tm-notion-topbar--scrolled {
+    border-bottom-color: var(--tm-notion-border, var(--tm-border-color));
+    background:          var(--tm-notion-bg, var(--tm-bg-page));
+    backdrop-filter:     blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Sidebar toggle button ────────────────────────────────────── */
+
+.tm-notion-sidebar-toggle {
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    width:         28px;
+    height:        28px;
+    border:        none;
+    background:    transparent;
+    border-radius: var(--tm-radius-md);
+    color:         var(--tm-text-secondary);
+    cursor:        pointer;
+    flex-shrink:   0;
+    transition:    background var(--tm-notion-anim-fast, 120ms ease),
+                   color var(--tm-notion-anim-fast, 120ms ease);
+}
+
+.tm-notion-sidebar-toggle:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+/* ── Sidebar overlay (mobile) ─────────────────────────────────── */
+
+.tm-notion-sidebar-overlay {
+    display:    none;
+    position:   fixed;
+    inset:      0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index:    calc(var(--tm-notion-z-context-menu, 800) - 10);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+}
+
+/* ── Responsive breakpoints ───────────────────────────────────── */
+
+/* ≤ 1024px — sidebar becomes a slide-over panel */
+@media (max-width: 1024px) {
+    .tm-notion-sidebar {
+        position:   fixed;
+        top:        0;
+        left:       0;
+        bottom:     0;
+        z-index:    calc(var(--tm-notion-z-context-menu, 800) - 5);
+        transform:  translateX(-100%);
+        box-shadow: var(--tm-shadow-xl);
+        width:      var(--tm-notion-sidebar-width, 260px) !important;
+    }
+
+    .tm-notion-sidebar--visible {
+        transform: translateX(0);
+    }
+
+    .tm-notion-sidebar--visible ~ .tm-notion-sidebar-overlay {
+        display: block;
+    }
+
+    .tm-notion-main {
+        width: 100%;
+    }
+}
+
+/* ≤ 640px — reduced page padding, smaller headings */
+@media (max-width: 640px) {
+    .tm-notion-page-wrapper {
+        padding-left:  var(--tm-notion-page-padding-x-narrow, 1rem);
+        padding-right: var(--tm-notion-page-padding-x-narrow, 1rem);
+        padding-top:   2rem;
+    }
+
+    .tm-notion-editor {
+        --tm-notion-h1-size:  1.625rem;
+        --tm-notion-h2-size:  1.3125rem;
+        --tm-notion-h3-size:  1.0625rem;
+    }
+}
+
+/* ≥ 1280px — wider sidebar if desired */
+@media (min-width: 1280px) {
+    .tm-notion-editor {
+        --tm-notion-sidebar-width: 280px;
+    }
+}
+
+/* ── Focus management — block focus ring ──────────────────────── */
+
+.tm-notion-block:focus-within > .tm-notion-block__content {
+    box-shadow: none;
+    outline:    none;
+}
+
+.tm-notion-editable:focus {
+    outline:    none;
+    box-shadow: none;
+}
+
+/* ── Loading state ────────────────────────────────────────────── */
+
+.tm-notion-loading {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--tm-space-4);
+    padding:        var(--tm-notion-page-padding-top, 3.5rem) var(--tm-space-8) var(--tm-space-8);
+    max-width:      var(--tm-notion-page-max-width, 900px);
+    margin-inline:  auto;
+    width:          100%;
+}
+
+.tm-notion-skeleton {
+    background:    linear-gradient(
+        90deg,
+        var(--tm-bg-muted) 25%,
+        var(--tm-color-gray-200) 50%,
+        var(--tm-bg-muted) 75%
+    );
+    background-size: 200% 100%;
+    border-radius:  var(--tm-radius-sm);
+    animation:      tm-notion-shimmer 1.4s infinite linear;
+}
+
+.tm-notion-skeleton--title {
+    height: 3rem;
+    width:  60%;
+}
+
+.tm-notion-skeleton--line {
+    height: 1.25rem;
+}
+
+.tm-notion-skeleton--line-short {
+    height: 1.25rem;
+    width:  40%;
+}
+
+@keyframes tm-notion-shimmer {
+    0%   { background-position:  200% 0; }
+    100% { background-position: -200% 0; }
+}
+
+/* ── Topbar elements ──────────────────────────────────────────── */
+
+.tm-notion-topbar__back {
+    display:       flex;
+    align-items:   center;
+    gap:           4px;
+    font-size:     var(--tm-font-size-sm);
+    font-weight:   var(--tm-font-weight-medium);
+    color:         var(--tm-text-secondary);
+    background:    transparent;
+    border:        none;
+    cursor:        pointer;
+    padding:       4px var(--tm-space-2);
+    border-radius: var(--tm-radius-md);
+    transition:    background var(--tm-transition-fast), color var(--tm-transition-fast);
+    white-space:   nowrap;
+}
+
+.tm-notion-topbar__back:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+.tm-notion-topbar__title {
+    font-size:     var(--tm-font-size-sm);
+    font-weight:   var(--tm-font-weight-medium);
+    color:         var(--tm-text-primary);
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+    min-width:     0;
+}
+
+.tm-notion-topbar__spacer {
+    flex: 1;
+}
+
+/* ── Error state ──────────────────────────────────────────────── */
+
+.tm-notion-load-error {
+    display:        flex;
+    flex-direction: column;
+    align-items:    center;
+    gap:            var(--tm-space-3);
+    padding:        var(--tm-space-16) var(--tm-space-8);
+    text-align:     center;
+    color:          var(--tm-text-secondary);
+}
+
+.tm-notion-load-error__icon {
+    color:   var(--tm-color-danger);
+    opacity: 0.7;
+}
+
+.tm-notion-load-error__message {
+    font-size: var(--tm-font-size-sm);
+    max-width: 36ch;
+}
+
+.tm-notion-load-error__retry {
+    font-size:     var(--tm-font-size-sm);
+    font-weight:   var(--tm-font-weight-medium);
+    color:         var(--tm-color-primary);
+    background:    transparent;
+    border:        1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-md);
+    padding:       var(--tm-space-2) var(--tm-space-4);
+    cursor:        pointer;
+    transition:    background var(--tm-transition-fast), border-color var(--tm-transition-fast);
+}
+
+.tm-notion-load-error__retry:hover {
+    background:    var(--tm-color-primary-subtle);
+    border-color:  var(--tm-color-primary);
+}

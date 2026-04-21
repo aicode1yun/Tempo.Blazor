@@ -1,0 +1,135 @@
+@namespace Tempo.Blazor.Components.NotionEditor
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.NotionEditor.Page
+
+<div class="tm-notion-editor @_editorModifiers @Class"
+     data-notion-scroll-root
+     @ref="_rootRef">
+
+    <CascadingValue Value="_context" IsFixed="false">
+
+        @* ── Sidebar ───────────────────────────────────────────────────────── *@
+        @if (ShowSidebar)
+        {
+            <aside class="tm-notion-sidebar @(_sidebarVisible ? "tm-notion-sidebar--visible" : "tm-notion-sidebar--hidden")"
+                   aria-label="@Loc["TmNotionEditor_SidebarLabel"]"
+                   role="navigation">
+                @* TmNotionSidebar component (Phase 30+) *@
+            </aside>
+
+            @if (_sidebarVisible && _sidebarOverlay)
+            {
+                <div class="tm-notion-sidebar-overlay"
+                     aria-hidden="true"
+                     @onclick="ToggleSidebar">
+                </div>
+            }
+        }
+
+        @* ── Main area ─────────────────────────────────────────────────────── *@
+        <div class="tm-notion-main" @ref="_mainRef">
+
+            @* ── Top bar ──────────────────────────────────────────────────── *@
+            <header class="tm-notion-topbar @(_topbarScrolled ? "tm-notion-topbar--scrolled" : "")"
+                    role="banner">
+
+                @if (ShowSidebar)
+                {
+                    <button class="tm-notion-sidebar-toggle"
+                            type="button"
+                            aria-label="@Loc["TmNotionEditor_ToggleSidebar"]"
+                            title="@Loc["TmNotionEditor_ToggleSidebar"]"
+                            @onclick="ToggleSidebar">
+                        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                            <rect x="1" y="2.5"  width="14" height="1.5" rx=".75" fill="currentColor"/>
+                            <rect x="1" y="7.25" width="14" height="1.5" rx=".75" fill="currentColor"/>
+                            <rect x="1" y="12"   width="14" height="1.5" rx=".75" fill="currentColor"/>
+                        </svg>
+                    </button>
+                }
+
+                @if (_navStack.Count > 1)
+                {
+                    <button class="tm-notion-topbar__back"
+                            type="button"
+                            aria-label="@Loc["TmNotionEditor_NavigateBack"]"
+                            title="@Loc["TmNotionEditor_NavigateBack"]"
+                            @onclick="NavigateBackAsync">
+                        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                            <path d="M9 2L4 7l5 5" stroke="currentColor" stroke-width="1.5"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        @Loc["TmNotionEditor_NavigateBack"]
+                    </button>
+                }
+
+                @if (_currentPage is not null)
+                {
+                    <span class="tm-notion-topbar__title" aria-live="polite">
+                        @(string.IsNullOrWhiteSpace(_currentPage.Title)
+                            ? Loc["TmNotionEditor_Untitled"]
+                            : _currentPage.Title)
+                    </span>
+                }
+
+                <span class="tm-notion-topbar__spacer" aria-hidden="true"></span>
+
+                @if (ReadOnly)
+                {
+                    <span class="tm-notion-locked-badge" role="status" aria-label="@Loc["TmNotionEditor_Locked"]">
+                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                            <rect x="2" y="5" width="8" height="6" rx="1.5" fill="currentColor" opacity=".7"/>
+                            <path d="M4 5V3.5a2 2 0 1 1 4 0V5" stroke="currentColor" stroke-width="1.25"
+                                  stroke-linecap="round" fill="none"/>
+                        </svg>
+                        @Loc["TmNotionEditor_Locked"]
+                    </span>
+                }
+
+            </header>
+
+            @* ── Page content area ────────────────────────────────────────── *@
+            @if (_isLoading)
+            {
+                <div class="tm-notion-loading" role="status" aria-label="@Loc["TmNotionEditor_Loading"]" aria-busy="true">
+                    <div class="tm-notion-skeleton tm-notion-skeleton--title"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:85%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:70%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line-short"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:60%"></div>
+                </div>
+            }
+            else if (_loadError is not null)
+            {
+                <div class="tm-notion-load-error" role="alert">
+                    <svg class="tm-notion-load-error__icon" width="24" height="24" viewBox="0 0 24 24"
+                         fill="none" aria-hidden="true">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 7v5M12 16h.01" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-notion-load-error__message">
+                        @Loc["TmNotionEditor_LoadError", _loadError]
+                    </span>
+                    <button class="tm-notion-load-error__retry"
+                            type="button"
+                            @onclick="RetryLoadAsync">
+                        @Loc["Tm_Retry"]
+                    </button>
+                </div>
+            }
+            else if (_currentPage is not null)
+            {
+                <TmNotionPage Page="_currentPage"
+                              ReadOnly="ReadOnly || _currentPage.IsLocked"
+                              OnPageUpdated="OnChildPageUpdatedAsync"
+                              OnNavigateToPage="NavigateToPageAsync" />
+            }
+
+        </div>
+
+    </CascadingValue>
+
+</div>

@@ -632,18 +632,18 @@
                             break;
 
                         case ContextMenuType.TableCell:
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuInsertRowAbove">@Loc["TmDiagramEditor_InsertRowAbove"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuInsertRowBelow">@Loc["TmDiagramEditor_InsertRowBelow"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuInsertColumnLeft">@Loc["TmDiagramEditor_InsertColumnLeft"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick="ContextMenuInsertColumnRight">@Loc["TmDiagramEditor_InsertColumnRight"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick="ContextMenuInsertRowAbove">@Loc["TmDiagramEditor_InsertRowAbove"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick="ContextMenuInsertRowBelow">@Loc["TmDiagramEditor_InsertRowBelow"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick="ContextMenuInsertColumnLeft">@Loc["TmDiagramEditor_InsertColumnLeft"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick="ContextMenuInsertColumnRight">@Loc["TmDiagramEditor_InsertColumnRight"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(!CanContextMenuMergeCells())" @onclick="ContextMenuMergeCells">@Loc["TmDiagramEditor_MergeCells"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(!CanContextMenuSplitCell())" @onclick="ContextMenuSplitCell">@Loc["TmDiagramEditor_SplitCell"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked() || !CanContextMenuMergeCells())" @onclick="ContextMenuMergeCells">@Loc["TmDiagramEditor_MergeCells"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked() || !CanContextMenuSplitCell())" @onclick="ContextMenuSplitCell">@Loc["TmDiagramEditor_SplitCell"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
                             <span class="tm-diagram-editor__context-heading">@Loc["TmDiagramEditor_FormatCell"]</span>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuFormatTableCell("#ffffff", "#e5e7eb")'>@Loc["TmDiagramEditor_CellWhite"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuFormatTableCell("#f3f4f6", "#d1d5db")'>@Loc["TmDiagramEditor_CellLightGray"]</button>
-                            <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuFormatTableCell("#d1d5db", "#9ca3af")'>@Loc["TmDiagramEditor_CellGray"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick='() => ContextMenuFormatTableCell("#ffffff", "#e5e7eb")'>@Loc["TmDiagramEditor_CellWhite"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick='() => ContextMenuFormatTableCell("#f3f4f6", "#d1d5db")'>@Loc["TmDiagramEditor_CellLightGray"]</button>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(ReadOnly || IsContextMenuNodeLocked())" @onclick='() => ContextMenuFormatTableCell("#d1d5db", "#9ca3af")'>@Loc["TmDiagramEditor_CellGray"]</button>
                             break;
                     }
                 </div>
@@ -669,6 +669,7 @@
                                                           OnPageSizeChanged="HandlePageSizeChanged"
                                                           SelectedTableCells="_selectedTableCells"
                                                           SelectedTableCellsChanged="OnSelectedTableCellsChanged"
+                                                          ReadOnly="@ReadOnly"
                                                           Class="tm-diagram-editor__props" />
                             </div>
                         }

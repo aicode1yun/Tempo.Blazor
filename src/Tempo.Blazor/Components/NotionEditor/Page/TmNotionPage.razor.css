@@ -1,0 +1,100 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionPage — Page Layout (scoped)
+   Content area, block list, comments and page-level modifiers.
+   Cover/icon/title/description live in TmNotionPageHeader.razor.css.
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root page element ────────────────────────────────────────── */
+
+.tm-notion-page {
+    width:            100%;
+    min-height:       100%;
+    display:          flex;
+    flex-direction:   column;
+    background:       var(--tm-notion-bg, var(--tm-bg-page));
+    color:            var(--tm-text-primary);
+    font-family:      var(--tm-notion-font-sans);
+}
+
+/* ── Content wrapper ──────────────────────────────────────────── */
+
+.tm-notion-page__content {
+    flex:           1;
+    display:        flex;
+    flex-direction: column;
+    width:          100%;
+    max-width:      var(--tm-notion-page-max-width, 900px);
+    margin-inline:  auto;
+    padding-left:   var(--tm-notion-page-padding-x);
+    padding-right:  var(--tm-notion-page-padding-x);
+    padding-bottom: var(--tm-notion-page-padding-bottom, 8rem);
+}
+
+/* ── Block list area ──────────────────────────────────────────── */
+
+.tm-notion-page__blocks {
+    flex:        1;
+    min-height:  80px;
+    padding-top: var(--tm-space-1);
+    cursor:      text;
+    position:    relative;
+}
+
+/* ── Empty state hint ─────────────────────────────────────────── */
+
+.tm-notion-page__empty-hint {
+    padding:       var(--tm-space-3) var(--tm-space-2);
+    color:         var(--tm-text-tertiary);
+    font-size:     var(--tm-notion-text-size);
+    cursor:        text;
+    user-select:   none;
+    border-radius: var(--tm-radius-sm);
+    transition:    color var(--tm-notion-anim-fast), background var(--tm-notion-anim-fast);
+    outline:       none;
+}
+
+.tm-notion-page__empty-hint:hover,
+.tm-notion-page__empty-hint:focus-visible {
+    color:      var(--tm-text-secondary);
+    background: var(--tm-notion-bg-block-hover);
+}
+
+/* ── Comments section ─────────────────────────────────────────── */
+
+.tm-notion-page__comments {
+    margin-top:  var(--tm-space-12);
+    padding-top: var(--tm-space-6);
+    border-top:  1px solid var(--tm-notion-border, var(--tm-border-color));
+}
+
+/* ── Full-width mode ──────────────────────────────────────────── */
+
+.tm-notion-page--full-width .tm-notion-page__content {
+    max-width:     var(--tm-notion-page-max-width-full, 100%);
+    padding-left:  var(--tm-notion-page-padding-x-narrow, 1rem);
+    padding-right: var(--tm-notion-page-padding-x-narrow, 1rem);
+}
+
+/* ── Small text mode ──────────────────────────────────────────── */
+
+.tm-notion-page--small-text {
+    --tm-notion-text-size: 0.9375rem;
+    --tm-notion-h1-size:   1.625rem;
+    --tm-notion-h2-size:   1.3125rem;
+    --tm-notion-h3-size:   1.0625rem;
+}
+
+/* ── Read-only mode ───────────────────────────────────────────── */
+
+.tm-notion-page--readonly .tm-notion-page__blocks {
+    cursor: default;
+}
+
+/* ── Responsive ────────────────────────────────────────────────── */
+
+@media (max-width: 640px) {
+    .tm-notion-page__content {
+        padding-left:  var(--tm-notion-page-padding-x-narrow, 1rem);
+        padding-right: var(--tm-notion-page-padding-x-narrow, 1rem);
+    }
+}

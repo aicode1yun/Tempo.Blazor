@@ -1,0 +1,36 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-notion-block-list"
+     data-notion-block-list
+     @ref="_listRef">
+
+    @for (var i = 0; i < Blocks.Count; i++)
+    {
+        var idx   = i;
+        var block = Blocks[i];
+        var num   = GetNumberedListNumber(idx);
+        <TmNotionBlock Block="block"
+                       ReadOnly="ReadOnly"
+                       BlockIndex="idx"
+                       NumberedListNumber="num"
+                       IsFocused="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
+                       IsSelected="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
+                       OnFocused="() => OnBlockFocused.InvokeAsync(block.Id.ToString())"
+                       OnDeleted="() => OnBlockDeleted.InvokeAsync(block.Id.ToString())"
+                       OnUpdated="OnBlockUpdated"
+                       OnDuplicate="OnBlockDuplicated"
+                       OnConvertTo="t => OnConvertBlock.InvokeAsync((block.Id.ToString(), t))"
+                       OnAddAfter="args => OnAddBlockAfter.InvokeAsync((block.Id.ToString(), args.Type, args.InitialHtml))" />
+    }
+
+    @if (!ReadOnly)
+    {
+        <div class="tm-notion-block-list__after"
+             aria-hidden="true"
+             @onclick="OnAddBlockAtEnd">
+        </div>
+    }
+
+</div>

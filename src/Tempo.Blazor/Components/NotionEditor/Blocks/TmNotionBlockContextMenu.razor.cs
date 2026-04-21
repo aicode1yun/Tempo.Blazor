@@ -1,0 +1,133 @@
+using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
+
+namespace Tempo.Blazor.Components.NotionEditor.Blocks;
+
+/// <summary>
+/// Dropdown context menu for a single block — provides Delete, Duplicate, Turn into,
+/// Move to, Copy link, Comment, and Color actions.
+/// </summary>
+public partial class TmNotionBlockContextMenu : ComponentBase
+{
+    // ── Parameters ───────────────────────────────────────────────────────────
+
+    [Parameter, EditorRequired]
+    public IPageBlock Block { get; set; } = default!;
+
+    [Parameter] public EventCallback          OnClose              { get; set; }
+    [Parameter] public EventCallback          OnDelete             { get; set; }
+    [Parameter] public EventCallback          OnDuplicate          { get; set; }
+    [Parameter] public EventCallback<BlockType> OnTurnInto         { get; set; }
+    [Parameter] public EventCallback          OnMoveTo             { get; set; }
+    [Parameter] public EventCallback          OnCopyLink           { get; set; }
+    [Parameter] public EventCallback          OnComment            { get; set; }
+    [Parameter] public EventCallback<string?> OnTextColorChange    { get; set; }
+    [Parameter] public EventCallback<string?> OnBackgroundChange   { get; set; }
+
+    // ── Submenu state ────────────────────────────────────────────────────────
+
+    private bool _showTurnInto;
+    private bool _showColor;
+
+    private enum Sub { TurnInto, Color }
+
+    private void OpenSub(Sub sub)
+    {
+        _showTurnInto = sub == Sub.TurnInto;
+        _showColor    = sub == Sub.Color;
+    }
+
+    private void CloseSub(Sub sub)
+    {
+        if (sub == Sub.TurnInto) _showTurnInto = false;
+        if (sub == Sub.Color)    _showColor    = false;
+    }
+
+    // ── Action handlers ───────────────────────────────────────────────────────
+
+    private async Task HandleDeleteAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnDelete.InvokeAsync();
+    }
+
+    private async Task HandleDuplicateAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnDuplicate.InvokeAsync();
+    }
+
+    private async Task HandleTurnIntoAsync(BlockType type)
+    {
+        await OnClose.InvokeAsync();
+        await OnTurnInto.InvokeAsync(type);
+    }
+
+    private async Task HandleMoveToAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnMoveTo.InvokeAsync();
+    }
+
+    private async Task HandleCopyLinkAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnCopyLink.InvokeAsync();
+    }
+
+    private async Task HandleCommentAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnComment.InvokeAsync();
+    }
+
+    private async Task HandleTextColorAsync(string? color)
+    {
+        await OnClose.InvokeAsync();
+        await OnTextColorChange.InvokeAsync(color);
+    }
+
+    private async Task HandleBackgroundAsync(string? color)
+    {
+        await OnClose.InvokeAsync();
+        await OnBackgroundChange.InvokeAsync(color);
+    }
+
+    private async Task CloseAsync() => await OnClose.InvokeAsync();
+
+    // ── Static data ───────────────────────────────────────────────────────────
+
+    private static readonly TurnIntoItem[] _turnIntoItems =
+    [
+        new(BlockType.Paragraph,    "TmNotionBlockContextMenu_TurnIntoText"),
+        new(BlockType.Heading1,     "TmNotionBlockContextMenu_TurnIntoH1"),
+        new(BlockType.Heading2,     "TmNotionBlockContextMenu_TurnIntoH2"),
+        new(BlockType.Heading3,     "TmNotionBlockContextMenu_TurnIntoH3"),
+        new(BlockType.Quote,        "TmNotionBlockContextMenu_TurnIntoQuote"),
+        new(BlockType.Callout,      "TmNotionBlockContextMenu_TurnIntoCallout"),
+        new(BlockType.BulletList,   "TmNotionBlockContextMenu_TurnIntoBullet"),
+        new(BlockType.NumberedList, "TmNotionBlockContextMenu_TurnIntoNumbered"),
+        new(BlockType.TodoItem,     "TmNotionBlockContextMenu_TurnIntoTodo"),
+        new(BlockType.Toggle,       "TmNotionBlockContextMenu_TurnIntoToggle"),
+        new(BlockType.Code,         "TmNotionBlockContextMenu_TurnIntoCode"),
+        new(BlockType.Divider,      "TmNotionBlockContextMenu_TurnIntoDivider"),
+    ];
+
+    private static readonly ColorItem[] _colorItems =
+    [
+        new(null,     "TmNotionBlockContextMenu_ColorDefault"),
+        new("gray",   "TmNotionBlockContextMenu_ColorGray"),
+        new("brown",  "TmNotionBlockContextMenu_ColorBrown"),
+        new("orange", "TmNotionBlockContextMenu_ColorOrange"),
+        new("yellow", "TmNotionBlockContextMenu_ColorYellow"),
+        new("green",  "TmNotionBlockContextMenu_ColorGreen"),
+        new("blue",   "TmNotionBlockContextMenu_ColorBlue"),
+        new("purple", "TmNotionBlockContextMenu_ColorPurple"),
+        new("pink",   "TmNotionBlockContextMenu_ColorPink"),
+        new("red",    "TmNotionBlockContextMenu_ColorRed"),
+    ];
+
+    private sealed record TurnIntoItem(BlockType Type, string LabelKey);
+    private sealed record ColorItem(string? Value, string LabelKey);
+}

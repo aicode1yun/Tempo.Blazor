@@ -373,10 +373,10 @@
             {
                 <TmSection Title="@Loc["TmDiagramProperties_Table"]" Icon="@IconNames.Grid" Collapsible="true" Collapsed="@(!IsSectionExpanded("table"))" CollapsedChanged="OnTableCollapsedChanged">
                     <div class="tm-diagram-properties__action-grid-2">
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Plus" OnClick="OnAddTableRow">@Loc["TmDiagramProperties_AddRow"]</TmButton>
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Minus" OnClick="OnRemoveTableRow">@Loc["TmDiagramProperties_RemoveRow"]</TmButton>
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Plus" OnClick="OnAddTableColumn">@Loc["TmDiagramProperties_AddColumn"]</TmButton>
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Minus" OnClick="OnRemoveTableColumn">@Loc["TmDiagramProperties_RemoveColumn"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Plus" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))" OnClick="OnAddTableRow">@Loc["TmDiagramProperties_AddRow"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Minus" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))" OnClick="OnRemoveTableRow">@Loc["TmDiagramProperties_RemoveRow"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Plus" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))" OnClick="OnAddTableColumn">@Loc["TmDiagramProperties_AddColumn"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Icon="@IconNames.Minus" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))" OnClick="OnRemoveTableColumn">@Loc["TmDiagramProperties_RemoveColumn"]</TmButton>
                     </div>
 
                     <div class="tm-diagram-properties__field">
@@ -392,6 +392,7 @@
                                         bool isSelected = IsTableCellSelected(row, col);
                                         <button type="button"
                                                 class="tm-diagram-properties__table-grid-cell @(isSelected ? "tm-diagram-properties__table-grid-cell--selected" : "")"
+                                                disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))"
                                                 @onclick="() => ToggleTableCellSelection(row, col)"
                                                 title="@GetTableCellText(row, col)">
                                             @GetTableCellText(row, col)
@@ -403,8 +404,8 @@
                     </div>
 
                     <div class="tm-diagram-properties__action-grid-2">
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Disabled="@(!CanMergeTableCells())" OnClick="OnMergeTableCells">@Loc["TmDiagramProperties_MergeCells"]</TmButton>
-                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Disabled="@(!CanSplitTableCells())" OnClick="OnSplitTableCell">@Loc["TmDiagramProperties_SplitCell"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode) || !CanMergeTableCells())" OnClick="OnMergeTableCells">@Loc["TmDiagramProperties_MergeCells"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" Size="ButtonSize.Sm" Disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode) || !CanSplitTableCells())" OnClick="OnSplitTableCell">@Loc["TmDiagramProperties_SplitCell"]</TmButton>
                     </div>
 
                     @if (SelectedTableCells.Count == 1)

@@ -1,0 +1,91 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+
+<article class="tm-notion-page @_pageMods"
+         data-page-id="@Page.Id"
+         @ref="_pageRef">
+
+    @* ── Page header (cover + icon + title + description) ──────────────────── *@
+    <TmNotionPageHeader Page="Page"
+                        ReadOnly="ReadOnly"
+                        OnPageUpdated="OnPageUpdated"
+                        OnTitleEnterPressed="HandleTitleEnterPressedAsync" />
+
+    @* ── Content wrapper ────────────────────────────────────────────────────── *@
+    <div class="tm-notion-page__content">
+
+        @* ── Block list area ─────────────────────────────────────────────── *@
+        <div class="tm-notion-page__blocks"
+             data-page-blocks
+             @onclick="OnContentAreaClickAsync">
+
+            @if (_isLoadingBlocks)
+            {
+                <div class="tm-notion-loading" role="status" aria-busy="true"
+                     aria-label="@Loc["TmNotionEditor_Loading"]">
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:90%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:76%"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line-short"></div>
+                    <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:83%"></div>
+                </div>
+            }
+            else if (_loadBlocksError is not null)
+            {
+                <div class="tm-notion-load-error" role="alert">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true"
+                         class="tm-notion-load-error__icon">
+                        <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/>
+                        <path d="M12 7v5M12 16h.01" stroke="currentColor" stroke-width="1.75"
+                              stroke-linecap="round"/>
+                    </svg>
+                    <span class="tm-notion-load-error__message">
+                        @Loc["TmNotionPage_BlocksLoadError", _loadBlocksError]
+                    </span>
+                    <button type="button" class="tm-notion-load-error__retry" @onclick="RefreshAsync">
+                        @Loc["Tm_Retry"]
+                    </button>
+                </div>
+            }
+            else if (_blocks.Count == 0 && !ReadOnly)
+            {
+                <div class="tm-notion-page__empty-hint"
+                     role="button"
+                     tabindex="0"
+                     aria-label="@Loc["TmNotionPage_WriteHint"]"
+                     @onclick="OnEmptyHintClickAsync"
+                     @onkeydown="OnEmptyHintKeyDownAsync">
+                    @Loc["TmNotionPage_WriteHint"]
+                </div>
+            }
+            else
+            {
+                <TmNotionBlockList Blocks="_blocks"
+                                   ReadOnly="ReadOnly"
+                                   ActiveBlockId="_activeBlockId"
+                                   OnReorder="HandleBlockReorderAsync"
+                                   OnBlockFocused="HandleBlockFocusedAsync"
+                                   OnBlockDeleted="HandleBlockDeletedAsync"
+                                   OnBlockUpdated="HandleBlockUpdatedAsync"
+                                   OnBlockDuplicated="HandleBlockDuplicatedAsync"
+                                   OnConvertBlock="HandleConvertBlockAsync"
+                                   OnAddBlockAfter="HandleAddBlockAfterAsync"
+                                   OnAddBlockAtEnd="HandleAddBlockAtEndAsync" />
+            }
+
+        </div>
+
+        @* ── Comments area ────────────────────────────────────────────────── *@
+        @if (Context.CommentProvider is not null)
+        {
+            <section class="tm-notion-page__comments"
+                     aria-label="@Loc["TmNotionPage_CommentsLabel"]">
+                @* TmNotionComments (future phase) renders here *@
+            </section>
+        }
+
+    </div>
+
+</article>

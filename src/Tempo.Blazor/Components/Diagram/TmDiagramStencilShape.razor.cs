@@ -1,13 +1,14 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
 
 namespace Tempo.Blazor.Components.Diagram;
 
 /// <summary>Renders a diagram stencil shape inside a node.</summary>
-public partial class TmDiagramStencilShape : ComponentBase
+public partial class TmDiagramStencilShape : ComponentBase, IDisposable
 {
     [Parameter] public DiagramNode Node { get; set; } = default!;
     [Parameter] public bool IsSelected { get; set; }
@@ -17,8 +18,10 @@ public partial class TmDiagramStencilShape : ComponentBase
     [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
     [Parameter] public DiagramPage? Page { get; set; }
     [Parameter] public DiagramDocument? Document { get; set; }
+    [Parameter] public bool ReadOnly { get; set; }
 
     [Inject] private DiagramStencilRegistry StencilRegistry { get; set; } = default!;
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private DiagramStencil? _stencil;
     private string? _editingDataKey;
@@ -36,6 +39,7 @@ public partial class TmDiagramStencilShape : ComponentBase
     private string _editingTableText = "";
     private bool _editTableFocusPending;
     private ElementReference _editTableInputRef;
+    private ElementReference _shapeRef;
 
     protected override void OnParametersSet()
     {
@@ -77,6 +81,10 @@ public partial class TmDiagramStencilShape : ComponentBase
             }
             catch { }
         }
+
+        // Table cell dblclick is handled via @ondblclick in the Razor markup
+        // (JS interop inside SVG foreignObject is unreliable, but our tables
+        // render in the HTML overlay where Blazor events work natively).
     }
 
     private void StartEdit(string? dataKey, string text)
@@ -415,13 +423,21 @@ public partial class TmDiagramStencilShape : ComponentBase
 
     private void StartTableCellEdit(int row, int column, string text)
     {
+        if (ReadOnly || Node.IsLocked) return;
         _editingTableCell = (row, column);
         _editingTableText = text;
         _editTableFocusPending = true;
     }
 
+    private void OnTableCellDblClick(int row, int column, string text)
+    {
+        if (ReadOnly || Node.IsLocked) return;
+        StartTableCellEdit(row, column, text);
+    }
+
     private void SaveTableCellEdit()
     {
+        if (ReadOnly || Node.IsLocked) return;
         if (_editingTableCell is not { } cell) return;
         var cells = GetTableCells();
         var existing = cells.FirstOrDefault(c => c.Row == cell.Row && c.Column == cell.Column);
@@ -457,6 +473,7 @@ public partial class TmDiagramStencilShape : ComponentBase
 
     private async Task OnTableCellClick(int row, int column, MouseEventArgs e)
     {
+        if (ReadOnly || Node.IsLocked) return;
         await OnTableCellSelect.InvokeAsync((row, column, e.CtrlKey));
     }
 
@@ -465,6 +482,20 @@ public partial class TmDiagramStencilShape : ComponentBase
         return SelectedTableCells.Any(c => c.Row == row && c.Column == column)
             ? "tm-diagram-node__table-cell--selected"
             : "";
+    }
+
+    [JSInvokable]
+    public void StartTableCellEditFromJs(int row, int column)
+    {
+        if (ReadOnly) return;
+        var cell = GetTableCellAt(row, column);
+        StartTableCellEdit(row, column, cell?.Text ?? string.Empty);
+        StateHasChanged();
+    }
+
+    public void Dispose()
+    {
+        // No async JS cleanup needed — table dblclick uses native Blazor events.
     }
 
     private static string F(double v) => v.ToString("0.##", CultureInfo.InvariantCulture);

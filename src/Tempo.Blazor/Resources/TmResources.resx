@@ -1052,6 +1052,25 @@
   <data name="TmNotionHeadingBlock_ToggleSection"            xml:space="preserve"><value>Toggle section</value></data>
   <data name="TmNotionHeadingBlock_Placeholder"              xml:space="preserve"><value>Heading</value></data>
 
+  <!-- Phase 38: Divider Block -->
+  <data name="TmNotionDividerBlock_Label"                    xml:space="preserve"><value>Divider</value></data>
+
+  <!-- Phase 42: Toggle Block -->
+  <data name="TmNotionToggleBlock_Expand"                    xml:space="preserve"><value>Expand / collapse</value></data>
+  <data name="TmNotionToggleBlock_ChildrenLoading"           xml:space="preserve"><value>Loading content…</value></data>
+
+  <!-- Phase 37: Code Block -->
+  <data name="TmNotionCodeBlock_CopyCode"                    xml:space="preserve"><value>Copy</value></data>
+  <data name="TmNotionCodeBlock_Copied"                      xml:space="preserve"><value>Copied!</value></data>
+  <data name="TmNotionCodeBlock_CaptionPlaceholder"          xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionCodeBlock_SelectLanguage"              xml:space="preserve"><value>Language</value></data>
+
+  <!-- Phase 36: Callout Block + shared Emoji Picker -->
+  <data name="TmNotionCalloutBlock_ChangeIcon"               xml:space="preserve"><value>Change icon</value></data>
+  <data name="TmNotionEmojiPicker_Title"                     xml:space="preserve"><value>Choose emoji</value></data>
+  <data name="TmNotionEmojiPicker_Search"                    xml:space="preserve"><value>Search emoji…</value></data>
+  <data name="TmNotionEmojiPicker_Remove"                    xml:space="preserve"><value>Remove icon</value></data>
+
   <!-- Phase 32: Block Handle -->
   <data name="TmNotionBlockHandle_DragToReorder"             xml:space="preserve"><value>Drag to reorder</value></data>
   <data name="TmNotionBlockHandle_OpenMenu"                  xml:space="preserve"><value>Block options</value></data>
