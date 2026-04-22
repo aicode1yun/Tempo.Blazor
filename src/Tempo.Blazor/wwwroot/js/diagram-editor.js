@@ -148,9 +148,26 @@ window.tmDiagramEditor = {
         this.instances.set(id, inst);
         this._attachEvents(inst);
         this._syncHtmlTransform(inst);
+
+        // Auto-fit the content into the visible canvas on first initialization.
+        // Without this, the default viewBox (e.g. 0 0 3000 2000) is much larger
+        // than the container, making the effective scale much smaller than 1.0
+        // (so edge strokes render sub-pixel thin and appear invisible), while
+        // the Blazor toolbar still displays "100 %". Auto-fit keeps the initial
+        // rendering aligned with the reported zoom level.
+        if (opts.autoFit !== false) {
+            try { this.fitToView(inst.container, (opts.padding != null) ? opts.padding : 40); }
+            catch (_e) { /* fitToView already falls back gracefully */ }
+        }
+
+        // Report both viewport and the real scale so Blazor's zoom label is
+        // correct from the very first render (init previously only sent the
+        // viewport and left the scale at its Blazor-side default of 1.0).
         const vb = this._getViewBox(inst);
-        if (dotNetRef)
+        if (dotNetRef) {
             dotNetRef.invokeMethodAsync('OnViewportChanged', vb.x, vb.y, vb.w, vb.h);
+            dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
         return id;
     },
 
@@ -317,6 +334,13 @@ window.tmDiagramEditor = {
         inst.svg.setAttribute('viewBox', x + ' ' + y + ' ' + w + ' ' + h);
         inst.scale = Math.max(inst.svg.getBoundingClientRect().width, 1) / w;
         this._syncHtmlTransform(inst);
+        // Keep the Blazor-side `_viewBox` string in sync so any subsequent
+        // parent re-render (which would otherwise reset the viewBox attribute
+        // from stale Blazor state) preserves the current view. Without this,
+        // changes like fitToView/zoomTo would be lost whenever OnParametersSet
+        // re-computes _viewBox from the document dimensions.
+        if (inst.dotNetRef)
+            inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', x, y, w, h);
     },
 
     _syncHtmlTransform: function (inst) {
@@ -2902,8 +2926,10 @@ window.tmDiagramEditor = {
         const nx = cx - newW / 2;
         const ny = cy - newH / 2;
         this._setViewBox(inst, nx, ny, newW, newH);
-        if (inst.dotNetRef)
+        if (inst.dotNetRef) {
             inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
     },
 
     fitToView: function (container, padding) {
@@ -2930,9 +2956,12 @@ window.tmDiagramEditor = {
         if (!hasNodes) {
             const svgRect = inst.svg.getBoundingClientRect();
             this._setViewBox(inst, 0, 0, inst.canvasW, inst.canvasH);
-            if (inst.dotNetRef)
+            const emptyScale = inst.scale;
+            if (inst.dotNetRef) {
                 inst.dotNetRef.invokeMethodAsync('OnViewportChanged', 0, 0, inst.canvasW, inst.canvasH);
-            return svgRect.width / inst.canvasW;
+                inst.dotNetRef.invokeMethodAsync('OnZoomChanged', emptyScale);
+            }
+            return emptyScale;
         }
 
         const contentW = maxX - minX + padding * 2;
@@ -2944,8 +2973,10 @@ window.tmDiagramEditor = {
         const nx = minX - padding;
         const ny = minY - padding;
         this._setViewBox(inst, nx, ny, newW, newH);
-        if (inst.dotNetRef)
+        if (inst.dotNetRef) {
             inst.dotNetRef.invokeMethodAsync('OnViewportChanged', nx, ny, newW, newH);
+            inst.dotNetRef.invokeMethodAsync('OnZoomChanged', inst.scale);
+        }
         return fitScale;
     },
 

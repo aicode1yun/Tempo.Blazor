@@ -195,7 +195,12 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _gs = GridSize.ToString(CultureInfo.InvariantCulture);
         _gl = (GridSize * 10).ToString(CultureInfo.InvariantCulture);
 
-        if (Document is not null)
+        // Only seed `_viewBox` from the document dimensions before JS has taken
+        // control of the viewBox. After init, JS drives the viewBox (pan, zoom,
+        // fit-to-view) and pushes updates via OnViewBoxChanged. Overwriting
+        // _viewBox here on every parameter change would revert the live view
+        // back to the full document rect and hide the actual rendered content.
+        if (!_jsInitialized && Document is not null)
         {
             if (ShowPageView)
             {
