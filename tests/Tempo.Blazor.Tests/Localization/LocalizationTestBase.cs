@@ -375,7 +375,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDiagramEditor_PanTool"] = "Pan tool (H)",
         ["TmDiagramEditor_PanToolHint"] = "Pan tool (H) — or hold Space",
         ["TmDiagramEditor_EdgeTool"] = "Edge tool (L)",
-        ["TmDiagramEditor_EdgeToolHint"] = "Edge tool (L / C) — click a node to start drawing a connector",
+        ["TmDiagramEditor_EdgeToolHint"] = "Edge tool (L / C) — click a node, drag for a single line, or click-click-... for a polyline (finish with double-click / Enter)",
         ["TmDiagramEditor_Undo"] = "Undo",
         ["TmDiagramEditor_Redo"] = "Redo",
         ["TmDiagramEditor_ZoomOut"] = "Zoom out",

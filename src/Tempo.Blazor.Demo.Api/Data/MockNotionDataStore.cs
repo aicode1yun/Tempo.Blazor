@@ -13,7 +13,7 @@ public class MockNotionDataStore
 
     private void InitializeMockData()
     {
-        var pageId = Guid.NewGuid();
+        var pageId = Guid.Parse("11111111-1111-1111-1111-111111111111");
 
         var page = new NotionPage
         {

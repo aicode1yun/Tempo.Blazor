@@ -1,5 +1,6 @@
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Demo.Api.Endpoints;
 
@@ -155,6 +156,6 @@ public static class NotionEditorEndpoints
 
 public record CreatePageRequest(string Title, string? ParentId = null);
 public record UpdatePageRequest(string? Title, string? Description, string? IconEmoji);
-public record CreateBlockRequest(string PageId, IPageBlock Block, string? AfterBlockId = null);
+public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
 public record UpdateBlockRequest(string Content);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);

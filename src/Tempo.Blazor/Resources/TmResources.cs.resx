@@ -568,7 +568,7 @@
   <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Posun (H)</value></data>
   <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Posun (H) — nebo držte Mezerník</value></data>
   <data name="TmDiagramEditor_EdgeTool" xml:space="preserve"><value>Spojnice (L)</value></data>
-  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Spojnice (L / C) — klikněte na uzel pro začátek kreslení hrany</value></data>
+  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Spojnice (L / C) — klikněte na uzel, táhněte pro jednoduchou čáru, nebo klikejte po bodech pro polyčáru (ukončete dvojklikem / Enter)</value></data>
   <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Zpět</value></data>
   <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Znovu</value></data>
   <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>

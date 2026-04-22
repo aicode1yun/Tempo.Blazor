@@ -1,5 +1,39 @@
+using System.Text.Json.Serialization;
+
 namespace Tempo.Blazor.NotionEditor.Models;
 
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
+[JsonDerivedType(typeof(AudioBlockContent), "audio")]
+[JsonDerivedType(typeof(BookmarkBlockContent), "bookmark")]
+[JsonDerivedType(typeof(BreadcrumbBlockContent), "breadcrumb")]
+[JsonDerivedType(typeof(CalloutBlockContent), "callout")]
+[JsonDerivedType(typeof(ChildPageBlockContent), "childPage")]
+[JsonDerivedType(typeof(CodeBlockContent), "code")]
+[JsonDerivedType(typeof(ColumnBlockContent), "column")]
+[JsonDerivedType(typeof(ColumnListBlockContent), "columnList")]
+[JsonDerivedType(typeof(DiagramBlockContent), "diagram")]
+[JsonDerivedType(typeof(DividerBlockContent), "divider")]
+[JsonDerivedType(typeof(EmbedBlockContent), "embed")]
+[JsonDerivedType(typeof(EquationBlockContent), "equation")]
+[JsonDerivedType(typeof(FileBlockContent), "file")]
+[JsonDerivedType(typeof(HeadingBlockContent), "heading")]
+[JsonDerivedType(typeof(ImageBlockContent), "image")]
+[JsonDerivedType(typeof(InlineDatabaseBlockContent), "inlineDatabase")]
+[JsonDerivedType(typeof(LinkedDatabaseBlockContent), "linkedDatabase")]
+[JsonDerivedType(typeof(LinkedPageBlockContent), "linkedPage")]
+[JsonDerivedType(typeof(ListBlockContent), "list")]
+[JsonDerivedType(typeof(PdfBlockContent), "pdf")]
+[JsonDerivedType(typeof(SyncedBlockOriginContent), "syncedBlockOrigin")]
+[JsonDerivedType(typeof(SyncedBlockRefContent), "syncedBlockRef")]
+[JsonDerivedType(typeof(TableBlockContent), "table")]
+[JsonDerivedType(typeof(TableOfContentsBlockContent), "tableOfContents")]
+[JsonDerivedType(typeof(TableRowBlockContent), "tableRow")]
+[JsonDerivedType(typeof(TemplateButtonBlockContent), "templateButton")]
+[JsonDerivedType(typeof(TextBlockContent), "text")]
+[JsonDerivedType(typeof(TodoBlockContent), "todo")]
+[JsonDerivedType(typeof(ToggleBlockContent), "toggle")]
+[JsonDerivedType(typeof(VideoBlockContent), "video")]
+[JsonDerivedType(typeof(WireframeBlockContent), "wireframe")]
 public interface IBlockContent
 {
 }

@@ -1766,7 +1766,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         // Edge drawing is handled in JS; this is a hook for future extensions
     }
 
-    private async Task OnEdgeCreated((string? SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY, double? SourcePointX, double? SourcePointY) args)
+    private async Task OnEdgeCreated((string? SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY, double? SourcePointX, double? SourcePointY, double[]? WaypointsXY) args)
     {
         if (_document is null || ReadOnly) return;
 
@@ -1881,6 +1881,25 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         if (floatingSource && floatingTarget)
         {
             edge.Routing = "straight";
+        }
+
+        // Polyline: flat [x0,y0, x1,y1, ...] array from JS becomes the edge's
+        // manually routed waypoint list. Ignore malformed (odd-length) input
+        // defensively. A non-empty list also forces manual routing so the
+        // router respects the exact click path the user drew.
+        if (args.WaypointsXY is { Length: > 0 } wp && (wp.Length % 2 == 0))
+        {
+            var points = new List<DiagramPoint>(wp.Length / 2);
+            for (int i = 0; i + 1 < wp.Length; i += 2)
+            {
+                points.Add(new DiagramPoint(wp[i], wp[i + 1]));
+            }
+            edge.Waypoints = points;
+            edge.IsManuallyRouted = true;
+            if (floatingSource && floatingTarget)
+            {
+                edge.Routing = "straight";
+            }
         }
 
         ActiveCommandStack.Push(new AddEdgeCommand(_document, edge));

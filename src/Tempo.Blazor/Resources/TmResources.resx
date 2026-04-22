@@ -592,7 +592,7 @@
   <data name="TmDiagramEditor_PanTool" xml:space="preserve"><value>Pan tool (H)</value></data>
   <data name="TmDiagramEditor_PanToolHint" xml:space="preserve"><value>Pan tool (H) — or hold Space</value></data>
   <data name="TmDiagramEditor_EdgeTool" xml:space="preserve"><value>Edge tool (L)</value></data>
-  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Edge tool (L / C) — click a node to start drawing a connector</value></data>
+  <data name="TmDiagramEditor_EdgeToolHint" xml:space="preserve"><value>Edge tool (L / C) — click a node, drag for a single line, or click-click-... for a polyline (finish with double-click / Enter)</value></data>
   <data name="TmDiagramEditor_Undo" xml:space="preserve"><value>Undo</value></data>
   <data name="TmDiagramEditor_Redo" xml:space="preserve"><value>Redo</value></data>
   <data name="TmDiagramEditor_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>

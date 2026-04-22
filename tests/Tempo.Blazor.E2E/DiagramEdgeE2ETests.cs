@@ -146,6 +146,23 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await page.WaitForTimeoutAsync(300);
     }
 
+    private async Task SetToolModeAsync(IPage page, string mode)
+    {
+        await page.EvaluateAsync("""
+            (mode) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return;
+                window.tmDiagramEditor.setToolMode(canvas, mode);
+            }
+        """, mode);
+        await page.WaitForTimeoutAsync(200);
+    }
+
+    private async Task<int> GetEdgeCountAsync(IPage page)
+    {
+        return await page.Locator(".tm-diagram-edge-path").CountAsync();
+    }
+
     // ========================================================================
     // FÁZE 1 — Základy interakce (Foundation)
     // ========================================================================
@@ -374,6 +391,387 @@ public class DiagramEdgeE2ETests : WasmTestBase
             $"Node should snap to grid multiple of 20, but is at ({newBox.X},{newBox.Y})");
 
         await TakeScreenshotAsync(page, "phase1_grid_snap");
+    }
+
+    [TestMethod]
+    [Description("Phase 1 — Empty-to-empty drag in edge mode creates floating edge")]
+    public async Task Phase1_FreeLine_EmptyToEmpty_CreatesFloatingEdge()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        await SetToolModeAsync(page, "edge");
+
+        var pointsJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                if (!canvas) return null;
+                const cr = canvas.getBoundingClientRect();
+                let maxNodeRight = cr.left + 80;
+                let minNodeTop = cr.top + 80;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxNodeRight = Math.max(maxNodeRight, r.right);
+                    minNodeTop = Math.min(minNodeTop, r.top);
+                }
+                const startX = Math.min(cr.right - 140, maxNodeRight + 40);
+                const startY = Math.max(cr.top + 40, minNodeTop - 20);
+                return JSON.stringify({
+                    startX,
+                    startY,
+                    endX: startX + 220,
+                    endY: startY + 130
+                });
+            }
+        """);
+        Assert.IsNotNull(pointsJson, "Could not compute empty-canvas drag points.");
+        using var points = JsonDocument.Parse(pointsJson);
+        var sx = points.RootElement.GetProperty("startX").GetDouble();
+        var sy = points.RootElement.GetProperty("startY").GetDouble();
+        var ex = points.RootElement.GetProperty("endX").GetDouble();
+        var ey = points.RootElement.GetProperty("endY").GetDouble();
+
+        await page.Mouse.MoveAsync((float)sx, (float)sy);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)ex, (float)ey);
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one newly created edge.");
+
+        var danglingCount = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        Assert.IsTrue(danglingCount >= 2, "Expected both terminals to be dangling for empty->empty draw.");
+
+        await TakeScreenshotAsync(page, "free_line_empty_to_empty");
+    }
+
+    [TestMethod]
+    [Description("Phase 1 — Empty-to-port drag keeps floating source and attaches target")]
+    public async Task Phase1_FreeLine_EmptyToNode_AttachesTarget()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        await SetToolModeAsync(page, "edge");
+
+        var pointsJson = await page.EvaluateAsync<string>("""
+            (targetSelector) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const target = document.querySelector(targetSelector);
+                if (!canvas || !target) return null;
+                const cr = canvas.getBoundingClientRect();
+                const tr = target.getBoundingClientRect();
+                const startX = Math.max(cr.left + 30, tr.left - 180);
+                const startY = Math.max(cr.top + 30, tr.top - 80);
+                return JSON.stringify({
+                    startX,
+                    startY,
+                    endX: tr.left + tr.width / 2,
+                    endY: tr.top + tr.height / 2
+                });
+            }
+        """, $".tm-diagram-node[data-node-id='{Node2Id}'] .tm-diagram-port[data-port-id='left']");
+        Assert.IsNotNull(pointsJson, "Could not compute empty->port drag points.");
+        using var points = JsonDocument.Parse(pointsJson);
+        var sx = points.RootElement.GetProperty("startX").GetDouble();
+        var sy = points.RootElement.GetProperty("startY").GetDouble();
+        var ex = points.RootElement.GetProperty("endX").GetDouble();
+        var ey = points.RootElement.GetProperty("endY").GetDouble();
+
+        await page.Mouse.MoveAsync((float)sx, (float)sy);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)ex, (float)ey);
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one newly created edge.");
+
+        var danglingAfter = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        Assert.IsTrue(danglingAfter >= danglingBefore + 1,
+            "Expected at least one additional dangling handle after empty->port draw.");
+
+        await TakeScreenshotAsync(page, "free_line_empty_to_node");
+    }
+
+    [TestMethod]
+    [Description("Phase 2 — Edge tool empty click without drag starts a polyline draft; ESC discards it")]
+    public async Task Phase2_EdgeTool_ClickEmpty_StartsPolyline_EscCancels()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        await SetToolModeAsync(page, "edge");
+
+        var pointJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas) return null;
+                const r = canvas.getBoundingClientRect();
+                return JSON.stringify({ x: r.left + 40, y: r.top + 40 });
+            }
+        """);
+        Assert.IsNotNull(pointJson);
+        using var p = JsonDocument.Parse(pointJson);
+        var x = p.RootElement.GetProperty("x").GetDouble();
+        var y = p.RootElement.GetProperty("y").GetDouble();
+
+        await page.Mouse.ClickAsync((float)x, (float)y);
+        await page.WaitForTimeoutAsync(200);
+
+        var stateAfterClick = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return 'unknown';
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (!inst) return 'missing';
+                return JSON.stringify({ polyline: inst.isDrawingPolyline, drawing: inst.isDrawingEdge, mode: inst.toolMode });
+            }
+        """);
+        Assert.IsNotNull(stateAfterClick);
+        using (var s = JsonDocument.Parse(stateAfterClick))
+        {
+            Assert.IsTrue(s.RootElement.GetProperty("polyline").GetBoolean(),
+                "Plain click on empty canvas in edge mode should start a polyline draft.");
+            Assert.IsTrue(s.RootElement.GetProperty("drawing").GetBoolean(),
+                "isDrawingEdge should also be true while polyline is drafting.");
+        }
+
+        await page.Keyboard.PressAsync("Escape");
+        await page.WaitForTimeoutAsync(200);
+
+        var mode = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return 'unknown';
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                return inst ? inst.toolMode : 'missing';
+            }
+        """);
+        Assert.AreEqual("select", mode, "ESC should cancel the polyline draft and return to select.");
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount, edgeCountAfter, "No new edge should be created by click+ESC.");
+    }
+
+    [TestMethod]
+    [Description("Phase 2 — Three clicks + double-click finish creates a polyline with waypoints")]
+    public async Task Phase2_Polyline_ThreeClicks_DblClickFinish()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        await SetToolModeAsync(page, "edge");
+
+        var pointsJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas) return null;
+                const cr = canvas.getBoundingClientRect();
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                let maxRight = cr.left + 40, minTop = cr.top + 40;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxRight = Math.max(maxRight, r.right);
+                    minTop = Math.min(minTop, r.top);
+                }
+                // Base anchor: right of every node, slightly above the top row.
+                const baseX = Math.min(cr.right - 260, maxRight + 60);
+                const baseY = Math.max(cr.top + 30, minTop - 30);
+
+                // Ensure a point lands on truly empty canvas (not on a node,
+                // port, connection-point or edge-hit-path) AND is still inside
+                // the canvas rect. If not, nudge upward in 20px steps.
+                function isEmpty(x, y) {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return false;
+                    if (!canvas.contains(el)) return false;
+                    if (el.closest('.tm-diagram-port')) return false;
+                    if (el.closest('.tm-diagram-connection-point')) return false;
+                    if (el.closest('[data-node-id]')) return false;
+                    if (el.closest('.tm-diagram-edge-hit-path')) return false;
+                    return true;
+                }
+                function pick(x, y) {
+                    for (let k = 0; k < 20; k++) {
+                        const yy = y - k * 20;
+                        if (yy < cr.top + 10) break;
+                        if (isEmpty(x, yy)) return { x, y: yy };
+                    }
+                    return { x, y: cr.top + 10 };
+                }
+
+                return JSON.stringify({
+                    p1: pick(baseX,        baseY),
+                    p2: pick(baseX + 80,   baseY),
+                    p3: pick(baseX + 160,  baseY),
+                    p4: pick(baseX + 220,  baseY)
+                });
+            }
+        """);
+        Assert.IsNotNull(pointsJson);
+        using var pts = JsonDocument.Parse(pointsJson);
+        double Px(string k) => pts.RootElement.GetProperty(k).GetProperty("x").GetDouble();
+        double Py(string k) => pts.RootElement.GetProperty(k).GetProperty("y").GetDouble();
+
+        await page.Mouse.ClickAsync((float)Px("p1"), (float)Py("p1"));
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.ClickAsync((float)Px("p2"), (float)Py("p2"));
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.ClickAsync((float)Px("p3"), (float)Py("p3"));
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.DblClickAsync((float)Px("p4"), (float)Py("p4"));
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one new polyline edge.");
+
+        // Both ends should be dangling (floating source + floating target).
+        var danglingCount = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        Assert.IsTrue(danglingCount >= 2, "Polyline with both floating ends should have dangling handles on both sides.");
+
+        await TakeScreenshotAsync(page, "phase2_polyline_dblclick");
+    }
+
+    [TestMethod]
+    [Description("Phase 2 — ESC during polyline draft discards the edge")]
+    public async Task Phase2_Polyline_Escape_DiscardsDraft()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        await SetToolModeAsync(page, "edge");
+
+        var pointsJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas) return null;
+                const cr = canvas.getBoundingClientRect();
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                let maxRight = cr.left + 40, minTop = cr.top + 40;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxRight = Math.max(maxRight, r.right);
+                    minTop = Math.min(minTop, r.top);
+                }
+                const baseX = Math.min(cr.right - 160, maxRight + 60);
+                const baseY = Math.max(cr.top + 30, minTop - 30);
+                function isEmpty(x, y) {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return false;
+                    if (!canvas.contains(el)) return false;
+                    if (el.closest('.tm-diagram-port')) return false;
+                    if (el.closest('.tm-diagram-connection-point')) return false;
+                    if (el.closest('[data-node-id]')) return false;
+                    if (el.closest('.tm-diagram-edge-hit-path')) return false;
+                    return true;
+                }
+                function pick(x, y) {
+                    for (let k = 0; k < 20; k++) {
+                        const yy = y - k * 20;
+                        if (yy < cr.top + 10) break;
+                        if (isEmpty(x, yy)) return { x, y: yy };
+                    }
+                    return { x, y: cr.top + 10 };
+                }
+                return JSON.stringify({
+                    p1: pick(baseX,       baseY),
+                    p2: pick(baseX + 80,  baseY)
+                });
+            }
+        """);
+        Assert.IsNotNull(pointsJson);
+        using var pts = JsonDocument.Parse(pointsJson);
+        var p1x = pts.RootElement.GetProperty("p1").GetProperty("x").GetDouble();
+        var p1y = pts.RootElement.GetProperty("p1").GetProperty("y").GetDouble();
+        var p2x = pts.RootElement.GetProperty("p2").GetProperty("x").GetDouble();
+        var p2y = pts.RootElement.GetProperty("p2").GetProperty("y").GetDouble();
+
+        await page.Mouse.ClickAsync((float)p1x, (float)p1y);
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.ClickAsync((float)p2x, (float)p2y);
+        await page.WaitForTimeoutAsync(150);
+        await page.Keyboard.PressAsync("Escape");
+        await page.WaitForTimeoutAsync(400);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount, edgeCountAfter, "ESC should discard the polyline draft.");
+
+        var mode = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const inst = canvas && window.tmDiagramEditor && window.tmDiagramEditor.instances.get(canvas.id);
+                return inst ? inst.toolMode : 'missing';
+            }
+        """);
+        Assert.AreEqual("select", mode, "After ESC we should be back in select mode.");
+    }
+
+    [TestMethod]
+    [Description("Phase 2 — Click on port during polyline draft attaches the target terminal")]
+    public async Task Phase2_Polyline_ClickOnNode_AttachesTarget()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        var danglingBefore = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        await SetToolModeAsync(page, "edge");
+
+        var pointsJson = await page.EvaluateAsync<string>("""
+            (targetSelector) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const target = document.querySelector(targetSelector);
+                if (!canvas || !target) return null;
+                const cr = canvas.getBoundingClientRect();
+                const tr = target.getBoundingClientRect();
+                const p1x = Math.max(cr.left + 30, tr.left - 200);
+                const p1y = Math.max(cr.top + 30, tr.top - 120);
+                const p2x = p1x + 80;
+                const p2y = p1y + 40;
+                return JSON.stringify({
+                    p1: { x: p1x, y: p1y },
+                    p2: { x: p2x, y: p2y },
+                    target: { x: tr.left + tr.width / 2, y: tr.top + tr.height / 2 }
+                });
+            }
+        """, $".tm-diagram-node[data-node-id='{Node2Id}'] .tm-diagram-port[data-port-id='left']");
+        Assert.IsNotNull(pointsJson);
+        using var pts = JsonDocument.Parse(pointsJson);
+        double Px(string k) => pts.RootElement.GetProperty(k).GetProperty("x").GetDouble();
+        double Py(string k) => pts.RootElement.GetProperty(k).GetProperty("y").GetDouble();
+
+        await page.Mouse.ClickAsync((float)Px("p1"), (float)Py("p1"));
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.ClickAsync((float)Px("p2"), (float)Py("p2"));
+        await page.WaitForTimeoutAsync(150);
+        await page.Mouse.ClickAsync((float)Px("target"), (float)Py("target"));
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one new polyline edge.");
+
+        // Floating source adds 1 dangling handle; the attached target side does not.
+        var danglingAfter = await page.Locator(".tm-diagram-edge-handle--dangling").CountAsync();
+        Assert.IsTrue(danglingAfter >= danglingBefore + 1,
+            "Expected one additional dangling handle (floating source) after polyline attaches target.");
+
+        await TakeScreenshotAsync(page, "phase2_polyline_click_on_node");
     }
 
     // ========================================================================

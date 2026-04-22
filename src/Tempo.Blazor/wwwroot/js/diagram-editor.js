@@ -119,6 +119,17 @@ window.tmDiagramEditor = {
                 isPendingEdgeDraw: false,
                 pendingEdgeStart: null,
 
+                // polyline draw (phase 2 — click-to-click). Active only when
+                // the user clicked (no drag) on empty canvas while in edge
+                // mode, or when a second empty-canvas click is made while
+                // isDrawingEdge is already true. Each entry in
+                // polylinePoints is an intermediate waypoint in document
+                // coords: {x, y}. The source terminal is stored in
+                // inst.drawSource (same shape as phase 1).
+                isDrawingPolyline: false,
+                polylinePoints: [],
+                polylineCommittedAt: 0,
+
             // jetty drag
             isDraggingJetty: false,
             dragJettyEdgeId: null,
@@ -575,6 +586,24 @@ window.tmDiagramEditor = {
             inst.pendingEdgeStart = null;
         }
 
+        // Polyline draw in progress: intercept before any other handler so
+        // clicks only add waypoints / commit the edge. Right-click discards
+        // the whole draft.
+        if (inst.isDrawingPolyline) {
+            if (isRightClick) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._cancelEdgeDraw(inst);
+                return;
+            }
+            if (e.button === 0) {
+                e.preventDefault();
+                e.stopPropagation();
+                this._onPolylineMouseDown(e, inst);
+                return;
+            }
+        }
+
         // Right-click on edge or label -> select edge
         if (isRightClick) {
             const edgeEl = this._findHitPath(e);
@@ -994,6 +1023,8 @@ window.tmDiagramEditor = {
         }
 
         if (inst.isDrawingEdge) {
+            // Remember the latest cursor position so Enter can commit at it.
+            inst.lastPointerClient = { x: e.clientX, y: e.clientY };
             this._updateEdgeDraw(inst, e.clientX, e.clientY);
             return;
         }
@@ -1305,6 +1336,39 @@ window.tmDiagramEditor = {
 
     _onDblClick: function (e, inst) {
         if (inst.readOnly) return;
+
+        // Finish a polyline draft on double-click over empty canvas. Both
+        // mousedowns of the dblclick pair already appended a waypoint at ~
+        // this position — pop up to two colocated waypoints so the commit
+        // does not leave redundant zero-length segments, then commit with
+        // the cursor as a floating target terminal.
+        if (inst.isDrawingPolyline) {
+            e.preventDefault();
+            e.stopPropagation();
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const threshDoc = 12 / (inst.scale || 1);
+            let popped = 0;
+            while (inst.polylinePoints.length > 0 && popped < 2) {
+                const last = inst.polylinePoints[inst.polylinePoints.length - 1];
+                if (Math.abs(last.x - docPt.x) < threshDoc && Math.abs(last.y - docPt.y) < threshDoc) {
+                    inst.polylinePoints.pop();
+                    popped++;
+                } else {
+                    break;
+                }
+            }
+            this._commitPolyline(inst, { kind: 'floating', x: docPt.x, y: docPt.y });
+            return;
+        }
+
+        // Swallow the native dblclick that immediately follows a polyline
+        // commit — otherwise the table-cell / edge-label dbl-click handlers
+        // on the same element would fire and e.g. open an inline editor.
+        if (inst.polylineCommittedAt && (Date.now() - inst.polylineCommittedAt) < 500) {
+            e.preventDefault();
+            e.stopPropagation();
+            return;
+        }
         // Don't fight with an already-active inline editor.
         const tag = e.target && e.target.tagName;
         if (tag === 'INPUT' || tag === 'TEXTAREA') return;
@@ -1332,16 +1396,25 @@ window.tmDiagramEditor = {
     // ── Mouse up ─────────────────────────────────────────────────────────────
 
     _onMouseUp: function (e, inst) {
-        // Pending free-line draw that never escalated (user just clicked on
-        // empty canvas in edge mode). Preserve the old UX: revert to select.
+        // Pending free-line draw that never escalated (user just *clicked*
+        // on empty canvas in edge mode — no drag). In phase 2 this promotes
+        // to a click-to-click polyline draw anchored at that point. The
+        // gesture is ended by ESC, right-click, Enter, double-click on
+        // empty canvas, or a mousedown on a node / port / edge.
         if (inst.isPendingEdgeDraw) {
+            const p = inst.pendingEdgeStart;
             inst.isPendingEdgeDraw = false;
             inst.pendingEdgeStart = null;
-            if (inst.toolMode === 'edge') {
-                inst.toolMode = 'select';
-                inst.container.style.cursor = '';
-                if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+            if (p && inst.toolMode === 'edge') {
+                this._startPolylineDraw(inst, p.clientX, p.clientY);
             }
+            return;
+        }
+
+        // Mouseup while already drawing a polyline is a no-op: the polyline
+        // gesture is driven by mousedown (add waypoint / commit on node) and
+        // keyboard (Enter / ESC) rather than by mouseup.
+        if (inst.isDrawingPolyline) {
             return;
         }
 
@@ -1374,7 +1447,8 @@ window.tmDiagramEditor = {
                     inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                     null, null, null,
                     null, null,
-                    srcPtX, srcPtY);
+                    srcPtX, srcPtY,
+                    null);
                 this._cancelEdgeDraw(inst);
                 return;
             }
@@ -1396,7 +1470,8 @@ window.tmDiagramEditor = {
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                         null, null, null,
                         null, null,
-                        srcPtX, srcPtY);
+                        srcPtX, srcPtY,
+                        null);
                     this._cancelEdgeDraw(inst);
                     return;
                 }
@@ -1418,7 +1493,8 @@ window.tmDiagramEditor = {
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                         targetRx, targetRy, targetPerimeter,
                         null, null,
-                        srcPtX, srcPtY);
+                        srcPtX, srcPtY,
+                        null);
                     this._cancelEdgeDraw(inst);
                     return;
                 }
@@ -1434,7 +1510,8 @@ window.tmDiagramEditor = {
                 inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                 null, null, null,
                 docPt.x, docPt.y,
-                srcPtX, srcPtY);
+                srcPtX, srcPtY,
+                null);
             this._cancelEdgeDraw(inst);
             return;
         }
@@ -2013,7 +2090,7 @@ window.tmDiagramEditor = {
             }
         }
 
-        const d = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y + ' L ' + endX + ' ' + endY;
+        const d = this._buildDrawPathD(inst, endX, endY);
         inst.drawTempPath.setAttribute('d', d);
 
         // Port snapping highlight
@@ -2066,8 +2143,7 @@ window.tmDiagramEditor = {
                     endX = closest.x;
                     endY = closest.y;
                     this._highlightEdgeTarget(inst, edgeId);
-                    // Update temp path to snap to edge point
-                    const d2 = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y + ' L ' + endX + ' ' + endY;
+                    const d2 = this._buildDrawPathD(inst, endX, endY);
                     inst.drawTempPath.setAttribute('d', d2);
                     return;
                 }
@@ -2231,6 +2307,8 @@ window.tmDiagramEditor = {
 
     _cancelEdgeDraw: function (inst) {
         inst.isDrawingEdge = false;
+        inst.isDrawingPolyline = false;
+        inst.polylinePoints = [];
         inst.container.classList.remove('tm-diagram-canvas--edge-drawing');
         if (inst.drawTempPath) {
             inst.drawTempPath.remove();
@@ -2256,6 +2334,203 @@ window.tmDiagramEditor = {
         }
     },
 
+    // ── Polyline draw (phase 2) ──────────────────────────────────────────────
+
+    // Build the temp path's `d` attribute, routing through all committed
+    // polyline waypoints when one is in progress. `endX/endY` is the live
+    // cursor-side endpoint (or the snapped target endpoint).
+    _buildDrawPathD: function (inst, endX, endY) {
+        let d = 'M ' + inst.drawSource.x + ' ' + inst.drawSource.y;
+        if (inst.isDrawingPolyline && inst.polylinePoints && inst.polylinePoints.length) {
+            for (let i = 0; i < inst.polylinePoints.length; i++) {
+                const p = inst.polylinePoints[i];
+                d += ' L ' + p.x + ' ' + p.y;
+            }
+        }
+        d += ' L ' + endX + ' ' + endY;
+        return d;
+    },
+
+    // Begin a click-to-click polyline draft at the given screen point. The
+    // source is always floating (empty canvas). Subsequent left-clicks in
+    // `_onPolylineMouseDown` append waypoints or commit the edge.
+    _startPolylineDraw: function (inst, clientX, clientY) {
+        inst.isDrawingEdge = true;
+        inst.isDrawingPolyline = true;
+        inst.polylinePoints = [];
+        inst.container.classList.add('tm-diagram-canvas--edge-drawing');
+
+        const docPt = this._screenToDoc(inst, clientX, clientY);
+        inst.drawSource = {
+            nodeId: null, portId: null,
+            side: null, offset: 0.5,
+            x: docPt.x, y: docPt.y,
+            edgeId: null,
+            constraintRx: null, constraintRy: null, constraintPerimeter: null
+        };
+
+        const path = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+        path.setAttribute('class', 'tm-diagram-edge-draw-path');
+        path.setAttribute('fill', 'none');
+        path.setAttribute('stroke', '#3b82f6');
+        path.setAttribute('stroke-width', '2');
+        path.setAttribute('marker-end', 'url(#arrow-default)');
+        path.setAttribute('pointer-events', 'none');
+        path.setAttribute('stroke-dasharray', '6 4');
+        inst.svg.appendChild(path);
+        inst.drawTempPath = path;
+
+        // Seed the preview path with source → source (zero-length) so it is
+        // visible before the first mousemove event.
+        inst.drawTempPath.setAttribute('d', 'M ' + docPt.x + ' ' + docPt.y + ' L ' + docPt.x + ' ' + docPt.y);
+    },
+
+    // Handle a left mousedown while a polyline draft is active. Commits the
+    // edge if the click landed on a port / connection-point / edge; otherwise
+    // appends a waypoint. Double-click finish is handled by `_onDblClick`
+    // (the real `dblclick` DOM event) rather than `mousedown.detail` because
+    // the latter also fires on sequential clicks that happen within the OS
+    // double-click interval, which would commit a polyline prematurely.
+    _onPolylineMouseDown: function (e, inst) {
+        const hitEl = document.elementFromPoint(e.clientX, e.clientY);
+
+        // Port → attach target to node + port
+        const portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
+        if (portEl) {
+            const nodeEl = portEl.closest('[data-node-id]');
+            if (nodeEl) {
+                this._commitPolyline(inst, {
+                    kind: 'port',
+                    nodeId: nodeEl.getAttribute('data-node-id'),
+                    portId: portEl.getAttribute('data-port-id')
+                });
+                return;
+            }
+        }
+
+        // Connection point → attach target via constraint
+        const cpEl = hitEl ? hitEl.closest('.tm-diagram-connection-point') : null;
+        if (cpEl) {
+            const nodeEl = cpEl.closest('[data-node-id]');
+            if (nodeEl) {
+                this._commitPolyline(inst, {
+                    kind: 'cp',
+                    nodeId: nodeEl.getAttribute('data-node-id'),
+                    rx: parseFloat(cpEl.getAttribute('data-cp-rx')),
+                    ry: parseFloat(cpEl.getAttribute('data-cp-ry')),
+                    perimeter: cpEl.getAttribute('data-cp-perimeter') === 'true'
+                });
+                return;
+            }
+        }
+
+        // Node body (no port) → attach to node without port
+        const nodeEl = hitEl ? hitEl.closest('[data-node-id]') : null;
+        if (nodeEl) {
+            this._commitPolyline(inst, {
+                kind: 'node',
+                nodeId: nodeEl.getAttribute('data-node-id')
+            });
+            return;
+        }
+
+        // Edge hit → attach to edge midpoint
+        const edgeHit = hitEl ? hitEl.closest('.tm-diagram-edge-hit-path') : null;
+        if (edgeHit && edgeHit.getAttribute('data-edge-id')) {
+            const edgeId = edgeHit.getAttribute('data-edge-id');
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            const closest = this._findClosestPointOnEdge(edgeHit, docPt.x, docPt.y);
+            this._commitPolyline(inst, {
+                kind: 'edge',
+                edgeId: edgeId,
+                t: closest ? closest.t : 0.5
+            });
+            return;
+        }
+
+        // Empty canvas → append waypoint and update preview.
+        const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+        inst.polylinePoints.push({ x: docPt.x, y: docPt.y });
+        this._updateEdgeDraw(inst, e.clientX, e.clientY);
+    },
+
+    // Flatten polyline waypoints and dispatch JsOnEdgeCreated with the
+    // appropriate target terminal descriptor.
+    _commitPolyline: function (inst, target) {
+        if (!inst.dotNetRef) { this._cancelEdgeDraw(inst); return; }
+
+        const waypointsXY = [];
+        for (let i = 0; i < inst.polylinePoints.length; i++) {
+            waypointsXY.push(inst.polylinePoints[i].x);
+            waypointsXY.push(inst.polylinePoints[i].y);
+        }
+
+        // Source is always floating for a polyline draft started from empty
+        // canvas; forward its doc-space coordinates.
+        const srcPtX = inst.drawSource.x;
+        const srcPtY = inst.drawSource.y;
+
+        if (target.kind === 'floating') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                null, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                target.x, target.y,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'port') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, target.portId,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'node') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'cp') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                target.nodeId, null,
+                null, 0.5, null, 0.5,
+                null, 0.5,
+                null, null, null,
+                target.rx, target.ry, target.perimeter,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        } else if (target.kind === 'edge') {
+            inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
+                null, null,
+                null, null,
+                null, 0.5, null, 0.5,
+                target.edgeId, target.t,
+                null, null, null,
+                null, null, null,
+                null, null,
+                srcPtX, srcPtY,
+                waypointsXY);
+        }
+
+        inst.polylineCommittedAt = Date.now();
+        this._cancelEdgeDraw(inst);
+    },
+
     // ── Keyboard shortcuts ───────────────────────────────────────────────────
 
     _onKeyDown: function (e, inst) {
@@ -2270,6 +2545,20 @@ window.tmDiagramEditor = {
             inst.selectedIds.clear();
             this._updateSelection(inst);
             inst.dotNetRef.invokeMethodAsync('OnDeleteSelected', ids);
+            return;
+        }
+
+        // Enter commits the current polyline draft, using the last known
+        // cursor position as a floating target terminal.
+        if (e.key === 'Enter' && inst.isDrawingPolyline) {
+            e.preventDefault();
+            const last = inst.lastPointerClient;
+            if (last) {
+                const docPt = this._screenToDoc(inst, last.x, last.y);
+                this._commitPolyline(inst, { kind: 'floating', x: docPt.x, y: docPt.y });
+            } else {
+                this._cancelEdgeDraw(inst);
+            }
             return;
         }
 
