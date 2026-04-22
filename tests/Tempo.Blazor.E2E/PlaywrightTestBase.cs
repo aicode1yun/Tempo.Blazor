@@ -13,6 +13,14 @@ public abstract class PlaywrightTestBase
     private static IPlaywright? _playwright;
     private static readonly SemaphoreSlim BrowserLock = new(1, 1);
 
+    // Per-test list of contexts created via CreatePageAsync / CreateContextAsync.
+    // They MUST be disposed after each test, otherwise the shared static browser
+    // process accumulates WebSocket/SignalR connections, service workers, and
+    // IndexedDB handles for every sample page loaded, which eventually
+    // exhausts Chromium and the OS kills the browser (manifests as cascade of
+    // `TargetClosedException: Process exited` in later tests).
+    private readonly List<IBrowserContext> _contextsToDispose = new();
+
     /// <summary>
     /// Gets the base URL for the demo application under test.
     /// </summary>
@@ -77,16 +85,19 @@ public abstract class PlaywrightTestBase
     }
 
     /// <summary>
-    /// Creates a new browser context for a test.
+    /// Creates a new browser context for a test. The context is automatically
+    /// closed in <see cref="BaseTestCleanup"/> after the test finishes.
     /// </summary>
     protected async Task<IBrowserContext> CreateContextAsync()
     {
-        return await Browser.NewContextAsync(new BrowserNewContextOptions
+        var context = await Browser.NewContextAsync(new BrowserNewContextOptions
         {
             ViewportSize = new ViewportSize { Width = 1280, Height = 720 },
             Locale = "en-US",
             IgnoreHTTPSErrors = true
         });
+        _contextsToDispose.Add(context);
+        return context;
     }
 
     /// <summary>
@@ -99,6 +110,21 @@ public abstract class PlaywrightTestBase
         await page.GotoAsync(BaseUrl);
         await WaitForAppReadyAsync(page);
         return page;
+    }
+
+    /// <summary>
+    /// Closes all browser contexts that were created by the test via
+    /// <see cref="CreatePageAsync"/> or <see cref="CreateContextAsync"/>.
+    /// </summary>
+    [TestCleanup]
+    public async Task BaseTestCleanup()
+    {
+        foreach (var context in _contextsToDispose)
+        {
+            try { await context.CloseAsync(); }
+            catch { /* best-effort: browser may already be gone */ }
+        }
+        _contextsToDispose.Clear();
     }
 
     /// <summary>

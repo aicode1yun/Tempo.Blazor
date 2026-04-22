@@ -786,6 +786,23 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await OnSelectionChanged.InvokeAsync(ids);
     }
 
+    /// <summary>
+    /// True when the current selection contains at least one edge and no nodes.
+    /// Used to hide node connection-points while an edge is selected, so they
+    /// do not occlude the inline edge toolbar.
+    /// </summary>
+    private bool IsOnlyEdgeSelected()
+    {
+        if (Document is null || _currentSelectionIds.Length == 0) return false;
+        bool anyEdge = false;
+        foreach (var id in _currentSelectionIds)
+        {
+            if (Document.Nodes.Any(n => n.Id == id)) return false;
+            if (Document.Edges.Any(e => e.Id == id)) anyEdge = true;
+        }
+        return anyEdge;
+    }
+
     [JSInvokable]
     public async Task OnDeleteSelected(string[] ids)
     {

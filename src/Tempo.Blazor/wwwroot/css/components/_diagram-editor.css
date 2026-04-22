@@ -992,6 +992,17 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
 }
 
+/* When the user has ONLY an edge selected, the small connection-points that
+   live on nodes are visual noise and (because the overlay layer sits above
+   the SVG) can actually intercept clicks destined for the inline edge
+   toolbar rendered inside <foreignObject>. Hide them while an edge is
+   selected — users can still start a new edge from a node by clicking on
+   empty canvas first or by switching to the edge tool. */
+.tm-diagram-canvas--edge-selected .tm-diagram-connection-point {
+    opacity: 0 !important;
+    pointer-events: none !important;
+}
+
 .tm-diagram-edge-toolbar button {
     pointer-events: auto;
     width: 22px;

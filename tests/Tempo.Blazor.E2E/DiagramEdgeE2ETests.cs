@@ -23,7 +23,21 @@ public class DiagramEdgeE2ETests : WasmTestBase
             State = WaitForSelectorState.Visible,
             Timeout = 10000
         });
-        await page.WaitForTimeoutAsync(500);
+        // The DOM node is there early (Blazor SSR), but the diagram JS handler
+        // (`tmDiagramEditor.init`) is wired up only once the WASM interactive
+        // bootstrap has completed and the first interactive render ran. Tests
+        // that immediately dispatch mouse events would otherwise hit a DOM
+        // that looks ready but has no JS listeners attached — the events
+        // arrive at the rect but `_onMouseDown` never runs.
+        await page.WaitForFunctionAsync("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !canvas.id) return false;
+                const ed = window.tmDiagramEditor;
+                return !!(ed && ed.instances && ed.instances.get(canvas.id));
+            }
+        """, null, new PageWaitForFunctionOptions { Timeout = 15000 });
+        await page.WaitForTimeoutAsync(200);
     }
 
     private async Task<(double X, double Y)> GetCenterAsync(ILocator locator)
@@ -1207,6 +1221,72 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await page.GotoAsync(BaseUrl + DiagramEditorUrl);
         await WaitForCanvasAsync(page);
 
+        // Install a mousedown event probe so we can prove whether Playwright's
+        // mouse events actually reach DOM listeners at all (if none arrive,
+        // neither deselect nor the rubber-band can ever trigger). Also capture
+        // the diagram instance state before/after each event to pinpoint which
+        // branch of `_onMouseDown` ran (or whether it ran at all).
+        await page.EvaluateAsync("""
+            () => {
+                window.__tmMouseDowns = [];
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const ed = window.tmDiagramEditor;
+                const inst = canvas && ed && ed.instances && ed.instances.get(canvas.id);
+                function snap() {
+                    if (!inst) return null;
+                    return {
+                        hasInst: true,
+                        isRubberBand: !!inst.isRubberBand,
+                        isDragging: !!inst.isDragging,
+                        isDraggingWholeEdge: !!inst.isDraggingWholeEdge,
+                        isDraggingJetty: !!inst.isDraggingJetty,
+                        isDraggingWaypoint: !!inst.isDraggingWaypoint,
+                        isDraggingDangling: !!inst.isDraggingDangling,
+                        isDraggingSegment: !!inst.isDraggingSegment,
+                        isPanning: !!inst.isPanning,
+                        isDrawingEdge: !!inst.isDrawingEdge,
+                        isDrawingPolyline: !!inst.isDrawingPolyline,
+                        isPendingEdgeDraw: !!inst.isPendingEdgeDraw,
+                        readOnly: !!inst.readOnly,
+                        toolMode: inst.toolMode,
+                        selectedIdsSize: inst.selectedIds ? inst.selectedIds.size : null,
+                        selectedIds: inst.selectedIds ? [...inst.selectedIds] : null,
+                        rubberElAttached: !!(inst.rubberEl && inst.rubberEl.isConnected)
+                    };
+                }
+                window.__tmSnap = snap;
+                // Capture in BOTH capture and bubble phases — if something in
+                // between stops propagation we will see only the capture log.
+                window.addEventListener('mousedown', (e) => {
+                    const el = e.target;
+                    window.__tmMouseDowns.push({
+                        phase: 'capture',
+                        x: Math.round(e.clientX), y: Math.round(e.clientY), btn: e.button,
+                        defaultPrevented: e.defaultPrevented,
+                        tag: el && el.tagName,
+                        closest: el && el.closest ? (
+                            (el.closest('.tm-diagram-edge-hit-path') ? 'edge-hit' : '') ||
+                            (el.closest('.tm-diagram-edge-virtual-bend') ? 'virtual-bend' : '') ||
+                            (el.closest('[data-node-id]') ? 'node' : '') ||
+                            (el.closest('.tm-diagram-port') ? 'port' : '') ||
+                            (el.closest('.tm-diagram-connection-point') ? 'cp' : '') ||
+                            (el.closest('.tm-diagram-canvas') ? 'canvas' : 'outside-canvas')
+                        ) : '?',
+                        snap: snap()
+                    });
+                }, true);
+                window.addEventListener('mousedown', (e) => {
+                    window.__tmMouseDowns.push({
+                        phase: 'bubble',
+                        x: Math.round(e.clientX), y: Math.round(e.clientY),
+                        defaultPrevented: e.defaultPrevented,
+                        propagationStopped: e.cancelBubble,
+                        snap: snap()
+                    });
+                }, false);
+            }
+        """);
+
         // Deselect by clicking empty area (top-left corner of canvas is usually empty)
         var canvas = page.Locator(".tm-diagram-canvas");
         var box = await canvas.BoundingBoxAsync();
@@ -1214,34 +1294,114 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await page.Mouse.ClickAsync((float)(box.X + 10), (float)(box.Y + 10));
         await page.WaitForTimeoutAsync(200);
 
-        // Use JS to find node screen positions so we can start the rubber-band guaranteed outside any node
-        var nodeRectsJson = await page.EvaluateAsync<string>("""
+        // Rubber-band rectangle must enclose at least one full node *in the
+        // coordinate space the JS rubber-band algorithm uses*. That algorithm
+        // converts screen points to SVG user space via `getScreenCTM()`
+        // (affected by SVG `preserveAspectRatio="xMidYMid meet"`), while
+        // `_nodeRect` reads node translate directly from the HTML overlay
+        // (no meet-centering). For viewBoxes whose aspect ratio ≠ canvas
+        // aspect ratio, these two mappings diverge and a tight rectangle
+        // that *looks* correct on screen fails the doc-space enclosure test.
+        //
+        // The robust test strategy is therefore: drag from ~top-left corner
+        // of the canvas to ~bottom-right corner — the resulting rectangle is
+        // so large that it encloses every node in every coordinate space.
+        // We only need to ensure the two corners themselves don't land on an
+        // interactive element that would eat the mousedown.
+        var coordsJson = await page.EvaluateAsync<string>("""
             () => {
-                const nodes = document.querySelectorAll('.tm-diagram-node[data-node-id]');
-                const arr = [];
-                nodes.forEach(n => { const r = n.getBoundingClientRect(); arr.push({ left: r.left, top: r.top, right: r.right, bottom: r.bottom }); });
-                return JSON.stringify(arr);
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas) return null;
+                const cr = canvas.getBoundingClientRect();
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                if (!nodes.length) return null;
+
+                function describeAt(x, y) {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return { x, y, el: null };
+                    return {
+                        x, y,
+                        tag: el.tagName,
+                        cls: (el.className && el.className.baseVal) || el.className || '',
+                        id: el.id || null,
+                        inCanvas: canvas.contains(el),
+                        nodeId: el.closest('[data-node-id]')?.getAttribute('data-node-id') || null,
+                        edgeId: el.closest('[data-edge-id]')?.getAttribute('data-edge-id') || null,
+                        port:   !!el.closest('.tm-diagram-port'),
+                        cp:     !!el.closest('.tm-diagram-connection-point'),
+                        hitPath:!!el.closest('.tm-diagram-edge-hit-path')
+                    };
+                }
+
+                function isEmpty(x, y) {
+                    const el = document.elementFromPoint(x, y);
+                    if (!el) return false;
+                    if (!canvas.contains(el)) return false;
+                    if (el.closest('[data-node-id]')) return false;
+                    if (el.closest('.tm-diagram-port')) return false;
+                    if (el.closest('.tm-diagram-connection-point')) return false;
+                    if (el.closest('.tm-diagram-edge-hit-path')) return false;
+                    if (el.closest('.tm-diagram-edge-handle')) return false;
+                    if (el.closest('.tm-diagram-edge-virtual-bend')) return false;
+                    return true;
+                }
+
+                // elementFromPoint only considers the visible viewport.
+                // Points below/right of the viewport return null, so clamp
+                // the corner search to what is actually on-screen.
+                const viewW = window.innerWidth;
+                const viewH = window.innerHeight;
+                const visLeft   = Math.max(cr.left + 2, 2);
+                const visTop    = Math.max(cr.top  + 2, 2);
+                const visRight  = Math.min(cr.right  - 2, viewW - 2);
+                const visBottom = Math.min(cr.bottom - 2, viewH - 2);
+
+                function pickCorner(cornerX, cornerY, dx, dy) {
+                    for (let step = 0; step < 60; step++) {
+                        const x = cornerX + dx * step * 3;
+                        const y = cornerY + dy * step * 3;
+                        if (x < visLeft || x > visRight) continue;
+                        if (y < visTop  || y > visBottom) continue;
+                        if (isEmpty(x, y)) return { x, y };
+                    }
+                    return null;
+                }
+
+                const start = pickCorner(visLeft,  visTop,    +1, +1);
+                const end   = pickCorner(visRight, visBottom, -1, -1);
+                if (!start || !end) {
+                    return JSON.stringify({
+                        error: 'no-empty-corner',
+                        cr,
+                        startProbe: describeAt(Math.round(cr.left + 8), Math.round(cr.top + 8)),
+                        endProbe:   describeAt(Math.round(cr.right - 8), Math.round(cr.bottom - 8)),
+                        foundStart: start, foundEnd: end
+                    });
+                }
+                return JSON.stringify({ startX: start.x, startY: start.y, endX: end.x, endY: end.y });
             }
         """);
-        using var rectsDoc = JsonDocument.Parse(nodeRectsJson);
-        var rects = rectsDoc.RootElement.EnumerateArray()
-            .Select(e => (Left: e.GetProperty("left").GetDouble(), Top: e.GetProperty("top").GetDouble(), Right: e.GetProperty("right").GetDouble(), Bottom: e.GetProperty("bottom").GetDouble()))
-            .ToList();
-        Assert.IsTrue(rects.Count > 0, "Expected at least one node on the canvas");
-        var minLeft = rects.Min(r => r.Left);
-        var minTop = rects.Min(r => r.Top);
-        var maxRight = rects.Max(r => r.Right);
-        var maxBottom = rects.Max(r => r.Bottom);
+        Assert.IsNotNull(coordsJson, "coordsJson returned null");
+        using (var probeDoc = JsonDocument.Parse(coordsJson))
+        {
+            if (probeDoc.RootElement.TryGetProperty("error", out _))
+            {
+                Assert.Fail("Failed to find empty canvas corner points. Probe: " + coordsJson);
+            }
+        }
+        using var coordsDoc = JsonDocument.Parse(coordsJson);
+        var startX = coordsDoc.RootElement.GetProperty("startX").GetDouble();
+        var startY = coordsDoc.RootElement.GetProperty("startY").GetDouble();
+        var endX   = coordsDoc.RootElement.GetProperty("endX").GetDouble();
+        var endY   = coordsDoc.RootElement.GetProperty("endY").GetDouble();
 
-        // Start slightly outside the node bounding box to guarantee empty-canvas mousedown
-        var startX = minLeft - 20;
-        var startY = minTop - 20;
-        var endX = maxRight + 20;
-        var endY = maxBottom + 20;
-
+        // Drag the mouse across the canvas with intermediate move steps so the
+        // rubber-band has time to render and the JS mousemove handler is fed a
+        // proper drag trajectory (single big jump is sometimes coalesced).
         await page.Mouse.MoveAsync((float)startX, (float)startY);
         await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)endX, (float)endY);
+        await page.Mouse.MoveAsync((float)((startX + endX) / 2), (float)((startY + endY) / 2), new MouseMoveOptions { Steps = 6 });
+        await page.Mouse.MoveAsync((float)endX, (float)endY, new MouseMoveOptions { Steps = 6 });
         await page.Mouse.UpAsync();
         await page.WaitForTimeoutAsync(400);
 
@@ -1249,7 +1409,90 @@ public class DiagramEdgeE2ETests : WasmTestBase
         // We verify selection changed by checking that nodes got selected class or selection outlines
         var outlines = page.Locator(".tm-diagram-selection-outline");
         var outlineCount = await outlines.CountAsync();
-        Assert.IsTrue(outlineCount > 0, "Rubber-band should select at least one node and create selection outline");
+        if (outlineCount == 0)
+        {
+            var sx = (int)Math.Round(startX);
+            var sy = (int)Math.Round(startY);
+            var ex = (int)Math.Round(endX);
+            var ey = (int)Math.Round(endY);
+            var postDiag = await page.EvaluateAsync<string>($$"""
+                () => {
+                    const canvas = document.querySelector('.tm-diagram-canvas');
+                    const cr = canvas ? canvas.getBoundingClientRect() : null;
+                    const selNodes = document.querySelectorAll('.tm-diagram-node--selected').length;
+                    const outlines = document.querySelectorAll('.tm-diagram-selection-outline').length;
+                    const selLayer = !!document.querySelector('.tm-diagram-selection-layer');
+                    const htmlLayer = !!document.querySelector('.tm-diagram-canvas__overlay');
+                    const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                    const nodeRects = nodes.map(n => { const r = n.getBoundingClientRect(); return { id: n.getAttribute('data-node-id'), l: Math.round(r.left), t: Math.round(r.top), r: Math.round(r.right), b: Math.round(r.bottom) }; });
+                    const canvasCls = canvas ? canvas.className : null;
+                    function describe(x, y) {
+                        const el = document.elementFromPoint(x, y);
+                        if (!el) return null;
+                        return {
+                            tag: el.tagName,
+                            cls: (el.className && el.className.baseVal || el.className || ''),
+                            id: el.id || null,
+                            dataNodeId: el.closest('[data-node-id]') ? el.closest('[data-node-id]').getAttribute('data-node-id') : null,
+                            dataEdgeId: el.closest('[data-edge-id]') ? el.closest('[data-edge-id]').getAttribute('data-edge-id') : null,
+                            chain: (function () {
+                                const chain = [];
+                                let cur = el;
+                                for (let i = 0; i < 6 && cur; i++) {
+                                    chain.push(cur.tagName + (cur.className ? '.' + (cur.className.baseVal || cur.className).toString().replace(/\s+/g, '.') : ''));
+                                    cur = cur.parentElement;
+                                }
+                                return chain;
+                            })()
+                        };
+                    }
+                    // Convert screen points to SVG user (doc) coordinates
+                    // using the live CTM — same transform `_screenToDoc` uses.
+                    const svg = document.querySelector('.tm-diagram-canvas__svg');
+                    let docStart = null, docEnd = null, svgTransform = null, viewBox = null;
+                    if (svg) {
+                        const ctm = svg.getScreenCTM();
+                        if (ctm) {
+                            const inv = ctm.inverse();
+                            const p1 = svg.createSVGPoint(); p1.x = {{sx}}; p1.y = {{sy}};
+                            const p2 = svg.createSVGPoint(); p2.x = {{ex}}; p2.y = {{ey}};
+                            const r1 = p1.matrixTransform(inv);
+                            const r2 = p2.matrixTransform(inv);
+                            docStart = { x: Math.round(r1.x), y: Math.round(r1.y) };
+                            docEnd   = { x: Math.round(r2.x), y: Math.round(r2.y) };
+                        }
+                        svgTransform = svg.style.transform || '';
+                        viewBox = svg.getAttribute('viewBox');
+                    }
+                    // Read node translate+data-w/h like `_nodeRect` does.
+                    const overlay = document.querySelector('.tm-diagram-canvas__overlay');
+                    const nodeDocRects = Array.from((overlay || document).querySelectorAll('.tm-diagram-node[data-node-id]')).map(el => {
+                        const s = el.style.transform || '';
+                        const m = s.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
+                        return {
+                            id: el.getAttribute('data-node-id'),
+                            x: m ? Math.round(parseFloat(m[1])) : null,
+                            y: m ? Math.round(parseFloat(m[2])) : null,
+                            w: parseFloat(el.getAttribute('data-w') || el.style.width || '0'),
+                            h: parseFloat(el.getAttribute('data-h') || el.style.height || '0')
+                        };
+                    });
+                    return JSON.stringify({
+                        cr, selNodes, outlines, selLayer, htmlLayer,
+                        nodeCount: nodes.length, nodeRects, nodeDocRects, canvasCls,
+                        elAtStart: describe({{sx}}, {{sy}}),
+                        elAtEnd:   describe({{ex}}, {{ey}}),
+                        docStart, docEnd, viewBox, svgTransform,
+                        mouseDownCount: (window.__tmMouseDowns || []).length,
+                        mouseDownLog:   (window.__tmMouseDowns || []).slice(-4),
+                        instState:      window.__tmSnap ? window.__tmSnap() : null
+                    });
+                }
+            """);
+            Assert.Fail(
+                $"Rubber-band should select at least one node and create selection outline. " +
+                $"Start=({startX:F1},{startY:F1}) End=({endX:F1},{endY:F1}). Post-diagnostics: {postDiag}");
+        }
 
         await TakeScreenshotAsync(page, "phase5_rubber_band");
     }
@@ -1446,7 +1689,12 @@ public class DiagramEdgeE2ETests : WasmTestBase
             Assert.Inconclusive("Flip button not found in inline toolbar.");
         }
 
-        await flipBtn.ClickAsync();
+        // Move mouse away from nodes first so lingering hover state doesn't
+        // re-show connection-points over the toolbar, then force-click to be
+        // robust against any remaining overlay elements (pointer intercepts).
+        await page.Mouse.MoveAsync(2f, 2f);
+        await page.WaitForTimeoutAsync(100);
+        await flipBtn.ClickAsync(new LocatorClickOptions { Force = true });
         await page.WaitForTimeoutAsync(500);
 
         // Edge should still be rendered after flip (degenerate elbow may not change path visually)
