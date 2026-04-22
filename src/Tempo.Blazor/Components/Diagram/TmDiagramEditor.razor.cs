@@ -170,7 +170,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     private double _contextMenuCanvasY;
     private ElementReference _contextMenuRef;
 
-    private readonly List<(int Row, int Column)> _selectedTableCells = [];
+    private List<(int Row, int Column)> _selectedTableCells = [];
 
     // ── Page tabs state ──────────────────────────────────────────────────────
 
@@ -428,8 +428,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
     private async Task OnSelectedTableCellsChanged(List<(int Row, int Column)> cells)
     {
-        _selectedTableCells.Clear();
-        _selectedTableCells.AddRange(cells);
+        _selectedTableCells = cells.ToList();
         await InvokeAsync(StateHasChanged);
     }
 
@@ -1460,8 +1459,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         switch (value)
         {
             case "table": _showTableInserter = true; await InvokeAsync(StateHasChanged); break;
-            case "text": await InsertText(); break;
-            case "group": await InsertGroup(); break;
+            case "text": await InsertText(); break;            
         }
         Console.WriteLine($"[HandleInsertSelect] _showTableInserter after={_showTableInserter}");
     }
@@ -1528,13 +1526,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         if (_document is null || ReadOnly) return;
         await HandleQuickInsert("general.text");
-    }
-
-    private async Task InsertGroup()
-    {
-        if (_document is null || ReadOnly) return;
-        await HandleQuickInsert("general.group");
-    }
+    }    
 
     private async Task HandleExportSelect(string value)
     {

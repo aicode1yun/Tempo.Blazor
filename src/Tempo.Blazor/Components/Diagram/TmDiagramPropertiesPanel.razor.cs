@@ -1542,19 +1542,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private async Task ToggleTableCellSelection(int row, int column, MouseEventArgs e)
     {
+        var newSelection = new List<(int Row, int Column)>(SelectedTableCells);
         if (e.CtrlKey)
         {
             // Multi-select: toggle without clearing others
-            if (SelectedTableCells.RemoveAll(s => s.Row == row && s.Column == column) == 0)
-                SelectedTableCells.Add((row, column));
+            if (newSelection.RemoveAll(s => s.Row == row && s.Column == column) == 0)
+                newSelection.Add((row, column));
         }
         else
         {
             // Single-select: clear others and select this one
-            SelectedTableCells.Clear();
-            SelectedTableCells.Add((row, column));
+            newSelection.Clear();
+            newSelection.Add((row, column));
         }
-        await SelectedTableCellsChanged.InvokeAsync(SelectedTableCells);
+        await SelectedTableCellsChanged.InvokeAsync(newSelection);
     }
 
     private bool CanMergeTableCells() => FirstSelectedNode is not null && Services.TableLayoutService.CanMerge(FirstSelectedNode, SelectedTableCells);
