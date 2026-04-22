@@ -1,0 +1,271 @@
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
+using Tempo.Blazor.NotionEditor.Enums;
+
+namespace Tempo.Blazor.Components.NotionEditor.UI;
+
+public partial class TmNotionInlineToolbar : ComponentBase
+{
+    // ── DI ───────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Parameters ───────────────────────────────────────────────────────────
+
+    [Parameter] public bool           Visible          { get; set; }
+    [Parameter] public double         Top              { get; set; }
+    [Parameter] public double         Left             { get; set; }
+    [Parameter] public bool           IsBold           { get; set; }
+    [Parameter] public bool           IsItalic         { get; set; }
+    [Parameter] public bool           IsUnderline      { get; set; }
+    [Parameter] public bool           IsStrikethrough  { get; set; }
+    [Parameter] public bool           IsCode           { get; set; }
+    [Parameter] public string?        CurrentHref      { get; set; }
+    [Parameter] public TextAlignment  CurrentAlign     { get; set; }
+
+    [Parameter] public EventCallback<BlockType>     OnTurnInto    { get; set; }
+    [Parameter] public EventCallback<TextAlignment> OnAlignChange { get; set; }
+
+    // ── Static data ───────────────────────────────────────────────────────────
+
+    private static readonly (string Name, string? TextHex, string? BgHex)[] Colors =
+    [
+        ("default", null,      null),
+        ("gray",    "#9b9a97", "#ebeced"),
+        ("brown",   "#64473a", "#e9e5e3"),
+        ("orange",  "#d9730d", "#faebdd"),
+        ("yellow",  "#dfab01", "#fbf3db"),
+        ("green",   "#0f7b6c", "#ddedea"),
+        ("blue",    "#0b6e99", "#ddebf1"),
+        ("purple",  "#6940a5", "#eae4f2"),
+        ("pink",    "#ad1a72", "#f4dfeb"),
+        ("red",     "#e03e3e", "#fbe4e4"),
+    ];
+
+    private static readonly (BlockType Type, string NameKey)[] TurnIntoItems =
+    [
+        (BlockType.Paragraph,    "TmNotionBlockContextMenu_TurnIntoText"),
+        (BlockType.Heading1,     "TmNotionBlockContextMenu_TurnIntoH1"),
+        (BlockType.Heading2,     "TmNotionBlockContextMenu_TurnIntoH2"),
+        (BlockType.Heading3,     "TmNotionBlockContextMenu_TurnIntoH3"),
+        (BlockType.Quote,        "TmNotionBlockContextMenu_TurnIntoQuote"),
+        (BlockType.Callout,      "TmNotionBlockContextMenu_TurnIntoCallout"),
+        (BlockType.BulletList,   "TmNotionBlockContextMenu_TurnIntoBullet"),
+        (BlockType.NumberedList, "TmNotionBlockContextMenu_TurnIntoNumbered"),
+        (BlockType.TodoItem,     "TmNotionBlockContextMenu_TurnIntoTodo"),
+        (BlockType.Toggle,       "TmNotionBlockContextMenu_TurnIntoToggle"),
+        (BlockType.Code,         "TmNotionBlockContextMenu_TurnIntoCode"),
+        (BlockType.Divider,      "TmNotionBlockContextMenu_TurnIntoDivider"),
+    ];
+
+    // ── State ────────────────────────────────────────────────────────────────
+
+    private bool   _showLinkInput;
+    private bool   _showColorPanel;
+    private bool   _showTurnIntoPanel;
+    private bool   _showAlignPanel;
+    private string _linkUrl          = string.Empty;
+    private bool   _wasVisible;
+    private bool   _needsFocusLink;
+    private double _top;
+    private double _leftClamped;
+
+    private ElementReference _toolbarRef;
+    private ElementReference _linkInputRef;
+
+    // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        if (Visible && !_wasVisible)
+        {
+            _top             = Top;
+            _leftClamped     = Left;
+            _showLinkInput    = false;
+            _showColorPanel   = false;
+            _showTurnIntoPanel = false;
+            _showAlignPanel   = false;
+        }
+        else if (!Visible && _wasVisible)
+        {
+            _showLinkInput    = false;
+            _showColorPanel   = false;
+            _showTurnIntoPanel = false;
+            _showAlignPanel   = false;
+        }
+        _wasVisible = Visible;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_needsFocusLink && Visible && _showLinkInput)
+        {
+            _needsFocusLink = false;
+            try { await _linkInputRef.FocusAsync(); }
+            catch { /* SSR / test */ }
+            return;
+        }
+
+        if (Visible && !_showLinkInput && !_showColorPanel && !_showTurnIntoPanel && !_showAlignPanel)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.adjustInlineToolbarPosition", _toolbarRef);
+            }
+            catch { /* SSR / test */ }
+        }
+    }
+
+    // ── Format handlers ────────────────────────────────────────────────────────
+
+    private async Task HandleBoldAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "bold"); }
+        catch { }
+    }
+
+    private async Task HandleItalicAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "italic"); }
+        catch { }
+    }
+
+    private async Task HandleUnderlineAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "underline"); }
+        catch { }
+    }
+
+    private async Task HandleStrikethroughAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "strikeThrough"); }
+        catch { }
+    }
+
+    private async Task HandleCodeAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.toggleInlineCode"); }
+        catch { }
+    }
+
+    // ── Link handlers ─────────────────────────────────────────────────────────
+
+    private async Task HandleLinkClickAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.saveSelection"); }
+        catch { }
+        _linkUrl         = CurrentHref ?? string.Empty;
+        _showLinkInput   = true;
+        _needsFocusLink  = true;
+        CloseOtherPanels(link: true);
+    }
+
+    private async Task HandleApplyLinkAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_linkUrl)) return;
+        try { await JS.InvokeVoidAsync("tmNotionEditor.insertLinkOnSavedSelection", _linkUrl.Trim()); }
+        catch { }
+        _showLinkInput = false;
+    }
+
+    private async Task HandleRemoveLinkAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyFormat", "unlink"); }
+        catch { }
+        _showLinkInput = false;
+    }
+
+    private async Task HandleLinkKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") await HandleApplyLinkAsync();
+        else if (e.Key == "Escape") _showLinkInput = false;
+    }
+
+    // ── Color handlers ────────────────────────────────────────────────────────
+
+    private void HandleColorClickAsync()
+    {
+        _showColorPanel = !_showColorPanel;
+        if (_showColorPanel) CloseOtherPanels(color: true);
+    }
+
+    private async Task HandleTextColorAsync(string? hex)
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyInlineColor", "text", hex); }
+        catch { }
+        _showColorPanel = false;
+    }
+
+    private async Task HandleBgColorAsync(string? hex)
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.applyInlineColor", "bg", hex); }
+        catch { }
+        _showColorPanel = false;
+    }
+
+    // ── Turn Into handlers ────────────────────────────────────────────────────
+
+    private void HandleTurnIntoClickAsync()
+    {
+        _showTurnIntoPanel = !_showTurnIntoPanel;
+        if (_showTurnIntoPanel) CloseOtherPanels(turnInto: true);
+    }
+
+    private async Task HandleTurnIntoAsync(BlockType type)
+    {
+        _showTurnIntoPanel = false;
+        await OnTurnInto.InvokeAsync(type);
+    }
+
+    // ── Align handlers ────────────────────────────────────────────────────────
+
+    private void HandleAlignClickAsync()
+    {
+        _showAlignPanel = !_showAlignPanel;
+        if (_showAlignPanel) CloseOtherPanels(align: true);
+    }
+
+    private async Task HandleAlignAsync(TextAlignment alignment)
+    {
+        _showAlignPanel = false;
+        await OnAlignChange.InvokeAsync(alignment);
+    }
+
+    // ── Comment / Math handlers ───────────────────────────────────────────────
+
+    private async Task HandleCommentAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", Guid.NewGuid().ToString()); }
+        catch { }
+    }
+
+    private async Task HandleMathAsync()
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.insertInlineMath"); }
+        catch { }
+    }
+
+    // ── Keyboard handler ──────────────────────────────────────────────────────
+
+    private void HandleKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Escape")
+        {
+            _showLinkInput    = false;
+            _showColorPanel   = false;
+            _showTurnIntoPanel = false;
+            _showAlignPanel   = false;
+        }
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────────────────
+
+    private void CloseOtherPanels(bool link = false, bool color = false, bool turnInto = false, bool align = false)
+    {
+        if (!link)     _showLinkInput    = false;
+        if (!color)    _showColorPanel   = false;
+        if (!turnInto) _showTurnIntoPanel = false;
+        if (!align)    _showAlignPanel   = false;
+    }
+}

@@ -392,7 +392,7 @@
                                         <button type="button"
                                                 class="tm-diagram-properties__table-grid-cell @(isSelected ? "tm-diagram-properties__table-grid-cell--selected" : "")"
                                                 disabled="@(ReadOnly || IsNodeLocked(FirstSelectedNode))"
-                                                @onclick="() => ToggleTableCellSelection(row, col)"
+                                                @onclick="e => ToggleTableCellSelection(row, col, e)"
                                                 title="@GetTableCellText(row, col)">
                                             @GetTableCellText(row, col)
                                         </button>

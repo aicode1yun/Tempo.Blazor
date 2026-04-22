@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -13,6 +14,10 @@ namespace Tempo.Blazor.Components.NotionEditor.Page;
 /// </summary>
 public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 {
+    // ── DI ────────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     // ── Cascaded context ─────────────────────────────────────────────────────
 
     [CascadingParameter]
@@ -46,6 +51,29 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private ElementReference _pageRef;
 
+    // ── Slash menu state ─────────────────────────────────────────────────────
+
+    private bool   _slashMenuVisible;
+    private double _slashMenuTop;
+    private double _slashMenuLeft;
+    private string _slashBlockId = string.Empty;
+
+    // ── Inline toolbar state ──────────────────────────────────────────────────
+
+    private bool          _toolbarVisible;
+    private double        _toolbarTop;
+    private double        _toolbarLeft;
+    private bool          _toolbarIsBold;
+    private bool          _toolbarIsItalic;
+    private bool          _toolbarIsUnderline;
+    private bool          _toolbarIsStrikethrough;
+    private bool          _toolbarIsCode;
+    private string        _toolbarCurrentHref  = string.Empty;
+    private TextAlignment _toolbarCurrentAlign  = TextAlignment.Left;
+    private string        _toolbarBlockId       = string.Empty;
+    private DotNetObjectReference<TmNotionPage>? _toolbarDotNetRef;
+    private bool          _toolbarWatcherReady;
+
     // ── Computed ─────────────────────────────────────────────────────────────
 
     private string _pageMods => string.Concat(
@@ -62,6 +90,20 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         {
             _lastPage = Page;
             await RefreshAsync();
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !ReadOnly)
+        {
+            _toolbarDotNetRef = DotNetObjectReference.Create(this);
+            try
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.initSelectionWatcher", _pageRef, _toolbarDotNetRef);
+                _toolbarWatcherReady = true;
+            }
+            catch { /* SSR / test */ }
         }
     }
 
@@ -348,7 +390,114 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _                      => new TextBlockContent  { Html = initialHtml }
     };
 
+    // ── Slash menu handlers ───────────────────────────────────────────────────
+
+    private Task HandleSlashMenuOpenedAsync((string BlockId, double Top, double Left) args)
+    {
+        _slashBlockId   = args.BlockId;
+        _slashMenuTop   = args.Top;
+        _slashMenuLeft  = args.Left;
+        _slashMenuVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleSlashItemSelectedAsync(BlockType selectedType)
+    {
+        _slashMenuVisible = false;
+
+        if (!string.IsNullOrEmpty(_slashBlockId))
+            await HandleConvertBlockAsync((_slashBlockId, selectedType));
+
+        _slashBlockId = string.Empty;
+        StateHasChanged();
+    }
+
+    private Task HandleSlashMenuClosedAsync()
+    {
+        _slashMenuVisible = false;
+        _slashBlockId     = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // ── Inline toolbar JS callbacks ───────────────────────────────────────────
+
+    [JSInvokable]
+    public Task OnToolbarSelectionChanged(
+        double top, double left,
+        bool isBold, bool isItalic, bool isUnderline, bool isStrikethrough, bool isCode,
+        string currentHref, string blockId)
+    {
+        _toolbarVisible        = true;
+        _toolbarTop            = top;
+        _toolbarLeft           = left;
+        _toolbarIsBold         = isBold;
+        _toolbarIsItalic       = isItalic;
+        _toolbarIsUnderline    = isUnderline;
+        _toolbarIsStrikethrough = isStrikethrough;
+        _toolbarIsCode         = isCode;
+        _toolbarCurrentHref    = currentHref;
+        _toolbarBlockId        = blockId;
+
+        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == blockId);
+        _toolbarCurrentAlign = block?.Content is ITextBlockContent tc ? tc.Alignment : TextAlignment.Left;
+
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnToolbarSelectionCleared()
+    {
+        if (!_toolbarVisible) return Task.CompletedTask;
+        _toolbarVisible = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // ── Inline toolbar event handlers ─────────────────────────────────────────
+
+    private async Task HandleToolbarTurnIntoAsync(BlockType newType)
+    {
+        if (!string.IsNullOrEmpty(_toolbarBlockId))
+            await HandleConvertBlockAsync((_toolbarBlockId, newType));
+    }
+
+    private async Task HandleToolbarAlignAsync(TextAlignment alignment)
+    {
+        _toolbarCurrentAlign = alignment;
+        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == _toolbarBlockId);
+        if (block is null) return;
+
+        var applied = block.Content switch
+        {
+            TextBlockContent    tb => (tb.Alignment = alignment) == alignment,
+            HeadingBlockContent hb => (hb.Alignment = alignment) == alignment,
+            ListBlockContent    lb => (lb.Alignment = alignment) == alignment,
+            TodoBlockContent    td => (td.Alignment = alignment) == alignment,
+            ToggleBlockContent  tg => (tg.Alignment = alignment) == alignment,
+            CalloutBlockContent cb => (cb.Alignment = alignment) == alignment,
+            _                      => false
+        };
+
+        if (applied)
+        {
+            try { await Context.BlockProvider.UpdateBlockAsync(block); }
+            catch { /* best-effort */ }
+            StateHasChanged();
+        }
+    }
+
     // ── Dispose ───────────────────────────────────────────────────────────────
 
-    public ValueTask DisposeAsync() => ValueTask.CompletedTask;
+    public async ValueTask DisposeAsync()
+    {
+        if (_toolbarWatcherReady)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroySelectionWatcher", _pageRef); }
+            catch { }
+        }
+        _toolbarDotNetRef?.Dispose();
+    }
 }

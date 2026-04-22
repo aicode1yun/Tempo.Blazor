@@ -17,10 +17,15 @@ window.tmNotionEditor = (function () {
     'use strict';
 
     // ── Internal registries ────────────────────────────────────────────────────
-    const _blocks       = new WeakMap(); // element → { dotNetRef, listeners: [] }
+    const _blocks         = new WeakMap(); // element → { dotNetRef, listeners: [] }
     const _dragContainers = new WeakMap();
     const _resizeHandles  = new WeakMap();
     const _scrollSpies    = new WeakMap();
+
+    // ── Slash menu state ───────────────────────────────────────────────────────
+    let _slashElement    = null; // contenteditable that triggered the slash menu
+    let _slashAnchorNode = null; // text node position just before the '/'
+    let _slashAnchorOff  = 0;
 
     // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -438,6 +443,13 @@ window.tmNotionEditor = (function () {
             const atWordBoundary = !prevChar || prevChar === ' ';
 
             if (lastChar === '/' && atWordBoundary) {
+                // Store the element and anchor position (just before '/')
+                _slashElement = element;
+                const r = _range();
+                if (r) {
+                    _slashAnchorNode = r.startContainer;
+                    _slashAnchorOff  = Math.max(0, r.startOffset - 1);
+                }
                 const c = getCaretCoords();
                 dotNetRef.invokeMethodAsync('OnSlashTriggered', c.top, c.left).catch(console.error);
             } else if (lastChar === '@' && atWordBoundary) {
@@ -693,6 +705,332 @@ window.tmNotionEditor = (function () {
         document.addEventListener('mouseup',   onMouseUp);
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 43.1 — Slash menu helpers
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    const SLASH_RECENT_KEY  = 'tm-notion-slash-recent';
+    const SLASH_RECENT_MAX  = 5;
+
+    function getRecentSlashItems() {
+        try {
+            const raw = localStorage.getItem(SLASH_RECENT_KEY);
+            return raw ? JSON.parse(raw) : [];
+        } catch {
+            return [];
+        }
+    }
+
+    function addRecentSlashItem(blockTypeInt) {
+        try {
+            const existing = getRecentSlashItems().filter(v => v !== blockTypeInt);
+            existing.unshift(blockTypeInt);
+            localStorage.setItem(SLASH_RECENT_KEY, JSON.stringify(existing.slice(0, SLASH_RECENT_MAX)));
+        } catch { /* private browsing / storage full */ }
+    }
+
+    function clearSlashQuery() {
+        if (!_slashElement) return;
+        try {
+            // Build a range from the anchor (before '/') to end of the editable
+            const sel   = window.getSelection();
+            const range = document.createRange();
+            if (_slashAnchorNode && _slashElement.contains(_slashAnchorNode)) {
+                range.setStart(_slashAnchorNode, _slashAnchorOff);
+            } else {
+                range.selectNodeContents(_slashElement);
+                range.collapse(false);
+                range.setStart(_slashElement, 0);
+            }
+            // Extend to end of editable content
+            const endRange = document.createRange();
+            endRange.selectNodeContents(_slashElement);
+            range.setEnd(endRange.endContainer, endRange.endOffset);
+
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('delete');
+        } catch { /* ignore edge cases */ }
+        _slashElement    = null;
+        _slashAnchorNode = null;
+        _slashAnchorOff  = 0;
+    }
+
+    function refocusSlashElement() {
+        if (_slashElement) {
+            _setCursorAtEnd(_slashElement);
+        }
+        _slashElement    = null;
+        _slashAnchorNode = null;
+        _slashAnchorOff  = 0;
+    }
+
+    function adjustSlashMenuPosition(menuEl) {
+        if (!menuEl) return;
+        const rect   = menuEl.getBoundingClientRect();
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
+        const margin = 8;
+
+        let top  = parseFloat(menuEl.style.top)  || 0;
+        let left = parseFloat(menuEl.style.left) || 0;
+
+        // Flip above caret if menu overflows bottom
+        if (rect.bottom > vh - margin) {
+            top = top - rect.height - 28; // 28 = approx line height
+            menuEl.style.top = Math.max(margin, top) + 'px';
+        }
+        // Clamp right edge
+        if (rect.right > vw - margin) {
+            left = vw - rect.width - margin;
+            menuEl.style.left = Math.max(margin, left) + 'px';
+        }
+    }
+
+    // 47.1
+    function adjustTypeSwitcherPosition(panelEl) {
+        if (!panelEl) return;
+        const rect   = panelEl.getBoundingClientRect();
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
+        const margin = 8;
+
+        let top  = parseFloat(panelEl.style.top)  || 0;
+        let left = parseFloat(panelEl.style.left) || 0;
+
+        if (rect.bottom > vh - margin) {
+            top = top - rect.height - 4;
+            panelEl.style.top = Math.max(margin, top) + 'px';
+        }
+        if (rect.right > vw - margin) {
+            left = vw - rect.width - margin;
+            panelEl.style.left = Math.max(margin, left) + 'px';
+        }
+    }
+
+    // 46.1
+    function getRecentEmojis() {
+        try {
+            const raw = localStorage.getItem('tm-notion-emoji-recent');
+            return raw ? JSON.parse(raw) : [];
+        } catch { return []; }
+    }
+
+    function addRecentEmoji(emoji) {
+        try {
+            const recent = getRecentEmojis().filter(e => e !== emoji);
+            recent.unshift(emoji);
+            localStorage.setItem('tm-notion-emoji-recent', JSON.stringify(recent.slice(0, 16)));
+        } catch { }
+    }
+
+    function adjustEmojiPickerPosition(pickerEl) {
+        if (!pickerEl) return;
+        const rect   = pickerEl.getBoundingClientRect();
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
+        const margin = 8;
+
+        let top  = parseFloat(pickerEl.style.top)  || 0;
+        let left = parseFloat(pickerEl.style.left) || 0;
+
+        if (rect.bottom > vh - margin) {
+            top = top - rect.height - 4;
+            pickerEl.style.top = Math.max(margin, top) + 'px';
+        }
+        if (rect.right > vw - margin) {
+            left = vw - rect.width - margin;
+            pickerEl.style.left = Math.max(margin, left) + 'px';
+        }
+    }
+
+    // 45.1
+    function adjustColorPickerPosition(pickerEl) {
+        if (!pickerEl) return;
+        const rect   = pickerEl.getBoundingClientRect();
+        const vw     = window.innerWidth;
+        const vh     = window.innerHeight;
+        const margin = 8;
+
+        let top  = parseFloat(pickerEl.style.top)  || 0;
+        let left = parseFloat(pickerEl.style.left) || 0;
+
+        if (rect.bottom > vh - margin) {
+            top = top - rect.height - 4;
+            pickerEl.style.top = Math.max(margin, top) + 'px';
+        }
+        if (rect.right > vw - margin) {
+            left = vw - rect.width - margin;
+            pickerEl.style.left = Math.max(margin, left) + 'px';
+        }
+    }
+
+    function scrollSlashItemIntoView(listEl, flatIndex) {
+        if (!listEl) return;
+        const el = listEl.querySelector(`[data-slash-idx="${flatIndex}"]`);
+        el?.scrollIntoView({ block: 'nearest' });
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 44.1 — Inline formatting toolbar
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    const _selectionWatchers = new WeakMap(); // pageEl → { dotNetRef, listeners: [] }
+
+    // Saved selection range for link insertion (focus moves to URL input, losing selection)
+    let _savedRange = null;
+
+    function initSelectionWatcher(pageEl, dotNetRef) {
+        if (!pageEl) return;
+        if (_selectionWatchers.has(pageEl)) destroySelectionWatcher(pageEl);
+
+        const listeners = [];
+
+        function _notify() {
+            const sel = window.getSelection();
+            if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
+                dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
+                return;
+            }
+            const range = sel.getRangeAt(0);
+            if (!pageEl.contains(range.commonAncestorContainer)) {
+                dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
+                return;
+            }
+            const rect = range.getBoundingClientRect();
+            if (rect.width === 0) {
+                dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
+                return;
+            }
+
+            const blockEl = range.commonAncestorContainer.nodeType === Node.TEXT_NODE
+                ? range.commonAncestorContainer.parentElement?.closest('[data-notion-block]')
+                : range.commonAncestorContainer.closest?.('[data-notion-block]');
+
+            const blockId = blockEl?.dataset?.notionBlock ?? '';
+            const isBold          = document.queryCommandState('bold');
+            const isItalic        = document.queryCommandState('italic');
+            const isUnderline     = document.queryCommandState('underline');
+            const isStrikeThrough = document.queryCommandState('strikeThrough');
+            const linkEl          = sel.anchorNode?.parentElement?.closest('a');
+            const currentHref     = linkEl?.href ?? '';
+
+            // Detect inline code by checking if selection is within a <code> element
+            const codeEl   = sel.anchorNode?.parentElement?.closest('code');
+            const isCode   = !!codeEl && !codeEl.closest('pre');
+
+            // Toolbar appears just above the selection
+            const top  = rect.top + window.scrollY - 40;
+            const left = rect.left + window.scrollX + rect.width / 2 - 160;
+
+            dotNetRef.invokeMethodAsync('OnToolbarSelectionChanged',
+                top, left, isBold, isItalic, isUnderline, isStrikeThrough, isCode,
+                currentHref, blockId
+            ).catch(() => {});
+        }
+
+        let _timer = 0;
+        const onUp = () => { clearTimeout(_timer); _timer = setTimeout(_notify, 10); };
+
+        listeners.push(
+            _on(document, 'mouseup',  onUp),
+            _on(document, 'keyup',    onUp),
+            _on(document, 'selectionchange', onUp)
+        );
+
+        _selectionWatchers.set(pageEl, { dotNetRef, listeners });
+    }
+
+    function destroySelectionWatcher(pageEl) {
+        if (!pageEl) return;
+        const state = _selectionWatchers.get(pageEl);
+        if (!state) return;
+        _offAll(state.listeners);
+        _selectionWatchers.delete(pageEl);
+    }
+
+    function saveSelection() {
+        _savedRange = _range() ? _range().cloneRange() : null;
+    }
+
+    function insertLinkOnSavedSelection(url) {
+        if (!_savedRange) return;
+        _applyRange(_savedRange);
+        _savedRange = null;
+        const label = _escHtml(window.getSelection()?.toString() || url);
+        const href  = _escHtml(url);
+        document.execCommand('insertHTML', false,
+            `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
+    }
+
+    function applyInlineColor(scope, colorValue) {
+        if (scope === 'text') {
+            if (!colorValue) {
+                document.execCommand('removeFormat', false, null);
+            } else {
+                document.execCommand('foreColor', false, colorValue);
+            }
+        } else {
+            if (!colorValue) {
+                document.execCommand('hiliteColor', false, 'transparent');
+            } else {
+                document.execCommand('hiliteColor', false, colorValue);
+            }
+        }
+    }
+
+    function toggleInlineCode() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const r = sel.getRangeAt(0);
+        const codeEl = sel.anchorNode?.parentElement?.closest('code');
+        if (codeEl && !codeEl.closest('pre')) {
+            // Unwrap: replace <code> with its text content
+            const parent = codeEl.parentNode;
+            while (codeEl.firstChild) parent.insertBefore(codeEl.firstChild, codeEl);
+            parent.removeChild(codeEl);
+        } else {
+            // Wrap selection in <code>
+            const code = document.createElement('code');
+            try {
+                r.surroundContents(code);
+            } catch {
+                const frag = r.extractContents();
+                code.appendChild(frag);
+                r.insertNode(code);
+            }
+        }
+    }
+
+    function insertInlineMath() {
+        const sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0) return;
+        const r     = sel.getRangeAt(0);
+        const expr  = sel.toString().trim() || 'x';
+        const span  = document.createElement('span');
+        span.className = 'tm-notion-inline-math';
+        span.dataset.expr = expr;
+        span.textContent  = expr;
+        try {
+            r.deleteContents();
+            r.insertNode(span);
+        } catch { /* ignore */ }
+    }
+
+    function adjustInlineToolbarPosition(toolbarEl) {
+        if (!toolbarEl) return;
+        const rect   = toolbarEl.getBoundingClientRect();
+        const vw     = window.innerWidth;
+        const margin = 8;
+        if (rect.right > vw - margin) {
+            const shift = rect.right - (vw - margin);
+            toolbarEl.style.left = (parseFloat(toolbarEl.style.left) - shift) + 'px';
+        }
+        if (rect.left < margin) {
+            toolbarEl.style.left = margin + 'px';
+        }
+    }
+
     // ── 32.1 Copy block link ───────────────────────────────────────────────────
 
     function copyBlockLink(fragment) {
@@ -791,6 +1129,21 @@ window.tmNotionEditor = (function () {
         // 32.1
         copyBlockLink,
         // 37.1
-        initCodeKeyboardHandler, getCode, setCode
+        initCodeKeyboardHandler, getCode, setCode,
+        // 43.1
+        getRecentSlashItems, addRecentSlashItem,
+        clearSlashQuery, refocusSlashElement,
+        adjustSlashMenuPosition, scrollSlashItemIntoView,
+        // 44.1
+        initSelectionWatcher, destroySelectionWatcher,
+        saveSelection, insertLinkOnSavedSelection,
+        applyInlineColor, toggleInlineCode,
+        insertInlineMath, adjustInlineToolbarPosition,
+        // 45.1
+        adjustColorPickerPosition,
+        // 46.1
+        getRecentEmojis, addRecentEmoji, adjustEmojiPickerPosition,
+        // 47.1
+        adjustTypeSwitcherPosition
     };
 })();

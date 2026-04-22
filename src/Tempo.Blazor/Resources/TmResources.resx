@@ -1108,4 +1108,141 @@
   <data name="TmNotionBlockContextMenu_TurnIntoCode"         xml:space="preserve"><value>Code</value></data>
   <data name="TmNotionBlockContextMenu_TurnIntoDivider"      xml:space="preserve"><value>Divider</value></data>
 
+  <!-- Phase 43: Slash Menu -->
+  <data name="TmNotionSlashMenu_SearchPlaceholder"              xml:space="preserve"><value>Filter actions…</value></data>
+  <data name="TmNotionSlashMenu_NoResults"                      xml:space="preserve"><value>No results</value></data>
+  <data name="TmNotionSlashMenu_CategoryRecent"                 xml:space="preserve"><value>Recently used</value></data>
+  <data name="TmNotionSlashMenu_CategoryBasic"                  xml:space="preserve"><value>Basic blocks</value></data>
+  <data name="TmNotionSlashMenu_CategoryMedia"                  xml:space="preserve"><value>Media</value></data>
+  <data name="TmNotionSlashMenu_CategoryEmbeds"                 xml:space="preserve"><value>Embeds</value></data>
+  <data name="TmNotionSlashMenu_CategoryPage"                   xml:space="preserve"><value>Pages</value></data>
+  <data name="TmNotionSlashMenu_CategoryAdvanced"               xml:space="preserve"><value>Advanced blocks</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Paragraph"             xml:space="preserve"><value>Text</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading1"              xml:space="preserve"><value>Heading 1</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading2"              xml:space="preserve"><value>Heading 2</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading3"              xml:space="preserve"><value>Heading 3</value></data>
+  <data name="TmNotionSlashMenu_ItemName_BulletList"            xml:space="preserve"><value>Bulleted list</value></data>
+  <data name="TmNotionSlashMenu_ItemName_NumberedList"          xml:space="preserve"><value>Numbered list</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TodoItem"              xml:space="preserve"><value>To-do list</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Toggle"                xml:space="preserve"><value>Toggle list</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Quote"                 xml:space="preserve"><value>Quote</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Callout"               xml:space="preserve"><value>Callout</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Divider"               xml:space="preserve"><value>Divider</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Code"                  xml:space="preserve"><value>Code</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Equation"              xml:space="preserve"><value>Block equation</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Image"                 xml:space="preserve"><value>Image</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Video"                 xml:space="preserve"><value>Video</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Audio"                 xml:space="preserve"><value>Audio</value></data>
+  <data name="TmNotionSlashMenu_ItemName_File"                  xml:space="preserve"><value>File</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Pdf"                   xml:space="preserve"><value>PDF</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Bookmark"              xml:space="preserve"><value>Web bookmark</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Embed"                 xml:space="preserve"><value>Embed</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ChildPage"             xml:space="preserve"><value>Page</value></data>
+  <data name="TmNotionSlashMenu_ItemName_LinkedPage"            xml:space="preserve"><value>Linked page</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TableOfContents"       xml:space="preserve"><value>Table of contents</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TemplateButton"        xml:space="preserve"><value>Template button</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Diagram"               xml:space="preserve"><value>Diagram</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Wireframe"             xml:space="preserve"><value>Wireframe</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Just start writing with plain text</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Big section heading</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Medium section heading</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading3"              xml:space="preserve"><value>Small section heading</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_BulletList"            xml:space="preserve"><value>Create a simple bulleted list</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_NumberedList"          xml:space="preserve"><value>Create a list with numbering</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TodoItem"              xml:space="preserve"><value>Track tasks with a to-do list</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Toggle"                xml:space="preserve"><value>Toggles can hide and show content inside</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Quote"                 xml:space="preserve"><value>Capture a quote</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Callout"               xml:space="preserve"><value>Make your writing stand out</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Divider"               xml:space="preserve"><value>Visually divide content with a line</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Code"                  xml:space="preserve"><value>Capture a code snippet</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Equation"              xml:space="preserve"><value>Display a math equation using LaTeX</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Image"                 xml:space="preserve"><value>Upload or embed with a link</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Video"                 xml:space="preserve"><value>Embed from YouTube, Vimeo…</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Audio"                 xml:space="preserve"><value>Embed an audio file</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_File"                  xml:space="preserve"><value>Upload or link to any file type</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Pdf"                   xml:space="preserve"><value>Embed a PDF</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Bookmark"              xml:space="preserve"><value>Save a link as a visual bookmark</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Embed"                 xml:space="preserve"><value>Embed from any URL</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ChildPage"             xml:space="preserve"><value>Embed a sub-page inside this page</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_LinkedPage"            xml:space="preserve"><value>Link to an existing page</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TableOfContents"       xml:space="preserve"><value>Show an outline of your page</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Add a button to create templates</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Create a diagram or flowchart</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Create a UI wireframe or mockup</value></data>
+
+  <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
+  <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Text formatting</value></data>
+  <data name="TmNotionInlineToolbar_Bold"          xml:space="preserve"><value>Bold</value></data>
+  <data name="TmNotionInlineToolbar_Italic"        xml:space="preserve"><value>Italic</value></data>
+  <data name="TmNotionInlineToolbar_Underline"     xml:space="preserve"><value>Underline</value></data>
+  <data name="TmNotionInlineToolbar_Strikethrough" xml:space="preserve"><value>Strikethrough</value></data>
+  <data name="TmNotionInlineToolbar_Code"          xml:space="preserve"><value>Inline code</value></data>
+  <data name="TmNotionInlineToolbar_Link"          xml:space="preserve"><value>Link</value></data>
+  <data name="TmNotionInlineToolbar_Color"         xml:space="preserve"><value>Color</value></data>
+  <data name="TmNotionInlineToolbar_TurnInto"      xml:space="preserve"><value>Turn into</value></data>
+  <data name="TmNotionInlineToolbar_Align"         xml:space="preserve"><value>Align</value></data>
+  <data name="TmNotionInlineToolbar_AlignLeft"     xml:space="preserve"><value>Align left</value></data>
+  <data name="TmNotionInlineToolbar_AlignCenter"   xml:space="preserve"><value>Align center</value></data>
+  <data name="TmNotionInlineToolbar_AlignRight"    xml:space="preserve"><value>Align right</value></data>
+  <data name="TmNotionInlineToolbar_Comment"       xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionInlineToolbar_Math"          xml:space="preserve"><value>Inline equation</value></data>
+  <data name="TmNotionInlineToolbar_LinkPlaceholder" xml:space="preserve"><value>Paste or type a link…</value></data>
+  <data name="TmNotionInlineToolbar_LinkApply"     xml:space="preserve"><value>Apply</value></data>
+  <data name="TmNotionInlineToolbar_RemoveLink"    xml:space="preserve"><value>Remove link</value></data>
+  <data name="TmNotionInlineToolbar_TextColor"     xml:space="preserve"><value>Text color</value></data>
+  <data name="TmNotionInlineToolbar_BgColor"       xml:space="preserve"><value>Background color</value></data>
+  <data name="TmNotionInlineToolbar_ColorDefault"  xml:space="preserve"><value>Default</value></data>
+  <data name="TmNotionInlineToolbar_ColorGray"     xml:space="preserve"><value>Gray</value></data>
+  <data name="TmNotionInlineToolbar_ColorBrown"    xml:space="preserve"><value>Brown</value></data>
+  <data name="TmNotionInlineToolbar_ColorOrange"   xml:space="preserve"><value>Orange</value></data>
+  <data name="TmNotionInlineToolbar_ColorYellow"   xml:space="preserve"><value>Yellow</value></data>
+  <data name="TmNotionInlineToolbar_ColorGreen"    xml:space="preserve"><value>Green</value></data>
+  <data name="TmNotionInlineToolbar_ColorBlue"     xml:space="preserve"><value>Blue</value></data>
+  <data name="TmNotionInlineToolbar_ColorPurple"   xml:space="preserve"><value>Purple</value></data>
+  <data name="TmNotionInlineToolbar_ColorPink"     xml:space="preserve"><value>Pink</value></data>
+  <data name="TmNotionInlineToolbar_ColorRed"      xml:space="preserve"><value>Red</value></data>
+
+  <!-- ═══════════════ TMNOTIONCOLORPICKER ═══════════════ -->
+  <data name="TmNotionColorPicker_TextColor"  xml:space="preserve"><value>Text color</value></data>
+  <data name="TmNotionColorPicker_BgColor"    xml:space="preserve"><value>Background</value></data>
+  <data name="TmNotionColorPicker_Default"    xml:space="preserve"><value>Default</value></data>
+  <data name="TmNotionColorPicker_Gray"       xml:space="preserve"><value>Gray</value></data>
+  <data name="TmNotionColorPicker_Brown"      xml:space="preserve"><value>Brown</value></data>
+  <data name="TmNotionColorPicker_Orange"     xml:space="preserve"><value>Orange</value></data>
+  <data name="TmNotionColorPicker_Yellow"     xml:space="preserve"><value>Yellow</value></data>
+  <data name="TmNotionColorPicker_Green"      xml:space="preserve"><value>Green</value></data>
+  <data name="TmNotionColorPicker_Blue"       xml:space="preserve"><value>Blue</value></data>
+  <data name="TmNotionColorPicker_Purple"     xml:space="preserve"><value>Purple</value></data>
+  <data name="TmNotionColorPicker_Pink"       xml:space="preserve"><value>Pink</value></data>
+  <data name="TmNotionColorPicker_Red"        xml:space="preserve"><value>Red</value></data>
+  <data name="TmNotionColorPicker_GrayBg"     xml:space="preserve"><value>Gray background</value></data>
+  <data name="TmNotionColorPicker_BrownBg"    xml:space="preserve"><value>Brown background</value></data>
+  <data name="TmNotionColorPicker_OrangeBg"   xml:space="preserve"><value>Orange background</value></data>
+  <data name="TmNotionColorPicker_YellowBg"   xml:space="preserve"><value>Yellow background</value></data>
+  <data name="TmNotionColorPicker_GreenBg"    xml:space="preserve"><value>Green background</value></data>
+  <data name="TmNotionColorPicker_BlueBg"     xml:space="preserve"><value>Blue background</value></data>
+  <data name="TmNotionColorPicker_PurpleBg"   xml:space="preserve"><value>Purple background</value></data>
+  <data name="TmNotionColorPicker_PinkBg"     xml:space="preserve"><value>Pink background</value></data>
+  <data name="TmNotionColorPicker_RedBg"      xml:space="preserve"><value>Red background</value></data>
+
+  <!-- ═══════════════ TMNOTIONEMOJIPICKER (UI) ═══════════════ -->
+  <data name="TmNotionEmojiPicker_SearchPlaceholder"    xml:space="preserve"><value>Search emoji…</value></data>
+  <data name="TmNotionEmojiPicker_NoResults"            xml:space="preserve"><value>No emoji found</value></data>
+  <data name="TmNotionEmojiPicker_RecentlyUsed"         xml:space="preserve"><value>Recently used</value></data>
+  <data name="TmNotionEmojiPicker_Random"               xml:space="preserve"><value>Random</value></data>
+  <data name="TmNotionEmojiPicker_CategorySmileys"      xml:space="preserve"><value>Smileys &amp; Emotion</value></data>
+  <data name="TmNotionEmojiPicker_CategoryPeople"       xml:space="preserve"><value>People &amp; Body</value></data>
+  <data name="TmNotionEmojiPicker_CategoryAnimals"      xml:space="preserve"><value>Animals &amp; Nature</value></data>
+  <data name="TmNotionEmojiPicker_CategoryFood"         xml:space="preserve"><value>Food &amp; Drink</value></data>
+  <data name="TmNotionEmojiPicker_CategoryTravel"       xml:space="preserve"><value>Travel &amp; Places</value></data>
+  <data name="TmNotionEmojiPicker_CategoryActivities"   xml:space="preserve"><value>Activities</value></data>
+  <data name="TmNotionEmojiPicker_CategoryObjects"      xml:space="preserve"><value>Objects</value></data>
+  <data name="TmNotionEmojiPicker_CategorySymbols"      xml:space="preserve"><value>Symbols</value></data>
+  <data name="TmNotionEmojiPicker_CategoryFlags"        xml:space="preserve"><value>Flags</value></data>
+
+  <!-- ═══════════════ TMNOTIONBLOCKTYPESWITCHER ═══════════════ -->
+  <data name="TmNotionBlockTypeSwitcher_BasicBlocks"  xml:space="preserve"><value>Basic blocks</value></data>
+  <data name="TmNotionBlockTypeSwitcher_Lists"        xml:space="preserve"><value>Lists</value></data>
+  <data name="TmNotionBlockTypeSwitcher_Blocks"       xml:space="preserve"><value>Blocks</value></data>
+
 </root>

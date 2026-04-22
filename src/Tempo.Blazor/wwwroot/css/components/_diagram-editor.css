@@ -1813,6 +1813,12 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     gap: var(--tm-space-2, 8px);
 }
 
+.tm-diagram-properties__action-grid-2 .tm-btn {
+    padding: 0 var(--tm-space-2, 8px);
+    font-size: var(--tm-font-size-xs, 12px);
+    gap: 4px;
+}
+
 .tm-diagram-properties__action-btn {
     display: inline-flex;
     align-items: center;

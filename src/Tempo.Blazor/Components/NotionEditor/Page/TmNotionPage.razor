@@ -3,6 +3,7 @@
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.NotionEditor.Blocks
+@using Tempo.Blazor.Components.NotionEditor.UI
 
 <article class="tm-notion-page @_pageMods"
          data-page-id="@Page.Id"
@@ -72,7 +73,8 @@
                                    OnBlockDuplicated="HandleBlockDuplicatedAsync"
                                    OnConvertBlock="HandleConvertBlockAsync"
                                    OnAddBlockAfter="HandleAddBlockAfterAsync"
-                                   OnAddBlockAtEnd="HandleAddBlockAtEndAsync" />
+                                   OnAddBlockAtEnd="HandleAddBlockAtEndAsync"
+                                   OnSlashMenu="HandleSlashMenuOpenedAsync" />
             }
 
         </div>
@@ -89,3 +91,24 @@
     </div>
 
 </article>
+
+@* ── Slash menu (portal — rendered outside the article scroll so position:fixed works) *@
+<TmNotionSlashMenu Visible="_slashMenuVisible"
+                   Top="_slashMenuTop"
+                   Left="_slashMenuLeft"
+                   OnItemSelected="HandleSlashItemSelectedAsync"
+                   OnClosed="HandleSlashMenuClosedAsync" />
+
+@* ── Inline formatting toolbar (portal — position:fixed, outside scroll) *@
+<TmNotionInlineToolbar Visible="_toolbarVisible"
+                       Top="_toolbarTop"
+                       Left="_toolbarLeft"
+                       IsBold="_toolbarIsBold"
+                       IsItalic="_toolbarIsItalic"
+                       IsUnderline="_toolbarIsUnderline"
+                       IsStrikethrough="_toolbarIsStrikethrough"
+                       IsCode="_toolbarIsCode"
+                       CurrentHref="_toolbarCurrentHref"
+                       CurrentAlign="_toolbarCurrentAlign"
+                       OnTurnInto="HandleToolbarTurnIntoAsync"
+                       OnAlignChange="HandleToolbarAlignAsync" />

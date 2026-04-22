@@ -49,6 +49,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     /// <summary>Fired when the user clicks the empty area below all blocks.</summary>
     [Parameter] public EventCallback OnAddBlockAtEnd { get; set; }
 
+    /// <summary>Fired when a block's '/' keystroke opens the slash menu (blockId, top, left).</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                             _listRef;

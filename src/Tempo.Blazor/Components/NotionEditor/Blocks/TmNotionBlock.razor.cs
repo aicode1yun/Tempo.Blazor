@@ -51,6 +51,9 @@ public partial class TmNotionBlock : ComponentBase
 
     [Parameter] public EventCallback<IPageBlock> OnDuplicate { get; set; }
 
+    /// <summary>Raised when a '/' typed in this block opens the slash menu. Args are viewport coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private IPageBlock?       _lastBlock;
@@ -141,7 +144,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleTodoSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleTodoSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleTodoMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleTodoPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -200,7 +204,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleToggleSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleToggleSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleToggleMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleTogglePageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -322,7 +327,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleParagraphSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleParagraphSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleParagraphMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleParagraphPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -363,7 +369,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleHeadingSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleHeadingSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleHeadingMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleHeadingPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleHeadingToggleAsync(bool _) => Task.CompletedTask;
@@ -404,7 +411,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleQuoteSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleQuoteSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleQuoteMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleQuotePageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -445,7 +453,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleCalloutSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleCalloutSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleCalloutMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleCalloutPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -525,7 +534,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleBulletSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleBulletSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleBulletMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleBulletPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 
@@ -585,7 +595,8 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleNumberedSlashAsync((double Top, double Left) _) => Task.CompletedTask;
+    private Task HandleNumberedSlashAsync((double Top, double Left) coords) =>
+        OnSlashMenu.InvokeAsync(coords);
     private Task HandleNumberedMentionAsync((double Top, double Left) _) => Task.CompletedTask;
     private Task HandleNumberedPageLinkAsync((double Top, double Left) _) => Task.CompletedTask;
 

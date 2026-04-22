@@ -1,0 +1,111 @@
+/* ── Backdrop ─────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 9997;
+}
+
+/* ── Panel ───────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher {
+    position: fixed;
+    z-index: 9998;
+    min-width: 220px;
+    padding: 6px 4px;
+    background: var(--tm-surface-overlay, #fff);
+    border: 1px solid var(--tm-border, rgba(55,53,47,.16));
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,.14), 0 2px 6px rgba(0,0,0,.08);
+    animation: tm-type-switcher-appear 80ms ease;
+    transform-origin: top left;
+}
+
+@keyframes tm-type-switcher-appear {
+    from { opacity: 0; transform: scale(.96) translateY(-4px); }
+    to   { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+/* ── Group label ─────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__group-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    color: var(--tm-text-secondary, rgba(55,53,47,.5));
+    padding: 6px 12px 3px;
+    user-select: none;
+}
+
+/* ── Item ────────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    width: 100%;
+    padding: 5px 10px;
+    border: none;
+    border-radius: 5px;
+    background: transparent;
+    color: var(--tm-text, rgba(55,53,47,.85));
+    cursor: pointer;
+    text-align: left;
+    transition: background .08s;
+}
+
+.tm-notion-type-switcher__item:hover,
+.tm-notion-type-switcher__item--highlighted {
+    background: var(--tm-hover, rgba(55,53,47,.06));
+}
+
+.tm-notion-type-switcher__item--current {
+    color: var(--tm-primary, #2383e2);
+}
+
+/* ── Icon ────────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__item-icon {
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tm-text-secondary, rgba(55,53,47,.55));
+    transition: color .08s;
+}
+
+.tm-notion-type-switcher__item--current .tm-notion-type-switcher__item-icon {
+    color: var(--tm-primary, #2383e2);
+}
+
+/* ── Name ────────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__item-name {
+    flex: 1;
+    font-size: 13px;
+    font-weight: 400;
+    white-space: nowrap;
+    line-height: 1.4;
+}
+
+.tm-notion-type-switcher__item--current .tm-notion-type-switcher__item-name {
+    font-weight: 500;
+}
+
+/* ── Checkmark ───────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__item-check {
+    flex-shrink: 0;
+    color: var(--tm-primary, #2383e2);
+}
+
+/* ── Divider ─────────────────────────────────────────────────────────────── */
+
+.tm-notion-type-switcher__divider {
+    height: 1px;
+    background: var(--tm-border, rgba(55,53,47,.09));
+    margin: 5px 8px;
+}

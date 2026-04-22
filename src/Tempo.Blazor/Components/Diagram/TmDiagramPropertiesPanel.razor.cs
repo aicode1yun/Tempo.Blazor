@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Linq;
 using System.Text.Json;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Diagram.Commands;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Stencils;
@@ -1539,10 +1540,20 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
 
     private bool IsTableCellSelected(int row, int column) => SelectedTableCells.Any(s => s.Row == row && s.Column == column);
 
-    private async Task ToggleTableCellSelection(int row, int column)
+    private async Task ToggleTableCellSelection(int row, int column, MouseEventArgs e)
     {
-        if (SelectedTableCells.RemoveAll(s => s.Row == row && s.Column == column) == 0)
+        if (e.CtrlKey)
+        {
+            // Multi-select: toggle without clearing others
+            if (SelectedTableCells.RemoveAll(s => s.Row == row && s.Column == column) == 0)
+                SelectedTableCells.Add((row, column));
+        }
+        else
+        {
+            // Single-select: clear others and select this one
+            SelectedTableCells.Clear();
             SelectedTableCells.Add((row, column));
+        }
         await SelectedTableCellsChanged.InvokeAsync(SelectedTableCells);
     }
 

@@ -1,0 +1,71 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Enums
+
+@if (Visible)
+{
+    @* ── Backdrop ────────────────────────────────────────────────────────────── *@
+    <div class="tm-notion-type-switcher-backdrop"
+         @onclick="HandleBackdropClickAsync"
+         aria-hidden="true"></div>
+
+    @* ── Panel ───────────────────────────────────────────────────────────────── *@
+    <div class="tm-notion-type-switcher"
+         role="listbox"
+         aria-label="@Loc["TmNotionBlockContextMenu_TurnInto"]"
+         style="top:@(_top)px;left:@(_left)px"
+         @ref="_panelRef"
+         @onkeydown="HandleKeyDownAsync"
+         @onmousedown:preventDefault="true">
+
+        @{ var flatIndex = 0; }
+        @foreach (var group in _groups)
+        {
+            @* ── Group header ─────────────────────────────────────────────────── *@
+            <div class="tm-notion-type-switcher__group-label" role="presentation">
+                @Loc[group.HeaderKey]
+            </div>
+
+            @* ── Group items ──────────────────────────────────────────────────── *@
+            @foreach (var item in group.Items)
+            {
+                var capturedItem  = item;
+                var capturedIndex = flatIndex++;
+                var isCurrent     = item.Type == CurrentType;
+                var isHighlighted = capturedIndex == _highlightedIndex;
+
+                <button class="tm-notion-type-switcher__item @(isCurrent ? "tm-notion-type-switcher__item--current" : "") @(isHighlighted ? "tm-notion-type-switcher__item--highlighted" : "")"
+                        role="option"
+                        aria-selected="@isCurrent"
+                        data-type-idx="@capturedIndex"
+                        @onclick="() => SelectTypeAsync(capturedItem.Type)"
+                        @onclick:preventDefault="true"
+                        @onmouseenter="() => _highlightedIndex = capturedIndex">
+
+                    <span class="tm-notion-type-switcher__item-icon" aria-hidden="true">
+                        @((MarkupString)capturedItem.SvgIcon)
+                    </span>
+
+                    <span class="tm-notion-type-switcher__item-name">
+                        @Loc[capturedItem.NameKey]
+                    </span>
+
+                    @if (isCurrent)
+                    {
+                        <svg class="tm-notion-type-switcher__item-check"
+                             width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                            <path d="M2.5 7L5.5 10L11.5 4"
+                                  stroke="currentColor" stroke-width="1.6"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                    }
+                </button>
+            }
+
+            @if (group != _groups[^1])
+            {
+                <div class="tm-notion-type-switcher__divider" role="separator"></div>
+            }
+        }
+
+    </div>
+}

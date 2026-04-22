@@ -1,0 +1,139 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+
+@if (Visible)
+{
+    @* ── Backdrop ────────────────────────────────────────────────────────────── *@
+    <div class="tm-notion-emoji-picker-backdrop"
+         @onclick="HandleBackdropClickAsync"
+         aria-hidden="true"></div>
+
+    @* ── Panel ───────────────────────────────────────────────────────────────── *@
+    <div class="tm-notion-emoji-picker"
+         role="dialog"
+         aria-label="@Loc["TmNotionEmojiPicker_SearchPlaceholder"]"
+         style="top:@(_top)px;left:@(_left)px"
+         @ref="_pickerRef"
+         @onkeydown="HandleKeyDownAsync"
+         @onmousedown:preventDefault="true">
+
+        @* ── Top bar: search + random ─────────────────────────────────────────── *@
+        <div class="tm-notion-emoji-picker__top">
+            <div class="tm-notion-emoji-picker__search-wrap">
+                <svg class="tm-notion-emoji-picker__search-icon" width="14" height="14"
+                     viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.3"/>
+                    <path d="M9.5 9.5l3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round"/>
+                </svg>
+                <input class="tm-notion-emoji-picker__search"
+                       type="text"
+                       autocomplete="off"
+                       spellcheck="false"
+                       placeholder="@Loc["TmNotionEmojiPicker_SearchPlaceholder"]"
+                       value="@_query"
+                       @ref="_searchRef"
+                       @oninput="HandleQueryInputAsync"
+                       @onmousedown:stopPropagation="true"
+                       @onkeydown:stopPropagation="true" />
+            </div>
+            <button class="tm-notion-emoji-picker__random"
+                    title="@Loc["TmNotionEmojiPicker_Random"]"
+                    @onclick="HandleRandomAsync"
+                    @onclick:preventDefault="true">
+                🎲
+            </button>
+        </div>
+
+        @* ── Category tabs (hidden during search) ─────────────────────────────── *@
+        @if (!_isSearching)
+        {
+            <div class="tm-notion-emoji-picker__tabs" role="tablist">
+                @foreach (var tab in _tabs)
+                {
+                    var capturedTab = tab;
+                    <button class="tm-notion-emoji-picker__tab @(_activeCategory == capturedTab.Category ? "tm-notion-emoji-picker__tab--active" : "")"
+                            role="tab"
+                            aria-selected="@(_activeCategory == capturedTab.Category)"
+                            title="@Loc[capturedTab.NameKey]"
+                            @onclick="() => SetCategory(capturedTab.Category)"
+                            @onclick:preventDefault="true">
+                        @capturedTab.Icon
+                    </button>
+                }
+            </div>
+        }
+
+        @* ── Scrollable emoji area ─────────────────────────────────────────────── *@
+        <div class="tm-notion-emoji-picker__scroll" @ref="_scrollRef">
+
+            @if (_isSearching)
+            {
+                @* ── Search results ─────────────────────────────────────────────── *@
+                @if (_searchResults.Count == 0)
+                {
+                    <div class="tm-notion-emoji-picker__empty">
+                        @Loc["TmNotionEmojiPicker_NoResults"]
+                    </div>
+                }
+                else
+                {
+                    <div class="tm-notion-emoji-picker__grid">
+                        @foreach (var entry in _searchResults)
+                        {
+                            var captured = entry;
+                            <button class="tm-notion-emoji-picker__emoji"
+                                    title="@captured.Name"
+                                    aria-label="@captured.Name"
+                                    @onclick="() => SelectEmojiAsync(captured.Emoji)"
+                                    @onclick:preventDefault="true">
+                                @captured.Emoji
+                            </button>
+                        }
+                    </div>
+                }
+            }
+            else
+            {
+                @* ── Recently used ───────────────────────────────────────────────── *@
+                @if (_recentEmojis.Count > 0)
+                {
+                    <div class="tm-notion-emoji-picker__section-label">
+                        @Loc["TmNotionEmojiPicker_RecentlyUsed"]
+                    </div>
+                    <div class="tm-notion-emoji-picker__grid tm-notion-emoji-picker__grid--recent">
+                        @foreach (var emoji in _recentEmojis)
+                        {
+                            var captured = emoji;
+                            <button class="tm-notion-emoji-picker__emoji"
+                                    title="@captured"
+                                    aria-label="@captured"
+                                    @onclick="() => SelectEmojiAsync(captured)"
+                                    @onclick:preventDefault="true">
+                                @captured
+                            </button>
+                        }
+                    </div>
+                }
+
+                @* ── Current category ────────────────────────────────────────────── *@
+                <div class="tm-notion-emoji-picker__section-label">
+                    @CategoryLabel(_activeCategory)
+                </div>
+                <div class="tm-notion-emoji-picker__grid">
+                    @foreach (var entry in _categoryEmojis)
+                    {
+                        var captured = entry;
+                        <button class="tm-notion-emoji-picker__emoji"
+                                title="@captured.Name"
+                                aria-label="@captured.Name"
+                                @onclick="() => SelectEmojiAsync(captured.Emoji)"
+                                @onclick:preventDefault="true">
+                            @captured.Emoji
+                        </button>
+                    }
+                </div>
+            }
+
+        </div>
+
+    </div>
+}

@@ -22,7 +22,8 @@
                        OnUpdated="OnBlockUpdated"
                        OnDuplicate="OnBlockDuplicated"
                        OnConvertTo="t => OnConvertBlock.InvokeAsync((block.Id.ToString(), t))"
-                       OnAddAfter="args => OnAddBlockAfter.InvokeAsync((block.Id.ToString(), args.Type, args.InitialHtml))" />
+                       OnAddAfter="args => OnAddBlockAfter.InvokeAsync((block.Id.ToString(), args.Type, args.InitialHtml))"
+                       OnSlashMenu="coords => OnSlashMenu.InvokeAsync((block.Id.ToString(), coords.Top, coords.Left))" />
     }
 
     @if (!ReadOnly)

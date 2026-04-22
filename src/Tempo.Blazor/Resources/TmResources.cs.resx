@@ -987,4 +987,141 @@
   <data name="TmDiagramCsvImportDialog_ErrorParse" xml:space="preserve"><value>Nepodařilo se zpracovat CSV: {0}</value></data>
   <data name="TmDiagramEditor_VirtualBend" xml:space="preserve"><value>Virtuální ohyb</value></data>
 
+  <!-- Phase 43: Slash Menu -->
+  <data name="TmNotionSlashMenu_SearchPlaceholder"              xml:space="preserve"><value>Filtrovat akce…</value></data>
+  <data name="TmNotionSlashMenu_NoResults"                      xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmNotionSlashMenu_CategoryRecent"                 xml:space="preserve"><value>Naposledy použité</value></data>
+  <data name="TmNotionSlashMenu_CategoryBasic"                  xml:space="preserve"><value>Základní bloky</value></data>
+  <data name="TmNotionSlashMenu_CategoryMedia"                  xml:space="preserve"><value>Média</value></data>
+  <data name="TmNotionSlashMenu_CategoryEmbeds"                 xml:space="preserve"><value>Vložení</value></data>
+  <data name="TmNotionSlashMenu_CategoryPage"                   xml:space="preserve"><value>Stránky</value></data>
+  <data name="TmNotionSlashMenu_CategoryAdvanced"               xml:space="preserve"><value>Pokročilé bloky</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Paragraph"             xml:space="preserve"><value>Text</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading1"              xml:space="preserve"><value>Nadpis 1</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading2"              xml:space="preserve"><value>Nadpis 2</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Heading3"              xml:space="preserve"><value>Nadpis 3</value></data>
+  <data name="TmNotionSlashMenu_ItemName_BulletList"            xml:space="preserve"><value>Odrážkový seznam</value></data>
+  <data name="TmNotionSlashMenu_ItemName_NumberedList"          xml:space="preserve"><value>Číslovaný seznam</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TodoItem"              xml:space="preserve"><value>Seznam úkolů</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Toggle"                xml:space="preserve"><value>Rozbalovací seznam</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Quote"                 xml:space="preserve"><value>Citace</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Callout"               xml:space="preserve"><value>Výzva</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Divider"               xml:space="preserve"><value>Oddělovač</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Code"                  xml:space="preserve"><value>Kód</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Equation"              xml:space="preserve"><value>Matematický výraz</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Image"                 xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Video"                 xml:space="preserve"><value>Video</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Audio"                 xml:space="preserve"><value>Audio</value></data>
+  <data name="TmNotionSlashMenu_ItemName_File"                  xml:space="preserve"><value>Soubor</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Pdf"                   xml:space="preserve"><value>PDF</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Bookmark"              xml:space="preserve"><value>Záložka</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Embed"                 xml:space="preserve"><value>Vložení</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ChildPage"             xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmNotionSlashMenu_ItemName_LinkedPage"            xml:space="preserve"><value>Odkaz na stránku</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TableOfContents"       xml:space="preserve"><value>Obsah</value></data>
+  <data name="TmNotionSlashMenu_ItemName_TemplateButton"        xml:space="preserve"><value>Tlačítko šablony</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Diagram"               xml:space="preserve"><value>Diagram</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Wireframe"             xml:space="preserve"><value>Drátěný model</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Začněte psát prostý text</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Velký nadpis sekce</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Střední nadpis sekce</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Heading3"              xml:space="preserve"><value>Malý nadpis sekce</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_BulletList"            xml:space="preserve"><value>Vytvořte jednoduchý odrážkový seznam</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_NumberedList"          xml:space="preserve"><value>Vytvořte číslovaný seznam</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TodoItem"              xml:space="preserve"><value>Sledujte úkoly se seznamem</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Toggle"                xml:space="preserve"><value>Skryjte a zobrazte obsah uvnitř</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Quote"                 xml:space="preserve"><value>Zachyťte citát</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Callout"               xml:space="preserve"><value>Zvýrazněte svůj text</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Divider"               xml:space="preserve"><value>Vizuálně oddělte obsah</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Code"                  xml:space="preserve"><value>Zachyťte úryvek kódu</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Equation"              xml:space="preserve"><value>Zobrazte matematický výraz pomocí LaTeXu</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Image"                 xml:space="preserve"><value>Nahrát nebo vložit z odkazu</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Video"                 xml:space="preserve"><value>Vložení z YouTube, Vimeo…</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Audio"                 xml:space="preserve"><value>Vložte zvukový soubor</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_File"                  xml:space="preserve"><value>Nahrajte nebo odkažte na soubor</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Pdf"                   xml:space="preserve"><value>Vložte PDF soubor</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Bookmark"              xml:space="preserve"><value>Uložte odkaz jako záložku</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Embed"                 xml:space="preserve"><value>Vložte obsah z libovolné URL</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ChildPage"             xml:space="preserve"><value>Vložte podstránku do této stránky</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_LinkedPage"            xml:space="preserve"><value>Odkaz na existující stránku</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TableOfContents"       xml:space="preserve"><value>Zobrazí osnovu stránky</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Přidejte tlačítko pro vytváření šablon</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Vytvořte diagram nebo vývojový diagram</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Vytvořte drátěný model UI</value></data>
+
+  <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
+  <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Formátování textu</value></data>
+  <data name="TmNotionInlineToolbar_Bold"          xml:space="preserve"><value>Tučné</value></data>
+  <data name="TmNotionInlineToolbar_Italic"        xml:space="preserve"><value>Kurzíva</value></data>
+  <data name="TmNotionInlineToolbar_Underline"     xml:space="preserve"><value>Podtržené</value></data>
+  <data name="TmNotionInlineToolbar_Strikethrough" xml:space="preserve"><value>Přeškrtnuté</value></data>
+  <data name="TmNotionInlineToolbar_Code"          xml:space="preserve"><value>Inline kód</value></data>
+  <data name="TmNotionInlineToolbar_Link"          xml:space="preserve"><value>Odkaz</value></data>
+  <data name="TmNotionInlineToolbar_Color"         xml:space="preserve"><value>Barva</value></data>
+  <data name="TmNotionInlineToolbar_TurnInto"      xml:space="preserve"><value>Převést na</value></data>
+  <data name="TmNotionInlineToolbar_Align"         xml:space="preserve"><value>Zarovnání</value></data>
+  <data name="TmNotionInlineToolbar_AlignLeft"     xml:space="preserve"><value>Zarovnat doleva</value></data>
+  <data name="TmNotionInlineToolbar_AlignCenter"   xml:space="preserve"><value>Zarovnat na střed</value></data>
+  <data name="TmNotionInlineToolbar_AlignRight"    xml:space="preserve"><value>Zarovnat doprava</value></data>
+  <data name="TmNotionInlineToolbar_Comment"       xml:space="preserve"><value>Komentář</value></data>
+  <data name="TmNotionInlineToolbar_Math"          xml:space="preserve"><value>Inline rovnice</value></data>
+  <data name="TmNotionInlineToolbar_LinkPlaceholder" xml:space="preserve"><value>Vložte nebo zadejte odkaz…</value></data>
+  <data name="TmNotionInlineToolbar_LinkApply"     xml:space="preserve"><value>Použít</value></data>
+  <data name="TmNotionInlineToolbar_RemoveLink"    xml:space="preserve"><value>Odebrat odkaz</value></data>
+  <data name="TmNotionInlineToolbar_TextColor"     xml:space="preserve"><value>Barva textu</value></data>
+  <data name="TmNotionInlineToolbar_BgColor"       xml:space="preserve"><value>Barva pozadí</value></data>
+  <data name="TmNotionInlineToolbar_ColorDefault"  xml:space="preserve"><value>Výchozí</value></data>
+  <data name="TmNotionInlineToolbar_ColorGray"     xml:space="preserve"><value>Šedá</value></data>
+  <data name="TmNotionInlineToolbar_ColorBrown"    xml:space="preserve"><value>Hnědá</value></data>
+  <data name="TmNotionInlineToolbar_ColorOrange"   xml:space="preserve"><value>Oranžová</value></data>
+  <data name="TmNotionInlineToolbar_ColorYellow"   xml:space="preserve"><value>Žlutá</value></data>
+  <data name="TmNotionInlineToolbar_ColorGreen"    xml:space="preserve"><value>Zelená</value></data>
+  <data name="TmNotionInlineToolbar_ColorBlue"     xml:space="preserve"><value>Modrá</value></data>
+  <data name="TmNotionInlineToolbar_ColorPurple"   xml:space="preserve"><value>Fialová</value></data>
+  <data name="TmNotionInlineToolbar_ColorPink"     xml:space="preserve"><value>Růžová</value></data>
+  <data name="TmNotionInlineToolbar_ColorRed"      xml:space="preserve"><value>Červená</value></data>
+
+  <!-- ═══════════════ TMNOTIONCOLORPICKER ═══════════════ -->
+  <data name="TmNotionColorPicker_TextColor"  xml:space="preserve"><value>Barva textu</value></data>
+  <data name="TmNotionColorPicker_BgColor"    xml:space="preserve"><value>Pozadí</value></data>
+  <data name="TmNotionColorPicker_Default"    xml:space="preserve"><value>Výchozí</value></data>
+  <data name="TmNotionColorPicker_Gray"       xml:space="preserve"><value>Šedá</value></data>
+  <data name="TmNotionColorPicker_Brown"      xml:space="preserve"><value>Hnědá</value></data>
+  <data name="TmNotionColorPicker_Orange"     xml:space="preserve"><value>Oranžová</value></data>
+  <data name="TmNotionColorPicker_Yellow"     xml:space="preserve"><value>Žlutá</value></data>
+  <data name="TmNotionColorPicker_Green"      xml:space="preserve"><value>Zelená</value></data>
+  <data name="TmNotionColorPicker_Blue"       xml:space="preserve"><value>Modrá</value></data>
+  <data name="TmNotionColorPicker_Purple"     xml:space="preserve"><value>Fialová</value></data>
+  <data name="TmNotionColorPicker_Pink"       xml:space="preserve"><value>Růžová</value></data>
+  <data name="TmNotionColorPicker_Red"        xml:space="preserve"><value>Červená</value></data>
+  <data name="TmNotionColorPicker_GrayBg"     xml:space="preserve"><value>Šedé pozadí</value></data>
+  <data name="TmNotionColorPicker_BrownBg"    xml:space="preserve"><value>Hnědé pozadí</value></data>
+  <data name="TmNotionColorPicker_OrangeBg"   xml:space="preserve"><value>Oranžové pozadí</value></data>
+  <data name="TmNotionColorPicker_YellowBg"   xml:space="preserve"><value>Žluté pozadí</value></data>
+  <data name="TmNotionColorPicker_GreenBg"    xml:space="preserve"><value>Zelené pozadí</value></data>
+  <data name="TmNotionColorPicker_BlueBg"     xml:space="preserve"><value>Modré pozadí</value></data>
+  <data name="TmNotionColorPicker_PurpleBg"   xml:space="preserve"><value>Fialové pozadí</value></data>
+  <data name="TmNotionColorPicker_PinkBg"     xml:space="preserve"><value>Růžové pozadí</value></data>
+  <data name="TmNotionColorPicker_RedBg"      xml:space="preserve"><value>Červené pozadí</value></data>
+
+  <!-- ═══════════════ TMNOTIONEMOJIPICKER (UI) ═══════════════ -->
+  <data name="TmNotionEmojiPicker_SearchPlaceholder"    xml:space="preserve"><value>Hledat emoji…</value></data>
+  <data name="TmNotionEmojiPicker_NoResults"            xml:space="preserve"><value>Žádné emoji nenalezeno</value></data>
+  <data name="TmNotionEmojiPicker_RecentlyUsed"         xml:space="preserve"><value>Nedávno použité</value></data>
+  <data name="TmNotionEmojiPicker_Random"               xml:space="preserve"><value>Náhodné</value></data>
+  <data name="TmNotionEmojiPicker_CategorySmileys"      xml:space="preserve"><value>Smajlíci a emoce</value></data>
+  <data name="TmNotionEmojiPicker_CategoryPeople"       xml:space="preserve"><value>Lidé a tělo</value></data>
+  <data name="TmNotionEmojiPicker_CategoryAnimals"      xml:space="preserve"><value>Zvířata a příroda</value></data>
+  <data name="TmNotionEmojiPicker_CategoryFood"         xml:space="preserve"><value>Jídlo a pití</value></data>
+  <data name="TmNotionEmojiPicker_CategoryTravel"       xml:space="preserve"><value>Cestování a místa</value></data>
+  <data name="TmNotionEmojiPicker_CategoryActivities"   xml:space="preserve"><value>Aktivity</value></data>
+  <data name="TmNotionEmojiPicker_CategoryObjects"      xml:space="preserve"><value>Objekty</value></data>
+  <data name="TmNotionEmojiPicker_CategorySymbols"      xml:space="preserve"><value>Symboly</value></data>
+  <data name="TmNotionEmojiPicker_CategoryFlags"        xml:space="preserve"><value>Vlajky</value></data>
+
+  <!-- ═══════════════ TMNOTIONBLOCKTYPESWITCHER ═══════════════ -->
+  <data name="TmNotionBlockTypeSwitcher_BasicBlocks"  xml:space="preserve"><value>Základní bloky</value></data>
+  <data name="TmNotionBlockTypeSwitcher_Lists"        xml:space="preserve"><value>Seznamy</value></data>
+  <data name="TmNotionBlockTypeSwitcher_Blocks"       xml:space="preserve"><value>Bloky</value></data>
+
 </root>
