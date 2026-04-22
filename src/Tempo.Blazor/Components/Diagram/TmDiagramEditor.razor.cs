@@ -1935,6 +1935,34 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await OnDocumentChanged(_document);
     }
 
+    // When the user flips "Manual routing" to true on an orthogonal-like edge
+    // that has no explicit Waypoints yet (because it has always been
+    // auto-routed), seed Waypoints from the current auto-routed path so the
+    // hand-off is visually invisible. Without this, `IsManuallyRouted=true`
+    // combined with `Waypoints=[]` renders as a straight 2-point line (the
+    // router skips manual edges), which visibly "breaks" the edge at the
+    // moment the user intends to preserve its shape for manual tweaking.
+    private async Task HandleEdgeManualRoutingChanged((string EdgeId, bool Value) args)
+    {
+        if (_document is null || _canvas is null || ReadOnly) return;
+        if (!args.Value) return;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == args.EdgeId);
+        if (edge is null) return;
+        if (edge.Waypoints.Count > 0) return;
+        if (edge.Routing is not ("orthogonal" or "elbow" or "segment")) return;
+
+        // Temporarily clear the manual flag so `ComputeOrthogonalWaypointsAsync`
+        // does not short-circuit and return the (still-empty) current list.
+        edge.IsManuallyRouted = false;
+        var seeded = await _canvas.ComputeOrthogonalWaypointsAsync(edge);
+        edge.IsManuallyRouted = true;
+        if (seeded.Count > 0)
+        {
+            edge.Waypoints = seeded;
+            await OnDocumentChanged(_document);
+        }
+    }
+
     // ── Connect modal ────────────────────────────────────────────────────────
 
     private void OnConnectArrowClicked((string NodeId, string Direction) args)

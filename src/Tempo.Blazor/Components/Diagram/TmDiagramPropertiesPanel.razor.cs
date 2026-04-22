@@ -23,6 +23,11 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     [Parameter] public string? Class { get; set; }
     [Parameter] public EventCallback<DiagramDocument> DocumentChanged { get; set; }
     [Parameter] public EventCallback<(string EdgeId, string OldRouting, string NewRouting)> OnEdgeRoutingChanged { get; set; }
+    /// <summary>Raised when the "Manual routing" checkbox is toggled for an edge. The editor
+    /// listens so it can seed an empty Waypoints list from the auto-router when the user flips
+    /// to manual on an orthogonal-like edge — otherwise the edge would collapse to a straight
+    /// line at the moment of toggle.</summary>
+    [Parameter] public EventCallback<(string EdgeId, bool Value)> OnEdgeManualRoutingChanged { get; set; }
     [Parameter] public EventCallback<(string Algorithm, string Direction)> OnApplyLayout { get; set; }
     [Parameter] public EventCallback OnPageSizeChanged { get; set; }
     [Parameter] public List<(int Row, int Column)> SelectedTableCells { get; set; } = [];
@@ -684,6 +689,15 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     {
         if (Document is null || SelectedEdges.Count == 0) return;
         foreach (var edge in SelectedEdges) edge.IsManuallyRouted = value;
+        // Notify the editor first so it can seed Waypoints from the auto-router
+        // when transitioning orthogonal-like edges to manual (fixes the UX bug
+        // where an auto-routed orthogonal edge would visually collapse to a
+        // straight 2-point line the moment the user ticked "Manual routing").
+        if (OnEdgeManualRoutingChanged.HasDelegate)
+        {
+            foreach (var edge in SelectedEdges)
+                await OnEdgeManualRoutingChanged.InvokeAsync((edge.Id, value));
+        }
         await DocumentChanged.InvokeAsync(Document);
     }
 

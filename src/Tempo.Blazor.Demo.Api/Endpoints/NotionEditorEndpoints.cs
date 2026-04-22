@@ -114,17 +114,13 @@ public static class NotionEditorEndpoints
             }
         });
 
-        blockGroup.MapPut("/{blockId}", (string blockId, UpdateBlockRequest request, MockNotionBlockStore store) =>
+        blockGroup.MapPut("/{blockId}", async (string blockId, PageBlock request, MockNotionBlockStore store) =>
         {
-            try
-            {
-                // This is a simplified implementation - in real app you'd fetch and update
-                return Results.Ok();
-            }
-            catch
-            {
-                return Results.NotFound();
-            }
+            if (!Guid.TryParse(blockId, out var id))
+                return Results.BadRequest("Invalid block id");
+            request.Id = id;
+            await store.UpdateBlockAsync(request);
+            return Results.Ok(request);
         });
 
         blockGroup.MapDelete("/{blockId}", (string blockId, MockNotionBlockStore store) =>
@@ -157,5 +153,4 @@ public static class NotionEditorEndpoints
 public record CreatePageRequest(string Title, string? ParentId = null);
 public record UpdatePageRequest(string? Title, string? Description, string? IconEmoji);
 public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
-public record UpdateBlockRequest(string Content);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);

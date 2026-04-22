@@ -199,12 +199,54 @@ public class DiagramEdgeE2ETests : WasmTestBase
         }
 
         await manualCheckbox.ClickAsync();
-        await page.WaitForTimeoutAsync(300);
+        await page.WaitForTimeoutAsync(600); // give async HandleEdgeManualRoutingChanged time to seed waypoints
 
-        // After toggle, the edge should have been marked manually routed
-        // We verify by checking that edge path still exists (no crash)
-        var edgePath = page.Locator(".tm-diagram-edge-path").First;
-        Assert.IsTrue(await edgePath.IsVisibleAsync(), "Edge should remain visible after toggling manual routing");
+        // After toggle, the edge should still be drawn: non-empty `d` attribute
+        // AND non-zero SVG bounding box. `IsVisibleAsync` proved flaky in CI
+        // because Blazor re-renders detach/attach the SVG node; we use a JS
+        // probe so a diagnostic message is attached to any failure.
+        var diag = await page.EvaluateAsync<string>("""
+            () => {
+                const paths = Array.from(document.querySelectorAll('.tm-diagram-edge-path'));
+                const out = paths.map(p => {
+                    let bb = null;
+                    try { bb = p.getBBox(); } catch { bb = null; }
+                    const cs = getComputedStyle(p);
+                    const parentG = p.closest('.tm-diagram-edge-group');
+                    const parentOpacity = parentG ? getComputedStyle(parentG).opacity : null;
+                    return {
+                        d: p.getAttribute('d'),
+                        bboxW: bb ? bb.width : null,
+                        bboxH: bb ? bb.height : null,
+                        visibility: cs.visibility,
+                        display: cs.display,
+                        opacity: cs.opacity,
+                        parentOpacity,
+                        cls: p.getAttribute('class')
+                    };
+                });
+                return JSON.stringify({ count: paths.length, paths: out });
+            }
+        """);
+        Assert.IsNotNull(diag);
+        using var diagDoc = JsonDocument.Parse(diag);
+        var count = diagDoc.RootElement.GetProperty("count").GetInt32();
+        bool anyVisible = false;
+        foreach (var p in diagDoc.RootElement.GetProperty("paths").EnumerateArray())
+        {
+            var d = p.GetProperty("d").GetString();
+            var w = p.GetProperty("bboxW").ValueKind == JsonValueKind.Number ? p.GetProperty("bboxW").GetDouble() : 0;
+            var h = p.GetProperty("bboxH").ValueKind == JsonValueKind.Number ? p.GetProperty("bboxH").GetDouble() : 0;
+            var vis = p.GetProperty("visibility").GetString();
+            var disp = p.GetProperty("display").GetString();
+            if (!string.IsNullOrEmpty(d) && (w > 0 || h > 0) && vis != "hidden" && disp != "none")
+            {
+                anyVisible = true;
+                break;
+            }
+        }
+        Assert.IsTrue(anyVisible,
+            $"Edge should remain visible after toggling manual routing. Diagnostics: {diag}");
 
         await TakeScreenshotAsync(page, "phase1_manual_routing");
     }

@@ -113,6 +113,8 @@ public partial class TmNotionNumberedListBlock : ComponentBase, IAsyncDisposable
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
                 await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
+                if (IsFocused)
+                    await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef);
             }
             catch { }
         }
