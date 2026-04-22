@@ -1766,42 +1766,61 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         // Edge drawing is handled in JS; this is a hook for future extensions
     }
 
-    private async Task OnEdgeCreated((string SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY) args)
+    private async Task OnEdgeCreated((string? SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY, double? SourcePointX, double? SourcePointY) args)
     {
         if (_document is null || ReadOnly) return;
 
-        var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == args.SourceNodeId);
-        if (sourceNode is null) return;
+        var edge = new DiagramEdge();
 
-        string? sourcePortId = args.SourcePortId;
-        if (sourcePortId is null && !string.IsNullOrEmpty(args.SourceSide))
+        // ── Source terminal ──────────────────────────────────────────────────
+        // Either attached to a node (with optional port / constraint / side) or
+        // floating at an absolute document point. Constraint takes priority
+        // over port when both were supplied by the JS layer.
+        bool floatingSource;
+        if (!string.IsNullOrEmpty(args.SourceNodeId))
         {
-            var side = Enum.Parse<PortSide>(args.SourceSide, true);
-            var port = sourceNode.Ports.FirstOrDefault(p => p.Side == side);
-            if (port is null)
+            var sourceNode = _document.Nodes.FirstOrDefault(n => n.Id == args.SourceNodeId);
+            if (sourceNode is null) return;
+
+            string? sourcePortId = args.SourcePortId;
+            if (sourcePortId is null && !string.IsNullOrEmpty(args.SourceSide))
             {
-                port = new DiagramPort { Side = side, Offset = args.SourceOffset, IsInput = false, IsOutput = true };
-                sourceNode.Ports.Add(port);
+                var side = Enum.Parse<PortSide>(args.SourceSide, true);
+                var port = sourceNode.Ports.FirstOrDefault(p => p.Side == side);
+                if (port is null)
+                {
+                    port = new DiagramPort { Side = side, Offset = args.SourceOffset, IsInput = false, IsOutput = true };
+                    sourceNode.Ports.Add(port);
+                }
+                sourcePortId = port.Id;
             }
-            sourcePortId = port.Id;
-        }
 
-        var edge = new DiagramEdge
-        {
-            SourceNodeId = args.SourceNodeId,
-            SourcePortId = sourcePortId,
-        };
+            edge.SourceNodeId = args.SourceNodeId;
+            edge.SourcePortId = sourcePortId;
 
-        // Fixed connection point (constraint) takes priority over port
-        if (args.SourceConstraintRx is not null && args.SourceConstraintRy is not null)
-        {
-            edge.SourceConstraint = new DiagramConnectionConstraint
+            if (args.SourceConstraintRx is not null && args.SourceConstraintRy is not null)
             {
-                RelativeX = args.SourceConstraintRx.Value,
-                RelativeY = args.SourceConstraintRy.Value,
-                Perimeter = args.SourceConstraintPerimeter ?? true
-            };
+                edge.SourceConstraint = new DiagramConnectionConstraint
+                {
+                    RelativeX = args.SourceConstraintRx.Value,
+                    RelativeY = args.SourceConstraintRy.Value,
+                    Perimeter = args.SourceConstraintPerimeter ?? true
+                };
+                edge.SourcePortId = null;
+            }
+            floatingSource = false;
+        }
+        else if (args.SourcePointX is not null && args.SourcePointY is not null)
+        {
+            edge.SourceNodeId = null;
             edge.SourcePortId = null;
+            edge.SourceConstraint = null;
+            edge.SourcePoint = new DiagramPoint(args.SourcePointX.Value, args.SourcePointY.Value);
+            floatingSource = true;
+        }
+        else
+        {
+            return; // No valid source
         }
 
         if (!string.IsNullOrEmpty(args.TargetEdgeId))
@@ -1849,6 +1868,19 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         else
         {
             return; // No valid target
+        }
+
+        // Routing matrix: a straight line feels most natural when neither end
+        // is anchored to a node (there is no perimeter to route around). All
+        // other combinations keep the default orthogonal routing coming from
+        // `new DiagramEdge()`.
+        bool floatingTarget =
+            string.IsNullOrEmpty(args.TargetNodeId)
+            && string.IsNullOrEmpty(args.TargetEdgeId)
+            && args.TargetPointX is not null && args.TargetPointY is not null;
+        if (floatingSource && floatingTarget)
+        {
+            edge.Routing = "straight";
         }
 
         ActiveCommandStack.Push(new AddEdgeCommand(_document, edge));

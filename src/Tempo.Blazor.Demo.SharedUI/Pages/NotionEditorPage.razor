@@ -1,0 +1,186 @@
+@page "/notion-editor"
+@using Tempo.Blazor.Components.NotionEditor
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Demo.Services
+@using System.Net.Http.Json
+@inject IHttpClientFactory HttpClientFactory
+@inject ITmLocalizer Loc
+@inject DemoNotionDataProvider DataProvider
+@inject DemoNotionBlockProvider BlockProvider
+
+<PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Notion Editor</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Block-based editor inspired by Notion with full keyboard support, collaborative features, and extensible block types.
+    </p>
+</div>
+
+<!-- ═══ Interactive editor ═══════════════════════════════════════════════════ -->
+<section class="demo-section mb-6">
+    <div class="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <div>
+            <h2 class="text-xl font-semibold text-slate-800 dark:text-slate-200">Interactive Editor</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">
+                Block-based document editor with keyboard shortcuts, drag & drop, and formatting toolbar.
+            </p>
+        </div>
+        <div class="flex flex-wrap items-center gap-2">
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="RefreshData">
+                Refresh
+            </button>
+            <span class="px-3 py-1.5 text-sm text-slate-500 dark:text-slate-400">
+                Page: <strong>@(_currentPage?.Title ?? "Loading...")</strong>
+            </span>
+        </div>
+    </div>
+
+    @if (!string.IsNullOrEmpty(_statusMessage))
+    {
+        <div class="mb-3 px-4 py-2 rounded text-sm @(_statusIsError ? "bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-200" : "bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-200")">
+            @_statusMessage
+        </div>
+    }
+
+    @if (_isLoading)
+    {
+        <div class="flex items-center justify-center h-64 text-slate-500 dark:text-slate-400">
+            <p>Loading editor...</p>
+        </div>
+    }
+    else if (_currentPage != null)
+    {
+        <div style="height: 500px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: auto; background: white;">
+            <TmNotionEditor DataProvider="@DataProvider"
+                            BlockProvider="@BlockProvider"
+                            InitialPageId="@_currentPage.Id.ToString()"
+                            ShowSidebar="true"
+                            Class="h-full" />
+        </div>
+
+        <div class="mt-3 flex gap-4 text-sm text-slate-500 dark:text-slate-400">
+            <span>Page ID: <strong class="text-slate-700 dark:text-slate-300">@_currentPage.Id</strong></span>
+            <span>Title: <strong class="text-slate-700 dark:text-slate-300">@_currentPage.Title</strong></span>
+            <span>Last Updated: <strong class="text-slate-700 dark:text-slate-300">@_currentPage.LastEditedAt:g</strong></span>
+        </div>
+    }
+</section>
+
+<!-- ═══ Features checklist ════════════════════════════════════════════════════ -->
+<section class="demo-section">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 1 Features</h3>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3">Core Editing</h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Editor renders blocks from API</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Text editing in all blocks</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Enter creates new block</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Backspace on empty deletes</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Block reordering (drag & drop)</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3">Advanced Features</h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Slash menu (type /)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Inline toolbar on text selection</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Bold & Italic formatting</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Markdown shortcuts</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400">✓</span>
+                    <span>Undo/Redo (Ctrl+Z/Y)</span>
+                </li>
+            </ul>
+        </div>
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800">
+        <p class="text-sm text-blue-900 dark:text-blue-100">
+            <strong>Keyboard Shortcuts:</strong>
+            / = slash menu | Enter = new block | Backspace = delete on empty | Ctrl+Z = undo | Ctrl+Y = redo
+        </p>
+    </div>
+</section>
+
+@code {
+    private INotionPage? _currentPage;
+    private string _statusMessage = "";
+    private bool _statusIsError = false;
+    private bool _isLoading = true;
+
+    protected override async Task OnInitializedAsync()
+    {
+        await LoadEditorDataAsync();
+    }
+
+    private async Task LoadEditorDataAsync()
+    {
+        try
+        {
+            _isLoading = true;
+            _statusMessage = "";
+
+            var httpClient = HttpClientFactory.CreateClient("DemoApi");
+
+            // Get all pages to find the first one
+            var pages = await httpClient.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages");
+            if (pages?.Count > 0)
+            {
+                _currentPage = pages[0];
+                _statusMessage = "Editor loaded successfully";
+            }
+            else
+            {
+                _statusMessage = "No pages found";
+                _statusIsError = true;
+            }
+        }
+        catch (Exception ex)
+        {
+            _statusMessage = $"Error: {ex.Message}";
+            _statusIsError = true;
+        }
+        finally
+        {
+            _isLoading = false;
+        }
+    }
+
+    private async Task RefreshData()
+    {
+        await LoadEditorDataAsync();
+    }
+}

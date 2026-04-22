@@ -1239,7 +1239,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     [Parameter] public EventCallback<(string StencilId, double X, double Y)> OnToolboxDrop { get; set; }
 
-    [Parameter] public EventCallback<(string SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY)> OnEdgeCreated { get; set; }
+    [Parameter] public EventCallback<(string? SourceNodeId, string? SourcePortId, string? TargetNodeId, string? TargetPortId, string? SourceSide, double SourceOffset, string? TargetSide, double TargetOffset, string? TargetEdgeId, double TargetEdgeT, double? SourceConstraintRx, double? SourceConstraintRy, bool? SourceConstraintPerimeter, double? TargetConstraintRx, double? TargetConstraintRy, bool? TargetConstraintPerimeter, double? TargetPointX, double? TargetPointY, double? SourcePointX, double? SourcePointY)> OnEdgeCreated { get; set; }
 
     // ── Port interactions ────────────────────────────────────────────────────
 
@@ -1270,18 +1270,20 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 
     [JSInvokable]
     public async Task JsOnEdgeCreated(
-        string sourceNodeId, string? sourcePortId, string? targetNodeId, string? targetPortId,
+        string? sourceNodeId, string? sourcePortId, string? targetNodeId, string? targetPortId,
         string? sourceSide = null, double sourceOffset = 0.5, string? targetSide = null, double targetOffset = 0.5,
         string? targetEdgeId = null, double targetEdgeT = 0.5,
         double? sourceConstraintRx = null, double? sourceConstraintRy = null, bool? sourceConstraintPerimeter = null,
         double? targetConstraintRx = null, double? targetConstraintRy = null, bool? targetConstraintPerimeter = null,
-        double? targetPointX = null, double? targetPointY = null)
+        double? targetPointX = null, double? targetPointY = null,
+        double? sourcePointX = null, double? sourcePointY = null)
     {
         if (ReadOnly || Document is null) return;
         await OnEdgeCreated.InvokeAsync((sourceNodeId, sourcePortId, targetNodeId, targetPortId, sourceSide, sourceOffset, targetSide, targetOffset, targetEdgeId, targetEdgeT,
             sourceConstraintRx, sourceConstraintRy, sourceConstraintPerimeter,
             targetConstraintRx, targetConstraintRy, targetConstraintPerimeter,
-            targetPointX, targetPointY));
+            targetPointX, targetPointY,
+            sourcePointX, sourcePointY));
     }
 
     // ── Edge interactions ────────────────────────────────────────────────────

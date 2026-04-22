@@ -108,10 +108,16 @@ window.tmDiagramEditor = {
             // scale tracker
             scale: 1.0,
 
-            // edge drawing
-            isDrawingEdge: false,
-            drawSource: null,
-            drawTempPath: null,
+                // edge drawing
+                isDrawingEdge: false,
+                drawSource: null,
+                drawTempPath: null,
+
+                // pending free-line draw (empty canvas mousedown in edge mode
+                // that has not yet escalated to an active drag). Cleared on
+                // escalation, mouseup, ESC, or right-click.
+                isPendingEdgeDraw: false,
+                pendingEdgeStart: null,
 
             // jetty drag
             isDraggingJetty: false,
@@ -562,6 +568,13 @@ window.tmDiagramEditor = {
         const isRightClick = e.button === 2;
         if (e.button !== 0 && !isRightClick) return;
 
+        // Any right-click aborts a pending free-line draw (mirrors the
+        // classic "right-click to cancel drawing" UX from draw.io / Visio).
+        if (isRightClick && inst.isPendingEdgeDraw) {
+            inst.isPendingEdgeDraw = false;
+            inst.pendingEdgeStart = null;
+        }
+
         // Right-click on edge or label -> select edge
         if (isRightClick) {
             const edgeEl = this._findHitPath(e);
@@ -893,8 +906,24 @@ window.tmDiagramEditor = {
             return;
         }
 
-        // Edge tool: cancel on empty canvas click
+        // Edge tool on empty canvas: start a *pending* free-line draw. The
+        // actual `_startEdgeDraw` is deferred until the pointer moves past
+        // DRAG_ESCALATE_PX (see _onMouseMove) so a simple click on empty
+        // canvas still behaves as "cancel / back to select" like before.
+        if (inst.toolMode === 'edge' && !isRightClick) {
+            e.preventDefault();
+            const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
+            inst.isPendingEdgeDraw = true;
+            inst.pendingEdgeStart = {
+                clientX: e.clientX,
+                clientY: e.clientY,
+                docX: docPt.x,
+                docY: docPt.y
+            };
+            return;
+        }
         if (inst.toolMode === 'edge') {
+            // Right-click in edge mode: revert to select.
             inst.toolMode = 'select';
             inst.container.style.cursor = '';
             if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
@@ -940,6 +969,26 @@ window.tmDiagramEditor = {
                 this._beginNodeDragFromCell(inst, p.nodeId, p.startScreenX, p.startScreenY);
                 // fall through so the current delta is also applied this frame
             } else {
+                return;
+            }
+        }
+
+        // Escalate a pending free-line draw into an actual edge draw once the
+        // pointer has moved past DRAG_ESCALATE_PX. This keeps a plain click
+        // on empty canvas (no movement) as a no-op (and mouseup will then
+        // revert to select mode).
+        if (inst.isPendingEdgeDraw && inst.pendingEdgeStart) {
+            const p = inst.pendingEdgeStart;
+            const dx = Math.abs(e.clientX - p.clientX);
+            const dy = Math.abs(e.clientY - p.clientY);
+            const DRAG_ESCALATE_PX = 4;
+            if (dx > DRAG_ESCALATE_PX || dy > DRAG_ESCALATE_PX) {
+                inst.isPendingEdgeDraw = false;
+                inst.pendingEdgeStart = null;
+                // Start the draw anchored at the original mousedown point so
+                // the temp path does not visually "jump" from the cursor.
+                this._startEdgeDraw(inst, null, null, p.clientX, p.clientY);
+                this._updateEdgeDraw(inst, e.clientX, e.clientY);
                 return;
             }
         }
@@ -1283,6 +1332,19 @@ window.tmDiagramEditor = {
     // ── Mouse up ─────────────────────────────────────────────────────────────
 
     _onMouseUp: function (e, inst) {
+        // Pending free-line draw that never escalated (user just clicked on
+        // empty canvas in edge mode). Preserve the old UX: revert to select.
+        if (inst.isPendingEdgeDraw) {
+            inst.isPendingEdgeDraw = false;
+            inst.pendingEdgeStart = null;
+            if (inst.toolMode === 'edge') {
+                inst.toolMode = 'select';
+                inst.container.style.cursor = '';
+                if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+            }
+            return;
+        }
+
         // Pending table-cell click that never escalated into a drag → fire the
         // cell sub-select up to Blazor. Ctrl held = multi-select toggle.
         if (inst.pendingTableCellClick) {
@@ -1295,6 +1357,13 @@ window.tmDiagramEditor = {
         }
 
         if (inst.isDrawingEdge) {
+            // When the source is floating (free-line from empty canvas) pass
+            // the doc-space source point so the backend can create an edge
+            // with SourcePoint instead of a source node/port.
+            const floatingSource = !inst.drawSource.nodeId;
+            const srcPtX = floatingSource ? inst.drawSource.x : null;
+            const srcPtY = floatingSource ? inst.drawSource.y : null;
+
             // Edge-to-edge connection takes priority
             if (inst.drawHoverEdgeId && inst.drawHoverEdgeT !== null) {
                 inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
@@ -1304,7 +1373,8 @@ window.tmDiagramEditor = {
                     inst.drawHoverEdgeId, inst.drawHoverEdgeT,
                     inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                     null, null, null,
-                    null, null);
+                    null, null,
+                    srcPtX, srcPtY);
                 this._cancelEdgeDraw(inst);
                 return;
             }
@@ -1325,7 +1395,8 @@ window.tmDiagramEditor = {
                         null, 0.5,
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                         null, null, null,
-                        null, null);
+                        null, null,
+                        srcPtX, srcPtY);
                     this._cancelEdgeDraw(inst);
                     return;
                 }
@@ -1346,7 +1417,8 @@ window.tmDiagramEditor = {
                         null, 0.5,
                         inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                         targetRx, targetRy, targetPerimeter,
-                        null, null);
+                        null, null,
+                        srcPtX, srcPtY);
                     this._cancelEdgeDraw(inst);
                     return;
                 }
@@ -1361,7 +1433,8 @@ window.tmDiagramEditor = {
                 null, 0.5,
                 inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                 null, null, null,
-                docPt.x, docPt.y);
+                docPt.x, docPt.y,
+                srcPtX, srcPtY);
             this._cancelEdgeDraw(inst);
             return;
         }
@@ -2202,6 +2275,16 @@ window.tmDiagramEditor = {
 
         if (e.key === 'Escape') {
             e.preventDefault();
+            if (inst.isPendingEdgeDraw) {
+                inst.isPendingEdgeDraw = false;
+                inst.pendingEdgeStart = null;
+                if (inst.toolMode === 'edge') {
+                    inst.toolMode = 'select';
+                    inst.container.style.cursor = '';
+                    if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
+                }
+                return;
+            }
             if (inst.isDrawingEdge) {
                 this._cancelEdgeDraw(inst);
                 return;

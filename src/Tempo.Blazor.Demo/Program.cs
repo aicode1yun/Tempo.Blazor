@@ -24,6 +24,8 @@ builder.Services.AddScoped<ActivityHttpService>();
 builder.Services.AddScoped<AttachmentHttpProvider>();
 builder.Services.AddScoped<ImageHttpGalleryProvider>();
 builder.Services.AddScoped<ViewHttpProvider>();
+builder.Services.AddScoped<DemoNotionDataProvider>();
+builder.Services.AddScoped<DemoNotionBlockProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();

@@ -32,6 +32,8 @@ builder.Services.AddSingleton<MockDropdownStore>();
 builder.Services.AddSingleton<MockScheduleStore>();
 builder.Services.AddSingleton<MockTokenStore>();
 builder.Services.AddSingleton<MockWireframeStore>();
+builder.Services.AddSingleton<MockNotionDataStore>();
+builder.Services.AddSingleton<MockNotionBlockStore>();
 builder.Services.AddSingleton<IDiagramExportService, DemoDiagramExportService>();
 builder.Services.AddScoped<DemoDiagramHistoryStore>();
 builder.Services.AddScoped<IDiagramHistoryStore>(sp => sp.GetRequiredService<DemoDiagramHistoryStore>());
@@ -53,6 +55,7 @@ app.MapTokenEndpoints();
 app.MapWireframeEndpoints();
 app.MapDiagramExportEndpoints();
 app.MapDiagramHistoryEndpoints();
+app.MapNotionEditorEndpoints();
 
 using (var scope = app.Services.CreateScope())
 {
