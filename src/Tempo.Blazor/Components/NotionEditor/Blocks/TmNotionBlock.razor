@@ -6,6 +6,8 @@
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Text
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Lists
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Embed
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Layout
 
 <div class="tm-notion-block @_blockMods"
      data-notion-block
@@ -308,48 +310,12 @@
             case BlockType.Bookmark:
             {
                 var c = Block.Content as IBookmarkBlockContent;
-                if (!string.IsNullOrEmpty(c?.Url))
-                {
-                    <a class="tm-notion-bookmark" href="@c.Url" target="_blank" rel="noopener noreferrer">
-                        <div class="tm-notion-bookmark__body">
-                            @if (!string.IsNullOrEmpty(c.Title))
-                            {
-                                <div class="tm-notion-bookmark__title">@c.Title</div>
-                            }
-                            @if (!string.IsNullOrEmpty(c.Description))
-                            {
-                                <div class="tm-notion-bookmark__description">@c.Description</div>
-                            }
-                            <div class="tm-notion-bookmark__url">
-                                @if (!string.IsNullOrEmpty(c.FaviconUrl))
-                                {
-                                    <img src="@c.FaviconUrl" width="16" height="16" alt="" aria-hidden="true" />
-                                }
-                                <span>@(c.Domain ?? c.Url)</span>
-                            </div>
-                        </div>
-                        @if (!string.IsNullOrEmpty(c.CoverImageUrl))
-                        {
-                            <div class="tm-notion-bookmark__cover"
-                                 style="background-image:url('@c.CoverImageUrl')">
-                            </div>
-                        }
-                    </a>
-                }
-                else
-                {
-                    <div class="tm-notion-media-empty">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <path d="M10 13a5 5 0 007.54.54l3-3a5 5 0 00-7.07-7.07l-1.72 1.71"
-                                  stroke="currentColor" stroke-width="1.5"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                            <path d="M14 11a5 5 0 00-7.54-.54l-3 3a5 5 0 007.07 7.07l1.71-1.71"
-                                  stroke="currentColor" stroke-width="1.5"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span>@Loc["TmNotionBlock_MediaUrlPlaceholder"]</span>
-                    </div>
-                }
+                <TmNotionBookmarkBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       BookmarkProvider="Context.BookmarkProvider"
+                                       OnResolved="HandleBookmarkResolvedAsync"
+                                       OnCaptionSaved="HandleBookmarkCaptionSavedAsync"
+                                       OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -357,27 +323,12 @@
             case BlockType.Embed:
             {
                 var c = Block.Content as IEmbedBlockContent;
-                if (!string.IsNullOrEmpty(c?.Url))
-                {
-                    <div class="tm-notion-embed"
-                         style="@(c.Height.HasValue ? $"height:{c.Height}px" : string.Empty)">
-                        <iframe src="@c.Url"
-                                class="tm-notion-embed__frame"
-                                allowfullscreen
-                                sandbox="allow-scripts allow-same-origin allow-forms allow-presentation">
-                        </iframe>
-                    </div>
-                }
-                else
-                {
-                    <div class="tm-notion-media-empty">
-                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                            <rect x="2" y="3" width="20" height="14" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                            <path d="M8 21h8M12 17v4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                        </svg>
-                        <span>@Loc["TmNotionBlock_MediaUrlPlaceholder"]</span>
-                    </div>
-                }
+                <TmNotionEmbedBlock Content="c"
+                                    ReadOnly="ReadOnly"
+                                    OnUrlSet="HandleEmbedUrlSetAsync"
+                                    OnResized="HandleEmbedResizedAsync"
+                                    OnCaptionSaved="HandleEmbedCaptionSavedAsync"
+                                    OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -419,6 +370,30 @@
                         @(string.IsNullOrEmpty(c?.Title) ? Loc["TmNotionEditor_Untitled"] : c.Title)
                     </span>
                 </div>
+                break;
+            }
+
+            // ── Column list ───────────────────────────────────────────────────
+            case BlockType.ColumnList:
+            {
+                var c = Block.Content as IColumnListBlockContent;
+                <TmNotionColumnListBlock Block="Block"
+                                        Content="c"
+                                        ReadOnly="ReadOnly"
+                                        OnUpdated="OnUpdated"
+                                        OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Column (standalone fallback — normally inside ColumnList) ─────
+            case BlockType.Column:
+            {
+                var c = Block.Content as IColumnBlockContent;
+                <TmNotionColumnBlock Block="Block"
+                                     ColumnIndex="c?.ColumnIndex ?? 0"
+                                     WidthPercent="100"
+                                     ReadOnly="ReadOnly"
+                                     OnFocused="OnFocusedAsync" />
                 break;
             }
 

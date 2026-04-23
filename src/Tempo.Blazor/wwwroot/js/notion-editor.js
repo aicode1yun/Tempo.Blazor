@@ -17,10 +17,11 @@ window.tmNotionEditor = (function () {
     'use strict';
 
     // ── Internal registries ────────────────────────────────────────────────────
-    const _blocks         = new WeakMap(); // element → { dotNetRef, listeners: [] }
-    const _dragContainers = new WeakMap();
-    const _resizeHandles  = new WeakMap();
-    const _scrollSpies    = new WeakMap();
+    const _blocks          = new WeakMap(); // element → { dotNetRef, listeners: [] }
+    const _dragContainers  = new WeakMap();
+    const _resizeHandles   = new WeakMap();
+    const _scrollSpies     = new WeakMap();
+    const _columnResizers  = new WeakMap();
 
     // ── Slash menu state ───────────────────────────────────────────────────────
     let _slashElement    = null; // contenteditable that triggered the slash menu
@@ -623,6 +624,80 @@ window.tmNotionEditor = (function () {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // 54.1 — Column resize
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function initColumnResize(containerElement, dotNetRef) {
+        if (!containerElement) return;
+        destroyColumnResize(containerElement);
+
+        const cleanups = [];
+
+        const attachDivider = (divider) => {
+            const idx = parseInt(divider.dataset.colDivider, 10);
+
+            const onDown = (e) => {
+                e.preventDefault();
+
+                const cols     = Array.from(containerElement.querySelectorAll('[data-col-index]'))
+                    .sort((a, b) => parseInt(a.dataset.colIndex) - parseInt(b.dataset.colIndex));
+                const leftCol  = cols[idx];
+                const rightCol = cols[idx + 1];
+                if (!leftCol || !rightCol) return;
+
+                const startX     = e.clientX;
+                const totalW     = containerElement.offsetWidth;
+                const leftStart  = leftCol.offsetWidth;
+                const rightStart = rightCol.offsetWidth;
+                const minW       = Math.max(80, totalW * 0.1);
+
+                document.body.style.cursor     = 'col-resize';
+                document.body.style.userSelect = 'none';
+                divider.classList.add('tm-notion-column-list__divider--active');
+
+                const onMove = (e2) => {
+                    const delta    = e2.clientX - startX;
+                    const newLeft  = Math.max(minW, Math.min(leftStart + delta, leftStart + rightStart - minW));
+                    const newRight = (leftStart + rightStart) - newLeft;
+                    leftCol.style.flexBasis  = (newLeft  / totalW * 100).toFixed(2) + '%';
+                    rightCol.style.flexBasis = (newRight / totalW * 100).toFixed(2) + '%';
+                };
+
+                const onUp = () => {
+                    document.body.style.cursor     = '';
+                    document.body.style.userSelect = '';
+                    divider.classList.remove('tm-notion-column-list__divider--active');
+                    document.removeEventListener('mousemove', onMove);
+                    document.removeEventListener('mouseup',   onUp);
+
+                    const allCols   = Array.from(containerElement.querySelectorAll('[data-col-index]'))
+                        .sort((a, b) => parseInt(a.dataset.colIndex) - parseInt(b.dataset.colIndex));
+                    const totalWidth = containerElement.offsetWidth;
+                    const widths     = allCols.map(c => parseFloat((c.offsetWidth / totalWidth * 100).toFixed(2)));
+
+                    dotNetRef.invokeMethodAsync('OnColumnResized', widths).catch(console.error);
+                };
+
+                document.addEventListener('mousemove', onMove);
+                document.addEventListener('mouseup',   onUp);
+            };
+
+            divider.addEventListener('mousedown', onDown);
+            cleanups.push(() => divider.removeEventListener('mousedown', onDown));
+        };
+
+        containerElement.querySelectorAll('[data-col-divider]').forEach(attachDivider);
+
+        _columnResizers.set(containerElement, { cleanup() { cleanups.forEach(fn => fn()); } });
+    }
+
+    function destroyColumnResize(containerElement) {
+        if (!containerElement || !_columnResizers.has(containerElement)) return;
+        _columnResizers.get(containerElement).cleanup();
+        _columnResizers.delete(containerElement);
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // 26.9 — Scroll & navigation
     // ═══════════════════════════════════════════════════════════════════════════
 
@@ -1122,6 +1197,8 @@ window.tmNotionEditor = (function () {
         handlePaste, copyBlocksToClipboard,
         // 26.8
         initResizeHandle, destroyResizeHandle,
+        // 54.1
+        initColumnResize, destroyColumnResize,
         // 26.9
         scrollToBlock, initSmoothScrollSpy, destroyScrollSpy,
         // 30.1

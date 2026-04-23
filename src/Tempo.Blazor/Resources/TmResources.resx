@@ -1302,4 +1302,25 @@
   <data name="TmNotionBlockTypeSwitcher_Lists"        xml:space="preserve"><value>Lists</value></data>
   <data name="TmNotionBlockTypeSwitcher_Blocks"       xml:space="preserve"><value>Blocks</value></data>
 
+  <!-- Phase 54: Column Layout -->
+  <data name="TmNotionColumnListBlock_DragToResize" xml:space="preserve"><value>Drag to resize columns</value></data>
+  <data name="TmNotionColumnListBlock_AddColumn"    xml:space="preserve"><value>Add column</value></data>
+
+  <!-- Phase 53: Bookmark Block -->
+  <data name="TmNotionBookmarkBlock_UrlPlaceholder"   xml:space="preserve"><value>Paste a link to create a bookmark…</value></data>
+  <data name="TmNotionBookmarkBlock_Confirm"          xml:space="preserve"><value>Create bookmark</value></data>
+  <data name="TmNotionBookmarkBlock_Resolving"        xml:space="preserve"><value>Resolving…</value></data>
+  <data name="TmNotionBookmarkBlock_CaptionPlaceholder" xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionBookmarkBlock_ErrorInvalidUrl"  xml:space="preserve"><value>Please enter a valid URL.</value></data>
+  <data name="TmNotionBookmarkBlock_ErrorResolve"     xml:space="preserve"><value>Could not load bookmark preview. Check the URL and try again.</value></data>
+
+  <!-- Phase 53: Embed Block -->
+  <data name="TmNotionEmbedBlock_UrlPlaceholder"      xml:space="preserve"><value>Paste an embed link (Figma, Miro, CodePen…)</value></data>
+  <data name="TmNotionEmbedBlock_Confirm"             xml:space="preserve"><value>Embed</value></data>
+  <data name="TmNotionEmbedBlock_CaptionPlaceholder"  xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionEmbedBlock_Replace"             xml:space="preserve"><value>Replace</value></data>
+  <data name="TmNotionEmbedBlock_OpenSource"          xml:space="preserve"><value>Open source</value></data>
+  <data name="TmNotionEmbedBlock_ErrorInvalidUrl"     xml:space="preserve"><value>Please enter a valid URL.</value></data>
+  <data name="TmNotionEmbedBlock_ErrorGeneric"        xml:space="preserve"><value>Could not embed this URL. Check the link and try again.</value></data>
+
 </root>

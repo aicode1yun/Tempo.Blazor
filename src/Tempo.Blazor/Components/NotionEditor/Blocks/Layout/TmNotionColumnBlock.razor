@@ -1,0 +1,32 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Layout
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+
+<div class="tm-notion-column"
+     data-col-index="@ColumnIndex"
+     style="flex-basis:@(_flexBasisStyle);min-width:var(--tm-column-min-width,120px);flex-grow:0;flex-shrink:0;">
+
+    @if (_loadingChildren)
+    {
+        <div class="tm-notion-column__skeleton">
+            <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:80%"></div>
+            <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:55%"></div>
+            <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:70%"></div>
+        </div>
+    }
+    else
+    {
+        <TmNotionBlockList Blocks="_children"
+                           ReadOnly="ReadOnly"
+                           ActiveBlockId="_activeChildId"
+                           OnReorder="HandleChildReorderAsync"
+                           OnBlockFocused="HandleChildFocusedAsync"
+                           OnBlockDeleted="HandleChildDeletedAsync"
+                           OnBlockUpdated="HandleChildUpdatedAsync"
+                           OnBlockDuplicated="HandleChildDuplicatedAsync"
+                           OnConvertBlock="HandleChildConvertAsync"
+                           OnAddBlockAfter="HandleChildAddAfterAsync"
+                           OnAddBlockAtEnd="HandleChildAddAtEndAsync" />
+    }
+
+</div>

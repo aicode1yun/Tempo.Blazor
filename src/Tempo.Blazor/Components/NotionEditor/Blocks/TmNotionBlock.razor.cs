@@ -427,6 +427,82 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
+    // ── Bookmark (TmNotionBookmarkBlock) callbacks ────────────────────────────
+
+    private async Task HandleBookmarkResolvedAsync(BookmarkBlockContent resolved)
+    {
+        var updated = BuildBlockWithContent(Block, resolved);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleBookmarkCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IBookmarkBlockContent bm) return;
+        var updated = BuildBlockWithContent(Block, new BookmarkBlockContent
+        {
+            Url          = bm.Url,
+            Title        = bm.Title,
+            Description  = bm.Description,
+            CoverImageUrl = bm.CoverImageUrl,
+            FaviconUrl   = bm.FaviconUrl,
+            Domain       = bm.Domain,
+            Caption      = caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Embed (TmNotionEmbedBlock) callbacks ──────────────────────────────────
+
+    private async Task HandleEmbedUrlSetAsync(EmbedBlockContent embed)
+    {
+        if (Block.Content is IEmbedBlockContent ex)
+        {
+            embed = new EmbedBlockContent
+            {
+                Url     = embed.Url,
+                Provider = embed.Provider,
+                Width   = ex.Width,
+                Height  = embed.Height ?? ex.Height,
+                Caption = ex.Caption
+            };
+        }
+        var updated = BuildBlockWithContent(Block, embed);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleEmbedResizedAsync((int W, int H) size)
+    {
+        if (Block.Content is not IEmbedBlockContent em) return;
+        var updated = BuildBlockWithContent(Block, new EmbedBlockContent
+        {
+            Url     = em.Url,
+            Provider = em.Provider,
+            Width   = size.W,
+            Height  = size.H,
+            Caption = em.Caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleEmbedCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IEmbedBlockContent em) return;
+        var updated = BuildBlockWithContent(Block, new EmbedBlockContent
+        {
+            Url     = em.Url,
+            Provider = em.Provider,
+            Width   = em.Width,
+            Height  = em.Height,
+            Caption = caption
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
     // ── PDF (TmNotionPdfBlock) callbacks ──────────────────────────────────────
 
     private async Task HandlePdfMediaSetAsync((string? FileId, string? Url) media)
