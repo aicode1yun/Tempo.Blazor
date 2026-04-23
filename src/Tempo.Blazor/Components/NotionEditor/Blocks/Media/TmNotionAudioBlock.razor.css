@@ -1,0 +1,75 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionAudioBlock — audio player / embed with caption
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-notion-audio-block {
+    width: 100%;
+}
+
+.tm-notion-audio-block__figure {
+    display:        flex;
+    flex-direction: column;
+    gap:            6px;
+    margin:         0;
+    width:          100%;
+}
+
+.tm-notion-audio-block__player-wrap {
+    width: 100%;
+}
+
+/* ── Embed (SoundCloud / Spotify) ─────────────────────────────── */
+
+.tm-notion-audio-block__embed {
+    display:       block;
+    width:         100%;
+    height:        166px;
+    border:        none;
+    border-radius: var(--tm-radius-sm, 4px);
+    overflow:      hidden;
+}
+
+/* ── Native audio player wrapper ─────────────────────────────── */
+
+.tm-notion-audio-block__native-wrap {
+    display:       flex;
+    align-items:   center;
+    gap:           10px;
+    padding:       10px 14px;
+    background:    var(--tm-notion-bg-block-hover, rgba(0, 0, 0, 0.03));
+    border:        1px solid var(--tm-border-subtle, #e8e8e8);
+    border-radius: var(--tm-radius-md, 6px);
+}
+
+.tm-notion-audio-block__icon {
+    flex-shrink: 0;
+    color:       var(--tm-text-tertiary, #aaa);
+}
+
+.tm-notion-audio-block__audio {
+    flex:    1;
+    min-width: 0;
+    height:  32px;
+}
+
+.tm-notion-audio-block__replace-btn {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    flex-shrink:     0;
+    width:           28px;
+    height:          28px;
+    padding:         0;
+    color:           var(--tm-text-tertiary, #aaa);
+    background:      transparent;
+    border:          1px solid var(--tm-border-subtle, #e8e8e8);
+    border-radius:   var(--tm-radius-sm, 4px);
+    cursor:          pointer;
+    transition:      color var(--tm-notion-anim-fast, 120ms),
+                     background var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-audio-block__replace-btn:hover {
+    color:       var(--tm-text-primary, #333);
+    background:  var(--tm-notion-bg-block-hover, rgba(0, 0, 0, 0.06));
+}

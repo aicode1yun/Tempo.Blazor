@@ -281,6 +281,177 @@ public partial class TmNotionBlock : ComponentBase
         if (e.Key == "Enter") OnNavigateToPage(pageId);
     }
 
+    // ── Image (TmNotionImageBlock) callbacks ──────────────────────────────────
+
+    private async Task HandleImageMediaSetAsync((string? FileId, string? Url) media)
+    {
+        if (Block.Content is not IImageBlockContent img) return;
+        var updated = BuildBlockWithContent(Block, new ImageBlockContent
+        {
+            Url       = media.Url ?? img.Url,
+            FileId    = media.FileId ?? img.FileId,
+            AltText   = img.AltText,
+            Caption   = img.Caption,
+            Width     = img.Width,
+            Alignment = img.Alignment
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleImageWidthChangedAsync(int width)
+    {
+        if (Block.Content is not IImageBlockContent img) return;
+        var updated = BuildBlockWithContent(Block, new ImageBlockContent
+        {
+            Url = img.Url, FileId = img.FileId, AltText = img.AltText,
+            Caption = img.Caption, Width = width, Alignment = img.Alignment
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleImageCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IImageBlockContent img) return;
+        var updated = BuildBlockWithContent(Block, new ImageBlockContent
+        {
+            Url = img.Url, FileId = img.FileId, AltText = img.AltText,
+            Caption = caption, Width = img.Width, Alignment = img.Alignment
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleImageAlignmentChangedAsync(MediaAlignment alignment)
+    {
+        if (Block.Content is not IImageBlockContent img) return;
+        var updated = BuildBlockWithContent(Block, new ImageBlockContent
+        {
+            Url = img.Url, FileId = img.FileId, AltText = img.AltText,
+            Caption = img.Caption, Width = img.Width, Alignment = alignment
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Video (TmNotionVideoBlock) callbacks ──────────────────────────────────
+
+    private async Task HandleVideoMediaSetAsync((string? FileId, string? Url) media)
+    {
+        if (Block.Content is not IVideoBlockContent vid) return;
+        var updated = BuildBlockWithContent(Block, new VideoBlockContent
+        {
+            Url = media.Url ?? vid.Url, FileId = media.FileId ?? vid.FileId,
+            Provider = vid.Provider, Caption = vid.Caption, Width = vid.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleVideoWidthChangedAsync(int width)
+    {
+        if (Block.Content is not IVideoBlockContent vid) return;
+        var updated = BuildBlockWithContent(Block, new VideoBlockContent
+        {
+            Url = vid.Url, FileId = vid.FileId, Provider = vid.Provider,
+            Caption = vid.Caption, Width = width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleVideoCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IVideoBlockContent vid) return;
+        var updated = BuildBlockWithContent(Block, new VideoBlockContent
+        {
+            Url = vid.Url, FileId = vid.FileId, Provider = vid.Provider,
+            Caption = caption, Width = vid.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Audio (TmNotionAudioBlock) callbacks ──────────────────────────────────
+
+    private async Task HandleAudioMediaSetAsync((string? FileId, string? Url) media)
+    {
+        if (Block.Content is not IAudioBlockContent aud) return;
+        var updated = BuildBlockWithContent(Block, new AudioBlockContent
+        {
+            Url = media.Url ?? aud.Url, FileId = media.FileId ?? aud.FileId,
+            Provider = aud.Provider, Caption = aud.Caption, Width = aud.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleAudioCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IAudioBlockContent aud) return;
+        var updated = BuildBlockWithContent(Block, new AudioBlockContent
+        {
+            Url = aud.Url, FileId = aud.FileId, Provider = aud.Provider,
+            Caption = caption, Width = aud.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── File (TmNotionFileBlock) callbacks ────────────────────────────────────
+
+    private async Task HandleFileMediaSetAsync((string? FileId, string? Url) media)
+    {
+        if (Block.Content is not IFileBlockContent file) return;
+        var updated = BuildBlockWithContent(Block, new FileBlockContent
+        {
+            Url = media.Url ?? file.Url, FileId = media.FileId ?? file.FileId,
+            FileName = file.FileName, FileSizeBytes = file.FileSizeBytes,
+            ContentType = file.ContentType, Caption = file.Caption, Width = file.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleFileCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IFileBlockContent file) return;
+        var updated = BuildBlockWithContent(Block, new FileBlockContent
+        {
+            Url = file.Url, FileId = file.FileId, FileName = file.FileName,
+            FileSizeBytes = file.FileSizeBytes, ContentType = file.ContentType,
+            Caption = caption, Width = file.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── PDF (TmNotionPdfBlock) callbacks ──────────────────────────────────────
+
+    private async Task HandlePdfMediaSetAsync((string? FileId, string? Url) media)
+    {
+        if (Block.Content is not IPdfBlockContent pdf) return;
+        var updated = BuildBlockWithContent(Block, new PdfBlockContent
+        {
+            Url = media.Url ?? pdf.Url, FileId = media.FileId ?? pdf.FileId,
+            Caption = pdf.Caption, Width = pdf.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandlePdfCaptionSavedAsync(string? caption)
+    {
+        if (Block.Content is not IPdfBlockContent pdf) return;
+        var updated = BuildBlockWithContent(Block, new PdfBlockContent
+        {
+            Url = pdf.Url, FileId = pdf.FileId, Caption = caption, Width = pdf.Width
+        });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
     // ── Handle button ─────────────────────────────────────────────────────────
 
     private Task HandleAddClickedAsync() =>

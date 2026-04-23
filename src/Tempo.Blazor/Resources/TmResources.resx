@@ -1056,6 +1056,62 @@
   <data name="TmNotionDividerBlock_Label"                    xml:space="preserve"><value>Divider</value></data>
 
   <!-- Phase 42: Toggle Block -->
+  <!-- Phase 52: Media Upload Dialog -->
+  <data name="TmNotionMediaUploadDialog_TitleImage"          xml:space="preserve"><value>Add image</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleVideo"          xml:space="preserve"><value>Add video</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleAudio"          xml:space="preserve"><value>Add audio</value></data>
+  <data name="TmNotionMediaUploadDialog_TitlePdf"            xml:space="preserve"><value>Add PDF</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleFile"           xml:space="preserve"><value>Add file</value></data>
+  <data name="TmNotionMediaUploadDialog_TabUpload"           xml:space="preserve"><value>Upload</value></data>
+  <data name="TmNotionMediaUploadDialog_TabEmbed"            xml:space="preserve"><value>Embed link</value></data>
+  <data name="TmNotionMediaUploadDialog_DropZone"            xml:space="preserve"><value>Drag &amp; drop a file here</value></data>
+  <data name="TmNotionMediaUploadDialog_BrowseFiles"         xml:space="preserve"><value>or click to browse</value></data>
+  <data name="TmNotionMediaUploadDialog_UrlPlaceholder"      xml:space="preserve"><value>Paste a URL…</value></data>
+  <data name="TmNotionMediaUploadDialog_UrlConfirm"          xml:space="preserve"><value>Embed</value></data>
+  <data name="TmNotionMediaUploadDialog_Cancel"              xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Uploading…</value></data>
+  <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Upload failed. Please try again.</value></data>
+  <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>File upload is not configured.</value></data>
+
+  <!-- Phase 52: Image Block -->
+  <data name="TmNotionImageBlock_AddImage"                   xml:space="preserve"><value>Add an image</value></data>
+  <data name="TmNotionImageBlock_ReplaceImage"               xml:space="preserve"><value>Replace</value></data>
+  <data name="TmNotionImageBlock_CaptionPlaceholder"         xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionImageBlock_AlignLeft"                  xml:space="preserve"><value>Align left</value></data>
+  <data name="TmNotionImageBlock_AlignCenter"                xml:space="preserve"><value>Center</value></data>
+  <data name="TmNotionImageBlock_AlignFull"                  xml:space="preserve"><value>Full width</value></data>
+  <data name="TmNotionImageBlock_AlignmentLabel"             xml:space="preserve"><value>Image alignment</value></data>
+
+  <!-- Phase 52: Video Block -->
+  <data name="TmNotionVideoBlock_AddVideo"                   xml:space="preserve"><value>Add a video</value></data>
+  <data name="TmNotionVideoBlock_Replace"                    xml:space="preserve"><value>Replace</value></data>
+  <data name="TmNotionVideoBlock_CaptionPlaceholder"         xml:space="preserve"><value>Add caption…</value></data>
+
+  <!-- Phase 52: Audio Block -->
+  <data name="TmNotionAudioBlock_AddAudio"                   xml:space="preserve"><value>Add audio</value></data>
+  <data name="TmNotionAudioBlock_Replace"                    xml:space="preserve"><value>Replace</value></data>
+  <data name="TmNotionAudioBlock_CaptionPlaceholder"         xml:space="preserve"><value>Add caption…</value></data>
+
+  <!-- Phase 52: File Block -->
+  <data name="TmNotionFileBlock_AddFile"                     xml:space="preserve"><value>Add a file</value></data>
+  <data name="TmNotionFileBlock_Replace"                     xml:space="preserve"><value>Replace</value></data>
+  <data name="TmNotionFileBlock_Download"                    xml:space="preserve"><value>Download</value></data>
+  <data name="TmNotionFileBlock_CaptionPlaceholder"          xml:space="preserve"><value>Add caption…</value></data>
+
+  <!-- Phase 52: PDF Block -->
+  <data name="TmNotionPdfBlock_AddPdf"                       xml:space="preserve"><value>Add a PDF</value></data>
+  <data name="TmNotionPdfBlock_CaptionPlaceholder"           xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionPdfBlock_Open"                         xml:space="preserve"><value>Open</value></data>
+  <data name="TmNotionPdfBlock_Download"                     xml:space="preserve"><value>Download</value></data>
+  <data name="TmNotionPdfBlock_Page"                         xml:space="preserve"><value>Page</value></data>
+  <data name="TmNotionPdfBlock_Of"                           xml:space="preserve"><value>of</value></data>
+  <data name="TmNotionPdfBlock_ZoomIn"                       xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmNotionPdfBlock_ZoomOut"                      xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmNotionPdfBlock_PreviousPage"                 xml:space="preserve"><value>Previous page</value></data>
+  <data name="TmNotionPdfBlock_NextPage"                     xml:space="preserve"><value>Next page</value></data>
+  <data name="TmNotionPdfBlock_LoadError"                    xml:space="preserve"><value>Could not load the PDF.</value></data>
+  <data name="TmNotionPdfBlock_ToolbarLabel"                 xml:space="preserve"><value>PDF controls</value></data>
+
   <data name="TmNotionToggleBlock_Expand"                    xml:space="preserve"><value>Expand / collapse</value></data>
   <data name="TmNotionToggleBlock_ChildrenLoading"           xml:space="preserve"><value>Loading content…</value></data>
 

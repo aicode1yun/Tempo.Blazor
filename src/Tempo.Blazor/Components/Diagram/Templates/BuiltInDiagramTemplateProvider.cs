@@ -1,5 +1,4 @@
 using System.Text.Json;
-using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.Diagram.Serialization;
 using Tempo.Blazor.Components.Diagram.Services;
@@ -7,23 +6,13 @@ using Tempo.Blazor.Components.Diagram.Services;
 namespace Tempo.Blazor.Components.Diagram.Templates;
 
 /// <summary>
-/// Built-in provider that loads diagram templates from the embedded
-/// <c>_content/Tempo.Blazor/diagram-templates/index.json</c> catalog.
+/// Built-in provider that loads diagram templates from embedded resources
+/// (compiled from <c>wwwroot/diagram-templates/*.json</c>).
 /// </summary>
 public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
 {
-    private readonly HttpClient _http;
+    private static readonly System.Reflection.Assembly _assembly = typeof(BuiltInDiagramTemplateProvider).Assembly;
     private List<DiagramTemplateCategory>? _categories;
-
-    /// <summary>
-    /// Creates a new instance of <see cref="BuiltInDiagramTemplateProvider"/>.
-    /// </summary>
-    public BuiltInDiagramTemplateProvider(NavigationManager navigation, IHttpClientFactory httpClientFactory)
-    {
-        var baseUri = navigation.BaseUri.TrimEnd('/');
-        _http = httpClientFactory.CreateClient();
-        _http.BaseAddress = new Uri(baseUri);
-    }
 
     /// <inheritdoc />
     public int Priority => 0;
@@ -42,7 +31,7 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
     {
         try
         {
-            var catalogJson = await _http.GetStringAsync("/_content/Tempo.Blazor/diagram-templates/index.json");
+            var catalogJson = await ReadResourceAsync("diagram-templates/index.json");
             if (string.IsNullOrWhiteSpace(catalogJson))
                 return [];
 
@@ -73,7 +62,7 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
                 {
                     try
                     {
-                        template.DocumentJson = await _http.GetStringAsync($"/_content/Tempo.Blazor/{documentJsonPath.TrimStart('/')}");
+                        template.DocumentJson = await ReadResourceAsync(documentJsonPath.TrimStart('/'));
                     }
                     catch
                     {
@@ -81,14 +70,12 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
                     }
                 }
 
-                // Generate SVG thumbnail automatically for built-in templates
                 try
                 {
                     DiagramDocument? thumbDoc = null;
                     if (!string.IsNullOrWhiteSpace(template.DocumentJson))
-                    {
                         DiagramSerializer.TryDeserialize(template.DocumentJson, out thumbDoc);
-                    }
+
                     thumbDoc ??= new DiagramDocument();
                     thumbDoc.EnsurePages();
                     var svg = DiagramThumbnailSvgGenerator.Generate(thumbDoc);
@@ -116,6 +103,18 @@ public sealed class BuiltInDiagramTemplateProvider : IDiagramTemplateProvider
         {
             return [];
         }
+    }
+
+    // Converts "diagram-templates/index.json" → "Tempo.Blazor.wwwroot.diagram-templates.index.json"
+    private static async Task<string> ReadResourceAsync(string relativePath)
+    {
+        var resourceName = "Tempo.Blazor.wwwroot." + relativePath.Replace('/', '.').Replace('\\', '.');
+        using var stream = _assembly.GetManifestResourceStream(resourceName);
+        if (stream is null)
+            return string.Empty;
+
+        using var reader = new StreamReader(stream);
+        return await reader.ReadToEndAsync();
     }
 
     private static string GetString(JsonElement el, string property)

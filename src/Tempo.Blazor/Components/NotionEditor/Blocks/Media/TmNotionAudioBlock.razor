@@ -1,0 +1,115 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.UI
+
+<div class="tm-notion-audio-block" @onfocus="HandleFocusAsync">
+
+    @if (string.IsNullOrEmpty(Content?.Url))
+    {
+        @if (!ReadOnly)
+        {
+            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--audio"
+                    type="button"
+                    aria-label="@Loc["TmNotionAudioBlock_AddAudio"]"
+                    @onclick="OpenDialogAsync">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                <span>@Loc["TmNotionAudioBlock_AddAudio"]</span>
+            </button>
+
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="audio"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <figure class="tm-notion-audio-block__figure">
+
+            <div class="tm-notion-audio-block__player-wrap">
+
+                @if (_isEmbedProvider)
+                {
+                    <iframe src="@_embedUrl"
+                            class="tm-notion-audio-block__embed"
+                            frameborder="0"
+                            allow="autoplay; encrypted-media"
+                            loading="lazy"
+                            title="@Loc["TmNotionAudioBlock_AddAudio"]">
+                    </iframe>
+                }
+                else
+                {
+                    <div class="tm-notion-audio-block__native-wrap">
+                        <div class="tm-notion-audio-block__icon" aria-hidden="true">
+                            <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                                <path d="M9 18V5l12-2v13" stroke="currentColor" stroke-width="1.5"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                                <circle cx="6" cy="18" r="3" stroke="currentColor" stroke-width="1.5"/>
+                                <circle cx="18" cy="16" r="3" stroke="currentColor" stroke-width="1.5"/>
+                            </svg>
+                        </div>
+                        <audio src="@Content.Url"
+                               class="tm-notion-audio-block__audio"
+                               controls
+                               preload="metadata">
+                        </audio>
+                        @if (!ReadOnly)
+                        {
+                            <button class="tm-notion-audio-block__replace-btn"
+                                    type="button"
+                                    title="@Loc["TmNotionAudioBlock_Replace"]"
+                                    @onclick="OpenDialogAsync"
+                                    @onclick:stopPropagation="true">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        }
+                    </div>
+                }
+
+            </div>
+
+            @if (!string.IsNullOrEmpty(Content?.Caption) || !ReadOnly)
+            {
+                <figcaption class="tm-notion-image-block__caption tm-notion-editable"
+                             contenteditable="@(!ReadOnly ? "true" : "false")"
+                             data-placeholder="@Loc["TmNotionAudioBlock_CaptionPlaceholder"]"
+                             @ref="_captionRef"
+                             @oninput="() => _captionDirty = true"
+                             @onblur="OnCaptionBlurAsync">
+                </figcaption>
+            }
+
+        </figure>
+
+        @if (!ReadOnly)
+        {
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="audio"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+    }
+
+</div>

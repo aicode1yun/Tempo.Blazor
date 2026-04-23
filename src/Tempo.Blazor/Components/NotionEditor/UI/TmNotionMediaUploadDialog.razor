@@ -1,0 +1,108 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Microsoft.AspNetCore.Components.Forms
+
+@if (IsOpen)
+{
+    <div class="tm-media-dialog-backdrop" @onclick="HandleCancelAsync">
+        <div class="tm-media-dialog"
+             role="dialog"
+             aria-modal="true"
+             aria-labelledby="tm-media-dialog-title"
+             @onclick:stopPropagation="true">
+
+            <div class="tm-media-dialog__header">
+                <span id="tm-media-dialog-title" class="tm-media-dialog__title">@_dialogTitle</span>
+                <button class="tm-media-dialog__close"
+                        type="button"
+                        aria-label="@Loc["TmNotionMediaUploadDialog_Cancel"]"
+                        @onclick="HandleCancelAsync">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M1 1l12 12M13 1L1 13" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            </div>
+
+            <div class="tm-media-dialog__tabs" role="tablist">
+                @if (CanUpload)
+                {
+                    <button class="tm-media-dialog__tab @(_activeTab == "upload" ? "tm-media-dialog__tab--active" : "")"
+                            role="tab"
+                            aria-selected="@(_activeTab == "upload").ToString().ToLower()"
+                            type="button"
+                            @onclick='() => SetTab("upload")'>
+                        @Loc["TmNotionMediaUploadDialog_TabUpload"]
+                    </button>
+                }
+                <button class="tm-media-dialog__tab @(_activeTab == "embed" ? "tm-media-dialog__tab--active" : "")"
+                        role="tab"
+                        aria-selected="@(_activeTab == "embed").ToString().ToLower()"
+                        type="button"
+                        @onclick='() => SetTab("embed")'>
+                    @Loc["TmNotionMediaUploadDialog_TabEmbed"]
+                </button>
+            </div>
+
+            <div class="tm-media-dialog__body">
+
+                @if (_activeTab == "upload")
+                {
+                    <label class="tm-media-dialog__dropzone @(_isDragging ? "tm-media-dialog__dropzone--dragging" : "")"
+                           @ondragenter="() => _isDragging = true"
+                           @ondragleave="() => _isDragging = false"
+                           @ondragover:preventDefault="true">
+                        <svg class="tm-media-dialog__dropzone-icon" width="36" height="36"
+                             viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor"
+                                  stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5"
+                                      stroke-linecap="round" stroke-linejoin="round"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor"
+                                  stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                        <span class="tm-media-dialog__dropzone-text">@Loc["TmNotionMediaUploadDialog_DropZone"]</span>
+                        <span class="tm-media-dialog__browse-hint">@Loc["TmNotionMediaUploadDialog_BrowseFiles"]</span>
+                        <InputFile class="tm-media-dialog__file-input"
+                                   accept="@_acceptTypes"
+                                   OnChange="HandleFileSelectedAsync" />
+                    </label>
+
+                    @if (_isUploading)
+                    {
+                        <div class="tm-media-dialog__status">
+                            <span class="tm-media-dialog__spinner" aria-hidden="true"></span>
+                            <span>@Loc["TmNotionMediaUploadDialog_Uploading"]</span>
+                        </div>
+                    }
+
+                    @if (!string.IsNullOrEmpty(_uploadError))
+                    {
+                        <div class="tm-media-dialog__error" role="alert">@_uploadError</div>
+                    }
+                }
+                else
+                {
+                    <div class="tm-media-dialog__embed">
+                        <div class="tm-media-dialog__embed-row">
+                            <input class="tm-media-dialog__url-input"
+                                   type="url"
+                                   placeholder="@Loc["TmNotionMediaUploadDialog_UrlPlaceholder"]"
+                                   @bind="_embedUrl"
+                                   @bind:event="oninput"
+                                   @onkeydown="HandleUrlKeyDownAsync"
+                                   @ref="_urlInputRef" />
+                            <button class="tm-media-dialog__embed-btn"
+                                    type="button"
+                                    disabled="@(string.IsNullOrWhiteSpace(_embedUrl))"
+                                    @onclick="HandleEmbedConfirmAsync">
+                                @Loc["TmNotionMediaUploadDialog_UrlConfirm"]
+                            </button>
+                        </div>
+                    </div>
+                }
+
+            </div>
+
+        </div>
+    </div>
+}

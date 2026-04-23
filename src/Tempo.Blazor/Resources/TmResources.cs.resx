@@ -1104,6 +1104,57 @@
   <data name="TmNotionColorPicker_PinkBg"     xml:space="preserve"><value>Růžové pozadí</value></data>
   <data name="TmNotionColorPicker_RedBg"      xml:space="preserve"><value>Červené pozadí</value></data>
 
+  <!-- Phase 52: Media Upload Dialog -->
+  <data name="TmNotionMediaUploadDialog_TitleImage"          xml:space="preserve"><value>Přidat obrázek</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleVideo"          xml:space="preserve"><value>Přidat video</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleAudio"          xml:space="preserve"><value>Přidat audio</value></data>
+  <data name="TmNotionMediaUploadDialog_TitlePdf"            xml:space="preserve"><value>Přidat PDF</value></data>
+  <data name="TmNotionMediaUploadDialog_TitleFile"           xml:space="preserve"><value>Přidat soubor</value></data>
+  <data name="TmNotionMediaUploadDialog_TabUpload"           xml:space="preserve"><value>Nahrát</value></data>
+  <data name="TmNotionMediaUploadDialog_TabEmbed"            xml:space="preserve"><value>Vložit odkaz</value></data>
+  <data name="TmNotionMediaUploadDialog_DropZone"            xml:space="preserve"><value>Přetáhněte soubor sem</value></data>
+  <data name="TmNotionMediaUploadDialog_BrowseFiles"         xml:space="preserve"><value>nebo klikněte pro výběr</value></data>
+  <data name="TmNotionMediaUploadDialog_UrlPlaceholder"      xml:space="preserve"><value>Vložte URL…</value></data>
+  <data name="TmNotionMediaUploadDialog_UrlConfirm"          xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmNotionMediaUploadDialog_Cancel"              xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Nahrávání…</value></data>
+  <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Nahrávání selhalo. Zkuste to znovu.</value></data>
+  <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>Nahrávání souborů není nakonfigurováno.</value></data>
+  <!-- Phase 52: Image Block -->
+  <data name="TmNotionImageBlock_AddImage"                   xml:space="preserve"><value>Přidat obrázek</value></data>
+  <data name="TmNotionImageBlock_ReplaceImage"               xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmNotionImageBlock_CaptionPlaceholder"         xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionImageBlock_AlignLeft"                  xml:space="preserve"><value>Zarovnat vlevo</value></data>
+  <data name="TmNotionImageBlock_AlignCenter"                xml:space="preserve"><value>Na střed</value></data>
+  <data name="TmNotionImageBlock_AlignFull"                  xml:space="preserve"><value>Plná šířka</value></data>
+  <data name="TmNotionImageBlock_AlignmentLabel"             xml:space="preserve"><value>Zarovnání obrázku</value></data>
+  <!-- Phase 52: Video Block -->
+  <data name="TmNotionVideoBlock_AddVideo"                   xml:space="preserve"><value>Přidat video</value></data>
+  <data name="TmNotionVideoBlock_Replace"                    xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmNotionVideoBlock_CaptionPlaceholder"         xml:space="preserve"><value>Přidat popisek…</value></data>
+  <!-- Phase 52: Audio Block -->
+  <data name="TmNotionAudioBlock_AddAudio"                   xml:space="preserve"><value>Přidat audio</value></data>
+  <data name="TmNotionAudioBlock_Replace"                    xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmNotionAudioBlock_CaptionPlaceholder"         xml:space="preserve"><value>Přidat popisek…</value></data>
+  <!-- Phase 52: File Block -->
+  <data name="TmNotionFileBlock_AddFile"                     xml:space="preserve"><value>Přidat soubor</value></data>
+  <data name="TmNotionFileBlock_Replace"                     xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmNotionFileBlock_Download"                    xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmNotionFileBlock_CaptionPlaceholder"          xml:space="preserve"><value>Přidat popisek…</value></data>
+  <!-- Phase 52: PDF Block -->
+  <data name="TmNotionPdfBlock_AddPdf"                       xml:space="preserve"><value>Přidat PDF</value></data>
+  <data name="TmNotionPdfBlock_CaptionPlaceholder"           xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionPdfBlock_Open"                         xml:space="preserve"><value>Otevřít</value></data>
+  <data name="TmNotionPdfBlock_Download"                     xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmNotionPdfBlock_Page"                         xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmNotionPdfBlock_Of"                           xml:space="preserve"><value>z</value></data>
+  <data name="TmNotionPdfBlock_ZoomIn"                       xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmNotionPdfBlock_ZoomOut"                      xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmNotionPdfBlock_PreviousPage"                 xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="TmNotionPdfBlock_NextPage"                     xml:space="preserve"><value>Další stránka</value></data>
+  <data name="TmNotionPdfBlock_LoadError"                    xml:space="preserve"><value>PDF se nepodařilo načíst.</value></data>
+  <data name="TmNotionPdfBlock_ToolbarLabel"                 xml:space="preserve"><value>Ovládání PDF</value></data>
+
   <!-- ═══════════════ TMNOTIONEMOJIPICKER (UI) ═══════════════ -->
   <data name="TmNotionEmojiPicker_SearchPlaceholder"    xml:space="preserve"><value>Hledat emoji…</value></data>
   <data name="TmNotionEmojiPicker_NoResults"            xml:space="preserve"><value>Žádné emoji nenalezeno</value></data>

@@ -1147,3 +1147,86 @@ window.tmNotionEditor = (function () {
         adjustTypeSwitcherPosition
     };
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+// 52.5 — PDF block (tmNotionPdf)
+//
+// Uses PDF.js v5 (ES modules) via dynamic import — no <script> tag needed.
+// Requires pdf.min.mjs + pdf.worker.min.mjs in the same directory as this file.
+// ═══════════════════════════════════════════════════════════════════════════
+
+window.tmNotionPdf = (function () {
+    'use strict';
+
+    // Capture script directory while document.currentScript is still set.
+    const _scriptDir = (() => {
+        const src = document.currentScript?.src ?? '';
+        return src ? src.substring(0, src.lastIndexOf('/') + 1) : '_content/Tempo.Blazor/js/';
+    })();
+
+    // canvasEl → { pdfDoc, currentPage, scale, dotNetRef }
+    const _docs = new WeakMap();
+    let _lib = null;
+
+    async function _ensureLib() {
+        if (_lib) return _lib;
+        const mod = await import(_scriptDir + 'pdf.min.mjs');
+        mod.GlobalWorkerOptions.workerSrc = _scriptDir + 'pdf.worker.min.mjs';
+        _lib = mod;
+        return _lib;
+    }
+
+    function isAvailable() {
+        return true;
+    }
+
+    async function init(canvasEl, url, dotNetRef) {
+        if (!canvasEl || !url) return;
+        destroy(canvasEl);
+        try {
+            const pdfjs  = await _ensureLib();
+            const pdfDoc = await pdfjs.getDocument(url).promise;
+            _docs.set(canvasEl, { pdfDoc, currentPage: 1, scale: 1.0, dotNetRef });
+            await renderPage(canvasEl, 1, 1.0);
+            dotNetRef.invokeMethodAsync('OnPdfLoaded', pdfDoc.numPages).catch(console.error);
+        } catch (err) {
+            dotNetRef.invokeMethodAsync('OnPdfLoadError', String(err?.message ?? err))
+                     .catch(console.error);
+        }
+    }
+
+    async function renderPage(canvasEl, pageNum, scale) {
+        const state = _docs.get(canvasEl);
+        if (!state) return;
+        state.currentPage = pageNum;
+        state.scale       = scale;
+        try {
+            const page     = await state.pdfDoc.getPage(pageNum);
+            const viewport = page.getViewport({ scale });
+            canvasEl.width  = viewport.width;
+            canvasEl.height = viewport.height;
+            await page.render({ canvasContext: canvasEl.getContext('2d'), viewport }).promise;
+        } catch (err) {
+            console.error('tmNotionPdf.renderPage', err);
+        }
+    }
+
+    function getTotalPages(canvasEl) {
+        return _docs.get(canvasEl)?.pdfDoc?.numPages ?? 0;
+    }
+
+    async function setScale(canvasEl, scale) {
+        const state = _docs.get(canvasEl);
+        if (!state) return;
+        await renderPage(canvasEl, state.currentPage, scale);
+    }
+
+    function destroy(canvasEl) {
+        const state = _docs.get(canvasEl);
+        if (!state) return;
+        try { state.pdfDoc.destroy(); } catch { }
+        _docs.delete(canvasEl);
+    }
+
+    return { isAvailable, init, renderPage, getTotalPages, setScale, destroy };
+})();

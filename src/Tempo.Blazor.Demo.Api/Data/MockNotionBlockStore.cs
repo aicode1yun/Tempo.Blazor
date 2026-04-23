@@ -134,6 +134,32 @@ public class MockNotionBlockStore
                 },
                 CreatedAt = DateTime.UtcNow,
                 LastEditedAt = DateTime.UtcNow
+            },
+            new PageBlock
+            {
+                Id = Guid.NewGuid(),
+                PageId = pageId,
+                ParentBlockId = null,
+                Type = BlockType.Heading2,
+                Order = 10,
+                Content = new HeadingBlockContent { Level = 2, Html = "PDF Viewer" },
+                CreatedAt = DateTime.UtcNow,
+                LastEditedAt = DateTime.UtcNow
+            },
+            new PageBlock
+            {
+                Id = Guid.NewGuid(),
+                PageId = pageId,
+                ParentBlockId = null,
+                Type = BlockType.Pdf,
+                Order = 11,
+                Content = new PdfBlockContent
+                {
+                    Url = "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf",
+                    Caption = "TraceMonkey — demo PDF (Mozilla)"
+                },
+                CreatedAt = DateTime.UtcNow,
+                LastEditedAt = DateTime.UtcNow
             }
         };
 
@@ -322,6 +348,11 @@ public class MockNotionBlockStore
             BlockType.BulletList or BlockType.NumberedList => new ListBlockContent { Html = "" },
             BlockType.Divider => new DividerBlockContent(),
             BlockType.Code => new CodeBlockContent { Language = "plaintext" },
+            BlockType.Image => new ImageBlockContent(),
+            BlockType.Video => new VideoBlockContent(),
+            BlockType.Audio => new AudioBlockContent(),
+            BlockType.File => new FileBlockContent(),
+            BlockType.Pdf => new PdfBlockContent(),
             _ => new TextBlockContent { Html = "" }
         };
     }

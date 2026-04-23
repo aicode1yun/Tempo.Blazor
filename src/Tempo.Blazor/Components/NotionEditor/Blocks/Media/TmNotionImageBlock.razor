@@ -1,0 +1,136 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.Components.NotionEditor.UI
+
+<div class="tm-notion-image-block @_alignClass" @onfocus="HandleFocusAsync">
+
+    @if (string.IsNullOrEmpty(Content?.Url))
+    {
+        @if (!ReadOnly)
+        {
+            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--image"
+                    type="button"
+                    aria-label="@Loc["TmNotionImageBlock_AddImage"]"
+                    @onclick="OpenDialogAsync">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                    <path d="M3 16l5-5 4 4 3-3 4 4" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>@Loc["TmNotionImageBlock_AddImage"]</span>
+            </button>
+
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="image"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder" aria-label="@Loc["TmNotionImageBlock_AddImage"]">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                    <path d="M3 16l5-5 4 4 3-3 4 4" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <figure class="tm-notion-image-block__figure">
+
+            <div class="tm-notion-image-block__img-wrap"
+                 style="@_widthStyle"
+                 @ref="_imgWrapRef">
+                <img src="@Content.Url"
+                     alt="@(Content?.AltText ?? string.Empty)"
+                     class="tm-notion-image-block__img"
+                     loading="lazy"
+                     draggable="false" />
+
+                @if (!ReadOnly)
+                {
+                    <div class="tm-notion-image-block__overlay">
+                        <button class="tm-notion-image-block__action-btn"
+                                type="button"
+                                title="@Loc["TmNotionImageBlock_ReplaceImage"]"
+                                @onclick="OpenDialogAsync"
+                                @onclick:stopPropagation="true">
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            </svg>
+                            @Loc["TmNotionImageBlock_ReplaceImage"]
+                        </button>
+
+                        <div class="tm-notion-image-block__align-group" role="group"
+                             aria-label="@Loc["TmNotionImageBlock_AlignmentLabel"]">
+                            <button class="tm-notion-image-block__align-btn @(Content?.Alignment == MediaAlignment.Left ? "tm-notion-image-block__align-btn--active" : "")"
+                                    type="button"
+                                    title="@Loc["TmNotionImageBlock_AlignLeft"]"
+                                    @onclick='() => HandleAlignmentAsync(MediaAlignment.Left)'
+                                    @onclick:stopPropagation="true">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <line x1="3" y1="6"  x2="21" y2="6"  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="10" x2="15" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="14" x2="21" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="18" x2="15" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                            <button class="tm-notion-image-block__align-btn @(Content?.Alignment == MediaAlignment.Center || Content?.Alignment == null ? "tm-notion-image-block__align-btn--active" : "")"
+                                    type="button"
+                                    title="@Loc["TmNotionImageBlock_AlignCenter"]"
+                                    @onclick='() => HandleAlignmentAsync(MediaAlignment.Center)'
+                                    @onclick:stopPropagation="true">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <line x1="3" y1="6"  x2="21" y2="6"  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="6" y1="10" x2="18" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="14" x2="21" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="6" y1="18" x2="18" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                            <button class="tm-notion-image-block__align-btn @(Content?.Alignment == MediaAlignment.FullWidth ? "tm-notion-image-block__align-btn--active" : "")"
+                                    type="button"
+                                    title="@Loc["TmNotionImageBlock_AlignFull"]"
+                                    @onclick='() => HandleAlignmentAsync(MediaAlignment.FullWidth)'
+                                    @onclick:stopPropagation="true">
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                                    <line x1="3" y1="6"  x2="21" y2="6"  stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="14" x2="21" y2="14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                    <line x1="3" y1="18" x2="21" y2="18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                }
+            </div>
+
+            @if (!string.IsNullOrEmpty(Content?.Caption) || !ReadOnly)
+            {
+                <figcaption class="tm-notion-image-block__caption tm-notion-editable"
+                             contenteditable="@(!ReadOnly ? "true" : "false")"
+                             data-placeholder="@Loc["TmNotionImageBlock_CaptionPlaceholder"]"
+                             @ref="_captionRef"
+                             @oninput="() => _captionDirty = true"
+                             @onblur="OnCaptionBlurAsync">
+                </figcaption>
+            }
+
+        </figure>
+
+        @if (!ReadOnly)
+        {
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="image"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+    }
+
+</div>

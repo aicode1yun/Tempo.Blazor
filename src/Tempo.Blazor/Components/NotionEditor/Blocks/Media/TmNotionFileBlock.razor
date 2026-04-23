@@ -1,0 +1,118 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.UI
+
+<div class="tm-notion-file-block" @onfocus="HandleFocusAsync">
+
+    @if (string.IsNullOrEmpty(Content?.Url))
+    {
+        @if (!ReadOnly)
+        {
+            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--file"
+                    type="button"
+                    aria-label="@Loc["TmNotionFileBlock_AddFile"]"
+                    @onclick="OpenDialogAsync">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
+                          stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                <span>@Loc["TmNotionFileBlock_AddFile"]</span>
+            </button>
+
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="file"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+        else
+        {
+            <div class="tm-notion-media-empty-placeholder">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
+                          stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+        }
+    }
+    else
+    {
+        <div class="tm-notion-file-block__card">
+
+            <div class="tm-notion-file-block__icon" aria-hidden="true">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none">
+                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
+                          stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </div>
+
+            <div class="tm-notion-file-block__info">
+                <span class="tm-notion-file-block__name">
+                    @(string.IsNullOrEmpty(Content?.FileName) ? Content?.Url : Content.FileName)
+                </span>
+                @if ((Content?.FileSizeBytes ?? 0) > 0)
+                {
+                    <span class="tm-notion-file-block__size">@FormatFileSize(Content!.FileSizeBytes)</span>
+                }
+            </div>
+
+            <div class="tm-notion-file-block__actions">
+                <a class="tm-notion-file-block__download"
+                   href="@Content?.Url"
+                   download
+                   target="_blank"
+                   rel="noopener noreferrer"
+                   title="@Loc["TmNotionFileBlock_Download"]">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <polyline points="7 10 12 15 17 10" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        <line x1="12" y1="15" x2="12" y2="3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                    </svg>
+                    @Loc["TmNotionFileBlock_Download"]
+                </a>
+                @if (!ReadOnly)
+                {
+                    <button class="tm-notion-file-block__replace-btn"
+                            type="button"
+                            title="@Loc["TmNotionFileBlock_Replace"]"
+                            @onclick="OpenDialogAsync">
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <polyline points="17 8 12 3 7 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                            <line x1="12" y1="3" x2="12" y2="15" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                        </svg>
+                    </button>
+                }
+            </div>
+
+        </div>
+
+        @if (!string.IsNullOrEmpty(Content?.Caption) || !ReadOnly)
+        {
+            <div class="tm-notion-file-block__caption tm-notion-editable"
+                 contenteditable="@(!ReadOnly ? "true" : "false")"
+                 data-placeholder="@Loc["TmNotionFileBlock_CaptionPlaceholder"]"
+                 @ref="_captionRef"
+                 @oninput="() => _captionDirty = true"
+                 @onblur="OnCaptionBlurAsync">
+            </div>
+        }
+
+        @if (!ReadOnly)
+        {
+            <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
+                                       MediaType="file"
+                                       OnConfirmed="HandleMediaSetAsync"
+                                       OnCancelled="CloseDialogAsync" />
+        }
+    }
+
+</div>

@@ -1,0 +1,204 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionImageBlock — image with caption, resize, alignment
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-notion-image-block {
+    width: 100%;
+}
+
+/* ── Empty / upload zone ──────────────────────────────────────── */
+
+.tm-notion-media-upload-zone {
+    display:         flex;
+    align-items:     center;
+    gap:             10px;
+    width:           100%;
+    padding:         10px 14px;
+    border:          1px dashed var(--tm-border-default, #d8d8d8);
+    border-radius:   var(--tm-radius-md, 6px);
+    background:      transparent;
+    color:           var(--tm-text-tertiary, #aaa);
+    font-size:       13px;
+    cursor:          pointer;
+    transition:      border-color var(--tm-notion-anim-fast, 120ms),
+                     background var(--tm-notion-anim-fast, 120ms),
+                     color var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-media-upload-zone:hover {
+    border-color: var(--tm-notion-border-block-hover, #ccc);
+    background:   var(--tm-notion-bg-block-hover, rgba(0, 0, 0, 0.03));
+    color:        var(--tm-text-secondary, #666);
+}
+
+.tm-notion-media-empty-placeholder {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    padding:         24px;
+    color:           var(--tm-text-tertiary, #ccc);
+}
+
+/* ── Alignment variants ───────────────────────────────────────── */
+
+.tm-notion-image-block--center .tm-notion-image-block__figure,
+.tm-notion-image-block--center {
+    display:         flex;
+    flex-direction:  column;
+    align-items:     center;
+}
+
+.tm-notion-image-block--left .tm-notion-image-block__figure,
+.tm-notion-image-block--left {
+    display:        flex;
+    flex-direction: column;
+    align-items:    flex-start;
+}
+
+.tm-notion-image-block--full .tm-notion-image-block__img-wrap {
+    width: 100% !important;
+}
+
+/* ── Figure ───────────────────────────────────────────────────── */
+
+.tm-notion-image-block__figure {
+    display:        flex;
+    flex-direction: column;
+    align-items:    inherit;
+    gap:            6px;
+    margin:         0;
+    width:          100%;
+}
+
+/* ── Image wrapper (resize container) ────────────────────────── */
+
+.tm-notion-image-block__img-wrap {
+    position:   relative;
+    display:    inline-flex;
+    max-width:  100%;
+    min-width:  80px;
+    cursor:     default;
+}
+
+.tm-notion-image-block__img-wrap:hover .tm-notion-image-block__overlay {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+/* ── Image ────────────────────────────────────────────────────── */
+
+.tm-notion-image-block__img {
+    display:    block;
+    max-width:  100%;
+    height:     auto;
+    border-radius: var(--tm-radius-sm, 4px);
+    object-fit: contain;
+}
+
+/* ── Hover overlay (replace + align) ─────────────────────────── */
+
+.tm-notion-image-block__overlay {
+    position:        absolute;
+    top:             8px;
+    right:           8px;
+    display:         flex;
+    align-items:     center;
+    gap:             6px;
+    padding:         4px 6px;
+    background:      rgba(0, 0, 0, 0.65);
+    border-radius:   var(--tm-radius-sm, 4px);
+    opacity:         0;
+    pointer-events:  none;
+    transition:      opacity var(--tm-notion-anim-fast, 120ms);
+    backdrop-filter: blur(4px);
+}
+
+.tm-notion-image-block__action-btn {
+    display:       flex;
+    align-items:   center;
+    gap:           4px;
+    padding:       3px 7px;
+    font-size:     11px;
+    font-weight:   500;
+    color:         rgba(255, 255, 255, 0.9);
+    background:    transparent;
+    border:        1px solid rgba(255, 255, 255, 0.2);
+    border-radius: var(--tm-radius-xs, 3px);
+    cursor:        pointer;
+    white-space:   nowrap;
+    transition:    background var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-image-block__action-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tm-notion-image-block__align-group {
+    display:         flex;
+    align-items:     center;
+    gap:             2px;
+    border-left:     1px solid rgba(255, 255, 255, 0.2);
+    padding-left:    6px;
+}
+
+.tm-notion-image-block__align-btn {
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    width:           22px;
+    height:          22px;
+    padding:         0;
+    color:           rgba(255, 255, 255, 0.65);
+    background:      transparent;
+    border:          none;
+    border-radius:   var(--tm-radius-xs, 3px);
+    cursor:          pointer;
+    transition:      background var(--tm-notion-anim-fast, 120ms),
+                     color var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-image-block__align-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color:      rgba(255, 255, 255, 1);
+}
+
+.tm-notion-image-block__align-btn--active {
+    background: rgba(255, 255, 255, 0.2);
+    color:      #fff;
+}
+
+/* ── Caption ──────────────────────────────────────────────────── */
+
+.tm-notion-image-block__caption {
+    width:      100%;
+    max-width:  100%;
+    font-size:  12px;
+    color:      var(--tm-text-tertiary, #aaa);
+    text-align: center;
+    min-height: 20px;
+    outline:    none;
+}
+
+.tm-notion-image-block__caption:empty::before {
+    content: attr(data-placeholder);
+    color:   var(--tm-text-tertiary, #bbb);
+    pointer-events: none;
+}
+
+/* ── Resize handle (injected by JS) ──────────────────────────── */
+
+.tm-notion-resize-handle {
+    position:      absolute;
+    right:         0;
+    top:           0;
+    bottom:        0;
+    width:         6px;
+    cursor:        ew-resize;
+    border-radius: 0 3px 3px 0;
+    background:    transparent;
+    transition:    background var(--tm-notion-anim-fast, 120ms);
+}
+
+.tm-notion-image-block__img-wrap:hover .tm-notion-resize-handle {
+    background: rgba(0, 0, 0, 0.25);
+}
