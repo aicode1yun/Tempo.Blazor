@@ -49,6 +49,11 @@ public sealed class DiagramDocumentJsonConverter : JsonConverter<DiagramDocument
             document.Version = "2.0"; // bump after migration
         }
 
+        if (root.TryGetProperty("lastUsedEdgeStyle", out var lastStyleEl) && lastStyleEl.ValueKind == JsonValueKind.Object)
+        {
+            document.LastUsedEdgeStyle = JsonSerializer.Deserialize<DiagramEdgeStyleSnapshot>(lastStyleEl.GetRawText(), options);
+        }
+
         document.EnsurePages();
         return document;
     }
@@ -67,6 +72,12 @@ public sealed class DiagramDocumentJsonConverter : JsonConverter<DiagramDocument
 
         writer.WriteStringProperty("createdAt", value.CreatedAt);
         writer.WriteStringProperty("modifiedAt", value.ModifiedAt);
+
+        if (value.LastUsedEdgeStyle is not null)
+        {
+            writer.WritePropertyName("lastUsedEdgeStyle");
+            JsonSerializer.Serialize(writer, value.LastUsedEdgeStyle, options);
+        }
 
         writer.WriteEndObject();
     }

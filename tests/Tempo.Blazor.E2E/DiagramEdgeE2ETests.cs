@@ -1819,6 +1819,325 @@ public class DiagramEdgeE2ETests : WasmTestBase
     }
 
     // ========================================================================
+    // FÁZE 3 — Polish (snap-to-port, grid snap, detach endpoints, …)
+    // ========================================================================
+
+    [TestMethod]
+    [Description("3.2 — Dragging to a point near (but not on) a port still snaps the target to that port")]
+    public async Task Phase3_SnapToPort_NearMiss_Attaches()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+
+        // Capture console messages — the edge-draw code logs
+        // `[EdgeDraw] Port connect -> ...` or `[EdgeDraw] Dangling -> ...`
+        // which tells us exactly which _onMouseUp branch ran.
+        var consoleLog = new System.Collections.Generic.List<string>();
+        page.Console += (_, msg) => { if (msg.Text.Contains("[EdgeDraw]")) consoleLog.Add(msg.Text); };
+
+        await SetToolModeAsync(page, "edge");
+
+        // Drop the edge at a point ~10 px inside the target node, offset
+        // from the port center but still within the smart-snap threshold
+        // (15 / scale). Placing the cursor _inside_ the node ensures
+        // `elementFromPoint` returns the node so `_findNearestPortOnNode`
+        // runs and snaps the endpoint to the port.
+        var pointsJson = await page.EvaluateAsync<string>("""
+            (targetSelector) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const target = document.querySelector(targetSelector);
+                const node = target ? target.closest('.tm-diagram-node') : null;
+                if (!canvas || !target || !node) return null;
+                const cr = canvas.getBoundingClientRect();
+                const tr = target.getBoundingClientRect();
+                const nr = node.getBoundingClientRect();
+                const portCx = tr.left + tr.width / 2;
+                const portCy = tr.top + tr.height / 2;
+                // Move 8 px into the node, parallel to the node's local X
+                // axis. Clamped so we always stay inside the node rect.
+                const insideX = Math.min(nr.right - 4, Math.max(nr.left + 4, portCx + 8));
+                const insideY = Math.min(nr.bottom - 4, Math.max(nr.top + 4, portCy));
+                const startX = Math.max(cr.left + 30, nr.left - 220);
+                const startY = Math.max(cr.top + 30, nr.top - 80);
+                return JSON.stringify({
+                    startX, startY,
+                    endX: insideX, endY: insideY,
+                    portCx, portCy, portW: tr.width, portH: tr.height,
+                    nodeLeft: nr.left, nodeTop: nr.top, nodeRight: nr.right, nodeBottom: nr.bottom
+                });
+            }
+        """, $".tm-diagram-node[data-node-id='{Node2Id}'] .tm-diagram-port[data-port-id='left']");
+        Assert.IsNotNull(pointsJson, "Could not compute near-miss drag points.");
+        using var points = JsonDocument.Parse(pointsJson);
+        var sx = points.RootElement.GetProperty("startX").GetDouble();
+        var sy = points.RootElement.GetProperty("startY").GetDouble();
+        var ex = points.RootElement.GetProperty("endX").GetDouble();
+        var ey = points.RootElement.GetProperty("endY").GetDouble();
+
+        await page.Mouse.MoveAsync((float)sx, (float)sy);
+        await page.Mouse.DownAsync();
+        // Several intermediate steps so _onMouseMove fires and the hover
+        // logic has time to latch onto the node/port.
+        await page.Mouse.MoveAsync((float)((sx + ex) / 2), (float)((sy + ey) / 2), new MouseMoveOptions { Steps = 6 });
+        await page.Mouse.MoveAsync((float)ex, (float)ey, new MouseMoveOptions { Steps = 6 });
+
+        // Diagnostic probe — right before mouseup, gather everything needed
+        // to understand why smart-snap might not hit the port.
+        var probe = await page.EvaluateAsync<string>("""
+            (args) => {
+                const [cx, cy, nodeId, portId] = args;
+                const el = document.elementFromPoint(cx, cy);
+                const nodeEl = el ? el.closest('[data-node-id]') : null;
+                const portElUnder = el ? el.closest('.tm-diagram-port') : null;
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const inst  = canvas ? window.tmDiagramEditor.instances.get(canvas.id) : null;
+                const docPt = inst ? window.tmDiagramEditor._screenToDoc(inst, cx, cy) : null;
+
+                let nearest = null;
+                let nodeRect = null;
+                const portList = [];
+                if (inst && nodeEl) {
+                    const nid = nodeEl.getAttribute('data-node-id');
+                    nodeRect = window.tmDiagramEditor._nodeRect(inst, nid);
+                    const nodeClientRect = nodeEl.getBoundingClientRect();
+                    const s = inst.scale || 1;
+                    const ports = nodeEl.querySelectorAll('.tm-diagram-port[data-port-id]');
+                    for (const p of ports) {
+                        const pr = p.getBoundingClientRect();
+                        const pcxC = pr.left + pr.width / 2;
+                        const pcyC = pr.top + pr.height / 2;
+                        const relX = pcxC - nodeClientRect.left;
+                        const relY = pcyC - nodeClientRect.top;
+                        const px = nodeRect ? (nodeRect.x + relX / s) : null;
+                        const py = nodeRect ? (nodeRect.y + relY / s) : null;
+                        const dx = (px !== null && docPt) ? px - docPt.x : null;
+                        const dy = (py !== null && docPt) ? py - docPt.y : null;
+                        const distDoc = (dx !== null && dy !== null) ? Math.sqrt(dx*dx + dy*dy) : null;
+                        portList.push({
+                            portId: p.getAttribute('data-port-id'),
+                            screenCenter: { x: Math.round(pcxC*100)/100, y: Math.round(pcyC*100)/100 },
+                            docCenter: (px !== null) ? { x: Math.round(px*100)/100, y: Math.round(py*100)/100 } : null,
+                            distDoc: distDoc !== null ? Math.round(distDoc*100)/100 : null
+                        });
+                    }
+                    const threshold = 15 / Math.max(s, 0.01);
+                    const res = window.tmDiagramEditor._findNearestPortOnNode(
+                        inst, nid, docPt.x, docPt.y, threshold);
+                    nearest = res ? {
+                        portId: res.portEl ? res.portEl.getAttribute('data-port-id') : null,
+                        x: res.x, y: res.y,
+                        threshold
+                    } : { result: null, threshold };
+                }
+                return JSON.stringify({
+                    hitTag: el ? el.tagName : null,
+                    hitClass: el ? el.getAttribute('class') : null,
+                    nodeId: nodeEl ? nodeEl.getAttribute('data-node-id') : null,
+                    onPort: portElUnder ? portElUnder.getAttribute('data-port-id') : null,
+                    cursorScreen: { x: cx, y: cy },
+                    cursorDoc: docPt,
+                    nodeRect,
+                    instScale: inst ? inst.scale : null,
+                    toolMode: inst ? inst.toolMode : null,
+                    nearestPort: nearest,
+                    ports: portList
+                });
+            }
+        """, new object[] { ex, ey, Node2Id, "left" });
+
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        var logJoined = string.Join(" | ", consoleLog);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter,
+            $"Expected one newly created edge from near-miss drag. Probe: {probe} Console: [{logJoined}]");
+
+        // Inspect the newly created edge's path `d` attribute to verify its
+        // terminal coordinates. For a straight-routed edge, the path is
+        // `M x0 y0 L x1 y1`. When the target gets smart-snapped onto
+        // class2/left port, the last point must sit at (500, 230) in doc
+        // coordinates — the port's absolute location — regardless of where
+        // exactly the cursor was dropped. If snapping had failed, the last
+        // point would be wherever the cursor was (≈ 507, 195).
+        var edgeState = await page.EvaluateAsync<string>("""
+            () => {
+                const paths = Array.from(document.querySelectorAll('.tm-diagram-edge-path'));
+                if (!paths.length) return null;
+                // Take the last visible edge path in document order
+                const last = paths[paths.length - 1];
+                const group = last.closest('.tm-diagram-edge-group');
+                const edgeId = group ? group.getAttribute('data-edge-id') : null;
+                const d = last.getAttribute('d') || '';
+                // Parse numbers from the path: works for "M x y L x y" and
+                // also for multi-segment orthogonal paths — we only care
+                // about the very first and very last (x, y).
+                const nums = (d.match(/-?\d+(?:\.\d+)?/g) || []).map(parseFloat);
+                let start = null, end = null;
+                if (nums.length >= 4) {
+                    start = { x: nums[0], y: nums[1] };
+                    end   = { x: nums[nums.length - 2], y: nums[nums.length - 1] };
+                }
+                return JSON.stringify({ edgeId, d, start, end });
+            }
+        """);
+
+        Assert.IsNotNull(edgeState, "Could not find the newly-created edge path in the DOM.");
+        using var state = JsonDocument.Parse(edgeState!);
+        Assert.IsTrue(state.RootElement.TryGetProperty("end", out var endEl) && endEl.ValueKind == JsonValueKind.Object,
+            $"Could not parse end point from edge path. EdgeState: {edgeState} Probe: {probe} Console: [{logJoined}]");
+        var endX = endEl.GetProperty("x").GetDouble();
+        var endY = endEl.GetProperty("y").GetDouble();
+
+        // Port "left" on class2 center (from the probe): (500, 230).
+        // The cursor was dropped at ~(507, 195) in doc coords — off the
+        // port by ~35 units. If smart-snap attached the target to
+        // class2/left, the rendered edge end point must lie close to the
+        // port. A straight-routed edge clips at the node perimeter with a
+        // small jetty offset, so we accept a 20-unit radius around the
+        // port (still well below the ~34-unit cursor distance).
+        var cursorDocJson = await page.EvaluateAsync<string>("""
+            (args) => {
+                const [cx, cy] = args;
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                const inst  = canvas ? window.tmDiagramEditor.instances.get(canvas.id) : null;
+                if (!inst) return null;
+                const p = window.tmDiagramEditor._screenToDoc(inst, cx, cy);
+                return JSON.stringify({ x: p.x, y: p.y });
+            }
+        """, new object[] { ex, ey });
+        using var cursorDocEl = JsonDocument.Parse(cursorDocJson!);
+        var curX = cursorDocEl.RootElement.GetProperty("x").GetDouble();
+        var curY = cursorDocEl.RootElement.GetProperty("y").GetDouble();
+
+        const double portX = 500;
+        const double portY = 230;
+        var distToPort   = Math.Sqrt((endX - portX) * (endX - portX) + (endY - portY) * (endY - portY));
+        var distToCursor = Math.Sqrt((endX - curX) * (endX - curX) + (endY - curY) * (endY - curY));
+
+        Assert.IsTrue(distToPort < 20,
+            $"Edge target did not snap to class2/left port. End=({endX:F2},{endY:F2}), port=({portX},{portY}), dist={distToPort:F2}. Cursor=({curX:F2},{curY:F2}), distToCursor={distToCursor:F2}. EdgeState: {edgeState} Probe: {probe} Console: [{logJoined}]");
+        Assert.IsTrue(distToPort < distToCursor,
+            $"Edge target end is closer to drop location than to the port — snap did not happen. End=({endX:F2},{endY:F2}), port=({portX},{portY}), dist={distToPort:F2}. Cursor=({curX:F2},{curY:F2}), distToCursor={distToCursor:F2}. EdgeState: {edgeState}");
+
+        await TakeScreenshotAsync(page, "phase3_snap_to_port_near_miss");
+    }
+
+    [TestMethod]
+    [Description("3.3 — With grid snap active, floating target point is rounded to the grid")]
+    public async Task Phase3_GridSnap_FloatingPoint_Rounded()
+    {
+        const int GridSize = 20;
+        var page = await CreatePageAsync();
+        await page.GotoAsync(BaseUrl + DiagramEditorUrl);
+        await WaitForCanvasAsync(page);
+
+        // Configure a coarse 20px grid directly on the active diagram instance.
+        // Avoids depending on demo-specific UI controls.
+        await page.EvaluateAsync("""
+            (gridSize) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return;
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (inst) inst.gridSize = gridSize;
+            }
+        """, GridSize);
+
+        var initialEdgeCount = await GetEdgeCountAsync(page);
+        await SetToolModeAsync(page, "edge");
+
+        // Pick screen points BELOW every node so the drag endpoint stays in
+        // truly empty canvas space (no node/edge/port hit). That lets the
+        // "nothing snapped → grid snap the floating endpoint" branch run.
+        var coordsJson = await page.EvaluateAsync<string>("""
+            (gridSize) => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return null;
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (!inst) return null;
+                const cr = canvas.getBoundingClientRect();
+                const nodes = Array.from(document.querySelectorAll('.tm-diagram-node[data-node-id]'));
+                let maxBottom = cr.top + 100;
+                for (const n of nodes) {
+                    const r = n.getBoundingClientRect();
+                    maxBottom = Math.max(maxBottom, r.bottom);
+                }
+                const startScreen = {
+                    x: cr.left + 60,
+                    y: Math.min(cr.bottom - 80, maxBottom + 40)
+                };
+                const endScreen = {
+                    x: Math.min(cr.right - 60, startScreen.x + 223),
+                    y: Math.min(cr.bottom - 20, startScreen.y + 137)
+                };
+                const startDoc = window.tmDiagramEditor._screenToDoc(inst, startScreen.x, startScreen.y);
+                const endDoc   = window.tmDiagramEditor._screenToDoc(inst, endScreen.x, endScreen.y);
+                return JSON.stringify({ startScreen, endScreen, startDoc, endDoc });
+            }
+        """, GridSize);
+        Assert.IsNotNull(coordsJson, "Could not compute grid-snap drag coordinates.");
+        using var coords = JsonDocument.Parse(coordsJson);
+        var sx = coords.RootElement.GetProperty("startScreen").GetProperty("x").GetDouble();
+        var sy = coords.RootElement.GetProperty("startScreen").GetProperty("y").GetDouble();
+        var ex = coords.RootElement.GetProperty("endScreen").GetProperty("x").GetDouble();
+        var ey = coords.RootElement.GetProperty("endScreen").GetProperty("y").GetDouble();
+        var endDocX = coords.RootElement.GetProperty("endDoc").GetProperty("x").GetDouble();
+        var endDocY = coords.RootElement.GetProperty("endDoc").GetProperty("y").GetDouble();
+        var expectedX = Math.Round(endDocX / GridSize) * GridSize;
+        var expectedY = Math.Round(endDocY / GridSize) * GridSize;
+
+        await page.Mouse.MoveAsync((float)sx, (float)sy);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)ex, (float)ey, new MouseMoveOptions { Steps = 6 });
+        await page.Mouse.UpAsync();
+        await page.WaitForTimeoutAsync(900);
+
+        var edgeCountAfter = await GetEdgeCountAsync(page);
+        Assert.AreEqual(initialEdgeCount + 1, edgeCountAfter, "Expected one newly created floating edge.");
+
+        // Read the actual floating-target position from the dangling target
+        // handle's bounding rect (screen) and map it back to doc units via
+        // the public `_screenToDoc` helper. This is independent of any SVG
+        // transform or router layout.
+        var targetPosJson = await page.EvaluateAsync<string>("""
+            () => {
+                const canvas = document.querySelector('.tm-diagram-canvas');
+                if (!canvas || !window.tmDiagramEditor) return null;
+                const inst = window.tmDiagramEditor.instances.get(canvas.id);
+                if (!inst) return null;
+                const handles = Array.from(document.querySelectorAll('.tm-diagram-edge-handle--dangling[data-dangling="target"]'));
+                if (!handles.length) return JSON.stringify({ noHandle: true });
+                // Take the last-rendered dangling target handle — that's the
+                // one on the edge we just created.
+                const h = handles[handles.length - 1];
+                const r = h.getBoundingClientRect();
+                const cx = r.left + r.width / 2;
+                const cy = r.top + r.height / 2;
+                const doc = window.tmDiagramEditor._screenToDoc(inst, cx, cy);
+                return JSON.stringify({ docX: doc.x, docY: doc.y, gridSize: inst.gridSize });
+            }
+        """);
+        Assert.IsNotNull(targetPosJson);
+        using var targetPos = JsonDocument.Parse(targetPosJson);
+        Assert.IsFalse(targetPos.RootElement.TryGetProperty("noHandle", out _),
+            "Expected a dangling target handle after free-line drag; none found (target may have attached to a node or edge).");
+        var docX = targetPos.RootElement.GetProperty("docX").GetDouble();
+        var docY = targetPos.RootElement.GetProperty("docY").GetDouble();
+
+        // Grid snap tolerance: 1.5 doc units covers cumulative float
+        // rounding through SVG matrixTransform and DOM rect measurement.
+        Assert.IsTrue(Math.Abs(docX - expectedX) <= 1.5,
+            $"Target X should snap to grid multiple of {GridSize}. Expected ≈ {expectedX} (raw {endDocX:F2}), got {docX:F2}.");
+        Assert.IsTrue(Math.Abs(docY - expectedY) <= 1.5,
+            $"Target Y should snap to grid multiple of {GridSize}. Expected ≈ {expectedY} (raw {endDocY:F2}), got {docY:F2}.");
+
+        await TakeScreenshotAsync(page, "phase3_grid_snap_floating_point");
+    }
+
+    // ========================================================================
     // Smoke / Integration
     // ========================================================================
 

@@ -628,6 +628,8 @@
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeLineStyle("5,5")'>@Loc["TmDiagramEditor_LineDashed"]</button>
                             <button class="tm-diagram-editor__context-item" role="menuitem" @onclick='() => ContextMenuChangeEdgeLineStyle("2,2")'>@Loc["TmDiagramEditor_LineDotted"]</button>
                             <div class="tm-diagram-editor__context-sep" role="separator"></div>
+                            <button class="tm-diagram-editor__context-item" role="menuitem" disabled="@(!ContextMenuCanDetachEdgeEndpoints())" @onclick="ContextMenuDetachEdgeEndpoints">@Loc["TmDiagramEditor_DetachEndpoints"]</button>
+                            <div class="tm-diagram-editor__context-sep" role="separator"></div>
                             <button class="tm-diagram-editor__context-item tm-diagram-editor__context-item--danger" role="menuitem" @onclick="ContextMenuDeleteEdge">@Loc["TmDiagramEditor_Delete"]</button>
                             break;
 

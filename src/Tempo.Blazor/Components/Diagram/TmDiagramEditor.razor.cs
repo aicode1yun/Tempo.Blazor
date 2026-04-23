@@ -720,6 +720,30 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         await OnDocumentChanged(_document);
     }
 
+    // Detach both endpoints of the right-clicked edge. Preserves the edge's
+    // current visible geometry by freezing source/target positions into
+    // SourcePoint / TargetPoint before wiping the connection fields.
+    private async Task ContextMenuDetachEdgeEndpoints()
+    {
+        await CloseContextMenu();
+        if (_document is null || ReadOnly || _contextMenuEdgeId is null) return;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+        if (edge is null) return;
+        ActiveCommandStack.Push(new DetachEdgeEndpointsCommand(_document, edge.Id, detachSource: true, detachTarget: true));
+        await OnDocumentChanged(_document);
+    }
+
+    private bool ContextMenuCanDetachEdgeEndpoints()
+    {
+        if (ReadOnly || _document is null || _contextMenuEdgeId is null) return false;
+        var edge = _document.Edges.FirstOrDefault(e => e.Id == _contextMenuEdgeId);
+        if (edge is null) return false;
+        // At least one endpoint must be attached for detach to make sense.
+        bool sourceAttached = !string.IsNullOrEmpty(edge.SourceNodeId) || !string.IsNullOrEmpty(edge.SourceEdgeId) || edge.SourceConstraint is not null;
+        bool targetAttached = !string.IsNullOrEmpty(edge.TargetNodeId) || !string.IsNullOrEmpty(edge.TargetEdgeId) || edge.TargetConstraint is not null;
+        return sourceAttached || targetAttached;
+    }
+
     private async Task ContextMenuEditEdgeLabel()
     {
         await CloseContextMenu();
@@ -1771,6 +1795,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         if (_document is null || ReadOnly) return;
 
         var edge = new DiagramEdge();
+
+        // Inherit the last used edge style (stroke, arrow, routing…) so the
+        // look-and-feel carries across newly drawn edges until the user
+        // explicitly edits one through the properties panel.
+        _document.LastUsedEdgeStyle?.ApplyTo(edge);
 
         // ── Source terminal ──────────────────────────────────────────────────
         // Either attached to a node (with optional port / constraint / side) or

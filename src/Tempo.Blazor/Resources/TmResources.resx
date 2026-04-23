@@ -959,6 +959,7 @@
   <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Curved</value></data>
   <data name="TmDiagramEditor_FlipEdge" xml:space="preserve"><value>Flip</value></data>
   <data name="TmDiagramEditor_ClearWaypoints" xml:space="preserve"><value>Clear waypoints</value></data>
+  <data name="TmDiagramEditor_DetachEndpoints" xml:space="preserve"><value>Detach endpoints</value></data>
   <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Start Arrow</value></data>
   <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>End Arrow</value></data>
   <data name="TmDiagramEditor_ArrowNone" xml:space="preserve"><value>None</value></data>

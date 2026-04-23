@@ -509,6 +509,34 @@
     cursor: move;
 }
 
+/* Edge-tool cursor hints (Phase 3.6):
+ * - Over empty canvas the container cursor is already `crosshair` via JS.
+ * - Over a node body give the user a `pointer` cursor so it is visible the
+ *   click will attach the new edge to that node. */
+.tm-diagram-canvas--edge-mode .tm-diagram-node {
+    cursor: pointer;
+}
+.tm-diagram-canvas--edge-mode .tm-diagram-port,
+.tm-diagram-canvas--edge-mode .tm-diagram-connection-point {
+    cursor: crosshair;
+}
+
+/* Phase 3.9: subtle open-circle marker at floating edge terminals.
+ * Invisible by default; revealed when the user hovers the edge's interactive
+ * group so they can tell the endpoint is not attached to anything. */
+.tm-diagram-edge-floating-marker {
+    fill: transparent;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    stroke-dasharray: 2 2;
+    opacity: 0;
+    transition: opacity 120ms ease-in-out;
+    pointer-events: none;
+}
+.tm-diagram-edge-group:hover .tm-diagram-edge-floating-marker {
+    opacity: 0.75;
+}
+
 .tm-diagram-node--drop-target {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;

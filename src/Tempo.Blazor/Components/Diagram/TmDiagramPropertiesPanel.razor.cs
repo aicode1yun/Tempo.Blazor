@@ -1068,6 +1068,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
     private void ApplyEdgeStyleChange(Action<DiagramEdge> mutate)
     {
         if (Document is null || SelectedEdges.Count == 0) return;
+        DiagramEdge? representative;
         if (SelectedEdges.Count == 1)
         {
             var edge = SelectedEdges[0];
@@ -1076,6 +1077,7 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
             var after = DiagramEdgeStyleSnapshot.FromEdge(edge);
             if (CommandStack is not null)
                 CommandStack.Push(new UpdateEdgeStyleCommand(Document, edge.Id, before, after));
+            representative = edge;
         }
         else
         {
@@ -1085,6 +1087,14 @@ public partial class TmDiagramPropertiesPanel : ComponentBase
             var afterSnapshot = DiagramEdgeStyleSnapshot.FromEdge(SelectedEdges[0]);
             if (CommandStack is not null)
                 CommandStack.Push(new UpdateEdgesStyleCommand(Document, ids, beforeSnapshots, afterSnapshot));
+            representative = SelectedEdges[0];
+        }
+
+        // Remember the latest explicit style so subsequent newly-drawn edges
+        // pick up the same look (inherits across edges until changed again).
+        if (representative is not null)
+        {
+            Document.LastUsedEdgeStyle = DiagramEdgeStyleSnapshot.FromEdge(representative);
         }
     }
 

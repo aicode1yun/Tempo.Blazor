@@ -28,6 +28,14 @@ public sealed class DiagramDocument
     /// <summary>UTC timestamp of last modification.</summary>
     public DateTime ModifiedAt { get; set; } = DateTime.UtcNow;
 
+    /// <summary>
+    /// Most recently applied edge style (stroke, arrow, routing preferences…).
+    /// When a new edge is created, this snapshot is cloned onto it so the
+    /// style sticks across edges until the user edits one through the
+    /// properties panel. `null` → use built-in defaults.
+    /// </summary>
+    public DiagramEdgeStyleSnapshot? LastUsedEdgeStyle { get; set; }
+
     /// <summary>Returns the currently active page, ensuring at least one page exists.</summary>
     [JsonIgnore]
     public DiagramPage ActivePage

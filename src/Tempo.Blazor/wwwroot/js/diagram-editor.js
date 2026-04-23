@@ -213,8 +213,19 @@ window.tmDiagramEditor = {
     setToolMode: function (container, mode) {
         const inst = this.instances.get(container.id);
         if (!inst) return;
+        this._applyToolMode(inst, mode);
+    },
+
+    // Central tool-mode assignment helper. Keeps `inst.toolMode`, the
+    // container cursor, and the `--edge-mode` / `--pan-mode` CSS classes
+    // consistent so styling hooks (e.g. node pointer-cursor in edge mode)
+    // stay in sync regardless of which code path flipped the mode.
+    _applyToolMode: function (inst, mode) {
+        if (!inst || !inst.container) return;
         inst.toolMode = mode;
         inst.container.style.cursor = mode === 'pan' ? 'grab' : (mode === 'edge' ? 'crosshair' : '');
+        inst.container.classList.toggle('tm-diagram-canvas--edge-mode', mode === 'edge');
+        inst.container.classList.toggle('tm-diagram-canvas--pan-mode', mode === 'pan');
     },
 
     // ── Canvas size update ────────────────────────────────────────────────────
@@ -953,8 +964,7 @@ window.tmDiagramEditor = {
         }
         if (inst.toolMode === 'edge') {
             // Right-click in edge mode: revert to select.
-            inst.toolMode = 'select';
-            inst.container.style.cursor = '';
+            this._applyToolMode(inst, 'select');
             if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
             return;
         }
@@ -1432,10 +1442,12 @@ window.tmDiagramEditor = {
         if (inst.isDrawingEdge) {
             // When the source is floating (free-line from empty canvas) pass
             // the doc-space source point so the backend can create an edge
-            // with SourcePoint instead of a source node/port.
+            // with SourcePoint instead of a source node/port. Floating
+            // coordinates are grid-snapped when `gridSize > 0` so free
+            // endpoints line up with the grid just like node positions do.
             const floatingSource = !inst.drawSource.nodeId;
-            const srcPtX = floatingSource ? inst.drawSource.x : null;
-            const srcPtY = floatingSource ? inst.drawSource.y : null;
+            const srcPtX = floatingSource ? this._snap(inst, inst.drawSource.x) : null;
+            const srcPtY = floatingSource ? this._snap(inst, inst.drawSource.y) : null;
 
             // Edge-to-edge connection takes priority
             if (inst.drawHoverEdgeId && inst.drawHoverEdgeT !== null) {
@@ -1454,9 +1466,27 @@ window.tmDiagramEditor = {
             }
             // Use elementFromPoint because e.target may hit SVG grid/path instead of HTML port overlay
             const hitEl = document.elementFromPoint(e.clientX, e.clientY);
-            const portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
+            let portEl = hitEl ? hitEl.closest('.tm-diagram-port') : null;
+            // Phase 3.2 smart-snap to port — if the cursor isn't directly on
+            // a port but _is_ over a node, pull the target onto the closest
+            // port within the same threshold used by `_updateEdgeDraw`
+            // (15 / scale in doc units). This mirrors the preview behavior
+            // so what the user sees during drag is what they get on release.
+            let smartSnapNodeEl = null;
+            if (!portEl) {
+                const nodeUnderCursor = hitEl ? hitEl.closest('[data-node-id]') : null;
+                if (nodeUnderCursor) {
+                    const nId = nodeUnderCursor.getAttribute('data-node-id');
+                    const upDoc = this._screenToDoc(inst, e.clientX, e.clientY);
+                    const nearest = this._findNearestPortOnNode(inst, nId, upDoc.x, upDoc.y, 15 / Math.max(inst.scale, 0.01));
+                    if (nearest && nearest.portEl) {
+                        portEl = nearest.portEl;
+                        smartSnapNodeEl = nodeUnderCursor;
+                    }
+                }
+            }
             if (portEl) {
-                const nodeEl = portEl.closest('[data-node-id]');
+                const nodeEl = portEl.closest('[data-node-id]') || smartSnapNodeEl;
                 if (nodeEl) {
                     const targetNodeId = nodeEl.getAttribute('data-node-id');
                     const targetPortId = portEl.getAttribute('data-port-id');
@@ -1501,7 +1531,9 @@ window.tmDiagramEditor = {
             }
             // Dangling edge: drop on empty canvas
             const docPt = this._screenToDoc(inst, e.clientX, e.clientY);
-            console.log('[EdgeDraw] Dangling -> pt=' + docPt.x + ',' + docPt.y);
+            const tgtX = this._snap(inst, docPt.x);
+            const tgtY = this._snap(inst, docPt.y);
+            console.log('[EdgeDraw] Dangling -> pt=' + tgtX + ',' + tgtY);
             inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
                 inst.drawSource.nodeId, inst.drawSource.portId,
                 null, null,
@@ -1509,7 +1541,7 @@ window.tmDiagramEditor = {
                 null, 0.5,
                 inst.drawSource.constraintRx, inst.drawSource.constraintRy, inst.drawSource.constraintPerimeter,
                 null, null, null,
-                docPt.x, docPt.y,
+                tgtX, tgtY,
                 srcPtX, srcPtY,
                 null);
             this._cancelEdgeDraw(inst);
@@ -2080,21 +2112,54 @@ window.tmDiagramEditor = {
         // Magnet snapping: find nearest node perimeter point
         const el = document.elementFromPoint(clientX, clientY);
         const nodeEl = el ? el.closest('[data-node-id]') : null;
+        const hoverNodeId = nodeEl ? nodeEl.getAttribute('data-node-id') : null;
         if (nodeEl) {
-            const nid = nodeEl.getAttribute('data-node-id');
-            const rect = this._nodeRect(inst, nid);
+            const rect = this._nodeRect(inst, hoverNodeId);
             if (rect) {
-                const snap = this._snapToNodePerimeter(rect, docPt.x, docPt.y);
-                endX = snap.x;
-                endY = snap.y;
+                // Auto-snap to nearest port when cursor is close enough
+                // (smart-target threshold). Falls back to perimeter snap
+                // otherwise. Distance is measured in document units so
+                // the 15px screen threshold scales with zoom.
+                const snapToPort = this._findNearestPortOnNode(inst, hoverNodeId, docPt.x, docPt.y, 15 / Math.max(inst.scale, 0.01));
+                if (snapToPort) {
+                    endX = snapToPort.x;
+                    endY = snapToPort.y;
+                } else {
+                    const snap = this._snapToNodePerimeter(rect, docPt.x, docPt.y);
+                    endX = snap.x;
+                    endY = snap.y;
+                }
             }
         }
+
+        // Drop-target highlight — mark the node the cursor is over so the
+        // user gets draw.io-style feedback of where the edge will attach.
+        // Don't highlight the source node of a node-anchored draw.
+        const prevDrop = inst.__dropTargetNodeId || null;
+        const isOwnSource = hoverNodeId && inst.drawSource && hoverNodeId === inst.drawSource.nodeId;
+        const nextDrop = (hoverNodeId && !isOwnSource) ? hoverNodeId : null;
+        if (prevDrop && prevDrop !== nextDrop) {
+            inst.htmlLayer?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+        }
+        if (nextDrop && nextDrop !== prevDrop) {
+            const target = inst.htmlLayer?.querySelector('[data-node-id="' + nextDrop + '"]');
+            if (target) target.classList.add('tm-diagram-node--drop-target');
+        }
+        inst.__dropTargetNodeId = nextDrop;
 
         const d = this._buildDrawPathD(inst, endX, endY);
         inst.drawTempPath.setAttribute('d', d);
 
-        // Port snapping highlight
-        const portEl = el ? el.closest('.tm-diagram-port') : null;
+        // Port snapping highlight. Prefer the explicitly hovered port
+        // (cursor is directly on the port circle) but also highlight the
+        // near-miss port that `_findNearestPortOnNode` just snapped the
+        // endpoint to, so the user sees the same visual affordance whether
+        // they aim precisely or just near enough.
+        let portEl = el ? el.closest('.tm-diagram-port') : null;
+        if (!portEl && hoverNodeId) {
+            const nearest = this._findNearestPortOnNode(inst, hoverNodeId, docPt.x, docPt.y, 15 / Math.max(inst.scale, 0.01));
+            if (nearest && nearest.portEl) portEl = nearest.portEl;
+        }
         inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
         if (portEl) {
             const nid = portEl.closest('[data-node-id]')?.getAttribute('data-node-id');
@@ -2152,6 +2217,54 @@ window.tmDiagramEditor = {
         inst.drawHoverEdgeId = null;
         inst.drawHoverEdgeT = null;
         this._highlightEdgeTarget(inst, null);
+
+        // Nothing snapped — apply grid snap to the free floating endpoint
+        // so the preview matches what the final edge will actually use.
+        if (!hoverNodeId && inst.gridSize > 0) {
+            const gx = this._snap(inst, endX);
+            const gy = this._snap(inst, endY);
+            if (gx !== endX || gy !== endY) {
+                const d3 = this._buildDrawPathD(inst, gx, gy);
+                inst.drawTempPath.setAttribute('d', d3);
+            }
+        }
+    },
+
+    // Find the port on `nodeId` whose center is closest to the given doc
+    // point (x, y). Returns `{ x, y, portEl, portId, distDoc }` if the
+    // distance is within `maxDistDoc` document units, otherwise null.
+    // Used for smart auto-snap during edge draw (Phase 3.2): the draw
+    // endpoint and port highlight both snap even when the cursor is
+    // slightly off the port circle.
+    _findNearestPortOnNode: function (inst, nodeId, x, y, maxDistDoc) {
+        if (!nodeId || !inst.htmlLayer) return null;
+        const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]');
+        if (!nodeEl) return null;
+        const portEls = nodeEl.querySelectorAll('.tm-diagram-port[data-port-id]');
+        if (!portEls || portEls.length === 0) return null;
+        // Map every port's screen-space center through the same _screenToDoc
+        // transform used for the cursor. This keeps the two coordinate
+        // systems consistent even if the SVG's screen-CTM and the
+        // htmlLayer's CSS transform (driven by `inst.scale`) drift apart —
+        // which happens in practice when the SVG viewBox and its rendered
+        // client width imply a different scale than `inst.scale`.
+        let best = null;
+        let bestD2 = Infinity;
+        const maxD2 = maxDistDoc * maxDistDoc;
+        for (let i = 0; i < portEls.length; i++) {
+            const p = portEls[i];
+            const pr = p.getBoundingClientRect();
+            const pcScreen = { x: pr.left + pr.width / 2, y: pr.top + pr.height / 2 };
+            const pcDoc = this._screenToDoc(inst, pcScreen.x, pcScreen.y);
+            const dx = pcDoc.x - x;
+            const dy = pcDoc.y - y;
+            const d2 = dx * dx + dy * dy;
+            if (d2 < bestD2 && d2 <= maxD2) {
+                bestD2 = d2;
+                best = { x: pcDoc.x, y: pcDoc.y, portEl: p, portId: p.getAttribute('data-port-id'), distDoc: Math.sqrt(d2) };
+            }
+        }
+        return best;
     },
 
     _snapToNodePerimeter: function (rect, x, y) {
@@ -2325,11 +2438,12 @@ window.tmDiagramEditor = {
         inst.drawHoverEdgeT = null;
         this._highlightEdgeTarget(inst, null);
         inst.htmlLayer?.querySelectorAll('.tm-diagram-port.tm-diagram-port--target').forEach(p => p.classList.remove('tm-diagram-port--target'));
+        inst.htmlLayer?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
+        inst.__dropTargetNodeId = null;
 
         // Return to select mode after using edge tool
         if (inst.toolMode === 'edge') {
-            inst.toolMode = 'select';
-            inst.container.style.cursor = '';
+            this._applyToolMode(inst, 'select');
             if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
         }
     },
@@ -2461,14 +2575,15 @@ window.tmDiagramEditor = {
 
         const waypointsXY = [];
         for (let i = 0; i < inst.polylinePoints.length; i++) {
-            waypointsXY.push(inst.polylinePoints[i].x);
-            waypointsXY.push(inst.polylinePoints[i].y);
+            waypointsXY.push(this._snap(inst, inst.polylinePoints[i].x));
+            waypointsXY.push(this._snap(inst, inst.polylinePoints[i].y));
         }
 
         // Source is always floating for a polyline draft started from empty
-        // canvas; forward its doc-space coordinates.
-        const srcPtX = inst.drawSource.x;
-        const srcPtY = inst.drawSource.y;
+        // canvas; forward its doc-space coordinates, grid-snapped so free
+        // endpoints align with the grid when one is active.
+        const srcPtX = this._snap(inst, inst.drawSource.x);
+        const srcPtY = this._snap(inst, inst.drawSource.y);
 
         if (target.kind === 'floating') {
             inst.dotNetRef.invokeMethodAsync('JsOnEdgeCreated',
@@ -2478,7 +2593,7 @@ window.tmDiagramEditor = {
                 null, 0.5,
                 null, null, null,
                 null, null, null,
-                target.x, target.y,
+                this._snap(inst, target.x), this._snap(inst, target.y),
                 srcPtX, srcPtY,
                 waypointsXY);
         } else if (target.kind === 'port') {
@@ -2568,8 +2683,7 @@ window.tmDiagramEditor = {
                 inst.isPendingEdgeDraw = false;
                 inst.pendingEdgeStart = null;
                 if (inst.toolMode === 'edge') {
-                    inst.toolMode = 'select';
-                    inst.container.style.cursor = '';
+                    this._applyToolMode(inst, 'select');
                     if (inst.dotNetRef) inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
                 }
                 return;
@@ -2731,26 +2845,25 @@ window.tmDiagramEditor = {
             return;
         }
 
-        // H -> pan tool, V -> select tool
+        // Tool-mode shortcuts: H → pan, V → select, L/C/E → edge.
+        // `E` was added in Phase 3 to match draw.io's edge shortcut; `L`
+        // and `C` are kept for backwards compatibility.
         if (!e.ctrlKey && !e.metaKey && !e.target.matches('input,textarea,select')) {
             if (e.code === 'KeyH') {
                 e.preventDefault();
-                inst.toolMode = 'pan';
-                inst.container.style.cursor = 'grab';
+                this._applyToolMode(inst, 'pan');
                 inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'pan');
                 return;
             }
             if (e.code === 'KeyV') {
                 e.preventDefault();
-                inst.toolMode = 'select';
-                inst.container.style.cursor = '';
+                this._applyToolMode(inst, 'select');
                 inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'select');
                 return;
             }
-            if (e.code === 'KeyL' || e.code === 'KeyC') {
+            if (e.code === 'KeyL' || e.code === 'KeyC' || e.code === 'KeyE') {
                 e.preventDefault();
-                inst.toolMode = 'edge';
-                inst.container.style.cursor = 'crosshair';
+                this._applyToolMode(inst, 'edge');
                 inst.dotNetRef.invokeMethodAsync('OnToolModeChanged', 'edge');
                 return;
             }

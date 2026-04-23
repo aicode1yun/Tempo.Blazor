@@ -941,6 +941,7 @@
   <data name="TmDiagramEditor_Curved" xml:space="preserve"><value>Křivka</value></data>
   <data name="TmDiagramEditor_FlipEdge" xml:space="preserve"><value>Překlopit</value></data>
   <data name="TmDiagramEditor_ClearWaypoints" xml:space="preserve"><value>Vymazat body</value></data>
+  <data name="TmDiagramEditor_DetachEndpoints" xml:space="preserve"><value>Odpojit konce</value></data>
   <data name="TmDiagramEditor_StartArrow" xml:space="preserve"><value>Počáteční šipka</value></data>
   <data name="TmDiagramEditor_EndArrow" xml:space="preserve"><value>Koncová šipka</value></data>
   <data name="TmDiagramEditor_ArrowNone" xml:space="preserve"><value>Žádná</value></data>
