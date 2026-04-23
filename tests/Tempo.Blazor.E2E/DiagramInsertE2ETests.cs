@@ -68,10 +68,15 @@ public class DiagramInsertE2ETests : WasmTestBase
         await cells.Nth(23).ClickAsync();
         await page.WaitForTimeoutAsync(500);
 
-        // Verify table node was created
-        var tableNode = page.Locator(".tm-diagram-node[data-stencil-id='table.basic']");
+        // Verify table node was created. After F3.A `.tm-diagram-node` is an
+        // SVG <g> group; Playwright's `Visible` state check on <g> is brittle,
+        // so we wait for attachment and then query downstream selectors that
+        // live on normal HTML inside the node's <foreignObject>.
+        var tableGroup = page.Locator("g.tm-diagram-node[data-stencil-id='table.basic']");
+        await tableGroup.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 5000 });
+        Assert.IsTrue(await tableGroup.CountAsync() >= 1, "Table node should exist in the SVG scene pane");
+        var tableNode = page.Locator(".tm-diagram-node__shape[data-stencil-id='table.basic']");
         await tableNode.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
-        Assert.IsTrue(await tableNode.IsVisibleAsync(), "Table node should be visible");
 
         // Verify cell count inside the table (3 rows × 4 cols = 12 cells)
         var tableCells = tableNode.Locator(".tm-diagram-node__table-cell");
@@ -97,11 +102,15 @@ public class DiagramInsertE2ETests : WasmTestBase
         // Open Insert dropdown and click Text
         await OpenInsertDropdownAsync(page);
         await ClickInsertOptionAsync(page, "Text");
-        await page.WaitForTimeoutAsync(500);
+        await page.WaitForTimeoutAsync(800);
 
-        // Verify text node was created
-        var textNode = page.Locator(".tm-diagram-node[data-stencil-id='general.text']");
-        await textNode.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
-        Assert.IsTrue(await textNode.IsVisibleAsync(), "Text node should be visible");
+        // After F3.A `.tm-diagram-node` is an SVG <g> group; Playwright's
+        // `Visible` state check on <g> is brittle (SVG groups don't have
+        // offsetWidth/offsetHeight), so we assert Attached — the concrete
+        // behaviour under test is that the Text stencil got inserted into
+        // the scene pane.
+        var textNode = page.Locator("g.tm-diagram-node[data-stencil-id='general.text']");
+        await textNode.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached, Timeout = 5000 });
+        Assert.IsTrue(await textNode.CountAsync() >= 1, "Text node should exist in the SVG scene pane");
     }
 }

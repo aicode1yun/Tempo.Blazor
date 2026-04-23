@@ -442,10 +442,12 @@ public class DiagramEdgeE2ETests : WasmTestBase
         // node's inline translate(...) (same source the C# side reads).
         var docPosJson = await page.EvaluateAsync<string>("""
             () => {
-                const node = document.querySelector('.tm-diagram-node');
+                // F3.A — node position is on the SVG <g> transform attribute
+                // (translate(x,y) rotate(θ cx cy)); no more `px` in CSS translate.
+                const node = document.querySelector('g.tm-diagram-node[data-node-id]');
                 if (!node) return null;
-                const s = node.style.transform || '';
-                const m = s.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
+                const s = node.getAttribute('transform') || '';
+                const m = s.match(/translate\(\s*([-\d.e+]+)\s*,\s*([-\d.e+]+)\s*\)/);
                 if (!m) return null;
                 return JSON.stringify({ x: parseFloat(m[1]), y: parseFloat(m[2]) });
             }
@@ -932,7 +934,7 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await WaitForCanvasAsync(page);
 
         var port = page.Locator($".tm-diagram-node[data-node-id='{Node1Id}'] .tm-diagram-port[data-port-id='right']");
-        await port.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await port.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Attached });
         var (startX, startY) = await GetCenterAsync(port);
 
         var endX = startX + 250;
@@ -944,7 +946,6 @@ public class DiagramEdgeE2ETests : WasmTestBase
         await page.Mouse.UpAsync();
         await page.WaitForTimeoutAsync(2000); // WASM needs more time to render
 
-        // Debug: count total edges first
         var allEdges = page.Locator(".tm-diagram-edge-path");
         var edgeCount = await allEdges.CountAsync();
 
@@ -1543,15 +1544,18 @@ public class DiagramEdgeE2ETests : WasmTestBase
                     // the SVG now. Prefer the scene pane as the query root so this stays
                     // correct through F3 when per-node <g>s replace the single foreignObject.
                     const overlay = document.querySelector('.tm-diagram-scene-pane');
-                    const nodeDocRects = Array.from((overlay || document).querySelectorAll('.tm-diagram-node[data-node-id]')).map(el => {
-                        const s = el.style.transform || '';
-                        const m = s.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
+                    // F3.A — nodes are per-node SVG <g> with the SVG `transform`
+                    // attribute carrying translate(x,y) rotate(...). No px units,
+                    // no CSS transform.
+                    const nodeDocRects = Array.from((overlay || document).querySelectorAll('g.tm-diagram-node[data-node-id]')).map(el => {
+                        const s = el.getAttribute('transform') || '';
+                        const m = s.match(/translate\(\s*([-\d.e+]+)\s*,\s*([-\d.e+]+)\s*\)/);
                         return {
                             id: el.getAttribute('data-node-id'),
                             x: m ? Math.round(parseFloat(m[1])) : null,
                             y: m ? Math.round(parseFloat(m[2])) : null,
-                            w: parseFloat(el.getAttribute('data-w') || el.style.width || '0'),
-                            h: parseFloat(el.getAttribute('data-h') || el.style.height || '0')
+                            w: parseFloat(el.getAttribute('data-w') || '0'),
+                            h: parseFloat(el.getAttribute('data-h') || '0')
                         };
                     });
                     return JSON.stringify({

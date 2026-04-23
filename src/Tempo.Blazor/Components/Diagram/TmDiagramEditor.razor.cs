@@ -1502,9 +1502,20 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
 
         var w = columns * 80 + 20;
         var h = rows * 30 + 20;
+        // Place at the visible viewport centre — see HandleQuickInsert for rationale.
         var page = _document.Pages[_document.ActivePageIndex];
-        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
-        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+        double cx = page.Width / 2, cy = page.Height / 2;
+        if (_canvas is not null)
+        {
+            var vp = _canvas.GetViewport();
+            if (vp.W > 0 && vp.H > 0)
+            {
+                cx = vp.X + vp.W / 2;
+                cy = vp.Y + vp.H / 2;
+            }
+        }
+        var x = Math.Round((cx - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((cy - h / 2) / GridSize) * GridSize;
 
         var node = new DiagramNode
         {
@@ -2426,9 +2437,25 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         var stencil = StencilRegistry.GetStencil(stencilId);
         var w = stencil?.DefaultWidth ?? 120;
         var h = stencil?.DefaultHeight ?? 60;
+        // Place at the visible viewport centre rather than the full-page centre.
+        // After F3 the canvas auto-fits content on init, which shrinks the
+        // rendered viewport away from the whole page; placing at page centre
+        // would drop the node far outside the visible rect and the viewport
+        // culling in `TmDiagramCanvas.IsNodeVisible` would hide it entirely.
+        // Falling back to page centre when no canvas/viewport info is known.
         var page = _document.Pages[_document.ActivePageIndex];
-        var x = Math.Round((page.Width / 2 - w / 2) / GridSize) * GridSize;
-        var y = Math.Round((page.Height / 2 - h / 2) / GridSize) * GridSize;
+        double cx = page.Width / 2, cy = page.Height / 2;
+        if (_canvas is not null)
+        {
+            var vp = _canvas.GetViewport();
+            if (vp.W > 0 && vp.H > 0)
+            {
+                cx = vp.X + vp.W / 2;
+                cy = vp.Y + vp.H / 2;
+            }
+        }
+        var x = Math.Round((cx - w / 2) / GridSize) * GridSize;
+        var y = Math.Round((cy - h / 2) / GridSize) * GridSize;
         await OnToolboxDrop((stencilId, x, y));
     }
 

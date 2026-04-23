@@ -467,48 +467,78 @@
 
 /* ── HTML overlay (nodes foreignObject content) ──────────────────────────── */
 /* After F2, .tm-diagram-canvas__overlay + .tm-diagram-transform-layer live
-   inside a <foreignObject> inside the scene pane. They no longer carry their
-   own transform (viewBox drives zoom/pan) — they are just a static HTML
-   wrapper for the absolutely-positioned node divs.
-
-   The foreignObject is sized to the entire document (Document.Width × Height)
-   so it would, by default, intercept mouse events on EVERY pixel of the canvas
-   — including empty areas sitting above SVG edges, waypoints and decorator
-   handles. We therefore make the foreignObject and its inner HTML wrappers
-   transparent to events and only re-enable pointer-events on the actual
-   `.tm-diagram-node` elements. Events on empty areas pass through to
-   the underlying SVG (edges, handles, bg-pane rect, etc.). This will
-   become a non-issue in F3 when each node gets its own shape-sized
-   foreignObject. */
-.tm-diagram-nodes-fo {
+   Post-F3 each node is its own SVG <g class="tm-diagram-node"> with a
+   shape-sized <foreignObject class="tm-diagram-node__fo"> wrapping a single
+   <div class="tm-diagram-node__body"> that hosts the rich HTML content
+   (stencil sections, ports, connection points, handles). Because every
+   foreignObject is sized to the node itself, empty canvas areas are no
+   longer covered by HTML, so edge hit-paths and decorator handles under
+   empty space are hit-tested natively by the SVG — no more global
+   pointer-events plumbing is required. */
+.tm-diagram-node__fo {
+    overflow: visible;
+    /* Chromium's SVG hit-testing returns <foreignObject> as the hit target
+       even when later SVG siblings (circle.tm-diagram-port) are painted on
+       top of it. Explicitly disabling pointer-events on the foreignObject
+       lets the port circles receive mousedown correctly; HTML children
+       (labels, table cells, inputs) opt back in via .tm-diagram-node__body
+       below. */
     pointer-events: none;
 }
 
-.tm-diagram-canvas__overlay {
+.tm-diagram-node__body {
     position: relative;
     width: 100%;
     height: 100%;
-    pointer-events: none;
-}
-
-.tm-diagram-canvas__overlay .tm-diagram-transform-layer {
-    position: absolute;
-    top: 0;
-    left: 0;
-    pointer-events: none;
-}
-
-.tm-diagram-canvas__overlay .tm-diagram-transform-layer .tm-diagram-node {
+    box-sizing: border-box;
+    user-select: none;
     pointer-events: auto;
 }
 
-/* ── Selection outline ────────────────────────────────────────────────────── */
-.tm-diagram-selection-outline {
-    position: absolute;
-    border: 2px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 4px;
+/* ── F3.E — native SVG shape primitive ────────────────────────────────────
+ * Simple stencils (rectangle, rounded, ellipse, diamond, triangle, hexagon,
+ * parallelogram) emit a native SVG primitive (<rect>, <ellipse>, <polygon>)
+ * *behind* the node's <foreignObject>. The SVG element provides the visual
+ * fill + stroke; the HTML .tm-diagram-node__shape div inside the foreignObject
+ * then only lays out content (labels, sections, ports). We mark the body with
+ * data-native-shape="true" so the HTML shape's background/border are hidden,
+ * preventing double-painting. */
+.tm-diagram-node__shape-bg {
     pointer-events: none;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.25), 0 0 8px rgba(59, 130, 246, 0.35);
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape {
+    background: transparent !important;
+    border: 0 !important;
+    box-shadow: none !important;
+    clip-path: none !important;
+}
+
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::before,
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__shape::after {
+    display: none !important;
+}
+
+/* When a native SVG primitive is drawn, the inline <svg class="tm-diagram-node__svg-bg">
+ * fallback (rendered by TmDiagramStencilShape for BackgroundShape legacy paths)
+ * would double-paint the background. Hide it — the native primitive is the
+ * single source of truth for fill/stroke in F3.E. */
+.tm-diagram-node__body[data-native-shape="true"] .tm-diagram-node__svg-bg {
+    display: none !important;
+}
+
+/* ── Selection outline ──────────────────────────────────────────────────────
+ * Post-F3 the selection outline is an SVG <rect> injected into overlay-pane.
+ * It uses stroke instead of border and SVG drop-shadow filter instead of
+ * box-shadow. */
+rect.tm-diagram-selection-outline {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 2;
+    rx: 4;
+    ry: 4;
+    pointer-events: none;
+    filter: drop-shadow(0 0 3px rgba(59, 130, 246, 0.45));
 }
 
 /* ── Rubber band ─────────────────────────────────────────────────────────── */
@@ -520,10 +550,11 @@
 }
 
 /* ── Node styling ─────────────────────────────────────────────────────────── */
+/* Post-F3 `.tm-diagram-node` is an SVG <g> element. Position/rotation live in
+ * its `transform` attribute (translate + rotate around the node centre). The
+ * `cursor` property is valid on SVG and is inherited into the inner HTML body,
+ * so drag affordance still works over the node shape and labels. */
 .tm-diagram-node {
-    position: absolute;
-    box-sizing: border-box;
-    user-select: none;
     cursor: move;
 }
 
@@ -555,13 +586,17 @@
     opacity: 0.75;
 }
 
-.tm-diagram-node--drop-target {
+/* Drop-target / outline-connect hints — applied on the HTML body because
+ * SVG `outline` support is patchy. The modifier class still lives on the
+ * `.tm-diagram-node` <g> so JS `classList.add/remove` can keep targeting
+ * the node itself. */
+.tm-diagram-node--drop-target .tm-diagram-node__body {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;
     border-radius: var(--tm-radius-sm, 4px);
 }
 
-.tm-diagram-node--outline-connect {
+.tm-diagram-node--outline-connect .tm-diagram-node__body {
     outline: 2px dashed var(--tm-color-success, #10b981);
     outline-offset: 3px;
     border-radius: var(--tm-radius-sm, 4px);
@@ -860,7 +895,7 @@
 }
 
 /* ── Search highlight ────────────────────────────────────────────────────── */
-.tm-diagram-node.tm-diagram-search-match {
+.tm-diagram-node.tm-diagram-search-match .tm-diagram-node__body {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;
     animation: tm-diagram-search-pulse 1.5s ease-in-out infinite;
@@ -883,30 +918,34 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
 }
 
 /* ── Port styling ─────────────────────────────────────────────────────────── */
-.tm-diagram-port {
-    position: absolute;
-    width: 10px;
-    height: 10px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+/* Post-F3 ports are SVG <circle> elements directly inside the node's <g>
+ * (rendered after the <foreignObject>) so Chromium's SVG hit-testing can
+ * reliably route pointer events to them; HTML ports inside <foreignObject>
+ * do NOT receive mousedown in Chromium even with pointer-events:none on the
+ * foreignObject. Styling therefore uses SVG presentation attributes
+ * (fill/stroke) instead of CSS background/border. */
+circle.tm-diagram-port {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: crosshair;
-    z-index: 10;
     opacity: 0;
-    transition: transform 120ms, background 120ms, opacity 120ms;
+    transition: opacity 120ms, r 120ms;
 }
 
-/* Ports visible on node hover, selected node, or during edge drawing */
-.tm-diagram-node:hover .tm-diagram-port,
-.tm-diagram-node--selected .tm-diagram-port,
-.tm-diagram-canvas--edge-drawing .tm-diagram-port {
+/* Ports visible on node hover, selected node, or during edge drawing.
+ * Post-F3 the node is an SVG <g class="tm-diagram-node">; the port <circle>
+ * is a direct child of that <g>. `:hover` on an SVG <g> fires when the
+ * cursor is over any of its shapes, so the same selectors still work. */
+.tm-diagram-node:hover circle.tm-diagram-port,
+.tm-diagram-node--selected circle.tm-diagram-port,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-port {
     opacity: 1;
 }
 
-.tm-diagram-port:hover {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.2);
+circle.tm-diagram-port:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6;
 }
 
 /* ── Edge drawing ─────────────────────────────────────────────────────────── */
@@ -917,49 +956,43 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
 }
 
-.tm-diagram-port--active {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.3);
+circle.tm-diagram-port.tm-diagram-port--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 6.5;
 }
 
-.tm-diagram-port--target {
-    background: var(--tm-color-success, #10b981);
-    border-color: var(--tm-color-success, #10b981);
-    transform: translate(-50%, -50%) scale(1.5);
+circle.tm-diagram-port.tm-diagram-port--target {
+    fill: var(--tm-color-success, #10b981);
+    stroke: var(--tm-color-success, #10b981);
+    r: 7.5;
 }
 
-/* ── Connection points (draw.io style fixed constraint points) ────────────── */
-.tm-diagram-connection-point {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
-    transform: translate(-50%, -50%);
+/* ── Connection points (draw.io style fixed constraint points) ──────────────
+ * Also SVG <circle> post-F3 for the same hit-testing reason as ports. */
+circle.tm-diagram-connection-point {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: crosshair;
-    z-index: 11;
     opacity: 0;
-    transition: transform 120ms, background 120ms, opacity 120ms;
-    pointer-events: auto;
+    transition: opacity 120ms, r 120ms;
 }
 
-/* Visible on node hover, selected node, or during edge drawing */
-.tm-diagram-node:hover .tm-diagram-connection-point,
-.tm-diagram-node--selected .tm-diagram-connection-point,
-.tm-diagram-canvas--edge-drawing .tm-diagram-connection-point {
+.tm-diagram-node:hover circle.tm-diagram-connection-point,
+.tm-diagram-node--selected circle.tm-diagram-connection-point,
+.tm-diagram-canvas--edge-drawing circle.tm-diagram-connection-point {
     opacity: 1;
 }
 
-.tm-diagram-connection-point:hover {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.3);
+circle.tm-diagram-connection-point:hover {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5;
 }
 
-.tm-diagram-connection-point--active {
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translate(-50%, -50%) scale(1.4);
-    box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
+circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
+    fill: var(--tm-color-primary, #3b82f6);
+    r: 5.5;
+    filter: drop-shadow(0 0 2px rgba(59, 130, 246, 0.5));
 }
 
 /* ── Edge path ────────────────────────────────────────────────────────────── */
@@ -968,6 +1001,15 @@ path.tm-diagram-edge-path.tm-diagram-search-match {
     pointer-events: none;
     stroke-linejoin: round;
     stroke-linecap: round;
+}
+
+/* Arrowheads are purely decorative. They're drawn at the edge terminals —
+ * which, for edges attached to a node's port, land exactly on that port's
+ * position. Letting them capture pointer events would block port clicks for
+ * drawing new edges or reconnecting existing ones. The edge itself is
+ * selected via `.tm-diagram-edge-hit-path` (a wide transparent hit target). */
+.tm-diagram-arrowhead {
+    pointer-events: none;
 }
 
 .tm-diagram-edge-hit-path {

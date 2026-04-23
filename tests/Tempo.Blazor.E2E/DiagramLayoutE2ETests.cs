@@ -88,13 +88,30 @@ public class DiagramLayoutE2ETests : WasmTestBase
 
     private async Task<List<(string Id, double X, double Y)>> GetNodeLayoutPositionsAsync(IPage page)
     {
+        // After F3.A the canvas does viewport culling (`IsNodeVisible`) which
+        // can hide nodes that a layout pushed beyond the current viewBox. Call
+        // fit-to-view before reading positions so every layout result is
+        // inside the rendered `g.tm-diagram-node` set.
+        await page.EvaluateAsync("""
+            () => {
+                const c = document.querySelector('.tm-diagram-canvas');
+                if (c && window.tmDiagramEditor && typeof tmDiagramEditor.fitToView === 'function') {
+                    try { tmDiagramEditor.fitToView(c, 40); } catch (_e) {}
+                }
+            }
+        """);
+        await page.WaitForTimeoutAsync(300);
+
+        // After F3.A (planning/DIAGRAM_UNIFIED_SVG_PLAN.md) node position lives
+        // on the per-node SVG <g>'s `transform` attribute (translate(x,y) rotate(θ cx cy))
+        // — no more CSS `style.transform` with `px` units.
         var json = await page.EvaluateAsync<string>("""
             () => {
-                const nodes = document.querySelectorAll('.tm-diagram-node');
+                const nodes = document.querySelectorAll('g.tm-diagram-node[data-node-id]');
                 const arr = [];
                 nodes.forEach(n => {
-                    const t = n.style.transform;
-                    const m = t.match(/translate\(([-+]?[0-9]*\.?[0-9]+)px,\s*([-+]?[0-9]*\.?[0-9]+)px\)/);
+                    const t = n.getAttribute('transform') || '';
+                    const m = t.match(/translate\(\s*([-+]?[0-9]*\.?[0-9]+)\s*,\s*([-+]?[0-9]*\.?[0-9]+)\s*\)/);
                     if (m) {
                         arr.push({ id: n.getAttribute('data-node-id'), x: parseFloat(m[1]), y: parseFloat(m[2]) });
                     } else {

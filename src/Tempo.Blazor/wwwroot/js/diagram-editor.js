@@ -72,10 +72,13 @@ window.tmDiagramEditor = {
         const scenePane = svg.querySelector('.tm-diagram-scene-pane');
         const overlayPane = svg.querySelector('.tm-diagram-overlay-pane');
         const decoratorPane = svg.querySelector('.tm-diagram-decorator-pane');
-        const htmlLayer = scenePane
-            ? scenePane.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer')
-            : null;
-        const selectionLayer = container.querySelector('.tm-diagram-selection-layer');
+        // F3 removed the document-sized HTML overlay: node queries now run
+        // against scenePane (which contains the per-node <g class="tm-diagram-node">
+        // elements). The `htmlLayer` alias is kept for backwards-compat during
+        // the F3→F7 migration; call-sites that specifically want the overlay-pane
+        // (JS-injected SVG elements) already reference `overlayPane` explicitly.
+        const htmlLayer = scenePane;
+        const selectionLayer = null;
 
         const opts = options || {};
         const inst = {
@@ -408,32 +411,59 @@ window.tmDiagramEditor = {
     // ── Node lookup helpers ───────────────────────────────────────────────────
 
     _nodeEl: function (inst, id) {
-        return inst.htmlLayer ? inst.htmlLayer.querySelector('[data-node-id="' + id + '"]') : null;
+        if (!inst.scenePane) return null;
+        return inst.scenePane.querySelector('g.tm-diagram-node[data-node-id="' + id + '"]');
+    },
+
+    // Post-F3 node position/rotation live in the SVG `transform` attribute on
+    // the `<g class="tm-diagram-node">`. The stored format is:
+    //   translate(X,Y) rotate(θ cx cy)
+    // where (cx, cy) is the node centre (W/2, H/2) so the rotation pivot
+    // stays at the node's centre regardless of X/Y. The parsers below cover
+    // both F3's canonical format and any legacy single-part transforms.
+    _parseNodeTransform: function (el) {
+        const t = el ? (el.getAttribute('transform') || '') : '';
+        const tm = t.match(/translate\(\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+)\s*\)/);
+        const rm = t.match(/rotate\(\s*([-\d.e+]+)(?:\s*[,\s]\s*([-\d.e+]+)\s*[,\s]\s*([-\d.e+]+))?\s*\)/);
+        return {
+            x: tm ? parseFloat(tm[1]) : 0,
+            y: tm ? parseFloat(tm[2]) : 0,
+            rot: rm ? parseFloat(rm[1]) : 0,
+            cx: (rm && rm[2] !== undefined) ? parseFloat(rm[2]) : null,
+            cy: (rm && rm[3] !== undefined) ? parseFloat(rm[3]) : null,
+        };
+    },
+
+    _buildNodeTransform: function (x, y, rot, w, h) {
+        let t = 'translate(' + x + ',' + y + ')';
+        if (rot) {
+            const cx = (w != null ? w : 0) / 2;
+            const cy = (h != null ? h : 0) / 2;
+            t += ' rotate(' + rot + ' ' + cx + ' ' + cy + ')';
+        }
+        return t;
     },
 
     _nodeRect: function (inst, id) {
         const el = this._nodeEl(inst, id);
         if (!el) return null;
-        const style = el.style.transform || '';
-        const m = style.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
-        const x = m ? parseFloat(m[1]) : 0;
-        const y = m ? parseFloat(m[2]) : 0;
-        const dw = parseFloat(el.getAttribute('data-w') || el.style.width || '0');
-        const dh = parseFloat(el.getAttribute('data-h') || el.style.height || '0');
-        return { x, y, w: dw, h: dh };
+        const p = this._parseNodeTransform(el);
+        const dw = parseFloat(el.getAttribute('data-w') || '0');
+        const dh = parseFloat(el.getAttribute('data-h') || '0');
+        return { x: p.x, y: p.y, w: dw, h: dh };
     },
 
     _getNodeRotation: function (el) {
-        const style = el ? el.style.transform : '';
-        const m = style.match(/rotate\(([-\d.e+]+)deg\)/);
-        return m ? parseFloat(m[1]) : 0;
+        return this._parseNodeTransform(el).rot;
     },
 
     _setNodeTranslate: function (inst, id, x, y) {
         const el = this._nodeEl(inst, id);
         if (!el) return;
         const rot = this._getNodeRotation(el);
-        el.style.transform = 'translate(' + x + 'px, ' + y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        el.setAttribute('transform', this._buildNodeTransform(x, y, rot, w, h));
     },
 
     _isNodeInActiveGroup: function (inst, nodeEl) {
@@ -489,7 +519,7 @@ window.tmDiagramEditor = {
             if (gid) groupIds.add(gid);
         });
         if (groupIds.size > 0 && inst.htmlLayer) {
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+            inst.htmlLayer.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 const nid = el.getAttribute('data-node-id');
                 if (!nid || allIds.has(nid)) return;
                 const parentGroupId = el.getAttribute('data-parent-group-id') || null;
@@ -515,7 +545,7 @@ window.tmDiagramEditor = {
 
     _renderGroupBounds: function (inst) {
         this._clearGroupBounds(inst);
-        if (!inst.htmlLayer) return;
+        if (!inst.overlayPane) return;
         const groupMap = {};
         inst.selectedIds.forEach(id => {
             const el = this._nodeEl(inst, id);
@@ -526,6 +556,7 @@ window.tmDiagramEditor = {
             if (r) groupMap[gid].push(r);
         });
 
+        const SVG_NS = 'http://www.w3.org/2000/svg';
         Object.keys(groupMap).forEach(gid => {
             const rects = groupMap[gid];
             if (rects.length === 0) return;
@@ -533,24 +564,29 @@ window.tmDiagramEditor = {
             const minY = Math.min(...rects.map(r => r.y)) - 6;
             const maxX = Math.max(...rects.map(r => r.x + r.w)) + 6;
             const maxY = Math.max(...rects.map(r => r.y + r.h)) + 6;
-            const el = document.createElement('div');
-            el.className = 'tm-diagram-group-bounds';
-            el.style.position = 'absolute';
-            el.style.left = minX + 'px';
-            el.style.top = minY + 'px';
-            el.style.width = (maxX - minX) + 'px';
-            el.style.height = (maxY - minY) + 'px';
-            el.style.border = '1px dashed var(--tm-color-primary, #3b82f6)';
-            el.style.borderRadius = '4px';
-            el.style.pointerEvents = 'none';
-            inst.htmlLayer.appendChild(el);
-            inst.groupBoundsEls.push(el);
+            // Post-F3 group bounds live in overlay-pane as SVG <rect> with a
+            // dashed stroke; visual is equivalent to the previous HTML div.
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('class', 'tm-diagram-group-bounds');
+            rect.setAttribute('x', String(minX));
+            rect.setAttribute('y', String(minY));
+            rect.setAttribute('width', String(maxX - minX));
+            rect.setAttribute('height', String(maxY - minY));
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('stroke', 'var(--tm-color-primary, #3b82f6)');
+            rect.setAttribute('stroke-width', '1');
+            rect.setAttribute('stroke-dasharray', '4 4');
+            rect.setAttribute('rx', '4');
+            rect.setAttribute('ry', '4');
+            rect.setAttribute('pointer-events', 'none');
+            inst.overlayPane.appendChild(rect);
+            inst.groupBoundsEls.push(rect);
         });
     },
 
     _clearGroupBounds: function (inst) {
-        if (!inst.htmlLayer) return;
-        inst.htmlLayer.querySelectorAll('.tm-diagram-group-bounds').forEach(el => el.remove());
+        if (!inst.overlayPane) return;
+        inst.overlayPane.querySelectorAll('.tm-diagram-group-bounds').forEach(el => el.remove());
         inst.groupBoundsEls = [];
     },
 
@@ -1140,7 +1176,7 @@ window.tmDiagramEditor = {
                 if (inst.dragDanglingHoverNodeId !== hoverNodeId) {
                     // Clear previous highlight and timer
                     if (inst.dragDanglingHoverNodeId) {
-                        const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                        const prev = inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                         if (prev) {
                             prev.classList.remove('tm-diagram-node--drop-target');
                             prev.classList.remove('tm-diagram-node--outline-connect');
@@ -1156,14 +1192,14 @@ window.tmDiagramEditor = {
                     // Start 2s timer for outline connect
                     inst.danglingOutlineTimer = setTimeout(function () {
                         if (inst.dragDanglingHoverNodeId === hoverNodeId) {
-                            const stillNode = inst.htmlLayer.querySelector('[data-node-id="' + hoverNodeId + '"]');
+                            const stillNode = inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + hoverNodeId + '"]');
                             if (stillNode) stillNode.classList.add('tm-diagram-node--outline-connect');
                             inst.danglingOutlineConnect = true;
                         }
                     }, 2000);
                 }
             } else if (inst.dragDanglingHoverNodeId) {
-                const prev = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                const prev = inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                 if (prev) {
                     prev.classList.remove('tm-diagram-node--drop-target');
                     prev.classList.remove('tm-diagram-node--outline-connect');
@@ -1318,7 +1354,7 @@ window.tmDiagramEditor = {
     /// table. Mirrors the drag-setup block from _onMouseDown.
     _beginNodeDragFromCell: function (inst, nodeId, startScreenX, startScreenY) {
         if (inst.readOnly) return;
-        const nodeEl = inst.htmlLayer ? inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]') : null;
+        const nodeEl = inst.htmlLayer ? inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]') : null;
         if (nodeEl && nodeEl.getAttribute('data-locked') === 'true') return;
         if (!inst.selectedIds.has(nodeId)) return;
 
@@ -1600,7 +1636,7 @@ window.tmDiagramEditor = {
 
         if (inst.isDraggingDangling) {
             if (inst.dragDanglingHoverNodeId) {
-                const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
+                const nodeEl = inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + inst.dragDanglingHoverNodeId + '"]');
                 if (nodeEl) {
                     nodeEl.classList.remove('tm-diagram-node--drop-target');
                     nodeEl.classList.remove('tm-diagram-node--outline-connect');
@@ -1774,7 +1810,7 @@ window.tmDiagramEditor = {
 
                     const hits = [];
                     if (inst.htmlLayer) {
-                        inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+                        inst.htmlLayer.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                             if (!this._isNodeInActiveGroup(inst, el)) return;
                             const id = el.getAttribute('data-node-id');
                             const r = this._nodeRect(inst, id);
@@ -2147,7 +2183,7 @@ window.tmDiagramEditor = {
             inst.htmlLayer?.querySelectorAll('.tm-diagram-node--drop-target').forEach(n => n.classList.remove('tm-diagram-node--drop-target'));
         }
         if (nextDrop && nextDrop !== prevDrop) {
-            const target = inst.htmlLayer?.querySelector('[data-node-id="' + nextDrop + '"]');
+            const target = inst.htmlLayer?.querySelector('g.tm-diagram-node[data-node-id="' + nextDrop + '"]');
             if (target) target.classList.add('tm-diagram-node--drop-target');
         }
         inst.__dropTargetNodeId = nextDrop;
@@ -2243,7 +2279,7 @@ window.tmDiagramEditor = {
     // slightly off the port circle.
     _findNearestPortOnNode: function (inst, nodeId, x, y, maxDistDoc) {
         if (!nodeId || !inst.htmlLayer) return null;
-        const nodeEl = inst.htmlLayer.querySelector('[data-node-id="' + nodeId + '"]');
+        const nodeEl = inst.htmlLayer.querySelector('g.tm-diagram-node[data-node-id="' + nodeId + '"]');
         if (!nodeEl) return null;
         const portEls = nodeEl.querySelectorAll('.tm-diagram-port[data-port-id]');
         if (!portEls || portEls.length === 0) return null;
@@ -2925,52 +2961,56 @@ window.tmDiagramEditor = {
 
     _updateSelection: function (inst) {
         this._clearSelectionOutlines(inst);
-        if (!inst.htmlLayer) return;
+        if (!inst.scenePane) return;
 
-        // Sync selected class on node elements for port visibility
-        inst.htmlLayer.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
+        // Sync the .tm-diagram-node--selected modifier on the <g> so the CSS
+        // visibility rules for ports / connection points fire on selected nodes.
+        inst.scenePane.querySelectorAll('.tm-diagram-node--selected').forEach(function (el) {
             el.classList.remove('tm-diagram-node--selected');
         });
 
+        if (!inst.overlayPane) return;
+        const SVG_NS = 'http://www.w3.org/2000/svg';
         inst.selectedIds.forEach(id => {
             const nodeEl = this._nodeEl(inst, id);
             if (nodeEl) nodeEl.classList.add('tm-diagram-node--selected');
             const r = this._nodeRect(inst, id);
             if (!r) return;
             const rot = this._getNodeRotation(nodeEl);
-            const el = document.createElement('div');
-            el.className = 'tm-diagram-selection-outline';
-            el.style.position = 'absolute';
-            el.style.left = '-4px';
-            el.style.top = '-4px';
-            el.style.width = (r.w + 8) + 'px';
-            el.style.height = (r.h + 8) + 'px';
-            el.style.transformOrigin = 'center center';
-            el.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
-            el.style.pointerEvents = 'none';
-            el.style.boxSizing = 'border-box';
-            el.setAttribute('data-sel-for', id);
-            var selLayer = inst.htmlLayer.querySelector('.tm-diagram-selection-layer');
-            (selLayer || inst.htmlLayer).appendChild(el);
+            // Selection outline sits in the overlay-pane as an SVG <rect> with
+            // the same translate+rotate as the node, sized 8 px larger so it
+            // visually frames the shape rather than overlapping it.
+            const rect = document.createElementNS(SVG_NS, 'rect');
+            rect.setAttribute('class', 'tm-diagram-selection-outline');
+            rect.setAttribute('x', '-4');
+            rect.setAttribute('y', '-4');
+            rect.setAttribute('width', String(r.w + 8));
+            rect.setAttribute('height', String(r.h + 8));
+            rect.setAttribute('fill', 'none');
+            rect.setAttribute('pointer-events', 'none');
+            rect.setAttribute('transform', this._buildNodeTransform(r.x, r.y, rot, r.w, r.h));
+            rect.setAttribute('data-sel-for', id);
+            inst.overlayPane.appendChild(rect);
         });
     },
 
     _updateSelectionTransforms: function (inst) {
-        if (!inst.htmlLayer) return;
+        if (!inst.overlayPane) return;
         inst.selectedIds.forEach(id => {
             const r = this._nodeRect(inst, id);
             if (!r) return;
-            const outline = inst.htmlLayer.querySelector('[data-sel-for="' + id + '"]');
+            const outline = inst.overlayPane.querySelector('[data-sel-for="' + id + '"]');
             if (!outline) return;
             const nodeEl = this._nodeEl(inst, id);
             const rot = this._getNodeRotation(nodeEl);
-            outline.style.transform = 'translate(' + r.x + 'px, ' + r.y + 'px)' + (rot ? ' rotate(' + rot + 'deg)' : '');
+            outline.setAttribute('transform', this._buildNodeTransform(r.x, r.y, rot, r.w, r.h));
         });
     },
 
     _clearSelectionOutlines: function (inst) {
-        if (!inst.htmlLayer) return;
-        inst.htmlLayer.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
+        if (inst.overlayPane) {
+            inst.overlayPane.querySelectorAll('.tm-diagram-selection-outline').forEach(el => el.remove());
+        }
     },
 
     _updateWaypointVisuals: function (inst, edgeId, waypointIndex, x, y) {
@@ -3425,7 +3465,7 @@ window.tmDiagramEditor = {
         let hasNodes = false;
 
         if (inst.htmlLayer) {
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+            inst.htmlLayer.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 const id = el.getAttribute('data-node-id');
                 const r = this._nodeRect(inst, id);
                 if (!r) return;
@@ -3594,10 +3634,10 @@ window.tmDiagramEditor = {
     _applyNodeRotation: function (inst, nodeId, angle) {
         const el = this._nodeEl(inst, nodeId);
         if (!el) return;
-        const style = el.style.transform || '';
-        const m = style.match(/translate\(\s*([-\d.e+]+)px\s*,\s*([-\d.e+]+)px\s*\)/);
-        const translate = m ? 'translate(' + m[1] + 'px, ' + m[2] + 'px)' : 'translate(0px, 0px)';
-        el.style.transform = translate + ' rotate(' + angle + 'deg)';
+        const p = this._parseNodeTransform(el);
+        const w = parseFloat(el.getAttribute('data-w') || '0');
+        const h = parseFloat(el.getAttribute('data-h') || '0');
+        el.setAttribute('transform', this._buildNodeTransform(p.x, p.y, angle, w, h));
         this._updateSelection(inst);
     },
 
@@ -3627,7 +3667,7 @@ window.tmDiagramEditor = {
         const nodeEl = this._nodeEl(inst, nodeId);
         if (nodeEl && nodeEl.getAttribute('data-stencil-id') === 'general.group' && inst.htmlLayer) {
             inst.rotateGroupMembers = [];
-            inst.htmlLayer.querySelectorAll('[data-node-id]').forEach(el => {
+            inst.htmlLayer.querySelectorAll('g.tm-diagram-node[data-node-id]').forEach(el => {
                 if (el.getAttribute('data-parent-group-id') === nodeId) {
                     const memberId = el.getAttribute('data-node-id');
                     const memberRot = this._getNodeRotation(el);

@@ -12,13 +12,11 @@ namespace Tempo.Blazor.Tests.Components.Diagram;
 /// <summary>
 /// Locks down the Razor-produced coordinate-system scaffolding that
 /// <c>diagram-editor.js</c> relies on: the SVG <c>viewBox</c> attribute (now the
-/// sole source of zoom after F2) and the inline CSS <c>transform</c> string that
-/// <c>_nodeRect</c>/<c>_getNodeRotation</c> parse for each node.
+/// sole source of zoom after F2) and the SVG <c>transform</c> attribute that
+/// <c>_nodeRect</c>/<c>_getNodeRotation</c> parse for each node after F3.
 ///
 /// <para>
-/// Related refactor: planning/DIAGRAM_UNIFIED_SVG_PLAN.md — F0.3 / F0.6 / F2.5.
-/// F3 will replace node CSS transforms with SVG <c>&lt;g transform&gt;</c>; at
-/// that point the node-level tests move onto attribute-based assertions.
+/// Related refactor: planning/DIAGRAM_UNIFIED_SVG_PLAN.md — F0.3 / F0.6 / F2.5 / F3.
 /// </para>
 /// </summary>
 public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
@@ -73,10 +71,10 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
     }
 
     [Fact]
-    public void NodePosition_IsEncodedInCssTranslate_StillInF2()
+    public void NodePosition_IsEncodedInSvgTransform_AfterF3()
     {
-        // _nodeRect() parses this exact substring; F3 will rewrite the test to
-        // assert an SVG <g transform="translate(…)"> attribute instead.
+        // Post-F3 _nodeRect() parses this exact substring from the <g transform>
+        // attribute (no more CSS transforms on node divs).
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode
         {
@@ -92,18 +90,18 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
-        var nodeEl = cut.Find($"[data-node-id='{node.Id}']");
-        var style = nodeEl.GetAttribute("style") ?? string.Empty;
+        var nodeEl = cut.Find($"g.tm-diagram-node[data-node-id='{node.Id}']");
+        var transform = nodeEl.GetAttribute("transform") ?? string.Empty;
 
         var expectedX = node.X.ToString("0.##", CultureInfo.InvariantCulture);
         var expectedY = node.Y.ToString("0.##", CultureInfo.InvariantCulture);
 
-        style.Should().Contain($"translate({expectedX}px, {expectedY}px)",
+        transform.Should().Contain($"translate({expectedX},{expectedY})",
             "_nodeRect() parses this exact substring — any change breaks JS drag math");
     }
 
     [Fact]
-    public void RotatedNode_EncodesRotationInCssTransform_StillInF2()
+    public void RotatedNode_EncodesRotationInSvgTransform_AfterF3()
     {
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode
@@ -121,11 +119,11 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
             .Add(c => c.Document, doc)
             .Add(c => c.ShowPageView, false));
 
-        var nodeEl = cut.Find($"[data-node-id='{node.Id}']");
-        var style = nodeEl.GetAttribute("style") ?? string.Empty;
+        var nodeEl = cut.Find($"g.tm-diagram-node[data-node-id='{node.Id}']");
+        var transform = nodeEl.GetAttribute("transform") ?? string.Empty;
 
-        style.Should().Contain("rotate(45deg)",
-            "_getNodeRotation() parses this exact substring; F5 will move rotation onto the SVG <g> wrapping the node");
+        transform.Should().Contain("rotate(45 60 30)",
+            "F3 encodes rotation around the node centre (W/2, H/2) directly on the <g> transform attribute");
     }
 
     [Theory]

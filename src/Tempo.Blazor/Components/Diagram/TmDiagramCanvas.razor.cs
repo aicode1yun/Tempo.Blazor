@@ -177,6 +177,13 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
     private double _viewportY;
     private double _viewportW = 3000;
     private double _viewportH = 2000;
+    // True once JS has sent its first OnViewportChanged callback; before that
+    // _viewport{X,Y,W,H} hold conservative defaults (0,0,3000,2000) so that
+    // viewport culling is effectively off. `GetViewport()` returns a zeroed
+    // viewport while _viewportInitialized is false so callers (e.g. toolbar
+    // insert commands running in bUnit without JS) can fall back to a sensible
+    // document-center placement.
+    private bool _viewportInitialized;
     private const double ViewportMargin = 200;
     private string? _editingEdgeLabelId;
     private string _editingLabelValue = "";
@@ -1030,9 +1037,17 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         _viewportY = y;
         _viewportW = w;
         _viewportH = h;
+        _viewportInitialized = true;
         await ViewportChanged.InvokeAsync(new DiagramMinimapViewport(x, y, w, h));
         await InvokeAsync(StateHasChanged);
     }
+
+    /// <summary>Returns the current canvas viewport in document-space coordinates,
+    /// or a zeroed tuple if JS hasn't initialised it yet (e.g. in bUnit).</summary>
+    public (double X, double Y, double W, double H) GetViewport()
+        => _viewportInitialized
+            ? (_viewportX, _viewportY, _viewportW, _viewportH)
+            : (0, 0, 0, 0);
 
     private bool IsNodeVisible(DiagramNode node)
     {

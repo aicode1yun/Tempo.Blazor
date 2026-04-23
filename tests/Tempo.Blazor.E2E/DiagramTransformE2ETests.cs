@@ -103,17 +103,20 @@ public class DiagramTransformE2ETests : WasmTestBase
     }
 
     /// <summary>
-    /// Returns the effective horizontal scale applied by a CSS transform on the HTML overlay's
-    /// transform layer, if any. After F2 this should always be <c>1</c> (no transform) — the
-    /// scene pane's viewBox drives the zoom directly for the foreignObject-wrapped HTML.
+    /// Returns the effective horizontal scale applied by a CSS transform on the
+    /// scene pane. After F3 (planning/DIAGRAM_UNIFIED_SVG_PLAN.md) there is no
+    /// separate HTML overlay layer — nodes render as per-node SVG <c>&lt;g&gt;</c>
+    /// elements directly inside <c>.tm-diagram-scene-pane</c>. The scene pane
+    /// itself must never carry a <c>scale()</c> transform, otherwise the "drift
+    /// bug" would resurface; zoom must flow exclusively via the SVG viewBox.
     /// </summary>
     private static async Task<double?> HtmlOverlayScale(IPage page)
     {
         return await page.EvaluateAsync<double?>("""
             () => {
-                const layer = document.querySelector('.tm-diagram-scene-pane .tm-diagram-canvas__overlay .tm-diagram-transform-layer');
-                if (!layer) return null;
-                const t = getComputedStyle(layer).transform;
+                const pane = document.querySelector('.tm-diagram-scene-pane');
+                if (!pane) return null;
+                const t = getComputedStyle(pane).transform;
                 if (!t || t === 'none') return 1;
                 const m = t.match(/matrix\(([-0-9.eE+]+),\s*([-0-9.eE+]+),\s*([-0-9.eE+]+),\s*([-0-9.eE+]+),\s*([-0-9.eE+]+),\s*([-0-9.eE+]+)\)/);
                 return m ? parseFloat(m[1]) : null;
@@ -154,11 +157,11 @@ public class DiagramTransformE2ETests : WasmTestBase
 
             var svgCtm = await GetSvgScreenCtmAsync(page);
             var htmlScale = await HtmlOverlayScale(page);
-            Assert.IsNotNull(htmlScale, "HTML overlay transform-layer missing inside scene-pane foreignObject");
+            Assert.IsNotNull(htmlScale, "scene-pane <g> not found");
 
             Math.Abs(htmlScale!.Value - 1.0).Should().BeLessThan(1e-3,
-                $"at zoom {s}, the overlay transform layer must carry no CSS scale of its own — " +
-                $"F2 folded zoom into the SVG viewBox so the only scale in play is CTM.a = {svgCtm.A:F3}");
+                $"at zoom {s}, the scene-pane must carry no CSS scale of its own — " +
+                $"F2/F3 fold zoom into the SVG viewBox so the only scale in play is CTM.a = {svgCtm.A:F3}");
 
             // Pick the first edge path and verify that its first command coordinate projects
             // onto the bounding box of some node (simple adjacency sanity check in screen space).
@@ -200,17 +203,21 @@ public class DiagramTransformE2ETests : WasmTestBase
         var nodeId = beforeDoc.RootElement.GetProperty("id").GetString();
         Assert.IsNotNull(nodeId);
 
-        // Rotate via JS by updating the element's inline `transform` property — this mirrors
-        // how the Blazor side writes the transform today (translate(...) rotate(...)). F5 will
-        // replace this with an SVG <g> transform and the test will be rewritten to use the
-        // rotation command instead.
+        // Rotate via JS by updating the SVG <g>'s `transform` attribute — F3.A
+        // moved node position + rotation onto the attribute (translate(x,y) rotate(θ cx cy))
+        // on the per-node <g>. We append/replace the rotate(...) part while preserving
+        // the existing translate(...) to get the identical effect as the rotate command.
         await page.EvaluateAsync("""
             (id) => {
-                const el = document.querySelector(`[data-node-id='${id}']`);
+                const el = document.querySelector(`g.tm-diagram-node[data-node-id='${id}']`);
                 if (!el) return;
-                const current = el.style.transform || '';
-                const stripped = current.replace(/rotate\([^)]*\)/, '').trim();
-                el.style.transform = (stripped.length > 0 ? stripped + ' ' : '') + 'rotate(45deg)';
+                const current = el.getAttribute('transform') || '';
+                // Extract existing translate(x,y) — keep it; replace any rotate(...) with 45°.
+                const transMatch = current.match(/translate\([^)]*\)/);
+                const translate = transMatch ? transMatch[0] : 'translate(0,0)';
+                const w = parseFloat(el.getAttribute('data-w') || '100');
+                const h = parseFloat(el.getAttribute('data-h') || '100');
+                el.setAttribute('transform', `${translate} rotate(45 ${w / 2} ${h / 2})`);
             }
         """, nodeId);
         await page.WaitForTimeoutAsync(250);
@@ -272,10 +279,10 @@ public class DiagramTransformE2ETests : WasmTestBase
         var ctm = await GetSvgScreenCtmAsync(page);
         var htmlScale = await HtmlOverlayScale(page);
 
-        Assert.IsNotNull(htmlScale, "HTML overlay transform-layer not found inside scene-pane foreignObject");
+        Assert.IsNotNull(htmlScale, "scene-pane <g> not found");
 
         Math.Abs(htmlScale!.Value - 1.0).Should().BeLessThan(1e-3,
-            "post-F2 the overlay must expose no CSS scale; any non-identity value re-introduces the drift bug");
+            "post-F3 the scene-pane must expose no CSS scale; any non-identity value re-introduces the drift bug");
 
         // CTM.a must reflect the requested zoom, independently of the overlay.
         Math.Abs(ctm.A - 0.75).Should().BeLessThan(0.01,
