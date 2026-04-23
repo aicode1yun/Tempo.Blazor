@@ -5,20 +5,21 @@ using System.Text.Json;
 namespace Tempo.Blazor.E2E;
 
 /// <summary>
-/// Safety-net E2E tests for the unified SVG canvas refactor
+/// E2E coverage for the unified SVG canvas refactor
 /// (see planning/DIAGRAM_UNIFIED_SVG_PLAN.md — F0.4, F0.5, F0.6).
 ///
 /// <para>
-/// These tests lock the <b>current</b> (pre-refactor) behavior of the two-layer architecture so
-/// that any accidental break during F1–F7 surfaces immediately. They exercise the actual JS
-/// coordinate pipeline (<c>_screenToDoc</c>, <c>_syncHtmlTransform</c>, SVG <c>viewBox</c> and
-/// HTML overlay CSS transform) across several zooms and a 45° rotation.
+/// Before F2 these tests doubled as a drift-bug canary between the SVG
+/// <c>getScreenCTM()</c> scale and the independent HTML overlay CSS transform. After F2 the
+/// HTML overlay lives inside a <c>&lt;foreignObject&gt;</c> in the scene pane — no independent
+/// transform exists anymore — so these tests assert the <b>invariant F2 guarantees</b>:
+/// the transform layer carries no scale of its own, and on-screen node geometry is driven
+/// exclusively by the SVG CTM (viewBox + window size).
 /// </para>
 ///
 /// <para>
-/// After F2 the HTML overlay selectors (<c>.tm-diagram-canvas__overlay</c>,
-/// <c>.tm-diagram-transform-layer</c>) will be replaced by SVG-side equivalents. Update
-/// <see cref="HtmlOverlayScale"/> and its callers accordingly at that point.
+/// F5 will move node rotation from CSS onto an SVG <c>&lt;g transform&gt;</c>; the rotation
+/// test is rewritten at that point.
 /// </para>
 /// </summary>
 [TestClass]
@@ -102,15 +103,15 @@ public class DiagramTransformE2ETests : WasmTestBase
     }
 
     /// <summary>
-    /// Returns the effective horizontal scale applied by the JS overlay transform. Today this
-    /// is a separate value from <see cref="GetSvgScreenCtmAsync"/> because
-    /// <c>_syncHtmlTransform</c> writes an independent CSS transform — the drift bug.
+    /// Returns the effective horizontal scale applied by a CSS transform on the HTML overlay's
+    /// transform layer, if any. After F2 this should always be <c>1</c> (no transform) — the
+    /// scene pane's viewBox drives the zoom directly for the foreignObject-wrapped HTML.
     /// </summary>
     private static async Task<double?> HtmlOverlayScale(IPage page)
     {
         return await page.EvaluateAsync<double?>("""
             () => {
-                const layer = document.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer');
+                const layer = document.querySelector('.tm-diagram-scene-pane .tm-diagram-canvas__overlay .tm-diagram-transform-layer');
                 if (!layer) return null;
                 const t = getComputedStyle(layer).transform;
                 if (!t || t === 'none') return 1;
@@ -136,10 +137,10 @@ public class DiagramTransformE2ETests : WasmTestBase
     }
 
     /// <summary>
-    /// F0.4 — verifies that nodes and their connected edge endpoints stay aligned across
-    /// multiple zoom levels. This is the canonical regression for the "drift bug" comment in
-    /// <c>diagram-editor.js::_findNearestPortOnNode</c>. When F2 removes the dual transform the
-    /// tolerances should tighten; the test itself stays identical.
+    /// F0.4 + F2 — verifies that nodes and their connected edge endpoints stay aligned across
+    /// multiple zoom levels. Pre-F2 the regression was an independent HTML overlay CSS scale
+    /// diverging from the SVG CTM; post-F2 the invariant is stronger — the HTML overlay
+    /// carries no scale of its own, so the SVG CTM alone determines the alignment.
     /// </summary>
     [TestMethod]
     public async Task PanThenZoom_NodesRemainAlignedWithEdges()
@@ -153,10 +154,11 @@ public class DiagramTransformE2ETests : WasmTestBase
 
             var svgCtm = await GetSvgScreenCtmAsync(page);
             var htmlScale = await HtmlOverlayScale(page);
-            Assert.IsNotNull(htmlScale, "HTML overlay transform-layer missing");
+            Assert.IsNotNull(htmlScale, "HTML overlay transform-layer missing inside scene-pane foreignObject");
 
-            Math.Abs(htmlScale!.Value - svgCtm.A).Should().BeLessThan(0.01,
-                $"at scale {s}, HTML overlay CSS scale must match SVG getScreenCTM().a — this is the drift-bug canary");
+            Math.Abs(htmlScale!.Value - 1.0).Should().BeLessThan(1e-3,
+                $"at zoom {s}, the overlay transform layer must carry no CSS scale of its own — " +
+                $"F2 folded zoom into the SVG viewBox so the only scale in play is CTM.a = {svgCtm.A:F3}");
 
             // Pick the first edge path and verify that its first command coordinate projects
             // onto the bounding box of some node (simple adjacency sanity check in screen space).
@@ -254,9 +256,11 @@ public class DiagramTransformE2ETests : WasmTestBase
     }
 
     /// <summary>
-    /// F0.6 — core drift-bug regression. At 0.75 scale the SVG CTM's horizontal scale and the
-    /// HTML overlay's CSS scale must be identical. When they diverge (which is the root cause
-    /// of _findNearestPortOnNode being flaky at non-unit scales) this test fails.
+    /// F0.6 + F2 — the drift bug the name refers to was a double-source-of-truth between SVG
+    /// CTM and HTML overlay CSS. After F2 the overlay lives inside a foreignObject and carries
+    /// no CSS transform of its own, so the "drift" can't exist anymore. This test asserts the
+    /// post-F2 invariant directly: the SVG CTM is the single source of zoom, and the HTML
+    /// overlay transform layer is CSS-identity at the requested zoom level.
     /// </summary>
     [TestMethod]
     public async Task ScreenToDoc_And_HtmlLayerScale_MatchAtScale075()
@@ -268,9 +272,13 @@ public class DiagramTransformE2ETests : WasmTestBase
         var ctm = await GetSvgScreenCtmAsync(page);
         var htmlScale = await HtmlOverlayScale(page);
 
-        Assert.IsNotNull(htmlScale, "HTML overlay transform-layer not found");
+        Assert.IsNotNull(htmlScale, "HTML overlay transform-layer not found inside scene-pane foreignObject");
 
-        Math.Abs(htmlScale!.Value - ctm.A).Should().BeLessThan(0.005,
-            "both coordinate systems must agree on scale; a difference here reproduces the drift bug and F2 must make this exact test pass with tolerance 0");
+        Math.Abs(htmlScale!.Value - 1.0).Should().BeLessThan(1e-3,
+            "post-F2 the overlay must expose no CSS scale; any non-identity value re-introduces the drift bug");
+
+        // CTM.a must reflect the requested zoom, independently of the overlay.
+        Math.Abs(ctm.A - 0.75).Should().BeLessThan(0.01,
+            "SVG CTM scale must track the zoomTo(0.75) call — this is now the sole zoom authority");
     }
 }

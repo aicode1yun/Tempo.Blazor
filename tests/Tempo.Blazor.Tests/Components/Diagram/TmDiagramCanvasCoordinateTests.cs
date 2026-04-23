@@ -10,12 +10,16 @@ using Tempo.Blazor.Tests.Localization;
 namespace Tempo.Blazor.Tests.Components.Diagram;
 
 /// <summary>
-/// Safety-net tests that lock down the Razor-produced inputs into the JS coordinate system
-/// (viewBox, inline transforms, node position). They do not execute JS — they verify that the
-/// scaffolding the JS relies on is stable. After F2/F3 the assertions about CSS transforms
-/// disappear and are replaced by SVG-attribute-based checks.
+/// Locks down the Razor-produced coordinate-system scaffolding that
+/// <c>diagram-editor.js</c> relies on: the SVG <c>viewBox</c> attribute (now the
+/// sole source of zoom after F2) and the inline CSS <c>transform</c> string that
+/// <c>_nodeRect</c>/<c>_getNodeRotation</c> parse for each node.
 ///
-/// Related refactor: planning/DIAGRAM_UNIFIED_SVG_PLAN.md (F0.3, F0.6).
+/// <para>
+/// Related refactor: planning/DIAGRAM_UNIFIED_SVG_PLAN.md — F0.3 / F0.6 / F2.5.
+/// F3 will replace node CSS transforms with SVG <c>&lt;g transform&gt;</c>; at
+/// that point the node-level tests move onto attribute-based assertions.
+/// </para>
 /// </summary>
 public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
 {
@@ -26,10 +30,8 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
     }
 
     [Fact]
-    public void ScreenToDoc_RoundTrip_AtUnitScale_IdentityMapping()
+    public void ViewBox_AtUnitScale_IsIdentity()
     {
-        // At scale 1 and the default viewBox covering the full document, a screen-space
-        // point on the canvas maps 1:1 to document coordinates.
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = 1.0;
 
@@ -39,20 +41,20 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
 
         var svg = cut.Find("svg");
         svg.GetAttribute("viewBox").Should().Be("0 0 800 600",
-            "a 1:1 viewBox at unit scale is the identity CTM used by _screenToDoc");
+            "at Page.Scale = 1 the viewBox is the identity mapping used by _screenToDoc");
 
         var style = svg.GetAttribute("style") ?? string.Empty;
-        style.Should().Contain("transform:scale(1)",
-            "the inline CSS scale at 1 is the neutral value that F2.5 will remove entirely");
+        style.Should().NotContain("transform:scale(",
+            "F2.5 removed the duplicate CSS scale transform");
     }
 
     [Fact]
-    public void ScreenToDoc_RoundTrip_AtScale075_RenderesMatchingScaleAttribute()
+    public void ViewBox_AtScale075_IsFoldedIntoDimensions()
     {
-        // Today the same 0.75 scale is applied TWICE: once as CSS on <svg> (via style) and
-        // again by JS onto the HTML overlay's transform-layer. The drift bug in
-        // _findNearestPortOnNode arises exactly because these two sources can fall out of
-        // sync. F1/F2 will reduce this to a single viewBox-driven scale.
+        // Before F2 the same 0.75 zoom lived in two places — CSS transform:scale
+        // on <svg> plus JS-driven CSS on the HTML overlay — producing the drift
+        // bug documented in _findNearestPortOnNode. F2 folds Page.Scale directly
+        // into the viewBox: (W/0.75, H/0.75) at origin (0, 0).
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = 0.75;
 
@@ -62,19 +64,19 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
 
         var svg = cut.Find("svg");
         var style = svg.GetAttribute("style") ?? string.Empty;
-        style.Should().Contain("transform:scale(0.75)",
-            "Razor renders the CSS scale from Document.ActivePage.Scale; drift-bug root cause");
+        style.Should().NotContain("transform:scale(",
+            "no CSS scale — viewBox is the single source of zoom now");
 
-        svg.GetAttribute("viewBox").Should().Be("0 0 800 600",
-            "viewBox stays at document dimensions — zoom is applied by the duplicate CSS transform today");
+        var vb = svg.GetAttribute("viewBox");
+        vb.Should().Be("0 0 1066.67 800",
+            "Document.Width/scale = 800/0.75 ≈ 1066.67, Document.Height/scale = 600/0.75 = 800");
     }
 
     [Fact]
-    public void NodePosition_IsEncodedInCssTranslate_Baseline()
+    public void NodePosition_IsEncodedInCssTranslate_StillInF2()
     {
-        // Documents the exact string format that diagram-editor.js::_nodeRect parses today.
-        // When F3 replaces this with SVG <g transform> attributes, this test will be rewritten
-        // to assert the transform attribute instead.
+        // _nodeRect() parses this exact substring; F3 will rewrite the test to
+        // assert an SVG <g transform="translate(…)"> attribute instead.
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode
         {
@@ -97,11 +99,11 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
         var expectedY = node.Y.ToString("0.##", CultureInfo.InvariantCulture);
 
         style.Should().Contain($"translate({expectedX}px, {expectedY}px)",
-            "_nodeRect() parses this exact substring — any change breaks JS-side drag math");
+            "_nodeRect() parses this exact substring — any change breaks JS drag math");
     }
 
     [Fact]
-    public void RotatedNode_EncodesRotationInCssTransform_Baseline()
+    public void RotatedNode_EncodesRotationInCssTransform_StillInF2()
     {
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         var node = new DiagramNode
@@ -127,12 +129,14 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
     }
 
     [Theory]
-    [InlineData(0.5)]
-    [InlineData(1.0)]
-    [InlineData(1.5)]
-    [InlineData(2.0)]
-    public void SvgScaleTransform_TracksDocumentScale(double scale)
+    [InlineData(0.5, "0 0 1600 1200")]
+    [InlineData(1.0, "0 0 800 600")]
+    [InlineData(1.5, "0 0 533.33 400")]
+    [InlineData(2.0, "0 0 400 300")]
+    public void ViewBox_TracksDocumentScale(double scale, string expectedViewBox)
     {
+        // Post-F2 Page.Scale is folded into the viewBox dimensions: larger
+        // scale ⇒ smaller viewBox ⇒ content appears larger on screen.
         var doc = new DiagramDocument { Width = 800, Height = 600 };
         doc.ActivePage!.Scale = scale;
 
@@ -141,10 +145,10 @@ public class TmDiagramCanvasCoordinateTests : LocalizationTestBase
             .Add(c => c.ShowPageView, false));
 
         var svg = cut.Find("svg");
-        var style = svg.GetAttribute("style") ?? string.Empty;
+        svg.GetAttribute("viewBox").Should().Be(expectedViewBox);
 
-        var expected = $"transform:scale({scale.ToString("0.##", CultureInfo.InvariantCulture)})";
-        style.Should().Contain(expected,
-            $"document scale {scale} must render verbatim into the inline CSS transform today");
+        var style = svg.GetAttribute("style") ?? string.Empty;
+        style.Should().NotContain("transform:scale(",
+            "CSS transform scale is permanently gone — viewBox owns the zoom");
     }
 }

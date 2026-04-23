@@ -454,14 +454,40 @@
     z-index: 1;
 }
 
-/* ── HTML overlay layer ──────────────────────────────────────────────────── */
+/* ── SVG pane pointer-events rules (4-pane model) ────────────────────────── */
+/* Panes live inside the unified <svg> (see TmDiagramCanvas.razor).
+   * bg-pane: background / grid / model-level group bounds (no interaction)
+   * scene-pane: edges + nodes foreignObject (interactive content)
+   * overlay-pane: selection outlines, drop-target highlights (visual only)
+   * decorator-pane: resize/rotate/connect handles, waypoints (interactive) */
+.tm-diagram-bg-pane { pointer-events: none; }
+.tm-diagram-scene-pane { pointer-events: auto; }
+.tm-diagram-overlay-pane { pointer-events: none; }
+.tm-diagram-decorator-pane { pointer-events: auto; }
+
+/* ── HTML overlay (nodes foreignObject content) ──────────────────────────── */
+/* After F2, .tm-diagram-canvas__overlay + .tm-diagram-transform-layer live
+   inside a <foreignObject> inside the scene pane. They no longer carry their
+   own transform (viewBox drives zoom/pan) — they are just a static HTML
+   wrapper for the absolutely-positioned node divs.
+
+   The foreignObject is sized to the entire document (Document.Width × Height)
+   so it would, by default, intercept mouse events on EVERY pixel of the canvas
+   — including empty areas sitting above SVG edges, waypoints and decorator
+   handles. We therefore make the foreignObject and its inner HTML wrappers
+   transparent to events and only re-enable pointer-events on the actual
+   `.tm-diagram-node` elements. Events on empty areas pass through to
+   the underlying SVG (edges, handles, bg-pane rect, etc.). This will
+   become a non-issue in F3 when each node gets its own shape-sized
+   foreignObject. */
+.tm-diagram-nodes-fo {
+    pointer-events: none;
+}
+
 .tm-diagram-canvas__overlay {
-    position: absolute;
-    inset: 0;
+    position: relative;
     width: 100%;
     height: 100%;
-    overflow: hidden;
-    z-index: 2;
     pointer-events: none;
 }
 
@@ -469,19 +495,11 @@
     position: absolute;
     top: 0;
     left: 0;
-    transform-origin: 0 0;
-    pointer-events: auto;
+    pointer-events: none;
 }
 
-/* ── Interaction layer ───────────────────────────────────────────────────── */
-.tm-diagram-canvas__interaction {
-    position: absolute;
-    inset: 0;
-    width: 100%;
-    height: 100%;
-    overflow: hidden;
-    z-index: 3;
-    pointer-events: none;
+.tm-diagram-canvas__overlay .tm-diagram-transform-layer .tm-diagram-node {
+    pointer-events: auto;
 }
 
 /* ── Selection outline ────────────────────────────────────────────────────── */

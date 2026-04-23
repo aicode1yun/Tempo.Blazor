@@ -10,14 +10,14 @@
      @onmousemove="OnCanvasMouseMove"
      @onmouseup="OnCanvasMouseUp"
      @onmouseleave="OnCanvasMouseUp">
-    @* SVG layer: grid + background + edges *@
+    @* Unified SVG scene (4-pane structure inspired by mxGraph / draw.io) *@
     <svg @ref="_svgRef"
          id="@_svgId"
          class="tm-diagram-canvas__svg"
          viewBox="@_viewBox"
          xmlns="http://www.w3.org/2000/svg"
          aria-label="@Loc["TmDiagramCanvas_AriaLabel"]"
-         style="width:100%;height:100%;display:block;overflow:hidden;transform:scale(@(F(Document?.ActivePage?.Scale ?? 1.0)));transform-origin:0 0;">
+         style="width:100%;height:100%;display:block;overflow:hidden;">
 
         <defs>
             @if (ShowGrid)
@@ -41,6 +41,8 @@
             @* Arrowheads are rendered as standalone SVG paths, not markers *@
         </defs>
 
+        @* ── Pane 1 / backgroundPane: page frame, grid, model-level group bounds ───── *@
+        <g class="tm-diagram-bg-pane">
         @* Canvas background + page view + grid *@
         @if (ShowPageView)
         {
@@ -59,7 +61,7 @@
                   pointer-events="none" />
         }
 
-        @* Group bounds *@
+        @* Group bounds (model-level, rendered from Document.Nodes) *@
         @if (Document is not null)
         {
             var groups = Document.Nodes
@@ -88,6 +90,10 @@
                       pointer-events="none" />
             }
         }
+        </g>
+
+        @* ── Pane 2 / drawPane: scene content (edges + nodes) ───────────────────── *@
+        <g class="tm-diagram-scene-pane">
 
         @* Edges *@
         @if (Document is not null)
@@ -350,7 +356,7 @@
             }
         }
 
-        @* Inline toolbar for selected edge *@
+        @* Inline toolbar for selected edge (stays with its edge in scene-pane; will move to decorator-pane in F5). *@
         @{
             var _toolbarEdge = Document?.Edges.FirstOrDefault(e => _currentSelectionIds.Contains(e.Id));
         }
@@ -371,15 +377,19 @@
             </foreignObject>
         }
 
-    </svg>
-
-    @* HTML overlay layer: nodes *@
-    <div class="tm-diagram-canvas__overlay">
-        <div class="tm-diagram-transform-layer">
-            @if (Document is not null)
-            {
-                @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
+        @* Nodes: rendered as rich HTML inside a foreignObject living in the scene pane.
+           F3 will replace this unified foreignObject with per-node <g> elements that use
+           native SVG primitives for shapes and foreignObjects only for rich HTML content. *@
+        <foreignObject x="0" y="0"
+                       width="@(Document?.Width ?? 3000)" height="@(Document?.Height ?? 2000)"
+                       class="tm-diagram-nodes-fo"
+                       style="overflow: visible;">
+        <div xmlns="http://www.w3.org/1999/xhtml" class="tm-diagram-canvas__overlay">
+            <div class="tm-diagram-transform-layer">
+                @if (Document is not null)
                 {
+                    @foreach (var node in Document.Nodes.Where(IsNodeVisible).Where(IsLayerVisible).OrderBy(n => n.ZIndex))
+                    {
                     <div @key="@node.Id" class="tm-diagram-node @(_activeSearchResultId == node.Id ? "tm-diagram-search-match" : "")"
                          data-node-id="@node.Id"
                          data-stencil-id="@node.StencilId"
@@ -497,9 +507,16 @@
                 }
             }
         </div>
-    </div>
+        </div>
+        </foreignObject>
 
-    @* Interaction layer: injected by JS for selection outlines *@
-    <div class="tm-diagram-canvas__interaction"></div>
+        </g>
+        @* ── Pane 3 / overlayPane: selection outlines, drop-target highlights, JS-injected group bounds ──── *@
+        <g class="tm-diagram-overlay-pane"></g>
+
+        @* ── Pane 4 / decoratorPane: resize/rotate handles, connect arrows, edge waypoint handles ──────── *@
+        <g class="tm-diagram-decorator-pane"></g>
+
+    </svg>
 
 </div>

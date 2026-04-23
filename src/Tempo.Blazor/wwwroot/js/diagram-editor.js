@@ -60,18 +60,32 @@ window.tmDiagramEditor = {
         container.id = id;
 
         const svg = container.querySelector('.tm-diagram-canvas__svg');
-        const htmlLayer = container.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer');
-        const interactionLayer = container.querySelector('.tm-diagram-canvas__interaction');
-        const selectionLayer = container.querySelector('.tm-diagram-selection-layer');
-
         if (!svg) throw new Error('TmDiagramCanvas requires an SVG element with class tm-diagram-canvas__svg');
+
+        // F2 — 4-pane SVG structure (see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §5.1).
+        // The panes are rendered by Blazor as direct <g> children of the SVG and
+        // live inside the same coordinate system, so no per-pane transform is
+        // needed. Most JS callers still query through the legacy `htmlLayer`
+        // alias (nodes foreignObject's inner HTML); that alias will be retired
+        // in F7 once every site has migrated to an explicit pane reference.
+        const bgPane = svg.querySelector('.tm-diagram-bg-pane');
+        const scenePane = svg.querySelector('.tm-diagram-scene-pane');
+        const overlayPane = svg.querySelector('.tm-diagram-overlay-pane');
+        const decoratorPane = svg.querySelector('.tm-diagram-decorator-pane');
+        const htmlLayer = scenePane
+            ? scenePane.querySelector('.tm-diagram-canvas__overlay .tm-diagram-transform-layer')
+            : null;
+        const selectionLayer = container.querySelector('.tm-diagram-selection-layer');
 
         const opts = options || {};
         const inst = {
             container: container,
             svg: svg,
+            bgPane: bgPane,
+            scenePane: scenePane,
+            overlayPane: overlayPane,
+            decoratorPane: decoratorPane,
             htmlLayer: htmlLayer,
-            interactionLayer: interactionLayer,
             selectionLayer: selectionLayer,
             dotNetRef: dotNetRef,
 
@@ -164,7 +178,6 @@ window.tmDiagramEditor = {
 
         this.instances.set(id, inst);
         this._attachEvents(inst);
-        this._syncHtmlTransform(inst);
 
         // Auto-fit the content into the visible canvas on first initialization.
         // Without this, the default viewBox (e.g. 0 0 3000 2000) is much larger
@@ -202,8 +215,11 @@ window.tmDiagramEditor = {
         }
 
         inst.svg = null;
+        inst.bgPane = null;
+        inst.scenePane = null;
+        inst.overlayPane = null;
+        inst.decoratorPane = null;
         inst.htmlLayer = null;
-        inst.interactionLayer = null;
         inst.dotNetRef = null;
         this.instances.delete(id);
     },
@@ -360,8 +376,11 @@ window.tmDiagramEditor = {
 
     _setViewBox: function (inst, x, y, w, h) {
         inst.svg.setAttribute('viewBox', x + ' ' + y + ' ' + w + ' ' + h);
+        // After F2 the HTML nodes live inside a <foreignObject> in the scene
+        // pane, so they share the SVG's viewBox. inst.scale tracks the effective
+        // screen-to-doc ratio (still derived from the SVG's rendered width) for
+        // callers that want "zoom level" independent of getScreenCTM.
         inst.scale = Math.max(inst.svg.getBoundingClientRect().width, 1) / w;
-        this._syncHtmlTransform(inst);
         // Keep the Blazor-side `_viewBox` string in sync so any subsequent
         // parent re-render (which would otherwise reset the viewBox attribute
         // from stale Blazor state) preserves the current view. Without this,
@@ -369,20 +388,6 @@ window.tmDiagramEditor = {
         // re-computes _viewBox from the document dimensions.
         if (inst.dotNetRef)
             inst.dotNetRef.invokeMethodAsync('OnViewBoxChanged', x, y, w, h);
-    },
-
-    _syncHtmlTransform: function (inst) {
-        if (!inst.htmlLayer) return;
-        const vb = this._getViewBox(inst);
-        const rect = inst.svg.getBoundingClientRect();
-        const scale = Math.max(rect.width, 1) / vb.w;
-        inst.scale = scale;
-        const tx = -vb.x * scale;
-        const ty = -vb.y * scale;
-        var newTransform = 'translate(' + tx + 'px, ' + ty + 'px) scale(' + scale + ')';
-        if (inst.htmlLayer.style.transform !== newTransform) {
-            inst.htmlLayer.style.transform = newTransform;
-        }
     },
 
     _snap: function (inst, v) {
@@ -3391,12 +3396,6 @@ window.tmDiagramEditor = {
         const inst = this.instances.get(container.id);
         if (!inst) return;
         inst.activeGroupId = activeGroupId || null;
-    },
-
-    syncHtmlTransform: function (container) {
-        const inst = this.instances.get(container.id);
-        if (!inst) return;
-        this._syncHtmlTransform(inst);
     },
 
     zoomTo: function (container, scale) {

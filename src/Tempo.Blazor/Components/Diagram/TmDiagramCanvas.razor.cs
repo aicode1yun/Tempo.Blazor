@@ -200,22 +200,35 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         // fit-to-view) and pushes updates via OnViewBoxChanged. Overwriting
         // _viewBox here on every parameter change would revert the live view
         // back to the full document rect and hide the actual rendered content.
+        //
+        // Since F2 there is no CSS transform:scale on <svg>; Page.Scale is
+        // folded directly into viewBox dimensions so the initial render honours
+        // the page zoom without a second CSS-level multiplier.
         if (!_jsInitialized && Document is not null)
         {
+            var scale = Math.Max(0.01, Document.ActivePage?.Scale ?? 1.0);
+            var inv = 1.0 / scale;
             if (ShowPageView)
             {
-                _viewBox = $"-{PageViewMargin.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"-{PageViewMargin.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{(Document.Width + 2 * PageViewMargin).ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{(Document.Height + 2 * PageViewMargin).ToString("0.##", CultureInfo.InvariantCulture)}";
+                _viewBox = $"{(-PageViewMargin * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{(-PageViewMargin * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{((Document.Width + 2 * PageViewMargin) * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{((Document.Height + 2 * PageViewMargin) * inv).ToString("0.##", CultureInfo.InvariantCulture)}";
             }
             else
             {
-                _viewBox = $"0 0 {Document.Width.ToString("0.##", CultureInfo.InvariantCulture)} " +
-                           $"{Document.Height.ToString("0.##", CultureInfo.InvariantCulture)}";
+                _viewBox = $"0 0 {(Document.Width * inv).ToString("0.##", CultureInfo.InvariantCulture)} " +
+                           $"{(Document.Height * inv).ToString("0.##", CultureInfo.InvariantCulture)}";
             }
+            _lastAppliedPageScale = scale;
         }
     }
+
+    // Tracks the last Page.Scale value we've pushed into the JS viewBox so we can
+    // detect when the properties panel changes Page.Scale and forward it as a
+    // zoomTo() call. Kept in sync with Document.ActivePage.Scale after init and
+    // reseeded whenever OnParametersSet recomputes the initial viewBox.
+    private double _lastAppliedPageScale = 1.0;
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
@@ -240,7 +253,19 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
         else if (_jsInitialized)
         {
-            await JS.InvokeVoidAsync("tmDiagramEditor.syncHtmlTransform", _containerRef);
+            // F2: syncHtmlTransform is gone — the HTML overlay lives inside a
+            // foreignObject in the scene pane, so SVG viewBox already handles
+            // zoom/pan for both edges and nodes. Instead we forward Page.Scale
+            // changes (driven by the Properties panel) to the JS zoomTo entry
+            // point so the properties widget keeps its "page zoom" semantics.
+            var pageScale = Math.Max(0.01, Document?.ActivePage?.Scale ?? 1.0);
+            if (Math.Abs(pageScale - _lastAppliedPageScale) > 1e-4)
+            {
+                _lastAppliedPageScale = pageScale;
+                try { await JS.InvokeVoidAsync("tmDiagramEditor.zoomTo", _containerRef, pageScale); }
+                catch { /* JS may be mid-teardown */ }
+            }
+
             if (_currentSelectionIds.Length > 0)
             {
                 await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, _currentSelectionIds);
