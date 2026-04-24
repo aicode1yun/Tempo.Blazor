@@ -465,6 +465,21 @@
 .tm-diagram-overlay-pane { pointer-events: none; }
 .tm-diagram-decorator-pane { pointer-events: auto; }
 
+/* F6 — model-level group bounds. Rendered from Razor directly out of
+ * Document.Nodes grouped by GroupId as an SVG <rect> in .tm-diagram-bg-pane.
+ * No JS imperative path, no HTML div variant (the pre-F6 code lived in
+ * .tm-diagram-canvas__overlay as a CSS-positioned div; that path is gone).
+ * Purely decorative — pointer-events: none so drag/click fall through to the
+ * nodes underneath. */
+.tm-diagram-group-bounds {
+    fill: none;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    stroke-dasharray: 4 4;
+    opacity: 0.4;
+    pointer-events: none;
+}
+
 /* ── HTML overlay (nodes foreignObject content) ──────────────────────────── */
 /* After F2, .tm-diagram-canvas__overlay + .tm-diagram-transform-layer live
    Post-F3 each node is its own SVG <g class="tm-diagram-node"> with a
@@ -586,10 +601,19 @@ rect.tm-diagram-selection-outline {
     opacity: 0.75;
 }
 
-/* Drop-target / outline-connect hints — applied on the HTML body because
- * SVG `outline` support is patchy. The modifier class still lives on the
- * `.tm-diagram-node` <g> so JS `classList.add/remove` can keep targeting
- * the node itself. */
+/* F6.4 — drop-target / outline-connect hints. Decision (Apr 2026): keep as a
+ * CSS class toggled on the node's outer <g class="tm-diagram-node"> with the
+ * style cascading to the inner `.tm-diagram-node__body` (inside foreignObject).
+ * Not migrated to a separate SVG <rect> in overlay-pane because:
+ *   - The CSS-outline approach already animates with the node transform (no
+ *     extra JS sync during drag required, unlike the selection outline).
+ *   - `outline-offset` + `border-radius` give a pixel-perfect inset match to
+ *     the node's rounded corners that a separate SVG <rect> would have to
+ *     measure per-stencil to match.
+ *   - JS classList.add/remove stays a single line; no <rect> lifecycle.
+ * The modifier class still lives on the `.tm-diagram-node` <g> so JS
+ * `classList.add/remove` can keep targeting the node itself — `outline` on
+ * SVG elements is patchy across browsers, so the body <div> does the paint. */
 .tm-diagram-node--drop-target .tm-diagram-node__body {
     outline: 2px solid var(--tm-color-primary, #3b82f6);
     outline-offset: 2px;

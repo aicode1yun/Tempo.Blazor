@@ -80,14 +80,10 @@
                 var maxX = g.Max(n => n.X + n.W);
                 var maxY = g.Max(n => n.Y + n.H);
                 const double pad = 8;
-                <rect x="@F(minX - pad)" y="@F(minY - pad)"
-                      width="@F(maxX - minX + pad * 2)" height="@F(maxY - minY + pad * 2)"
-                      fill="none"
-                      stroke="var(--tm-color-primary)"
-                      stroke-width="1"
-                      stroke-dasharray="4,4"
-                      opacity="0.4"
-                      pointer-events="none" />
+                <rect class="tm-diagram-group-bounds"
+                      data-group-id="@g.Key"
+                      x="@F(minX - pad)" y="@F(minY - pad)"
+                      width="@F(maxX - minX + pad * 2)" height="@F(maxY - minY + pad * 2)" />
             }
         }
         </g>
@@ -577,7 +573,7 @@
         }
 
         </g>
-        @* ── Pane 3 / overlayPane: selection outlines, drop-target highlights, JS-injected group bounds ──── *@
+        @* ── Pane 3 / overlayPane: selection outlines (JS SVG &lt;rect&gt;), future transient overlays ──── *@
         <g class="tm-diagram-overlay-pane"></g>
 
         @* ── Pane 4 / decoratorPane: resize/rotate handles, connect arrows, edge waypoint handles ──────── *@

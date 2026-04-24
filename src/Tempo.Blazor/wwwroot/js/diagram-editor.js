@@ -174,9 +174,6 @@ window.tmDiagramEditor = {
 
             // magnetic guidelines
             guideLines: [],
-
-            // group bounds
-            groupBoundsEls: [],
         };
 
         this.instances.set(id, inst);
@@ -542,53 +539,12 @@ window.tmDiagramEditor = {
     },
 
     // ── Group bounds ─────────────────────────────────────────────────────────
-
-    _renderGroupBounds: function (inst) {
-        this._clearGroupBounds(inst);
-        if (!inst.overlayPane) return;
-        const groupMap = {};
-        inst.selectedIds.forEach(id => {
-            const el = this._nodeEl(inst, id);
-            const gid = el ? el.getAttribute('data-group-id') : null;
-            if (!gid) return;
-            if (!groupMap[gid]) groupMap[gid] = [];
-            const r = this._nodeRect(inst, id);
-            if (r) groupMap[gid].push(r);
-        });
-
-        const SVG_NS = 'http://www.w3.org/2000/svg';
-        Object.keys(groupMap).forEach(gid => {
-            const rects = groupMap[gid];
-            if (rects.length === 0) return;
-            const minX = Math.min(...rects.map(r => r.x)) - 6;
-            const minY = Math.min(...rects.map(r => r.y)) - 6;
-            const maxX = Math.max(...rects.map(r => r.x + r.w)) + 6;
-            const maxY = Math.max(...rects.map(r => r.y + r.h)) + 6;
-            // Post-F3 group bounds live in overlay-pane as SVG <rect> with a
-            // dashed stroke; visual is equivalent to the previous HTML div.
-            const rect = document.createElementNS(SVG_NS, 'rect');
-            rect.setAttribute('class', 'tm-diagram-group-bounds');
-            rect.setAttribute('x', String(minX));
-            rect.setAttribute('y', String(minY));
-            rect.setAttribute('width', String(maxX - minX));
-            rect.setAttribute('height', String(maxY - minY));
-            rect.setAttribute('fill', 'none');
-            rect.setAttribute('stroke', 'var(--tm-color-primary, #3b82f6)');
-            rect.setAttribute('stroke-width', '1');
-            rect.setAttribute('stroke-dasharray', '4 4');
-            rect.setAttribute('rx', '4');
-            rect.setAttribute('ry', '4');
-            rect.setAttribute('pointer-events', 'none');
-            inst.overlayPane.appendChild(rect);
-            inst.groupBoundsEls.push(rect);
-        });
-    },
-
-    _clearGroupBounds: function (inst) {
-        if (!inst.overlayPane) return;
-        inst.overlayPane.querySelectorAll('.tm-diagram-group-bounds').forEach(el => el.remove());
-        inst.groupBoundsEls = [];
-    },
+    //
+    // F6: No JS imperative group-bounds (no htmlLayer.appendChild div/rect).
+    // Razor emits <rect class="tm-diagram-group-bounds"> in .tm-diagram-bg-pane
+    // from Document.Nodes — model → view. Bounds update when Blazor re-renders
+    // after drag/resize commit; during live drag they stay at last committed
+    // geometry (less visual noise than a constantly resizing dashed frame).
 
     // ── Hit-path helper (HTML overlay may block SVG hit-path, use elementFromPoint fallback)
     _findHitPath: function (e) {

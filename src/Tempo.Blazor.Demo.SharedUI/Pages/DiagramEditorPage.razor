@@ -31,6 +31,10 @@
                 Load UML sample
             </button>
             <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
+                    @onclick="LoadGroupedBoundsSample">
+                Load grouped sample
+            </button>
+            <button class="px-3 py-1.5 text-sm rounded border border-slate-300 dark:border-slate-600 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300"
                     @onclick="NewDocument">
                 New document
             </button>
@@ -192,6 +196,52 @@
         _document = CreateUmlSample();
         _ = RefreshVersionsAsync();
     }
+
+    private void LoadGroupedBoundsSample()
+    {
+        _document = CreateGroupedBoundsSample();
+        _ = RefreshVersionsAsync();
+    }
+
+    private static DiagramDocument CreateGroupedBoundsSample() => new()
+    {
+        Title = "Grouped bounds sample",
+        Width = 1200,
+        Height = 800,
+        Nodes =
+        [
+            new()
+            {
+                Id = "m1",
+                StencilId = "general.rectangle",
+                X = 100,
+                Y = 100,
+                W = 120,
+                H = 60,
+                GroupId = "g1"
+            },
+            new()
+            {
+                Id = "m2",
+                StencilId = "general.rectangle",
+                X = 300,
+                Y = 240,
+                W = 120,
+                H = 60,
+                GroupId = "g1"
+            },
+            new()
+            {
+                Id = "solo",
+                StencilId = "general.rectangle",
+                X = 700,
+                Y = 400,
+                W = 120,
+                H = 60
+            }
+        ],
+        Edges = []
+    };
 
     private static DiagramDocument CreateUmlSample() => new()
     {

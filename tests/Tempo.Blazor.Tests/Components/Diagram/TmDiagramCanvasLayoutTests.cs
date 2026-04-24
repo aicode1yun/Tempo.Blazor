@@ -17,10 +17,10 @@ namespace Tempo.Blazor.Tests.Components.Diagram;
 /// mxGraph / draw.io:
 /// </para>
 /// <list type="bullet">
-///   <item><c>.tm-diagram-bg-pane</c> — background, grid, model-level group bounds</item>
+///   <item><c>.tm-diagram-bg-pane</c> — background, grid, model-level group bounds (F6)</item>
 ///   <item><c>.tm-diagram-scene-pane</c> — edges + per-node <c>&lt;g class="tm-diagram-node"&gt;</c> elements</item>
-///   <item><c>.tm-diagram-overlay-pane</c> — selection outlines, drop-target highlights, group bounds (populated by JS)</item>
-///   <item><c>.tm-diagram-decorator-pane</c> — resize/rotate handles, connect arrows (populated in F5)</item>
+///   <item><c>.tm-diagram-overlay-pane</c> — selection outlines, drop-target highlights</item>
+///   <item><c>.tm-diagram-decorator-pane</c> — resize/rotate handles, connect arrows (F5)</item>
 /// </list>
 ///
 /// <para>
@@ -365,5 +365,102 @@ public class TmDiagramCanvasLayoutTests : LocalizationTestBase
         new DiagramStencilLayout { BackgroundShape = "cube" }.GetNativeShapeKind().Should().Be(DiagramShapeKind.Custom);
         new DiagramStencilLayout { BackgroundShape = "sticky-note" }.GetNativeShapeKind().Should().Be(DiagramShapeKind.Custom);
         new DiagramStencilLayout { BackgroundShape = "document" }.GetNativeShapeKind().Should().Be(DiagramShapeKind.Custom);
+    }
+
+    // ──────────────────────────────────────────────────────────────────────────
+    // F6 — Group bounds are Razor-rendered SVG <rect class="tm-diagram-group-bounds">
+    //      inside <g class="tm-diagram-bg-pane">, driven directly from the model
+    //      (Document.Nodes grouped by GroupId). There's no JS imperative path.
+    // ──────────────────────────────────────────────────────────────────────────
+
+    private static DiagramDocument BuildGroupedDocument()
+    {
+        // Two members of group "g1" and one ungrouped spectator — the bounds
+        // should wrap (100,100)–(420,300) plus an 8 px pad.
+        var doc = new DiagramDocument { Width = 1200, Height = 800 };
+        doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 100, Y = 100, W = 120, H = 60, GroupId = "g1" });
+        doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 300, Y = 240, W = 120, H = 60, GroupId = "g1" });
+        doc.Nodes.Add(new DiagramNode { StencilId = "general.rectangle", X = 700, Y = 400, W = 120, H = 60 });
+        return doc;
+    }
+
+    [Fact]
+    public void GroupedNodes_RenderGroupBounds_AsSvgRect_InsideBgPane()
+    {
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, BuildGroupedDocument())
+            .Add(c => c.ShowPageView, false));
+
+        var bgPane = cut.Find(".tm-diagram-bg-pane");
+        var bounds = bgPane.QuerySelectorAll("rect.tm-diagram-group-bounds");
+        bounds.Should().HaveCount(1, "F6 — one bounds rect per GroupId present in the model");
+
+        var b = bounds[0];
+        b.GetAttribute("data-group-id").Should().Be("g1",
+            "F6 — the rect carries its group id for tests / export tooling");
+
+        // 8 px pad in Razor (const pad = 8): (100 - 8, 100 - 8, 320 + 16, 200 + 16).
+        b.GetAttribute("x").Should().Be("92");
+        b.GetAttribute("y").Should().Be("92");
+        b.GetAttribute("width").Should().Be("336");
+        b.GetAttribute("height").Should().Be("216");
+    }
+
+    [Fact]
+    public void GroupBounds_AreNotRenderedInOverlayOrDecoratorPane()
+    {
+        // F6 decision — group bounds are a model concern (bg-pane), not a
+        // selection/decorator concern. Any leak into overlay/decorator would
+        // suggest the pre-F6 imperative JS path has resurfaced.
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, BuildGroupedDocument())
+            .Add(c => c.ShowPageView, false));
+
+        cut.Find(".tm-diagram-overlay-pane").QuerySelectorAll(".tm-diagram-group-bounds").Should().BeEmpty(
+            "F6 removed the JS _renderGroupBounds path; bounds no longer live in overlay-pane");
+        cut.Find(".tm-diagram-decorator-pane").QuerySelectorAll(".tm-diagram-group-bounds").Should().BeEmpty(
+            "decorator-pane is reserved for handles, not bounds");
+    }
+
+    [Fact]
+    public void GroupBounds_RecomputeWhenNodePositionChanges_SimulatingDragCommit()
+    {
+        // F6.5 smoke (bUnit variant): after a group member's coordinates change
+        // and Blazor re-renders, the bounds rect follows. This is the same path
+        // the UI uses when a drag commit updates Document.Nodes[i].X/Y.
+        var doc = BuildGroupedDocument();
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, doc)
+            .Add(c => c.ShowPageView, false));
+
+        var before = cut.Find(".tm-diagram-bg-pane rect.tm-diagram-group-bounds");
+        before.GetAttribute("width").Should().Be("336");
+        before.GetAttribute("height").Should().Be("216");
+
+        // Move the second group member further down-right; bounds must grow.
+        doc.Nodes[1].X = 500;
+        doc.Nodes[1].Y = 400;
+        cut.SetParametersAndRender(p => p.Add(c => c.Document, doc));
+
+        var after = cut.Find(".tm-diagram-bg-pane rect.tm-diagram-group-bounds");
+        // New extent: (100,100)–(620,460) with ±8 pad → (92,92, 536, 376).
+        after.GetAttribute("x").Should().Be("92");
+        after.GetAttribute("y").Should().Be("92");
+        after.GetAttribute("width").Should().Be("536");
+        after.GetAttribute("height").Should().Be("376");
+    }
+
+    [Fact]
+    public void UngroupedDocument_EmitsNoGroupBoundsRect()
+    {
+        // No nodes have GroupId in the baseline sample, so the Razor @if that
+        // selects grouped nodes emits nothing — bg-pane must contain zero
+        // .tm-diagram-group-bounds rects.
+        var cut = RenderComponent<TmDiagramCanvas>(p => p
+            .Add(c => c.Document, BuildSampleDocument())
+            .Add(c => c.ShowPageView, false));
+
+        cut.FindAll("rect.tm-diagram-group-bounds").Should().BeEmpty(
+            "F6 — no groups in Document ⇒ no bounds rects anywhere in the canvas");
     }
 }
