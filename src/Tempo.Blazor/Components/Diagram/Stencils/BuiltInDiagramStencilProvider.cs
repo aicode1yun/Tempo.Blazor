@@ -1777,7 +1777,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                             {
                                 Type = "icon",
                                 DataKey = "icon",
-                                DefaultText = "âœ•",
+                                DefaultText = "✕",
                                 Padding = 0,
                                 TextStyle = new() { TextAlign = StencilTextAlign.Center, FontSize = 22 }
                             }
@@ -1785,7 +1785,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                     },
                     DefaultData = new()
                     {
-                        ["icon"] = "âœ•"
+                        ["icon"] = "✕"
                     }
                 },
                 new()
@@ -2941,7 +2941,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                             {
                                 Type = "icon",
                                 DataKey = "icon",
-                                DefaultText = "ðŸ–¥",
+                                DefaultText = "🖥",
                                 Padding = 8,
                                 TextStyle = new() { TextAlign = StencilTextAlign.Center, FontSize = 20 }
                             },
@@ -2955,7 +2955,7 @@ public sealed class BuiltInDiagramStencilProvider : IDiagramStencilProvider
                             }
                         ]
                     },
-                    DefaultData = new() { ["icon"] = "ðŸ–¥", ["label"] = "Server" }
+                    DefaultData = new() { ["icon"] = "🖥", ["label"] = "Server" }
                 },
                 new()
                 {
