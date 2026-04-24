@@ -2111,6 +2111,15 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             await JS.InvokeVoidAsync("tmDiagramEditor.addPageViewMargin", _containerRef, PageViewMargin);
     }
 
+    /// <summary>Serializes the current viewport as a standalone SVG string.
+    /// Decorator and overlay panes (handles, selection outlines) are stripped.
+    /// Requires the canvas to be initialized.</summary>
+    public async Task<string?> ExportViewportAsSvgAsync()
+    {
+        if (!_jsInitialized) return null;
+        return await JS.InvokeAsync<string?>("tmDiagramEditor.exportViewportAsSvg", _containerRef);
+    }
+
     public async Task FocusOnNode(string nodeId)
     {
         if (Document is null || !_jsInitialized) return;

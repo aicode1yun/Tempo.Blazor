@@ -586,6 +586,7 @@
   <data name="TmDiagramEditor_ExportSvg" xml:space="preserve"><value>Export SVG</value></data>
   <data name="TmDiagramEditor_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
   <data name="TmDiagramEditor_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDiagramEditor_ExportViewportSvg" xml:space="preserve"><value>Export viewport SVG</value></data>
   <data name="TmDiagramEditor_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
   <data name="TmDiagramEditor_Import" xml:space="preserve"><value>Import</value></data>
   <data name="TmDiagramEditor_ImportSql" xml:space="preserve"><value>Import SQL → ER</value></data>

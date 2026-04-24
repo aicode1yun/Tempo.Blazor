@@ -1571,6 +1571,7 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
             case "svg": await ExportSvg(); break;
             case "png": await ExportPng(); break;
             case "pdf": await ExportPdf(); break;
+            case "viewportSvg": await ExportViewportSvg(); break;
         }
     }
 
@@ -1612,6 +1613,23 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         _exportMenuOpen = false;
         await ExportToServerAsync("pdf", "application/pdf", ".pdf");
+    }
+
+    private async Task ExportViewportSvg()
+    {
+        _exportMenuOpen = false;
+        if (_canvas is null) return;
+        try
+        {
+            var svg = await _canvas.ExportViewportAsSvgAsync();
+            if (string.IsNullOrEmpty(svg)) return;
+            var fileName = SanitizeFileName(_document?.Title ?? "diagram") + "-viewport.svg";
+            await DownloadFile(fileName, "image/svg+xml", System.Text.Encoding.UTF8.GetBytes(svg));
+        }
+        catch (Exception ex)
+        {
+            _exportError = Loc["TmDiagramEditor_ExportError", ex.Message];
+        }
     }
 
     private async Task ExportToServerAsync(string format, string mimeType, string extension, bool exportAllPages = false)

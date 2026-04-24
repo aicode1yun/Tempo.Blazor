@@ -4166,6 +4166,45 @@ window.tmDiagramEditor = {
 
         return result;
     },
+
+    // ── Export ───────────────────────────────────────────────────────────────
+
+    exportViewportAsSvg: function (container) {
+        const inst = this.instances.get(container.id);
+        if (!inst || !inst.svg) return null;
+        const clone = inst.svg.cloneNode(true);
+        // Remove interactive / transient layers that should not appear in export
+        clone.querySelector('.tm-diagram-decorator-pane')?.remove();
+        clone.querySelector('.tm-diagram-overlay-pane')?.remove();
+        // Remove any temporary draw path
+        clone.querySelectorAll('.tm-diagram-edge-draw-path').forEach(function (el) { el.remove(); });
+        // Wrap every foreignObject in <switch> with a <rect> fallback so viewers
+        // that do not support foreignObject still render a visible placeholder.
+        // (draw.io/mxGraph pattern — see planning/DIAGRAM_UNIFIED_SVG_PLAN.md §11.5)
+        const SVG_NS = 'http://www.w3.org/2000/svg';
+        clone.querySelectorAll('foreignObject').forEach(function (fo) {
+            var parent = fo.parentNode;
+            if (!parent) return;
+            var sw = document.createElementNS(SVG_NS, 'switch');
+            fo.setAttribute('requiredFeatures', 'http://www.w3.org/TR/SVG11/feature#Extensibility');
+            var fallback = document.createElementNS(SVG_NS, 'rect');
+            fallback.setAttribute('x', fo.getAttribute('x') || '0');
+            fallback.setAttribute('y', fo.getAttribute('y') || '0');
+            fallback.setAttribute('width', fo.getAttribute('width') || '0');
+            fallback.setAttribute('height', fo.getAttribute('height') || '0');
+            fallback.setAttribute('fill', '#f9fafb');
+            fallback.setAttribute('stroke', '#d1d5db');
+            fallback.setAttribute('stroke-width', '1');
+            parent.insertBefore(sw, fo);
+            sw.appendChild(fo);
+            sw.appendChild(fallback);
+        });
+        // Ensure the clone has explicit xmlns for standalone SVG serialization
+        if (!clone.getAttribute('xmlns')) {
+            clone.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+        }
+        return new XMLSerializer().serializeToString(clone);
+    },
 };
 
 // ── TmDiagramArrowSelect helpers ─────────────────────────────────────────────
