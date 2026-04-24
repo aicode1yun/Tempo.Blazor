@@ -633,14 +633,12 @@
                             <title>@Loc["TmDiagramEditor_RotateHandleLabel"]</title>
                         </circle>
 
-                        @* Quick-connect arrows N/E/S/W. Kept as <foreignObject><button>
-                           so screen readers see a real button (important for a11y —
-                           see draw.io's mxConnectionHandler which uses the same pattern). *@
+                        @* Quick-connect arrows N/E/S/W (<foreignObject><button> for a11y). *@
                         @foreach (var _dir in _connectDirections)
                         {
                             var (_ax, _ay) = _dir.Css switch
                             {
-                                "n" => (_hNode.W / 2.0 - 11.0, -46.0),
+                                "n" => (_hNode.W / 2.0 - 11.0, -24.0),
                                 "e" => (_hNode.W + 2.0, _hNode.H / 2.0 - 11.0),
                                 "s" => (_hNode.W / 2.0 - 11.0, _hNode.H + 2.0),
                                 "w" => (-24.0, _hNode.H / 2.0 - 11.0),
