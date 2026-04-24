@@ -845,6 +845,33 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         var targetIds = _currentSelectionIds.Length > 0 ? _currentSelectionIds : ids;
         if (targetIds.Length == 0) return;
 
+        // If exactly one group node is selected, ungroup it instead of deleting
+        if (targetIds.Length == 1)
+        {
+            var groupNode = Document.Nodes.FirstOrDefault(n => n.Id == targetIds[0] && n.StencilId == "general.group");
+            if (groupNode is not null)
+            {
+                var anyLockedMember = Document.Nodes.Any(n => n.ParentGroupId == groupNode.Id && n.IsLocked);
+                if (!anyLockedMember)
+                {
+                    if (CommandStack is not null)
+                    {
+                        CommandStack.Push(new UngroupNodesCommand(Document, groupNode.Id));
+                    }
+                    else
+                    {
+                        new UngroupNodesCommand(Document, groupNode.Id).Execute();
+                    }
+
+                    _currentSelectionIds = [];
+                    await JS.InvokeVoidAsync("tmDiagramEditor.setSelection", _containerRef, Array.Empty<string>());
+                    await OnSelectionChanged.InvokeAsync([]);
+                    await NotifyAndRender();
+                    return;
+                }
+            }
+        }
+
         var nodeIds = targetIds.Where(id => Document.Nodes.Any(n => n.Id == id && !IsNodeLocked(n))).ToArray();
         var edgeIds = targetIds.Where(id => Document.Edges.Any(e => e.Id == id)).ToArray();
 

@@ -652,6 +652,8 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         var ids = _selectedIds.Where(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked != true).ToArray();
         if (ids.Length < 2) return;
         ActiveCommandStack.Push(new GroupNodesCommand(_document, ids));
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);
     }
 
@@ -2503,7 +2505,11 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
     {
         if (_document is null || ReadOnly) return;
         if (!CanContextMenuGroup()) return;
-        ActiveCommandStack.Push(new GroupNodesCommand(_document, _selectedIds));
+        var ids = _selectedIds.Where(id => _document.Nodes.FirstOrDefault(n => n.Id == id)?.IsLocked != true).ToArray();
+        if (ids.Length < 2) return;
+        ActiveCommandStack.Push(new GroupNodesCommand(_document, ids));
+        _selectedIds = [];
+        if (_canvas is not null) await _canvas.SetSelection([]);
         await OnDocumentChanged(_document);
     }
 
