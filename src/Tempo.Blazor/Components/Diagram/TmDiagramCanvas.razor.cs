@@ -10,8 +10,11 @@ using Tempo.Blazor.Components.Diagram.Stencils;
 namespace Tempo.Blazor.Components.Diagram;
 
 /// <summary>
-/// Hybrid SVG + HTML diagram canvas. Renders <see cref="DiagramDocument"/> nodes and edges
-/// and communicates with <c>diagram-editor.js</c> for pan, zoom, drag, and selection.
+/// Unified SVG diagram canvas (draw.io‑inspired 4‑pane architecture:
+/// backgroundPane / drawPane / overlayPane / decoratorPane).
+/// Renders <see cref="DiagramDocument"/> nodes and edges as native SVG
+/// primitives and <see cref="foreignObject"/> labels, and communicates
+/// with <c>diagram-editor.js</c> for pan, zoom, drag, and selection.
 /// </summary>
 public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
 {
@@ -260,11 +263,10 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         }
         else if (_jsInitialized)
         {
-            // F2: syncHtmlTransform is gone — the HTML overlay lives inside a
-            // foreignObject in the scene pane, so SVG viewBox already handles
-            // zoom/pan for both edges and nodes. Instead we forward Page.Scale
-            // changes (driven by the Properties panel) to the JS zoomTo entry
-            // point so the properties widget keeps its "page zoom" semantics.
+            // F2: syncHtmlTransform was removed — there is no HTML overlay.
+            // The unified SVG canvas uses viewBox for zoom/pan. We only forward
+            // Page.Scale changes (driven by the Properties panel) to JS zoomTo
+            // so the properties widget keeps its "page zoom" semantics.
             var pageScale = Math.Max(0.01, Document?.ActivePage?.Scale ?? 1.0);
             if (Math.Abs(pageScale - _lastAppliedPageScale) > 1e-4)
             {
