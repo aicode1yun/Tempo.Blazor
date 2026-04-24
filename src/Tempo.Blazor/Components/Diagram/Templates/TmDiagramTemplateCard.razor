@@ -40,7 +40,12 @@
     [Parameter] public string BaseUri { get; set; } = "";
 
     private bool _selected => Selected;
-    private string _thumbUrl => string.IsNullOrWhiteSpace(BaseUri) || string.IsNullOrWhiteSpace(Template.ThumbnailUrl)
-        ? (Template.ThumbnailUrl ?? "")
-        : $"{BaseUri.TrimEnd('/')}/{Template.ThumbnailUrl.TrimStart('/')}";
+    private string _thumbUrl => string.IsNullOrWhiteSpace(Template.ThumbnailUrl)
+        ? ""
+        : Template.ThumbnailUrl.StartsWith("data:", StringComparison.OrdinalIgnoreCase)
+            || Template.ThumbnailUrl.StartsWith("http", StringComparison.OrdinalIgnoreCase)
+            ? Template.ThumbnailUrl
+            : string.IsNullOrWhiteSpace(BaseUri)
+                ? Template.ThumbnailUrl
+                : $"{BaseUri.TrimEnd('/')}/{Template.ThumbnailUrl.TrimStart('/')}";
 }
