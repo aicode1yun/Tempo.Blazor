@@ -2122,6 +2122,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         await JS.InvokeVoidAsync("tmDiagramEditor.updateCanvasSize", _containerRef, w, h);
     }
 
+    public async Task SetRulerUnit(string unit)
+    {
+        if (!_jsInitialized) return;
+        await JS.InvokeVoidAsync("tmDiagramEditor.setRulerUnit", _containerRef, unit);
+    }
+
+    public async Task SetPageScale(double scale)
+    {
+        if (!_jsInitialized) return;
+        await JS.InvokeVoidAsync("tmDiagramEditor.setPageScale", _containerRef, scale);
+    }
+
     public async Task ScrollTo(double centreX, double centreY)
     {
         if (!_jsInitialized) return;

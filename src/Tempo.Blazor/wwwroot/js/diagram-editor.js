@@ -3393,6 +3393,18 @@ window.tmDiagramEditor = {
         inst.activeGroupId = activeGroupId || null;
     },
 
+    setRulerUnit: function (container, unit) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.rulerUnit = unit || 'px';
+    },
+
+    setPageScale: function (container, scale) {
+        const inst = this.instances.get(container.id);
+        if (!inst) return;
+        inst.pageScale = scale || 1.0;
+    },
+
     zoomTo: function (container, scale) {
         const inst = this.instances.get(container.id);
         if (!inst) return;

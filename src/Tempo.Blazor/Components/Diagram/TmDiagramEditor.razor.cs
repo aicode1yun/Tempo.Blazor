@@ -1222,17 +1222,21 @@ public partial class TmDiagramEditor : ComponentBase, IDisposable
         StateHasChanged();
     }
 
-    private void OnRulerUnitChanged(MeasurementUnit unit)
+    private async Task OnRulerUnitChanged(MeasurementUnit unit)
     {
         if (_document?.ActivePage is null) return;
         _document.ActivePage.RulerUnit = unit;
+        if (_canvas is not null)
+            await _canvas.SetRulerUnit(unit.ToString().ToLowerInvariant());
         StateHasChanged();
     }
 
-    private void OnPageScaleChanged(double scale)
+    private async Task OnPageScaleChanged(double scale)
     {
         if (_document?.ActivePage is null || scale <= 0) return;
         _document.ActivePage.PageScale = scale;
+        if (_canvas is not null)
+            await _canvas.SetPageScale(scale);
         StateHasChanged();
     }
 

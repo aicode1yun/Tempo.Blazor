@@ -282,7 +282,7 @@
                             aria-label="@Loc["TmDiagramEditor_RulerUnitLabel"]"
                             title="@Loc["TmDiagramEditor_RulerUnitLabel"]"
                             value="@(_document?.ActivePage?.RulerUnit ?? MeasurementUnit.Px)"
-                            @onchange='e => OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
+                            @onchange='async e => await OnRulerUnitChanged(Enum.Parse<MeasurementUnit>(e.Value?.ToString() ?? "Px"))'>
                         @foreach (var opt in _rulerUnitOptions)
                         {
                             <option value="@opt.Value">@opt.Label</option>
