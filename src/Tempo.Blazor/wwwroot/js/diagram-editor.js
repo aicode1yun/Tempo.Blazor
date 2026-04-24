@@ -2995,15 +2995,27 @@ window.tmDiagramEditor = {
     },
 
     _updateSelectionTransforms: function (inst) {
-        if (!inst.overlayPane) return;
+        if (!inst.overlayPane && !inst.decoratorPane) return;
         inst.selectedIds.forEach(id => {
             const r = this._nodeRect(inst, id);
             if (!r) return;
-            const outline = inst.overlayPane.querySelector('[data-sel-for="' + id + '"]');
-            if (!outline) return;
             const nodeEl = this._nodeEl(inst, id);
             const rot = this._getNodeRotation(nodeEl);
-            outline.setAttribute('transform', this._buildNodeTransform(r.x, r.y, rot, r.w, r.h));
+            const tr = this._buildNodeTransform(r.x, r.y, rot, r.w, r.h);
+
+            if (inst.overlayPane) {
+                const outline = inst.overlayPane.querySelector('[data-sel-for="' + id + '"]');
+                if (outline) outline.setAttribute('transform', tr);
+            }
+            // F5: keep the decorator-pane per-node handles group (resize rects,
+            // rotate circle, connect-arrow foreignObjects) in sync with the
+            // live node during JS-driven drags. Blazor re-renders it after the
+            // drag commits, but during the drag we must update the DOM directly
+            // otherwise the handles would lag behind the node.
+            if (inst.decoratorPane) {
+                const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + id + '"]');
+                if (handles) handles.setAttribute('transform', tr);
+            }
         });
     },
 
@@ -3637,7 +3649,14 @@ window.tmDiagramEditor = {
         const p = this._parseNodeTransform(el);
         const w = parseFloat(el.getAttribute('data-w') || '0');
         const h = parseFloat(el.getAttribute('data-h') || '0');
-        el.setAttribute('transform', this._buildNodeTransform(p.x, p.y, angle, w, h));
+        const tr = this._buildNodeTransform(p.x, p.y, angle, w, h);
+        el.setAttribute('transform', tr);
+        // F5: also rotate the handles group in decorator-pane so the resize
+        // squares, rotate knob and connect arrows track the live rotation.
+        if (inst.decoratorPane) {
+            const handles = inst.decoratorPane.querySelector('g.tm-diagram-node-handles[data-node-id="' + nodeId + '"]');
+            if (handles) handles.setAttribute('transform', tr);
+        }
         this._updateSelection(inst);
     },
 

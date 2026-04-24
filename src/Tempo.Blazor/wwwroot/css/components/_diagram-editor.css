@@ -1316,26 +1316,20 @@ circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
     resize: vertical;
 }
 
-/* ── Resize handles ──────────────────────────────────────────────────────── */
-.tm-diagram-resize-handle {
-    position: absolute;
-    width: 8px;
-    height: 8px;
-    background: var(--tm-color-surface, #ffffff);
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 2px;
-    z-index: 25;
-    cursor: pointer;
+/* ── Resize handles ──────────────────────────────────────────────────────── *
+ * Post-F5 handles are SVG <rect> in the decorator-pane, positioned in node-local
+ * coordinates on a <g class="tm-diagram-node-handles"> that mirrors the node's
+ * translate()+rotate() transform. SVG presentation attributes instead of CSS
+ * background/border. Cursor hint is applied inline per handle (direction
+ * depends on the handle role). */
+rect.tm-diagram-resize-handle {
+    fill: var(--tm-color-surface, #ffffff);
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
+    rx: 2;
+    ry: 2;
+    pointer-events: auto;
 }
-
-.tm-diagram-resize-handle--nw { top: -5px; left: -5px; cursor: nw-resize; }
-.tm-diagram-resize-handle--n  { top: -5px; left: 50%; transform: translateX(-50%); cursor: n-resize; }
-.tm-diagram-resize-handle--ne { top: -5px; right: -5px; cursor: ne-resize; }
-.tm-diagram-resize-handle--e  { top: 50%; right: -5px; transform: translateY(-50%); cursor: e-resize; }
-.tm-diagram-resize-handle--se { bottom: -5px; right: -5px; cursor: se-resize; }
-.tm-diagram-resize-handle--s  { bottom: -5px; left: 50%; transform: translateX(-50%); cursor: s-resize; }
-.tm-diagram-resize-handle--sw { bottom: -5px; left: -5px; cursor: sw-resize; }
-.tm-diagram-resize-handle--w  { top: 50%; left: -5px; transform: translateY(-50%); cursor: w-resize; }
 
 /* ── Read-only mode ──────────────────────────────────────────────────────── */
 .tm-diagram-editor--readonly .tm-diagram-node {
@@ -2032,39 +2026,40 @@ circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
 }
 /* Append to existing file */
 
-/* ── Rotate handle ─────────────────────────────────────────────────────── */
-.tm-diagram-rotate-handle {
-    position: absolute;
-    top: -38px;
-    left: calc(50% - 7px);
-    width: 14px;
-    height: 14px;
-    background: #fff;
-    border: 1.5px solid var(--tm-color-primary, #3b82f6);
-    border-radius: 50%;
+/* ── Rotate handle ─────────────────────────────────────────────────────── *
+ * Post-F5 — <circle class="tm-diagram-rotate-handle"> with a <line
+ * class="tm-diagram-rotate-handle-stem"> beneath it connecting the node's top
+ * edge. Both are native SVG in the decorator-pane's per-node <g>, so they
+ * inherit the node's rotation automatically. */
+circle.tm-diagram-rotate-handle {
+    fill: #fff;
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1.5;
     cursor: grab;
-    z-index: 20;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.15);
+    filter: drop-shadow(0 1px 1px rgba(0, 0, 0, 0.15));
+    pointer-events: auto;
 }
-.tm-diagram-rotate-handle:active {
+circle.tm-diagram-rotate-handle:active {
     cursor: grabbing;
 }
-.tm-diagram-rotate-handle::after {
-    content: "";
-    position: absolute;
-    top: 100%;
-    left: 50%;
-    width: 1px;
-    height: 10px;
-    background: var(--tm-color-primary, #3b82f6);
-    transform: translateX(-50%);
+line.tm-diagram-rotate-handle-stem {
+    stroke: var(--tm-color-primary, #3b82f6);
+    stroke-width: 1;
+    pointer-events: none;
 }
 
-/* ── Quick-connect arrows ──────────────────────────────────────────────── */
+/* ── Quick-connect arrows ──────────────────────────────────────────────── *
+ * Post-F5 — positioning is handled on the <foreignObject class="tm-diagram-
+ * connect-arrow-wrap"> via SVG x/y/width/height attributes (so it rotates with
+ * the node). The HTML <button> inside just fills the foreignObject; we keep
+ * it as HTML for a11y (real button semantics, keyboard focus, screen readers)
+ * — same approach as draw.io's mxConnectionHandler. */
+.tm-diagram-connect-arrow-wrap {
+    overflow: visible;
+}
 .tm-diagram-connect-arrow {
-    position: absolute;
-    width: 22px;
-    height: 22px;
+    width: 100%;
+    height: 100%;
     padding: 0;
     margin: 0;
     display: flex;
@@ -2074,8 +2069,7 @@ circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
     border: 1.5px solid var(--tm-color-primary, #3b82f6);
     border-radius: 50%;
     cursor: pointer;
-    z-index: 20;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
     transition: transform 0.12s, background 0.12s;
 }
 .tm-diagram-connect-arrow:hover {
@@ -2092,17 +2086,11 @@ circle.tm-diagram-connection-point.tm-diagram-connection-point--active {
     pointer-events: none;
 }
 
-/* Positioning */
-.tm-diagram-connect-arrow--n { top: -24px; left: calc(50% - 11px); }
+/* Rotate the "+" glyph to suggest the direction. Actual button placement is
+ * done by the wrapping <foreignObject> x/y attributes. */
 .tm-diagram-connect-arrow--n .tm-diagram-connect-arrow__icon { transform: rotate(-90deg); }
-
-.tm-diagram-connect-arrow--e { top: calc(50% - 11px); right: -24px; }
 .tm-diagram-connect-arrow--e .tm-diagram-connect-arrow__icon { transform: rotate(0deg); }
-
-.tm-diagram-connect-arrow--s { bottom: -24px; left: calc(50% - 11px); }
 .tm-diagram-connect-arrow--s .tm-diagram-connect-arrow__icon { transform: rotate(90deg); }
-
-.tm-diagram-connect-arrow--w { top: calc(50% - 11px); left: -24px; }
 .tm-diagram-connect-arrow--w .tm-diagram-connect-arrow__icon { transform: rotate(180deg); }
 
 /* ── Connect modal stencil grid ────────────────────────────────────────── */
