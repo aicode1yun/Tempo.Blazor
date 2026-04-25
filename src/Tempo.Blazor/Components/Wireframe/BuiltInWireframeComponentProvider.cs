@@ -3094,5 +3094,23 @@ public sealed class BuiltInWireframeComponentProvider : IWireframeComponentProvi
                 sb.Append(HLine(el.W / 2 + 60, el.W - 200, el.H / 2));
                 Svg(b, sb.ToString());
             });
+
+        // ── GROUP CONTAINER (internal) ─────────────────────────────────────────
+        yield return DefFromSchema("__group__", "folder",
+            (el, b) =>
+            {
+                var label = el.Props.GetString("label", "Group");
+                var sb = new StringBuilder();
+                // Semi-transparent background with dashed border
+                sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='{F(el.H)}' rx='4' fill='{FillAccent}' stroke='{Accent}' stroke-width='1' stroke-dasharray='6 3' opacity='0.25'></rect>");
+                // Solid border on top edge (header)
+                sb.Append($"<rect x='0' y='0' width='{F(el.W)}' height='22' rx='4' fill='{FillAccent}' stroke='{Accent}' stroke-width='1'></rect>");
+                sb.Append($"<rect x='0' y='14' width='{F(el.W)}' height='8' fill='{FillAccent}' stroke='none'></rect>");
+                // Label
+                sb.Append(Text(label, 8, 11, 10, Accent, "start", "500"));
+                // Folder icon
+                sb.Append(Icon("folder", el.W - 14, 11, 12));
+                Svg(b, sb.ToString());
+            });
     }
 }

@@ -1456,5 +1456,16 @@ public sealed class BuiltInComponentSchemas : IWireframeSchemaSource
             DefaultWidth = 500, DefaultHeight = 300,
             Props = [P("title", "Title", PropType.String, "Workflow", cat: "Content")]
         };
+
+        // ── GROUP (internal container, not shown in toolbox) ──────────────────
+        yield return new WireframeComponentSchema
+        {
+            Type = "__group__", Category = "Layout", DisplayName = "Group",
+            DefaultWidth = 200, DefaultHeight = 150,
+            Props =
+            [
+                P("label", "Label", PropType.String, "Group", cat: "Content"),
+            ]
+        };
     }
 }

@@ -1,0 +1,119 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Abstractions.Wireframe.Export
+@using Tempo.Blazor.Components.Buttons
+@using Tempo.Blazor.Components.Feedback
+@using Tempo.Blazor.Components.Inputs
+
+<TmModal Show="@Show"
+         OnClose="OnClose"
+         Title="@Loc["TmWireframeExportDialog_Title"]"
+         ShowDefaultFooterButtons="false"
+         Size="ModalSize.Medium"
+         CloseOnOverlayClick="true"
+         CloseOnEscape="true">
+    <ChildContent>
+        <div class="tm-wd-export-dialog">
+            @* File name *@
+            <div class="tm-wd-export-dialog__field">
+                <label class="tm-wd-export-dialog__label" for="wd-export-filename">
+                    @Loc["TmWireframeExportDialog_FileName"]
+                </label>
+                <TmTextInput Id="wd-export-filename"
+                             @bind-Value="_fileName"
+                             Placeholder="@Loc["TmWireframeExportDialog_FileNamePlaceholder"]" />
+            </div>
+
+            @* Format *@
+            <div class="tm-wd-export-dialog__field">
+                <label class="tm-wd-export-dialog__label" for="wd-export-format">
+                    @Loc["TmWireframeExportDialog_Format"]
+                </label>
+                <TmSelect Id="wd-export-format"
+                          @bind-Value="_format"
+                          Options="_formatOptions" />
+            </div>
+
+            @* Scale (PNG only) *@
+            @if (_format == "png")
+            {
+                <div class="tm-wd-export-dialog__field">
+                    <label class="tm-wd-export-dialog__label" for="wd-export-scale">
+                        @Loc["TmWireframeExportDialog_Scale"]
+                    </label>
+                    <TmSelect Id="wd-export-scale"
+                              @bind-Value="_scale"
+                              Options="_scaleOptions" />
+                </div>
+            }
+
+            @* Background *@
+            <div class="tm-wd-export-dialog__field tm-wd-export-dialog__field--inline">
+                <TmCheckbox Id="wd-export-bg"
+                            @bind-Value="_includeBackground"
+                            Label="@Loc["TmWireframeExportDialog_IncludeBackground"]" />
+            </div>
+        </div>
+    </ChildContent>
+    <Footer>
+        <TmButton Variant="ButtonVariant.Ghost" OnClick="OnClose">
+            @Loc["Tm_Cancel"]
+        </TmButton>
+        <TmButton Variant="ButtonVariant.Primary" OnClick="OnExportClick">
+            @Loc["TmWireframeExportDialog_ExportButton"]
+        </TmButton>
+    </Footer>
+</TmModal>
+
+@code {
+    [Parameter] public bool Show { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<WireframeExportDialogResult> OnExport { get; set; }
+    [Parameter] public string? DefaultFileName { get; set; }
+
+    private string _fileName = "";
+    private string _format = "png";
+    private string _scale = "1";
+    private bool _includeBackground = true;
+
+    private readonly List<SelectOption<string>> _formatOptions = new()
+    {
+        new() { Value = "png", Label = "PNG" },
+        new() { Value = "pdf", Label = "PDF" }
+    };
+
+    private readonly List<SelectOption<string>> _scaleOptions = new()
+    {
+        new() { Value = "1", Label = "1×" },
+        new() { Value = "2", Label = "2×" },
+        new() { Value = "3", Label = "3×" }
+    };
+
+    protected override void OnParametersSet()
+    {
+        if (!Show)
+        {
+            _format = "png";
+            _scale = "1";
+            _includeBackground = true;
+        }
+        else if (string.IsNullOrEmpty(_fileName) && !string.IsNullOrEmpty(DefaultFileName))
+        {
+            _fileName = DefaultFileName;
+        }
+    }
+
+    private async Task OnExportClick()
+    {
+        var result = new WireframeExportDialogResult
+        {
+            FileName = string.IsNullOrWhiteSpace(_fileName) ? "wireframe" : _fileName.Trim(),
+            Format = _format,
+            Options = new WireframeExportOptions
+            {
+                IncludeBackground = _includeBackground,
+                Scale = int.TryParse(_scale, out var s) ? s : 1
+            }
+        };
+        await OnExport.InvokeAsync(result);
+    }
+}

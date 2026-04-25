@@ -30,7 +30,7 @@ public sealed class ResizeElementCommand : IWireframeCommand
     private void Apply(double x, double y, double w, double h)
     {
         var el = _doc.Elements.FirstOrDefault(e => e.Id == _id);
-        if (el is null) return;
+        if (el is null || el.IsLocked || !string.IsNullOrEmpty(el.LockedBy)) return;
         el.X = x; el.Y = y; el.W = w; el.H = h;
     }
 }

@@ -511,6 +511,16 @@
   <data name="TmWireframe_Export" xml:space="preserve"><value>Exportovat</value></data>
   <data name="TmWireframe_ExportJson" xml:space="preserve"><value>Exportovat JSON</value></data>
   <data name="TmWireframe_ExportSvg" xml:space="preserve"><value>Exportovat SVG</value></data>
+  <data name="TmWireframe_ExportPng" xml:space="preserve"><value>Exportovat PNG</value></data>
+  <data name="TmWireframe_ExportPdf" xml:space="preserve"><value>Exportovat PDF</value></data>
+  <data name="TmWireframe_ExportError" xml:space="preserve"><value>Export selhal: {0}.</value></data>
+  <data name="TmWireframeExportDialog_Title" xml:space="preserve"><value>Exportovat wireframe</value></data>
+  <data name="TmWireframeExportDialog_FileName" xml:space="preserve"><value>Název souboru</value></data>
+  <data name="TmWireframeExportDialog_FileNamePlaceholder" xml:space="preserve"><value>wireframe</value></data>
+  <data name="TmWireframeExportDialog_Format" xml:space="preserve"><value>Formát</value></data>
+  <data name="TmWireframeExportDialog_Scale" xml:space="preserve"><value>Měřítko</value></data>
+  <data name="TmWireframeExportDialog_IncludeBackground" xml:space="preserve"><value>Zahrnout pozadí</value></data>
+  <data name="TmWireframeExportDialog_ExportButton" xml:space="preserve"><value>Exportovat</value></data>
   <data name="TmWireframe_ImportJson" xml:space="preserve"><value>Importovat JSON</value></data>
   <data name="TmWireframe_SwitchToEditMode" xml:space="preserve"><value>Přepnout do režimu úprav</value></data>
   <data name="TmWireframe_SwitchToReadOnlyMode" xml:space="preserve"><value>Přepnout do režimu pouze pro čtení</value></data>
@@ -559,6 +569,54 @@
   <data name="TmWireframeProps_CatAppearance" xml:space="preserve"><value>Vzhled</value></data>
   <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Chování</value></data>
   <data name="TmWireframeProps_CatState" xml:space="preserve"><value>Stav</value></data>
+  <data name="TmWireframe_BringToFront" xml:space="preserve"><value>Přenést dopředu</value></data>
+  <data name="TmWireframe_SendToBack" xml:space="preserve"><value>Odsunout dozadu</value></data>
+  <data name="TmWireframe_Lock" xml:space="preserve"><value>Zamknout</value></data>
+  <data name="TmWireframe_Unlock" xml:space="preserve"><value>Odemknout</value></data>
+  <data name="TmWireframeProps_BringToFront" xml:space="preserve"><value>Dopředu</value></data>
+  <data name="TmWireframeProps_SendToBack" xml:space="preserve"><value>Dozadu</value></data>
+  <data name="TmWireframeProps_Rotation" xml:space="preserve"><value>Rotace</value></data>
+  <data name="TmWireframeProps_Locked" xml:space="preserve"><value>Zamčeno</value></data>
+  <data name="TmWireframe_Group" xml:space="preserve"><value>Seskupit</value></data>
+  <data name="TmWireframe_Ungroup" xml:space="preserve"><value>Rozdělit</value></data>
+  <data name="TmWireframeProps_Group" xml:space="preserve"><value>Skupina</value></data>
+  <data name="TmWireframe_Align" xml:space="preserve"><value>Zarovnat</value></data>
+  <data name="TmWireframe_AlignLeft" xml:space="preserve"><value>Zarovnat vlevo</value></data>
+  <data name="TmWireframe_AlignCenterH" xml:space="preserve"><value>Zarovnat na střed vodorovně</value></data>
+  <data name="TmWireframe_AlignRight" xml:space="preserve"><value>Zarovnat vpravo</value></data>
+  <data name="TmWireframe_AlignTop" xml:space="preserve"><value>Zarovnat nahoru</value></data>
+  <data name="TmWireframe_AlignCenterV" xml:space="preserve"><value>Zarovnat na střed svisle</value></data>
+  <data name="TmWireframe_AlignBottom" xml:space="preserve"><value>Zarovnat dolů</value></data>
+  <data name="TmWireframe_Distribute" xml:space="preserve"><value>Rozmístit</value></data>
+  <data name="TmWireframe_DistributeHorizontal" xml:space="preserve"><value>Rozmístit vodorovně</value></data>
+  <data name="TmWireframe_DistributeVertical" xml:space="preserve"><value>Rozmístit svisle</value></data>
+  <data name="TmWireframe_SnapToObjects" xml:space="preserve"><value>Přichytit k objektům</value></data>
+  <data name="TmWireframe_CopyStyle" xml:space="preserve"><value>Kopírovat styl (Ctrl+Shift+C)</value></data>
+  <data name="TmWireframe_PasteStyle" xml:space="preserve"><value>Vložit styl (Ctrl+Shift+V)</value></data>
+  <data name="TmWireframe_PasteSize" xml:space="preserve"><value>Vložit velikost (Ctrl+Shift+S)</value></data>
+  <data name="TmWireframeProps_FormatPainter" xml:space="preserve"><value>Kopírování formátu</value></data>
+  <data name="TmWireframeProps_Arrange" xml:space="preserve"><value>Uspořádat</value></data>
+  <data name="TmWireframe_CtxCopyStyle" xml:space="preserve"><value>Kopírovat styl</value></data>
+  <data name="TmWireframe_CtxUndo" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmWireframe_CtxRedo" xml:space="preserve"><value>Znovu</value></data>
+  <data name="TmWireframe_CtxSelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
+  <data name="TmWireframe_CtxDuplicate" xml:space="preserve"><value>Duplikovat</value></data>
+  <data name="TmWireframe_CtxDelete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmWireframe_CtxBringToFront" xml:space="preserve"><value>Přenést dopředu</value></data>
+  <data name="TmWireframe_CtxSendToBack" xml:space="preserve"><value>Odsunout dozadu</value></data>
+  <data name="TmWireframe_CtxLock" xml:space="preserve"><value>Zamknout</value></data>
+  <data name="TmWireframe_CtxUnlock" xml:space="preserve"><value>Odemknout</value></data>
+  <data name="TmWireframe_CtxGroup" xml:space="preserve"><value>Seskupit</value></data>
+  <data name="TmWireframe_CtxUngroup" xml:space="preserve"><value>Rozdělit skupinu</value></data>
+  <data name="TmWireframe_CtxAlign" xml:space="preserve"><value>Zarovnat</value></data>
+  <data name="TmWireframe_CtxDistribute" xml:space="preserve"><value>Rozmístit</value></data>
+  <data name="TmWireframe_CtxPasteStyle" xml:space="preserve"><value>Vložit styl</value></data>
+  <data name="TmWireframe_CtxPasteSize" xml:space="preserve"><value>Vložit velikost</value></data>
+  <data name="TmWireframe_CtxShowGrid" xml:space="preserve"><value>Zobrazit mřížku</value></data>
+  <data name="TmWireframe_CtxHideGrid" xml:space="preserve"><value>Skrýt mřížku</value></data>
+  <data name="TmWireframe_CtxEnableSnap" xml:space="preserve"><value>Povolit přichycení k objektům</value></data>
+  <data name="TmWireframe_CtxDisableSnap" xml:space="preserve"><value>Zakázat přichycení k objektům</value></data>
+  <data name="TmWireframe_CtxFitToView" xml:space="preserve"><value>Přizpůsobit zobrazení</value></data>
 
   <!-- ═══════════════ TmDiagramEditor ═══════════════ -->
   <data name="TmDiagramEditor_ToolbarAriaLabel" xml:space="preserve"><value>Lišta editoru diagramu</value></data>
@@ -1176,5 +1234,43 @@
   <data name="TmNotionBlockTypeSwitcher_BasicBlocks"  xml:space="preserve"><value>Základní bloky</value></data>
   <data name="TmNotionBlockTypeSwitcher_Lists"        xml:space="preserve"><value>Seznamy</value></data>
   <data name="TmNotionBlockTypeSwitcher_Blocks"       xml:space="preserve"><value>Bloky</value></data>
+
+  <!-- ═══════════════ WIREFRAME MULTI-PAGE ═══════════════ -->
+  <data name="TmWireframe_Page" xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmWireframe_AddPage" xml:space="preserve"><value>Přidat stránku</value></data>
+  <data name="TmWireframe_DuplicatePage" xml:space="preserve"><value>Duplikovat stránku</value></data>
+  <data name="TmWireframe_DuplicatePageShort" xml:space="preserve"><value>Kop</value></data>
+  <data name="TmWireframe_ClosePage" xml:space="preserve"><value>Zavřít stránku</value></data>
+  <data name="TmWireframe_Copy" xml:space="preserve"><value>kopie</value></data>
+
+  <!-- ═══════════════ WIREFRAME CONNECTORS ═══════════════ -->
+  <data name="TmWireframe_ConnectorTool" xml:space="preserve"><value>Nástroj spojnice</value></data>
+  <data name="TmWireframeProps_SectionConnector" xml:space="preserve"><value>Spojnice</value></data>
+  <data name="TmWireframeProps_Routing" xml:space="preserve"><value>Směrování</value></data>
+  <data name="TmWireframeProps_StartArrow" xml:space="preserve"><value>Šipka na začátku</value></data>
+  <data name="TmWireframeProps_EndArrow" xml:space="preserve"><value>Šipka na konci</value></data>
+  <data name="TmWireframeProps_Stroke" xml:space="preserve"><value>Barva čáry</value></data>
+  <data name="TmWireframeProps_StrokeWidth" xml:space="preserve"><value>Tloušťka čáry</value></data>
+  <data name="TmWireframeProps_Label" xml:space="preserve"><value>Popisek</value></data>
+  <data name="TmWireframeProps_MultiConnectorHint" xml:space="preserve"><value>Vybráno více spojnic</value></data>
+
+  <!-- ═══════════════ WIREFRAME LAYERS ═══════════════ -->
+  <data name="TmWireframe_LayersToggle" xml:space="preserve"><value>Přepnout panel vrstev</value></data>
+  <data name="TmWireframe_LayersTitle" xml:space="preserve"><value>Vrstvy</value></data>
+  <data name="TmWireframe_AddLayer" xml:space="preserve"><value>Přidat vrstvu</value></data>
+  <data name="TmWireframe_SetActiveLayer" xml:space="preserve"><value>Nastavit jako aktivní vrstvu</value></data>
+  <data name="TmWireframe_HideLayer" xml:space="preserve"><value>Skrýt vrstvu</value></data>
+  <data name="TmWireframe_ShowLayer" xml:space="preserve"><value>Zobrazit vrstvu</value></data>
+  <data name="TmWireframe_UnlockLayer" xml:space="preserve"><value>Odemknout vrstvu</value></data>
+  <data name="TmWireframe_LockLayer" xml:space="preserve"><value>Zamknout vrstvu</value></data>
+  <data name="TmWireframe_DoubleClickToEdit" xml:space="preserve"><value>Dvojklikem upravte název</value></data>
+  <data name="TmWireframe_DeleteLayer" xml:space="preserve"><value>Smazat vrstvu</value></data>
+  <data name="TmWireframe_MoveToLayer" xml:space="preserve"><value>Přesunout do vrstvy</value></data>
+  <data name="TmWireframe_SelectLayer" xml:space="preserve"><value>Vyberte vrstvu</value></data>
+  <data name="TmWireframe_Layer" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmWireframeProps_Layer" xml:space="preserve"><value>Vrstva</value></data>
+  <data name="TmWireframe_ShowRulers" xml:space="preserve"><value>Zobrazit pravítka</value></data>
+  <data name="TmWireframe_HorizontalRuler" xml:space="preserve"><value>Vodorovné pravítko</value></data>
+  <data name="TmWireframe_VerticalRuler" xml:space="preserve"><value>Svislé pravítko</value></data>
 
 </root>

@@ -60,6 +60,15 @@ public sealed class WireframeCommandStack
             return;
         }
 
+        // Attempt coalescing for waypoint updates
+        if (command is UpdateConnectorWaypointsCommand newWp
+            && _undoStack.Last?.Value is UpdateConnectorWaypointsCommand prevWp
+            && prevWp.TryCoalesce(newWp))
+        {
+            OnStackChanged?.Invoke();
+            return;
+        }
+
         command.Execute();
 
         _undoStack.AddLast(command);

@@ -535,6 +535,16 @@
   <data name="TmWireframe_Export" xml:space="preserve"><value>Export</value></data>
   <data name="TmWireframe_ExportJson" xml:space="preserve"><value>Export JSON</value></data>
   <data name="TmWireframe_ExportSvg" xml:space="preserve"><value>Export SVG</value></data>
+  <data name="TmWireframe_ExportPng" xml:space="preserve"><value>Export PNG</value></data>
+  <data name="TmWireframe_ExportPdf" xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmWireframe_ExportError" xml:space="preserve"><value>Export failed: {0}.</value></data>
+  <data name="TmWireframeExportDialog_Title" xml:space="preserve"><value>Export Wireframe</value></data>
+  <data name="TmWireframeExportDialog_FileName" xml:space="preserve"><value>File name</value></data>
+  <data name="TmWireframeExportDialog_FileNamePlaceholder" xml:space="preserve"><value>wireframe</value></data>
+  <data name="TmWireframeExportDialog_Format" xml:space="preserve"><value>Format</value></data>
+  <data name="TmWireframeExportDialog_Scale" xml:space="preserve"><value>Scale</value></data>
+  <data name="TmWireframeExportDialog_IncludeBackground" xml:space="preserve"><value>Include background</value></data>
+  <data name="TmWireframeExportDialog_ExportButton" xml:space="preserve"><value>Export</value></data>
   <data name="TmWireframe_ImportJson" xml:space="preserve"><value>Import JSON</value></data>
   <data name="TmWireframe_SwitchToEditMode" xml:space="preserve"><value>Switch to edit mode</value></data>
   <data name="TmWireframe_SwitchToReadOnlyMode" xml:space="preserve"><value>Switch to read-only mode</value></data>
@@ -583,6 +593,54 @@
   <data name="TmWireframeProps_CatAppearance" xml:space="preserve"><value>Appearance</value></data>
   <data name="TmWireframeProps_CatBehavior" xml:space="preserve"><value>Behavior</value></data>
   <data name="TmWireframeProps_CatState" xml:space="preserve"><value>State</value></data>
+  <data name="TmWireframe_BringToFront" xml:space="preserve"><value>Bring to front</value></data>
+  <data name="TmWireframe_SendToBack" xml:space="preserve"><value>Send to back</value></data>
+  <data name="TmWireframe_Lock" xml:space="preserve"><value>Lock</value></data>
+  <data name="TmWireframe_Unlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="TmWireframeProps_BringToFront" xml:space="preserve"><value>Bring to front</value></data>
+  <data name="TmWireframeProps_SendToBack" xml:space="preserve"><value>Send to back</value></data>
+  <data name="TmWireframeProps_Rotation" xml:space="preserve"><value>Rotation</value></data>
+  <data name="TmWireframeProps_Locked" xml:space="preserve"><value>Locked</value></data>
+  <data name="TmWireframe_Group" xml:space="preserve"><value>Group</value></data>
+  <data name="TmWireframe_Ungroup" xml:space="preserve"><value>Ungroup</value></data>
+  <data name="TmWireframeProps_Group" xml:space="preserve"><value>Group</value></data>
+  <data name="TmWireframe_Align" xml:space="preserve"><value>Align</value></data>
+  <data name="TmWireframe_AlignLeft" xml:space="preserve"><value>Align Left</value></data>
+  <data name="TmWireframe_AlignCenterH" xml:space="preserve"><value>Align Center Horizontal</value></data>
+  <data name="TmWireframe_AlignRight" xml:space="preserve"><value>Align Right</value></data>
+  <data name="TmWireframe_AlignTop" xml:space="preserve"><value>Align Top</value></data>
+  <data name="TmWireframe_AlignCenterV" xml:space="preserve"><value>Align Center Vertical</value></data>
+  <data name="TmWireframe_AlignBottom" xml:space="preserve"><value>Align Bottom</value></data>
+  <data name="TmWireframe_Distribute" xml:space="preserve"><value>Distribute</value></data>
+  <data name="TmWireframe_DistributeHorizontal" xml:space="preserve"><value>Distribute Horizontal</value></data>
+  <data name="TmWireframe_DistributeVertical" xml:space="preserve"><value>Distribute Vertical</value></data>
+  <data name="TmWireframe_SnapToObjects" xml:space="preserve"><value>Snap to Objects</value></data>
+  <data name="TmWireframe_CopyStyle" xml:space="preserve"><value>Copy style (Ctrl+Shift+C)</value></data>
+  <data name="TmWireframe_PasteStyle" xml:space="preserve"><value>Paste style (Ctrl+Shift+V)</value></data>
+  <data name="TmWireframe_PasteSize" xml:space="preserve"><value>Paste size (Ctrl+Shift+S)</value></data>
+  <data name="TmWireframeProps_FormatPainter" xml:space="preserve"><value>Format Painter</value></data>
+  <data name="TmWireframeProps_Arrange" xml:space="preserve"><value>Arrange</value></data>
+  <data name="TmWireframe_CtxCopyStyle" xml:space="preserve"><value>Copy Style</value></data>
+  <data name="TmWireframe_CtxUndo" xml:space="preserve"><value>Undo</value></data>
+  <data name="TmWireframe_CtxRedo" xml:space="preserve"><value>Redo</value></data>
+  <data name="TmWireframe_CtxSelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="TmWireframe_CtxDuplicate" xml:space="preserve"><value>Duplicate</value></data>
+  <data name="TmWireframe_CtxDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmWireframe_CtxBringToFront" xml:space="preserve"><value>Bring to Front</value></data>
+  <data name="TmWireframe_CtxSendToBack" xml:space="preserve"><value>Send to Back</value></data>
+  <data name="TmWireframe_CtxLock" xml:space="preserve"><value>Lock</value></data>
+  <data name="TmWireframe_CtxUnlock" xml:space="preserve"><value>Unlock</value></data>
+  <data name="TmWireframe_CtxGroup" xml:space="preserve"><value>Group</value></data>
+  <data name="TmWireframe_CtxUngroup" xml:space="preserve"><value>Ungroup</value></data>
+  <data name="TmWireframe_CtxAlign" xml:space="preserve"><value>Align</value></data>
+  <data name="TmWireframe_CtxDistribute" xml:space="preserve"><value>Distribute</value></data>
+  <data name="TmWireframe_CtxPasteStyle" xml:space="preserve"><value>Paste Style</value></data>
+  <data name="TmWireframe_CtxPasteSize" xml:space="preserve"><value>Paste Size</value></data>
+  <data name="TmWireframe_CtxShowGrid" xml:space="preserve"><value>Show Grid</value></data>
+  <data name="TmWireframe_CtxHideGrid" xml:space="preserve"><value>Hide Grid</value></data>
+  <data name="TmWireframe_CtxEnableSnap" xml:space="preserve"><value>Enable Snap to Objects</value></data>
+  <data name="TmWireframe_CtxDisableSnap" xml:space="preserve"><value>Disable Snap to Objects</value></data>
+  <data name="TmWireframe_CtxFitToView" xml:space="preserve"><value>Fit to View</value></data>
 
   <!-- ═══════════════ TmDiagramEditor ═══════════════ -->
   <data name="TmDiagramEditor_ToolbarAriaLabel" xml:space="preserve"><value>Diagram editor toolbar</value></data>
@@ -1323,5 +1381,43 @@
   <data name="TmNotionEmbedBlock_OpenSource"          xml:space="preserve"><value>Open source</value></data>
   <data name="TmNotionEmbedBlock_ErrorInvalidUrl"     xml:space="preserve"><value>Please enter a valid URL.</value></data>
   <data name="TmNotionEmbedBlock_ErrorGeneric"        xml:space="preserve"><value>Could not embed this URL. Check the link and try again.</value></data>
+
+  <!-- ═══════════════ WIREFRAME MULTI-PAGE ═══════════════ -->
+  <data name="TmWireframe_Page" xml:space="preserve"><value>Page</value></data>
+  <data name="TmWireframe_AddPage" xml:space="preserve"><value>Add page</value></data>
+  <data name="TmWireframe_DuplicatePage" xml:space="preserve"><value>Duplicate page</value></data>
+  <data name="TmWireframe_DuplicatePageShort" xml:space="preserve"><value>Dup</value></data>
+  <data name="TmWireframe_ClosePage" xml:space="preserve"><value>Close page</value></data>
+  <data name="TmWireframe_Copy" xml:space="preserve"><value>copy</value></data>
+
+  <!-- ═══════════════ WIREFRAME CONNECTORS ═══════════════ -->
+  <data name="TmWireframe_ConnectorTool" xml:space="preserve"><value>Connector tool</value></data>
+  <data name="TmWireframeProps_SectionConnector" xml:space="preserve"><value>Connector</value></data>
+  <data name="TmWireframeProps_Routing" xml:space="preserve"><value>Routing</value></data>
+  <data name="TmWireframeProps_StartArrow" xml:space="preserve"><value>Start Arrow</value></data>
+  <data name="TmWireframeProps_EndArrow" xml:space="preserve"><value>End Arrow</value></data>
+  <data name="TmWireframeProps_Stroke" xml:space="preserve"><value>Stroke</value></data>
+  <data name="TmWireframeProps_StrokeWidth" xml:space="preserve"><value>Stroke Width</value></data>
+  <data name="TmWireframeProps_Label" xml:space="preserve"><value>Label</value></data>
+  <data name="TmWireframeProps_MultiConnectorHint" xml:space="preserve"><value>Multiple connectors selected</value></data>
+
+  <!-- ═══════════════ WIREFRAME LAYERS ═══════════════ -->
+  <data name="TmWireframe_LayersToggle" xml:space="preserve"><value>Toggle layers panel</value></data>
+  <data name="TmWireframe_LayersTitle" xml:space="preserve"><value>Layers</value></data>
+  <data name="TmWireframe_AddLayer" xml:space="preserve"><value>Add layer</value></data>
+  <data name="TmWireframe_SetActiveLayer" xml:space="preserve"><value>Set as active layer</value></data>
+  <data name="TmWireframe_HideLayer" xml:space="preserve"><value>Hide layer</value></data>
+  <data name="TmWireframe_ShowLayer" xml:space="preserve"><value>Show layer</value></data>
+  <data name="TmWireframe_UnlockLayer" xml:space="preserve"><value>Unlock layer</value></data>
+  <data name="TmWireframe_LockLayer" xml:space="preserve"><value>Lock layer</value></data>
+  <data name="TmWireframe_DoubleClickToEdit" xml:space="preserve"><value>Double-click to edit name</value></data>
+  <data name="TmWireframe_DeleteLayer" xml:space="preserve"><value>Delete layer</value></data>
+  <data name="TmWireframe_MoveToLayer" xml:space="preserve"><value>Move to layer</value></data>
+  <data name="TmWireframe_SelectLayer" xml:space="preserve"><value>Select layer</value></data>
+  <data name="TmWireframe_Layer" xml:space="preserve"><value>Layer</value></data>
+  <data name="TmWireframeProps_Layer" xml:space="preserve"><value>Layer</value></data>
+  <data name="TmWireframe_ShowRulers" xml:space="preserve"><value>Show rulers</value></data>
+  <data name="TmWireframe_HorizontalRuler" xml:space="preserve"><value>Horizontal ruler</value></data>
+  <data name="TmWireframe_VerticalRuler" xml:space="preserve"><value>Vertical ruler</value></data>
 
 </root>

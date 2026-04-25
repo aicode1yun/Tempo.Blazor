@@ -44,6 +44,9 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Snap-to-grid cell size in SVG units (pixels). 0 = disabled.</summary>
     [Parameter] public int GridSize { get; set; } = 8;
 
+    /// <summary>When true, dragged elements snap to edges/centers of other elements.</summary>
+    [Parameter] public bool SnapToObjects { get; set; }
+
     /// <summary>Prevent all editing interactions (drag, resize, drop).</summary>
     [Parameter] public bool ReadOnly { get; set; }
 
@@ -53,6 +56,24 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     /// <summary>Raised when the user changes the selection (single or multi).</summary>
     [Parameter] public EventCallback<string[]> OnSelectionChanged { get; set; }
 
+    /// <summary>Raised when the user changes the connector selection.</summary>
+    [Parameter] public EventCallback<string[]> OnConnectorSelectionChanged { get; set; }
+
+    /// <summary>Raised when the user creates a connector by dragging from one element to another.</summary>
+    [Parameter] public EventCallback<(string FromId, string ToId)> OnConnectorCreated { get; set; }
+
+    /// <summary>Raised when user requests deletion of selected connectors.</summary>
+    [Parameter] public EventCallback<string[]> OnDeleteConnectors { get; set; }
+
+    /// <summary>Raised when user drags a connector waypoint to a new position.</summary>
+    [Parameter] public EventCallback<(string ConnectorId, int WaypointIndex, double X, double Y)> OnConnectorWaypointDragged { get; set; }
+
+    /// <summary>Raised when user double-clicks a connector path to add a new waypoint.</summary>
+    [Parameter] public EventCallback<(string ConnectorId, double X, double Y)> OnConnectorWaypointAdded { get; set; }
+
+    /// <summary>Raised when user drags a selected connector to move all its waypoints.</summary>
+    [Parameter] public EventCallback<(string ConnectorId, double Dx, double Dy)> OnConnectorDragged { get; set; }
+
     /// <summary>Raised when user requests undo (Ctrl+Z). Parent handles the command stack.</summary>
     [Parameter] public EventCallback OnUndo { get; set; }
 
@@ -61,6 +82,33 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
 
     /// <summary>Raised when the user switches tool mode via H/V keyboard shortcut.</summary>
     [Parameter] public EventCallback<string> OnToolModeChanged { get; set; }
+
+    /// <summary>Raised when user requests copy style (Ctrl+Shift+C).</summary>
+    [Parameter] public EventCallback OnCopyStyleRequested { get; set; }
+
+    /// <summary>Raised when user requests paste style (Ctrl+Shift+V).</summary>
+    [Parameter] public EventCallback OnPasteStyleRequested { get; set; }
+
+    /// <summary>Raised when user requests paste size (Ctrl+Shift+S).</summary>
+    [Parameter] public EventCallback OnPasteSizeRequested { get; set; }
+
+    /// <summary>Raised when user opens context menu on an element (right-click).</summary>
+    [Parameter] public EventCallback<(string Id, double ScreenX, double ScreenY)> OnElementContextMenuRequested { get; set; }
+
+    /// <summary>Raised when user opens context menu on a connector (right-click).</summary>
+    [Parameter] public EventCallback<(string Id, double ScreenX, double ScreenY)> OnConnectorContextMenuRequested { get; set; }
+
+    /// <summary>Raised when user opens context menu on empty canvas (right-click).</summary>
+    [Parameter] public EventCallback<(double SvgX, double SvgY, double ScreenX, double ScreenY)> OnCanvasContextMenuRequested { get; set; }
+
+    /// <summary>Raised when context menu should close (click outside / Escape).</summary>
+    [Parameter] public EventCallback OnCloseContextMenu { get; set; }
+
+    /// <summary>Raised when the viewBox changes (pan/zoom).</summary>
+    [Parameter] public EventCallback<(double X, double Y, double W, double H)> OnViewBoxChangedEvent { get; set; }
+
+    /// <summary>Raised when mouse moves over the canvas (SVG coordinates).</summary>
+    [Parameter] public EventCallback<(double SvgX, double SvgY)> OnCanvasMouseMoved { get; set; }
 
     // ── Internal state ───────────────────────────────────────────────────────
 
@@ -86,6 +134,9 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
 
     // Current JS selection – kept in sync so we can re-apply handles after Blazor re-renders
     private string[] _currentSelectionIds = [];
+
+    // Current connector selection IDs (drives .tm-wd-connector--selected CSS class)
+    private string[] _currentConnectorSelectionIds = [];
 
     public TmWireframeDesignerCanvas()
     {
@@ -116,11 +167,12 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
 
             var options = new
             {
-                readOnly     = ReadOnly,
-                gridSize     = GridSize,
-                showGrid     = ShowGrid,
-                canvasWidth  = Document?.Width  ?? 1200,
-                canvasHeight = Document?.Height ?? 800,
+                readOnly       = ReadOnly,
+                gridSize       = GridSize,
+                showGrid       = ShowGrid,
+                snapToObjects  = SnapToObjects,
+                canvasWidth    = Document?.Width  ?? 1200,
+                canvasHeight   = Document?.Height ?? 800,
             };
 
             await JS.InvokeVoidAsync("tmWireframeDesigner.init", _svgRef, _dotNetRef, options);
@@ -255,6 +307,7 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         el.ZIndex = Document.Elements.Count > 0
             ? Document.Elements.Max(e => e.ZIndex) + 1
             : 0;
+        el.LayerId = Document.ActiveLayerId;
 
         if (CommandStack is not null)
             CommandStack.Push(new AddElementCommand(Document, el));
@@ -277,7 +330,53 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     public async Task JsOnSelectionChanged(string[] ids)
     {
         _currentSelectionIds = ids;
+        _currentConnectorSelectionIds = []; // clear connector selection when element selected
         await OnSelectionChanged.InvokeAsync(ids);
+    }
+
+    /// <summary>Connector selection changed.</summary>
+    [JSInvokable("OnConnectorSelectionChanged")]
+    public async Task JsOnConnectorSelectionChanged(string[] ids)
+    {
+        _currentConnectorSelectionIds = ids;
+        _currentSelectionIds = []; // clear element selection when connector selected
+        await OnConnectorSelectionChanged.InvokeAsync(ids);
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>User dragged from one element to another in connector tool mode.</summary>
+    [JSInvokable("OnConnectorCreated")]
+    public async Task JsOnConnectorCreated(string fromId, string toId)
+    {
+        await OnConnectorCreated.InvokeAsync((fromId, toId));
+    }
+
+    /// <summary>Delete key pressed for connectors.</summary>
+    [JSInvokable("OnDeleteConnectors")]
+    public async Task JsOnDeleteConnectors(string[] ids)
+    {
+        await OnDeleteConnectors.InvokeAsync(ids);
+    }
+
+    /// <summary>User dragged a connector waypoint to a new position.</summary>
+    [JSInvokable("OnConnectorWaypointDragged")]
+    public async Task JsOnConnectorWaypointDragged(string connectorId, int waypointIndex, double x, double y)
+    {
+        await OnConnectorWaypointDragged.InvokeAsync((connectorId, waypointIndex, x, y));
+    }
+
+    /// <summary>User double-clicked a connector path to add a new waypoint.</summary>
+    [JSInvokable("OnConnectorWaypointAdded")]
+    public async Task JsOnConnectorWaypointAdded(string connectorId, double x, double y)
+    {
+        await OnConnectorWaypointAdded.InvokeAsync((connectorId, x, y));
+    }
+
+    /// <summary>User dragged a connector to move all its waypoints.</summary>
+    [JSInvokable("OnConnectorDragged")]
+    public async Task JsOnConnectorDragged(string connectorId, double dx, double dy)
+    {
+        await OnConnectorDragged.InvokeAsync((connectorId, dx, dy));
     }
 
     /// <summary>Delete key pressed – remove the selected elements.</summary>
@@ -343,6 +442,115 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         }
     }
 
+    /// <summary>Bring to front requested by keyboard shortcut.</summary>
+    [JSInvokable]
+    public async Task OnBringToFront(string[] ids)
+    {
+        if (Document is null || ReadOnly) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new BringToFrontCommand(Document, ids));
+        else
+        {
+            var maxZ = Document.Elements.Max(e => e.ZIndex);
+            foreach (var id in ids)
+            {
+                var el = Document.Elements.FirstOrDefault(e => e.Id == id);
+                if (el is not null) el.ZIndex = ++maxZ;
+            }
+        }
+        await NotifyAndRender();
+    }
+
+    /// <summary>Send to back requested by keyboard shortcut.</summary>
+    [JSInvokable]
+    public async Task OnSendToBack(string[] ids)
+    {
+        if (Document is null || ReadOnly) return;
+        if (CommandStack is not null)
+            CommandStack.Push(new SendToBackCommand(Document, ids));
+        else
+        {
+            var minZ = Document.Elements.Min(e => e.ZIndex);
+            var offset = ids.Length;
+            foreach (var id in ids)
+            {
+                var el = Document.Elements.FirstOrDefault(e => e.Id == id);
+                if (el is not null) el.ZIndex = minZ - offset--;
+            }
+        }
+        await NotifyAndRender();
+    }
+
+    /// <summary>Toggle lock requested by keyboard shortcut.</summary>
+    [JSInvokable]
+    public async Task OnToggleLock(string[] ids)
+    {
+        if (Document is null || ReadOnly) return;
+        var elements = ids
+            .Select(id => Document.Elements.FirstOrDefault(e => e.Id == id))
+            .Where(e => e is not null)
+            .ToList();
+        if (elements.Count == 0) return;
+
+        var allLocked = elements.All(e => e!.IsLocked || !string.IsNullOrEmpty(e.LockedBy));
+        if (allLocked)
+        {
+            if (CommandStack is not null)
+                CommandStack.Push(new UnlockElementsCommand(Document, ids));
+            else
+                foreach (var el in elements) el!.IsLocked = false;
+        }
+        else
+        {
+            if (CommandStack is not null)
+                CommandStack.Push(new LockElementsCommand(Document, ids));
+            else
+                foreach (var el in elements) el!.IsLocked = true;
+        }
+        await NotifyAndRender();
+    }
+
+    /// <summary>Group selected elements (Ctrl+G).</summary>
+    [JSInvokable]
+    public async Task OnGroup(string[] ids)
+    {
+        if (Document is null || ReadOnly || ids.Length < 2) return;
+
+        if (CommandStack is not null)
+            CommandStack.Push(new GroupElementsCommand(Document, ids));
+        else
+        {
+            // Standalone mode: apply directly
+            var cmd = new GroupElementsCommand(Document, ids);
+            cmd.Execute();
+        }
+
+        await NotifyAndRender();
+    }
+
+    /// <summary>Ungroup selected groups (Ctrl+Shift+G).</summary>
+    [JSInvokable]
+    public async Task OnUngroup(string[] ids)
+    {
+        if (Document is null || ReadOnly || ids.Length == 0) return;
+
+        if (CommandStack is not null)
+        {
+            foreach (var id in ids)
+                CommandStack.Push(new UngroupElementsCommand(Document, id));
+        }
+        else
+        {
+            foreach (var id in ids)
+            {
+                var cmd = new UngroupElementsCommand(Document, id);
+                cmd.Execute();
+            }
+        }
+
+        await NotifyAndRender();
+    }
+
     /// <summary>Duplicate selected elements (Ctrl+D).</summary>
     [JSInvokable]
     public async Task OnDuplicate(string[] ids)
@@ -374,27 +582,49 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         await OnSelectionChanged.InvokeAsync(added.ToArray());
     }
 
+    /// <summary>Element rotated via rotate handle.</summary>
+    [JSInvokable]
+    public async Task OnElementRotated(string id, double rotation)
+    {
+        if (Document is null || ReadOnly) return;
+        var el = Document.Elements.FirstOrDefault(e => e.Id == id);
+        if (el is null || el.IsLocked || !string.IsNullOrEmpty(el.LockedBy)) return;
+
+        var before = el.Rotation;
+        if (CommandStack is not null)
+            CommandStack.Push(new RotateElementCommand(Document, id, before, rotation));
+        else
+            el.Rotation = rotation;
+
+        await NotifyAndRender();
+    }
+
     /// <summary>Zoom level changed by wheel.</summary>
     [JSInvokable]
     public Task OnZoomChanged(double scale) => Task.CompletedTask;
 
     /// <summary>ViewBox updated after pan.</summary>
     [JSInvokable]
-    public void OnViewBoxChanged(double x, double y, double w, double h)
+    public async Task OnViewBoxChanged(double x, double y, double w, double h)
     {
-        // Kept in JS; no Blazor re-render needed
         _viewBox = $"{F(x)} {F(y)} {F(w)} {F(h)}";
+        await OnViewBoxChangedEvent.InvokeAsync((x, y, w, h));
     }
 
     /// <summary>Context menu on element.</summary>
     [JSInvokable]
-    public Task OnElementContextMenu(string id, double offsetX, double offsetY)
-        => Task.CompletedTask;
+    public async Task OnElementContextMenu(string id, double screenX, double screenY)
+        => await OnElementContextMenuRequested.InvokeAsync((id, screenX, screenY));
+
+    /// <summary>Context menu on connector.</summary>
+    [JSInvokable]
+    public async Task OnConnectorContextMenu(string id, double screenX, double screenY)
+        => await OnConnectorContextMenuRequested.InvokeAsync((id, screenX, screenY));
 
     /// <summary>Context menu on empty canvas.</summary>
     [JSInvokable]
-    public Task OnCanvasContextMenu(double svgX, double svgY, double offsetX, double offsetY)
-        => Task.CompletedTask;
+    public async Task OnCanvasContextMenu(double svgX, double svgY, double screenX, double screenY)
+        => await OnCanvasContextMenuRequested.InvokeAsync((svgX, svgY, screenX, screenY));
 
     // ── Public API ───────────────────────────────────────────────────────────
 
@@ -474,6 +704,44 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
     public async Task JsOnToolModeChanged(string mode)
         => await OnToolModeChanged.InvokeAsync(mode);
 
+    /// <summary>JS invokes this when user presses Ctrl+Shift+C.</summary>
+    [JSInvokable]
+    public async Task OnCopyStyle()
+        => await OnCopyStyleRequested.InvokeAsync();
+
+    /// <summary>JS invokes this when user presses Ctrl+Shift+V.</summary>
+    [JSInvokable]
+    public async Task OnPasteStyle()
+        => await OnPasteStyleRequested.InvokeAsync();
+
+    /// <summary>JS invokes this when user presses Ctrl+Shift+S.</summary>
+    [JSInvokable]
+    public async Task OnPasteSize()
+        => await OnPasteSizeRequested.InvokeAsync();
+
+    /// <summary>Returns true when the element's layer is visible (or element has no layer).</summary>
+    public bool IsLayerVisible(string? layerId)
+    {
+        if (Document is null || string.IsNullOrEmpty(layerId)) return true;
+        var layer = Document.Layers.FirstOrDefault(l => l.Id == layerId);
+        return layer?.IsVisible ?? true;
+    }
+
+    /// <summary>Returns true when the element's layer is locked (or element has no layer).</summary>
+    public bool IsLayerLocked(string? layerId)
+    {
+        if (Document is null || string.IsNullOrEmpty(layerId)) return false;
+        var layer = Document.Layers.FirstOrDefault(l => l.Id == layerId);
+        return layer?.IsLocked ?? false;
+    }
+
+    /// <summary>Mouse moved over the canvas in SVG coordinates.</summary>
+    [JSInvokable("OnCanvasMouseMoved")]
+    public async Task JsOnCanvasMouseMoved(double svgX, double svgY)
+    {
+        await OnCanvasMouseMoved.InvokeAsync((svgX, svgY));
+    }
+
     /// <summary>Returns the underlying SVG element reference (needed by TmWireframeEditor for JS calls).</summary>
     public ElementReference GetSvgRef() => _svgRef;
 
@@ -503,17 +771,5 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         public string Id { get; set; } = "";
         public double X  { get; set; }
         public double Y  { get; set; }
-    }
-}
-
-/// <summary>Internal deep-copy extension for <see cref="WireframeElement"/>.</summary>
-file static class WireframeElementExtensions
-{
-    internal static WireframeElement DeepCopy(this WireframeElement src)
-    {
-        var json = System.Text.Json.JsonSerializer.Serialize(src, WireframeJsonOptions.Default);
-        var copy = System.Text.Json.JsonSerializer.Deserialize<WireframeElement>(json, WireframeJsonOptions.Default)!;
-        copy.Id  = Guid.NewGuid().ToString("N")[..8];
-        return copy;
     }
 }

@@ -1,0 +1,122 @@
+@namespace Tempo.Blazor.Components.Wireframe
+@using Tempo.Blazor.Components.Wireframe.Commands
+@using Tempo.Blazor.Components.Wireframe.Models
+
+<div class="tm-wd-layers @Class" data-collapsed="@_collapsed">
+    <button type="button" class="tm-wd-layers__toggle" @onclick="ToggleCollapse"
+            aria-label="@Loc["TmWireframe_LayersToggle"]" title="@Loc["TmWireframe_LayersToggle"]">
+        <TmIcon Name="@(_collapsed ? IconNames.ChevronLeft : IconNames.ChevronRight)" />
+    </button>
+
+    <div class="tm-wd-layers__inner">
+        <div class="tm-wd-layers__header">
+            <h3 class="tm-wd-layers__title">@Loc["TmWireframe_LayersTitle"]</h3>
+            <button type="button" class="tm-wd-layers__add-btn"
+                    aria-label="@Loc["TmWireframe_AddLayer"]"
+                    title="@Loc["TmWireframe_AddLayer"]"
+                    @onclick="OnAddLayer"
+                    disabled="@ReadOnly">
+                <TmIcon Name="IconNames.Plus" />
+            </button>
+        </div>
+
+        <div class="tm-wd-layers__list" role="list" aria-label="@Loc["TmWireframe_LayersTitle"]">
+            @foreach (var layer in SortedLayers)
+            {
+                var isActive = ActiveLayerId == layer.Id;
+                var isEditing = _editingLayerId == layer.Id;
+                <div class="tm-wd-layers__item"
+                     role="listitem"
+                     data-layer-id="@layer.Id"
+                     draggable="true"
+                     @ondragstart="e => OnDragStart(e, layer.Id)"
+                     @ondragover:preventDefault
+                     @ondrop="e => OnDrop(e, layer.Id)"
+                     @ondrop:preventDefault
+                     @ondragenter="e => OnDragEnter(e, layer.Id)"
+                     @ondragleave="OnDragLeave">
+                    <div class="tm-wd-layers__drag-handle">
+                        <TmIcon Name="IconNames.GripVertical" />
+                    </div>
+
+                    <button type="button"
+                            class="tm-wd-layers__active"
+                            aria-label="@Loc["TmWireframe_SetActiveLayer"]"
+                            title="@Loc["TmWireframe_SetActiveLayer"]"
+                            @onclick="() => OnSetActive(layer.Id)"
+                            disabled="@ReadOnly">
+                        @if (isActive)
+                        {
+                            <span class="tm-wd-layers__radio tm-wd-layers__radio--checked"></span>
+                        }
+                        else
+                        {
+                            <span class="tm-wd-layers__radio"></span>
+                        }
+                    </button>
+
+                    <button type="button"
+                            class="tm-wd-layers__visibility"
+                            aria-label="@(layer.IsVisible ? Loc["TmWireframe_HideLayer"] : Loc["TmWireframe_ShowLayer"])"
+                            title="@(layer.IsVisible ? Loc["TmWireframe_HideLayer"] : Loc["TmWireframe_ShowLayer"])"
+                            @onclick="() => OnToggleVisibility(layer)"
+                            disabled="@ReadOnly">
+                        <TmIcon Name="@(layer.IsVisible ? IconNames.Eye : IconNames.EyeOff)" />
+                    </button>
+
+                    <button type="button"
+                            class="tm-wd-layers__lock"
+                            aria-label="@(layer.IsLocked ? Loc["TmWireframe_UnlockLayer"] : Loc["TmWireframe_LockLayer"])"
+                            title="@(layer.IsLocked ? Loc["TmWireframe_UnlockLayer"] : Loc["TmWireframe_LockLayer"])"
+                            @onclick="() => OnToggleLock(layer)"
+                            disabled="@ReadOnly">
+                        <TmIcon Name="@(layer.IsLocked ? IconNames.Lock : IconNames.Unlock)" />
+                    </button>
+
+                    @if (isEditing)
+                    {
+                        <input class="tm-wd-layers__name-input"
+                               type="text"
+                               value="@_editName"
+                               @oninput="e => _editName = e.Value?.ToString() ?? _editName"
+                               @onkeydown="e => OnNameKeyDown(e, layer)"
+                               @onblur="() => OnNameBlur(layer)"
+                               @ref="_nameInputRef" />
+                    }
+                    else
+                    {
+                        <span class="tm-wd-layers__name"
+                              @ondblclick="() => OnStartEdit(layer)"
+                              title="@Loc["TmWireframe_DoubleClickToEdit"]">
+                            @layer.Name
+                        </span>
+                    }
+
+                    @if (Document?.Layers.Count > 1 && layer.Id != _defaultLayerId)
+                    {
+                        <button type="button"
+                                class="tm-wd-layers__delete"
+                                aria-label="@Loc["TmWireframe_DeleteLayer"]"
+                                title="@Loc["TmWireframe_DeleteLayer"]"
+                                @onclick="() => OnRemoveLayer(layer)"
+                                disabled="@ReadOnly">
+                            <TmIcon Name="IconNames.Trash" />
+                        </button>
+                    }
+                </div>
+            }
+        </div>
+
+        @if (SelectedElementIds.Length > 0 && !ReadOnly)
+        {
+            <div class="tm-wd-layers__move-section">
+                <label class="tm-wd-layers__move-label">@Loc["TmWireframe_MoveToLayer"]</label>
+                <TmSelect TValue="string"
+                          Value="@_moveTargetLayerId"
+                          ValueChanged="OnMoveElementsToLayer"
+                          Options="MoveLayerOptions"
+                          Placeholder="@Loc["TmWireframe_SelectLayer"]" />
+            </div>
+        }
+    </div>
+</div>

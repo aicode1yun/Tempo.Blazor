@@ -16,12 +16,14 @@ public class WireframeDocumentTests
     {
         var doc = new WireframeDocument();
 
-        doc.Version.Should().Be("1.0");
+        doc.Version.Should().Be("2.0");
         doc.Title.Should().Be("Untitled wireframe");
         doc.Width.Should().Be(1280);
         doc.Height.Should().Be(800);
         doc.Elements.Should().BeEmpty();
         doc.Connectors.Should().BeEmpty();
+        doc.Pages.Should().HaveCount(1);
+        doc.ActivePageId.Should().NotBeNullOrEmpty();
     }
 
     [Fact]

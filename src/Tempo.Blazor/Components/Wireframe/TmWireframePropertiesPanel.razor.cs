@@ -1,3 +1,4 @@
+using System.Globalization;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using Microsoft.AspNetCore.Components;
@@ -42,12 +43,31 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
     /// <summary>Currently selected element ids.</summary>
     [Parameter] public string[] SelectedIds { get; set; } = [];
 
+    /// <summary>Currently selected connector ids.</summary>
+    [Parameter] public string[] SelectedConnectorIds { get; set; } = [];
+
+    /// <summary>Raised when the user requests copy style from the selected element.</summary>
+    [Parameter] public EventCallback OnCopyStyle { get; set; }
+
+    /// <summary>Raised when the user requests paste style to the selected elements.</summary>
+    [Parameter] public EventCallback OnPasteStyle { get; set; }
+
+    /// <summary>Raised when the user requests paste size to the selected elements.</summary>
+    [Parameter] public EventCallback OnPasteSize { get; set; }
+
+    /// <summary>Prevent all editing interactions.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
     /// <summary>Additional CSS class on the panel wrapper.</summary>
     [Parameter] public string? Class { get; set; }
+
+    /// <summary>Whether the wireframe clipboard currently holds a copied style.</summary>
+    public bool HasClipboardStyle => WireframeClipboard.HasStyle;
 
     // ── Derived state (recomputed in OnParametersSet) ─────────────────────────
 
     private List<WireframeElement>     _elements      = [];
+    private List<WireframeConnector>   _connectors    = [];
     private WireframeComponentDef?     _def;           // null in multi-type selection
     private List<PropDef>              _commonProps    = [];
     private List<string>               _propCategories = [];
@@ -72,12 +92,22 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
     protected override void OnParametersSet()
     {
         _validationErrors.Clear();
+        _connectors = [];
+        _elements = [];
 
-        if (Document is null || SelectedIds.Length == 0)
+        if (Document is null) return;
+
+        if (SelectedConnectorIds.Length > 0)
         {
-            _elements = [];
+            _connectors = SelectedConnectorIds
+                .Select(id => Document.Connectors.FirstOrDefault(c => c.Id == id))
+                .Where(c => c is not null)
+                .Select(c => c!)
+                .ToList();
             return;
         }
+
+        if (SelectedIds.Length == 0) return;
 
         _elements = SelectedIds
             .Select(id => Document.Elements.FirstOrDefault(e => e.Id == id))
@@ -368,10 +398,225 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
             { el.W = preset.W; el.H = preset.H; }
     }
 
+    // ── Arrange commands (Bring to Front / Send to Back) ──────────────────────
+
+    private async Task OnBringToFront()
+    {
+        if (Document is null || _elements.Count == 0) return;
+        var ids = _elements.Select(e => e.Id).ToList();
+        if (CommandStack is not null)
+            CommandStack.Push(new BringToFrontCommand(Document, ids));
+        else
+        {
+            var maxZ = Document.Elements.Max(e => e.ZIndex);
+            foreach (var el in _elements)
+                el.ZIndex = ++maxZ;
+        }
+        await NotifyChanged();
+    }
+
+    private async Task OnSendToBack()
+    {
+        if (Document is null || _elements.Count == 0) return;
+        var ids = _elements.Select(e => e.Id).ToList();
+        if (CommandStack is not null)
+            CommandStack.Push(new SendToBackCommand(Document, ids));
+        else
+        {
+            var minZ = Document.Elements.Min(e => e.ZIndex);
+            var offset = ids.Count;
+            foreach (var el in _elements)
+                el.ZIndex = minZ - offset--;
+        }
+        await NotifyChanged();
+    }
+
+    // ── Lock toggle ───────────────────────────────────────────────────────────
+
+    private async Task OnLockChanged(ChangeEventArgs e)
+    {
+        if (Document is null || _elements.Count == 0) return;
+        var val = e.Value is bool b ? b : bool.TryParse(e.Value?.ToString(), out var bv) && bv;
+        var ids = _elements.Select(e => e.Id).ToList();
+
+        if (CommandStack is not null)
+        {
+            if (val)
+                CommandStack.Push(new LockElementsCommand(Document, ids));
+            else
+                CommandStack.Push(new UnlockElementsCommand(Document, ids));
+        }
+        else
+        {
+            foreach (var el in _elements)
+                el.IsLocked = val;
+        }
+        await NotifyChanged();
+    }
+
+    // ── Rotation change ───────────────────────────────────────────────────────
+
+    private Task OnRotationChanged(ChangeEventArgs e)
+    {
+        if (Document is null || _elements.Count == 0) return Task.CompletedTask;
+        if (!double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any,
+                System.Globalization.CultureInfo.InvariantCulture, out var rot))
+            return Task.CompletedTask;
+
+        return DebounceApply("rotation", async () =>
+        {
+            if (_elements.Count == 1)
+            {
+                var el = _elements[0];
+                var before = el.Rotation;
+                if (CommandStack is not null)
+                    CommandStack.Push(new RotateElementCommand(Document, el.Id, before, rot));
+                else
+                    el.Rotation = rot;
+            }
+            else
+            {
+                // Multi-select: apply same rotation to all selected
+                if (CommandStack is not null)
+                {
+                    var ids = _elements.Select(e => e.Id);
+                    var beforeMap = _elements.ToDictionary(e => e.Id, e => e.Rotation);
+                    CommandStack.Push(new BulkRotateCommand(Document, ids, beforeMap, rot));
+                }
+                else
+                {
+                    foreach (var el in _elements)
+                        el.Rotation = rot;
+                }
+            }
+            await NotifyChanged();
+        });
+    }
+
     private async Task NotifyChanged()
     {
         if (Document is not null)
             await DocumentChanged.InvokeAsync(Document);
+    }
+
+    // ── Align / Distribute ────────────────────────────────────────────────────
+
+    private async Task OnAlign(WireframeAlignment alignment)
+    {
+        if (Document is null || _elements.Count < 2) return;
+        var ids = _elements.Select(e => e.Id);
+        if (CommandStack is not null)
+            CommandStack.Push(new AlignElementsCommand(Document, ids, alignment));
+        else
+            new AlignElementsCommand(Document, ids, alignment).Execute();
+        await NotifyChanged();
+    }
+
+    private async Task OnDistribute(WireframeDistribution distribution)
+    {
+        if (Document is null || _elements.Count < 3) return;
+        var ids = _elements.Select(e => e.Id);
+        if (CommandStack is not null)
+            CommandStack.Push(new DistributeElementsCommand(Document, ids, distribution));
+        else
+            new DistributeElementsCommand(Document, ids, distribution).Execute();
+        await NotifyChanged();
+    }
+
+    // ── Connector property handlers ───────────────────────────────────────────
+
+    private async Task OnConnectorRoutingChanged(string connectorId, ChangeEventArgs e)
+    {
+        if (Document is null) return;
+        var c = Document.Connectors.FirstOrDefault(x => x.Id == connectorId);
+        if (c is null) return;
+        var routing = e.Value?.ToString() ?? "straight";
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateConnectorRoutingCommand(Document, connectorId, c.Routing, c.Waypoints.ToList(), routing, c.Waypoints.ToList()));
+        else
+            c.Routing = routing;
+        await NotifyChanged();
+    }
+
+    private async Task OnConnectorArrowChanged(string connectorId, bool isStart, ChangeEventArgs e)
+    {
+        if (Document is null) return;
+        var c = Document.Connectors.FirstOrDefault(x => x.Id == connectorId);
+        if (c is null) return;
+        var arrow = e.Value?.ToString() ?? "none";
+        var beforeStart = c.StartArrow;
+        var beforeEnd = c.EndArrow;
+        var afterStart = isStart ? arrow : c.StartArrow;
+        var afterEnd = isStart ? c.EndArrow : arrow;
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateConnectorStyleCommand(Document, connectorId,
+                c.Stroke, c.StrokeWidth, c.StrokeDasharray, beforeStart, beforeEnd,
+                c.Stroke, c.StrokeWidth, c.StrokeDasharray, afterStart, afterEnd));
+        else
+        {
+            if (isStart) c.StartArrow = arrow;
+            else c.EndArrow = arrow;
+        }
+        await NotifyChanged();
+    }
+
+    private async Task OnConnectorStrokeChanged(string connectorId, ChangeEventArgs e)
+    {
+        if (Document is null) return;
+        var c = Document.Connectors.FirstOrDefault(x => x.Id == connectorId);
+        if (c is null) return;
+        var stroke = e.Value?.ToString() ?? "#94a3b8";
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateConnectorStyleCommand(Document, connectorId,
+                c.Stroke, c.StrokeWidth, c.StrokeDasharray, c.StartArrow, c.EndArrow,
+                stroke, c.StrokeWidth, c.StrokeDasharray, c.StartArrow, c.EndArrow));
+        else
+            c.Stroke = stroke;
+        await NotifyChanged();
+    }
+
+    private async Task OnConnectorStrokeWidthChanged(string connectorId, ChangeEventArgs e)
+    {
+        if (Document is null) return;
+        var c = Document.Connectors.FirstOrDefault(x => x.Id == connectorId);
+        if (c is null) return;
+        if (!double.TryParse(e.Value?.ToString(), System.Globalization.NumberStyles.Any, CultureInfo.InvariantCulture, out var width))
+            return;
+        width = Math.Max(0.5, Math.Min(20, width));
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateConnectorStyleCommand(Document, connectorId,
+                c.Stroke, c.StrokeWidth, c.StrokeDasharray, c.StartArrow, c.EndArrow,
+                c.Stroke, width, c.StrokeDasharray, c.StartArrow, c.EndArrow));
+        else
+            c.StrokeWidth = width;
+        await NotifyChanged();
+    }
+
+    private async Task OnConnectorLabelChanged(string connectorId, ChangeEventArgs e)
+    {
+        if (Document is null) return;
+        var c = Document.Connectors.FirstOrDefault(x => x.Id == connectorId);
+        if (c is null) return;
+        var label = e.Value?.ToString();
+        if (CommandStack is not null)
+            CommandStack.Push(new UpdateConnectorLabelCommand(Document, connectorId, c.Label, label));
+        else
+            c.Label = label;
+        await NotifyChanged();
+    }
+
+    private async Task OnLayerChanged(ChangeEventArgs e)
+    {
+        if (Document is null || _elements.Count == 0) return;
+        var layerId = e.Value?.ToString() ?? "";
+        var elementIds = _elements.Select(el => el.Id).ToArray();
+
+        if (CommandStack is not null)
+            CommandStack.Push(new MoveElementsToLayerCommand(Document, elementIds, layerId));
+        else
+            foreach (var el in _elements) el.LayerId = layerId;
+
+        await NotifyChanged();
     }
 
     /// <inheritdoc/>
@@ -380,27 +625,16 @@ public partial class TmWireframePropertiesPanel : ComponentBase, IDisposable
         foreach (var cts in _debounceCts.Values) { cts.Cancel(); cts.Dispose(); }
         _debounceCts.Clear();
     }
-}
 
-// ── ZIndex command (thin wrapper for a first-class field) ─────────────────────
+    // ── Group label helper ────────────────────────────────────────────────────
 
-file sealed class ZIndexCommand : IWireframeCommand
-{
-    private readonly WireframeDocument _doc;
-    private readonly string _id;
-    private readonly int _before, _after;
-    private readonly string _name;
-
-    public ZIndexCommand(WireframeDocument doc, string id, int before, int after, string name)
-    { _doc = doc; _id = id; _before = before; _after = after; _name = name; }
-
-    public string Name => _name;
-    public void Execute() => Apply(_after);
-    public void Undo()    => Apply(_before);
-
-    private void Apply(int z)
+    private string GetGroupLabel(string groupId)
     {
-        var el = _doc.Elements.FirstOrDefault(e => e.Id == _id);
-        if (el is not null) el.ZIndex = z;
+        if (Document is null) return groupId;
+        var group = Document.Elements.FirstOrDefault(e => e.Id == groupId && e.Type == "__group__");
+        if (group is null) return groupId;
+        var label = group.Props.GetString("label");
+        return string.IsNullOrEmpty(label) ? "Group" : label;
     }
 }
+

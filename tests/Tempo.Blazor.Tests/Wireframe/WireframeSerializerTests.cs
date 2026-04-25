@@ -18,7 +18,7 @@ public class WireframeSerializerTests
         json.Should().NotBeNullOrWhiteSpace();
         json.Should().Contain("\"version\"");
         json.Should().Contain("\"title\"");
-        json.Should().Contain("\"elements\"");
+        json.Should().Contain("\"pages\"");
     }
 
     [Fact]
@@ -64,12 +64,17 @@ public class WireframeSerializerTests
     {
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Login page",
-              "width": 1280,
-              "height": 800,
-              "elements": [],
-              "connectors": []
+              "pages": [
+                {
+                  "name": "Page 1",
+                  "width": 1280,
+                  "height": 800,
+                  "elements": [],
+                  "connectors": []
+                }
+              ]
             }
             """;
 
@@ -77,7 +82,7 @@ public class WireframeSerializerTests
 
         doc.Should().NotBeNull();
         doc.Title.Should().Be("Login page");
-        doc.Version.Should().Be("1.0");
+        doc.Version.Should().Be("2.0");
         doc.Width.Should().Be(1280);
     }
 
@@ -86,21 +91,28 @@ public class WireframeSerializerTests
     {
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Test",
-              "elements": [
+              "pages": [
                 {
-                  "id": "abc123",
-                  "type": "TmButton",
-                  "x": 100,
-                  "y": 200,
-                  "w": 120,
-                  "h": 36,
-                  "props": {
-                    "label": "Submit",
-                    "variant": "primary",
-                    "disabled": false
-                  }
+                  "name": "Page 1",
+                  "width": 1280,
+                  "height": 800,
+                  "elements": [
+                    {
+                      "id": "abc123",
+                      "type": "TmButton",
+                      "x": 100,
+                      "y": 200,
+                      "w": 120,
+                      "h": 36,
+                      "props": {
+                        "label": "Submit",
+                        "variant": "primary",
+                        "disabled": false
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -125,19 +137,26 @@ public class WireframeSerializerTests
     {
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Test",
-              "elements": [
+              "pages": [
                 {
-                  "id": "el1",
-                  "type": "TmDataTable",
-                  "x": 0, "y": 0, "w": 800, "h": 400,
-                  "props": {
-                    "title": "Users",
-                    "rowCount": 10,
-                    "showPagination": true,
-                    "columns": ["Name", "Email", "Role"]
-                  }
+                  "name": "Page 1",
+                  "width": 1280,
+                  "height": 800,
+                  "elements": [
+                    {
+                      "id": "el1",
+                      "type": "TmDataTable",
+                      "x": 0, "y": 0, "w": 800, "h": 400,
+                      "props": {
+                        "title": "Users",
+                        "rowCount": 10,
+                        "showPagination": true,
+                        "columns": ["Name", "Email", "Role"]
+                      }
+                    }
+                  ]
                 }
               ]
             }
@@ -157,11 +176,18 @@ public class WireframeSerializerTests
     {
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Test",
-              "elements": [],
-              "connectors": [
-                { "id": "c1", "fromId": "el1", "toId": "el2", "label": "navigates" }
+              "pages": [
+                {
+                  "name": "Page 1",
+                  "width": 1280,
+                  "height": 800,
+                  "elements": [],
+                  "connectors": [
+                    { "id": "c1", "fromId": "el1", "toId": "el2", "label": "navigates" }
+                  ]
+                }
               ]
             }
             """;
@@ -196,7 +222,7 @@ public class WireframeSerializerTests
     [Fact]
     public void TryDeserialize_ValidJson_ReturnsTrueAndDocument()
     {
-        var json = """{ "version": "1.0", "title": "Test", "elements": [] }""";
+        var json = """{ "version": "2.0", "title": "Test", "pages": [{ "name": "P1", "width": 1280, "height": 800, "elements": [] }] }""";
 
         var result = WireframeSerializer.TryDeserialize(json, out var doc);
 

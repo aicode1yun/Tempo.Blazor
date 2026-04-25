@@ -31,22 +31,45 @@ public class WireframeSchemaTests
     }
 
     [Fact]
-    public void SerializedDocument_HasElementsArray()
+    public void SerializedDocument_HasPagesArray()
     {
         var json = WireframeSerializer.Serialize(new WireframeDocument());
         using var doc = JsonDocument.Parse(json);
-        doc.RootElement.TryGetProperty("elements", out var el).Should().BeTrue("'elements' is required by schema");
+        doc.RootElement.TryGetProperty("pages", out var pages).Should().BeTrue("'pages' is required by schema");
+        pages.ValueKind.Should().Be(JsonValueKind.Array);
+    }
+
+    [Fact]
+    public void SerializedDocument_HasActivePageIdField()
+    {
+        var wf = new WireframeDocument();
+        wf.EnsureActivePage();
+        var json = WireframeSerializer.Serialize(wf);
+        using var doc = JsonDocument.Parse(json);
+        doc.RootElement.TryGetProperty("activePageId", out _).Should().BeTrue("'activePageId' is required by schema");
+    }
+
+    [Fact]
+    public void SerializedPage_HasElementsArray()
+    {
+        var wf = new WireframeDocument();
+        wf.EnsureActivePage();
+        var json = WireframeSerializer.Serialize(wf);
+        using var doc = JsonDocument.Parse(json);
+        var page = doc.RootElement.GetProperty("pages")[0];
+        page.TryGetProperty("elements", out var el).Should().BeTrue("'elements' is required by schema");
         el.ValueKind.Should().Be(JsonValueKind.Array);
     }
 
     [Fact]
-    public void SerializedDocument_HasConnectorsArray()
+    public void SerializedPage_HasConnectorsArray()
     {
         var wf = new WireframeDocument();
         wf.Connectors.Add(new WireframeConnector { FromId = "a", ToId = "b" });
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
-        doc.RootElement.TryGetProperty("connectors", out var cv).Should().BeTrue();
+        var page = doc.RootElement.GetProperty("pages")[0];
+        page.TryGetProperty("connectors", out var cv).Should().BeTrue();
         cv.ValueKind.Should().Be(JsonValueKind.Array);
     }
 
@@ -60,7 +83,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var el = doc.RootElement.GetProperty("elements")[0];
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
         el.TryGetProperty("id", out _).Should().BeTrue("'id' required");
         el.TryGetProperty("type", out _).Should().BeTrue("'type' required");
         el.TryGetProperty("x", out _).Should().BeTrue("'x' required");
@@ -77,7 +100,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var el = doc.RootElement.GetProperty("elements")[0];
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
         el.GetProperty("type").ValueKind.Should().Be(JsonValueKind.String);
         el.GetProperty("type").GetString().Should().Be("TmCard");
     }
@@ -90,7 +113,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var el = doc.RootElement.GetProperty("elements")[0];
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
         el.GetProperty("x").ValueKind.Should().Be(JsonValueKind.Number);
         el.GetProperty("y").ValueKind.Should().Be(JsonValueKind.Number);
         el.GetProperty("x").GetDouble().Should().Be(50.5);
@@ -107,7 +130,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var props = doc.RootElement.GetProperty("elements")[0].GetProperty("props");
+        var props = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0].GetProperty("props");
         props.ValueKind.Should().Be(JsonValueKind.Object);
         props.TryGetProperty("label", out var lbl).Should().BeTrue();
         lbl.GetString().Should().Be("Click");
@@ -122,7 +145,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var el = doc.RootElement.GetProperty("elements")[0];
+        var el = doc.RootElement.GetProperty("pages")[0].GetProperty("elements")[0];
         el.TryGetProperty("groupId", out _).Should().BeFalse("null groupId should be omitted");
         el.TryGetProperty("lockedBy", out _).Should().BeFalse("null lockedBy should be omitted");
     }
@@ -137,7 +160,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var c = doc.RootElement.GetProperty("connectors")[0];
+        var c = doc.RootElement.GetProperty("pages")[0].GetProperty("connectors")[0];
         c.TryGetProperty("id", out _).Should().BeTrue("'id' required");
         c.TryGetProperty("fromId", out _).Should().BeTrue("'fromId' required");
         c.TryGetProperty("toId", out _).Should().BeTrue("'toId' required");
@@ -151,7 +174,7 @@ public class WireframeSchemaTests
         var json = WireframeSerializer.Serialize(wf);
         using var doc = JsonDocument.Parse(json);
 
-        var c = doc.RootElement.GetProperty("connectors")[0];
+        var c = doc.RootElement.GetProperty("pages")[0].GetProperty("connectors")[0];
         c.TryGetProperty("label", out _).Should().BeFalse("null label should be omitted");
     }
 
@@ -225,16 +248,23 @@ public class WireframeSchemaTests
     [Fact]
     public void Deserialize_MinimalAiGeneratedJson_Works()
     {
-        // Simulates the minimal JSON an AI might produce
+        // Simulates the minimal JSON an AI might produce (v2.0 multi-page format)
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Contact form",
-              "elements": [
-                { "id": "f1a2b3c4", "type": "TmTextInput", "x": 40, "y": 40, "w": 280, "h": 36,
-                  "props": { "label": "Name", "placeholder": "Your name" } },
-                { "id": "d5e6f7a8", "type": "TmButton",    "x": 40, "y": 100, "w": 120, "h": 36,
-                  "props": { "label": "Submit", "variant": "primary" } }
+              "pages": [
+                {
+                  "name": "Page 1",
+                  "width": 1280,
+                  "height": 800,
+                  "elements": [
+                    { "id": "f1a2b3c4", "type": "TmTextInput", "x": 40, "y": 40, "w": 280, "h": 36,
+                      "props": { "label": "Name", "placeholder": "Your name" } },
+                    { "id": "d5e6f7a8", "type": "TmButton",    "x": 40, "y": 100, "w": 120, "h": 36,
+                      "props": { "label": "Submit", "variant": "primary" } }
+                  ]
+                }
               ]
             }
             """;
@@ -254,9 +284,11 @@ public class WireframeSchemaTests
         // Schema should tolerate forward-compatible additions
         var json = """
             {
-              "version": "1.0",
+              "version": "2.0",
               "title": "Test",
-              "elements": [],
+              "pages": [
+                { "name": "Page 1", "width": 1280, "height": 800, "elements": [], "connectors": [] }
+              ],
               "futureField": "ignored",
               "metadata": { "author": "Claude" }
             }
@@ -269,15 +301,16 @@ public class WireframeSchemaTests
     // ── Canvas dimensions within schema bounds ────────────────────────────────
 
     [Fact]
-    public void SerializedDocument_WidthAndHeight_AreNumbers()
+    public void SerializedDocument_PageWidthAndHeight_AreNumbers()
     {
         var json = WireframeSerializer.Serialize(new WireframeDocument { Width = 1440, Height = 900 });
         using var doc = JsonDocument.Parse(json);
 
-        doc.RootElement.GetProperty("width").ValueKind.Should().Be(JsonValueKind.Number);
-        doc.RootElement.GetProperty("height").ValueKind.Should().Be(JsonValueKind.Number);
-        doc.RootElement.GetProperty("width").GetDouble().Should().Be(1440);
-        doc.RootElement.GetProperty("height").GetDouble().Should().Be(900);
+        var page = doc.RootElement.GetProperty("pages")[0];
+        page.GetProperty("width").ValueKind.Should().Be(JsonValueKind.Number);
+        page.GetProperty("height").ValueKind.Should().Be(JsonValueKind.Number);
+        page.GetProperty("width").GetDouble().Should().Be(1440);
+        page.GetProperty("height").GetDouble().Should().Be(900);
     }
 
     [Fact]
