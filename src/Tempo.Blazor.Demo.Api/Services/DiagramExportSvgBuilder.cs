@@ -54,10 +54,10 @@ internal static class DiagramExportSvgBuilder
             sb.Append($"""<rect width="{F(svgWidth)}" height="{F(svgHeight)}" fill="url(#grid)"/>""");
         }
 
-        sb.Append("""<g id="edges" clip-path="url(#page-clip)">""");
+        sb.Append($"""<g id="edges" clip-path="url(#page-clip)" transform="translate({F(offsetX)},{F(offsetY)})">""");
         foreach (var edge in edges)
         {
-            RenderEdge(sb, edge, nodes, offsetX, offsetY);
+            RenderEdge(sb, edge, nodes);
         }
         sb.Append("</g>");
 
@@ -210,7 +210,7 @@ internal static class DiagramExportSvgBuilder
             _ => padding
         };
 
-    private static void RenderEdge(StringBuilder sb, DiagramEdge edge, List<DiagramNode> nodes, double ox, double oy)
+    private static void RenderEdge(StringBuilder sb, DiagramEdge edge, List<DiagramNode> nodes)
     {
         var source = nodes.FirstOrDefault(n => n.Id == edge.SourceNodeId);
         var target = nodes.FirstOrDefault(n => n.Id == edge.TargetNodeId);
@@ -294,7 +294,7 @@ internal static class DiagramExportSvgBuilder
         {
             double lx = (sp.X + tp.X) / 2;
             double ly = (sp.Y + tp.Y) / 2;
-            sb.Append($"""<text x="{F(lx + ox)}" y="{F(ly + oy - 4)}" font-size="11" text-anchor="middle" fill="{EscapeSvg(stroke)}">{EscapeSvg(edge.Label)}</text>""");
+            sb.Append($"""<text x="{F(lx)}" y="{F(ly - 4)}" font-size="11" text-anchor="middle" fill="{EscapeSvg(stroke)}">{EscapeSvg(edge.Label)}</text>""");
         }
     }
 
