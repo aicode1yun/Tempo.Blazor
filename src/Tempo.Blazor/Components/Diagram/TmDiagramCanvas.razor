@@ -560,14 +560,14 @@
             var _toolbarPts = DiagramGeometryHelper.GetEdgePoints(Document, _toolbarEdge);
             var _toolbarMidX = (_toolbarPts[0].X + _toolbarPts[^1].X) / 2;
             var _toolbarMidY = (_toolbarPts[0].Y + _toolbarPts[^1].Y) / 2;
-            <foreignObject x="@F(_toolbarMidX - 75)" y="@F(_toolbarMidY - 48)" width="150" height="36">
+            <foreignObject x="@F(_toolbarMidX - 75)" y="@F(_toolbarMidY - 48)" width="150" height="36" style="pointer-events: none;">
                 <div class="tm-diagram-edge-toolbar" xmlns="http://www.w3.org/1999/xhtml">
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "flip")' data-action="flip" title="Flip">↔</button>
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "clearWaypoints")' data-action="clearWaypoints" title="Clear waypoints">⬡</button>
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "straight")' data-action="straight" title="Straight">─</button>
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "orthogonal")' data-action="orthogonal" title="Orthogonal">┐</button>
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "elbow")' data-action="elbow" title="Elbow">└</button>
-                    <button @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "curved")' data-action="curved" title="Curved">~</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "flip")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="flip" title="Flip">↔</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "clearWaypoints")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="clearWaypoints" title="Clear waypoints">⬡</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "straight")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="straight" title="Straight">─</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "orthogonal")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="orthogonal" title="Orthogonal">┐</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "elbow")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="elbow" title="Elbow">└</button>
+                    <button type="button" @onclick='() => OnEdgeToolbarAction(_toolbarEdge.Id, "curved")' @onclick:stopPropagation="true" @onmousedown:stopPropagation="true" data-action="curved" title="Curved">~</button>
                 </div>
             </foreignObject>
         }

@@ -1474,7 +1474,7 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
             edge.ElbowOrientation = oldOrientation; // restore for command
 
             if (CommandStack is not null)
-                CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+                CommandStack.Push(new FlipElbowOrientationCommand(edge, newOrientation, newWaypoints));
             else
             {
                 edge.ElbowOrientation = newOrientation;
@@ -1722,21 +1722,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         switch (action)
         {
             case "flip":
-                if (edge.Routing == "elbow" && edge.Waypoints.Count > 0)
                 {
-                    var oldOrientation = edge.ElbowOrientation;
-                    var newOrientation = oldOrientation == "horizontal" ? "vertical" : "horizontal";
-                    edge.ElbowOrientation = newOrientation;
-                    var newWaypoints = await ComputeOrthogonalWaypointsAsync(edge);
-                    edge.ElbowOrientation = oldOrientation;
+                    // Reverse waypoints so the geometric path flows the other way.
+                    // For orthogonal/elbow/segment edges the waypoints will be recomputed
+                    // automatically the next time a connected node moves.
+                    var newWaypoints = edge.Waypoints.AsEnumerable().Reverse().Select(p => new DiagramPoint(p.X, p.Y)).ToList();
+
                     if (CommandStack is not null)
-                        CommandStack.Push(new FlipEdgeCommand(edge, newOrientation, newWaypoints));
+                        CommandStack.Push(new ReverseEdgeCommand(edge, newWaypoints));
                     else
                     {
-                        edge.ElbowOrientation = newOrientation;
-                        edge.Waypoints.Clear();
-                        foreach (var wp in newWaypoints)
-                            edge.Waypoints.Add(wp);
+                        var cmd = new ReverseEdgeCommand(edge, newWaypoints);
+                        cmd.Execute();
                     }
                 }
                 break;
@@ -2830,5 +2827,18 @@ public partial class TmDiagramCanvas : ComponentBase, IAsyncDisposable
         public double Y { get; set; }
     }
 
-
+    /// <summary>Swaps source and target endpoints of an edge (used temporarily before ComputeOrthogonalWaypointsAsync).</summary>
+    private static void SwapEdgeEndpoints(DiagramEdge edge)
+    {
+        (edge.SourceNodeId, edge.TargetNodeId) = (edge.TargetNodeId, edge.SourceNodeId);
+        (edge.SourcePortId, edge.TargetPortId) = (edge.TargetPortId, edge.SourcePortId);
+        (edge.SourceEdgeId, edge.TargetEdgeId) = (edge.TargetEdgeId, edge.SourceEdgeId);
+        (edge.SourceEdgeT, edge.TargetEdgeT) = (edge.TargetEdgeT, edge.SourceEdgeT);
+        (edge.SourcePoint, edge.TargetPoint) = (edge.TargetPoint, edge.SourcePoint);
+        (edge.SourceConstraint, edge.TargetConstraint) = (edge.TargetConstraint, edge.SourceConstraint);
+        (edge.SourceSpacing, edge.TargetSpacing) = (edge.TargetSpacing, edge.SourceSpacing);
+        (edge.SourceCardinality, edge.TargetCardinality) = (edge.TargetCardinality, edge.SourceCardinality);
+        // StartArrow/EndArrow intentionally NOT swapped – they describe the physical
+        // start/end of the edge line, which is already reversed by swapping source/target.
+    }
 }
