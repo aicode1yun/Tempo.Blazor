@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.Components.Wireframe.Models;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -524,6 +526,24 @@ public partial class TmNotionBlock : ComponentBase
         {
             Url = pdf.Url, FileId = pdf.FileId, Caption = caption, Width = pdf.Width
         });
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Diagram (TmNotionDiagramBlock) callbacks ──────────────────────────────
+
+    private async Task HandleDiagramContentSavedAsync(DiagramBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Wireframe (TmNotionWireframeBlock) callbacks ──────────────────────────
+
+    private async Task HandleWireframeContentSavedAsync(WireframeBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }

@@ -1,0 +1,91 @@
+.tm-notion-diagram-edit-modal {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-surface, #ffffff);
+}
+
+.tm-notion-diagram-edit-modal__loading {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tm-notion-diagram-edit-modal__editor {
+    flex: 1;
+    min-height: 0;
+}
+
+.tm-notion-diagram-edit-modal__footer {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 10px 16px;
+    border-top: 1px solid var(--tm-border-color, #e5e7eb);
+    background: var(--tm-surface, #ffffff);
+    flex-shrink: 0;
+}
+
+.tm-notion-diagram-edit-modal__btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 7px 16px;
+    border: 1px solid var(--tm-border-color, #e5e7eb);
+    border-radius: 6px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    background: var(--tm-surface, #ffffff);
+    color: var(--tm-text-primary, #111827);
+    transition: background 0.1s ease;
+}
+
+.tm-notion-diagram-edit-modal__btn:hover:not(:disabled) {
+    background: var(--tm-surface-hover, #f3f4f6);
+}
+
+.tm-notion-diagram-edit-modal__btn--primary {
+    background: var(--tm-primary, #2563eb);
+    color: #ffffff;
+    border-color: var(--tm-primary, #2563eb);
+}
+
+.tm-notion-diagram-edit-modal__btn--primary:hover:not(:disabled) {
+    background: var(--tm-primary-hover, #1d4ed8);
+    border-color: var(--tm-primary-hover, #1d4ed8);
+}
+
+.tm-notion-diagram-edit-modal__btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+@keyframes tm-diagram-modal-spin {
+    to { transform: rotate(360deg); }
+}
+
+.tm-notion-diagram-edit-modal__spinner {
+    display: inline-block;
+    width: 22px;
+    height: 22px;
+    border: 2px solid rgba(255, 255, 255, 0.3);
+    border-top-color: #ffffff;
+    border-radius: 50%;
+    animation: tm-diagram-modal-spin 0.75s linear infinite;
+}
+
+.tm-notion-diagram-edit-modal__spinner--sm {
+    width: 14px;
+    height: 14px;
+}
+
+.tm-notion-diagram-edit-modal__loading .tm-notion-diagram-edit-modal__spinner {
+    border-color: var(--tm-border-color, #e5e7eb);
+    border-top-color: var(--tm-primary, #2563eb);
+    width: 32px;
+    height: 32px;
+}

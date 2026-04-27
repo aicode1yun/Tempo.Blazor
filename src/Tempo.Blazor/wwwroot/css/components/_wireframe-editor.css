@@ -563,6 +563,23 @@
    4. CANVAS AREA
    ════════════════════════════════════════════════════════════════ */
 
+.tm-wd-editor__canvas-area {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.tm-wd-editor__canvas-inner {
+  display: flex;
+  flex: 1;
+  min-width: 0;
+  min-height: 0;
+  overflow: hidden;
+}
+
 .tm-wd-editor__canvas-wrap {
   position: relative;
   flex: 1;

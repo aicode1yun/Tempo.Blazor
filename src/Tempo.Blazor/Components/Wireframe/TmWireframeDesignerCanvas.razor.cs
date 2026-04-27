@@ -635,11 +635,11 @@ public partial class TmWireframeDesignerCanvas : ComponentBase, IAsyncDisposable
         await JS.InvokeVoidAsync("tmWireframeDesigner.zoomTo", _svgRef, scale);
     }
 
-    /// <summary>Fit all elements into view.</summary>
-    public async Task FitToView()
+    /// <summary>Fit all elements into view. Returns the computed scale.</summary>
+    public async Task<double> FitToView()
     {
-        if (!_jsInitialized) return;
-        await JS.InvokeVoidAsync("tmWireframeDesigner.fitToView", _svgRef, 40);
+        if (!_jsInitialized) return 1.0;
+        return await JS.InvokeAsync<double>("tmWireframeDesigner.fitToView", _svgRef, 40);
     }
 
     /// <summary>Add an element via command stack (undoable) and trigger a re-render.</summary>

@@ -17,7 +17,9 @@ public sealed class NotionEditorContext
     public INotionHistoryProvider?     HistoryProvider       { get; init; }
     public INotionCollaborationProvider? CollaborationProvider { get; init; }
     public INotionMentionProvider?     MentionProvider       { get; init; }
-    public INotionBookmarkProvider?    BookmarkProvider      { get; init; }
-    public INotionFileProvider?        FileProvider          { get; init; }
-    public INotionImportExportProvider? ImportExportProvider { get; init; }
+    public INotionBookmarkProvider?      BookmarkProvider         { get; init; }
+    public INotionFileProvider?          FileProvider             { get; init; }
+    public INotionImportExportProvider?  ImportExportProvider     { get; init; }
+    public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; init; }
+    public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; init; }
 }

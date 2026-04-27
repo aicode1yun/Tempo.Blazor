@@ -680,7 +680,7 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
     private async Task FitToView()
     {
         if (_canvas is not null)
-            await _canvas.FitToView();
+            _zoomLevel = await _canvas.FitToView();
     }
 
     // ── Toolbar: Export ───────────────────────────────────────────────────────
@@ -710,6 +710,13 @@ public partial class TmWireframeEditor : ComponentBase, IDisposable
         var svg      = await _canvas.ExportSvg();
         var fileName = SanitizeFileName(_document?.Title ?? Loc["TmWireframe_ExportFilename"]) + ".svg";
         await DownloadFile(fileName, "image/svg+xml", System.Text.Encoding.UTF8.GetBytes(svg));
+    }
+
+    /// <summary>Returns the current canvas state as an SVG string for use by embedded callers.</summary>
+    public async Task<string> ExportSvgAsync()
+    {
+        if (_canvas is null) return string.Empty;
+        return await _canvas.ExportSvg();
     }
 
     private void ExportPng()

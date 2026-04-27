@@ -8,6 +8,7 @@
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Media
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Embed
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Layout
+@using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
 
 <div class="tm-notion-block @_blockMods"
      data-notion-block
@@ -394,6 +395,28 @@
                                      WidthPercent="100"
                                      ReadOnly="ReadOnly"
                                      OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Diagram ───────────────────────────────────────────────────────
+            case BlockType.Diagram:
+            {
+                var c = Block.Content as IDiagramBlockContent;
+                <TmNotionDiagramBlock Content="c"
+                                      ReadOnly="ReadOnly"
+                                      OnContentSaved="HandleDiagramContentSavedAsync"
+                                      OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Wireframe ─────────────────────────────────────────────────────
+            case BlockType.Wireframe:
+            {
+                var c = Block.Content as IWireframeBlockContent;
+                <TmNotionWireframeBlock Content="c"
+                                        ReadOnly="ReadOnly"
+                                        OnContentSaved="HandleWireframeContentSavedAsync"
+                                        OnFocused="OnFocusedAsync" />
                 break;
             }
 
