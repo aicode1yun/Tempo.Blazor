@@ -110,13 +110,22 @@ public partial class TmNotionWireframeBlock : ComponentBase, IAsyncDisposable
 
     private async Task CreateWireframeAsync()
     {
-        if (Context.WireframeDocumentProvider is null || _creating) return;
+        if (_creating) return;
         _creating = true;
         StateHasChanged();
         try
         {
-            var (id, _) = await Context.WireframeDocumentProvider.CreateWireframeDocumentAsync(string.Empty);
-            var created  = new WireframeBlockContent { WireframeDocumentId = id };
+            Guid id;
+            if (Context.WireframeDocumentProvider is not null)
+            {
+                var (newId, _) = await Context.WireframeDocumentProvider.CreateWireframeDocumentAsync(string.Empty);
+                id = newId;
+            }
+            else
+            {
+                id = Guid.NewGuid();
+            }
+            var created = new WireframeBlockContent { WireframeDocumentId = id };
             await OnContentSaved.InvokeAsync(created);
             _editorOpen = true;
         }
@@ -136,9 +145,16 @@ public partial class TmNotionWireframeBlock : ComponentBase, IAsyncDisposable
     private async Task HandleEditorSavedAsync((WireframeDocument Document, string SvgPreview) result)
     {
         _editorOpen = false;
-        if (Context.WireframeDocumentProvider is null || Content is null) return;
-        await Context.WireframeDocumentProvider.SaveWireframeDocumentAsync(
-            Content.WireframeDocumentId, result.Document);
+        if (Content is null) return;
+        if (Context.WireframeDocumentProvider is not null)
+        {
+            try
+            {
+                await Context.WireframeDocumentProvider.SaveWireframeDocumentAsync(
+                    Content.WireframeDocumentId, result.Document);
+            }
+            catch { }
+        }
         var updated = new WireframeBlockContent
         {
             WireframeDocumentId = Content.WireframeDocumentId,

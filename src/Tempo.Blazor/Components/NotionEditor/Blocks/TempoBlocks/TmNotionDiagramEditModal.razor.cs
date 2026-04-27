@@ -12,8 +12,8 @@ public partial class TmNotionDiagramEditModal : ComponentBase
     [Parameter, EditorRequired]
     public Guid DiagramDocumentId { get; set; }
 
-    [Parameter, EditorRequired]
-    public IDiagramDocumentProvider Provider { get; set; } = default!;
+    [Parameter]
+    public IDiagramDocumentProvider? Provider { get; set; }
 
     [Parameter]
     public IDiagramExportService? ExportService { get; set; }
@@ -31,9 +31,12 @@ public partial class TmNotionDiagramEditModal : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        _document = await Provider.GetDiagramDocumentAsync(DiagramDocumentId);
-        if (_document is null)
-            _document = new DiagramDocument { Id = DiagramDocumentId.ToString() };
+        if (Provider is not null)
+        {
+            try { _document = await Provider.GetDiagramDocumentAsync(DiagramDocumentId); }
+            catch { }
+        }
+        _document ??= new DiagramDocument { Id = DiagramDocumentId.ToString() };
         _loading = false;
     }
 

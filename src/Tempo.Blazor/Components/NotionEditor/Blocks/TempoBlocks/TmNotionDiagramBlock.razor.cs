@@ -119,13 +119,22 @@ public partial class TmNotionDiagramBlock : ComponentBase, IAsyncDisposable
 
     private async Task CreateDiagramAsync()
     {
-        if (Context.DiagramDocumentProvider is null || _creating) return;
+        if (_creating) return;
         _creating = true;
         StateHasChanged();
         try
         {
-            var (id, _) = await Context.DiagramDocumentProvider.CreateDiagramDocumentAsync(string.Empty);
-            var created  = new DiagramBlockContent { DiagramDocumentId = id };
+            Guid id;
+            if (Context.DiagramDocumentProvider is not null)
+            {
+                var (newId, _) = await Context.DiagramDocumentProvider.CreateDiagramDocumentAsync(string.Empty);
+                id = newId;
+            }
+            else
+            {
+                id = Guid.NewGuid();
+            }
+            var created = new DiagramBlockContent { DiagramDocumentId = id };
             await OnContentSaved.InvokeAsync(created);
             _editorOpen = true;
         }
@@ -145,9 +154,16 @@ public partial class TmNotionDiagramBlock : ComponentBase, IAsyncDisposable
     private async Task HandleEditorSavedAsync((DiagramDocument Document, string SvgPreview) result)
     {
         _editorOpen = false;
-        if (Context.DiagramDocumentProvider is null || Content is null) return;
-        await Context.DiagramDocumentProvider.SaveDiagramDocumentAsync(
-            Content.DiagramDocumentId, result.Document);
+        if (Content is null) return;
+        if (Context.DiagramDocumentProvider is not null)
+        {
+            try
+            {
+                await Context.DiagramDocumentProvider.SaveDiagramDocumentAsync(
+                    Content.DiagramDocumentId, result.Document);
+            }
+            catch { }
+        }
         var updated = new DiagramBlockContent
         {
             DiagramDocumentId = Content.DiagramDocumentId,

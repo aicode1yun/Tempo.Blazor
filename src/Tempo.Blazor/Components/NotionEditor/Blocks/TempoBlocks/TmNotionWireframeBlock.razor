@@ -108,7 +108,7 @@
     @if (_editorOpen && Content is not null && Content.WireframeDocumentId != Guid.Empty)
     {
         <TmNotionWireframeEditModal WireframeDocumentId="Content.WireframeDocumentId"
-                                    Provider="Context.WireframeDocumentProvider!"
+                                    Provider="Context.WireframeDocumentProvider"
                                     OnSaved="HandleEditorSavedAsync"
                                     OnDiscarded="HandleEditorDiscardedAsync" />
     }

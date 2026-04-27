@@ -105,7 +105,7 @@
     @if (_editorOpen && Content is not null && Content.DiagramDocumentId != Guid.Empty)
     {
         <TmNotionDiagramEditModal DiagramDocumentId="Content.DiagramDocumentId"
-                                   Provider="Context.DiagramDocumentProvider!"
+                                   Provider="Context.DiagramDocumentProvider"
                                    ExportService="_exportService"
                                    OnSaved="HandleEditorSavedAsync"
                                    OnDiscarded="HandleEditorDiscardedAsync" />

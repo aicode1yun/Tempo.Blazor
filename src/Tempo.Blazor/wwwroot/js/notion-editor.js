@@ -273,6 +273,7 @@ window.tmNotionEditor = (function () {
         }
 
         function _onDragOver(e) {
+            if (!dragSrc) return; // not a block drag — let diagram/wireframe stencil drops work
             e.preventDefault();
             e.dataTransfer.dropEffect = 'move';
             const b = _blockAt(e.clientY);
@@ -297,9 +298,10 @@ window.tmNotionEditor = (function () {
         }
 
         function _onDrop(e) {
+            if (!dragSrc) return; // not a block drag — let diagram/wireframe stencil drops work
             e.preventDefault();
             _indicator().style.display = 'none';
-            if (!dragSrc || !dropTarget || dropTarget === dragSrc) return;
+            if (!dropTarget || dropTarget === dragSrc) return;
             const src = _indexOf(dragSrc);
             const rect = dropTarget.getBoundingClientRect();
             let dst  = _indexOf(dropTarget);

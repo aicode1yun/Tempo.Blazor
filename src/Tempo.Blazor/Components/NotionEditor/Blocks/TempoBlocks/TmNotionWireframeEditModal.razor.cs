@@ -12,8 +12,8 @@ public partial class TmNotionWireframeEditModal : ComponentBase
     [Parameter, EditorRequired]
     public Guid WireframeDocumentId { get; set; }
 
-    [Parameter, EditorRequired]
-    public IWireframeDocumentProvider Provider { get; set; } = default!;
+    [Parameter]
+    public IWireframeDocumentProvider? Provider { get; set; }
 
     [Parameter] public EventCallback<(WireframeDocument Document, string SvgPreview)> OnSaved     { get; set; }
     [Parameter] public EventCallback                                                    OnDiscarded { get; set; }
@@ -29,7 +29,11 @@ public partial class TmNotionWireframeEditModal : ComponentBase
 
     protected override async Task OnInitializedAsync()
     {
-        _document = await Provider.GetWireframeDocumentAsync(WireframeDocumentId);
+        if (Provider is not null)
+        {
+            try { _document = await Provider.GetWireframeDocumentAsync(WireframeDocumentId); }
+            catch { }
+        }
         if (_document is null)
         {
             _document = new WireframeDocument();

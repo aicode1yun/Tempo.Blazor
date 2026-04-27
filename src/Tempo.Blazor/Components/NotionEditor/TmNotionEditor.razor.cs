@@ -35,9 +35,11 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionHistoryProvider?       HistoryProvider       { get; set; }
     [Parameter] public INotionCollaborationProvider? CollaborationProvider { get; set; }
     [Parameter] public INotionMentionProvider?       MentionProvider       { get; set; }
-    [Parameter] public INotionBookmarkProvider?      BookmarkProvider      { get; set; }
-    [Parameter] public INotionFileProvider?          FileProvider          { get; set; }
-    [Parameter] public INotionImportExportProvider?  ImportExportProvider  { get; set; }
+    [Parameter] public INotionBookmarkProvider?      BookmarkProvider       { get; set; }
+    [Parameter] public INotionFileProvider?          FileProvider           { get; set; }
+    [Parameter] public INotionImportExportProvider?  ImportExportProvider   { get; set; }
+    [Parameter] public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; set; }
+    [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; set; }
 
     // ── Behaviour parameters ─────────────────────────────────────────────────
 
@@ -206,9 +208,11 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         HistoryProvider       = HistoryProvider,
         CollaborationProvider = CollaborationProvider,
         MentionProvider       = MentionProvider,
-        BookmarkProvider      = BookmarkProvider,
-        FileProvider          = FileProvider,
-        ImportExportProvider  = ImportExportProvider
+        BookmarkProvider          = BookmarkProvider,
+        FileProvider              = FileProvider,
+        ImportExportProvider      = ImportExportProvider,
+        DiagramDocumentProvider   = DiagramDocumentProvider,
+        WireframeDocumentProvider = WireframeDocumentProvider
     };
 
     // ── Dispose ──────────────────────────────────────────────────────────────
