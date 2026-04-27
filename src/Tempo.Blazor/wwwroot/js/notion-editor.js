@@ -476,6 +476,7 @@ window.tmNotionEditor = (function () {
 
     function renderEquation(element, latex) {
         if (!element) return;
+        if (!latex || !latex.trim()) { element.innerHTML = ''; return; }
         if (window.katex) {
             try {
                 element.innerHTML = window.katex.renderToString(latex, {

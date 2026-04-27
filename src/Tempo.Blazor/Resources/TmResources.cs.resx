@@ -1273,4 +1273,12 @@
   <data name="TmWireframe_HorizontalRuler" xml:space="preserve"><value>Vodorovné pravítko</value></data>
   <data name="TmWireframe_VerticalRuler" xml:space="preserve"><value>Svislé pravítko</value></data>
 
+  <!-- Phase 56: Equation Block -->
+  <data name="TmNotionEquationBlock_EditLabel"               xml:space="preserve"><value>Upravit rovnici</value></data>
+  <data name="TmNotionEquationBlock_EditorLabel"             xml:space="preserve"><value>LaTeX</value></data>
+  <data name="TmNotionEquationBlock_PreviewLabel"            xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmNotionEquationBlock_Hint"                    xml:space="preserve"><value>Enter ↵ pro potvrzení · Shift+Enter nový řádek · Esc pro zrušení</value></data>
+  <data name="TmNotionEquationBlock_Done"                    xml:space="preserve"><value>Hotovo</value></data>
+  <data name="TmNotionEquationBlock_Cancel"                  xml:space="preserve"><value>Zrušit</value></data>
+
 </root>

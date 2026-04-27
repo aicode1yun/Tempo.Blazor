@@ -61,7 +61,6 @@ public partial class TmNotionBlock : ComponentBase
     private IPageBlock?       _lastBlock;
 
     private ElementReference  _blockRef;
-    private ElementReference  _equationRef;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -75,19 +74,6 @@ public partial class TmNotionBlock : ComponentBase
     protected override void OnParametersSet()
     {
         _lastBlock = Block;
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (Block.Type == BlockType.Equation)
-        {
-            var expr = (Block.Content as IEquationBlockContent)?.Expression;
-            if (!string.IsNullOrWhiteSpace(expr))
-            {
-                try { await JS.InvokeVoidAsync("tmNotionEditor.renderEquation", _equationRef, expr); }
-                catch { }
-            }
-        }
     }
 
     private async Task OnFocusedAsync() => await OnFocused.InvokeAsync();
@@ -544,6 +530,15 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleWireframeContentSavedAsync(WireframeBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    // ── Equation (TmNotionEquationBlock) callbacks ────────────────────────────
+
+    private async Task HandleEquationExpressionSavedAsync(string expression)
+    {
+        var updated = BuildBlockWithContent(Block, new EquationBlockContent { Expression = expression });
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
     }

@@ -8,6 +8,7 @@
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Media
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Embed
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Layout
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Special
 @using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
 
 <div class="tm-notion-block @_blockMods"
@@ -228,14 +229,12 @@
             case BlockType.Equation:
             {
                 var c = Block.Content as IEquationBlockContent;
-                <div class="tm-notion-equation" @ref="_equationRef">
-                    @if (string.IsNullOrWhiteSpace(c?.Expression))
-                    {
-                        <span class="tm-notion-equation__placeholder">
-                            @Loc["TmNotionBlock_EquationPlaceholder"]
-                        </span>
-                    }
-                </div>
+                <TmNotionEquationBlock Content="c"
+                                       ReadOnly="ReadOnly"
+                                       IsFocused="IsFocused"
+                                       OnExpressionSaved="HandleEquationExpressionSavedAsync"
+                                       OnDeleteRequested="OnDeleted"
+                                       OnFocused="OnFocusedAsync" />
                 break;
             }
 

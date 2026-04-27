@@ -1,0 +1,225 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionEquationBlock — equation view + inline LaTeX editor
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Rendered view ────────────────────────────────────────────── */
+
+.tm-notion-equation-block {
+    display:        flex;
+    justify-content: center;
+    align-items:    center;
+    min-height:     48px;
+    padding:        var(--tm-space-3) var(--tm-space-4);
+    border-radius:  var(--tm-radius-md);
+    cursor:         default;
+    overflow-x:     auto;
+    transition:     background var(--tm-notion-anim-fast);
+}
+
+.tm-notion-equation-block:not(.tm-notion-equation-block--editing):not([readonly]):not(.tm-notion-equation-block--empty) {
+    cursor: pointer;
+}
+
+.tm-notion-equation-block:hover:not(.tm-notion-equation-block--editing) {
+    background: var(--tm-notion-bg-block-hover);
+}
+
+.tm-notion-equation-block:focus-visible {
+    outline:        2px solid var(--tm-color-primary-500);
+    outline-offset: 2px;
+}
+
+.tm-notion-equation-block--empty {
+    cursor: pointer;
+}
+
+/* ── Placeholder ─────────────────────────────────────────────── */
+
+.tm-notion-equation-block__placeholder {
+    color:       var(--tm-text-tertiary);
+    font-size:   var(--tm-font-size-sm);
+    font-style:  italic;
+    user-select: none;
+}
+
+/* ── Editing state ───────────────────────────────────────────── */
+
+.tm-notion-equation-block--editing {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--tm-space-3);
+    padding:        var(--tm-space-4);
+    border:         1px solid var(--tm-notion-border, var(--tm-border-color));
+    border-radius:  var(--tm-radius-lg);
+    background:     var(--tm-bg-surface);
+    cursor:         default;
+    box-shadow:     var(--tm-shadow-md);
+}
+
+/* ── Editor section ──────────────────────────────────────────── */
+
+.tm-notion-equation-block__editor-wrap {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--tm-space-2);
+}
+
+.tm-notion-equation-block__editor-header {
+    display:     flex;
+    align-items: center;
+    gap:         var(--tm-space-1-5);
+}
+
+.tm-notion-equation-block__editor-icon {
+    color:       var(--tm-text-tertiary);
+    flex-shrink: 0;
+}
+
+.tm-notion-equation-block__editor-label {
+    font-size:   var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+    color:       var(--tm-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.tm-notion-equation-block__input {
+    width:            100%;
+    min-height:       80px;
+    padding:          var(--tm-space-2-5) var(--tm-space-3);
+    font-family:      var(--tm-notion-font-mono);
+    font-size:        var(--tm-font-size-sm);
+    line-height:      1.6;
+    color:            var(--tm-text-primary);
+    background:       var(--tm-bg-subtle);
+    border:           1px solid var(--tm-notion-border, var(--tm-border-color));
+    border-radius:    var(--tm-radius-md);
+    resize:           vertical;
+    outline:          none;
+    transition:       border-color var(--tm-notion-anim-fast),
+                      box-shadow   var(--tm-notion-anim-fast);
+}
+
+.tm-notion-equation-block__input:focus {
+    border-color: var(--tm-color-primary-400);
+    box-shadow:   0 0 0 3px color-mix(in srgb, var(--tm-color-primary-500) 15%, transparent);
+}
+
+.tm-notion-equation-block__input::placeholder {
+    color:      var(--tm-text-placeholder);
+    font-style: italic;
+}
+
+/* ── Preview section ─────────────────────────────────────────── */
+
+.tm-notion-equation-block__preview-wrap {
+    display:        flex;
+    flex-direction: column;
+    gap:            var(--tm-space-1-5);
+}
+
+.tm-notion-equation-block__preview-label {
+    font-size:      var(--tm-font-size-xs);
+    font-weight:    var(--tm-font-weight-medium);
+    color:          var(--tm-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+}
+
+.tm-notion-equation-block__preview {
+    min-height:    52px;
+    padding:       var(--tm-space-3) var(--tm-space-4);
+    background:    var(--tm-bg-subtle);
+    border:        1px solid var(--tm-notion-border, var(--tm-border-color));
+    border-radius: var(--tm-radius-md);
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    overflow-x:    auto;
+}
+
+.tm-notion-equation-block__preview--empty {
+    justify-content: flex-start;
+}
+
+.tm-notion-equation-block__preview-hint {
+    color:      var(--tm-text-tertiary);
+    font-size:  var(--tm-font-size-sm);
+    font-style: italic;
+}
+
+/* ── KaTeX rendered output ───────────────────────────────────── */
+
+.tm-notion-equation-block :deep(.katex-display) {
+    margin: 0;
+    overflow-x: auto;
+    overflow-y: hidden;
+}
+
+.tm-notion-equation-block :deep(.katex) {
+    font-size: 1.1em;
+    color: var(--tm-text-primary);
+}
+
+/* ── Footer ──────────────────────────────────────────────────── */
+
+.tm-notion-equation-block__editor-footer {
+    display:     flex;
+    align-items: center;
+    justify-content: space-between;
+    gap:         var(--tm-space-2);
+}
+
+.tm-notion-equation-block__hint {
+    font-size:  var(--tm-font-size-xs);
+    color:      var(--tm-text-tertiary);
+    font-style: italic;
+    flex:       1;
+    min-width:  0;
+    overflow:   hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-notion-equation-block__actions {
+    display:  flex;
+    gap:      var(--tm-space-2);
+    flex-shrink: 0;
+}
+
+.tm-notion-equation-block__cancel-btn,
+.tm-notion-equation-block__done-btn {
+    display:       inline-flex;
+    align-items:   center;
+    padding:       var(--tm-space-1-5) var(--tm-space-3);
+    border-radius: var(--tm-radius-md);
+    font-size:     var(--tm-font-size-sm);
+    font-weight:   var(--tm-font-weight-medium);
+    cursor:        pointer;
+    border:        1px solid transparent;
+    transition:    background  var(--tm-notion-anim-fast),
+                   border-color var(--tm-notion-anim-fast),
+                   color       var(--tm-notion-anim-fast);
+}
+
+.tm-notion-equation-block__cancel-btn {
+    background:   var(--tm-bg-subtle);
+    color:        var(--tm-text-secondary);
+    border-color: var(--tm-notion-border, var(--tm-border-color));
+}
+
+.tm-notion-equation-block__cancel-btn:hover {
+    background:   var(--tm-notion-bg-block-hover);
+    color:        var(--tm-text-primary);
+}
+
+.tm-notion-equation-block__done-btn {
+    background:   var(--tm-color-primary-600);
+    color:        #fff;
+    border-color: var(--tm-color-primary-600);
+}
+
+.tm-notion-equation-block__done-btn:hover {
+    background:   var(--tm-color-primary-700);
+    border-color: var(--tm-color-primary-700);
+}

@@ -1108,6 +1108,14 @@
   <data name="TmNotionBlock_EquationPlaceholder"             xml:space="preserve"><value>Enter a LaTeX expression…</value></data>
   <data name="TmNotionBlock_Unsupported"                     xml:space="preserve"><value>Unsupported block type</value></data>
 
+  <!-- Phase 56: Equation Block -->
+  <data name="TmNotionEquationBlock_EditLabel"               xml:space="preserve"><value>Edit equation</value></data>
+  <data name="TmNotionEquationBlock_EditorLabel"             xml:space="preserve"><value>LaTeX</value></data>
+  <data name="TmNotionEquationBlock_PreviewLabel"            xml:space="preserve"><value>Preview</value></data>
+  <data name="TmNotionEquationBlock_Hint"                    xml:space="preserve"><value>Enter ↵ to confirm · Shift+Enter for new line · Esc to cancel</value></data>
+  <data name="TmNotionEquationBlock_Done"                    xml:space="preserve"><value>Done</value></data>
+  <data name="TmNotionEquationBlock_Cancel"                  xml:space="preserve"><value>Cancel</value></data>
+
   <!-- Phase 34: Heading Block -->
   <data name="TmNotionHeadingBlock_ToggleSection"            xml:space="preserve"><value>Toggle section</value></data>
   <data name="TmNotionHeadingBlock_Placeholder"              xml:space="preserve"><value>Heading</value></data>

@@ -1,0 +1,84 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (_isEditing)
+{
+    <div class="tm-notion-equation-block tm-notion-equation-block--editing">
+
+        <div class="tm-notion-equation-block__editor-wrap">
+            <div class="tm-notion-equation-block__editor-header">
+                <svg class="tm-notion-equation-block__editor-icon" width="14" height="14"
+                     viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M4 7h16M4 12h10M4 17h7" stroke="currentColor" stroke-width="1.6"
+                          stroke-linecap="round"/>
+                </svg>
+                <span class="tm-notion-equation-block__editor-label">@Loc["TmNotionEquationBlock_EditorLabel"]</span>
+            </div>
+
+            <textarea class="tm-notion-equation-block__input"
+                      @ref="_inputRef"
+                      @oninput="HandleInputAsync"
+                      @onblur="HandleBlurAsync"
+                      @onkeydown="HandleEditKeyDownAsync"
+                      placeholder="@Loc["TmNotionBlock_EquationPlaceholder"]"
+                      spellcheck="false"
+                      autocomplete="off"
+                      autocorrect="off"
+                      autocapitalize="off"
+                      rows="3">
+            </textarea>
+        </div>
+
+        <div class="tm-notion-equation-block__preview-wrap">
+            <div class="tm-notion-equation-block__preview-label">@Loc["TmNotionEquationBlock_PreviewLabel"]</div>
+            <div class="tm-notion-equation-block__preview @(_editBuffer.Length == 0 ? "tm-notion-equation-block__preview--empty" : "")"
+                 @ref="_previewRef"
+                 aria-hidden="true">
+                @if (_editBuffer.Length == 0)
+                {
+                    <span class="tm-notion-equation-block__preview-hint">
+                        @Loc["TmNotionBlock_EquationPlaceholder"]
+                    </span>
+                }
+            </div>
+        </div>
+
+        <div class="tm-notion-equation-block__editor-footer">
+            <span class="tm-notion-equation-block__hint">@Loc["TmNotionEquationBlock_Hint"]</span>
+            <div class="tm-notion-equation-block__actions">
+                <button class="tm-notion-equation-block__cancel-btn"
+                        type="button"
+                        @onclick="CancelAsync"
+                        @onclick:stopPropagation="true">
+                    @Loc["TmNotionEquationBlock_Cancel"]
+                </button>
+                <button class="tm-notion-equation-block__done-btn"
+                        type="button"
+                        @onclick="CommitAsync"
+                        @onclick:stopPropagation="true">
+                    @Loc["TmNotionEquationBlock_Done"]
+                </button>
+            </div>
+        </div>
+
+    </div>
+}
+else
+{
+    <div class="tm-notion-equation-block @_emptyCls"
+         @ref="_renderRef"
+         role="@(!ReadOnly ? "button" : null)"
+         tabindex="@(!ReadOnly ? "0" : null)"
+         @onclick="HandleClickAsync"
+         @onkeydown="HandleViewKeyDownAsync"
+         aria-label="@(!ReadOnly ? Loc["TmNotionEquationBlock_EditLabel"] : null)">
+
+        @if (string.IsNullOrWhiteSpace(Content?.Expression))
+        {
+            <span class="tm-notion-equation-block__placeholder">
+                @Loc["TmNotionBlock_EquationPlaceholder"]
+            </span>
+        }
+
+    </div>
+}
