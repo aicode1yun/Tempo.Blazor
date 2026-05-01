@@ -56,6 +56,51 @@
     </div>
 </section>
 
+<!-- Field Tree View -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div class="flex items-center space-x-2">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Field Tree View</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Checkbox Fields</span>
+        </div>
+        <div class="flex items-center space-x-2">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="@(() => _showTreePanel = !_showTreePanel)">
+                <span class="flex items-center space-x-1">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4" />
+                    </svg>
+                    <span>@(_showTreePanel ? "Hide Panel" : "Show Panel")</span>
+                </span>
+            </TmButton>
+        </div>
+    </div>
+
+    <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl mb-4">
+        <div class="flex items-start space-x-3">
+            <svg class="w-5 h-5 text-indigo-600 dark:text-indigo-400 flex-shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+            </svg>
+            <div>
+                <p class="text-sm text-indigo-800 dark:text-indigo-200">
+                    Field tree provides an alternative to drag-and-drop. Click the three-dots menu on any field to add it to Row, Column, Value, or Filter areas. Fields already in use show their area badge. You can add the same field to Values multiple times (e.g. Sum and Count). Remove removes the field from all areas.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_treeRowFields"
+                      ColumnFieldKeys="_treeColumnFields"
+                      ValueFields="_treeValueFields"
+                      ShowConfigurationPanel="_showTreePanel"
+                      ShowFieldTree="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
 <!-- Pivot Without Panel -->
 <section class="demo-section">
     <div class="flex items-center space-x-2 mb-4">
@@ -268,6 +313,17 @@
     private readonly List<string> _basicRowFields = ["Category"];
     private readonly List<string> _basicColumnFields = ["Month"];
     private readonly List<PivotValueFieldConfiguration> _basicValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
+    ];
+
+    // ── Field Tree Configuration ───────────────────────────────────
+
+    private bool _showTreePanel = true;
+
+    private readonly List<string> _treeRowFields = ["Category"];
+    private readonly List<string> _treeColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _treeValueFields =
     [
         new() { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
     ];

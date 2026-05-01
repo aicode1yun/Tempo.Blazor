@@ -1683,6 +1683,7 @@
   <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Maximum</value></data>
   <data name="TmPivotTable_SelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
   <data name="TmPivotTable_Clear" xml:space="preserve"><value>Vymazat</value></data>
+  <data name="TmPivotTable_Cancel" xml:space="preserve"><value>Zrušit</value></data>
   <data name="TmPivotTable_Format" xml:space="preserve"><value>Formát</value></data>
   <data name="TmPivotTable_Format_Custom" xml:space="preserve"><value>Vlastní</value></data>
   <data name="TmPivotTable_Format_Number" xml:space="preserve"><value>Číslo</value></data>
@@ -1696,5 +1697,15 @@
   <data name="TmPivotTable_Sort_AscendingByAggregate" xml:space="preserve"><value>Vzestupně podle celku</value></data>
   <data name="TmPivotTable_Sort_DescendingByAggregate" xml:space="preserve"><value>Sestupně podle celku</value></data>
   <data name="TmPivotTable_Sort_Clear" xml:space="preserve"><value>Zrušit řazení</value></data>
+  <data name="TmPivotTable_RowShort" xml:space="preserve"><value>Řádek</value></data>
+  <data name="TmPivotTable_ColumnShort" xml:space="preserve"><value>Sloupec</value></data>
+  <data name="TmPivotTable_DataShort" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmPivotTable_FilterShort" xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmPivotTable_FieldActions" xml:space="preserve"><value>Akce pole</value></data>
+  <data name="TmPivotTable_AddToRow" xml:space="preserve"><value>Přidat do řádků</value></data>
+  <data name="TmPivotTable_AddToColumn" xml:space="preserve"><value>Přidat do sloupců</value></data>
+  <data name="TmPivotTable_AddToValue" xml:space="preserve"><value>Přidat do hodnot</value></data>
+  <data name="TmPivotTable_AddToFilter" xml:space="preserve"><value>Přidat do filtrů</value></data>
+  <data name="TmPivotTable_RemoveFromAll" xml:space="preserve"><value>Odebrat ze všech oblastí</value></data>
 
 </root>

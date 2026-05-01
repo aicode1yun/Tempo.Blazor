@@ -1844,6 +1844,7 @@
   <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Max</value></data>
   <data name="TmPivotTable_SelectAll" xml:space="preserve"><value>Select All</value></data>
   <data name="TmPivotTable_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="TmPivotTable_Cancel" xml:space="preserve"><value>Cancel</value></data>
   <data name="TmPivotTable_Format" xml:space="preserve"><value>Format</value></data>
   <data name="TmPivotTable_Format_Custom" xml:space="preserve"><value>Custom</value></data>
   <data name="TmPivotTable_Format_Number" xml:space="preserve"><value>Number</value></data>
@@ -1857,5 +1858,15 @@
   <data name="TmPivotTable_Sort_AscendingByAggregate" xml:space="preserve"><value>Sort Ascending by Total</value></data>
   <data name="TmPivotTable_Sort_DescendingByAggregate" xml:space="preserve"><value>Sort Descending by Total</value></data>
   <data name="TmPivotTable_Sort_Clear" xml:space="preserve"><value>Clear Sort</value></data>
+  <data name="TmPivotTable_RowShort" xml:space="preserve"><value>Row</value></data>
+  <data name="TmPivotTable_ColumnShort" xml:space="preserve"><value>Col</value></data>
+  <data name="TmPivotTable_DataShort" xml:space="preserve"><value>Val</value></data>
+  <data name="TmPivotTable_FilterShort" xml:space="preserve"><value>Flt</value></data>
+  <data name="TmPivotTable_FieldActions" xml:space="preserve"><value>Field actions</value></data>
+  <data name="TmPivotTable_AddToRow" xml:space="preserve"><value>Add to Row Fields</value></data>
+  <data name="TmPivotTable_AddToColumn" xml:space="preserve"><value>Add to Column Fields</value></data>
+  <data name="TmPivotTable_AddToValue" xml:space="preserve"><value>Add to Values</value></data>
+  <data name="TmPivotTable_AddToFilter" xml:space="preserve"><value>Add to Filters</value></data>
+  <data name="TmPivotTable_RemoveFromAll" xml:space="preserve"><value>Remove from all areas</value></data>
 
 </root>

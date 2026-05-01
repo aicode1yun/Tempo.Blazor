@@ -100,6 +100,11 @@
   background: color-mix(in srgb, var(--tm-color-danger, #ef4444) 3%, var(--tm-bg-surface));
 }
 
+.tm-pivot-zone--tree {
+  border-color: var(--tm-border-color);
+  background: var(--tm-bg-surface);
+}
+
 .tm-pivot-zone--unused {
   border-style: dashed;
 }
@@ -460,6 +465,13 @@
   color: var(--tm-text-primary);
 }
 
+.tm-btn:disabled,
+.tm-btn[disabled] {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
+}
+
 /* ═══════════════════════════════════════════════════════════════
    Filter Editor
    ═══════════════════════════════════════════════════════════════ */
@@ -549,6 +561,165 @@
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Field Tree
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-field-tree {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
+}
+
+.tm-pivot-field-tree-title {
+  font-size: var(--tm-font-size-xs);
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tm-text-secondary);
+}
+
+.tm-pivot-field-tree-items {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.tm-pivot-field-tree-item {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-2) var(--tm-space-2);
+  border-radius: var(--tm-radius-sm);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-primary);
+}
+
+.tm-pivot-field-tree-item:hover {
+  background: var(--tm-bg-surface-secondary);
+}
+
+.tm-pivot-field-tree-item-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.tm-pivot-field-tree-item-text--used {
+  font-weight: 600;
+}
+
+.tm-pivot-field-tree-item-badge {
+  font-size: var(--tm-font-size-xs);
+  font-weight: 600;
+  padding: 1px var(--tm-space-1);
+  border-radius: var(--tm-radius-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  flex-shrink: 0;
+}
+
+.tm-pivot-field-tree-item-badge--row {
+  background: color-mix(in srgb, var(--tm-color-info) 15%, transparent);
+  color: var(--tm-color-info-text);
+}
+
+.tm-pivot-field-tree-item-badge--column {
+  background: color-mix(in srgb, var(--tm-color-success) 15%, transparent);
+  color: var(--tm-color-success-text);
+}
+
+.tm-pivot-field-tree-item-badge--data {
+  background: color-mix(in srgb, var(--tm-color-warning) 15%, transparent);
+  color: var(--tm-color-warning-text);
+}
+
+.tm-pivot-field-tree-item-badge--filter {
+  background: color-mix(in srgb, var(--tm-color-danger) 15%, transparent);
+  color: var(--tm-color-danger-text);
+}
+
+.tm-pivot-field-tree-item-menu-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tm-pivot-field-tree-item-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 2px;
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-text-secondary);
+  cursor: pointer;
+  transition: background 0.15s ease;
+  flex-shrink: 0;
+}
+
+.tm-pivot-field-tree-item-menu-btn:hover {
+  background: var(--tm-bg-muted);
+  color: var(--tm-text-primary);
+}
+
+.tm-pivot-field-tree-item-menu-btn svg {
+  width: 14px;
+  height: 14px;
+}
+
+.tm-pivot-field-tree-item-menu {
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  z-index: 100;
+  min-width: 200px;
+  background: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  box-shadow: var(--tm-shadow-lg);
+  padding: var(--tm-space-1);
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.tm-pivot-field-tree-item-menu-item {
+  display: flex;
+  align-items: center;
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-text-primary);
+  font-size: var(--tm-font-size-sm);
+  cursor: pointer;
+  text-align: left;
+  white-space: nowrap;
+  transition: background 0.15s ease;
+}
+
+.tm-pivot-field-tree-item-menu-item:hover {
+  background: var(--tm-bg-muted);
+}
+
+.tm-pivot-field-tree-item-menu-item--danger {
+  color: var(--tm-color-danger);
+}
+
+.tm-pivot-field-tree-item-menu-item--danger:hover {
+  background: color-mix(in srgb, var(--tm-color-danger) 10%, transparent);
+}
+
+.tm-pivot-field-tree-item-menu-divider {
+  height: 1px;
+  background: var(--tm-border-color);
+  margin: var(--tm-space-1) var(--tm-space-2);
 }
 
 /* ═══════════════════════════════════════════════════════════════

@@ -741,4 +741,195 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
         capturedSort.Should().NotBeNull();
         capturedSort!.Value.Direction.Should().Be(PivotSortDirection.None);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4.9  Apply / Cancel / Draft changes
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotFieldPanel_DropRowField_ThenApply_FiresConfigurationChanged()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Simulate dragging Category from Unused to Row
+        var chip = cut.Find(".tm-pivot-zone--unused .tm-pivot-field-chip");
+        chip.DragStart();
+        var rowZone = cut.Find(".tm-pivot-zone--row");
+        rowZone.Drop();
+
+        capturedConfig.Should().BeNull(); // not fired yet
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        capturedConfig.Should().NotBeNull();
+        capturedConfig!.RowFieldKeys.Should().Contain("Category");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_DropRowField_ThenCancel_RestoresOriginal()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Remove Category from Row
+        var removeBtn = cut.Find(".tm-pivot-zone--row .tm-pivot-field-chip-btn--remove");
+        removeBtn.Click();
+
+        cut.FindAll(".tm-pivot-zone--row .tm-pivot-field-chip").Should().BeEmpty();
+
+        // Cancel
+        var cancelBtn = cut.FindAll(".tm-pivot-field-panel-actions button").ElementAt(1);
+        cancelBtn.Click();
+
+        // Category should be restored
+        cut.FindAll(".tm-pivot-zone--row .tm-pivot-field-chip").Should().HaveCount(1);
+        capturedConfig.Should().BeNull(); // no event fired
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_HasDraftChanges_ApplyButtonDisabledWhenNoChanges()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+        );
+
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.HasAttribute("disabled").Should().BeTrue(); // no changes initially
+
+        // Remove Category from Row
+        var removeBtn = cut.Find(".tm-pivot-zone--row .tm-pivot-field-chip-btn--remove");
+        removeBtn.Click();
+
+        applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.HasAttribute("disabled").Should().BeFalse(); // now there are changes
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FilterChange_WithAutoApply_DoesNotRequireApply()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+            new("Transport", "Feb", 200m),
+        };
+
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.AutoApplyFilters, true)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Open filter editor
+        var settingsBtn = cut.Find(".tm-pivot-zone--filter .tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Uncheck Food
+        var checkbox = cut.Find(".tm-pivot-filter-value input[type='checkbox']");
+        checkbox.Change(false);
+
+        capturedConfig.Should().NotBeNull();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4.10  Field Tree
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotFieldPanel_FieldTree_Menu_AddsToRow()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ShowFieldTree, true)
+        );
+
+        cut.FindAll(".tm-pivot-field-tree").Should().HaveCount(1);
+
+        // Open menu on Amount field
+        var menuBtns = cut.FindAll(".tm-pivot-field-tree-item-menu-btn");
+        menuBtns[2].Click(); // Amount
+
+        // Click Add to Row
+        var menuItems = cut.FindAll(".tm-pivot-field-tree-item-menu-item");
+        menuItems.First(i => i.TextContent.Contains("Row")).Click();
+
+        cut.FindAll(".tm-pivot-zone--row .tm-pivot-field-chip").Should().HaveCount(1);
+        cut.Find(".tm-pivot-zone--row .tm-pivot-field-chip").TextContent.Should().Contain("Amount");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FieldTree_Menu_AddsToValue_AllowsDuplicates()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ShowFieldTree, true)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        // Open menu on Amount field
+        var menuBtns = cut.FindAll(".tm-pivot-field-tree-item-menu-btn");
+        var amountBtn = menuBtns.First(b => b.ParentElement?.ParentElement?.TextContent.Contains("Amount") == true);
+        amountBtn.Click();
+
+        // Click Add to Value again
+        var menuItems = cut.FindAll(".tm-pivot-field-tree-item-menu-item");
+        menuItems.First(i => i.TextContent.Contains("Value")).Click();
+
+        // Should have 2 Amount fields in Values
+        cut.FindAll(".tm-pivot-zone--value .tm-pivot-field-chip").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FieldTree_Menu_RemoveFromAll()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ShowFieldTree, true)
+            .Add(p => p.RowFieldKeys, ["Category"])
+        );
+
+        // Open menu on Category field
+        var menuBtns = cut.FindAll(".tm-pivot-field-tree-item-menu-btn");
+        menuBtns[0].Click(); // Category
+
+        // Click Remove from all
+        var removeItem = cut.FindAll(".tm-pivot-field-tree-item-menu-item--danger");
+        removeItem.Should().HaveCount(1);
+        removeItem[0].Click();
+
+        // Category should be removed from Row
+        cut.FindAll(".tm-pivot-zone--row .tm-pivot-field-chip").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FieldTree_ShowsAreaBadge()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ShowFieldTree, true)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ColumnFieldKeys, ["Month"])
+        );
+
+        var badges = cut.FindAll(".tm-pivot-field-tree-item-badge");
+        badges.Should().HaveCount(2);
+        badges[0].TextContent.Should().Contain("Row");
+        badges[1].TextContent.Should().Contain("Col");
+    }
 }

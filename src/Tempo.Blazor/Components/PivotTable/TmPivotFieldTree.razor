@@ -1,0 +1,141 @@
+@namespace Tempo.Blazor.Components.PivotTable
+@typeparam TItem
+@using Tempo.Blazor.Abstractions.PivotTable
+
+<div class="tm-pivot-field-tree">
+    <span class="tm-pivot-field-tree-title">@Loc["TmPivotTable_AvailableFields"]</span>
+    <div class="tm-pivot-field-tree-items">
+        @foreach (var field in Fields)
+        {
+            var isUsed = IsFieldUsed(field.Key);
+            var isOpen = _openMenuFieldKey == field.Key;
+            <div class="tm-pivot-field-tree-item">
+                <span class="tm-pivot-field-tree-item-text @GetUsedClass(field.Key)">@field.Title</span>
+                @if (isUsed)
+                {
+                    <span class="tm-pivot-field-tree-item-badge @GetAreaBadgeClass(field.Key)">@GetAreaLabel(field.Key)</span>
+                }
+                <div class="tm-pivot-field-tree-item-menu-wrapper">
+                    <button type="button"
+                            class="tm-pivot-field-tree-item-menu-btn"
+                            @onclick="() => ToggleMenu(field.Key)"
+                            @onclick:stopPropagation="true"
+                            title="@Loc["TmPivotTable_FieldActions"]">
+                        <svg viewBox="0 0 24 24" fill="currentColor">
+                            <circle cx="12" cy="6" r="2" />
+                            <circle cx="12" cy="12" r="2" />
+                            <circle cx="12" cy="18" r="2" />
+                        </svg>
+                    </button>
+                    @if (isOpen)
+                    {
+                        <div class="tm-pivot-field-tree-item-menu">
+                            @if (!_draftRowFields.Contains(field.Key))
+                            {
+                                <button type="button" class="tm-pivot-field-tree-item-menu-item" @onclick="() => HandleAction(field.Key, PivotArea.Row)">
+                                    <span>@Loc["TmPivotTable_AddToRow"]</span>
+                                </button>
+                            }
+                            @if (!_draftColumnFields.Contains(field.Key))
+                            {
+                                <button type="button" class="tm-pivot-field-tree-item-menu-item" @onclick="() => HandleAction(field.Key, PivotArea.Column)">
+                                    <span>@Loc["TmPivotTable_AddToColumn"]</span>
+                                </button>
+                            }
+                            <button type="button" class="tm-pivot-field-tree-item-menu-item" @onclick="() => HandleAction(field.Key, PivotArea.Data)">
+                                <span>@Loc["TmPivotTable_AddToValue"]</span>
+                            </button>
+                            @if (!_draftFilterFields.ContainsKey(field.Key))
+                            {
+                                <button type="button" class="tm-pivot-field-tree-item-menu-item" @onclick="() => HandleAction(field.Key, PivotArea.Filter)">
+                                    <span>@Loc["TmPivotTable_AddToFilter"]</span>
+                                </button>
+                            }
+                            @if (isUsed)
+                            {
+                                <div class="tm-pivot-field-tree-item-menu-divider"></div>
+                                <button type="button" class="tm-pivot-field-tree-item-menu-item tm-pivot-field-tree-item-menu-item--danger" @onclick="() => HandleRemove(field.Key)">
+                                    <span>@Loc["TmPivotTable_RemoveFromAll"]</span>
+                                </button>
+                            }
+                        </div>
+                    }
+                </div>
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private string? _openMenuFieldKey;
+
+    /// <summary>All available field definitions.</summary>
+    [Parameter] public List<PivotField<TItem>> Fields { get; set; } = [];
+
+    /// <summary>Keys of fields currently in the row area.</summary>
+    [Parameter] public List<string> RowFieldKeys { get; set; } = [];
+
+    /// <summary>Keys of fields currently in the column area.</summary>
+    [Parameter] public List<string> ColumnFieldKeys { get; set; } = [];
+
+    /// <summary>Keys of fields currently in the data area.</summary>
+    [Parameter] public List<string> DataFieldKeys { get; set; } = [];
+
+    /// <summary>Keys of fields currently in the filter area.</summary>
+    [Parameter] public Dictionary<string, List<object?>> FilterFields { get; set; } = [];
+
+    /// <summary>Fires when a field should be added/moved to a target area.</summary>
+    [Parameter] public EventCallback<(string FieldKey, PivotArea Area)> OnAddToArea { get; set; }
+
+    /// <summary>Fires when a field should be removed from all areas.</summary>
+    [Parameter] public EventCallback<string> OnRemove { get; set; }
+
+    private List<string> _draftRowFields => RowFieldKeys;
+    private List<string> _draftColumnFields => ColumnFieldKeys;
+    private List<string> _draftDataFields => DataFieldKeys;
+    private Dictionary<string, List<object?>> _draftFilterFields => FilterFields;
+
+    private bool IsFieldUsed(string fieldKey) =>
+        RowFieldKeys.Contains(fieldKey) ||
+        ColumnFieldKeys.Contains(fieldKey) ||
+        DataFieldKeys.Contains(fieldKey) ||
+        FilterFields.ContainsKey(fieldKey);
+
+    private string GetUsedClass(string fieldKey) =>
+        IsFieldUsed(fieldKey) ? "tm-pivot-field-tree-item-text--used" : "";
+
+    private string GetAreaBadgeClass(string fieldKey)
+    {
+        if (RowFieldKeys.Contains(fieldKey)) return "tm-pivot-field-tree-item-badge--row";
+        if (ColumnFieldKeys.Contains(fieldKey)) return "tm-pivot-field-tree-item-badge--column";
+        if (DataFieldKeys.Contains(fieldKey)) return "tm-pivot-field-tree-item-badge--data";
+        if (FilterFields.ContainsKey(fieldKey)) return "tm-pivot-field-tree-item-badge--filter";
+        return "";
+    }
+
+    private string GetAreaLabel(string fieldKey)
+    {
+        if (RowFieldKeys.Contains(fieldKey)) return Loc["TmPivotTable_RowShort"];
+        if (ColumnFieldKeys.Contains(fieldKey)) return Loc["TmPivotTable_ColumnShort"];
+        if (DataFieldKeys.Contains(fieldKey)) return Loc["TmPivotTable_DataShort"];
+        if (FilterFields.ContainsKey(fieldKey)) return Loc["TmPivotTable_FilterShort"];
+        return "";
+    }
+
+    private void ToggleMenu(string fieldKey)
+    {
+        _openMenuFieldKey = _openMenuFieldKey == fieldKey ? null : fieldKey;
+    }
+
+    private async Task HandleAction(string fieldKey, PivotArea area)
+    {
+        _openMenuFieldKey = null;
+        await OnAddToArea.InvokeAsync((fieldKey, area));
+    }
+
+    private async Task HandleRemove(string fieldKey)
+    {
+        _openMenuFieldKey = null;
+        await OnRemove.InvokeAsync(fieldKey);
+    }
+}

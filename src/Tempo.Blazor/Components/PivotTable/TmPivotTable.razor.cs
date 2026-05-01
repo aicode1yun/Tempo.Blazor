@@ -50,6 +50,9 @@ public partial class TmPivotTable<TItem>
     /// <summary>When true, shows the filter bar. Default: true.</summary>
     [Parameter] public bool ShowFilterBar { get; set; } = true;
 
+    /// <summary>When true, shows a checkbox tree instead of the Unused zone in the configuration panel. Default: false.</summary>
+    [Parameter] public bool ShowFieldTree { get; set; }
+
     /// <summary>When true, enables drag-and-drop in the configuration panel. Default: true.</summary>
     [Parameter] public bool AllowDragDrop { get; set; } = true;
 

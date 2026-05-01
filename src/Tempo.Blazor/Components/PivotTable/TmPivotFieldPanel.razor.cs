@@ -16,6 +16,9 @@ public partial class TmPivotFieldPanel<TItem>
     private readonly List<PivotValueFieldConfiguration> _draftValueFields = [];
     private readonly Dictionary<string, List<object?>> _draftFilterFields = [];
 
+    // ── Applied state (last confirmed configuration) ─────────────
+    private PivotTableConfiguration? _appliedConfig;
+
     // ── Drag state ───────────────────────────────────────────────
     private string? _draggedFieldKey;
     private PivotArea? _draggedFromArea;
@@ -50,6 +53,9 @@ public partial class TmPivotFieldPanel<TItem>
     /// <summary>When true, filter changes are applied immediately without clicking Apply. Default: true.</summary>
     [Parameter] public bool AutoApplyFilters { get; set; } = true;
 
+    /// <summary>When true, shows a checkbox tree instead of the Unused zone. Default: false.</summary>
+    [Parameter] public bool ShowFieldTree { get; set; }
+
     /// <summary>Fires when the user applies a new configuration.</summary>
     [Parameter] public EventCallback<PivotTableConfiguration> OnConfigurationChanged { get; set; }
 
@@ -58,10 +64,25 @@ public partial class TmPivotFieldPanel<TItem>
 
     // ── Lifecycle ─────────────────────────────────────────────────
 
-    /// <summary>Syncs draft state from parameters when they change.</summary>
+    /// <summary>Syncs draft state from parameters when they change externally.</summary>
     protected override void OnParametersSet()
     {
-        SyncDraftState();
+        var incoming = BuildConfigurationFromParameters();
+
+        // If no applied config yet, initialize both applied and draft from parameters
+        if (_appliedConfig is null)
+        {
+            _appliedConfig = CloneConfiguration(incoming);
+            SyncDraftState();
+            return;
+        }
+
+        // If parameters differ from applied config, external change occurred – update both
+        if (!ConfigurationsEqual(_appliedConfig, incoming))
+        {
+            _appliedConfig = CloneConfiguration(incoming);
+            SyncDraftState();
+        }
     }
 
     private void SyncDraftState()
@@ -85,6 +106,62 @@ public partial class TmPivotFieldPanel<TItem>
         foreach (var kv in FilterFields)
             _draftFilterFields[kv.Key] = [.. kv.Value];
     }
+
+    private static PivotTableConfiguration BuildConfigurationFromParameters(List<string> rowKeys, List<string> colKeys, List<PivotValueFieldConfiguration> valueFields, Dictionary<string, List<object?>> filterFields) => new()
+    {
+        RowFieldKeys = rowKeys.ToList(),
+        ColumnFieldKeys = colKeys.ToList(),
+        ValueFields = valueFields.ToList(),
+        FilterFields = new Dictionary<string, List<object?>>(filterFields)
+    };
+
+    private PivotTableConfiguration BuildConfigurationFromParameters() => new()
+    {
+        RowFieldKeys = RowFieldKeys.ToList(),
+        ColumnFieldKeys = ColumnFieldKeys.ToList(),
+        ValueFields = ValueFields.ToList(),
+        FilterFields = new Dictionary<string, List<object?>>(FilterFields)
+    };
+
+    private static PivotTableConfiguration CloneConfiguration(PivotTableConfiguration source) => new()
+    {
+        RowFieldKeys = source.RowFieldKeys.ToList(),
+        ColumnFieldKeys = source.ColumnFieldKeys.ToList(),
+        ValueFields = source.ValueFields.ToList(),
+        FilterFields = new Dictionary<string, List<object?>>(source.FilterFields)
+    };
+
+    private static bool ConfigurationsEqual(PivotTableConfiguration a, PivotTableConfiguration b)
+    {
+        if (!a.RowFieldKeys.SequenceEqual(b.RowFieldKeys)) return false;
+        if (!a.ColumnFieldKeys.SequenceEqual(b.ColumnFieldKeys)) return false;
+        if (a.ValueFields.Count != b.ValueFields.Count) return false;
+        for (var i = 0; i < a.ValueFields.Count; i++)
+        {
+            var av = a.ValueFields[i];
+            var bv = b.ValueFields[i];
+            if (av.FieldKey != bv.FieldKey || av.Aggregation != bv.Aggregation || av.DisplayName != bv.DisplayName || av.Format != bv.Format)
+                return false;
+        }
+        if (a.FilterFields.Count != b.FilterFields.Count) return false;
+        foreach (var kv in a.FilterFields)
+        {
+            if (!b.FilterFields.TryGetValue(kv.Key, out var bValues)) return false;
+            if (!kv.Value.SequenceEqual(bValues)) return false;
+        }
+        return true;
+    }
+
+    /// <summary>True when draft configuration differs from the last applied configuration.</summary>
+    private bool HasDraftChanges => _appliedConfig is not null && !ConfigurationsEqual(_appliedConfig, BuildDraftConfiguration());
+
+    private PivotTableConfiguration BuildDraftConfiguration() => new()
+    {
+        RowFieldKeys = _draftRowFields.ToList(),
+        ColumnFieldKeys = _draftColumnFields.ToList(),
+        ValueFields = _draftValueFields.ToList(),
+        FilterFields = new Dictionary<string, List<object?>>(_draftFilterFields)
+    };
 
     // ── Drag & Drop ──────────────────────────────────────────────
 
@@ -201,6 +278,41 @@ public partial class TmPivotFieldPanel<TItem>
         field.SortBy = args.SortBy;
 
         await OnSortChanged.InvokeAsync((fieldKey, args.Direction, args.SortBy));
+    }
+
+    private void HandleFieldTreeAddToArea(string fieldKey, PivotArea area)
+    {
+        switch (area)
+        {
+            case PivotArea.Row:
+                _draftColumnFields.Remove(fieldKey);
+                if (!_draftRowFields.Contains(fieldKey))
+                    _draftRowFields.Add(fieldKey);
+                break;
+            case PivotArea.Column:
+                _draftRowFields.Remove(fieldKey);
+                if (!_draftColumnFields.Contains(fieldKey))
+                    _draftColumnFields.Add(fieldKey);
+                break;
+            case PivotArea.Data:
+                _draftValueFields.Add(new PivotValueFieldConfiguration { FieldKey = fieldKey, Aggregation = "Sum" });
+                break;
+            case PivotArea.Filter:
+                if (!_draftFilterFields.ContainsKey(fieldKey))
+                    _draftFilterFields[fieldKey] = GetDistinctFieldValues(fieldKey).ToList();
+                break;
+        }
+
+        StateHasChanged();
+    }
+
+    private void HandleFieldTreeRemove(string fieldKey)
+    {
+        _draftRowFields.Remove(fieldKey);
+        _draftColumnFields.Remove(fieldKey);
+        _draftValueFields.RemoveAll(v => v.FieldKey == fieldKey);
+        _draftFilterFields.Remove(fieldKey);
+        StateHasChanged();
     }
 
     // ── Value Field Settings ─────────────────────────────────────
@@ -332,7 +444,7 @@ public partial class TmPivotFieldPanel<TItem>
         }
 
         if (AutoApplyFilters)
-            await FireConfigurationChangedAsync(closeEditors: false);
+            await FireConfigurationChangedAsync(closeEditors: false, useAppliedStructure: true);
         else
             StateHasChanged();
     }
@@ -343,7 +455,7 @@ public partial class TmPivotFieldPanel<TItem>
         _draftFilterFields[fieldKey] = values.ToList();
 
         if (AutoApplyFilters)
-            await FireConfigurationChangedAsync(closeEditors: false);
+            await FireConfigurationChangedAsync(closeEditors: false, useAppliedStructure: true);
         else
             StateHasChanged();
     }
@@ -353,7 +465,7 @@ public partial class TmPivotFieldPanel<TItem>
         _draftFilterFields.Remove(fieldKey);
 
         if (AutoApplyFilters)
-            await FireConfigurationChangedAsync(closeEditors: false);
+            await FireConfigurationChangedAsync(closeEditors: false, useAppliedStructure: true);
         else
             StateHasChanged();
     }
@@ -366,13 +478,19 @@ public partial class TmPivotFieldPanel<TItem>
 
     // ── Actions ──────────────────────────────────────────────────
 
-    private async Task FireConfigurationChangedAsync(bool closeEditors = true)
+    private async Task FireConfigurationChangedAsync(bool closeEditors = true, bool useAppliedStructure = false)
     {
         var config = new PivotTableConfiguration
         {
-            RowFieldKeys = _draftRowFields.ToList(),
-            ColumnFieldKeys = _draftColumnFields.ToList(),
-            ValueFields = _draftValueFields.ToList(),
+            RowFieldKeys = useAppliedStructure && _appliedConfig is not null
+                ? _appliedConfig.RowFieldKeys.ToList()
+                : _draftRowFields.ToList(),
+            ColumnFieldKeys = useAppliedStructure && _appliedConfig is not null
+                ? _appliedConfig.ColumnFieldKeys.ToList()
+                : _draftColumnFields.ToList(),
+            ValueFields = useAppliedStructure && _appliedConfig is not null
+                ? _appliedConfig.ValueFields.ToList()
+                : _draftValueFields.ToList(),
             FilterFields = new Dictionary<string, List<object?>>(_draftFilterFields)
         };
 
@@ -388,14 +506,35 @@ public partial class TmPivotFieldPanel<TItem>
     private async Task ApplyAsync()
     {
         await FireConfigurationChangedAsync(closeEditors: true);
+        _appliedConfig = BuildDraftConfiguration();
     }
 
     private void Reset()
     {
-        SyncDraftState();
+        if (_appliedConfig is not null)
+        {
+            _draftRowFields.Clear();
+            _draftRowFields.AddRange(_appliedConfig.RowFieldKeys);
+
+            _draftColumnFields.Clear();
+            _draftColumnFields.AddRange(_appliedConfig.ColumnFieldKeys);
+
+            _draftValueFields.Clear();
+            _draftValueFields.AddRange(_appliedConfig.ValueFields);
+
+            _draftFilterFields.Clear();
+            foreach (var kv in _appliedConfig.FilterFields)
+                _draftFilterFields[kv.Key] = [.. kv.Value];
+        }
+
         _editingValueFieldIndex = null;
         _expandedFilterFieldKey = null;
         StateHasChanged();
+    }
+
+    private void Cancel()
+    {
+        Reset();
     }
 
     private void ClearAll()
