@@ -22,11 +22,15 @@ public partial class TmPivotFieldPanel<TItem>
 
     // ── Editing state ────────────────────────────────────────────
     private int? _editingValueFieldIndex;
+    private string? _expandedFilterFieldKey;
 
     // ── Parameters ───────────────────────────────────────────────
 
     /// <summary>All available field definitions.</summary>
     [Parameter] public List<PivotField<TItem>> Fields { get; set; } = [];
+
+    /// <summary>Source data items used to compute distinct filter values.</summary>
+    [Parameter] public IEnumerable<TItem>? Items { get; set; }
 
     /// <summary>Keys of fields currently in the row area.</summary>
     [Parameter] public List<string> RowFieldKeys { get; set; } = [];
@@ -204,15 +208,67 @@ public partial class TmPivotFieldPanel<TItem>
 
     // ── Filter Management ────────────────────────────────────────
 
-    private List<object?> GetDistinctFieldValues(string fieldKey)
+    private IReadOnlyList<object?> GetDistinctFieldValues(string fieldKey)
     {
         var field = Fields.FirstOrDefault(f => f.Key == fieldKey);
-        if (field is null) return [];
+        if (field is null || Items is null) return [];
 
-        // Note: this requires access to Items, which we don't have in the panel.
-        // For a full implementation, the panel would need the data items to compute distinct values.
-        // For now, return an empty list and let the consumer provide filter options via parameters.
-        return [];
+        return Items
+            .Select(item => field.Accessor(item))
+            .Where(v => v is not null)
+            .Distinct()
+            .OrderBy(v => v?.ToString())
+            .ToList();
+    }
+
+    private bool IsFilterValueSelected(string fieldKey, object? value)
+    {
+        if (!_draftFilterFields.TryGetValue(fieldKey, out var selected))
+            return false;
+        return selected.Any(v => Equals(v, value));
+    }
+
+    private void ToggleFilterValue(string fieldKey, object? value)
+    {
+        if (!_draftFilterFields.TryGetValue(fieldKey, out var selected))
+        {
+            _draftFilterFields[fieldKey] = [value];
+            StateHasChanged();
+            return;
+        }
+
+        var existing = selected.FirstOrDefault(v => Equals(v, value));
+        if (existing is not null)
+        {
+            selected.Remove(existing);
+            if (selected.Count == 0)
+                _draftFilterFields.Remove(fieldKey);
+        }
+        else
+        {
+            selected.Add(value);
+        }
+
+        StateHasChanged();
+    }
+
+    private void SelectAllFilterValues(string fieldKey)
+    {
+        var values = GetDistinctFieldValues(fieldKey);
+        _draftFilterFields[fieldKey] = values.ToList();
+        StateHasChanged();
+    }
+
+    private void ClearFilterValues(string fieldKey)
+    {
+        _draftFilterFields.Remove(fieldKey);
+        StateHasChanged();
+    }
+
+    private void ToggleFilterEditor(string fieldKey)
+    {
+        _expandedFilterFieldKey = _expandedFilterFieldKey == fieldKey ? null : fieldKey;
+        StateHasChanged();
     }
 
     // ── Actions ──────────────────────────────────────────────────
@@ -228,6 +284,7 @@ public partial class TmPivotFieldPanel<TItem>
         };
 
         _editingValueFieldIndex = null;
+        _expandedFilterFieldKey = null;
         await OnConfigurationChanged.InvokeAsync(config);
     }
 
@@ -235,6 +292,7 @@ public partial class TmPivotFieldPanel<TItem>
     {
         SyncDraftState();
         _editingValueFieldIndex = null;
+        _expandedFilterFieldKey = null;
         StateHasChanged();
     }
 
@@ -245,6 +303,7 @@ public partial class TmPivotFieldPanel<TItem>
         _draftValueFields.Clear();
         _draftFilterFields.Clear();
         _editingValueFieldIndex = null;
+        _expandedFilterFieldKey = null;
         StateHasChanged();
     }
 

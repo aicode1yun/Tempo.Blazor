@@ -362,6 +362,97 @@
 }
 
 /* ═══════════════════════════════════════════════════════════════
+   Filter Editor
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-filter-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+}
+
+.tm-pivot-filter-editor {
+  padding: var(--tm-space-2);
+  background: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-sm);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.tm-pivot-filter-editor-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tm-space-2);
+  margin-bottom: var(--tm-space-2);
+  padding-bottom: var(--tm-space-1);
+  border-bottom: 1px solid var(--tm-border-color);
+}
+
+.tm-pivot-filter-editor-title {
+  font-size: var(--tm-font-size-xs);
+  font-weight: var(--tm-font-weight-semibold);
+  color: var(--tm-text-secondary);
+}
+
+.tm-pivot-filter-editor-actions {
+  display: flex;
+  gap: var(--tm-space-1);
+}
+
+.tm-pivot-filter-editor-btn {
+  padding: var(--tm-space-0-5) var(--tm-space-1);
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: transparent;
+  color: var(--tm-color-primary);
+  font-size: var(--tm-font-size-xs);
+  cursor: pointer;
+  line-height: 1;
+}
+
+.tm-pivot-filter-editor-btn:hover {
+  background: var(--tm-bg-surface-secondary);
+}
+
+.tm-pivot-filter-values {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+}
+
+.tm-pivot-filter-value {
+  display: flex;
+  align-items: center;
+  gap: var(--tm-space-2);
+  padding: var(--tm-space-1) var(--tm-space-2);
+  border-radius: var(--tm-radius-sm);
+  cursor: pointer;
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-primary);
+  transition: background-color 0.1s;
+}
+
+.tm-pivot-filter-value:hover {
+  background: var(--tm-bg-surface-secondary);
+}
+
+.tm-pivot-filter-value input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  accent-color: var(--tm-color-primary);
+  cursor: pointer;
+}
+
+.tm-pivot-filter-value span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════════════════════════════════
    Responsive
    ═══════════════════════════════════════════════════════════════ */
 

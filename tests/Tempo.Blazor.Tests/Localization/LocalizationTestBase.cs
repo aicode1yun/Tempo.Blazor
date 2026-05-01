@@ -614,6 +614,8 @@ public abstract class LocalizationTestBase : TestContext
         ["TmPivotTable_Aggregation_Average"] = "Average",
         ["TmPivotTable_Aggregation_Min"] = "Min",
         ["TmPivotTable_Aggregation_Max"] = "Max",
+        ["TmPivotTable_SelectAll"] = "Select All",
+        ["TmPivotTable_Clear"] = "Clear",
 
         // TmWireframe
         ["TmWireframe_ToolbarAriaLabel"] = "Wireframe editor toolbar",

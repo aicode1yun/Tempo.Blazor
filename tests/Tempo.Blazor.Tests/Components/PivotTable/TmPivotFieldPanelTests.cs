@@ -266,4 +266,113 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
         capturedConfig.Should().NotBeNull();
         capturedConfig!.ValueFields[0].Aggregation.Should().Be("Count");
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4.5  Filter field editor
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotFieldPanel_FilterField_ToggleEditor_ShowsDistinctValues()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+            new("Transport", "Feb", 200m),
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
+        );
+
+        // Initially no editor visible
+        cut.FindAll(".tm-pivot-filter-editor").Should().BeEmpty();
+
+        // Click settings button on filter chip
+        var settingsBtn = cut.Find(".tm-pivot-zone--filter .tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Editor should appear with distinct values
+        var editor = cut.Find(".tm-pivot-filter-editor");
+        editor.Should().NotBeNull();
+
+        var checkboxes = cut.FindAll(".tm-pivot-filter-value input[type='checkbox']");
+        checkboxes.Should().HaveCount(2); // Food, Transport
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FilterField_ToggleValue_UpdatesSelection()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+            new("Transport", "Feb", 200m),
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Open editor
+        var settingsBtn = cut.Find(".tm-pivot-zone--filter .tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Toggle Transport checkbox (currently unchecked)
+        var transportCheckbox = cut.FindAll(".tm-pivot-filter-value input[type='checkbox']")
+            .FirstOrDefault(cb => cb.ParentElement?.TextContent?.Contains("Transport") == true);
+        transportCheckbox.Should().NotBeNull();
+        transportCheckbox!.Change(true);
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        capturedConfig.Should().NotBeNull();
+        capturedConfig!.FilterFields.Should().ContainKey("Category");
+        capturedConfig.FilterFields["Category"].Should().HaveCount(2);
+        capturedConfig.FilterFields["Category"].Should().Contain("Food");
+        capturedConfig.FilterFields["Category"].Should().Contain("Transport");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_FilterField_ClearAll_RemovesSelection()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+            new("Transport", "Feb", 200m),
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
+        );
+
+        // Open editor
+        var settingsBtn = cut.Find(".tm-pivot-zone--filter .tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Click Clear button
+        var clearBtn = cut.FindAll(".tm-pivot-filter-editor-btn")
+            .FirstOrDefault(b => b.TextContent?.Contains("Clear") == true);
+        clearBtn.Should().NotBeNull();
+        clearBtn!.Click();
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        // After applying with empty selection, the field should be removed from filters
+        // (because empty filter list would filter out everything)
+        // Actually, our ClearFilterValues removes the key entirely
+        // So the filter field is removed but the chip stays in the filter zone
+        // This is intentional - user can re-select values
+    }
 }

@@ -131,6 +131,33 @@
     </div>
 </section>
 
+<!-- Interactive Filters -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Interactive Filters</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-pink-100 dark:bg-pink-900/30 text-pink-700 dark:text-pink-300 rounded-full">Filter Panel</span>
+    </div>
+
+    <div class="p-4 bg-pink-50 dark:bg-pink-900/20 border border-pink-200 dark:border-pink-800 rounded-xl mb-4">
+        <p class="text-sm text-pink-800 dark:text-pink-200">
+            Drag a field to the Filters zone, then click the gear icon to select specific values. 
+            Try filtering by Region or Category.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_filterDemoRowFields"
+                      ColumnFieldKeys="_filterDemoColumnFields"
+                      ValueFields="_filterDemoValueFields"
+                      FilterFields="_filterDemoFilterFields"
+                      ShowConfigurationPanel="true"
+                      ShowTotals="true" />
+    </div>
+</section>
+
 <!-- Empty State -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -244,4 +271,17 @@
     [
         new() { FieldKey = "Amount", Aggregation = "Sum" }
     ];
+
+    // ── Interactive Filter Demo Configuration ──────────────────────
+
+    private readonly List<string> _filterDemoRowFields = ["Category"];
+    private readonly List<string> _filterDemoColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _filterDemoValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+    private readonly Dictionary<string, List<object?>> _filterDemoFilterFields = new()
+    {
+        ["Region"] = ["North", "South"]
+    };
 }

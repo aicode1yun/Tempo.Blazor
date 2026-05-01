@@ -1681,5 +1681,7 @@
   <data name="TmPivotTable_Aggregation_Average" xml:space="preserve"><value>Průměr</value></data>
   <data name="TmPivotTable_Aggregation_Min" xml:space="preserve"><value>Minimum</value></data>
   <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmPivotTable_SelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
+  <data name="TmPivotTable_Clear" xml:space="preserve"><value>Vymazat</value></data>
 
 </root>

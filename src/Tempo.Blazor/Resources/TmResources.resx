@@ -1842,5 +1842,7 @@
   <data name="TmPivotTable_Aggregation_Average" xml:space="preserve"><value>Average</value></data>
   <data name="TmPivotTable_Aggregation_Min" xml:space="preserve"><value>Min</value></data>
   <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Max</value></data>
+  <data name="TmPivotTable_SelectAll" xml:space="preserve"><value>Select All</value></data>
+  <data name="TmPivotTable_Clear" xml:space="preserve"><value>Clear</value></data>
 
 </root>

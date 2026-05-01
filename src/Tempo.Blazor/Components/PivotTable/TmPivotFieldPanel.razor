@@ -125,14 +125,42 @@
             <div class="tm-pivot-zone-content">
                 @foreach (var field in GetFieldsInArea(PivotArea.Filter))
                 {
-                    <TmPivotFieldChip TItem="TItem"
-                                      Field="field"
-                                      Area="PivotArea.Filter"
-                                      AllowDragDrop="AllowDragDrop"
-                                      ShowRemove="true"
-                                      OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Filter)"
-                                      OnDragEnd="OnChipDragEnd"
-                                      OnRemoveClick="() => RemoveField(field.Key, PivotArea.Filter)" />
+                    <div class="tm-pivot-filter-item">
+                        <TmPivotFieldChip TItem="TItem"
+                                          Field="field"
+                                          Area="PivotArea.Filter"
+                                          AllowDragDrop="AllowDragDrop"
+                                          ShowSettings="true"
+                                          ShowRemove="true"
+                                          OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Filter)"
+                                          OnDragEnd="OnChipDragEnd"
+                                          OnSettingsClick="() => ToggleFilterEditor(field.Key)"
+                                          OnRemoveClick="() => RemoveField(field.Key, PivotArea.Filter)" />
+
+                        @if (_expandedFilterFieldKey == field.Key)
+                        {
+                            <div class="tm-pivot-filter-editor">
+                                <div class="tm-pivot-filter-editor-header">
+                                    <span class="tm-pivot-filter-editor-title">@field.Title</span>
+                                    <div class="tm-pivot-filter-editor-actions">
+                                        <button type="button" class="tm-pivot-filter-editor-btn" @onclick="() => SelectAllFilterValues(field.Key)">@Loc["TmPivotTable_SelectAll"]</button>
+                                        <button type="button" class="tm-pivot-filter-editor-btn" @onclick="() => ClearFilterValues(field.Key)">@Loc["TmPivotTable_Clear"]</button>
+                                    </div>
+                                </div>
+                                <div class="tm-pivot-filter-values">
+                                    @foreach (var value in GetDistinctFieldValues(field.Key))
+                                    {
+                                        <label class="tm-pivot-filter-value">
+                                            <input type="checkbox"
+                                                   checked="@IsFilterValueSelected(field.Key, value)"
+                                                   @onchange="() => ToggleFilterValue(field.Key, value)" />
+                                            <span>@field.FormatValue(value)</span>
+                                        </label>
+                                    }
+                                </div>
+                            </div>
+                        }
+                    </div>
                 }
             </div>
         </div>
