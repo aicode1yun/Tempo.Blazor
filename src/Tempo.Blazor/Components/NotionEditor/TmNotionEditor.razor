@@ -3,6 +3,7 @@
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.NotionEditor.Page
+@using Tempo.Blazor.Components.NotionEditor.Sidebar
 
 <div class="tm-notion-editor @_editorModifiers @Class"
      data-notion-scroll-root
@@ -16,7 +17,8 @@
             <aside class="tm-notion-sidebar @(_sidebarVisible ? "tm-notion-sidebar--visible" : "tm-notion-sidebar--hidden")"
                    aria-label="@Loc["TmNotionEditor_SidebarLabel"]"
                    role="navigation">
-                @* TmNotionSidebar component (Phase 30+) *@
+                <TmNotionSidebar ActivePageId="@_currentPageId"
+                                 OnTrashRequested="OnTrashRequestedAsync" />
             </aside>
 
             @if (_sidebarVisible && _sidebarOverlay)

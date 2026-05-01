@@ -22,4 +22,11 @@ public sealed class NotionEditorContext
     public INotionImportExportProvider?  ImportExportProvider     { get; init; }
     public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; init; }
     public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; init; }
+    public INotionSyncedBlockProvider?    SyncedBlockProvider      { get; init; }
+
+    /// <summary>
+    /// Navigates to the given page by ID. Supplied by TmNotionEditor and used by
+    /// child page / linked page / breadcrumb blocks to trigger in-editor navigation.
+    /// </summary>
+    public Func<string, Task>?            NavigateTo               { get; init; }
 }

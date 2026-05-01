@@ -302,6 +302,109 @@
     </div>
 </section>
 
+<!-- ═══ Features checklist — Phase 3 ══════════════════════════════════════════ -->
+<section class="demo-section mt-6">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 3 Features — Database</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        Scroll to the bottom of the editor above to find the <strong>Phase 3: Inline Database</strong> section.
+        The "Project Tasks" database has 8 fields, 12 records, and 6 views.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🗂️</span> Views
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Table view — all 8 fields, 12 rows</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Board view — grouped by Status</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>List view — compact rows</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Gallery view — card grid</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Calendar view — grouped by due date</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Timeline view — Gantt-style bars</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🔎</span> Filter, Sort &amp; Group
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Filter panel — add conditions per field</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Filter applies immediately to records</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Sort panel — multi-field sort</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Group by — separator rows per group</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">✏️</span> Records &amp; Fields
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Inline cell editing in Table view</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Record detail modal (click row icon)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Field editor — add / rename / delete</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Import / Export CSV dialog</span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800">
+        <p class="text-sm text-purple-900 dark:text-purple-100">
+            <strong>How to test:</strong>
+            Scroll down in the editor to the <em>Phase 3: Inline Database</em> heading.
+            Use the view tabs (Table / Board / List / Gallery / Calendar / Timeline) to switch.
+            Click toolbar buttons: <strong>Filter</strong>, <strong>Sort</strong>, <strong>Group</strong>, <strong>Fields</strong>, <strong>Import/Export</strong>.
+            Click a row's expand icon to open the record detail. Click a column header to edit the field type.
+        </p>
+    </div>
+</section>
+
 @code {
     private INotionPage? _currentPage;
     private string _statusMessage = "";

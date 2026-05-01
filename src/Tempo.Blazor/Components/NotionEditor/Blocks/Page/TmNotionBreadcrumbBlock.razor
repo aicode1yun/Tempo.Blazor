@@ -1,0 +1,56 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Page
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Services
+
+<nav class="tm-notion-breadcrumb" aria-label="@Loc["TmNotionBreadcrumbBlock_Label"]">
+
+    @if (_isLoading)
+    {
+        <div class="tm-notion-breadcrumb__skeleton-row" aria-hidden="true">
+            <div class="tm-notion-breadcrumb__skeleton tm-notion-breadcrumb__skeleton--short"></div>
+            <span class="tm-notion-breadcrumb__sep">/</span>
+            <div class="tm-notion-breadcrumb__skeleton tm-notion-breadcrumb__skeleton--medium"></div>
+            <span class="tm-notion-breadcrumb__sep">/</span>
+            <div class="tm-notion-breadcrumb__skeleton tm-notion-breadcrumb__skeleton--long"></div>
+        </div>
+    }
+    else if (_crumbs.Count == 0)
+    {
+        <span class="tm-notion-breadcrumb__empty" aria-hidden="true">—</span>
+    }
+    else
+    {
+        @for (int i = 0; i < _crumbs.Count; i++)
+        {
+            var crumb  = _crumbs[i];
+            var isLast = i == _crumbs.Count - 1;
+
+            @if (isLast)
+            {
+                <span class="tm-notion-breadcrumb__item tm-notion-breadcrumb__item--current"
+                      aria-current="page">
+                    @if (!string.IsNullOrEmpty(crumb.Icon))
+                    {
+                        <span class="tm-notion-breadcrumb__crumb-icon" aria-hidden="true">@crumb.Icon</span>
+                    }
+                    <span class="tm-notion-breadcrumb__crumb-label">@crumb.Title</span>
+                </span>
+            }
+            else
+            {
+                <button class="tm-notion-breadcrumb__item tm-notion-breadcrumb__item--link"
+                        type="button"
+                        @onclick="() => HandleCrumbClickAsync(crumb.PageId)">
+                    @if (!string.IsNullOrEmpty(crumb.Icon))
+                    {
+                        <span class="tm-notion-breadcrumb__crumb-icon" aria-hidden="true">@crumb.Icon</span>
+                    }
+                    <span class="tm-notion-breadcrumb__crumb-label">@crumb.Title</span>
+                </button>
+                <span class="tm-notion-breadcrumb__sep" aria-hidden="true">/</span>
+            }
+        }
+    }
+
+</nav>

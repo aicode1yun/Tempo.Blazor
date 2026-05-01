@@ -1,0 +1,127 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-dbcal" @ondragend="OnDragEnd">
+
+    @* ── Header ─────────────────────────────────────────────────────────── *@
+    <div class="tm-dbcal__header">
+
+        <div class="tm-dbcal__nav">
+            <button class="tm-dbcal__nav-btn"
+                    type="button"
+                    title="@Loc["TmNotionDbCalendarView_PrevMonth"]"
+                    aria-label="@Loc["TmNotionDbCalendarView_PrevMonth"]"
+                    @onclick="PrevMonth">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M15 18l-6-6 6-6" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+
+            <span class="tm-dbcal__month-title" role="heading" aria-level="2">
+                @MonthTitle
+            </span>
+
+            <button class="tm-dbcal__nav-btn"
+                    type="button"
+                    title="@Loc["TmNotionDbCalendarView_NextMonth"]"
+                    aria-label="@Loc["TmNotionDbCalendarView_NextMonth"]"
+                    @onclick="NextMonth">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M9 18l6-6-6-6" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <button class="tm-dbcal__today-btn"
+                type="button"
+                @onclick="GoToToday">
+            @Loc["TmNotionDbCalendarView_Today"]
+        </button>
+
+    </div>
+
+    @if (DateField is null)
+    {
+        <div class="tm-dbcal__no-field">@Loc["TmNotionDbCalendarView_NoDateField"]</div>
+    }
+    else
+    {
+        @* ── Weekday headers ─────────────────────────────────────────────── *@
+        <div class="tm-dbcal__weekdays" role="row" aria-hidden="true">
+            @foreach (var day in WeekdayHeaders)
+            {
+                <div class="tm-dbcal__weekday">@day</div>
+            }
+        </div>
+
+        @* ── Day grid ────────────────────────────────────────────────────── *@
+        <div class="tm-dbcal__grid" role="grid">
+            @foreach (var cell in _cells)
+            {
+                var date     = cell.Date;
+                var isToday  = date == Today;
+                var isTarget = _dragOverDate == date && _dragRecordId is not null;
+                var cls      = string.Join(" ",
+                    "tm-dbcal__cell",
+                    cell.IsCurrentMonth ? "" : "tm-dbcal__cell--other-month",
+                    isToday              ? "tm-dbcal__cell--today" : "",
+                    isTarget             ? "tm-dbcal__cell--target" : "");
+
+                <div class="@cls"
+                     role="gridcell"
+                     aria-label="@date.ToString("d MMMM yyyy")"
+                     @ondragover:preventDefault="true"
+                     @ondragenter:preventDefault="true"
+                     @ondragenter="() => SetDragOverDate(date)"
+                     @ondrop:preventDefault="true"
+                     @ondrop="() => OnCellDropAsync(date)"
+                     @onclick="() => HandleCellClickAsync(date)">
+
+                    @* Date number *@
+                    <span class="tm-dbcal__cell-num @(isToday ? "tm-dbcal__cell-num--today" : "")">
+                        @date.Day
+                    </span>
+
+                    @* Events *@
+                    @foreach (var record in VisibleEvents(cell))
+                    {
+                        var rec      = record;
+                        var isDragging = _dragRecordId == rec.Id;
+                        var eventColor = GetEventColor(rec);
+                        var title      = GetPrimaryValue(rec);
+
+                        <div class="tm-dbcal__event @(isDragging ? "tm-dbcal__event--dragging" : "")"
+                             style="--event-color: @eventColor"
+                             draggable="@(!ReadOnly ? "true" : "false")"
+                             role="button"
+                             tabindex="0"
+                             title="@title"
+                             @key="rec.Id"
+                             @onclick:stopPropagation="true"
+                             @onclick="() => HandleEventClickAsync(rec)"
+                             @ondragstart="() => OnEventDragStart(rec, date)"
+                             @onkeydown="e => HandleEventKeyAsync(e, rec)">
+                            <span class="tm-dbcal__event-dot" aria-hidden="true"></span>
+                            <span class="tm-dbcal__event-label">@title</span>
+                        </div>
+                    }
+
+                    @* Overflow indicator *@
+                    @if (OverflowCount(cell) > 0)
+                    {
+                        <span class="tm-dbcal__overflow"
+                              @onclick:stopPropagation="true">
+                            +@OverflowCount(cell)&nbsp;@Loc["TmNotionDbCalendarView_More"]
+                        </span>
+                    }
+
+                </div>
+            }
+        </div>
+    }
+
+</div>

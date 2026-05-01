@@ -1116,6 +1116,14 @@ window.tmNotionEditor = (function () {
         navigator.clipboard.writeText(url).catch(() => {});
     }
 
+    // ── 62.1 Copy plain text to clipboard (synced block sync ID) ──────────────
+
+    function copyText(text) {
+        if (navigator.clipboard?.writeText) {
+            navigator.clipboard.writeText(String(text)).catch(() => {});
+        }
+    }
+
     // ── 37.1 Code block keyboard handler ──────────────────────────────────────
 
     const CODE_TAB_SIZE = 4;
@@ -1180,6 +1188,114 @@ window.tmNotionEditor = (function () {
         _autoResizeTextarea(textarea);
     }
 
+    // ── 58.1 Table block — cell keyboard handler & focus ──────────────────────
+
+    function initTableRowKeyboardHandler(rowEl, dotNetRef, columnCount) {
+        if (!rowEl) return;
+        if (_blocks.has(rowEl)) destroyBlock(rowEl);
+        _blocks.set(rowEl, { dotNetRef, listeners: [], columnCount });
+
+        const onKeyDown = (e) => {
+            if (e.key !== 'Tab') return;
+            const cell = e.target.closest('[data-tm-col]');
+            if (!cell) return;
+            const colIdx = parseInt(cell.dataset.tmCol, 10);
+            const count  = _blocks.get(rowEl)?.columnCount ?? columnCount;
+            e.preventDefault();
+            if (e.shiftKey) {
+                if (colIdx === 0) {
+                    dotNetRef.invokeMethodAsync('InvokeShiftTabFromFirstCell').catch(console.error);
+                } else {
+                    const prev = rowEl.querySelector(`[data-tm-col="${colIdx - 1}"] [contenteditable]`);
+                    if (prev) { prev.focus(); _setCursorAtEnd(prev); }
+                }
+            } else {
+                if (colIdx === count - 1) {
+                    dotNetRef.invokeMethodAsync('InvokeTabFromLastCell').catch(console.error);
+                } else {
+                    const next = rowEl.querySelector(`[data-tm-col="${colIdx + 1}"] [contenteditable]`);
+                    if (next) { next.focus(); _setCursorAtStart(next); }
+                }
+            }
+        };
+
+        _blocks.get(rowEl).listeners.push(_on(rowEl, 'keydown', onKeyDown));
+    }
+
+    function destroyTableRowKeyboardHandler(rowEl) {
+        destroyBlock(rowEl);
+    }
+
+    function tableFocusCell(tableEl, rowIdx, colIdx) {
+        if (!tableEl) return;
+        const td = tableEl.querySelector(`[data-tm-row="${rowIdx}"][data-tm-col="${colIdx}"]`);
+        const editable = td?.querySelector('[contenteditable]');
+        if (editable) { editable.focus(); _setCursorAtEnd(editable); }
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 80.1 — Sidebar resize
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    const _sidebarResizes = new WeakMap();
+    const TM_SIDEBAR_WIDTH_KEY = 'tm-notion-sidebar-width';
+
+    function initSidebarResize(handleEl, dotNetRef, minWidth, maxWidth) {
+        if (!handleEl) return;
+        if (_sidebarResizes.has(handleEl)) _sidebarResizes.get(handleEl).cleanup();
+
+        const aside = handleEl.closest('.tm-notion-sidebar');
+        if (!aside) return;
+
+        const saved = parseInt(localStorage.getItem(TM_SIDEBAR_WIDTH_KEY), 10);
+        if (saved >= minWidth && saved <= maxWidth) aside.style.width = saved + 'px';
+
+        let active = false, startX = 0, startW = 0;
+
+        const onDown = (e) => {
+            e.preventDefault();
+            active  = true;
+            startX  = e.clientX;
+            startW  = aside.offsetWidth;
+            document.body.style.cursor     = 'ew-resize';
+            document.body.style.userSelect = 'none';
+        };
+
+        const onMove = (e) => {
+            if (!active) return;
+            const w = Math.min(maxWidth, Math.max(minWidth, startW + e.clientX - startX));
+            aside.style.width = w + 'px';
+        };
+
+        const onUp = () => {
+            if (!active) return;
+            active = false;
+            document.body.style.cursor     = '';
+            document.body.style.userSelect = '';
+            const w = aside.offsetWidth;
+            localStorage.setItem(TM_SIDEBAR_WIDTH_KEY, w);
+            dotNetRef?.invokeMethodAsync('OnSidebarResized', w).catch(() => {});
+        };
+
+        handleEl.addEventListener('mousedown', onDown);
+        document.addEventListener('mousemove', onMove);
+        document.addEventListener('mouseup',   onUp);
+
+        _sidebarResizes.set(handleEl, {
+            cleanup() {
+                handleEl.removeEventListener('mousedown', onDown);
+                document.removeEventListener('mousemove', onMove);
+                document.removeEventListener('mouseup',   onUp);
+            }
+        });
+    }
+
+    function destroySidebarResize(handleEl) {
+        if (!handleEl || !_sidebarResizes.has(handleEl)) return;
+        _sidebarResizes.get(handleEl).cleanup();
+        _sidebarResizes.delete(handleEl);
+    }
+
     // ── Public API ─────────────────────────────────────────────────────────────
     return {
         // 26.1
@@ -1208,8 +1324,12 @@ window.tmNotionEditor = (function () {
         startCoverDrag,
         // 32.1
         copyBlockLink,
+        // 62.1
+        copyText,
         // 37.1
         initCodeKeyboardHandler, getCode, setCode,
+        // 58.1
+        initTableRowKeyboardHandler, destroyTableRowKeyboardHandler, tableFocusCell,
         // 43.1
         getRecentSlashItems, addRecentSlashItem,
         clearSlashQuery, refocusSlashElement,
@@ -1224,7 +1344,9 @@ window.tmNotionEditor = (function () {
         // 46.1
         getRecentEmojis, addRecentEmoji, adjustEmojiPickerPosition,
         // 47.1
-        adjustTypeSwitcherPosition
+        adjustTypeSwitcherPosition,
+        // 80.1
+        initSidebarResize, destroySidebarResize
     };
 })();
 
@@ -1310,3 +1432,21 @@ window.tmNotionPdf = (function () {
 
     return { isAvailable, init, renderPage, getTotalPages, setScale, destroy };
 })();
+
+// ── Database utilities ────────────────────────────────────────────────────────
+
+window.tmDb = window.tmDb || {};
+
+window.tmDb.downloadFileFromStream = async function (fileName, contentStreamRef) {
+    const arrayBuffer = await contentStreamRef.arrayBuffer();
+    const blob        = new Blob([arrayBuffer], { type: 'text/csv;charset=utf-8;' });
+    const url         = URL.createObjectURL(blob);
+    const anchor      = document.createElement('a');
+    anchor.href       = url;
+    anchor.download   = fileName;
+    anchor.style.display = 'none';
+    document.body.appendChild(anchor);
+    anchor.click();
+    document.body.removeChild(anchor);
+    setTimeout(() => URL.revokeObjectURL(url), 10000);
+};

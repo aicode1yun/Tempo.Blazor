@@ -10,6 +10,10 @@
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Layout
 @using Tempo.Blazor.Components.NotionEditor.Blocks.Special
 @using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Table
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Page
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Synced
+@using Tempo.Blazor.Components.NotionEditor.Blocks.Database
 
 <div class="tm-notion-block @_blockMods"
      data-notion-block
@@ -336,17 +340,12 @@
             case BlockType.ChildPage:
             {
                 var c = Block.Content as IChildPageBlockContent;
-                <div class="tm-notion-page-link" role="link"
-                     tabindex="0"
-                     @onclick="() => OnNavigateToPage(c?.ChildPageId)"
-                     @onkeydown="@(e => OnPageLinkKeyDown(e, c?.ChildPageId))">
-                    <span class="tm-notion-page-link__icon" aria-hidden="true">
-                        @(string.IsNullOrEmpty(c?.IconEmoji) ? "📄" : c.IconEmoji)
-                    </span>
-                    <span class="tm-notion-page-link__title">
-                        @(string.IsNullOrEmpty(c?.Title) ? Loc["TmNotionEditor_Untitled"] : c.Title)
-                    </span>
-                </div>
+                <TmNotionChildPageBlock Content="c"
+                                        ReadOnly="ReadOnly"
+                                        IsFocused="IsFocused"
+                                        OnNavigate="HandleChildPageNavigateAsync"
+                                        OnRenameCommitted="HandleChildPageRenameCommittedAsync"
+                                        OnFocused="OnFocusedAsync" />
                 break;
             }
 
@@ -354,22 +353,83 @@
             case BlockType.LinkedPage:
             {
                 var c = Block.Content as ILinkedPageBlockContent;
-                <div class="tm-notion-page-link tm-notion-page-link--linked" role="link"
-                     tabindex="0"
-                     @onclick="() => OnNavigateToPage(c?.LinkedPageId)"
-                     @onkeydown="@(e => OnPageLinkKeyDown(e, c?.LinkedPageId))">
-                    <svg class="tm-notion-page-link__external" width="12" height="12" viewBox="0 0 12 12"
-                         fill="none" aria-hidden="true">
-                        <path d="M5 1H1v10h10V7M7 1h4m0 0v4m0-4L5 7"
-                              stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-                    </svg>
-                    <span class="tm-notion-page-link__icon" aria-hidden="true">
-                        @(string.IsNullOrEmpty(c?.IconEmoji) ? "📄" : c.IconEmoji)
-                    </span>
-                    <span class="tm-notion-page-link__title">
-                        @(string.IsNullOrEmpty(c?.Title) ? Loc["TmNotionEditor_Untitled"] : c.Title)
-                    </span>
-                </div>
+                <TmNotionLinkedPageBlock Content="c"
+                                         ReadOnly="ReadOnly"
+                                         OnNavigate="HandleLinkedPageNavigateAsync"
+                                         OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Table of contents ─────────────────────────────────────────────
+            case BlockType.TableOfContents:
+            {
+                var c = Block.Content as ITableOfContentsBlockContent;
+                <TmNotionTableOfContentsBlock Content="c"
+                                              ReadOnly="ReadOnly"
+                                              OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Breadcrumb ───────────────────────────────────────────────────
+            case BlockType.Breadcrumb:
+            {
+                var c = Block.Content as IBreadcrumbBlockContent;
+                <TmNotionBreadcrumbBlock Block="Block"
+                                         Content="c"
+                                         ReadOnly="ReadOnly"
+                                         OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Synced block origin ───────────────────────────────────────────
+            case BlockType.SyncedBlockOrigin:
+            {
+                var c = Block.Content as ISyncedBlockOriginContent;
+                <TmNotionSyncedBlockOrigin Block="Block"
+                                           Content="c"
+                                           ReadOnly="ReadOnly"
+                                           IsFocused="IsFocused"
+                                           OnFocused="OnFocusedAsync"
+                                           OnCopySyncId="HandleSyncedOriginCopySyncIdAsync" />
+                break;
+            }
+
+            // ── Synced block ref ──────────────────────────────────────────────
+            case BlockType.SyncedBlockRef:
+            {
+                var c = Block.Content as ISyncedBlockRefContent;
+                <TmNotionSyncedBlockRef Block="Block"
+                                        Content="c"
+                                        ReadOnly="ReadOnly"
+                                        IsFocused="IsFocused"
+                                        OnFocused="OnFocusedAsync"
+                                        OnUnsync="HandleSyncedRefUnsyncAsync" />
+                break;
+            }
+
+            // ── Template button ───────────────────────────────────────────────
+            case BlockType.TemplateButton:
+            {
+                var c = Block.Content as ITemplateButtonBlockContent;
+                <TmNotionTemplateButtonBlock Content="c"
+                                             ReadOnly="ReadOnly"
+                                             IsFocused="IsFocused"
+                                             OnInsertTemplateBlocks="HandleInsertTemplateBlocksAsync"
+                                             OnUpdated="HandleTemplateButtonUpdatedAsync"
+                                             OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── Inline database ───────────────────────────────────────────────
+            case BlockType.InlineDatabase:
+            // ── Linked database ───────────────────────────────────────────────
+            case BlockType.LinkedDatabase:
+            {
+                <TmNotionDatabaseBlock Block="Block"
+                                       ReadOnly="ReadOnly"
+                                       IsFocused="IsFocused"
+                                       OnFocused="OnFocusedAsync"
+                                       OnUpdated="OnUpdated" />
                 break;
             }
 
@@ -418,6 +478,25 @@
                                         OnFocused="OnFocusedAsync" />
                 break;
             }
+
+            // ── Table ────────────────────────────────────────────────────────
+            case BlockType.Table:
+            {
+                var c = Block.Content as ITableBlockContent;
+                <TmNotionTableBlock Block="Block"
+                                    Content="c"
+                                    ReadOnly="ReadOnly"
+                                    OnUpdated="OnUpdated"
+                                    OnFocused="OnFocusedAsync" />
+                break;
+            }
+
+            // ── TableRow (managed by TmNotionTableBlock — standalone fallback) ─
+            case BlockType.TableRow:
+                <div class="tm-notion-block-unsupported" aria-hidden="true">
+                    <span class="tm-notion-block-unsupported__label">@Block.Type</span>
+                </div>
+                break;
 
             // ── Default / unsupported ────────────────────────────────────────
             default:

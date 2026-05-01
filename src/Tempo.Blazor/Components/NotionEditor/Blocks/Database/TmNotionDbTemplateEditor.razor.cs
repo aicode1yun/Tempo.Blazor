@@ -1,0 +1,224 @@
+using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
+
+namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database;
+
+public partial class TmNotionDbTemplateEditor : ComponentBase
+{
+    // ── Cascaded context ──────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
+
+    // ── Parameters ────────────────────────────────────────────────────────────
+
+    [Parameter, EditorRequired] public IDatabaseRecordTemplate           Template        { get; set; } = default!;
+    [Parameter, EditorRequired] public IReadOnlyList<IDatabaseField>     Fields          { get; set; } = [];
+    [Parameter] public string   DatabaseName { get; set; } = string.Empty;
+    [Parameter] public bool     ReadOnly     { get; set; }
+
+    [Parameter] public EventCallback                             OnClose          { get; set; }
+    [Parameter] public EventCallback<IDatabaseRecordTemplate>   OnTemplateSaved  { get; set; }
+
+    // ── Editing state ─────────────────────────────────────────────────────────
+
+    private string                       _nameBuffer     = string.Empty;
+    private string?                      _iconEmoji;
+    private Dictionary<string, object?>  _localFields    = [];
+    private List<IPageBlock>             _localBlocks    = [];
+    private Guid?                        _editingFieldId;
+    private Guid?                        _activeBlockId;
+    private Guid                         _lastTemplateId;
+
+    // ── Lifecycle ─────────────────────────────────────────────────────────────
+
+    protected override void OnParametersSet()
+    {
+        if (Template.Id == _lastTemplateId) return;
+        _lastTemplateId = Template.Id;
+        _nameBuffer     = Template.Name;
+        _iconEmoji      = Template.IconEmoji;
+        _localFields    = Template.DefaultFields.ToDictionary(k => k.Key, k => k.Value);
+        _localBlocks    = Template.TemplateBlocks.ToList();
+        _editingFieldId = null;
+    }
+
+    // ── Properties ────────────────────────────────────────────────────────────
+
+    private string TemplateName => _nameBuffer is { Length: > 0 } n ? n : Loc["TmNotionDbTemplateEditor_Untitled"];
+
+    private IEnumerable<IDatabaseField> NonPrimaryFields
+        => Fields.Where(f => !f.IsPrimary);
+
+    // ── Save ──────────────────────────────────────────────────────────────────
+
+    private async Task SaveAsync()
+    {
+        if (Context.DatabaseProvider is null || ReadOnly) return;
+        var updated = new DatabaseRecordTemplate
+        {
+            Id             = Template.Id,
+            DatabaseId     = Template.DatabaseId,
+            Name           = _nameBuffer.Trim().Length > 0 ? _nameBuffer.Trim() : Template.Name,
+            IconEmoji      = _iconEmoji,
+            DefaultFields  = new Dictionary<string, object?>(_localFields),
+            TemplateBlocks = _localBlocks.ToList()
+        };
+        try
+        {
+            var result = await Context.DatabaseProvider.UpdateTemplateAsync(
+                Template.DatabaseId.ToString(), updated);
+            await OnTemplateSaved.InvokeAsync(result);
+        }
+        catch { /* silently ignore */ }
+    }
+
+    private async Task HandleCellCommitAsync(IDatabaseField field, object? value)
+    {
+        _localFields[field.Id.ToString()] = value;
+        _editingFieldId = null;
+        await SaveAsync();
+    }
+
+    private async Task CommitNameAsync()
+    {
+        await SaveAsync();
+    }
+
+    // ── Block handlers (all local — no provider) ──────────────────────────────
+
+    private async Task HandleAddBlockAfterAsync((string AfterBlockId, BlockType Type, string? InitialHtml) args)
+    {
+        var afterBlock  = _localBlocks.FirstOrDefault(b => b.Id.ToString() == args.AfterBlockId);
+        var insertOrder = afterBlock is null
+            ? (_localBlocks.Count > 0 ? _localBlocks.Max(b => b.Order) + 1 : 0)
+            : afterBlock.Order + 1;
+
+        var newBlock = new PageBlock
+        {
+            Id      = Guid.NewGuid(),
+            Type    = args.Type,
+            Order   = insertOrder,
+            Content = CreateDefaultContent(args.Type, args.InitialHtml)
+        };
+
+        var insertIdx = afterBlock is null
+            ? _localBlocks.Count
+            : _localBlocks.IndexOf(afterBlock) + 1;
+        _localBlocks.Insert(Math.Clamp(insertIdx, 0, _localBlocks.Count), newBlock);
+        _activeBlockId = newBlock.Id;
+        StateHasChanged();
+        await SaveAsync();
+    }
+
+    private async Task HandleAddBlockAtEndAsync()
+    {
+        var lastId = _localBlocks.Count > 0 ? _localBlocks[^1].Id.ToString() : string.Empty;
+        await HandleAddBlockAfterAsync((lastId, BlockType.Paragraph, null));
+    }
+
+    private Task HandleBlockFocusedAsync(string blockId)
+    {
+        if (Guid.TryParse(blockId, out var id)) _activeBlockId = id;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleBlockUpdatedAsync(IPageBlock updated)
+    {
+        var idx = _localBlocks.FindIndex(b => b.Id == updated.Id);
+        if (idx >= 0) _localBlocks[idx] = updated;
+        await SaveAsync();
+    }
+
+    private async Task HandleBlockDeletedAsync(string blockId)
+    {
+        var removed = _localBlocks.RemoveAll(b => b.Id.ToString() == blockId) > 0;
+        if (removed)
+        {
+            StateHasChanged();
+            await SaveAsync();
+        }
+    }
+
+    private async Task HandleBlockDuplicatedAsync(IPageBlock source)
+    {
+        var dup = new PageBlock
+        {
+            Id      = Guid.NewGuid(),
+            Type    = source.Type,
+            Order   = source.Order + 1,
+            Content = source.Content
+        };
+        var insertAt = _localBlocks.FindIndex(b => b.Id == source.Id) + 1;
+        _localBlocks.Insert(Math.Clamp(insertAt, 0, _localBlocks.Count), dup);
+        StateHasChanged();
+        await SaveAsync();
+    }
+
+    private async Task HandleReorderAsync((int source, int target) args)
+    {
+        if (args.source < 0 || args.source >= _localBlocks.Count) return;
+        var block  = _localBlocks[args.source];
+        var target = Math.Clamp(args.source < args.target ? args.target - 1 : args.target,
+                                0, _localBlocks.Count - 1);
+        _localBlocks.RemoveAt(args.source);
+        _localBlocks.Insert(target, block);
+        StateHasChanged();
+        await SaveAsync();
+    }
+
+    private async Task HandleConvertBlockAsync((string blockId, BlockType newType) args)
+    {
+        var idx = _localBlocks.FindIndex(b => b.Id.ToString() == args.blockId);
+        if (idx < 0) return;
+        var old = _localBlocks[idx];
+        _localBlocks[idx] = new PageBlock
+        {
+            Id      = old.Id,
+            Type    = args.newType,
+            Order   = old.Order,
+            Content = CreateDefaultContent(args.newType, null)
+        };
+        StateHasChanged();
+        await SaveAsync();
+    }
+
+    // ── Field type icon ───────────────────────────────────────────────────────
+
+    internal static Microsoft.AspNetCore.Components.MarkupString FieldTypeIcon(DatabaseFieldType t) =>
+        (Microsoft.AspNetCore.Components.MarkupString)(t switch
+        {
+            DatabaseFieldType.Text        => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><path d='M4 7h16M4 12h16M4 17h10' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>",
+            DatabaseFieldType.Number      => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><path d='M7 20l4-16M13 20l4-16M3 10h18M3 14h18' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>",
+            DatabaseFieldType.Select      => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><circle cx='12' cy='12' r='9' stroke='currentColor' stroke-width='1.5'/><circle cx='12' cy='12' r='4' fill='currentColor'/></svg>",
+            DatabaseFieldType.MultiSelect => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><rect x='2' y='5' width='9' height='6' rx='1' fill='currentColor'/><rect x='13' y='5' width='9' height='6' rx='1' fill='currentColor'/><rect x='2' y='14' width='9' height='6' rx='1' fill='currentColor'/></svg>",
+            DatabaseFieldType.Status      => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><circle cx='12' cy='12' r='9' stroke='currentColor' stroke-width='1.5'/><path d='M8 12l3 3 5-5' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+            DatabaseFieldType.Date or DatabaseFieldType.DateRange => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><rect x='3' y='4' width='18' height='17' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M16 2v4M8 2v4M3 10h18' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>",
+            DatabaseFieldType.Checkbox    => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><rect x='3' y='3' width='18' height='18' rx='2' stroke='currentColor' stroke-width='1.5'/><path d='M7 12l4 4 6-6' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+            DatabaseFieldType.Person or DatabaseFieldType.CreatedBy or DatabaseFieldType.LastEditedBy => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><circle cx='12' cy='8' r='4' stroke='currentColor' stroke-width='1.5'/><path d='M4 20c0-4 3.6-7 8-7s8 3 8 7' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>",
+            DatabaseFieldType.Url         => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><path d='M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/><path d='M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>",
+            DatabaseFieldType.CreatedTime or DatabaseFieldType.LastEditedTime => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><circle cx='12' cy='12' r='9' stroke='currentColor' stroke-width='1.5'/><path d='M12 7v5l3 3' stroke='currentColor' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'/></svg>",
+            _ => "<svg width='14' height='14' viewBox='0 0 24 24' fill='none'><path d='M4 7h16M4 12h16M4 17h10' stroke='currentColor' stroke-width='1.5' stroke-linecap='round'/></svg>"
+        });
+
+    // ── Block content factory ─────────────────────────────────────────────────
+
+    private static IBlockContent CreateDefaultContent(BlockType type, string? html) => type switch
+    {
+        BlockType.Heading1     => new HeadingBlockContent { Html = html, Level = 1 },
+        BlockType.Heading2     => new HeadingBlockContent { Html = html, Level = 2 },
+        BlockType.Heading3     => new HeadingBlockContent { Html = html, Level = 3 },
+        BlockType.BulletList   => new ListBlockContent   { Html = html },
+        BlockType.NumberedList => new ListBlockContent   { Html = html },
+        BlockType.TodoItem     => new TodoBlockContent   { Html = html },
+        BlockType.Toggle       => new ToggleBlockContent { Html = html },
+        BlockType.Quote        => new TextBlockContent   { Html = html },
+        BlockType.Callout      => new CalloutBlockContent { IconEmoji = "💡", Html = html },
+        BlockType.Code         => new CodeBlockContent(),
+        BlockType.Divider      => new DividerBlockContent(),
+        _                      => new TextBlockContent   { Html = html }
+    };
+}

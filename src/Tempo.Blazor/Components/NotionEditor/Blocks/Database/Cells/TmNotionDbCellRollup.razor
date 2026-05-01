@@ -1,0 +1,21 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-dbc tm-dbc--readonly">
+    @if (StringValue.Length > 0)
+    {
+        <span class="tm-dbc__rollup">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M3 3h7v7H3zM14 3h7v7h-7zM3 14h7v7H3z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/>
+                <path d="M17.5 14v7M14 17.5h7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+            @StringValue
+        </span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--muted">@Loc["TmNotionDbCell_ComputedValue"]</span>
+    }
+</div>

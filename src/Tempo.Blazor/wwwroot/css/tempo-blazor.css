@@ -60,9 +60,10 @@
 @import "components/_kanban.css";
 @import "components/_change-diff.css";
 
-/* 7. Data Table */
+/* 7. Data Table & Pivot Table */
 @import "components/_data-table.css";
 @import "components/_bulk-action-bar.css";
+@import "components/_pivot-table.css";
 
 /* 8. Pickers */
 @import "components/_picker-shared.css";
@@ -117,6 +118,7 @@
 @import "components/_notion-variables.css";
 @import "components/_notion-typography.css";
 @import "components/_notion-dark.css";
+@import "components/_cells.css";
 @import "components/_link-dialog.css";
 @import "components/_image-dialog.css";
 @import "components/_table-dialog.css";

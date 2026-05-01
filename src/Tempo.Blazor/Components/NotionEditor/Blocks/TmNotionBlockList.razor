@@ -23,6 +23,7 @@
                        OnDuplicate="OnBlockDuplicated"
                        OnConvertTo="t => OnConvertBlock.InvokeAsync((block.Id.ToString(), t))"
                        OnAddAfter="args => OnAddBlockAfter.InvokeAsync((block.Id.ToString(), args.Type, args.InitialHtml))"
+                       OnInsertTemplateBlocks="blocks => OnInsertTemplateBlocksAfter.InvokeAsync((block.Id.ToString(), blocks))"
                        OnSlashMenu="coords => OnSlashMenu.InvokeAsync((block.Id.ToString(), coords.Top, coords.Left))" />
     }
 

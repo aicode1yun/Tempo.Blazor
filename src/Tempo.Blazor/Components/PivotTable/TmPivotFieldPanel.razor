@@ -1,0 +1,140 @@
+@namespace Tempo.Blazor.Components.PivotTable
+@typeparam TItem
+@using Tempo.Blazor.Abstractions.PivotTable
+
+<div class="tm-pivot-field-panel">
+    <div class="tm-pivot-field-panel-header">
+        <span class="tm-pivot-field-panel-hint">@Loc["TmPivotTable_DragHint"]</span>
+        <div class="tm-pivot-field-panel-actions">
+            <button type="button" class="tm-btn tm-btn--secondary tm-btn--sm" @onclick="ApplyAsync">@Loc["TmPivotTable_Apply"]</button>
+            <button type="button" class="tm-btn tm-btn--ghost tm-btn--sm" @onclick="Reset">@Loc["TmPivotTable_Reset"]</button>
+            <button type="button" class="tm-btn tm-btn--ghost tm-btn--sm" @onclick="ClearAll">@Loc["TmPivotTable_ClearAll"]</button>
+        </div>
+    </div>
+
+    <div class="tm-pivot-field-panel-zones">
+        @* Available Fields *@
+        <div class="tm-pivot-zone @GetZoneClass(PivotArea.Unused)"
+             @ondrop="() => OnZoneDrop(PivotArea.Unused)"
+             @ondragover:preventDefault="true">
+            <span class="tm-pivot-zone-title">@Loc[GetZoneTitle(PivotArea.Unused)]</span>
+            <div class="tm-pivot-zone-content">
+                @foreach (var field in GetFieldsInArea(PivotArea.Unused))
+                {
+                    <TmPivotFieldChip TItem="TItem"
+                                      Field="field"
+                                      Area="PivotArea.Unused"
+                                      AllowDragDrop="AllowDragDrop"
+                                      ShowRemove="false"
+                                      OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Unused)"
+                                      OnDragEnd="OnChipDragEnd" />
+                }
+            </div>
+        </div>
+
+        @* Row Fields *@
+        <div class="tm-pivot-zone @GetZoneClass(PivotArea.Row)"
+             @ondrop="() => OnZoneDrop(PivotArea.Row)"
+             @ondragover:preventDefault="true">
+            <span class="tm-pivot-zone-title">@Loc[GetZoneTitle(PivotArea.Row)]</span>
+            <div class="tm-pivot-zone-content">
+                @foreach (var field in GetFieldsInArea(PivotArea.Row))
+                {
+                    <TmPivotFieldChip TItem="TItem"
+                                      Field="field"
+                                      Area="PivotArea.Row"
+                                      AllowDragDrop="AllowDragDrop"
+                                      ShowRemove="true"
+                                      OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Row)"
+                                      OnDragEnd="OnChipDragEnd"
+                                      OnRemoveClick="() => RemoveField(field.Key, PivotArea.Row)" />
+                }
+            </div>
+        </div>
+
+        @* Column Fields *@
+        <div class="tm-pivot-zone @GetZoneClass(PivotArea.Column)"
+             @ondrop="() => OnZoneDrop(PivotArea.Column)"
+             @ondragover:preventDefault="true">
+            <span class="tm-pivot-zone-title">@Loc[GetZoneTitle(PivotArea.Column)]</span>
+            <div class="tm-pivot-zone-content">
+                @foreach (var field in GetFieldsInArea(PivotArea.Column))
+                {
+                    <TmPivotFieldChip TItem="TItem"
+                                      Field="field"
+                                      Area="PivotArea.Column"
+                                      AllowDragDrop="AllowDragDrop"
+                                      ShowRemove="true"
+                                      OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Column)"
+                                      OnDragEnd="OnChipDragEnd"
+                                      OnRemoveClick="() => RemoveField(field.Key, PivotArea.Column)" />
+                }
+            </div>
+        </div>
+
+        @* Value Fields *@
+        <div class="tm-pivot-zone @GetZoneClass(PivotArea.Data)"
+             @ondrop="() => OnZoneDrop(PivotArea.Data)"
+             @ondragover:preventDefault="true">
+            <span class="tm-pivot-zone-title">@Loc[GetZoneTitle(PivotArea.Data)]</span>
+            <div class="tm-pivot-zone-content">
+                @for (var i = 0; i < _draftValueFields.Count; i++)
+                {
+                    var index = i;
+                    var field = Fields.FirstOrDefault(f => f.Key == _draftValueFields[i].FieldKey);
+                    if (field is null) continue;
+
+                    <div class="tm-pivot-value-field-item">
+                        <TmPivotFieldChip TItem="TItem"
+                                          Field="field"
+                                          Area="PivotArea.Data"
+                                          AllowDragDrop="AllowDragDrop"
+                                          ShowSettings="true"
+                                          ShowRemove="true"
+                                          OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Data)"
+                                          OnDragEnd="OnChipDragEnd"
+                                          OnSettingsClick="() => ToggleValueFieldSettings(index)"
+                                          OnRemoveClick="() => RemoveField(field.Key, PivotArea.Data)" />
+
+                        @if (_editingValueFieldIndex == index)
+                        {
+                            <div class="tm-pivot-value-field-editor">
+                                <label>
+                                    <span>@Loc["TmPivotTable_ValueSettings"]</span>
+                                    <select @onchange="e => HandleAggregationChange(index, e)"
+                                            value="@_draftValueFields[index].Aggregation">
+                                        <option value="Sum">@Loc["TmPivotTable_Aggregation_Sum"]</option>
+                                        <option value="Count">@Loc["TmPivotTable_Aggregation_Count"]</option>
+                                        <option value="Average">@Loc["TmPivotTable_Aggregation_Average"]</option>
+                                        <option value="Min">@Loc["TmPivotTable_Aggregation_Min"]</option>
+                                        <option value="Max">@Loc["TmPivotTable_Aggregation_Max"]</option>
+                                    </select>
+                                </label>
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+
+        @* Filter Fields *@
+        <div class="tm-pivot-zone @GetZoneClass(PivotArea.Filter)"
+             @ondrop="() => OnZoneDrop(PivotArea.Filter)"
+             @ondragover:preventDefault="true">
+            <span class="tm-pivot-zone-title">@Loc[GetZoneTitle(PivotArea.Filter)]</span>
+            <div class="tm-pivot-zone-content">
+                @foreach (var field in GetFieldsInArea(PivotArea.Filter))
+                {
+                    <TmPivotFieldChip TItem="TItem"
+                                      Field="field"
+                                      Area="PivotArea.Filter"
+                                      AllowDragDrop="AllowDragDrop"
+                                      ShowRemove="true"
+                                      OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Filter)"
+                                      OnDragEnd="OnChipDragEnd"
+                                      OnRemoveClick="() => RemoveField(field.Key, PivotArea.Filter)" />
+                }
+            </div>
+        </div>
+    </div>
+</div>

@@ -1663,6 +1663,337 @@
   <data name="TmNotionBlockTypeSwitcher_Lists"        xml:space="preserve"><value>Listes</value></data>
   <data name="TmNotionBlockTypeSwitcher_Blocks"       xml:space="preserve"><value>Blocs</value></data>
 
+  <!-- Phase 58: Table Block -->
+  <data name="TmNotionTableBlock_Loading"                    xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionTableBlock_TableLabel"                 xml:space="preserve"><value>Tableau</value></data>
+  <data name="TmNotionTableBlock_AddRow"                     xml:space="preserve"><value>Nouvelle ligne</value></data>
+  <data name="TmNotionTableBlock_AddColumn"                  xml:space="preserve"><value>Ajouter une colonne</value></data>
+  <data name="TmNotionTableBlock_DeleteColumn"               xml:space="preserve"><value>Supprimer la colonne</value></data>
+  <data name="TmNotionTableBlock_DeleteRow"                  xml:space="preserve"><value>Supprimer la ligne</value></data>
+  <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Glisser pour réorganiser</value></data>
+
+  <!-- Phase 60: Table of Contents Block -->
+  <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Table des matières</value></data>
+  <data name="TmNotionTableOfContentsBlock_Empty"             xml:space="preserve"><value>Aucun titre sur cette page. Ajoutez un bloc Titre.</value></data>
+
+  <!-- Phase 59: Page Blocks -->
+  <data name="TmNotionChildPageBlock_TitlePlaceholder"        xml:space="preserve"><value>Page sans titre</value></data>
+  <data name="TmNotionChildPageBlock_DoubleClickRename"       xml:space="preserve"><value>Double-cliquer pour renommer</value></data>
+  <data name="TmNotionLinkedPageBlock_Label"                  xml:space="preserve"><value>Page liée : {0}</value></data>
+  <data name="TmNotionBreadcrumbBlock_Label"                  xml:space="preserve"><value>Fil d'Ariane</value></data>
+
+  <!-- Phase 62: Synced Blocks -->
+  <data name="TmNotionSyncedBlockOrigin_Badge"         xml:space="preserve"><value>Bloc synchronisé</value></data>
+  <data name="TmNotionSyncedBlockOrigin_SyncedToN"     xml:space="preserve"><value>Synchronisé sur {0} pages</value></data>
+  <data name="TmNotionSyncedBlockOrigin_SyncedTo1"     xml:space="preserve"><value>Synchronisé sur 1 page</value></data>
+  <data name="TmNotionSyncedBlockOrigin_NoSyncRefs"    xml:space="preserve"><value>Non synchronisé sur aucune page</value></data>
+  <data name="TmNotionSyncedBlockOrigin_CopyAndSync"   xml:space="preserve"><value>Copier et synchroniser</value></data>
+  <data name="TmNotionSyncedBlockOrigin_CopyAndSyncTitle" xml:space="preserve"><value>Copier l'ID de synchronisation dans le presse-papiers</value></data>
+  <data name="TmNotionSyncedBlockRef_Badge"            xml:space="preserve"><value>Synchronisé depuis</value></data>
+  <data name="TmNotionSyncedBlockRef_UnknownOrigin"    xml:space="preserve"><value>page inconnue</value></data>
+  <data name="TmNotionSyncedBlockRef_Unsync"           xml:space="preserve"><value>Désynchroniser</value></data>
+  <data name="TmNotionSyncedBlockRef_UnsyncTitle"      xml:space="preserve"><value>Créer une copie indépendante</value></data>
+  <data name="TmNotionSyncedBlockRef_GoToOrigin"       xml:space="preserve"><value>Aller au bloc d'origine</value></data>
+
+  <!-- Phase 61: Template Button Block -->
+  <data name="TmNotionTemplateButtonBlock_DefaultLabel"       xml:space="preserve"><value>Bouton sans nom</value></data>
+  <data name="TmNotionTemplateButtonBlock_InsertTitle"        xml:space="preserve"><value>Insérer les blocs du modèle</value></data>
+  <data name="TmNotionTemplateButtonBlock_ConfigureTitle"     xml:space="preserve"><value>Configurer le bouton modèle</value></data>
+  <data name="TmNotionTemplateButtonBlock_ConfigTitle"        xml:space="preserve"><value>Paramètres du bouton modèle</value></data>
+  <data name="TmNotionTemplateButtonBlock_LabelLabel"         xml:space="preserve"><value>Libellé du bouton</value></data>
+  <data name="TmNotionTemplateButtonBlock_LabelPlaceholder"   xml:space="preserve"><value>Libellé du bouton...</value></data>
+  <data name="TmNotionTemplateButtonBlock_TemplateBlocksLabel" xml:space="preserve"><value>Blocs du modèle</value></data>
+  <data name="TmNotionTemplateButtonBlock_NoTemplateBlocks"   xml:space="preserve"><value>Aucun bloc de modèle. Ajoutez des blocs ci-dessous.</value></data>
+  <data name="TmNotionTemplateButtonBlock_SelectBlockType"    xml:space="preserve"><value>Sélectionner le type de bloc</value></data>
+  <data name="TmNotionTemplateButtonBlock_AddBlock"           xml:space="preserve"><value>Ajouter un bloc</value></data>
+  <data name="TmNotionTemplateButtonBlock_RemoveBlock"        xml:space="preserve"><value>Supprimer le bloc</value></data>
+  <data name="TmNotionTemplateButtonBlock_BlockCount"         xml:space="preserve"><value>{0} blocs</value></data>
+
+  <!-- Phase 64: Database Block -->
+  <data name="TmNotionDatabaseBlock_Untitled"         xml:space="preserve"><value>Sans titre</value></data>
+  <data name="TmNotionDatabaseBlock_TitlePlaceholder" xml:space="preserve"><value>Base de données sans titre</value></data>
+  <data name="TmNotionDatabaseBlock_New"              xml:space="preserve"><value>Nouveau</value></data>
+  <data name="TmNotionDatabaseBlock_AddView"          xml:space="preserve"><value>Ajouter une vue</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTabs"         xml:space="preserve"><value>Vues de la base de données</value></data>
+  <data name="TmNotionDatabaseBlock_Filter"           xml:space="preserve"><value>Filtrer</value></data>
+  <data name="TmNotionDatabaseBlock_Sort"             xml:space="preserve"><value>Trier</value></data>
+  <data name="TmNotionDatabaseBlock_Group"            xml:space="preserve"><value>Grouper</value></data>
+  <data name="TmNotionDatabaseBlock_Properties"       xml:space="preserve"><value>Propriétés</value></data>
+  <data name="TmNotionDatabaseBlock_OpenAsPage"       xml:space="preserve"><value>Ouvrir en pleine page</value></data>
+  <data name="TmNotionDatabaseBlock_NoProvider"       xml:space="preserve"><value>Le fournisseur de base de données n'est pas configuré.</value></data>
+  <data name="TmNotionDatabaseBlock_LoadError"        xml:space="preserve"><value>Échec du chargement de la base de données.</value></data>
+  <data name="TmNotionDatabaseBlock_NoRecords"        xml:space="preserve"><value>Aucun enregistrement</value></data>
+  <data name="TmNotionDatabaseBlock_AddRecord"        xml:space="preserve"><value>Nouvel enregistrement</value></data>
+  <data name="TmNotionDatabaseBlock_AddField"         xml:space="preserve"><value>Ajouter un champ</value></data>
+  <data name="TmNotionDatabaseBlock_ShowAll"          xml:space="preserve"><value>Tout afficher</value></data>
+  <data name="TmNotionDatabaseBlock_HideAll"          xml:space="preserve"><value>Tout masquer</value></data>
+  <data name="TmNotionDatabaseBlock_Uncategorized"    xml:space="preserve"><value>Sans valeur</value></data>
+  <data name="TmNotionDatabaseBlock_FilterEmpty"      xml:space="preserve"><value>Aucun filtre appliqué</value></data>
+  <data name="TmNotionDatabaseBlock_SortEmpty"        xml:space="preserve"><value>Aucun tri appliqué</value></data>
+  <data name="TmNotionDatabaseBlock_GroupEmpty"       xml:space="preserve"><value>Aucun regroupement appliqué</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTable"        xml:space="preserve"><value>Tableau</value></data>
+  <data name="TmNotionDatabaseBlock_ViewBoard"        xml:space="preserve"><value>Tableau Kanban</value></data>
+  <data name="TmNotionDatabaseBlock_ViewGallery"      xml:space="preserve"><value>Galerie</value></data>
+  <data name="TmNotionDatabaseBlock_ViewCalendar"     xml:space="preserve"><value>Calendrier</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTimeline"     xml:space="preserve"><value>Chronologie</value></data>
+  <data name="TmNotionDatabaseBlock_ViewList"         xml:space="preserve"><value>Liste</value></data>
+  <data name="TmNotionDatabaseBlock_CheckedYes"       xml:space="preserve"><value>Oui</value></data>
+  <data name="TmNotionDatabaseBlock_CheckedNo"        xml:space="preserve"><value>Non</value></data>
+
+  <!-- ═══════════════ NOTION DATABASE TABLE VIEW ═══════════════ -->
+  <data name="TmNotionDbTableView_RowHeight"          xml:space="preserve"><value>Hauteur des lignes</value></data>
+  <data name="TmNotionDbTableView_RowHeightShort"     xml:space="preserve"><value>Compact</value></data>
+  <data name="TmNotionDbTableView_RowHeightMedium"    xml:space="preserve"><value>Moyen</value></data>
+  <data name="TmNotionDbTableView_RowHeightTall"      xml:space="preserve"><value>Grand</value></data>
+  <data name="TmNotionDbTableView_WrapCells"          xml:space="preserve"><value>Retour à la ligne</value></data>
+  <data name="TmNotionDbTableView_SelectRow"          xml:space="preserve"><value>Sélectionner la ligne</value></data>
+  <data name="TmNotionDbTableView_SelectAllRows"      xml:space="preserve"><value>Tout sélectionner</value></data>
+  <data name="TmNotionDbTableView_GroupNoValue"       xml:space="preserve"><value>Sans valeur</value></data>
+  <data name="TmNotionDbTableView_GroupChecked"       xml:space="preserve"><value>Coché</value></data>
+  <data name="TmNotionDbTableView_GroupUnchecked"     xml:space="preserve"><value>Non coché</value></data>
+  <data name="TmNotionDbTableView_GroupExpand"        xml:space="preserve"><value>Développer le groupe</value></data>
+  <data name="TmNotionDbTableView_GroupCollapse"      xml:space="preserve"><value>Réduire le groupe</value></data>
+
+  <!-- ═══════════════ NOTION DATABASE CELL EDITORS ═══════════════ -->
+  <data name="TmNotionDbCell_Unassigned"             xml:space="preserve"><value>Non assigné</value></data>
+  <data name="TmNotionDbCell_NoLinkedRecords"        xml:space="preserve"><value>Aucun enregistrement lié</value></data>
+  <data name="TmNotionDbCell_NoFile"                 xml:space="preserve"><value>Aucun fichier</value></data>
+  <data name="TmNotionDbCell_ClearSelection"         xml:space="preserve"><value>Effacer</value></data>
+  <data name="TmNotionDbCell_ComputedValue"          xml:space="preserve"><value>Calculé</value></data>
+  <data name="TmNotionDbCell_OpenLink"               xml:space="preserve"><value>Ouvrir le lien</value></data>
+  <data name="TmNotionDbCell_SendEmail"              xml:space="preserve"><value>Envoyer un e-mail</value></data>
+  <data name="TmNotionDbCell_CallPhone"              xml:space="preserve"><value>Appeler</value></data>
+
+  <!-- TmNotionDbBoardView -->
+  <data name="TmNotionDbBoardView_AddCard"          xml:space="preserve"><value>Ajouter une carte</value></data>
+  <data name="TmNotionDbBoardView_DropHere"         xml:space="preserve"><value>Déposer ici</value></data>
+  <data name="TmNotionDbBoardView_HideEmptyGroups"  xml:space="preserve"><value>Masquer les groupes vides</value></data>
+
+  <!-- TmNotionDbGalleryView -->
+  <data name="TmNotionDbGalleryView_AddCard"        xml:space="preserve"><value>Nouvelle carte</value></data>
+
+  <!-- TmNotionDbCalendarView -->
+  <data name="TmNotionDbCalendarView_Today"         xml:space="preserve"><value>Aujourd'hui</value></data>
+  <data name="TmNotionDbCalendarView_PrevMonth"     xml:space="preserve"><value>Mois précédent</value></data>
+  <data name="TmNotionDbCalendarView_NextMonth"     xml:space="preserve"><value>Mois suivant</value></data>
+  <data name="TmNotionDbCalendarView_NoDateField"   xml:space="preserve"><value>Aucun champ date configuré pour cette vue.</value></data>
+  <data name="TmNotionDbCalendarView_More"          xml:space="preserve"><value>de plus</value></data>
+
+  <!-- TmNotionDbTimelineView -->
+  <data name="TmNotionDbTimelineView_ToggleTable"  xml:space="preserve"><value>Afficher le tableau</value></data>
+  <data name="TmNotionDbTimelineView_Prev"         xml:space="preserve"><value>Période précédente</value></data>
+  <data name="TmNotionDbTimelineView_Next"         xml:space="preserve"><value>Période suivante</value></data>
+  <data name="TmNotionDbTimelineView_Today"        xml:space="preserve"><value>Aujourd'hui</value></data>
+  <data name="TmNotionDbTimelineView_Zoom"         xml:space="preserve"><value>Zoom</value></data>
+  <data name="TmNotionDbTimelineView_ZoomDay"      xml:space="preserve"><value>Jour</value></data>
+  <data name="TmNotionDbTimelineView_ZoomWeek"     xml:space="preserve"><value>Semaine</value></data>
+  <data name="TmNotionDbTimelineView_ZoomMonth"    xml:space="preserve"><value>Mois</value></data>
+  <data name="TmNotionDbTimelineView_Name"         xml:space="preserve"><value>Nom</value></data>
+  <data name="TmNotionDbTimelineView_NewRecord"    xml:space="preserve"><value>Nouvel enregistrement</value></data>
+  <data name="TmNotionDbTimelineView_ResizeBar"    xml:space="preserve"><value>Glisser pour redimensionner</value></data>
+  <data name="TmNotionDbTimelineView_NoStartField" xml:space="preserve"><value>Aucun champ de date de début configuré pour cette vue chronologique.</value></data>
+
+  <!-- TmNotionDbListView -->
+  <data name="TmNotionDbListView_Label"      xml:space="preserve"><value>Liste des enregistrements</value></data>
+  <data name="TmNotionDbListView_Empty"      xml:space="preserve"><value>Aucun enregistrement dans cette vue</value></data>
+  <data name="TmNotionDbListView_NewRecord"  xml:space="preserve"><value>Nouvel enregistrement</value></data>
+  <data name="TmNotionDbListView_Untitled"   xml:space="preserve"><value>Sans titre</value></data>
+  <data name="TmNotionDbListView_Properties" xml:space="preserve"><value>Propriétés</value></data>
+
+  <!-- TmNotionDbFilterBar -->
+  <data name="TmNotionDbFilterBar_Title"            xml:space="preserve"><value>Filtres</value></data>
+  <data name="TmNotionDbFilterBar_Close"            xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbFilterBar_Empty"            xml:space="preserve"><value>Aucun filtre appliqué. Ajoutez un filtre pour affiner les résultats.</value></data>
+  <data name="TmNotionDbFilterBar_AddFilter"        xml:space="preserve"><value>Ajouter un filtre</value></data>
+  <data name="TmNotionDbFilterBar_AddGroup"         xml:space="preserve"><value>Ajouter un groupe de filtres</value></data>
+  <data name="TmNotionDbFilterBar_ClearAll"         xml:space="preserve"><value>Tout effacer</value></data>
+  <data name="TmNotionDbFilterBar_Where"            xml:space="preserve"><value>Où</value></data>
+  <data name="TmNotionDbFilterBar_And"              xml:space="preserve"><value>Et</value></data>
+  <data name="TmNotionDbFilterBar_Or"               xml:space="preserve"><value>Ou</value></data>
+  <data name="TmNotionDbFilterBar_SelectField"      xml:space="preserve"><value>Sélectionner un champ...</value></data>
+  <data name="TmNotionDbFilterBar_ValuePlaceholder" xml:space="preserve"><value>Valeur</value></data>
+  <data name="TmNotionDbFilterBar_SelectOption"     xml:space="preserve"><value>Sélectionner une option...</value></data>
+  <data name="TmNotionDbFilterBar_Remove"           xml:space="preserve"><value>Supprimer la condition</value></data>
+  <data name="TmNotionDbFilterBar_RemoveGroup"      xml:space="preserve"><value>Supprimer le groupe</value></data>
+  <data name="TmNotionDbFilterBar_Op_Contains"           xml:space="preserve"><value>contient</value></data>
+  <data name="TmNotionDbFilterBar_Op_NotContains"        xml:space="preserve"><value>ne contient pas</value></data>
+  <data name="TmNotionDbFilterBar_Op_Equals"             xml:space="preserve"><value>est égal à</value></data>
+  <data name="TmNotionDbFilterBar_Op_NotEquals"          xml:space="preserve"><value>n'est pas égal à</value></data>
+  <data name="TmNotionDbFilterBar_Op_StartsWith"         xml:space="preserve"><value>commence par</value></data>
+  <data name="TmNotionDbFilterBar_Op_EndsWith"           xml:space="preserve"><value>se termine par</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsEmpty"            xml:space="preserve"><value>est vide</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsNotEmpty"         xml:space="preserve"><value>n'est pas vide</value></data>
+  <data name="TmNotionDbFilterBar_Op_GreaterThan"        xml:space="preserve"><value>supérieur à</value></data>
+  <data name="TmNotionDbFilterBar_Op_GreaterThanOrEqual" xml:space="preserve"><value>supérieur ou égal à</value></data>
+  <data name="TmNotionDbFilterBar_Op_LessThan"           xml:space="preserve"><value>inférieur à</value></data>
+  <data name="TmNotionDbFilterBar_Op_LessThanOrEqual"    xml:space="preserve"><value>inférieur ou égal à</value></data>
+  <data name="TmNotionDbFilterBar_Op_Before"             xml:space="preserve"><value>avant</value></data>
+  <data name="TmNotionDbFilterBar_Op_After"              xml:space="preserve"><value>après</value></data>
+  <data name="TmNotionDbFilterBar_Op_OnOrBefore"         xml:space="preserve"><value>le ou avant</value></data>
+  <data name="TmNotionDbFilterBar_Op_OnOrAfter"          xml:space="preserve"><value>le ou après</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsChecked"          xml:space="preserve"><value>est coché</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsUnchecked"        xml:space="preserve"><value>n'est pas coché</value></data>
+  <data name="TmNotionDbFilterBar_Op_ThisWeek"           xml:space="preserve"><value>cette semaine</value></data>
+  <data name="TmNotionDbFilterBar_Op_PastWeek"           xml:space="preserve"><value>la semaine dernière</value></data>
+  <data name="TmNotionDbFilterBar_Op_PastMonth"          xml:space="preserve"><value>le mois dernier</value></data>
+  <data name="TmNotionDbFilterBar_Op_NextWeek"           xml:space="preserve"><value>la semaine prochaine</value></data>
+  <data name="TmNotionDbFilterBar_Op_NextMonth"          xml:space="preserve"><value>le mois prochain</value></data>
+
+  <!-- TmNotionDbSortBar -->
+  <data name="TmNotionDbSortBar_Title"        xml:space="preserve"><value>Trier</value></data>
+  <data name="TmNotionDbSortBar_Close"        xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbSortBar_Empty"        xml:space="preserve"><value>Aucun tri appliqué. Ajoutez un tri pour ordonner les résultats.</value></data>
+  <data name="TmNotionDbSortBar_AddSort"      xml:space="preserve"><value>Ajouter un tri</value></data>
+  <data name="TmNotionDbSortBar_ClearAll"     xml:space="preserve"><value>Tout effacer</value></data>
+  <data name="TmNotionDbSortBar_SelectField"  xml:space="preserve"><value>Sélectionner un champ...</value></data>
+  <data name="TmNotionDbSortBar_Ascending"    xml:space="preserve"><value>Croiss.</value></data>
+  <data name="TmNotionDbSortBar_Descending"   xml:space="preserve"><value>Décr.</value></data>
+  <data name="TmNotionDbSortBar_Remove"       xml:space="preserve"><value>Supprimer le tri</value></data>
+  <data name="TmNotionDbSortBar_DragHandle"   xml:space="preserve"><value>Glisser pour réorganiser</value></data>
+
+  <!-- TmNotionDbGroupBar -->
+  <data name="TmNotionDbGroupBar_Title"       xml:space="preserve"><value>Grouper par</value></data>
+  <data name="TmNotionDbGroupBar_Close"       xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbGroupBar_None"        xml:space="preserve"><value>Sans regroupement</value></data>
+  <data name="TmNotionDbGroupBar_HideEmpty"   xml:space="preserve"><value>Masquer les groupes vides</value></data>
+  <data name="TmNotionDbGroupBar_SortGroups"  xml:space="preserve"><value>Trier les groupes</value></data>
+  <data name="TmNotionDbGroupBar_Ascending"   xml:space="preserve"><value>A → Z</value></data>
+  <data name="TmNotionDbGroupBar_Descending"  xml:space="preserve"><value>Z → A</value></data>
+
+  <!-- TmNotionDbFieldEditor -->
+  <data name="TmNotionDbFieldEditor_Title"                    xml:space="preserve"><value>Modifier le champ</value></data>
+  <data name="TmNotionDbFieldEditor_Close"                    xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbFieldEditor_FieldName"                xml:space="preserve"><value>Nom du champ</value></data>
+  <data name="TmNotionDbFieldEditor_FieldType"                xml:space="preserve"><value>Type de champ</value></data>
+  <data name="TmNotionDbFieldEditor_TypeWarning"              xml:space="preserve"><value>Changer le type peut modifier les données existantes</value></data>
+  <data name="TmNotionDbFieldEditor_Options"                  xml:space="preserve"><value>Options</value></data>
+  <data name="TmNotionDbFieldEditor_AddOption"                xml:space="preserve"><value>Ajouter une option</value></data>
+  <data name="TmNotionDbFieldEditor_RemoveOption"             xml:space="preserve"><value>Supprimer l'option</value></data>
+  <data name="TmNotionDbFieldEditor_Groups"                   xml:space="preserve"><value>Groupes</value></data>
+  <data name="TmNotionDbFieldEditor_NumberFormat"             xml:space="preserve"><value>Format</value></data>
+  <data name="TmNotionDbFieldEditor_Formula"                  xml:space="preserve"><value>Expression</value></data>
+  <data name="TmNotionDbFieldEditor_FormulaPlaceholder"       xml:space="preserve"><value>ex. prop("Priorité") == "Haute"</value></data>
+  <data name="TmNotionDbFieldEditor_RelationTarget"           xml:space="preserve"><value>Liée à (ID de la base)</value></data>
+  <data name="TmNotionDbFieldEditor_RelationTargetPlaceholder" xml:space="preserve"><value>Coller l'ID de la base…</value></data>
+  <data name="TmNotionDbFieldEditor_Bidirectional"            xml:space="preserve"><value>Afficher dans la base liée</value></data>
+  <data name="TmNotionDbFieldEditor_RollupRelation"           xml:space="preserve"><value>Relation</value></data>
+  <data name="TmNotionDbFieldEditor_RollupProperty"           xml:space="preserve"><value>Propriété</value></data>
+  <data name="TmNotionDbFieldEditor_RollupAggregate"          xml:space="preserve"><value>Calcul</value></data>
+  <data name="TmNotionDbFieldEditor_SelectField"              xml:space="preserve"><value>Sélectionner un champ…</value></data>
+  <data name="TmNotionDbFieldEditor_NoRelationFields"         xml:space="preserve"><value>Aucun champ Relation disponible. Ajoutez d'abord un champ Relation.</value></data>
+  <data name="TmNotionDbFieldEditor_DateFormat"               xml:space="preserve"><value>Format de date</value></data>
+  <data name="TmNotionDbFieldEditor_IncludeTime"              xml:space="preserve"><value>Inclure l'heure</value></data>
+  <data name="TmNotionDbFieldEditor_Duplicate"                xml:space="preserve"><value>Dupliquer le champ</value></data>
+  <data name="TmNotionDbFieldEditor_Delete"                   xml:space="preserve"><value>Supprimer le champ</value></data>
+  <data name="TmNotionDbFieldEditor_Save"                     xml:space="preserve"><value>Enregistrer</value></data>
+  <!-- Field types -->
+  <data name="TmNotionDbFieldEditor_Type_Text"           xml:space="preserve"><value>Texte</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Number"         xml:space="preserve"><value>Nombre</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Select"         xml:space="preserve"><value>Sélection</value></data>
+  <data name="TmNotionDbFieldEditor_Type_MultiSelect"    xml:space="preserve"><value>Sélection multiple</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Status"         xml:space="preserve"><value>Statut</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Date"           xml:space="preserve"><value>Date</value></data>
+  <data name="TmNotionDbFieldEditor_Type_DateRange"      xml:space="preserve"><value>Plage de dates</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Person"         xml:space="preserve"><value>Personne</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Files"          xml:space="preserve"><value>Fichiers et médias</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Checkbox"       xml:space="preserve"><value>Case à cocher</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Url"            xml:space="preserve"><value>URL</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Email"          xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Phone"          xml:space="preserve"><value>Téléphone</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Formula"        xml:space="preserve"><value>Formule</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Relation"       xml:space="preserve"><value>Relation</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Rollup"         xml:space="preserve"><value>Rollup</value></data>
+  <data name="TmNotionDbFieldEditor_Type_CreatedTime"    xml:space="preserve"><value>Date de création</value></data>
+  <data name="TmNotionDbFieldEditor_Type_CreatedBy"      xml:space="preserve"><value>Créé par</value></data>
+  <data name="TmNotionDbFieldEditor_Type_LastEditedTime" xml:space="preserve"><value>Date de dernière modification</value></data>
+  <data name="TmNotionDbFieldEditor_Type_LastEditedBy"   xml:space="preserve"><value>Dernière modification par</value></data>
+  <!-- Number formats -->
+  <data name="TmNotionDbFieldEditor_NF_Number"           xml:space="preserve"><value>Nombre</value></data>
+  <data name="TmNotionDbFieldEditor_NF_NumberWithCommas" xml:space="preserve"><value>Nombre avec séparateurs</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Percent"          xml:space="preserve"><value>Pourcentage</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Dollar"           xml:space="preserve"><value>Dollar</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Euro"             xml:space="preserve"><value>Euro</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Pound"            xml:space="preserve"><value>Livre sterling</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Yen"              xml:space="preserve"><value>Yen</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Rupee"            xml:space="preserve"><value>Roupie</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Won"              xml:space="preserve"><value>Won</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Yuan"             xml:space="preserve"><value>Yuan</value></data>
+  <!-- Rollup aggregations -->
+  <data name="TmNotionDbFieldEditor_RA_Count"             xml:space="preserve"><value>Compter tout</value></data>
+  <data name="TmNotionDbFieldEditor_RA_CountValues"       xml:space="preserve"><value>Compter les valeurs</value></data>
+  <data name="TmNotionDbFieldEditor_RA_CountUniqueValues" xml:space="preserve"><value>Compter les valeurs uniques</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Sum"               xml:space="preserve"><value>Somme</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Average"           xml:space="preserve"><value>Moyenne</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Min"               xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Max"               xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Median"            xml:space="preserve"><value>Médiane</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Range"             xml:space="preserve"><value>Plage</value></data>
+  <data name="TmNotionDbFieldEditor_RA_ShowOriginal"      xml:space="preserve"><value>Afficher l'original</value></data>
+  <data name="TmNotionDbFieldEditor_RA_PercentEmpty"      xml:space="preserve"><value>Pourcentage vide</value></data>
+  <data name="TmNotionDbFieldEditor_RA_PercentNotEmpty"   xml:space="preserve"><value>Pourcentage non vide</value></data>
+  <!-- Date formats -->
+  <data name="TmNotionDbFieldEditor_DF_Full"              xml:space="preserve"><value>Date complète (ex. 29 avril 2026)</value></data>
+  <data name="TmNotionDbFieldEditor_DF_Short"             xml:space="preserve"><value>Abrégé (ex. 29 avr. 2026)</value></data>
+  <data name="TmNotionDbFieldEditor_DF_ISO"               xml:space="preserve"><value>ISO 8601 (2026-04-29)</value></data>
+
+  <!-- TmNotionDbRecordDetail -->
+  <data name="TmNotionDbRecordDetail_Untitled"           xml:space="preserve"><value>Sans titre</value></data>
+  <data name="TmNotionDbRecordDetail_Close"              xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbRecordDetail_OpenAsPage"         xml:space="preserve"><value>Ouvrir en pleine page</value></data>
+  <data name="TmNotionDbRecordDetail_Properties"         xml:space="preserve"><value>Propriétés</value></data>
+
+  <!-- TmNotionDbTemplateMenu -->
+  <data name="TmNotionDbTemplateMenu_Title"             xml:space="preserve"><value>Modèles</value></data>
+  <data name="TmNotionDbTemplateMenu_Close"             xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbTemplateMenu_NewTemplate"       xml:space="preserve"><value>Nouveau modèle</value></data>
+  <data name="TmNotionDbTemplateMenu_DefaultName"       xml:space="preserve"><value>Modèle sans titre</value></data>
+  <data name="TmNotionDbTemplateMenu_Empty"             xml:space="preserve"><value>Aucun modèle pour l'instant</value></data>
+  <data name="TmNotionDbTemplateMenu_UseTemplate"       xml:space="preserve"><value>Utiliser le modèle</value></data>
+  <data name="TmNotionDbTemplateMenu_EditTemplate"      xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmNotionDbTemplateMenu_Delete"            xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionDbTemplateMenu_ConfirmDelete"     xml:space="preserve"><value>Supprimer le modèle ?</value></data>
+  <data name="TmNotionDbTemplateMenu_Cancel"            xml:space="preserve"><value>Annuler</value></data>
+
+  <!-- TmNotionDbTemplateEditor -->
+  <data name="TmNotionDbTemplateEditor_Untitled"        xml:space="preserve"><value>Modèle sans titre</value></data>
+  <data name="TmNotionDbTemplateEditor_Close"           xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbTemplateEditor_Properties"      xml:space="preserve"><value>Propriétés</value></data>
+  <data name="TmNotionDbTemplateEditor_Breadcrumb"      xml:space="preserve"><value>Modifier le modèle</value></data>
+
+  <!-- TmNotionDbTableView sub-items -->
+  <data name="TmNotionDbTableView_ExpandRow"            xml:space="preserve"><value>Développer les sous-éléments</value></data>
+  <data name="TmNotionDbTableView_CollapseRow"          xml:space="preserve"><value>Réduire les sous-éléments</value></data>
+
+  <!-- TmNotionDbBoardView sub-items -->
+  <data name="TmNotionDbBoardView_SubItems"             xml:space="preserve"><value>sous-éléments</value></data>
+
+  <!-- TmNotionDatabaseBlock Phase 77 + 78 -->
+  <data name="TmNotionDatabaseBlock_Templates"          xml:space="preserve"><value>Modèles</value></data>
+  <data name="TmNotionDatabaseBlock_SubItems"           xml:space="preserve"><value>Sous-éléments</value></data>
+  <data name="TmNotionDatabaseBlock_ImportExport"       xml:space="preserve"><value>Import / Export</value></data>
+
+  <!-- TmNotionDbImportExport -->
+  <data name="TmNotionDbImportExport_Title"             xml:space="preserve"><value>Import / Export</value></data>
+  <data name="TmNotionDbImportExport_Close"             xml:space="preserve"><value>Fermer</value></data>
+  <data name="TmNotionDbImportExport_TabImport"         xml:space="preserve"><value>Importer</value></data>
+  <data name="TmNotionDbImportExport_TabExport"         xml:space="preserve"><value>Exporter</value></data>
+  <data name="TmNotionDbImportExport_DropZone"          xml:space="preserve"><value>Déposez un fichier CSV ici, ou cliquez pour sélectionner</value></data>
+  <data name="TmNotionDbImportExport_DropZoneHint"      xml:space="preserve"><value>Fichiers .csv jusqu'à 10 Mo</value></data>
+  <data name="TmNotionDbImportExport_FileMustBeCsv"     xml:space="preserve"><value>Veuillez sélectionner un fichier .csv valide</value></data>
+  <data name="TmNotionDbImportExport_FileTooBig"        xml:space="preserve"><value>Fichier trop volumineux (max. 10 Mo)</value></data>
+  <data name="TmNotionDbImportExport_CsvColumn"         xml:space="preserve"><value>Colonne CSV</value></data>
+  <data name="TmNotionDbImportExport_MapsTo"            xml:space="preserve"><value>Correspond au champ</value></data>
+  <data name="TmNotionDbImportExport_Preview"           xml:space="preserve"><value>Aperçu</value></data>
+  <data name="TmNotionDbImportExport_Skip"              xml:space="preserve"><value>Ignorer</value></data>
+  <data name="TmNotionDbImportExport_RowsToImport"      xml:space="preserve"><value>{0} lignes seront importées</value></data>
+  <data name="TmNotionDbImportExport_ImportBtn"         xml:space="preserve"><value>Importer</value></data>
+  <data name="TmNotionDbImportExport_Back"              xml:space="preserve"><value>Retour</value></data>
+  <data name="TmNotionDbImportExport_ImportError"       xml:space="preserve"><value>L'importation a échoué. Vérifiez le fichier et réessayez.</value></data>
+  <data name="TmNotionDbImportExport_ExportAll"         xml:space="preserve"><value>Toutes les données</value></data>
+  <data name="TmNotionDbImportExport_ExportView"        xml:space="preserve"><value>Sélectionnez ce à exporter</value></data>
+  <data name="TmNotionDbImportExport_ExportBtn"         xml:space="preserve"><value>Télécharger CSV</value></data>
+  <data name="TmNotionDbImportExport_ExportError"       xml:space="preserve"><value>L'exportation a échoué. Veuillez réessayer.</value></data>
+
   <!-- Phase 56: Equation Block -->
   <data name="TmNotionEquationBlock_EditLabel"               xml:space="preserve"><value>Modifier l'équation</value></data>
   <data name="TmNotionEquationBlock_EditorLabel"             xml:space="preserve"><value>LaTeX</value></data>
@@ -1670,5 +2001,74 @@
   <data name="TmNotionEquationBlock_Hint"                    xml:space="preserve"><value>Entrée ↵ pour confirmer · Maj+Entrée nouvelle ligne · Échap pour annuler</value></data>
   <data name="TmNotionEquationBlock_Done"                    xml:space="preserve"><value>Terminé</value></data>
   <data name="TmNotionEquationBlock_Cancel"                  xml:space="preserve"><value>Annuler</value></data>
+
+  <!-- ═══════════════ TmNotionSidebar (Phase 80) ═══════════════ -->
+  <data name="TmNotionSidebar_NewPage"           xml:space="preserve"><value>Nouvelle page</value></data>
+  <data name="TmNotionSidebar_Search"            xml:space="preserve"><value>Rechercher</value></data>
+  <data name="TmNotionSidebar_SearchPlaceholder" xml:space="preserve"><value>Rechercher des pages…</value></data>
+  <data name="TmNotionSidebar_SearchNoResults"   xml:space="preserve"><value>Aucune page trouvée</value></data>
+  <data name="TmNotionSidebar_SearchLoading"     xml:space="preserve"><value>Recherche…</value></data>
+  <data name="TmNotionSidebar_CloseSearch"       xml:space="preserve"><value>Fermer la recherche</value></data>
+  <data name="TmNotionSidebar_Favorites"         xml:space="preserve"><value>Favoris</value></data>
+  <data name="TmNotionSidebar_Recent"            xml:space="preserve"><value>Récent</value></data>
+  <data name="TmNotionSidebar_Pages"             xml:space="preserve"><value>Pages</value></data>
+  <data name="TmNotionSidebar_Trash"             xml:space="preserve"><value>Corbeille</value></data>
+  <data name="TmNotionSidebar_Untitled"          xml:space="preserve"><value>Sans titre</value></data>
+  <data name="TmNotionSidebar_NoFavorites"       xml:space="preserve"><value>Aucun favori pour l'instant</value></data>
+  <data name="TmNotionSidebar_NoRecent"          xml:space="preserve"><value>Aucune page récente</value></data>
+  <data name="TmNotionSidebar_NoPages"           xml:space="preserve"><value>Aucune page pour l'instant</value></data>
+  <data name="TmNotionSidebar_TrashCount"        xml:space="preserve"><value>{0} dans la corbeille</value></data>
+  <data name="TmNotionSidebar_TrashEmpty"        xml:space="preserve"><value>La corbeille est vide</value></data>
+  <data name="TmNotionSidebar_TrashOpen"         xml:space="preserve"><value>Ouvrir la corbeille</value></data>
+  <data name="TmNotionSidebar_Loading"           xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionSidebar_LoadError"         xml:space="preserve"><value>Échec du chargement de la barre latérale</value></data>
+  <data name="TmNotionSidebar_Unfavorite"        xml:space="preserve"><value>Retirer des favoris</value></data>
+  <data name="TmNotionSidebar_Favorite"          xml:space="preserve"><value>Ajouter aux favoris</value></data>
+  <data name="TmNotionSidebar_ResizeHandle"      xml:space="preserve"><value>Glisser pour redimensionner</value></data>
+  <data name="TmNotionSidebar_ExpandSection"     xml:space="preserve"><value>Développer la section</value></data>
+  <data name="TmNotionSidebar_CollapseSection"   xml:space="preserve"><value>Réduire la section</value></data>
+  <data name="TmNotionSidebar_PageCount"         xml:space="preserve"><value>{0} pages</value></data>
+  <data name="TmNotionSidebar_CreatingPage"      xml:space="preserve"><value>Création…</value></data>
+  <data name="TmNotionSidebar_OpenPage"          xml:space="preserve"><value>Ouvrir la page</value></data>
+
+  <data name="TmNotionPageTree_Rename"          xml:space="preserve"><value>Renommer</value></data>
+  <data name="TmNotionPageTree_Duplicate"       xml:space="preserve"><value>Dupliquer</value></data>
+  <data name="TmNotionPageTree_MoveTo"          xml:space="preserve"><value>Déplacer vers</value></data>
+  <data name="TmNotionPageTree_Favorite"        xml:space="preserve"><value>Ajouter aux favoris</value></data>
+  <data name="TmNotionPageTree_Unfavorite"      xml:space="preserve"><value>Retirer des favoris</value></data>
+  <data name="TmNotionPageTree_Delete"          xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionPageTree_NewChildPage"    xml:space="preserve"><value>Nouvelle sous-page</value></data>
+  <data name="TmNotionPageTree_ExpandNode"      xml:space="preserve"><value>Développer</value></data>
+  <data name="TmNotionPageTree_CollapseNode"    xml:space="preserve"><value>Réduire</value></data>
+  <data name="TmNotionPageTree_OpenMenu"        xml:space="preserve"><value>Plus d'options</value></data>
+  <data name="TmNotionPageTree_Untitled"        xml:space="preserve"><value>Sans titre</value></data>
+  <data name="TmNotionPageTree_DeleteConfirm"   xml:space="preserve"><value>Supprimer cette page ?</value></data>
+  <data name="TmNotionPageTree_DeleteYes"       xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionPageTree_DeleteNo"        xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmNotionPageTree_MoveToTitle"     xml:space="preserve"><value>Déplacer vers</value></data>
+  <data name="TmNotionPageTree_MoveToSearch"    xml:space="preserve"><value>Rechercher des pages…</value></data>
+  <data name="TmNotionPageTree_MoveToRoot"      xml:space="preserve"><value>Niveau supérieur</value></data>
+  <data name="TmNotionPageTree_NoPages"         xml:space="preserve"><value>Aucune page. Cliquez sur + pour en créer une.</value></data>
+  <data name="TmNotionPageTree_LoadingChildren" xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionPageTree_RenameHint"      xml:space="preserve"><value>Renommer : {0}</value></data>
+
+  <!-- ═══════════════ TmPivotTable ═══════════════ -->
+  <data name="TmPivotTable_Loading" xml:space="preserve"><value>Chargement du tableau croisé...</value></data>
+  <data name="TmPivotTable_NoData" xml:space="preserve"><value>Aucune donnée à afficher</value></data>
+  <data name="TmPivotTable_AvailableFields" xml:space="preserve"><value>Champs disponibles</value></data>
+  <data name="TmPivotTable_RowFields" xml:space="preserve"><value>Champs de lignes</value></data>
+  <data name="TmPivotTable_ColumnFields" xml:space="preserve"><value>Champs de colonnes</value></data>
+  <data name="TmPivotTable_ValueFields" xml:space="preserve"><value>Valeurs</value></data>
+  <data name="TmPivotTable_FilterFields" xml:space="preserve"><value>Filtres</value></data>
+  <data name="TmPivotTable_Apply" xml:space="preserve"><value>Appliquer</value></data>
+  <data name="TmPivotTable_Reset" xml:space="preserve"><value>Réinitialiser</value></data>
+  <data name="TmPivotTable_ClearAll" xml:space="preserve"><value>Tout effacer</value></data>
+  <data name="TmPivotTable_DragHint" xml:space="preserve"><value>Glisser les champs vers les zones</value></data>
+  <data name="TmPivotTable_ValueSettings" xml:space="preserve"><value>Paramètres de valeur</value></data>
+  <data name="TmPivotTable_Aggregation_Sum" xml:space="preserve"><value>Somme</value></data>
+  <data name="TmPivotTable_Aggregation_Count" xml:space="preserve"><value>Compte</value></data>
+  <data name="TmPivotTable_Aggregation_Average" xml:space="preserve"><value>Moyenne</value></data>
+  <data name="TmPivotTable_Aggregation_Min" xml:space="preserve"><value>Min</value></data>
+  <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Max</value></data>
 
 </root>

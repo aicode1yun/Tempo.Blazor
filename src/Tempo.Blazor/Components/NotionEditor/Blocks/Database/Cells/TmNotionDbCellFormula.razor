@@ -1,0 +1,15 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbc tm-dbc--readonly"
+     title="@Loc["TmNotionDbCell_ComputedValue"]">
+    @if (StringValue.Length > 0)
+    {
+        <span class="tm-dbc__computed">@StringValue</span>
+    }
+    else
+    {
+        <span class="tm-dbc__text tm-dbc__text--muted">@Loc["TmNotionDbCell_ComputedValue"]</span>
+    }
+</div>

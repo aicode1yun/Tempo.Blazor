@@ -52,6 +52,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     /// <summary>Fired when a block's '/' keystroke opens the slash menu (blockId, top, left).</summary>
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
 
+    /// <summary>Fired when a template button block inserts its template blocks after itself.</summary>
+    [Parameter] public EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)> OnInsertTemplateBlocksAfter { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                             _listRef;

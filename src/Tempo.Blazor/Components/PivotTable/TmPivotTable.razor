@@ -1,0 +1,41 @@
+@namespace Tempo.Blazor.Components.PivotTable
+@typeparam TItem
+
+<div class="tm-pivot-table-wrapper @Class" @attributes="AdditionalAttributes">
+    @if (ShowConfigurationPanel)
+    {
+        <TmPivotFieldPanel TItem="TItem"
+                           Fields="Fields"
+                           RowFieldKeys="RowFieldKeys"
+                           ColumnFieldKeys="ColumnFieldKeys"
+                           ValueFields="ValueFields"
+                           FilterFields="FilterFields"
+                           AllowDragDrop="AllowDragDrop"
+                           OnConfigurationChanged="OnConfigurationPanelChangedAsync" />
+    }
+
+    @if (ShowLoading)
+    {
+        <div class="tm-pivot-loading">
+            <TmSpinner />
+            <span class="tm-pivot-loading-text">@Loc["TmPivotTable_Loading"]</span>
+        </div>
+    }
+    else if (!HasData)
+    {
+        <TmEmptyState Title="@(EmptyTitle ?? Loc["TmPivotTable_NoData"])" />
+    }
+    else
+    {
+        <div class="tm-pivot-table-scroll">
+            <table class="tm-pivot-table">
+                <thead>
+                    @RenderHeader()
+                </thead>
+                <tbody>
+                    @RenderBody()
+                </tbody>
+            </table>
+        </div>
+    }
+</div>

@@ -1,0 +1,68 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Synced
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.Components.NotionEditor.Blocks
+
+<div class="tm-synced-origin @(IsFocused ? "tm-synced-origin--focused" : "")"
+     @onfocus="OnFocused"
+     tabindex="-1">
+
+    @* ── Header bar ───────────────────────────────────────────────────────────── *@
+    <div class="tm-synced-origin__header">
+        <span class="tm-synced-origin__badge" aria-label="@Loc["TmNotionSyncedBlockOrigin_Badge"]">
+            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"
+                      stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+            </svg>
+            @Loc["TmNotionSyncedBlockOrigin_Badge"]
+        </span>
+
+        <span class="tm-synced-origin__ref-count">
+            @(_refCount switch
+            {
+                0    => Loc["TmNotionSyncedBlockOrigin_NoSyncRefs"],
+                1    => Loc["TmNotionSyncedBlockOrigin_SyncedTo1"],
+                var n => Loc["TmNotionSyncedBlockOrigin_SyncedToN", n]
+            })
+        </span>
+
+        @if (!ReadOnly && Content is not null)
+        {
+            <button type="button"
+                    class="tm-synced-origin__copy-btn"
+                    @onclick="HandleCopySyncIdAsync"
+                    title="@Loc["TmNotionSyncedBlockOrigin_CopyAndSyncTitle"]">
+                <svg width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="8" y="8" width="13" height="13" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                @Loc["TmNotionSyncedBlockOrigin_CopyAndSync"]
+            </button>
+        }
+    </div>
+
+    @* ── Content area ─────────────────────────────────────────────────────────── *@
+    <div class="tm-synced-origin__body">
+        @if (_loading)
+        {
+            <div class="tm-synced-origin__skeleton">
+                <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:85%"></div>
+                <div class="tm-notion-skeleton tm-notion-skeleton--line" style="width:65%"></div>
+            </div>
+        }
+        else
+        {
+            <TmNotionBlockList Blocks="_children"
+                               ReadOnly="ReadOnly"
+                               ActiveBlockId="_activeChildId"
+                               OnReorder="HandleChildReorderAsync"
+                               OnBlockFocused="HandleChildFocusedAsync"
+                               OnBlockDeleted="HandleChildDeletedAsync"
+                               OnBlockUpdated="HandleChildUpdatedAsync"
+                               OnBlockDuplicated="HandleChildDuplicatedAsync"
+                               OnConvertBlock="HandleChildConvertAsync"
+                               OnAddBlockAfter="HandleChildAddAfterAsync"
+                               OnAddBlockAtEnd="HandleChildAddAtEndAsync" />
+        }
+    </div>
+
+</div>

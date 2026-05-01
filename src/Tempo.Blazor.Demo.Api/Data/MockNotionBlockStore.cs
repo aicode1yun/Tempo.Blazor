@@ -260,6 +260,23 @@ public class MockNotionBlockStore
         Add(BlockType.Diagram, 30, new DiagramBlockContent());
 
         Add(BlockType.Wireframe, 31, new WireframeBlockContent());
+
+        // ── Phase 3: Inline Database ──────────────────────────────────────────
+
+        Add(BlockType.Heading2, 32, new HeadingBlockContent { Level = 2, Html = "Phase 3: Inline Database" });
+
+        Add(BlockType.Paragraph, 33, new TextBlockContent
+        {
+            Html = "The database below is fully functional. Switch views using the tabs, filter and sort records, edit fields, open record details, and test import/export."
+        });
+
+        Add(BlockType.InlineDatabase, 34, new InlineDatabaseBlockContent
+        {
+            DatabaseId   = MockNotionDatabaseStore.DbId,
+            Title        = "Project Tasks",
+            IconEmoji    = "📋",
+            ActiveViewId = Guid.Parse("e0000000-0000-0000-0000-000000000001")
+        });
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

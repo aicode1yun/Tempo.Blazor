@@ -1,0 +1,313 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+@* ── Search panel (slide-over inside sidebar) ─────────────────────────────── *@
+
+@if (_searchOpen)
+{
+    <div class="tm-ns-search" role="search" aria-label="@Loc["TmNotionSidebar_Search"]">
+
+        <div class="tm-ns-search__bar">
+            <svg class="tm-ns-search__icon" width="14" height="14" viewBox="0 0 14 14"
+                 fill="none" aria-hidden="true">
+                <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.25"/>
+                <path d="M9.5 9.5L12 12" stroke="currentColor" stroke-width="1.25"
+                      stroke-linecap="round"/>
+            </svg>
+            <input class="tm-ns-search__input"
+                   type="search"
+                   autocomplete="off"
+                   spellcheck="false"
+                   placeholder="@Loc["TmNotionSidebar_SearchPlaceholder"]"
+                   value="@_searchQuery"
+                   @oninput="OnSearchInputAsync"
+                   @onkeydown="OnSearchKeyDownAsync"
+                   @ref="_searchInputRef"
+                   aria-label="@Loc["TmNotionSidebar_Search"]" />
+            <button class="tm-ns-search__close"
+                    type="button"
+                    title="@Loc["TmNotionSidebar_CloseSearch"]"
+                    aria-label="@Loc["TmNotionSidebar_CloseSearch"]"
+                    @onclick="CloseSearch">
+                <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                    <path d="M2 2l8 8M10 2l-8 8" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round"/>
+                </svg>
+            </button>
+        </div>
+
+        <div class="tm-ns-search__results" role="listbox">
+            @if (_searchLoading)
+            {
+                <div class="tm-ns-search__status">
+                    <span class="tm-ns-spinner" aria-hidden="true"></span>
+                    @Loc["TmNotionSidebar_SearchLoading"]
+                </div>
+            }
+            else if (_searchError is not null)
+            {
+                <div class="tm-ns-search__status tm-ns-search__status--error">
+                    @_searchError
+                </div>
+            }
+            else if (!string.IsNullOrWhiteSpace(_searchQuery) && _searchResults.Count == 0)
+            {
+                <div class="tm-ns-search__status">
+                    @Loc["TmNotionSidebar_SearchNoResults"]
+                </div>
+            }
+            else
+            {
+                @foreach (var page in _searchResults)
+                {
+                    <button class="tm-ns-page-item tm-ns-search__result @(IsActivePage(page) ? "tm-ns-page-item--active" : "")"
+                            type="button"
+                            role="option"
+                            aria-selected="@IsActivePage(page)"
+                            title="@GetPageTitle(page)"
+                            @onclick="async () => { CloseSearch(); await NavigateToAsync(page); }">
+                        <span class="tm-ns-page-item__icon" aria-hidden="true">@GetPageIcon(page)</span>
+                        <span class="tm-ns-page-item__title">@GetPageTitle(page)</span>
+                    </button>
+                }
+            }
+        </div>
+
+    </div>
+}
+else
+{
+    @* ── Header ───────────────────────────────────────────────────────────── *@
+
+    <header class="tm-ns-header">
+
+        <button class="tm-ns-btn-search"
+                type="button"
+                title="@Loc["TmNotionSidebar_Search"]"
+                aria-label="@Loc["TmNotionSidebar_Search"]"
+                @onclick="OpenSearchAsync">
+            <svg class="tm-ns-btn-search__icon" width="13" height="13" viewBox="0 0 13 13"
+                 fill="none" aria-hidden="true">
+                <circle cx="5.5" cy="5.5" r="4" stroke="currentColor" stroke-width="1.25"/>
+                <path d="M8.5 8.5L11 11" stroke="currentColor" stroke-width="1.25"
+                      stroke-linecap="round"/>
+            </svg>
+            <span class="tm-ns-btn-search__label">@Loc["TmNotionSidebar_Search"]</span>
+            <kbd class="tm-ns-btn-search__kbd" aria-hidden="true">Ctrl K</kbd>
+        </button>
+
+        <button class="tm-ns-btn-new @(_isCreatingPage ? "tm-ns-btn-new--loading" : "")"
+                type="button"
+                disabled="@_isCreatingPage"
+                title="@Loc["TmNotionSidebar_NewPage"]"
+                aria-label="@Loc["TmNotionSidebar_NewPage"]"
+                aria-busy="@_isCreatingPage"
+                @onclick="CreateNewPageAsync">
+            @if (_isCreatingPage)
+            {
+                <span class="tm-ns-spinner" aria-hidden="true"></span>
+                <span>@Loc["TmNotionSidebar_CreatingPage"]</span>
+            }
+            else
+            {
+                <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                    <path d="M7 1v12M1 7h12" stroke="currentColor" stroke-width="1.5"
+                          stroke-linecap="round"/>
+                </svg>
+                <span>@Loc["TmNotionSidebar_NewPage"]</span>
+            }
+        </button>
+
+    </header>
+
+    @* ── Content ──────────────────────────────────────────────────────────── *@
+
+    <div class="tm-ns-content" role="navigation" aria-label="@Loc["TmNotionEditor_SidebarLabel"]">
+
+        @if (_isLoading)
+        {
+            <div class="tm-ns-loading" aria-busy="true" aria-live="polite">
+                <span class="tm-ns-spinner" aria-hidden="true"></span>
+                <span>@Loc["TmNotionSidebar_Loading"]</span>
+            </div>
+        }
+        else if (_loadError is not null)
+        {
+            <div class="tm-ns-error" role="alert">
+                <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <circle cx="8" cy="8" r="6.5" stroke="currentColor" stroke-width="1.25"/>
+                    <path d="M8 5v3.5M8 10.5h.01" stroke="currentColor" stroke-width="1.25"
+                          stroke-linecap="round"/>
+                </svg>
+                <span>@Loc["TmNotionSidebar_LoadError"]</span>
+                <button class="tm-ns-error__retry" type="button" @onclick="LoadAllAsync">
+                    @Loc["Tm_Retry"]
+                </button>
+            </div>
+        }
+        else
+        {
+            @* ── Favorites ──────────────────────────────────────────────── *@
+
+            @if (_favorites.Count > 0)
+            {
+                <section class="tm-ns-section" aria-label="@Loc["TmNotionSidebar_Favorites"]">
+
+                    <button class="tm-ns-section__header"
+                            type="button"
+                            aria-expanded="@_favoritesExpanded"
+                            aria-controls="tm-ns-favorites"
+                            @onclick="() => _favoritesExpanded = !_favoritesExpanded">
+                        <svg class="tm-ns-section__chevron @(_favoritesExpanded ? "tm-ns-section__chevron--open" : "")"
+                             width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                            <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="tm-ns-section__label">@Loc["TmNotionSidebar_Favorites"]</span>
+                    </button>
+
+                    @if (_favoritesExpanded)
+                    {
+                        <ul class="tm-ns-list" id="tm-ns-favorites" role="list">
+                            @foreach (var page in _favorites)
+                            {
+                                <li role="listitem">
+                                    <button class="tm-ns-page-item @(IsActivePage(page) ? "tm-ns-page-item--active" : "")"
+                                            type="button"
+                                            title="@GetPageTitle(page)"
+                                            aria-current="@(IsActivePage(page) ? "page" : null)"
+                                            @onclick="() => NavigateToAsync(page)">
+                                        <span class="tm-ns-page-item__icon" aria-hidden="true">@GetPageIcon(page)</span>
+                                        <span class="tm-ns-page-item__title">@GetPageTitle(page)</span>
+                                        <button class="tm-ns-page-item__action"
+                                                type="button"
+                                                title="@Loc["TmNotionSidebar_Unfavorite"]"
+                                                aria-label="@Loc["TmNotionSidebar_Unfavorite"]"
+                                                @onclick:stopPropagation="true"
+                                                @onclick="() => ToggleFavoriteAsync(page)">
+                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                <path d="M6 1.5l1.3 2.6 2.9.4-2.1 2 .5 2.9L6 8l-2.6 1.4.5-2.9-2.1-2 2.9-.4z"
+                                                      stroke="currentColor" stroke-width="1" fill="currentColor" opacity=".6"/>
+                                            </svg>
+                                        </button>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                </section>
+            }
+
+            @* ── Recent ─────────────────────────────────────────────────── *@
+
+            @if (_recent.Count > 0)
+            {
+                <section class="tm-ns-section" aria-label="@Loc["TmNotionSidebar_Recent"]">
+
+                    <button class="tm-ns-section__header"
+                            type="button"
+                            aria-expanded="@_recentExpanded"
+                            aria-controls="tm-ns-recent"
+                            @onclick="() => _recentExpanded = !_recentExpanded">
+                        <svg class="tm-ns-section__chevron @(_recentExpanded ? "tm-ns-section__chevron--open" : "")"
+                             width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                            <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
+                                  stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        <span class="tm-ns-section__label">@Loc["TmNotionSidebar_Recent"]</span>
+                    </button>
+
+                    @if (_recentExpanded)
+                    {
+                        <ul class="tm-ns-list" id="tm-ns-recent" role="list">
+                            @foreach (var page in _recent)
+                            {
+                                <li role="listitem">
+                                    <button class="tm-ns-page-item @(IsActivePage(page) ? "tm-ns-page-item--active" : "")"
+                                            type="button"
+                                            title="@GetPageTitle(page)"
+                                            aria-current="@(IsActivePage(page) ? "page" : null)"
+                                            @onclick="() => NavigateToAsync(page)">
+                                        <span class="tm-ns-page-item__icon" aria-hidden="true">@GetPageIcon(page)</span>
+                                        <span class="tm-ns-page-item__title">@GetPageTitle(page)</span>
+                                    </button>
+                                </li>
+                            }
+                        </ul>
+                    }
+
+                </section>
+            }
+
+            @* ── Pages (root tree) ──────────────────────────────────────── *@
+
+            <section class="tm-ns-section" aria-label="@Loc["TmNotionSidebar_Pages"]">
+
+                <button class="tm-ns-section__header"
+                        type="button"
+                        aria-expanded="@_pagesExpanded"
+                        aria-controls="tm-ns-pages"
+                        @onclick="() => _pagesExpanded = !_pagesExpanded">
+                    <svg class="tm-ns-section__chevron @(_pagesExpanded ? "tm-ns-section__chevron--open" : "")"
+                         width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
+                        <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span class="tm-ns-section__label">@Loc["TmNotionSidebar_Pages"]</span>
+                    @if (_rootPages.Count > 0)
+                    {
+                        <span class="tm-ns-section__count" aria-label="@string.Format(Loc["TmNotionSidebar_PageCount"], _rootPages.Count)">
+                            @_rootPages.Count
+                        </span>
+                    }
+                </button>
+
+                @if (_pagesExpanded)
+                {
+                    <div id="tm-ns-pages">
+                        <TmNotionPageTree RootPages="@_rootPages"
+                                          ActivePageId="@ActivePageId"
+                                          OnTreeChanged="OnTreeChangedAsync" />
+                    </div>
+                }
+
+            </section>
+
+            @* ── Trash ──────────────────────────────────────────────────── *@
+
+            <div class="tm-ns-trash">
+                <button class="tm-ns-trash__btn"
+                        type="button"
+                        title="@Loc["TmNotionSidebar_TrashOpen"]"
+                        aria-label="@Loc["TmNotionSidebar_TrashOpen"]"
+                        @onclick="OpenTrashAsync">
+                    <svg width="14" height="14" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                        <path d="M2.5 4h9M5 4V2.5h4V4M3.5 4l.7 7.5h5.6L10.5 4"
+                              stroke="currentColor" stroke-width="1.1"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>@Loc["TmNotionSidebar_Trash"]</span>
+                    @if (_trashCount > 0)
+                    {
+                        <span class="tm-ns-trash__count" aria-label="@string.Format(Loc["TmNotionSidebar_TrashCount"], _trashCount)">
+                            @_trashCount
+                        </span>
+                    }
+                </button>
+            </div>
+        }
+
+    </div>
+}
+
+@* ── Resize handle ──────────────────────────────────────────────────────────── *@
+
+<div class="tm-ns-resize-handle"
+     @ref="_resizeHandleRef"
+     role="separator"
+     aria-orientation="vertical"
+     aria-label="@Loc["TmNotionSidebar_ResizeHandle"]"
+     title="@Loc["TmNotionSidebar_ResizeHandle"]">
+</div>

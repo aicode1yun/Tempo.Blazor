@@ -1,0 +1,38 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Special
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-toc">
+
+    <div class="tm-toc__header">
+        <svg class="tm-toc__header-icon" width="14" height="14" viewBox="0 0 14 14"
+             fill="none" aria-hidden="true">
+            <path d="M1.5 3h11M1.5 7h7M1.5 11h9"
+                  stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>
+        </svg>
+        <span class="tm-toc__header-label">@Loc["TmNotionTableOfContentsBlock_Title"]</span>
+    </div>
+
+    @if (_entries.Count == 0)
+    {
+        <p class="tm-toc__empty">@Loc["TmNotionTableOfContentsBlock_Empty"]</p>
+    }
+    else
+    {
+        <nav class="tm-toc__nav" aria-label="@Loc["TmNotionTableOfContentsBlock_Title"]">
+            @foreach (var entry in _entries)
+            {
+                <button class="tm-toc__item tm-toc__item--level@(entry.Level)"
+                        type="button"
+                        style="--tm-toc-indent: @((entry.Level - 1) * 14)px"
+                        @onclick="() => HandleItemClickAsync(entry.BlockId)"
+                        title="@entry.PlainText">
+                    <span class="tm-toc__item-dot" aria-hidden="true"></span>
+                    <span class="tm-toc__item-text">@entry.PlainText</span>
+                </button>
+            }
+        </nav>
+    }
+
+</div>

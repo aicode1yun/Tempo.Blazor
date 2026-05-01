@@ -1273,6 +1273,337 @@
   <data name="TmWireframe_HorizontalRuler" xml:space="preserve"><value>Vodorovné pravítko</value></data>
   <data name="TmWireframe_VerticalRuler" xml:space="preserve"><value>Svislé pravítko</value></data>
 
+  <!-- Phase 58: Table Block -->
+  <data name="TmNotionTableBlock_Loading"                    xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionTableBlock_TableLabel"                 xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmNotionTableBlock_AddRow"                     xml:space="preserve"><value>Nový řádek</value></data>
+  <data name="TmNotionTableBlock_AddColumn"                  xml:space="preserve"><value>Přidat sloupec</value></data>
+  <data name="TmNotionTableBlock_DeleteColumn"               xml:space="preserve"><value>Smazat sloupec</value></data>
+  <data name="TmNotionTableBlock_DeleteRow"                  xml:space="preserve"><value>Smazat řádek</value></data>
+  <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Přetáhnout pro přeřazení</value></data>
+
+  <!-- Phase 60: Table of Contents Block -->
+  <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Obsah stránky</value></data>
+  <data name="TmNotionTableOfContentsBlock_Empty"             xml:space="preserve"><value>Na této stránce nejsou žádné nadpisy. Přidejte blok Nadpis.</value></data>
+
+  <!-- Phase 59: Page Blocks -->
+  <data name="TmNotionChildPageBlock_TitlePlaceholder"        xml:space="preserve"><value>Stránka bez názvu</value></data>
+  <data name="TmNotionChildPageBlock_DoubleClickRename"       xml:space="preserve"><value>Dvojklikem přejmenovat</value></data>
+  <data name="TmNotionLinkedPageBlock_Label"                  xml:space="preserve"><value>Odkazovaná stránka: {0}</value></data>
+  <data name="TmNotionBreadcrumbBlock_Label"                  xml:space="preserve"><value>Drobečková navigace</value></data>
+
+  <!-- Phase 62: Synced Blocks -->
+  <data name="TmNotionSyncedBlockOrigin_Badge"         xml:space="preserve"><value>Synchronizovaný blok</value></data>
+  <data name="TmNotionSyncedBlockOrigin_SyncedToN"     xml:space="preserve"><value>Synchronizováno na {0} stránkách</value></data>
+  <data name="TmNotionSyncedBlockOrigin_SyncedTo1"     xml:space="preserve"><value>Synchronizováno na 1 stránce</value></data>
+  <data name="TmNotionSyncedBlockOrigin_NoSyncRefs"    xml:space="preserve"><value>Není synchronizováno na žádné stránce</value></data>
+  <data name="TmNotionSyncedBlockOrigin_CopyAndSync"   xml:space="preserve"><value>Kopírovat a synchronizovat</value></data>
+  <data name="TmNotionSyncedBlockOrigin_CopyAndSyncTitle" xml:space="preserve"><value>Zkopírovat ID synchronizace do schránky</value></data>
+  <data name="TmNotionSyncedBlockRef_Badge"            xml:space="preserve"><value>Synchronizováno z</value></data>
+  <data name="TmNotionSyncedBlockRef_UnknownOrigin"    xml:space="preserve"><value>neznámá stránka</value></data>
+  <data name="TmNotionSyncedBlockRef_Unsync"           xml:space="preserve"><value>Odebrat synchronizaci</value></data>
+  <data name="TmNotionSyncedBlockRef_UnsyncTitle"      xml:space="preserve"><value>Vytvořit nezávislou kopii</value></data>
+  <data name="TmNotionSyncedBlockRef_GoToOrigin"       xml:space="preserve"><value>Přejít na původní blok</value></data>
+
+  <!-- Phase 61: Template Button Block -->
+  <data name="TmNotionTemplateButtonBlock_DefaultLabel"       xml:space="preserve"><value>Nepojmenované tlačítko</value></data>
+  <data name="TmNotionTemplateButtonBlock_InsertTitle"        xml:space="preserve"><value>Vložit bloky šablony</value></data>
+  <data name="TmNotionTemplateButtonBlock_ConfigureTitle"     xml:space="preserve"><value>Nastavit tlačítko šablony</value></data>
+  <data name="TmNotionTemplateButtonBlock_ConfigTitle"        xml:space="preserve"><value>Nastavení tlačítka šablony</value></data>
+  <data name="TmNotionTemplateButtonBlock_LabelLabel"         xml:space="preserve"><value>Popis tlačítka</value></data>
+  <data name="TmNotionTemplateButtonBlock_LabelPlaceholder"   xml:space="preserve"><value>Popis tlačítka...</value></data>
+  <data name="TmNotionTemplateButtonBlock_TemplateBlocksLabel" xml:space="preserve"><value>Bloky šablony</value></data>
+  <data name="TmNotionTemplateButtonBlock_NoTemplateBlocks"   xml:space="preserve"><value>Žádné bloky šablony. Přidejte bloky níže.</value></data>
+  <data name="TmNotionTemplateButtonBlock_SelectBlockType"    xml:space="preserve"><value>Vyberte typ bloku</value></data>
+  <data name="TmNotionTemplateButtonBlock_AddBlock"           xml:space="preserve"><value>Přidat blok</value></data>
+  <data name="TmNotionTemplateButtonBlock_RemoveBlock"        xml:space="preserve"><value>Odebrat blok</value></data>
+  <data name="TmNotionTemplateButtonBlock_BlockCount"         xml:space="preserve"><value>{0} bloků</value></data>
+
+  <!-- Phase 64: Database Block -->
+  <data name="TmNotionDatabaseBlock_Untitled"         xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionDatabaseBlock_TitlePlaceholder" xml:space="preserve"><value>Databáze bez názvu</value></data>
+  <data name="TmNotionDatabaseBlock_New"              xml:space="preserve"><value>Nový</value></data>
+  <data name="TmNotionDatabaseBlock_AddView"          xml:space="preserve"><value>Přidat pohled</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTabs"         xml:space="preserve"><value>Pohledy databáze</value></data>
+  <data name="TmNotionDatabaseBlock_Filter"           xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmNotionDatabaseBlock_Sort"             xml:space="preserve"><value>Řadit</value></data>
+  <data name="TmNotionDatabaseBlock_Group"            xml:space="preserve"><value>Seskupit</value></data>
+  <data name="TmNotionDatabaseBlock_Properties"       xml:space="preserve"><value>Vlastnosti</value></data>
+  <data name="TmNotionDatabaseBlock_OpenAsPage"       xml:space="preserve"><value>Otevřít jako stránku</value></data>
+  <data name="TmNotionDatabaseBlock_NoProvider"       xml:space="preserve"><value>Poskytovatel databáze není nakonfigurován.</value></data>
+  <data name="TmNotionDatabaseBlock_LoadError"        xml:space="preserve"><value>Načtení databáze se nezdařilo.</value></data>
+  <data name="TmNotionDatabaseBlock_NoRecords"        xml:space="preserve"><value>Žádné záznamy</value></data>
+  <data name="TmNotionDatabaseBlock_AddRecord"        xml:space="preserve"><value>Nový záznam</value></data>
+  <data name="TmNotionDatabaseBlock_AddField"         xml:space="preserve"><value>Přidat pole</value></data>
+  <data name="TmNotionDatabaseBlock_ShowAll"          xml:space="preserve"><value>Zobrazit vše</value></data>
+  <data name="TmNotionDatabaseBlock_HideAll"          xml:space="preserve"><value>Skrýt vše</value></data>
+  <data name="TmNotionDatabaseBlock_Uncategorized"    xml:space="preserve"><value>Bez hodnoty</value></data>
+  <data name="TmNotionDatabaseBlock_FilterEmpty"      xml:space="preserve"><value>Žádné filtry</value></data>
+  <data name="TmNotionDatabaseBlock_SortEmpty"        xml:space="preserve"><value>Žádné řazení</value></data>
+  <data name="TmNotionDatabaseBlock_GroupEmpty"       xml:space="preserve"><value>Žádné seskupení</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTable"        xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmNotionDatabaseBlock_ViewBoard"        xml:space="preserve"><value>Nástěnka</value></data>
+  <data name="TmNotionDatabaseBlock_ViewGallery"      xml:space="preserve"><value>Galerie</value></data>
+  <data name="TmNotionDatabaseBlock_ViewCalendar"     xml:space="preserve"><value>Kalendář</value></data>
+  <data name="TmNotionDatabaseBlock_ViewTimeline"     xml:space="preserve"><value>Časová osa</value></data>
+  <data name="TmNotionDatabaseBlock_ViewList"         xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmNotionDatabaseBlock_CheckedYes"       xml:space="preserve"><value>Ano</value></data>
+  <data name="TmNotionDatabaseBlock_CheckedNo"        xml:space="preserve"><value>Ne</value></data>
+
+  <!-- ═══════════════ NOTION DATABASE TABLE VIEW ═══════════════ -->
+  <data name="TmNotionDbTableView_RowHeight"          xml:space="preserve"><value>Výška řádků</value></data>
+  <data name="TmNotionDbTableView_RowHeightShort"     xml:space="preserve"><value>Nízký</value></data>
+  <data name="TmNotionDbTableView_RowHeightMedium"    xml:space="preserve"><value>Střední</value></data>
+  <data name="TmNotionDbTableView_RowHeightTall"      xml:space="preserve"><value>Vysoký</value></data>
+  <data name="TmNotionDbTableView_WrapCells"          xml:space="preserve"><value>Zalamovat buňky</value></data>
+  <data name="TmNotionDbTableView_SelectRow"          xml:space="preserve"><value>Vybrat řádek</value></data>
+  <data name="TmNotionDbTableView_SelectAllRows"      xml:space="preserve"><value>Vybrat vše</value></data>
+  <data name="TmNotionDbTableView_GroupNoValue"       xml:space="preserve"><value>Bez hodnoty</value></data>
+  <data name="TmNotionDbTableView_GroupChecked"       xml:space="preserve"><value>Zaškrtnuto</value></data>
+  <data name="TmNotionDbTableView_GroupUnchecked"     xml:space="preserve"><value>Nezaškrtnuto</value></data>
+  <data name="TmNotionDbTableView_GroupExpand"        xml:space="preserve"><value>Rozbalit skupinu</value></data>
+  <data name="TmNotionDbTableView_GroupCollapse"      xml:space="preserve"><value>Sbalit skupinu</value></data>
+
+  <!-- ═══════════════ NOTION DATABASE CELL EDITORS ═══════════════ -->
+  <data name="TmNotionDbCell_Unassigned"             xml:space="preserve"><value>Nepřiřazeno</value></data>
+  <data name="TmNotionDbCell_NoLinkedRecords"        xml:space="preserve"><value>Žádné propojené záznamy</value></data>
+  <data name="TmNotionDbCell_NoFile"                 xml:space="preserve"><value>Žádný soubor</value></data>
+  <data name="TmNotionDbCell_ClearSelection"         xml:space="preserve"><value>Vymazat</value></data>
+  <data name="TmNotionDbCell_ComputedValue"          xml:space="preserve"><value>Vypočteno</value></data>
+  <data name="TmNotionDbCell_OpenLink"               xml:space="preserve"><value>Otevřít odkaz</value></data>
+  <data name="TmNotionDbCell_SendEmail"              xml:space="preserve"><value>Odeslat e-mail</value></data>
+  <data name="TmNotionDbCell_CallPhone"              xml:space="preserve"><value>Zavolat</value></data>
+
+  <!-- TmNotionDbBoardView -->
+  <data name="TmNotionDbBoardView_AddCard"          xml:space="preserve"><value>Přidat kartu</value></data>
+  <data name="TmNotionDbBoardView_DropHere"         xml:space="preserve"><value>Přetáhnout sem</value></data>
+  <data name="TmNotionDbBoardView_HideEmptyGroups"  xml:space="preserve"><value>Skrýt prázdné skupiny</value></data>
+
+  <!-- TmNotionDbGalleryView -->
+  <data name="TmNotionDbGalleryView_AddCard"        xml:space="preserve"><value>Nová karta</value></data>
+
+  <!-- TmNotionDbCalendarView -->
+  <data name="TmNotionDbCalendarView_Today"         xml:space="preserve"><value>Dnes</value></data>
+  <data name="TmNotionDbCalendarView_PrevMonth"     xml:space="preserve"><value>Předchozí měsíc</value></data>
+  <data name="TmNotionDbCalendarView_NextMonth"     xml:space="preserve"><value>Další měsíc</value></data>
+  <data name="TmNotionDbCalendarView_NoDateField"   xml:space="preserve"><value>Pro toto zobrazení není nakonfigurováno pole data.</value></data>
+  <data name="TmNotionDbCalendarView_More"          xml:space="preserve"><value>více</value></data>
+
+  <!-- TmNotionDbTimelineView -->
+  <data name="TmNotionDbTimelineView_ToggleTable"  xml:space="preserve"><value>Zobrazit tabulku</value></data>
+  <data name="TmNotionDbTimelineView_Prev"         xml:space="preserve"><value>Předchozí období</value></data>
+  <data name="TmNotionDbTimelineView_Next"         xml:space="preserve"><value>Další období</value></data>
+  <data name="TmNotionDbTimelineView_Today"        xml:space="preserve"><value>Dnes</value></data>
+  <data name="TmNotionDbTimelineView_Zoom"         xml:space="preserve"><value>Přiblížení</value></data>
+  <data name="TmNotionDbTimelineView_ZoomDay"      xml:space="preserve"><value>Den</value></data>
+  <data name="TmNotionDbTimelineView_ZoomWeek"     xml:space="preserve"><value>Týden</value></data>
+  <data name="TmNotionDbTimelineView_ZoomMonth"    xml:space="preserve"><value>Měsíc</value></data>
+  <data name="TmNotionDbTimelineView_Name"         xml:space="preserve"><value>Název</value></data>
+  <data name="TmNotionDbTimelineView_NewRecord"    xml:space="preserve"><value>Nový záznam</value></data>
+  <data name="TmNotionDbTimelineView_ResizeBar"    xml:space="preserve"><value>Přetáhněte pro změnu velikosti</value></data>
+  <data name="TmNotionDbTimelineView_NoStartField" xml:space="preserve"><value>Pro toto zobrazení timeline není nakonfigurováno pole počátečního data.</value></data>
+
+  <!-- TmNotionDbListView -->
+  <data name="TmNotionDbListView_Label"      xml:space="preserve"><value>Seznam záznamů</value></data>
+  <data name="TmNotionDbListView_Empty"      xml:space="preserve"><value>V tomto zobrazení nejsou žádné záznamy</value></data>
+  <data name="TmNotionDbListView_NewRecord"  xml:space="preserve"><value>Nový záznam</value></data>
+  <data name="TmNotionDbListView_Untitled"   xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionDbListView_Properties" xml:space="preserve"><value>Vlastnosti</value></data>
+
+  <!-- TmNotionDbFilterBar -->
+  <data name="TmNotionDbFilterBar_Title"            xml:space="preserve"><value>Filtry</value></data>
+  <data name="TmNotionDbFilterBar_Close"            xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbFilterBar_Empty"            xml:space="preserve"><value>Nejsou použity žádné filtry. Přidejte filtr pro zúžení výsledků.</value></data>
+  <data name="TmNotionDbFilterBar_AddFilter"        xml:space="preserve"><value>Přidat filtr</value></data>
+  <data name="TmNotionDbFilterBar_AddGroup"         xml:space="preserve"><value>Přidat skupinu filtrů</value></data>
+  <data name="TmNotionDbFilterBar_ClearAll"         xml:space="preserve"><value>Vymazat vše</value></data>
+  <data name="TmNotionDbFilterBar_Where"            xml:space="preserve"><value>Kde</value></data>
+  <data name="TmNotionDbFilterBar_And"              xml:space="preserve"><value>A</value></data>
+  <data name="TmNotionDbFilterBar_Or"               xml:space="preserve"><value>Nebo</value></data>
+  <data name="TmNotionDbFilterBar_SelectField"      xml:space="preserve"><value>Vyberte pole...</value></data>
+  <data name="TmNotionDbFilterBar_ValuePlaceholder" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmNotionDbFilterBar_SelectOption"     xml:space="preserve"><value>Vyberte možnost...</value></data>
+  <data name="TmNotionDbFilterBar_Remove"           xml:space="preserve"><value>Odebrat podmínku</value></data>
+  <data name="TmNotionDbFilterBar_RemoveGroup"      xml:space="preserve"><value>Odebrat skupinu</value></data>
+  <data name="TmNotionDbFilterBar_Op_Contains"           xml:space="preserve"><value>obsahuje</value></data>
+  <data name="TmNotionDbFilterBar_Op_NotContains"        xml:space="preserve"><value>neobsahuje</value></data>
+  <data name="TmNotionDbFilterBar_Op_Equals"             xml:space="preserve"><value>rovná se</value></data>
+  <data name="TmNotionDbFilterBar_Op_NotEquals"          xml:space="preserve"><value>nerovná se</value></data>
+  <data name="TmNotionDbFilterBar_Op_StartsWith"         xml:space="preserve"><value>začíná na</value></data>
+  <data name="TmNotionDbFilterBar_Op_EndsWith"           xml:space="preserve"><value>končí na</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsEmpty"            xml:space="preserve"><value>je prázdné</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsNotEmpty"         xml:space="preserve"><value>není prázdné</value></data>
+  <data name="TmNotionDbFilterBar_Op_GreaterThan"        xml:space="preserve"><value>větší než</value></data>
+  <data name="TmNotionDbFilterBar_Op_GreaterThanOrEqual" xml:space="preserve"><value>větší než nebo rovno</value></data>
+  <data name="TmNotionDbFilterBar_Op_LessThan"           xml:space="preserve"><value>menší než</value></data>
+  <data name="TmNotionDbFilterBar_Op_LessThanOrEqual"    xml:space="preserve"><value>menší než nebo rovno</value></data>
+  <data name="TmNotionDbFilterBar_Op_Before"             xml:space="preserve"><value>před</value></data>
+  <data name="TmNotionDbFilterBar_Op_After"              xml:space="preserve"><value>po</value></data>
+  <data name="TmNotionDbFilterBar_Op_OnOrBefore"         xml:space="preserve"><value>v nebo před</value></data>
+  <data name="TmNotionDbFilterBar_Op_OnOrAfter"          xml:space="preserve"><value>v nebo po</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsChecked"          xml:space="preserve"><value>je zaškrtnuto</value></data>
+  <data name="TmNotionDbFilterBar_Op_IsUnchecked"        xml:space="preserve"><value>není zaškrtnuto</value></data>
+  <data name="TmNotionDbFilterBar_Op_ThisWeek"           xml:space="preserve"><value>tento týden</value></data>
+  <data name="TmNotionDbFilterBar_Op_PastWeek"           xml:space="preserve"><value>minulý týden</value></data>
+  <data name="TmNotionDbFilterBar_Op_PastMonth"          xml:space="preserve"><value>minulý měsíc</value></data>
+  <data name="TmNotionDbFilterBar_Op_NextWeek"           xml:space="preserve"><value>příští týden</value></data>
+  <data name="TmNotionDbFilterBar_Op_NextMonth"          xml:space="preserve"><value>příští měsíc</value></data>
+
+  <!-- TmNotionDbSortBar -->
+  <data name="TmNotionDbSortBar_Title"        xml:space="preserve"><value>Řazení</value></data>
+  <data name="TmNotionDbSortBar_Close"        xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbSortBar_Empty"        xml:space="preserve"><value>Není použito žádné řazení. Přidejte řazení pro uspořádání výsledků.</value></data>
+  <data name="TmNotionDbSortBar_AddSort"      xml:space="preserve"><value>Přidat řazení</value></data>
+  <data name="TmNotionDbSortBar_ClearAll"     xml:space="preserve"><value>Vymazat vše</value></data>
+  <data name="TmNotionDbSortBar_SelectField"  xml:space="preserve"><value>Vyberte pole...</value></data>
+  <data name="TmNotionDbSortBar_Ascending"    xml:space="preserve"><value>Vzest.</value></data>
+  <data name="TmNotionDbSortBar_Descending"   xml:space="preserve"><value>Sest.</value></data>
+  <data name="TmNotionDbSortBar_Remove"       xml:space="preserve"><value>Odebrat řazení</value></data>
+  <data name="TmNotionDbSortBar_DragHandle"   xml:space="preserve"><value>Přetáhněte pro změnu pořadí</value></data>
+
+  <!-- TmNotionDbGroupBar -->
+  <data name="TmNotionDbGroupBar_Title"       xml:space="preserve"><value>Seskupit dle</value></data>
+  <data name="TmNotionDbGroupBar_Close"       xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbGroupBar_None"        xml:space="preserve"><value>Bez seskupení</value></data>
+  <data name="TmNotionDbGroupBar_HideEmpty"   xml:space="preserve"><value>Skrýt prázdné skupiny</value></data>
+  <data name="TmNotionDbGroupBar_SortGroups"  xml:space="preserve"><value>Řadit skupiny</value></data>
+  <data name="TmNotionDbGroupBar_Ascending"   xml:space="preserve"><value>A → Z</value></data>
+  <data name="TmNotionDbGroupBar_Descending"  xml:space="preserve"><value>Z → A</value></data>
+
+  <!-- TmNotionDbFieldEditor -->
+  <data name="TmNotionDbFieldEditor_Title"                    xml:space="preserve"><value>Upravit pole</value></data>
+  <data name="TmNotionDbFieldEditor_Close"                    xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbFieldEditor_FieldName"                xml:space="preserve"><value>Název pole</value></data>
+  <data name="TmNotionDbFieldEditor_FieldType"                xml:space="preserve"><value>Typ pole</value></data>
+  <data name="TmNotionDbFieldEditor_TypeWarning"              xml:space="preserve"><value>Změna typu může ovlivnit existující data</value></data>
+  <data name="TmNotionDbFieldEditor_Options"                  xml:space="preserve"><value>Možnosti</value></data>
+  <data name="TmNotionDbFieldEditor_AddOption"                xml:space="preserve"><value>Přidat možnost</value></data>
+  <data name="TmNotionDbFieldEditor_RemoveOption"             xml:space="preserve"><value>Odebrat možnost</value></data>
+  <data name="TmNotionDbFieldEditor_Groups"                   xml:space="preserve"><value>Skupiny</value></data>
+  <data name="TmNotionDbFieldEditor_NumberFormat"             xml:space="preserve"><value>Formát</value></data>
+  <data name="TmNotionDbFieldEditor_Formula"                  xml:space="preserve"><value>Výraz</value></data>
+  <data name="TmNotionDbFieldEditor_FormulaPlaceholder"       xml:space="preserve"><value>např. prop("Priorita") == "Vysoká"</value></data>
+  <data name="TmNotionDbFieldEditor_RelationTarget"           xml:space="preserve"><value>Odkazuje na (ID databáze)</value></data>
+  <data name="TmNotionDbFieldEditor_RelationTargetPlaceholder" xml:space="preserve"><value>Vložte ID databáze…</value></data>
+  <data name="TmNotionDbFieldEditor_Bidirectional"            xml:space="preserve"><value>Zobrazit v propojené databázi</value></data>
+  <data name="TmNotionDbFieldEditor_RollupRelation"           xml:space="preserve"><value>Relation</value></data>
+  <data name="TmNotionDbFieldEditor_RollupProperty"           xml:space="preserve"><value>Vlastnost</value></data>
+  <data name="TmNotionDbFieldEditor_RollupAggregate"          xml:space="preserve"><value>Výpočet</value></data>
+  <data name="TmNotionDbFieldEditor_SelectField"              xml:space="preserve"><value>Vyberte pole…</value></data>
+  <data name="TmNotionDbFieldEditor_NoRelationFields"         xml:space="preserve"><value>Žádná pole typu Relation. Nejprve přidejte pole Relation.</value></data>
+  <data name="TmNotionDbFieldEditor_DateFormat"               xml:space="preserve"><value>Formát data</value></data>
+  <data name="TmNotionDbFieldEditor_IncludeTime"              xml:space="preserve"><value>Zahrnout čas</value></data>
+  <data name="TmNotionDbFieldEditor_Duplicate"                xml:space="preserve"><value>Duplikovat pole</value></data>
+  <data name="TmNotionDbFieldEditor_Delete"                   xml:space="preserve"><value>Smazat pole</value></data>
+  <data name="TmNotionDbFieldEditor_Save"                     xml:space="preserve"><value>Uložit</value></data>
+  <!-- Field types -->
+  <data name="TmNotionDbFieldEditor_Type_Text"           xml:space="preserve"><value>Text</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Number"         xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Select"         xml:space="preserve"><value>Výběr</value></data>
+  <data name="TmNotionDbFieldEditor_Type_MultiSelect"    xml:space="preserve"><value>Vícenásobný výběr</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Status"         xml:space="preserve"><value>Stav</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Date"           xml:space="preserve"><value>Datum</value></data>
+  <data name="TmNotionDbFieldEditor_Type_DateRange"      xml:space="preserve"><value>Rozsah dat</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Person"         xml:space="preserve"><value>Osoba</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Files"          xml:space="preserve"><value>Soubory a média</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Checkbox"       xml:space="preserve"><value>Zaškrtávací políčko</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Url"            xml:space="preserve"><value>URL</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Email"          xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Phone"          xml:space="preserve"><value>Telefon</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Formula"        xml:space="preserve"><value>Vzorec</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Relation"       xml:space="preserve"><value>Relation</value></data>
+  <data name="TmNotionDbFieldEditor_Type_Rollup"         xml:space="preserve"><value>Rollup</value></data>
+  <data name="TmNotionDbFieldEditor_Type_CreatedTime"    xml:space="preserve"><value>Čas vytvoření</value></data>
+  <data name="TmNotionDbFieldEditor_Type_CreatedBy"      xml:space="preserve"><value>Vytvořil</value></data>
+  <data name="TmNotionDbFieldEditor_Type_LastEditedTime" xml:space="preserve"><value>Čas poslední úpravy</value></data>
+  <data name="TmNotionDbFieldEditor_Type_LastEditedBy"   xml:space="preserve"><value>Naposledy upravil</value></data>
+  <!-- Number formats -->
+  <data name="TmNotionDbFieldEditor_NF_Number"           xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmNotionDbFieldEditor_NF_NumberWithCommas" xml:space="preserve"><value>Číslo s oddělovači</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Percent"          xml:space="preserve"><value>Procenta</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Dollar"           xml:space="preserve"><value>Dolar</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Euro"             xml:space="preserve"><value>Euro</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Pound"            xml:space="preserve"><value>Libra</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Yen"              xml:space="preserve"><value>Jen</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Rupee"            xml:space="preserve"><value>Rupie</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Won"              xml:space="preserve"><value>Won</value></data>
+  <data name="TmNotionDbFieldEditor_NF_Yuan"             xml:space="preserve"><value>Yuan</value></data>
+  <!-- Rollup aggregations -->
+  <data name="TmNotionDbFieldEditor_RA_Count"             xml:space="preserve"><value>Počet všech</value></data>
+  <data name="TmNotionDbFieldEditor_RA_CountValues"       xml:space="preserve"><value>Počet hodnot</value></data>
+  <data name="TmNotionDbFieldEditor_RA_CountUniqueValues" xml:space="preserve"><value>Počet unikátních hodnot</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Sum"               xml:space="preserve"><value>Součet</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Average"           xml:space="preserve"><value>Průměr</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Min"               xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Max"               xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Median"            xml:space="preserve"><value>Medián</value></data>
+  <data name="TmNotionDbFieldEditor_RA_Range"             xml:space="preserve"><value>Rozsah</value></data>
+  <data name="TmNotionDbFieldEditor_RA_ShowOriginal"      xml:space="preserve"><value>Zobrazit originál</value></data>
+  <data name="TmNotionDbFieldEditor_RA_PercentEmpty"      xml:space="preserve"><value>Procento prázdných</value></data>
+  <data name="TmNotionDbFieldEditor_RA_PercentNotEmpty"   xml:space="preserve"><value>Procento neprázdných</value></data>
+  <!-- Date formats -->
+  <data name="TmNotionDbFieldEditor_DF_Full"              xml:space="preserve"><value>Plné datum (např. 29. dubna 2026)</value></data>
+  <data name="TmNotionDbFieldEditor_DF_Short"             xml:space="preserve"><value>Zkrácené (např. dub. 29, 2026)</value></data>
+  <data name="TmNotionDbFieldEditor_DF_ISO"               xml:space="preserve"><value>ISO 8601 (2026-04-29)</value></data>
+
+  <!-- TmNotionDbRecordDetail -->
+  <data name="TmNotionDbRecordDetail_Untitled"           xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionDbRecordDetail_Close"              xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbRecordDetail_OpenAsPage"         xml:space="preserve"><value>Otevřít jako stránku</value></data>
+  <data name="TmNotionDbRecordDetail_Properties"         xml:space="preserve"><value>Vlastnosti</value></data>
+
+  <!-- TmNotionDbTemplateMenu -->
+  <data name="TmNotionDbTemplateMenu_Title"             xml:space="preserve"><value>Šablony</value></data>
+  <data name="TmNotionDbTemplateMenu_Close"             xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbTemplateMenu_NewTemplate"       xml:space="preserve"><value>Nová šablona</value></data>
+  <data name="TmNotionDbTemplateMenu_DefaultName"       xml:space="preserve"><value>Nepojmenovaná šablona</value></data>
+  <data name="TmNotionDbTemplateMenu_Empty"             xml:space="preserve"><value>Zatím žádné šablony</value></data>
+  <data name="TmNotionDbTemplateMenu_UseTemplate"       xml:space="preserve"><value>Použít šablonu</value></data>
+  <data name="TmNotionDbTemplateMenu_EditTemplate"      xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmNotionDbTemplateMenu_Delete"            xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionDbTemplateMenu_ConfirmDelete"     xml:space="preserve"><value>Smazat šablonu?</value></data>
+  <data name="TmNotionDbTemplateMenu_Cancel"            xml:space="preserve"><value>Zrušit</value></data>
+
+  <!-- TmNotionDbTemplateEditor -->
+  <data name="TmNotionDbTemplateEditor_Untitled"        xml:space="preserve"><value>Nepojmenovaná šablona</value></data>
+  <data name="TmNotionDbTemplateEditor_Close"           xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbTemplateEditor_Properties"      xml:space="preserve"><value>Vlastnosti</value></data>
+  <data name="TmNotionDbTemplateEditor_Breadcrumb"      xml:space="preserve"><value>Upravit šablonu</value></data>
+
+  <!-- TmNotionDbTableView sub-items -->
+  <data name="TmNotionDbTableView_ExpandRow"            xml:space="preserve"><value>Rozbalit dílčí položky</value></data>
+  <data name="TmNotionDbTableView_CollapseRow"          xml:space="preserve"><value>Sbalit dílčí položky</value></data>
+
+  <!-- TmNotionDbBoardView sub-items -->
+  <data name="TmNotionDbBoardView_SubItems"             xml:space="preserve"><value>dílčí položky</value></data>
+
+  <!-- TmNotionDatabaseBlock Phase 77 + 78 -->
+  <data name="TmNotionDatabaseBlock_Templates"          xml:space="preserve"><value>Šablony</value></data>
+  <data name="TmNotionDatabaseBlock_SubItems"           xml:space="preserve"><value>Dílčí položky</value></data>
+  <data name="TmNotionDatabaseBlock_ImportExport"       xml:space="preserve"><value>Import / Export</value></data>
+
+  <!-- TmNotionDbImportExport -->
+  <data name="TmNotionDbImportExport_Title"             xml:space="preserve"><value>Import / Export</value></data>
+  <data name="TmNotionDbImportExport_Close"             xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionDbImportExport_TabImport"         xml:space="preserve"><value>Import</value></data>
+  <data name="TmNotionDbImportExport_TabExport"         xml:space="preserve"><value>Export</value></data>
+  <data name="TmNotionDbImportExport_DropZone"          xml:space="preserve"><value>Přetáhněte CSV soubor sem, nebo klikněte pro výběr</value></data>
+  <data name="TmNotionDbImportExport_DropZoneHint"      xml:space="preserve"><value>Podporuje soubory .csv do 10 MB</value></data>
+  <data name="TmNotionDbImportExport_FileMustBeCsv"     xml:space="preserve"><value>Vyberte prosím platný soubor .csv</value></data>
+  <data name="TmNotionDbImportExport_FileTooBig"        xml:space="preserve"><value>Soubor je příliš velký (max. 10 MB)</value></data>
+  <data name="TmNotionDbImportExport_CsvColumn"         xml:space="preserve"><value>Sloupec CSV</value></data>
+  <data name="TmNotionDbImportExport_MapsTo"            xml:space="preserve"><value>Mapuje na pole</value></data>
+  <data name="TmNotionDbImportExport_Preview"           xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmNotionDbImportExport_Skip"              xml:space="preserve"><value>Přeskočit</value></data>
+  <data name="TmNotionDbImportExport_RowsToImport"      xml:space="preserve"><value>{0} řádků bude importováno</value></data>
+  <data name="TmNotionDbImportExport_ImportBtn"         xml:space="preserve"><value>Importovat</value></data>
+  <data name="TmNotionDbImportExport_Back"              xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmNotionDbImportExport_ImportError"       xml:space="preserve"><value>Import selhal. Zkontrolujte soubor a zkuste to znovu.</value></data>
+  <data name="TmNotionDbImportExport_ExportAll"         xml:space="preserve"><value>Všechna data</value></data>
+  <data name="TmNotionDbImportExport_ExportView"        xml:space="preserve"><value>Vyberte, co exportovat</value></data>
+  <data name="TmNotionDbImportExport_ExportBtn"         xml:space="preserve"><value>Stáhnout CSV</value></data>
+  <data name="TmNotionDbImportExport_ExportError"       xml:space="preserve"><value>Export selhal. Zkuste to prosím znovu.</value></data>
+
   <!-- Phase 56: Equation Block -->
   <data name="TmNotionEquationBlock_EditLabel"               xml:space="preserve"><value>Upravit rovnici</value></data>
   <data name="TmNotionEquationBlock_EditorLabel"             xml:space="preserve"><value>LaTeX</value></data>
@@ -1280,5 +1611,75 @@
   <data name="TmNotionEquationBlock_Hint"                    xml:space="preserve"><value>Enter ↵ pro potvrzení · Shift+Enter nový řádek · Esc pro zrušení</value></data>
   <data name="TmNotionEquationBlock_Done"                    xml:space="preserve"><value>Hotovo</value></data>
   <data name="TmNotionEquationBlock_Cancel"                  xml:space="preserve"><value>Zrušit</value></data>
+
+  <!-- ═══════════════ TmNotionSidebar (Phase 80) ═══════════════ -->
+  <data name="TmNotionSidebar_NewPage"           xml:space="preserve"><value>Nová stránka</value></data>
+  <data name="TmNotionSidebar_Search"            xml:space="preserve"><value>Hledat</value></data>
+  <data name="TmNotionSidebar_SearchPlaceholder" xml:space="preserve"><value>Hledat stránky…</value></data>
+  <data name="TmNotionSidebar_SearchNoResults"   xml:space="preserve"><value>Žádné stránky nenalezeny</value></data>
+  <data name="TmNotionSidebar_SearchLoading"     xml:space="preserve"><value>Hledám…</value></data>
+  <data name="TmNotionSidebar_CloseSearch"       xml:space="preserve"><value>Zavřít hledání</value></data>
+  <data name="TmNotionSidebar_Favorites"         xml:space="preserve"><value>Oblíbené</value></data>
+  <data name="TmNotionSidebar_Recent"            xml:space="preserve"><value>Nedávné</value></data>
+  <data name="TmNotionSidebar_Pages"             xml:space="preserve"><value>Stránky</value></data>
+  <data name="TmNotionSidebar_Trash"             xml:space="preserve"><value>Koš</value></data>
+  <data name="TmNotionSidebar_Untitled"          xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionSidebar_NoFavorites"       xml:space="preserve"><value>Zatím žádné oblíbené</value></data>
+  <data name="TmNotionSidebar_NoRecent"          xml:space="preserve"><value>Žádné nedávné stránky</value></data>
+  <data name="TmNotionSidebar_NoPages"           xml:space="preserve"><value>Zatím žádné stránky</value></data>
+  <data name="TmNotionSidebar_TrashCount"        xml:space="preserve"><value>{0} v koši</value></data>
+  <data name="TmNotionSidebar_TrashEmpty"        xml:space="preserve"><value>Koš je prázdný</value></data>
+  <data name="TmNotionSidebar_TrashOpen"         xml:space="preserve"><value>Otevřít koš</value></data>
+  <data name="TmNotionSidebar_Loading"           xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionSidebar_LoadError"         xml:space="preserve"><value>Nepodařilo se načíst postranní panel</value></data>
+  <data name="TmNotionSidebar_Unfavorite"        xml:space="preserve"><value>Odebrat z oblíbených</value></data>
+  <data name="TmNotionSidebar_Favorite"          xml:space="preserve"><value>Přidat do oblíbených</value></data>
+  <data name="TmNotionSidebar_ResizeHandle"      xml:space="preserve"><value>Táhněte pro změnu šířky</value></data>
+  <data name="TmNotionSidebar_ExpandSection"     xml:space="preserve"><value>Rozbalit sekci</value></data>
+  <data name="TmNotionSidebar_CollapseSection"   xml:space="preserve"><value>Sbalit sekci</value></data>
+  <data name="TmNotionSidebar_PageCount"         xml:space="preserve"><value>{0} stránek</value></data>
+  <data name="TmNotionSidebar_CreatingPage"      xml:space="preserve"><value>Vytváření…</value></data>
+  <data name="TmNotionSidebar_OpenPage"          xml:space="preserve"><value>Otevřít stránku</value></data>
+
+  <!-- ═══════════════ TmNotionPageTree (Phase 81) ═══════════════ -->
+  <data name="TmNotionPageTree_Rename"           xml:space="preserve"><value>Přejmenovat</value></data>
+  <data name="TmNotionPageTree_Duplicate"        xml:space="preserve"><value>Duplikovat</value></data>
+  <data name="TmNotionPageTree_MoveTo"           xml:space="preserve"><value>Přesunout do</value></data>
+  <data name="TmNotionPageTree_Favorite"         xml:space="preserve"><value>Přidat do oblíbených</value></data>
+  <data name="TmNotionPageTree_Unfavorite"       xml:space="preserve"><value>Odebrat z oblíbených</value></data>
+  <data name="TmNotionPageTree_Delete"           xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionPageTree_NewChildPage"     xml:space="preserve"><value>Nová podstránka</value></data>
+  <data name="TmNotionPageTree_ExpandNode"       xml:space="preserve"><value>Rozbalit</value></data>
+  <data name="TmNotionPageTree_CollapseNode"     xml:space="preserve"><value>Sbalit</value></data>
+  <data name="TmNotionPageTree_OpenMenu"         xml:space="preserve"><value>Další možnosti</value></data>
+  <data name="TmNotionPageTree_Untitled"         xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionPageTree_DeleteConfirm"    xml:space="preserve"><value>Smazat tuto stránku?</value></data>
+  <data name="TmNotionPageTree_DeleteYes"        xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionPageTree_DeleteNo"         xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionPageTree_MoveToTitle"      xml:space="preserve"><value>Přesunout do</value></data>
+  <data name="TmNotionPageTree_MoveToSearch"     xml:space="preserve"><value>Hledat stránky…</value></data>
+  <data name="TmNotionPageTree_MoveToRoot"       xml:space="preserve"><value>Nejvyšší úroveň</value></data>
+  <data name="TmNotionPageTree_NoPages"          xml:space="preserve"><value>Zatím žádné stránky. Klikněte na + pro vytvoření.</value></data>
+  <data name="TmNotionPageTree_LoadingChildren"  xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionPageTree_RenameHint"       xml:space="preserve"><value>Přejmenovat: {0}</value></data>
+
+  <!-- ═══════════════ TmPivotTable ═══════════════ -->
+  <data name="TmPivotTable_Loading" xml:space="preserve"><value>Načítání kontingenční tabulky...</value></data>
+  <data name="TmPivotTable_NoData" xml:space="preserve"><value>Žádná data k zobrazení</value></data>
+  <data name="TmPivotTable_AvailableFields" xml:space="preserve"><value>Dostupná pole</value></data>
+  <data name="TmPivotTable_RowFields" xml:space="preserve"><value>Řádková pole</value></data>
+  <data name="TmPivotTable_ColumnFields" xml:space="preserve"><value>Sloupcová pole</value></data>
+  <data name="TmPivotTable_ValueFields" xml:space="preserve"><value>Hodnoty</value></data>
+  <data name="TmPivotTable_FilterFields" xml:space="preserve"><value>Filtry</value></data>
+  <data name="TmPivotTable_Apply" xml:space="preserve"><value>Použít</value></data>
+  <data name="TmPivotTable_Reset" xml:space="preserve"><value>Obnovit</value></data>
+  <data name="TmPivotTable_ClearAll" xml:space="preserve"><value>Vymazat vše</value></data>
+  <data name="TmPivotTable_DragHint" xml:space="preserve"><value>Přetáhněte pole do oblastí</value></data>
+  <data name="TmPivotTable_ValueSettings" xml:space="preserve"><value>Nastavení hodnoty</value></data>
+  <data name="TmPivotTable_Aggregation_Sum" xml:space="preserve"><value>Součet</value></data>
+  <data name="TmPivotTable_Aggregation_Count" xml:space="preserve"><value>Počet</value></data>
+  <data name="TmPivotTable_Aggregation_Average" xml:space="preserve"><value>Průměr</value></data>
+  <data name="TmPivotTable_Aggregation_Min" xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Maximum</value></data>
 
 </root>

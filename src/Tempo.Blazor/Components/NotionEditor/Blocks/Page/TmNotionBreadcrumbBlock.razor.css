@@ -1,0 +1,116 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionBreadcrumbBlock — auto breadcrumb navigation row
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Nav container ───────────────────────────────────────────── */
+
+.tm-notion-breadcrumb {
+    display:     flex;
+    align-items: center;
+    flex-wrap:   wrap;
+    gap:         2px;
+    padding:     var(--tm-space-1-5) var(--tm-space-1);
+    min-height:  32px;
+}
+
+/* ── Separator ───────────────────────────────────────────────── */
+
+.tm-notion-breadcrumb__sep {
+    color:     var(--tm-text-tertiary);
+    font-size: var(--tm-font-size-sm);
+    padding:   0 var(--tm-space-1);
+    user-select: none;
+}
+
+/* ── Crumb item (shared base) ────────────────────────────────── */
+
+.tm-notion-breadcrumb__item {
+    display:       inline-flex;
+    align-items:   center;
+    gap:           var(--tm-space-1);
+    padding:       var(--tm-space-1) var(--tm-space-1-5);
+    border-radius: var(--tm-radius-sm);
+    font-size:     var(--tm-font-size-sm);
+    line-height:   1.4;
+    white-space:   nowrap;
+    max-width:     180px;
+}
+
+.tm-notion-breadcrumb__crumb-label {
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+}
+
+.tm-notion-breadcrumb__crumb-icon {
+    font-size:   0.95em;
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* ── Clickable link crumbs ───────────────────────────────────── */
+
+.tm-notion-breadcrumb__item--link {
+    background:  transparent;
+    border:      none;
+    cursor:      pointer;
+    color:       var(--tm-text-secondary);
+    transition:  background var(--tm-notion-anim-fast), color var(--tm-notion-anim-fast);
+    outline:     none;
+}
+
+.tm-notion-breadcrumb__item--link:hover {
+    background: var(--tm-notion-bg-block-hover);
+    color:      var(--tm-text-primary);
+}
+
+.tm-notion-breadcrumb__item--link:focus-visible {
+    outline:        2px solid var(--tm-color-primary-500);
+    outline-offset: 1px;
+}
+
+/* ── Current (last) crumb ────────────────────────────────────── */
+
+.tm-notion-breadcrumb__item--current {
+    color:       var(--tm-text-primary);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+/* ── Empty state ─────────────────────────────────────────────── */
+
+.tm-notion-breadcrumb__empty {
+    color:     var(--tm-text-tertiary);
+    font-size: var(--tm-font-size-sm);
+    padding:   var(--tm-space-1) var(--tm-space-1-5);
+}
+
+/* ── Loading skeleton row ────────────────────────────────────── */
+
+.tm-notion-breadcrumb__skeleton-row {
+    display:     flex;
+    align-items: center;
+    gap:         var(--tm-space-1);
+    padding:     var(--tm-space-1) 0;
+}
+
+.tm-notion-breadcrumb__skeleton {
+    height:        12px;
+    border-radius: var(--tm-radius-sm);
+    background:    linear-gradient(
+        90deg,
+        var(--tm-notion-bg-block-hover) 25%,
+        color-mix(in srgb, var(--tm-notion-bg-block-hover) 60%, transparent) 50%,
+        var(--tm-notion-bg-block-hover) 75%
+    );
+    background-size: 200% 100%;
+    animation:       tm-breadcrumb-shimmer 1.4s infinite linear;
+}
+
+.tm-notion-breadcrumb__skeleton--short  { width: 48px; }
+.tm-notion-breadcrumb__skeleton--medium { width: 80px; }
+.tm-notion-breadcrumb__skeleton--long   { width: 120px; }
+
+@keyframes tm-breadcrumb-shimmer {
+    0%   { background-position: 200% 0; }
+    100% { background-position: -200% 0; }
+}

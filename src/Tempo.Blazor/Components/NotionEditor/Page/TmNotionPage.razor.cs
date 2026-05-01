@@ -260,7 +260,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private Task HandleBlockUpdatedAsync(IPageBlock updated)
     {
         var idx = _blocks.FindIndex(b => b.Id == updated.Id);
-        if (idx >= 0) _blocks[idx] = updated;
+        if (idx < 0) return Task.CompletedTask;
+        _blocks[idx] = updated;
+        _blocks = [.._blocks]; // new reference — CascadingValue consumers (ToC) detect the change
         return Task.CompletedTask;
     }
 
@@ -298,6 +300,39 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private async Task HandleAddBlockAfterAsync((string AfterBlockId, BlockType Type, string? InitialHtml) args) =>
         await AddBlockAsync(args.Type, args.AfterBlockId, args.InitialHtml);
+
+    private async Task HandleInsertTemplateBlocksAfterAsync((string AfterBlockId, IReadOnlyList<IPageBlock> Blocks) args)
+    {
+        if (ReadOnly || args.Blocks.Count == 0) return;
+
+        var afterBlock = _blocks.FirstOrDefault(b => b.Id.ToString() == args.AfterBlockId);
+        var baseOrder  = afterBlock?.Order ?? (_blocks.Count > 0 ? _blocks.Max(b => b.Order) : 0);
+
+        var newBlocks = args.Blocks.Select((src, i) => (IPageBlock)new PageBlock
+        {
+            Id           = Guid.NewGuid(),
+            PageId       = Page.Id,
+            Type         = src.Type,
+            Order        = baseOrder + i + 1,
+            Content      = src.Content,
+            CreatedAt    = DateTime.UtcNow,
+            LastEditedAt = DateTime.UtcNow
+        }).ToList();
+
+        try
+        {
+            var created   = await Context.BlockProvider.CreateBlocksAsync(Page.Id.ToString(), newBlocks, args.AfterBlockId);
+            var insertIdx = afterBlock is null ? _blocks.Count : _blocks.IndexOf(afterBlock) + 1;
+            foreach (var b in created.OrderBy(b => b.Order))
+                _blocks.Insert(Math.Clamp(insertIdx++, 0, _blocks.Count), b);
+            StateHasChanged();
+        }
+        catch (Exception ex)
+        {
+            _loadBlocksError = ex.Message;
+            StateHasChanged();
+        }
+    }
 
     private async Task HandleAddBlockAtEndAsync() =>
         await AddBlockAsync(BlockType.Paragraph);

@@ -1,0 +1,38 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (IsEditing)
+{
+    <input class="tm-dbc__input tm-dbc__input--email"
+           type="email"
+           @ref="_inputRef"
+           value="@_buffer"
+           @oninput="e => _buffer = e.Value?.ToString() ?? string.Empty"
+           @onblur="() => CommitAsync(_buffer.Length > 0 ? _buffer : null)"
+           @onkeydown="e => HandleKeyAsync(e, () => CommitAsync(_buffer.Length > 0 ? _buffer : null))"
+           @onclick:stopPropagation="true" />
+}
+else
+{
+    <div class="tm-dbc @(ReadOnly ? "tm-dbc--readonly" : "")"
+         @onclick="() => !ReadOnly ? RequestEditAsync() : Task.CompletedTask">
+        @if (StringValue.Length > 0)
+        {
+            <a class="tm-dbc__link"
+               href="mailto:@StringValue"
+               title="@Loc["TmNotionDbCell_SendEmail"]"
+               @onclick:stopPropagation="true">
+                <svg class="tm-dbc__link-icon" width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <rect x="2" y="4" width="20" height="16" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                    <path d="M2 8l10 6 10-6" stroke="currentColor" stroke-width="1.5"/>
+                </svg>
+                @StringValue
+            </a>
+        }
+        else
+        {
+            <span class="tm-dbc__text tm-dbc__text--empty">&nbsp;</span>
+        }
+    </div>
+}

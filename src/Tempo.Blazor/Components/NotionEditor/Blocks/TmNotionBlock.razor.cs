@@ -56,6 +56,9 @@ public partial class TmNotionBlock : ComponentBase
     /// <summary>Raised when a '/' typed in this block opens the slash menu. Args are viewport coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu { get; set; }
 
+    /// <summary>Raised when a TemplateButton block requests insertion of its template blocks after itself.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<IPageBlock>> OnInsertTemplateBlocks { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private IPageBlock?       _lastBlock;
@@ -256,17 +259,75 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
-    // ── Navigation helpers ────────────────────────────────────────────────────
+    // ── Child page (TmNotionChildPageBlock) callbacks ────────────────────────
 
-    private void OnNavigateToPage(Guid? pageId)
+    private async Task HandleChildPageNavigateAsync()
     {
-        if (pageId.HasValue)
-            _ = Context.DataProvider.GetPageAsync(pageId.Value.ToString());
+        if (Block.Content is not IChildPageBlockContent cp) return;
+        await NavigateToPageAsync(cp.ChildPageId);
     }
 
-    private void OnPageLinkKeyDown(KeyboardEventArgs e, Guid? pageId)
+    private async Task HandleChildPageRenameCommittedAsync(string newTitle)
     {
-        if (e.Key == "Enter") OnNavigateToPage(pageId);
+        if (Block.Content is not IChildPageBlockContent cp) return;
+        var updated = BuildBlockWithContent(Block, new ChildPageBlockContent
+        {
+            ChildPageId = cp.ChildPageId,
+            Title       = newTitle,
+            IconEmoji   = cp.IconEmoji
+        });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
+    }
+
+    // ── Linked page (TmNotionLinkedPageBlock) callbacks ──────────────────────
+
+    private async Task HandleLinkedPageNavigateAsync()
+    {
+        if (Block.Content is not ILinkedPageBlockContent lp) return;
+        await NavigateToPageAsync(lp.LinkedPageId);
+    }
+
+    // ── Navigation helper ────────────────────────────────────────────────────
+
+    private Task NavigateToPageAsync(Guid pageId)
+    {
+        if (Context.NavigateTo is not null)
+            return Context.NavigateTo(pageId.ToString());
+        return Task.CompletedTask;
+    }
+
+    // ── Synced blocks callbacks ──────────────────────────────────────────────
+
+    private async Task HandleSyncedOriginCopySyncIdAsync(Guid syncId)
+    {
+        try { await JS.InvokeVoidAsync("tmNotionEditor.copyText", syncId.ToString()); }
+        catch { }
+    }
+
+    private async Task HandleSyncedRefUnsyncAsync(IPageBlock newBlock)
+    {
+        await OnUpdated.InvokeAsync(newBlock);
+    }
+
+    // ── Template button (TmNotionTemplateButtonBlock) callbacks ──────────────
+
+    private Task HandleInsertTemplateBlocksAsync(IReadOnlyList<IPageBlock> blocks) =>
+        OnInsertTemplateBlocks.InvokeAsync(blocks);
+
+    private async Task HandleTemplateButtonUpdatedAsync(TemplateButtonBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+        }
+        catch { }
     }
 
     // ── Image (TmNotionImageBlock) callbacks ──────────────────────────────────

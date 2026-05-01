@@ -1,0 +1,103 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Models
+
+@switch (Field.Type)
+{
+    case DatabaseFieldType.Number:
+        <TmNotionDbCellNumber Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                               OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Select:
+        <TmNotionDbCellSelect Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                               OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.MultiSelect:
+        <TmNotionDbCellMultiSelect Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                    OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Status:
+        <TmNotionDbCellStatus Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                               OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Date:
+    case DatabaseFieldType.DateRange:
+        <TmNotionDbCellDate Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                             OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Person:
+        <TmNotionDbCellPerson Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                               OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Checkbox:
+        <TmNotionDbCellCheckbox Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                 OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Url:
+        <TmNotionDbCellUrl Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                            OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Email:
+        <TmNotionDbCellEmail Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                              OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Phone:
+        <TmNotionDbCellPhone Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                              OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Files:
+        <TmNotionDbCellFiles Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                              OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Formula:
+        <TmNotionDbCellFormula Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Relation:
+        <TmNotionDbCellRelation Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                 OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.Rollup:
+        <TmNotionDbCellRollup Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                               OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.CreatedTime:
+        <TmNotionDbCellCreatedTime Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                    OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.CreatedBy:
+        <TmNotionDbCellCreatedBy Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                  OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.LastEditedTime:
+        <TmNotionDbCellLastEditedTime Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                       OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    case DatabaseFieldType.LastEditedBy:
+        <TmNotionDbCellLastEditedBy Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                                     OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+
+    default:
+        <TmNotionDbCellText Field="Field" Value="Value" ReadOnly="ReadOnly" IsEditing="IsEditing"
+                             OnCommit="OnCommit" OnCancel="OnCancel" OnEditRequested="OnEditRequested" />
+        break;
+}

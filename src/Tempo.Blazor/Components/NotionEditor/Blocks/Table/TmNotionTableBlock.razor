@@ -1,0 +1,111 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Table
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<div class="tm-notion-table-block" @ref="_containerRef">
+
+    @if (_loadingRows)
+    {
+        <div class="tm-notion-table-block__loading" role="status" aria-label="@Loc["TmNotionTableBlock_Loading"]">
+            <div class="tm-notion-skeleton tm-notion-skeleton--rect" style="height:28px;margin-bottom:1px"></div>
+            <div class="tm-notion-skeleton tm-notion-skeleton--rect" style="height:28px;margin-bottom:1px"></div>
+            <div class="tm-notion-skeleton tm-notion-skeleton--rect" style="height:28px"></div>
+        </div>
+    }
+    else
+    {
+        <div class="tm-notion-table-block__wrapper">
+            <table class="tm-notion-table @(_hasHeaderRow ? "tm-notion-table--has-header-row" : "") @(_hasHeaderColumn ? "tm-notion-table--has-header-col" : "")"
+                   role="grid"
+                   aria-label="@Loc["TmNotionTableBlock_TableLabel"]"
+                   @ref="_tableRef">
+
+                @if (!ReadOnly && _columnCount > 0)
+                {
+                    <thead>
+                        <tr class="tm-notion-table__ctrl-row" aria-hidden="true">
+                            <th class="tm-notion-table__corner-cell"></th>
+                            @for (var c = 0; c < _columnCount; c++)
+                            {
+                                var colIdx = c;
+                                <th class="tm-notion-table__col-ctrl-cell">
+                                    @if (_columnCount > 1)
+                                    {
+                                        <button class="tm-notion-table__col-delete"
+                                                type="button"
+                                                title="@Loc["TmNotionTableBlock_DeleteColumn"]"
+                                                aria-label="@Loc["TmNotionTableBlock_DeleteColumn"]"
+                                                @onclick="() => DeleteColumnAsync(colIdx)"
+                                                @onclick:stopPropagation="true">
+                                            <svg width="8" height="8" viewBox="0 0 8 8" fill="none" aria-hidden="true">
+                                                <line x1="1" y1="1" x2="7" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                                <line x1="7" y1="1" x2="1" y2="7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                                            </svg>
+                                        </button>
+                                    }
+                                </th>
+                            }
+                        </tr>
+                    </thead>
+                }
+
+                <tbody>
+                    @for (var r = 0; r < _rows.Count; r++)
+                    {
+                        var row     = _rows[r];
+                        var rowIdx  = r;
+                        var isHeader = _hasHeaderRow && r == 0;
+                        <TmNotionTableRowBlock Row="row"
+                                               RowIndex="rowIdx"
+                                               ColumnCount="_columnCount"
+                                               IsHeaderRow="isHeader"
+                                               HasHeaderColumn="_hasHeaderColumn"
+                                               ReadOnly="ReadOnly"
+                                               IsDragging="_dragSourceIndex == rowIdx"
+                                               IsDragOver="_dragOverIndex == rowIdx && _dragOverIndex != _dragSourceIndex"
+                                               CanDelete="_rows.Count > 1"
+                                               OnCellsChanged="cells => HandleCellsChangedAsync(row, cells)"
+                                               OnDeleteRequested="() => DeleteRowAsync(rowIdx)"
+                                               OnFocused="OnFocused"
+                                               OnTabFromLastCell="() => FocusCellAsync(rowIdx + 1, 0)"
+                                               OnShiftTabFromFirstCell="() => FocusCellAsync(rowIdx - 1, _columnCount - 1)"
+                                               OnDragStart="() => HandleRowDragStartAsync(rowIdx)"
+                                               OnDragOver="() => HandleRowDragOverAsync(rowIdx)"
+                                               OnDrop="HandleRowDropAsync"
+                                               OnDragEnd="HandleRowDragEndAsync" />
+                    }
+                </tbody>
+            </table>
+
+            @if (!ReadOnly)
+            {
+                <button class="tm-notion-table-block__add-col"
+                        type="button"
+                        title="@Loc["TmNotionTableBlock_AddColumn"]"
+                        aria-label="@Loc["TmNotionTableBlock_AddColumn"]"
+                        @onclick="AddColumnAsync"
+                        @onclick:stopPropagation="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                        <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                </button>
+            }
+        </div>
+
+        @if (!ReadOnly)
+        {
+            <button class="tm-notion-table-block__add-row"
+                    type="button"
+                    aria-label="@Loc["TmNotionTableBlock_AddRow"]"
+                    @onclick="AddRowAsync"
+                    @onclick:stopPropagation="true">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <line x1="12" y1="5" x2="12" y2="19" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    <line x1="5" y1="12" x2="19" y2="12" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                </svg>
+                <span>@Loc["TmNotionTableBlock_AddRow"]</span>
+            </button>
+        }
+    }
+
+</div>

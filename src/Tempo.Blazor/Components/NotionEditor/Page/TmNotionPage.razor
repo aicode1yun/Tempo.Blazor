@@ -63,18 +63,21 @@
             }
             else
             {
-                <TmNotionBlockList Blocks="_blocks"
-                                   ReadOnly="ReadOnly"
-                                   ActiveBlockId="_activeBlockId"
-                                   OnReorder="HandleBlockReorderAsync"
-                                   OnBlockFocused="HandleBlockFocusedAsync"
-                                   OnBlockDeleted="HandleBlockDeletedAsync"
-                                   OnBlockUpdated="HandleBlockUpdatedAsync"
-                                   OnBlockDuplicated="HandleBlockDuplicatedAsync"
-                                   OnConvertBlock="HandleConvertBlockAsync"
-                                   OnAddBlockAfter="HandleAddBlockAfterAsync"
-                                   OnAddBlockAtEnd="HandleAddBlockAtEndAsync"
-                                   OnSlashMenu="HandleSlashMenuOpenedAsync" />
+                <CascadingValue Value="(IReadOnlyList<IPageBlock>)_blocks" Name="TmPageBlocks" IsFixed="false">
+                    <TmNotionBlockList Blocks="_blocks"
+                                       ReadOnly="ReadOnly"
+                                       ActiveBlockId="_activeBlockId"
+                                       OnReorder="HandleBlockReorderAsync"
+                                       OnBlockFocused="HandleBlockFocusedAsync"
+                                       OnBlockDeleted="HandleBlockDeletedAsync"
+                                       OnBlockUpdated="HandleBlockUpdatedAsync"
+                                       OnBlockDuplicated="HandleBlockDuplicatedAsync"
+                                       OnConvertBlock="HandleConvertBlockAsync"
+                                       OnAddBlockAfter="HandleAddBlockAfterAsync"
+                                       OnInsertTemplateBlocksAfter="HandleInsertTemplateBlocksAfterAsync"
+                                       OnAddBlockAtEnd="HandleAddBlockAtEndAsync"
+                                       OnSlashMenu="HandleSlashMenuOpenedAsync" />
+                </CascadingValue>
             }
 
         </div>

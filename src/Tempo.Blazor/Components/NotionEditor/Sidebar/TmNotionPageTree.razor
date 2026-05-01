@@ -1,0 +1,20 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.NotionEditor.Interfaces
+
+<CascadingValue Value="this" IsFixed="true">
+    @if (RootPages.Count == 0)
+    {
+        <div class="tm-npt-empty">@Loc["TmNotionPageTree_NoPages"]</div>
+    }
+    else
+    {
+        <ul class="tm-npt-root" role="tree" aria-label="@Loc["TmNotionSidebar_Pages"]">
+            @foreach (var page in RootPages)
+            {
+                <TmNotionPageTreeItem Page="@(page)"
+                                      Depth="0"
+                                      ActivePageId="@ActivePageId" />
+            }
+        </ul>
+    }
+</CascadingValue>

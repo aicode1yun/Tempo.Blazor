@@ -1,0 +1,113 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database
+@using Tempo.Blazor.NotionEditor.Enums
+@using Tempo.Blazor.NotionEditor.Models
+
+<div class="tm-dbgb">
+
+    @* ── Header ──────────────────────────────────────────────────────────── *@
+    <div class="tm-dbgb__header">
+        <span class="tm-dbgb__title">@Loc["TmNotionDbGroupBar_Title"]</span>
+        <button class="tm-dbgb__close" type="button"
+                aria-label="@Loc["TmNotionDbGroupBar_Close"]"
+                @onclick="() => OnClose.InvokeAsync()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+            </svg>
+        </button>
+    </div>
+
+    @* ── Field list ───────────────────────────────────────────────────────── *@
+    <div class="tm-dbgb__fields" role="listbox" aria-label="@Loc["TmNotionDbGroupBar_Title"]">
+
+        @* No grouping *@
+        <button class="tm-dbgb__field-item @(_selectedFieldId is null ? "tm-dbgb__field-item--active" : "")"
+                type="button"
+                role="option"
+                aria-selected="@(_selectedFieldId is null)"
+                disabled="@ReadOnly"
+                @onclick="() => SelectFieldAsync(null)">
+            <span class="tm-dbgb__field-icon" aria-hidden="true">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                    <path d="M5 12h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
+                </svg>
+            </span>
+            <span class="tm-dbgb__field-name">@Loc["TmNotionDbGroupBar_None"]</span>
+            @if (_selectedFieldId is null)
+            {
+                <svg class="tm-dbgb__field-check" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                    <path d="M5 13l4 4 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+            }
+        </button>
+
+        @* Groupable fields *@
+        @foreach (var field in GroupableFields)
+        {
+            var f = field;
+            <button class="tm-dbgb__field-item @(_selectedFieldId == f.Id ? "tm-dbgb__field-item--active" : "")"
+                    type="button"
+                    role="option"
+                    aria-selected="@(_selectedFieldId == f.Id)"
+                    disabled="@ReadOnly"
+                    @onclick="() => SelectFieldAsync(f.Id)">
+                <span class="tm-dbgb__field-icon" aria-hidden="true">@FieldTypeIcon(f.Type)</span>
+                <span class="tm-dbgb__field-name">@f.Name</span>
+                @if (_selectedFieldId == f.Id)
+                {
+                    <svg class="tm-dbgb__field-check" width="13" height="13" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M5 13l4 4 10-10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                }
+            </button>
+        }
+
+    </div>
+
+    @* ── Group options (shown when a field is selected) ───────────────────── *@
+    @if (_selectedFieldId.HasValue)
+    {
+        <div class="tm-dbgb__options">
+
+            @* Hide empty groups *@
+            <div class="tm-dbgb__opt-row">
+                <span class="tm-dbgb__opt-label">@Loc["TmNotionDbGroupBar_HideEmpty"]</span>
+                <label class="tm-dbgb__switch" aria-label="@Loc["TmNotionDbGroupBar_HideEmpty"]">
+                    <input class="tm-dbgb__switch-input" type="checkbox"
+                           disabled="@ReadOnly"
+                           checked="@_hideEmptyGroups"
+                           @onchange="e => ToggleHideEmptyAsync((bool)(e.Value ?? false))" />
+                    <span class="tm-dbgb__switch-track" aria-hidden="true"></span>
+                </label>
+            </div>
+
+            @* Sort groups direction *@
+            <div class="tm-dbgb__opt-row">
+                <span class="tm-dbgb__opt-label">@Loc["TmNotionDbGroupBar_SortGroups"]</span>
+                <div class="tm-dbgb__dir-toggle" role="group">
+                    <button class="tm-dbgb__dir-btn @(_sortDirection == SortDirection.Ascending ? "tm-dbgb__dir-btn--active" : "")"
+                            type="button"
+                            disabled="@ReadOnly"
+                            title="@Loc["TmNotionDbGroupBar_Ascending"]"
+                            @onclick="() => SetSortDirectionAsync(SortDirection.Ascending)">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 19V5M5 12l7-7 7 7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        @Loc["TmNotionDbGroupBar_Ascending"]
+                    </button>
+                    <button class="tm-dbgb__dir-btn @(_sortDirection == SortDirection.Descending ? "tm-dbgb__dir-btn--active" : "")"
+                            type="button"
+                            disabled="@ReadOnly"
+                            title="@Loc["TmNotionDbGroupBar_Descending"]"
+                            @onclick="() => SetSortDirectionAsync(SortDirection.Descending)">
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M12 5v14M5 12l7 7 7-7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        @Loc["TmNotionDbGroupBar_Descending"]
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    }
+
+</div>

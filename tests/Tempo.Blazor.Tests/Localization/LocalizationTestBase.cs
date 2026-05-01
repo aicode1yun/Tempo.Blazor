@@ -596,6 +596,25 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDiagramEditor_ToggleRulers"] = "Přepnout pravítka",
         ["TmDiagramEditor_RulerUnitLabel"] = "Jednotka pravítka",
 
+        // TmPivotTable
+        ["TmPivotTable_Loading"] = "Loading pivot data...",
+        ["TmPivotTable_NoData"] = "No data to display",
+        ["TmPivotTable_AvailableFields"] = "Available Fields",
+        ["TmPivotTable_RowFields"] = "Row Fields",
+        ["TmPivotTable_ColumnFields"] = "Column Fields",
+        ["TmPivotTable_ValueFields"] = "Values",
+        ["TmPivotTable_FilterFields"] = "Filters",
+        ["TmPivotTable_Apply"] = "Apply",
+        ["TmPivotTable_Reset"] = "Reset",
+        ["TmPivotTable_ClearAll"] = "Clear All",
+        ["TmPivotTable_DragHint"] = "Drag fields to areas",
+        ["TmPivotTable_ValueSettings"] = "Value Settings",
+        ["TmPivotTable_Aggregation_Sum"] = "Sum",
+        ["TmPivotTable_Aggregation_Count"] = "Count",
+        ["TmPivotTable_Aggregation_Average"] = "Average",
+        ["TmPivotTable_Aggregation_Min"] = "Min",
+        ["TmPivotTable_Aggregation_Max"] = "Max",
+
         // TmWireframe
         ["TmWireframe_ToolbarAriaLabel"] = "Wireframe editor toolbar",
         ["TmWireframe_UntitledPlaceholder"] = "Untitled wireframe",
@@ -1248,6 +1267,10 @@ public abstract class LocalizationTestBase : TestContext
         ["TmWireframe_ShowRulers"] = "Zobrazit pravítka",
         ["TmWireframe_HorizontalRuler"] = "Vodorovné pravítko",
         ["TmWireframe_VerticalRuler"] = "Svislé pravítko",
+
+        // TmPivotTable
+        ["TmPivotTable_Loading"] = "Načítání kontingenční tabulky...",
+        ["TmPivotTable_NoData"] = "Žádná data k zobrazení",
     });
 }
 

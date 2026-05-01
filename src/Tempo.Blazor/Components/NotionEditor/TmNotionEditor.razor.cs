@@ -40,6 +40,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionImportExportProvider?  ImportExportProvider   { get; set; }
     [Parameter] public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; set; }
     [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; set; }
+    [Parameter] public INotionSyncedBlockProvider?   SyncedBlockProvider      { get; set; }
 
     // ── Behaviour parameters ─────────────────────────────────────────────────
 
@@ -57,6 +58,9 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     /// <summary>Raised whenever the active page changes.</summary>
     [Parameter] public EventCallback<INotionPage> OnPageChanged { get; set; }
+
+    /// <summary>Raised when the user requests to open the trash panel from the sidebar.</summary>
+    [Parameter] public EventCallback OnTrashRequested { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -170,6 +174,11 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         StateHasChanged();
     }
 
+    private async Task OnTrashRequestedAsync()
+    {
+        await OnTrashRequested.InvokeAsync();
+    }
+
     // ── JS scroll spy ────────────────────────────────────────────────────────
 
     private async Task InitScrollListenerAsync()
@@ -212,7 +221,9 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         FileProvider              = FileProvider,
         ImportExportProvider      = ImportExportProvider,
         DiagramDocumentProvider   = DiagramDocumentProvider,
-        WireframeDocumentProvider = WireframeDocumentProvider
+        WireframeDocumentProvider = WireframeDocumentProvider,
+        SyncedBlockProvider       = SyncedBlockProvider,
+        NavigateTo                = pageId => NavigateToPageAsync(pageId)
     };
 
     // ── Dispose ──────────────────────────────────────────────────────────────

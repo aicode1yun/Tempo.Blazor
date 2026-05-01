@@ -1,0 +1,72 @@
+@namespace Tempo.Blazor.Components.PivotTable
+@typeparam TItem
+@using Tempo.Blazor.Abstractions.PivotTable
+
+<div class="tm-pivot-field-chip @GetAreaClass()"
+     draggable="@AllowDragDrop.ToString().ToLowerInvariant()"
+     @ondragstart="HandleDragStart"
+     @ondragend="HandleDragEnd">
+    <span class="tm-pivot-field-chip-text">@Field.Title</span>
+    @if (ShowSettings)
+    {
+        <button type="button"
+                class="tm-pivot-field-chip-btn"
+                @onclick="HandleSettingsClick"
+                @onclick:stopPropagation="true"
+                title="@Loc["TmPivotTable_ValueSettings"]">
+            ⚙
+        </button>
+    }
+    @if (ShowRemove)
+    {
+        <button type="button"
+                class="tm-pivot-field-chip-btn tm-pivot-field-chip-btn--remove"
+                @onclick="HandleRemoveClick"
+                @onclick:stopPropagation="true">
+            ×
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>The field this chip represents.</summary>
+    [Parameter] public PivotField<TItem> Field { get; set; } = default!;
+
+    /// <summary>The area where this chip is currently placed.</summary>
+    [Parameter] public PivotArea Area { get; set; } = PivotArea.Unused;
+
+    /// <summary>Whether the chip can be dragged.</summary>
+    [Parameter] public bool AllowDragDrop { get; set; } = true;
+
+    /// <summary>Whether to show the settings button.</summary>
+    [Parameter] public bool ShowSettings { get; set; }
+
+    /// <summary>Whether to show the remove button.</summary>
+    [Parameter] public bool ShowRemove { get; set; }
+
+    /// <summary>Fires when drag starts.</summary>
+    [Parameter] public EventCallback OnDragStart { get; set; }
+
+    /// <summary>Fires when drag ends.</summary>
+    [Parameter] public EventCallback OnDragEnd { get; set; }
+
+    /// <summary>Fires when settings button is clicked.</summary>
+    [Parameter] public EventCallback OnSettingsClick { get; set; }
+
+    /// <summary>Fires when remove button is clicked.</summary>
+    [Parameter] public EventCallback OnRemoveClick { get; set; }
+
+    private string GetAreaClass() => Area switch
+    {
+        PivotArea.Row => "tm-pivot-field-chip--row",
+        PivotArea.Column => "tm-pivot-field-chip--column",
+        PivotArea.Data => "tm-pivot-field-chip--value",
+        PivotArea.Filter => "tm-pivot-field-chip--filter",
+        _ => "tm-pivot-field-chip--unused"
+    };
+
+    private Task HandleDragStart() => OnDragStart.InvokeAsync();
+    private Task HandleDragEnd() => OnDragEnd.InvokeAsync();
+    private Task HandleSettingsClick() => OnSettingsClick.InvokeAsync();
+    private Task HandleRemoveClick() => OnRemoveClick.InvokeAsync();
+}

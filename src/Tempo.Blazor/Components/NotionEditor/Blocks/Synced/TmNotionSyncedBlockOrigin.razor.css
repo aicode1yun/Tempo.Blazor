@@ -1,0 +1,78 @@
+/* ── Outer frame ──────────────────────────────────────────────────────────── */
+
+.tm-synced-origin {
+    position: relative;
+    border: 1.5px solid var(--tm-synced-border, #f87171);
+    border-radius: var(--tm-radius-md);
+    background-color: color-mix(in srgb, var(--tm-synced-border, #f87171) 3%, transparent);
+    outline: none;
+}
+
+.tm-synced-origin--focused {
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--tm-synced-border, #f87171) 22%, transparent);
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.tm-synced-origin__header {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-1-5) var(--tm-space-3);
+    border-bottom: 1px solid color-mix(in srgb, var(--tm-synced-border, #f87171) 25%, transparent);
+    background-color: color-mix(in srgb, var(--tm-synced-border, #f87171) 6%, transparent);
+    border-radius: var(--tm-radius-md) var(--tm-radius-md) 0 0;
+    min-height: 32px;
+}
+
+.tm-synced-origin__badge {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    font-size: var(--tm-font-size-xs);
+    font-weight: 600;
+    color: var(--tm-synced-border, #f87171);
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.tm-synced-origin__ref-count {
+    font-size: var(--tm-font-size-xs);
+    color: var(--tm-color-gray-500);
+    flex: 1;
+}
+
+.tm-synced-origin__copy-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--tm-space-1);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    background: none;
+    border: 1px solid color-mix(in srgb, var(--tm-synced-border, #f87171) 40%, transparent);
+    border-radius: var(--tm-radius-sm);
+    font-size: var(--tm-font-size-xs);
+    color: var(--tm-synced-border, #f87171);
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background-color 100ms, border-color 100ms;
+    flex-shrink: 0;
+}
+
+.tm-synced-origin__copy-btn:hover {
+    background-color: color-mix(in srgb, var(--tm-synced-border, #f87171) 10%, transparent);
+    border-color: var(--tm-synced-border, #f87171);
+}
+
+/* ── Body ────────────────────────────────────────────────────────────────── */
+
+.tm-synced-origin__body {
+    padding: var(--tm-space-2) 0;
+}
+
+.tm-synced-origin__skeleton {
+    padding: var(--tm-space-3) var(--tm-space-3);
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+}

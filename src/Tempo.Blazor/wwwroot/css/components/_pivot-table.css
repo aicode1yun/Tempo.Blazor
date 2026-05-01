@@ -1,0 +1,381 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmPivotTable — Pivot Table Component
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Wrapper */
+.tm-pivot-table-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-4);
+  padding: var(--tm-space-4);
+  background: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-lg);
+}
+
+/* Loading */
+.tm-pivot-loading {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tm-space-3);
+  padding: var(--tm-space-8);
+}
+
+.tm-pivot-loading-text {
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TmPivotFieldPanel
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-field-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-3);
+  padding: var(--tm-space-3);
+  background: var(--tm-bg-surface-secondary);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+}
+
+.tm-pivot-field-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--tm-space-2);
+  flex-wrap: wrap;
+}
+
+.tm-pivot-field-panel-hint {
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-secondary);
+}
+
+.tm-pivot-field-panel-actions {
+  display: flex;
+  gap: var(--tm-space-2);
+}
+
+/* Zones Grid */
+.tm-pivot-field-panel-zones {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--tm-space-3);
+}
+
+/* Zone */
+.tm-pivot-zone {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-2);
+  min-height: 120px;
+  padding: var(--tm-space-2);
+  background: var(--tm-bg-surface);
+  border: 2px dashed var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+  transition: border-color 0.15s, background-color 0.15s;
+}
+
+.tm-pivot-zone--row {
+  border-color: var(--tm-color-info, #3b82f6);
+  background: color-mix(in srgb, var(--tm-color-info, #3b82f6) 3%, var(--tm-bg-surface));
+}
+
+.tm-pivot-zone--column {
+  border-color: var(--tm-color-success, #22c55e);
+  background: color-mix(in srgb, var(--tm-color-success, #22c55e) 3%, var(--tm-bg-surface));
+}
+
+.tm-pivot-zone--value {
+  border-color: var(--tm-color-warning, #f59e0b);
+  background: color-mix(in srgb, var(--tm-color-warning, #f59e0b) 3%, var(--tm-bg-surface));
+}
+
+.tm-pivot-zone--filter {
+  border-color: var(--tm-color-danger, #ef4444);
+  background: color-mix(in srgb, var(--tm-color-danger, #ef4444) 3%, var(--tm-bg-surface));
+}
+
+.tm-pivot-zone--unused {
+  border-style: dashed;
+}
+
+.tm-pivot-zone-title {
+  font-size: var(--tm-font-size-xs);
+  font-weight: var(--tm-font-weight-semibold);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tm-text-secondary);
+  padding-bottom: var(--tm-space-1);
+  border-bottom: 1px solid var(--tm-border-color);
+}
+
+.tm-pivot-zone-content {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+  flex: 1;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TmPivotFieldChip
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-field-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--tm-space-1);
+  padding: var(--tm-space-1) var(--tm-space-2);
+  border-radius: var(--tm-radius-md);
+  font-size: var(--tm-font-size-sm);
+  cursor: grab;
+  user-select: none;
+  transition: transform 0.1s, box-shadow 0.1s;
+  max-width: 100%;
+  overflow: hidden;
+}
+
+.tm-pivot-field-chip:active {
+  cursor: grabbing;
+}
+
+.tm-pivot-field-chip--unused {
+  background: var(--tm-bg-muted);
+  color: var(--tm-text-secondary);
+  border: 1px solid var(--tm-border-color);
+}
+
+.tm-pivot-field-chip--row {
+  background: color-mix(in srgb, var(--tm-color-info, #3b82f6) 15%, transparent);
+  color: var(--tm-color-info-text, #1e40af);
+  border: 1px solid var(--tm-color-info, #3b82f6);
+}
+
+.tm-pivot-field-chip--column {
+  background: color-mix(in srgb, var(--tm-color-success, #22c55e) 15%, transparent);
+  color: var(--tm-color-success-text, #166534);
+  border: 1px solid var(--tm-color-success, #22c55e);
+}
+
+.tm-pivot-field-chip--value {
+  background: color-mix(in srgb, var(--tm-color-warning, #f59e0b) 15%, transparent);
+  color: var(--tm-color-warning-text, #92400e);
+  border: 1px solid var(--tm-color-warning, #f59e0b);
+}
+
+.tm-pivot-field-chip--filter {
+  background: color-mix(in srgb, var(--tm-color-danger, #ef4444) 15%, transparent);
+  color: var(--tm-color-danger-text, #991b1b);
+  border: 1px solid var(--tm-color-danger, #ef4444);
+}
+
+.tm-pivot-field-chip-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tm-pivot-field-chip-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.25rem;
+  height: 1.25rem;
+  padding: 0;
+  border: none;
+  border-radius: var(--tm-radius-sm);
+  background: rgba(0, 0, 0, 0.1);
+  color: inherit;
+  font-size: var(--tm-font-size-xs);
+  cursor: pointer;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.tm-pivot-field-chip-btn:hover {
+  background: rgba(0, 0, 0, 0.2);
+}
+
+.tm-pivot-field-chip-btn--remove:hover {
+  background: var(--tm-color-danger);
+  color: white;
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Value Field Editor
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-value-field-item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+}
+
+.tm-pivot-value-field-editor {
+  padding: var(--tm-space-2);
+  background: var(--tm-bg-surface);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-sm);
+}
+
+.tm-pivot-value-field-editor label {
+  display: flex;
+  flex-direction: column;
+  gap: var(--tm-space-1);
+  font-size: var(--tm-font-size-xs);
+  color: var(--tm-text-secondary);
+}
+
+.tm-pivot-value-field-editor select {
+  padding: var(--tm-space-1) var(--tm-space-2);
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-sm);
+  font-size: var(--tm-font-size-sm);
+  background: var(--tm-bg-surface);
+  color: var(--tm-text-primary);
+}
+
+.tm-pivot-value-field-editor select:focus {
+  outline: none;
+  border-color: var(--tm-color-primary);
+  box-shadow: var(--tm-shadow-focus);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   TmPivotTable Table
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-pivot-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--tm-border-color);
+  border-radius: var(--tm-radius-md);
+}
+
+.tm-pivot-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--tm-font-size-sm);
+  color: var(--tm-text-primary);
+}
+
+.tm-pivot-table thead tr {
+  background-color: var(--tm-bg-surface-secondary);
+}
+
+.tm-pivot-table th,
+.tm-pivot-table td {
+  padding: var(--tm-space-2) var(--tm-space-3);
+  text-align: left;
+  border: 1px solid var(--tm-border-color);
+}
+
+.tm-pivot-table th {
+  font-weight: var(--tm-font-weight-semibold);
+  font-size: var(--tm-font-size-xs);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--tm-text-secondary);
+  white-space: nowrap;
+}
+
+.tm-pivot-corner {
+  background-color: var(--tm-bg-surface-tertiary);
+}
+
+.tm-pivot-col-header {
+  text-align: center;
+}
+
+.tm-pivot-value-header {
+  text-align: center;
+  font-size: var(--tm-font-size-xs);
+}
+
+.tm-pivot-row-dim {
+  font-weight: var(--tm-font-weight-medium);
+  background-color: var(--tm-bg-surface-secondary);
+}
+
+.tm-pivot-cell {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+
+.tm-pivot-cell-null {
+  color: var(--tm-text-tertiary);
+  text-align: center;
+}
+
+.tm-pivot-table tbody tr:hover {
+  background-color: var(--tm-bg-surface-secondary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Buttons (compact)
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--tm-space-1);
+  padding: var(--tm-space-2) var(--tm-space-3);
+  border: 1px solid transparent;
+  border-radius: var(--tm-radius-md);
+  font-size: var(--tm-font-size-sm);
+  font-weight: var(--tm-font-weight-medium);
+  cursor: pointer;
+  transition: all var(--tm-transition-fast);
+  white-space: nowrap;
+}
+
+.tm-btn--sm {
+  padding: var(--tm-space-1) var(--tm-space-2);
+  font-size: var(--tm-font-size-xs);
+}
+
+.tm-btn--secondary {
+  background: var(--tm-color-primary);
+  color: var(--tm-text-inverse);
+  border-color: var(--tm-color-primary);
+}
+
+.tm-btn--secondary:hover {
+  background: var(--tm-color-primary-hover);
+}
+
+.tm-btn--ghost {
+  background: transparent;
+  color: var(--tm-text-secondary);
+  border-color: var(--tm-border-color);
+}
+
+.tm-btn--ghost:hover {
+  background: var(--tm-bg-surface-secondary);
+  color: var(--tm-text-primary);
+}
+
+/* ═══════════════════════════════════════════════════════════════
+   Responsive
+   ═══════════════════════════════════════════════════════════════ */
+
+@media (max-width: 768px) {
+  .tm-pivot-field-panel-zones {
+    grid-template-columns: 1fr;
+  }
+
+  .tm-pivot-field-panel-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .tm-pivot-field-panel-actions {
+    justify-content: flex-end;
+  }
+}

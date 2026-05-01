@@ -1,0 +1,89 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database
+@using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Enums
+
+<div class="tm-dbg @CardSizeClass">
+
+    @if (Records.Count == 0 && ReadOnly)
+    {
+        <div class="tm-dbg__empty">@Loc["TmNotionDatabaseBlock_NoRecords"]</div>
+    }
+    else
+    {
+        <div class="tm-dbg__grid">
+
+            @foreach (var record in Records)
+            {
+                var rec      = record;
+                var coverUrl = GetCoverUrl(rec);
+
+                <div class="tm-dbg__card"
+                     role="button"
+                     tabindex="0"
+                     @key="rec.Id"
+                     @onclick="() => HandleCardClickAsync(rec)"
+                     @onkeydown="e => HandleCardKeyAsync(e, rec)">
+
+                    @* ── Cover ──────────────────────────────────── *@
+                    <div class="tm-dbg__card-cover @(coverUrl is null ? "tm-dbg__card-cover--empty" : "")">
+                        @if (coverUrl is not null)
+                        {
+                            <img src="@coverUrl"
+                                 alt=""
+                                 loading="lazy"
+                                 style="object-fit:@CoverObjectFit" />
+                        }
+                        else
+                        {
+                            <span class="tm-dbg__cover-placeholder" aria-hidden="true">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none">
+                                    <rect x="3" y="3" width="18" height="18" rx="3"
+                                          stroke="currentColor" stroke-width="1.5"/>
+                                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                                    <path d="M21 15l-5-5L5 21"
+                                          stroke="currentColor" stroke-width="1.5"
+                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                </svg>
+                            </span>
+                        }
+                    </div>
+
+                    @* ── Card body ───────────────────────────────── *@
+                    <div class="tm-dbg__card-body">
+                        <div class="tm-dbg__card-title">@GetPrimaryValue(rec)</div>
+
+                        @foreach (var field in _previewFields)
+                        {
+                            var val = FormatFieldValue(rec, field);
+                            if (val.Length > 0)
+                            {
+                                <div class="tm-dbg__card-prop">
+                                    <span class="tm-dbg__card-prop-name">@field.Name</span>
+                                    <span class="tm-dbg__card-prop-val">@val</span>
+                                </div>
+                            }
+                        }
+                    </div>
+
+                </div>
+            }
+
+            @* ── Add card ────────────────────────────────────────── *@
+            @if (!ReadOnly)
+            {
+                <button class="tm-dbg__add-card"
+                        type="button"
+                        title="@Loc["TmNotionDbGalleryView_AddCard"]"
+                        @onclick="OnNewRecord">
+                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+                    </svg>
+                    <span>@Loc["TmNotionDbGalleryView_AddCard"]</span>
+                </button>
+            }
+
+        </div>
+    }
+
+</div>

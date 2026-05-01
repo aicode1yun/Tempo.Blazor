@@ -1,0 +1,361 @@
+/* ── Item (li) ───────────────────────────────────────────────────────────── */
+
+.tm-npt-item {
+    list-style: none;
+    position: relative;
+}
+
+.tm-npt-item--drag-over > .tm-npt-row {
+    outline: 2px dashed var(--tm-color-accent, #0066cc);
+    outline-offset: -2px;
+    border-radius: 4px;
+    background: var(--tm-color-accent-ghost, rgba(0, 102, 204, 0.08));
+}
+
+/* ── Row ─────────────────────────────────────────────────────────────────── */
+
+.tm-npt-row {
+    display: flex;
+    align-items: center;
+    height: 28px;
+    border-radius: 4px;
+    padding-right: 4px;
+    cursor: default;
+    user-select: none;
+    transition: background 0.1s;
+}
+
+.tm-npt-row:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.04));
+}
+
+.tm-npt-item--active > .tm-npt-row {
+    background: var(--tm-color-selected, rgba(0, 0, 0, 0.07));
+    font-weight: 500;
+}
+
+/* ── Indent spacer ───────────────────────────────────────────────────────── */
+
+.tm-npt-indent {
+    display: inline-block;
+    flex-shrink: 0;
+    width: 12px;
+}
+
+/* ── Expand toggle ───────────────────────────────────────────────────────── */
+
+.tm-npt-toggle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--tm-color-text-secondary, #999);
+    border-radius: 3px;
+    opacity: 0;
+    transition: opacity 0.15s, background 0.1s;
+}
+
+.tm-npt-row:hover .tm-npt-toggle,
+.tm-npt-item--active > .tm-npt-row .tm-npt-toggle {
+    opacity: 1;
+}
+
+.tm-npt-toggle:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.06));
+    color: var(--tm-color-text, #333);
+}
+
+/* ── Chevron ─────────────────────────────────────────────────────────────── */
+
+.tm-npt-chevron {
+    transition: transform 0.2s;
+}
+
+.tm-npt-chevron--open {
+    transform: rotate(180deg);
+}
+
+/* ── Page icon ───────────────────────────────────────────────────────────── */
+
+.tm-npt-icon {
+    flex-shrink: 0;
+    font-size: 14px;
+    line-height: 1;
+    margin-right: 5px;
+}
+
+/* ── Title button ────────────────────────────────────────────────────────── */
+
+.tm-npt-title {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    text-align: left;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    cursor: pointer;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+}
+
+.tm-npt-item--active > .tm-npt-row .tm-npt-title {
+    color: var(--tm-color-text, #1a1a1a);
+}
+
+/* ── Inline rename input ─────────────────────────────────────────────────── */
+
+.tm-npt-rename-input {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 1px 4px;
+    border: 1px solid var(--tm-color-accent, #0066cc);
+    border-radius: 3px;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    background: var(--tm-color-surface, #fff);
+    outline: none;
+}
+
+/* ── Hover actions ───────────────────────────────────────────────────────── */
+
+.tm-npt-actions {
+    display: flex;
+    align-items: center;
+    gap: 1px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tm-npt-row:hover .tm-npt-actions,
+.tm-npt-item--active > .tm-npt-row .tm-npt-actions {
+    opacity: 1;
+}
+
+.tm-npt-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 20px;
+    height: 20px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--tm-color-text-secondary, #999);
+    border-radius: 3px;
+    transition: background 0.1s, color 0.1s;
+}
+
+.tm-npt-btn:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.08));
+    color: var(--tm-color-text, #333);
+}
+
+/* ── Children list ───────────────────────────────────────────────────────── */
+
+.tm-npt-children {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.tm-npt-child-loading {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 4px 12px 4px 36px;
+    font-size: 12px;
+    color: var(--tm-color-text-secondary, #999);
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+
+.tm-npt-spinner {
+    display: inline-block;
+    width: 12px;
+    height: 12px;
+    border: 1.5px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: tm-npt-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes tm-npt-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Context menu backdrop ───────────────────────────────────────────────── */
+
+.tm-npt-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 1000;
+}
+
+/* ── Context menu panel ──────────────────────────────────────────────────── */
+
+.tm-npt-menu {
+    position: fixed;
+    z-index: 1001;
+    min-width: 200px;
+    max-width: 260px;
+    background: var(--tm-color-surface, #fff);
+    border: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.12));
+    border-radius: 6px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.12);
+    padding: 4px;
+    overflow: hidden;
+}
+
+.tm-npt-menu__item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    width: 100%;
+    padding: 6px 8px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    cursor: pointer;
+    border-radius: 4px;
+    text-align: left;
+    transition: background 0.1s;
+}
+
+.tm-npt-menu__item:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.05));
+}
+
+.tm-npt-menu__item--danger {
+    color: var(--tm-color-danger, #dc2626);
+}
+
+.tm-npt-menu__item--danger:hover {
+    background: var(--tm-color-danger-ghost, rgba(220, 38, 38, 0.08));
+}
+
+.tm-npt-menu__divider {
+    border: none;
+    border-top: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.08));
+    margin: 4px 0;
+}
+
+/* ── Delete confirmation ─────────────────────────────────────────────────── */
+
+.tm-npt-menu__confirm {
+    padding: 8px;
+}
+
+.tm-npt-menu__confirm-text {
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    margin: 0 0 10px;
+}
+
+.tm-npt-menu__confirm-actions {
+    display: flex;
+    gap: 6px;
+    justify-content: flex-end;
+}
+
+.tm-npt-menu__confirm-yes,
+.tm-npt-menu__confirm-no {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid transparent;
+}
+
+.tm-npt-menu__confirm-yes {
+    background: var(--tm-color-danger, #dc2626);
+    color: #fff;
+    border-color: var(--tm-color-danger, #dc2626);
+}
+
+.tm-npt-menu__confirm-yes:hover {
+    opacity: 0.9;
+}
+
+.tm-npt-menu__confirm-no {
+    background: transparent;
+    color: var(--tm-color-text-secondary, #666);
+    border-color: var(--tm-color-border, rgba(0, 0, 0, 0.15));
+}
+
+.tm-npt-menu__confirm-no:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.04));
+}
+
+/* ── Move-to panel ───────────────────────────────────────────────────────── */
+
+.tm-npt-menu__moveto {
+    padding: 6px;
+}
+
+.tm-npt-menu__moveto-title {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--tm-color-text-secondary, #888);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin: 0 0 6px;
+    padding: 0 2px;
+}
+
+.tm-npt-menu__moveto-input {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 5px 8px;
+    border: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.15));
+    border-radius: 4px;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    background: var(--tm-color-surface, #fff);
+    outline: none;
+    margin-bottom: 4px;
+}
+
+.tm-npt-menu__moveto-input:focus {
+    border-color: var(--tm-color-accent, #0066cc);
+}
+
+.tm-npt-menu__moveto-results {
+    max-height: 180px;
+    overflow-y: auto;
+}
+
+.tm-npt-menu__moveto-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    width: 100%;
+    padding: 5px 6px;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    cursor: pointer;
+    border-radius: 4px;
+    text-align: left;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    transition: background 0.1s;
+}
+
+.tm-npt-menu__moveto-item:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.05));
+}

@@ -1,0 +1,33 @@
+@namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database.Cells
+@inherits TmNotionDbCellBase
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (IsEditing)
+{
+    <input class="tm-dbc__input"
+           type="text"
+           @ref="_inputRef"
+           value="@_buffer"
+           placeholder="@Loc["TmNotionDbCell_Unassigned"]"
+           @oninput="e => _buffer = e.Value?.ToString() ?? string.Empty"
+           @onblur="() => CommitAsync(_buffer.Length > 0 ? _buffer : null)"
+           @onkeydown="e => HandleKeyAsync(e, () => CommitAsync(_buffer.Length > 0 ? _buffer : null))"
+           @onclick:stopPropagation="true" />
+}
+else
+{
+    <div class="tm-dbc @(ReadOnly ? "tm-dbc--readonly" : "")"
+         @onclick="() => !ReadOnly ? RequestEditAsync() : Task.CompletedTask">
+        @if (StringValue.Length > 0)
+        {
+            <span class="tm-dbc__avatar" style="background:@AvatarColor(StringValue)">
+                @Initials(StringValue)
+            </span>
+            <span class="tm-dbc__person-name">@StringValue</span>
+        }
+        else
+        {
+            <span class="tm-dbc__text tm-dbc__text--muted">@Loc["TmNotionDbCell_Unassigned"]</span>
+        }
+    </div>
+}

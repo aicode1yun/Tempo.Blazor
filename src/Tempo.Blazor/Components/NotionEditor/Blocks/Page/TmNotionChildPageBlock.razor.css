@@ -1,0 +1,120 @@
+/* ═══════════════════════════════════════════════════════════════
+   TmNotionChildPageBlock — page link card with inline rename
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Card row ────────────────────────────────────────────────── */
+
+.tm-child-page {
+    display:        flex;
+    align-items:    center;
+    gap:            var(--tm-space-2);
+    padding:        var(--tm-space-2-5) var(--tm-space-3);
+    border-radius:  var(--tm-radius-md);
+    background:     var(--tm-bg-subtle);
+    border:         1px solid var(--tm-notion-border, var(--tm-border-color));
+    cursor:         pointer;
+    user-select:    none;
+    outline:        none;
+    width:          100%;
+    min-height:     42px;
+    font-size:      var(--tm-font-size-base);
+    font-weight:    var(--tm-font-weight-medium);
+    color:          var(--tm-text-primary);
+    transition:     background   var(--tm-notion-anim-fast),
+                    border-color var(--tm-notion-anim-fast),
+                    box-shadow   var(--tm-notion-anim-fast);
+}
+
+.tm-child-page:hover {
+    background:   var(--tm-notion-bg-block-hover);
+    border-color: var(--tm-color-primary-300);
+}
+
+.tm-child-page:focus-visible {
+    outline:        2px solid var(--tm-color-primary-500);
+    outline-offset: 2px;
+}
+
+/* ── Icons ───────────────────────────────────────────────────── */
+
+.tm-child-page__page-icon {
+    color:       var(--tm-text-tertiary);
+    flex-shrink: 0;
+}
+
+.tm-child-page__emoji {
+    font-size:   1.15em;
+    flex-shrink: 0;
+    line-height: 1;
+    margin-left: calc(var(--tm-space-1) * -1);
+}
+
+/* ── Title ───────────────────────────────────────────────────── */
+
+.tm-child-page__title {
+    flex:          1;
+    min-width:     0;
+    overflow:      hidden;
+    text-overflow: ellipsis;
+    white-space:   nowrap;
+}
+
+/* ── Hover hint ──────────────────────────────────────────────── */
+
+.tm-child-page__rename-hint {
+    font-size:   var(--tm-font-size-xs);
+    color:       var(--tm-text-tertiary);
+    flex-shrink: 0;
+    opacity:     0;
+    transition:  opacity var(--tm-notion-anim-fast);
+    white-space: nowrap;
+}
+
+.tm-child-page:hover .tm-child-page__rename-hint {
+    opacity: 1;
+}
+
+/* ── Chevron ─────────────────────────────────────────────────── */
+
+.tm-child-page__chevron {
+    color:       var(--tm-text-tertiary);
+    flex-shrink: 0;
+    opacity:     0;
+    transition:  opacity var(--tm-notion-anim-fast);
+}
+
+.tm-child-page:hover .tm-child-page__chevron {
+    opacity: 1;
+}
+
+/* ── Rename mode ─────────────────────────────────────────────── */
+
+.tm-child-page--renaming {
+    display:       flex;
+    align-items:   center;
+    gap:           var(--tm-space-2);
+    padding:       var(--tm-space-2-5) var(--tm-space-3);
+    border-radius: var(--tm-radius-md);
+    background:    var(--tm-bg-subtle);
+    border:        1px solid var(--tm-color-primary-400);
+    box-shadow:    0 0 0 3px color-mix(in srgb, var(--tm-color-primary-500) 15%, transparent);
+    width:         100%;
+    min-height:    42px;
+}
+
+.tm-child-page__rename-input {
+    flex:        1;
+    min-width:   0;
+    background:  transparent;
+    border:      none;
+    outline:     none;
+    font-size:   var(--tm-font-size-base);
+    font-weight: var(--tm-font-weight-medium);
+    color:       var(--tm-text-primary);
+    padding:     0;
+}
+
+.tm-child-page__rename-input::placeholder {
+    color:      var(--tm-text-placeholder);
+    font-style: italic;
+}

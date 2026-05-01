@@ -1,0 +1,251 @@
+/* ═══════════════════════════════════════════════
+   TmNotionDbTemplateMenu  (prefix: tm-dbtm__)
+   ═══════════════════════════════════════════════ */
+
+.tm-dbtm {
+    display: flex;
+    flex-direction: column;
+    width: 280px;
+    background: var(--tm-surface, #fff);
+    border: 1px solid var(--tm-border, #e5e5e5);
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.06);
+    overflow: hidden;
+    max-height: 400px;
+    animation: tm-dbtm-in 0.12s ease;
+}
+
+@keyframes tm-dbtm-in {
+    from { opacity: 0; transform: translateY(-4px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ─────────────────────────────────────── */
+
+.tm-dbtm__header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 12px 8px;
+    border-bottom: 1px solid var(--tm-border, #e5e5e5);
+    flex-shrink: 0;
+}
+
+.tm-dbtm__title {
+    font-size: 11px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    color: var(--tm-text-secondary, #777);
+}
+
+.tm-dbtm__close-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-secondary, #999);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.tm-dbtm__close-btn:hover {
+    background: var(--tm-hover, rgba(0,0,0,0.05));
+    color: var(--tm-text, #1a1a1a);
+}
+
+/* ── New button ─────────────────────────────────── */
+
+.tm-dbtm__new-btn {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: transparent;
+    color: var(--tm-text-secondary, #555);
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    text-align: left;
+    border-bottom: 1px solid var(--tm-border, #e5e5e5);
+    transition: background 0.1s;
+    flex-shrink: 0;
+}
+
+.tm-dbtm__new-btn:hover {
+    background: var(--tm-hover, rgba(0,0,0,0.04));
+    color: var(--tm-text, #1a1a1a);
+}
+
+/* ── Loading ─────────────────────────────────────── */
+
+.tm-dbtm__loading {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    padding: 12px;
+}
+
+/* ── Empty ───────────────────────────────────────── */
+
+.tm-dbtm__empty {
+    margin: 0;
+    padding: 16px 12px;
+    font-size: 13px;
+    color: var(--tm-text-tertiary, #aaa);
+    text-align: center;
+}
+
+/* ── List ────────────────────────────────────────── */
+
+.tm-dbtm__list {
+    list-style: none;
+    margin: 0;
+    padding: 4px 0;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+    scrollbar-width: thin;
+}
+
+/* ── Item ────────────────────────────────────────── */
+
+.tm-dbtm__item {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    border-radius: 4px;
+    position: relative;
+}
+
+.tm-dbtm__item:hover .tm-dbtm__item-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tm-dbtm__item--confirming .tm-dbtm__use-btn {
+    opacity: 0.4;
+    pointer-events: none;
+}
+
+.tm-dbtm__use-btn {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex: 1;
+    min-width: 0;
+    padding: 7px 8px;
+    border: none;
+    background: transparent;
+    border-radius: 5px;
+    font-size: 13px;
+    color: var(--tm-text, #1a1a1a);
+    cursor: pointer;
+    text-align: left;
+    transition: background 0.1s;
+}
+
+.tm-dbtm__use-btn:hover {
+    background: var(--tm-hover, rgba(0,0,0,0.04));
+}
+
+.tm-dbtm__emoji {
+    font-size: 14px;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+.tm-dbtm__default-icon {
+    color: var(--tm-text-tertiary, #bbb);
+    flex-shrink: 0;
+}
+
+.tm-dbtm__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+/* ── Item actions ───────────────────────────────── */
+
+.tm-dbtm__item-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+    opacity: 0;
+    pointer-events: none;
+    flex-shrink: 0;
+    transition: opacity 0.1s;
+    padding-right: 4px;
+}
+
+.tm-dbtm__item--confirming .tm-dbtm__item-actions {
+    opacity: 1;
+    pointer-events: auto;
+}
+
+.tm-dbtm__action-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-secondary, #888);
+    cursor: pointer;
+    transition: background 0.1s, color 0.1s;
+}
+
+.tm-dbtm__action-btn:hover {
+    background: var(--tm-hover, rgba(0,0,0,0.06));
+    color: var(--tm-text, #1a1a1a);
+}
+
+.tm-dbtm__action-btn--danger:hover {
+    background: rgba(239,68,68,0.08);
+    color: #ef4444;
+}
+
+.tm-dbtm__confirm-del-btn {
+    padding: 3px 8px;
+    height: 24px;
+    border: 1px solid #ef4444;
+    border-radius: 4px;
+    background: transparent;
+    color: #ef4444;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+}
+
+.tm-dbtm__confirm-del-btn:hover {
+    background: rgba(239,68,68,0.08);
+}
+
+.tm-dbtm__cancel-del-btn {
+    padding: 3px 8px;
+    height: 24px;
+    border: 1px solid var(--tm-border, #e5e5e5);
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-secondary, #666);
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.1s;
+}
+
+.tm-dbtm__cancel-del-btn:hover {
+    background: var(--tm-hover, rgba(0,0,0,0.04));
+}
