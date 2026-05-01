@@ -130,8 +130,7 @@ public partial class TmPivotFieldPanel<TItem>
                     _draftColumnFields.Add(fieldKey);
                 break;
             case PivotArea.Data:
-                if (!_draftValueFields.Any(v => v.FieldKey == fieldKey))
-                    _draftValueFields.Add(new PivotValueFieldConfiguration { FieldKey = fieldKey, Aggregation = "Sum" });
+                _draftValueFields.Add(new PivotValueFieldConfiguration { FieldKey = fieldKey, Aggregation = "Sum" });
                 break;
             case PivotArea.Filter:
                 if (!_draftFilterFields.ContainsKey(fieldKey))
@@ -161,6 +160,20 @@ public partial class TmPivotFieldPanel<TItem>
                 _draftFilterFields.Remove(fieldKey);
                 break;
         }
+    }
+
+    private void RemoveValueFieldAt(int index)
+    {
+        if (index < 0 || index >= _draftValueFields.Count) return;
+
+        _draftValueFields.RemoveAt(index);
+
+        if (_editingValueFieldIndex == index)
+            _editingValueFieldIndex = null;
+        else if (_editingValueFieldIndex > index)
+            _editingValueFieldIndex--;
+
+        StateHasChanged();
     }
 
     private void RemoveField(string fieldKey, PivotArea area)
@@ -315,14 +328,14 @@ public partial class TmPivotFieldPanel<TItem>
         PivotArea.Column => _draftColumnFields.Select(k => Fields.FirstOrDefault(f => f.Key == k)).Where(f => f is not null).ToList()!,
         PivotArea.Data => _draftValueFields.Select(v => Fields.FirstOrDefault(f => f.Key == v.FieldKey)).Where(f => f is not null).ToList()!,
         PivotArea.Filter => _draftFilterFields.Keys.Select(k => Fields.FirstOrDefault(f => f.Key == k)).Where(f => f is not null).ToList()!,
-        _ => Fields.Where(f => !IsFieldUsed(f.Key)).ToList()
+        _ => Fields.Where(f => !IsFieldLocked(f.Key)).ToList()
     };
 
-    private bool IsFieldUsed(string fieldKey) =>
+    /// <summary>Determines whether a field is locked in Row or Column area.
+    /// Fields in Data or Filter remain available in the Unused zone. */
+    private bool IsFieldLocked(string fieldKey) =>
         _draftRowFields.Contains(fieldKey) ||
-        _draftColumnFields.Contains(fieldKey) ||
-        _draftValueFields.Any(v => v.FieldKey == fieldKey) ||
-        _draftFilterFields.ContainsKey(fieldKey);
+        _draftColumnFields.Contains(fieldKey);
 
     private static string GetZoneTitle(PivotArea area) => area switch
     {

@@ -94,7 +94,7 @@
                                           OnDragStart="() => OnChipDragStart(field.Key, PivotArea.Data)"
                                           OnDragEnd="OnChipDragEnd"
                                           OnSettingsClick="() => ToggleValueFieldSettings(index)"
-                                          OnRemoveClick="() => RemoveField(field.Key, PivotArea.Data)" />
+                                          OnRemoveClick="() => RemoveValueFieldAt(index)" />
 
                         @if (_editingValueFieldIndex == index)
                         {
