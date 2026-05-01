@@ -21,6 +21,12 @@ public sealed class PivotField<TItem>
     /// <summary>The current area where this field is placed.</summary>
     public PivotArea Area { get; set; } = PivotArea.Unused;
 
+    /// <summary>Sort direction applied to this dimension field. Default: None.</summary>
+    public PivotSortDirection SortDirection { get; set; } = PivotSortDirection.None;
+
+    /// <summary>Sort criterion for this dimension field. Default: Value.</summary>
+    public PivotSortBy SortBy { get; set; } = PivotSortBy.Value;
+
     /// <summary>
     /// Gets the formatted display value for a given raw value.
     /// </summary>

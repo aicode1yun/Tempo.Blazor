@@ -53,6 +53,9 @@ public partial class TmPivotFieldPanel<TItem>
     /// <summary>Fires when the user applies a new configuration.</summary>
     [Parameter] public EventCallback<PivotTableConfiguration> OnConfigurationChanged { get; set; }
 
+    /// <summary>Fires when a field's sort direction or criterion changes.</summary>
+    [Parameter] public EventCallback<(string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy)> OnSortChanged { get; set; }
+
     // ── Lifecycle ─────────────────────────────────────────────────
 
     /// <summary>Syncs draft state from parameters when they change.</summary>
@@ -189,6 +192,17 @@ public partial class TmPivotFieldPanel<TItem>
         StateHasChanged();
     }
 
+    private async Task HandleSortChanged(string fieldKey, (PivotSortDirection Direction, PivotSortBy SortBy) args)
+    {
+        var field = Fields.FirstOrDefault(f => f.Key == fieldKey);
+        if (field is null) return;
+
+        field.SortDirection = args.Direction;
+        field.SortBy = args.SortBy;
+
+        await OnSortChanged.InvokeAsync((fieldKey, args.Direction, args.SortBy));
+    }
+
     // ── Value Field Settings ─────────────────────────────────────
 
     private void ToggleValueFieldSettings(int index)
@@ -225,6 +239,54 @@ public partial class TmPivotFieldPanel<TItem>
             Format = _draftValueFields[index].Format
         };
     }
+
+    private void HandleFormatPresetChange(int index, ChangeEventArgs e)
+    {
+        var preset = e.Value?.ToString() ?? "";
+        var format = preset switch
+        {
+            "N2" => "N2",
+            "C2" => "C2",
+            "P2" => "P2",
+            "d" => "d",
+            "custom" => _draftValueFields[index].Format ?? "",
+            _ => null
+        };
+        UpdateValueFieldFormat(index, format);
+    }
+
+    private void HandleCustomFormatChange(int index, ChangeEventArgs e)
+    {
+        var format = e.Value?.ToString();
+        if (string.IsNullOrWhiteSpace(format))
+            format = null;
+        UpdateValueFieldFormat(index, format);
+    }
+
+    private void UpdateValueFieldFormat(int index, string? format)
+    {
+        if (index < 0 || index >= _draftValueFields.Count) return;
+        _draftValueFields[index] = new PivotValueFieldConfiguration
+        {
+            FieldKey = _draftValueFields[index].FieldKey,
+            Aggregation = _draftValueFields[index].Aggregation,
+            DisplayName = _draftValueFields[index].DisplayName,
+            Format = format
+        };
+    }
+
+    private static string GetFormatPresetValue(string? format) => format switch
+    {
+        "N2" => "N2",
+        "C2" => "C2",
+        "P2" => "P2",
+        "d" => "d",
+        null or "" => "",
+        _ => "custom"
+    };
+
+    private static bool IsCustomFormatSelected(string? format) =>
+        !string.IsNullOrEmpty(format) && format is not "N2" and not "C2" and not "P2" and not "d";
 
     // ── Filter Management ────────────────────────────────────────
 

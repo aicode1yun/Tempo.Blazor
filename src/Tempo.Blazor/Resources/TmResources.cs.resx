@@ -1683,5 +1683,18 @@
   <data name="TmPivotTable_Aggregation_Max" xml:space="preserve"><value>Maximum</value></data>
   <data name="TmPivotTable_SelectAll" xml:space="preserve"><value>Vybrat vše</value></data>
   <data name="TmPivotTable_Clear" xml:space="preserve"><value>Vymazat</value></data>
+  <data name="TmPivotTable_Format" xml:space="preserve"><value>Formát</value></data>
+  <data name="TmPivotTable_Format_Custom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmPivotTable_Format_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmPivotTable_Format_Currency" xml:space="preserve"><value>Měna</value></data>
+  <data name="TmPivotTable_Format_Percent" xml:space="preserve"><value>Procento</value></data>
+  <data name="TmPivotTable_Format_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmPivotTable_Format_None" xml:space="preserve"><value>Žádný</value></data>
+  <data name="TmPivotTable_SortMenu" xml:space="preserve"><value>Možnosti řazení</value></data>
+  <data name="TmPivotTable_Sort_Ascending" xml:space="preserve"><value>Vzestupně</value></data>
+  <data name="TmPivotTable_Sort_Descending" xml:space="preserve"><value>Sestupně</value></data>
+  <data name="TmPivotTable_Sort_AscendingByAggregate" xml:space="preserve"><value>Vzestupně podle celku</value></data>
+  <data name="TmPivotTable_Sort_DescendingByAggregate" xml:space="preserve"><value>Sestupně podle celku</value></data>
+  <data name="TmPivotTable_Sort_Clear" xml:space="preserve"><value>Zrušit řazení</value></data>
 
 </root>

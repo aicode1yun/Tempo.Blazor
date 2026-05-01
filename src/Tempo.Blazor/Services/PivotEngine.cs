@@ -54,6 +54,10 @@ public static class PivotEngine
         var (rowTree, rowLeafKeys) = BuildRowTree(rowKeys, rowFields);
         var (columnTree, columnLeafKeys) = BuildColumnTree(columnKeys, columnFields);
 
+        // ── Sort by dimension value ─────────────────────────────────
+        SortRowTree(rowTree, rowFields, 0);
+        SortColumnTree(columnTree, columnFields, 0);
+
         var flatRows = FlattenRows(rowTree);
         var flatColumns = FlattenColumns(columnTree);
 
@@ -61,6 +65,27 @@ public static class PivotEngine
 
         var rowTotals = ComputeRowTotals(flatRows, flatColumns, cells, valueFields);
         var columnTotals = ComputeColumnTotals(flatRows, flatColumns, cells, valueFields);
+
+        // ── Sort by aggregate (requires totals) ─────────────────────
+        var needsRowAggregateSort = rowFields.Any(f => f.SortBy == PivotSortBy.Aggregate && f.SortDirection != PivotSortDirection.None);
+        var needsColumnAggregateSort = columnFields.Any(f => f.SortBy == PivotSortBy.Aggregate && f.SortDirection != PivotSortDirection.None);
+
+        if (needsRowAggregateSort)
+        {
+            SortRowTreeByAggregate(rowTree, rowFields, 0, rowTotals);
+            flatRows = FlattenRows(rowTree);
+            cells = BuildCellMatrix(flatRows, flatColumns, rowLeafKeys, columnLeafKeys, aggregatedData, valueFields);
+            rowTotals = ComputeRowTotals(flatRows, flatColumns, cells, valueFields);
+        }
+
+        if (needsColumnAggregateSort)
+        {
+            SortColumnTreeByAggregate(columnTree, columnFields, 0, columnTotals);
+            flatColumns = FlattenColumns(columnTree);
+            cells = BuildCellMatrix(flatRows, flatColumns, rowLeafKeys, columnLeafKeys, aggregatedData, valueFields);
+            columnTotals = ComputeColumnTotals(flatRows, flatColumns, cells, valueFields);
+        }
+
         var grandTotals = ComputeGrandTotals(flatRows, flatColumns, cells, valueFields);
 
         AttachRowTotals(flatRows, rowTotals);
@@ -742,6 +767,142 @@ public static class PivotEngine
                 col.Totals = colTotals;
             }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Sorting
+    // ═══════════════════════════════════════════════════════════════
+
+    private static void SortRowTree<TItem>(
+        List<PivotRowNode> nodes,
+        IReadOnlyList<PivotField<TItem>> fields,
+        int level)
+    {
+        if (level >= fields.Count || nodes.Count == 0) return;
+
+        var field = fields[level];
+        if (field.SortDirection != PivotSortDirection.None && field.SortBy == PivotSortBy.Value)
+        {
+            var comparer = new NaturalComparer();
+            var sorted = field.SortDirection == PivotSortDirection.Ascending
+                ? nodes.OrderBy(n => n.Key, comparer).ToList()
+                : nodes.OrderByDescending(n => n.Key, comparer).ToList();
+
+            nodes.Clear();
+            nodes.AddRange(sorted);
+        }
+
+        foreach (var node in nodes)
+            SortRowTree(node.Children, fields, level + 1);
+    }
+
+    private static void SortColumnTree<TItem>(
+        List<PivotColumnNode> nodes,
+        IReadOnlyList<PivotField<TItem>> fields,
+        int level)
+    {
+        if (level >= fields.Count || nodes.Count == 0) return;
+
+        var field = fields[level];
+        if (field.SortDirection != PivotSortDirection.None && field.SortBy == PivotSortBy.Value)
+        {
+            var comparer = new NaturalComparer();
+            var sorted = field.SortDirection == PivotSortDirection.Ascending
+                ? nodes.OrderBy(n => n.Key, comparer).ToList()
+                : nodes.OrderByDescending(n => n.Key, comparer).ToList();
+
+            nodes.Clear();
+            nodes.AddRange(sorted);
+        }
+
+        foreach (var node in nodes)
+            SortColumnTree(node.Children, fields, level + 1);
+    }
+
+    private static void SortRowTreeByAggregate<TItem>(
+        List<PivotRowNode> nodes,
+        IReadOnlyList<PivotField<TItem>> fields,
+        int level,
+        Dictionary<PivotRowNode, Dictionary<int, PivotCell>> totals)
+    {
+        if (level >= fields.Count || nodes.Count == 0) return;
+
+        var field = fields[level];
+        if (field.SortDirection != PivotSortDirection.None && field.SortBy == PivotSortBy.Aggregate)
+        {
+            var scores = nodes.ToDictionary(
+                n => n,
+                n => ComputeRowAggregateScore(n, totals));
+
+            var sorted = field.SortDirection == PivotSortDirection.Ascending
+                ? nodes.OrderBy(n => scores[n]).ToList()
+                : nodes.OrderByDescending(n => scores[n]).ToList();
+
+            nodes.Clear();
+            nodes.AddRange(sorted);
+        }
+
+        foreach (var node in nodes)
+            SortRowTreeByAggregate(node.Children, fields, level + 1, totals);
+    }
+
+    private static void SortColumnTreeByAggregate<TItem>(
+        List<PivotColumnNode> nodes,
+        IReadOnlyList<PivotField<TItem>> fields,
+        int level,
+        Dictionary<PivotColumnNode, Dictionary<int, PivotCell>> totals)
+    {
+        if (level >= fields.Count || nodes.Count == 0) return;
+
+        var field = fields[level];
+        if (field.SortDirection != PivotSortDirection.None && field.SortBy == PivotSortBy.Aggregate)
+        {
+            var scores = nodes.ToDictionary(
+                n => n,
+                n => ComputeColumnAggregateScore(n, totals));
+
+            var sorted = field.SortDirection == PivotSortDirection.Ascending
+                ? nodes.OrderBy(n => scores[n]).ToList()
+                : nodes.OrderByDescending(n => scores[n]).ToList();
+
+            nodes.Clear();
+            nodes.AddRange(sorted);
+        }
+
+        foreach (var node in nodes)
+            SortColumnTreeByAggregate(node.Children, fields, level + 1, totals);
+    }
+
+    private static decimal ComputeRowAggregateScore(
+        PivotRowNode node,
+        Dictionary<PivotRowNode, Dictionary<int, PivotCell>> totals)
+    {
+        if (node.IsLeaf)
+        {
+            if (!totals.TryGetValue(node, out var rowTotal))
+                return 0;
+            return rowTotal.Values
+                .Where(c => c.RawValue is not null)
+                .Sum(c => TryConvertToDecimal(c.RawValue, out var d) ? d : 0);
+        }
+
+        return node.Children.Sum(child => ComputeRowAggregateScore(child, totals));
+    }
+
+    private static decimal ComputeColumnAggregateScore(
+        PivotColumnNode node,
+        Dictionary<PivotColumnNode, Dictionary<int, PivotCell>> totals)
+    {
+        if (node.IsLeaf)
+        {
+            if (!totals.TryGetValue(node, out var colTotal))
+                return 0;
+            return colTotal.Values
+                .Where(c => c.RawValue is not null)
+                .Sum(c => TryConvertToDecimal(c.RawValue, out var d) ? d : 0);
+        }
+
+        return node.Children.Sum(child => ComputeColumnAggregateScore(child, totals));
     }
 
     // ═══════════════════════════════════════════════════════════════

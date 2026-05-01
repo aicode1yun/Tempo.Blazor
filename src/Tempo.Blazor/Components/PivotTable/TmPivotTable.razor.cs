@@ -64,6 +64,17 @@ public partial class TmPivotTable<TItem>
     /// <summary>Fires when the pivot configuration changes.</summary>
     [Parameter] public EventCallback<PivotTableConfiguration> OnConfigurationChanged { get; set; }
 
+    // ── Parameters: Templates ────────────────────────────────────
+
+    /// <summary>Custom template for data cells (inner matrix values).</summary>
+    [Parameter] public RenderFragment<PivotCellContext>? DataCellTemplate { get; set; }
+
+    /// <summary>Custom template for row dimension header cells.</summary>
+    [Parameter] public RenderFragment<PivotRowHeaderContext>? RowHeaderTemplate { get; set; }
+
+    /// <summary>Custom template for column dimension header cells.</summary>
+    [Parameter] public RenderFragment<PivotColumnHeaderContext>? ColumnHeaderTemplate { get; set; }
+
     // ── Parameters: Styling ──────────────────────────────────────
 
     /// <summary>Additional CSS class applied to the wrapper div.</summary>
@@ -169,6 +180,16 @@ public partial class TmPivotTable<TItem>
             RefreshClientData();
     }
 
+    private async Task OnSortChangedAsync((string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy) args)
+    {
+        await OnConfigurationChanged.InvokeAsync(BuildConfiguration());
+
+        if (DataProvider is not null)
+            await RefreshDataAsync();
+        else
+            RefreshClientData();
+    }
+
     private PivotTableConfiguration BuildConfiguration() => new()
     {
         RowFieldKeys = RowFieldKeys.ToList(),
@@ -242,19 +263,42 @@ public partial class TmPivotTable<TItem>
         builder.CloseElement();
     };
 
-    private static void RenderColumnLevelNodes(List<PivotColumnNode> nodes, int targetLevel, int valueFieldCount, ref int seq, RenderTreeBuilder builder)
+    private void RenderColumnLevelNodes(List<PivotColumnNode> nodes, int targetLevel, int valueFieldCount, ref int seq, RenderTreeBuilder builder)
     {
         foreach (var node in nodes)
         {
             if (node.Level == targetLevel)
             {
-                builder.OpenElement(seq++, "th");
-                builder.AddAttribute(seq++, "class", "tm-pivot-col-header");
                 var effectiveColSpan = node.ColSpan * valueFieldCount;
-                if (effectiveColSpan > 1)
-                    builder.AddAttribute(seq++, "colspan", effectiveColSpan);
-                builder.AddContent(seq++, node.DisplayValue);
-                builder.CloseElement();
+
+                if (ColumnHeaderTemplate is not null)
+                {
+                    var colPath = GetColumnPath(_result!.Columns, node.ColIndex);
+                    var ctx = new PivotColumnHeaderContext
+                    {
+                        Text = node.DisplayValue,
+                        ColumnFieldValues = colPath?.Select(n => n.DisplayValue).ToList() ?? new List<string>(),
+                        Level = node.Level,
+                        ColumnIndex = node.ColIndex,
+                        ColSpan = effectiveColSpan
+                    };
+
+                    builder.OpenElement(seq++, "th");
+                    builder.AddAttribute(seq++, "class", "tm-pivot-col-header");
+                    if (effectiveColSpan > 1)
+                        builder.AddAttribute(seq++, "colspan", effectiveColSpan);
+                    builder.AddContent(seq++, ColumnHeaderTemplate, ctx);
+                    builder.CloseElement();
+                }
+                else
+                {
+                    builder.OpenElement(seq++, "th");
+                    builder.AddAttribute(seq++, "class", "tm-pivot-col-header");
+                    if (effectiveColSpan > 1)
+                        builder.AddAttribute(seq++, "colspan", effectiveColSpan);
+                    builder.AddContent(seq++, node.DisplayValue);
+                    builder.CloseElement();
+                }
             }
             else if (node.Children.Count > 0)
             {
@@ -315,25 +359,72 @@ public partial class TmPivotTable<TItem>
                 {
                     if (pathNode.RowIndex == node.RowIndex)
                     {
-                        builder.OpenElement(seq++, "td");
-                        builder.AddAttribute(seq++, "class", "tm-pivot-row-dim");
-                        if (pathNode.RowSpan > 1)
-                            builder.AddAttribute(seq++, "rowspan", pathNode.RowSpan);
-                        builder.AddContent(seq++, pathNode.DisplayValue);
-                        builder.CloseElement();
+                        if (RowHeaderTemplate is not null)
+                        {
+                            var rowCtx = new PivotRowHeaderContext
+                            {
+                                Text = pathNode.DisplayValue,
+                                RowFieldValues = path.Select(n => n.DisplayValue).ToList(),
+                                Level = pathNode.Level,
+                                RowIndex = node.RowIndex,
+                                RowSpan = pathNode.RowSpan
+                            };
+
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", "tm-pivot-row-dim");
+                            if (pathNode.RowSpan > 1)
+                                builder.AddAttribute(seq++, "rowspan", pathNode.RowSpan);
+                            builder.AddContent(seq++, RowHeaderTemplate, rowCtx);
+                            builder.CloseElement();
+                        }
+                        else
+                        {
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", "tm-pivot-row-dim");
+                            if (pathNode.RowSpan > 1)
+                                builder.AddAttribute(seq++, "rowspan", pathNode.RowSpan);
+                            builder.AddContent(seq++, pathNode.DisplayValue);
+                            builder.CloseElement();
+                        }
                     }
                 }
 
                 // Render data cells
                 for (var c = 0; c < _result!.LeafColumnCount; c++)
                 {
+                    var colPath = GetColumnPath(_result.Columns, c);
+                    var colFieldValues = colPath?.Select(n => n.DisplayValue).ToList() ?? new List<string>();
+
                     for (var v = 0; v < _result.ValueFieldCount; v++)
                     {
                         var cell = _result.Cells[node.RowIndex, c * _result.ValueFieldCount + v];
-                        builder.OpenElement(seq++, "td");
-                        builder.AddAttribute(seq++, "class", $"tm-pivot-cell {(cell.IsNull ? "tm-pivot-cell-null" : "")}");
-                        builder.AddContent(seq++, cell.IsNull ? "–" : cell.FormattedValue);
-                        builder.CloseElement();
+
+                        if (DataCellTemplate is not null)
+                        {
+                            var cellCtx = new PivotCellContext
+                            {
+                                Value = cell.RawValue,
+                                FormattedValue = cell.FormattedValue,
+                                IsNull = cell.IsNull,
+                                RowIndex = node.RowIndex,
+                                ColumnIndex = c,
+                                RowFieldValues = path.Select(n => n.DisplayValue).ToList(),
+                                ColumnFieldValues = colFieldValues,
+                                ValueFieldIndex = v
+                            };
+
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", $"tm-pivot-cell {(cell.IsNull ? "tm-pivot-cell-null" : "")}");
+                            builder.AddContent(seq++, DataCellTemplate, cellCtx);
+                            builder.CloseElement();
+                        }
+                        else
+                        {
+                            builder.OpenElement(seq++, "td");
+                            builder.AddAttribute(seq++, "class", $"tm-pivot-cell {(cell.IsNull ? "tm-pivot-cell-null" : "")}");
+                            builder.AddContent(seq++, cell.IsNull ? "–" : cell.FormattedValue);
+                            builder.CloseElement();
+                        }
                     }
                 }
 
@@ -344,6 +435,60 @@ public partial class TmPivotTable<TItem>
                 RenderRowNodesRecursive(node.Children, path, ref seq, builder);
             }
         }
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Template helpers
+    // ═══════════════════════════════════════════════════════════════
+
+    private static List<PivotColumnNode>? GetColumnPath(List<PivotColumnNode> nodes, int targetIndex, int startIndex = 0)
+    {
+        var current = startIndex;
+        foreach (var node in nodes)
+        {
+            if (node.IsLeaf)
+            {
+                if (current == targetIndex)
+                    return new List<PivotColumnNode> { node };
+                current++;
+            }
+            else
+            {
+                var path = GetColumnPath(node.Children, targetIndex, current);
+                if (path is not null)
+                {
+                    path.Insert(0, node);
+                    return path;
+                }
+                current += node.ColSpan;
+            }
+        }
+        return null;
+    }
+
+    private static List<PivotRowNode>? GetRowPath(List<PivotRowNode> nodes, int targetIndex, int startIndex = 0)
+    {
+        var current = startIndex;
+        foreach (var node in nodes)
+        {
+            if (node.IsLeaf)
+            {
+                if (current == targetIndex)
+                    return new List<PivotRowNode> { node };
+                current++;
+            }
+            else
+            {
+                var path = GetRowPath(node.Children, targetIndex, current);
+                if (path is not null)
+                {
+                    path.Insert(0, node);
+                    return path;
+                }
+                current += node.RowSpan;
+            }
+        }
+        return null;
     }
 
     // ═══════════════════════════════════════════════════════════════

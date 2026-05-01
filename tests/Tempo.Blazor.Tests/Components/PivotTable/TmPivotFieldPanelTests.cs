@@ -504,4 +504,241 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
         // Only one should remain
         cut.FindAll(".tm-pivot-zone--value .tm-pivot-field-chip").Should().HaveCount(1);
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4.7  Format string editor
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotFieldPanel_ValueFieldSettings_ShowsFormatDropdown()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        // Open settings
+        var settingsBtn = cut.Find(".tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Should have two selects: aggregation and format preset
+        var selects = cut.FindAll(".tm-pivot-value-field-editor select");
+        selects.Should().HaveCount(2);
+
+        // Format select should have all options
+        var formatSelect = selects[1];
+        formatSelect.GetAttribute("value").Should().Be(""); // None by default
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_ChangeFormatPreset_UpdatesValueFieldFormat()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Open settings
+        var settingsBtn = cut.Find(".tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Change format to Currency
+        var selects = cut.FindAll(".tm-pivot-value-field-editor select");
+        selects[1].Change("C2");
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        capturedConfig.Should().NotBeNull();
+        capturedConfig!.ValueFields[0].Format.Should().Be("C2");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_CustomFormatPreset_ShowsCustomInput()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
+            {
+                FieldKey = "Amount",
+                Aggregation = "Sum",
+                Format = "#,##0.00"
+            }])
+        );
+
+        // Open settings
+        var settingsBtn = cut.Find(".tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Should show custom format input
+        var input = cut.Find(".tm-pivot-value-field-editor input[type='text']");
+        input.GetAttribute("value").Should().Be("#,##0.00");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_ChangeCustomFormat_UpdatesValueFieldFormat()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
+            {
+                FieldKey = "Amount",
+                Aggregation = "Sum",
+                Format = "#,##0.00"
+            }])
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Open settings
+        var settingsBtn = cut.Find(".tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Change custom format
+        var input = cut.Find(".tm-pivot-value-field-editor input[type='text']");
+        input.Change("0.000");
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        capturedConfig.Should().NotBeNull();
+        capturedConfig!.ValueFields[0].Format.Should().Be("0.000");
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_ClearFormat_SetsFormatToNull()
+    {
+        PivotTableConfiguration? capturedConfig = null;
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
+            {
+                FieldKey = "Amount",
+                Aggregation = "Sum",
+                Format = "C2"
+            }])
+            .Add(p => p.OnConfigurationChanged, config => { capturedConfig = config; })
+        );
+
+        // Open settings
+        var settingsBtn = cut.Find(".tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        // Change format to None
+        var selects = cut.FindAll(".tm-pivot-value-field-editor select");
+        selects[1].Change("");
+
+        // Apply
+        var applyBtn = cut.Find(".tm-pivot-field-panel-actions button:first-child");
+        applyBtn.Click();
+
+        capturedConfig.Should().NotBeNull();
+        capturedConfig!.ValueFields[0].Format.Should().BeNull();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  4.8  Sort menu
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotFieldPanel_RowFieldChip_ShowsSortMenuButton()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+        );
+
+        var sortBtn = cut.Find(".tm-pivot-field-chip-btn--menu");
+        sortBtn.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_SortMenu_OpensOnClick()
+    {
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+        );
+
+        cut.FindAll(".tm-pivot-field-chip-menu").Should().BeEmpty();
+
+        var sortBtn = cut.Find(".tm-pivot-field-chip-btn--menu");
+        sortBtn.Click();
+
+        var menu = cut.Find(".tm-pivot-field-chip-menu");
+        menu.Should().NotBeNull();
+        menu.Children.Length.Should().BeGreaterThanOrEqualTo(3);
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_SortAscending_UpdatesFieldSortDirection()
+    {
+        (string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy)? capturedSort = null;
+
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category
+            }
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.OnSortChanged, args => { capturedSort = args; })
+        );
+
+        var sortBtn = cut.Find(".tm-pivot-field-chip-btn--menu");
+        sortBtn.Click();
+
+        var menuItems = cut.FindAll(".tm-pivot-field-chip-menu-item");
+        menuItems[0].Click(); // Sort Ascending
+
+        capturedSort.Should().NotBeNull();
+        capturedSort!.Value.FieldKey.Should().Be("Category");
+        capturedSort!.Value.Direction.Should().Be(PivotSortDirection.Ascending);
+        capturedSort!.Value.SortBy.Should().Be(PivotSortBy.Value);
+    }
+
+    [Fact]
+    public void TmPivotFieldPanel_ClearSort_SetsDirectionToNone()
+    {
+        (string FieldKey, PivotSortDirection Direction, PivotSortBy SortBy)? capturedSort = null;
+
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.Ascending
+            }
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.OnSortChanged, args => { capturedSort = args; })
+        );
+
+        var sortBtn = cut.Find(".tm-pivot-field-chip-btn--menu");
+        sortBtn.Click();
+
+        var menuItems = cut.FindAll(".tm-pivot-field-chip-menu-item");
+        menuItems.Last().Click(); // Clear Sort
+
+        capturedSort.Should().NotBeNull();
+        capturedSort!.Value.Direction.Should().Be(PivotSortDirection.None);
+    }
 }

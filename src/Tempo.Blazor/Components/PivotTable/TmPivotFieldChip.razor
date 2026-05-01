@@ -2,11 +2,85 @@
 @typeparam TItem
 @using Tempo.Blazor.Abstractions.PivotTable
 
-<div class="tm-pivot-field-chip @GetAreaClass()"
+<div class="tm-pivot-field-chip @GetAreaClass() @GetSortClass()"
      draggable="@AllowDragDrop.ToString().ToLowerInvariant()"
      @ondragstart="HandleDragStart"
      @ondragend="HandleDragEnd">
     <span class="tm-pivot-field-chip-text">@Field.Title</span>
+    @if (ShowSortMenu && (Area == PivotArea.Row || Area == PivotArea.Column))
+    {
+        <div class="tm-pivot-field-chip-sort-indicator">
+            @if (SortDirection == PivotSortDirection.Ascending)
+            {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 19V5M5 12l7-7 7 7" />
+                </svg>
+            }
+            else if (SortDirection == PivotSortDirection.Descending)
+            {
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                    <path d="M12 5v14M5 12l7 7 7-7" />
+                </svg>
+            }
+        </div>
+        <div class="tm-pivot-field-chip-menu-wrapper">
+            <button type="button"
+                    class="tm-pivot-field-chip-btn tm-pivot-field-chip-btn--menu"
+                    @onclick="ToggleSortMenu"
+                    @onclick:stopPropagation="true"
+                    title="@Loc["TmPivotTable_SortMenu"]">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                    <circle cx="12" cy="6" r="2" />
+                    <circle cx="12" cy="12" r="2" />
+                    <circle cx="12" cy="18" r="2" />
+                </svg>
+            </button>
+            @if (_showSortMenu)
+            {
+                <div class="tm-pivot-field-chip-menu">
+                    <button type="button"
+                            class="tm-pivot-field-chip-menu-item @GetSortItemClass(PivotSortDirection.Ascending, PivotSortBy.Value)"
+                            @onclick="() => HandleSortChanged(PivotSortDirection.Ascending, PivotSortBy.Value)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-pivot-field-chip-menu-icon">
+                            <path d="M12 19V5M5 12l7-7 7 7" />
+                        </svg>
+                        <span>@Loc["TmPivotTable_Sort_Ascending"]</span>
+                    </button>
+                    <button type="button"
+                            class="tm-pivot-field-chip-menu-item @GetSortItemClass(PivotSortDirection.Descending, PivotSortBy.Value)"
+                            @onclick="() => HandleSortChanged(PivotSortDirection.Descending, PivotSortBy.Value)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-pivot-field-chip-menu-icon">
+                            <path d="M12 5v14M5 12l7 7 7-7" />
+                        </svg>
+                        <span>@Loc["TmPivotTable_Sort_Descending"]</span>
+                    </button>
+                    <div class="tm-pivot-field-chip-menu-divider"></div>
+                    <button type="button"
+                            class="tm-pivot-field-chip-menu-item @GetSortItemClass(PivotSortDirection.Ascending, PivotSortBy.Aggregate)"
+                            @onclick="() => HandleSortChanged(PivotSortDirection.Ascending, PivotSortBy.Aggregate)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-pivot-field-chip-menu-icon">
+                            <path d="M12 19V5M5 12l7-7 7 7" />
+                        </svg>
+                        <span>@Loc["TmPivotTable_Sort_AscendingByAggregate"]</span>
+                    </button>
+                    <button type="button"
+                            class="tm-pivot-field-chip-menu-item @GetSortItemClass(PivotSortDirection.Descending, PivotSortBy.Aggregate)"
+                            @onclick="() => HandleSortChanged(PivotSortDirection.Descending, PivotSortBy.Aggregate)">
+                        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-pivot-field-chip-menu-icon">
+                            <path d="M12 5v14M5 12l7 7 7-7" />
+                        </svg>
+                        <span>@Loc["TmPivotTable_Sort_DescendingByAggregate"]</span>
+                    </button>
+                    <div class="tm-pivot-field-chip-menu-divider"></div>
+                    <button type="button"
+                            class="tm-pivot-field-chip-menu-item"
+                            @onclick="() => HandleSortChanged(PivotSortDirection.None, PivotSortBy.Value)">
+                        <span>@Loc["TmPivotTable_Sort_Clear"]</span>
+                    </button>
+                </div>
+            }
+        </div>
+    }
     @if (ShowSettings)
     {
         <button type="button"
@@ -29,6 +103,8 @@
 </div>
 
 @code {
+    private bool _showSortMenu;
+
     /// <summary>The field this chip represents.</summary>
     [Parameter] public PivotField<TItem> Field { get; set; } = default!;
 
@@ -37,6 +113,15 @@
 
     /// <summary>Whether the chip can be dragged.</summary>
     [Parameter] public bool AllowDragDrop { get; set; } = true;
+
+    /// <summary>Whether to show the sort menu button.</summary>
+    [Parameter] public bool ShowSortMenu { get; set; }
+
+    /// <summary>Current sort direction displayed on the chip.</summary>
+    [Parameter] public PivotSortDirection SortDirection { get; set; }
+
+    /// <summary>Current sort criterion displayed on the chip.</summary>
+    [Parameter] public PivotSortBy SortBy { get; set; }
 
     /// <summary>Whether to show the settings button.</summary>
     [Parameter] public bool ShowSettings { get; set; }
@@ -49,6 +134,9 @@
 
     /// <summary>Fires when drag ends.</summary>
     [Parameter] public EventCallback OnDragEnd { get; set; }
+
+    /// <summary>Fires when sort direction or criterion changes.</summary>
+    [Parameter] public EventCallback<(PivotSortDirection Direction, PivotSortBy SortBy)> OnSortChanged { get; set; }
 
     /// <summary>Fires when settings button is clicked.</summary>
     [Parameter] public EventCallback OnSettingsClick { get; set; }
@@ -64,6 +152,27 @@
         PivotArea.Filter => "tm-pivot-field-chip--filter",
         _ => "tm-pivot-field-chip--unused"
     };
+
+    private string GetSortClass() => SortDirection switch
+    {
+        PivotSortDirection.Ascending => "tm-pivot-field-chip--sort-asc",
+        PivotSortDirection.Descending => "tm-pivot-field-chip--sort-desc",
+        _ => ""
+    };
+
+    private string GetSortItemClass(PivotSortDirection direction, PivotSortBy sortBy) =>
+        SortDirection == direction && SortBy == sortBy ? "tm-pivot-field-chip-menu-item--active" : "";
+
+    private void ToggleSortMenu()
+    {
+        _showSortMenu = !_showSortMenu;
+    }
+
+    private async Task HandleSortChanged(PivotSortDirection direction, PivotSortBy sortBy)
+    {
+        _showSortMenu = false;
+        await OnSortChanged.InvokeAsync((direction, sortBy));
+    }
 
     private Task HandleDragStart() => OnDragStart.InvokeAsync();
     private Task HandleDragEnd() => OnDragEnd.InvokeAsync();

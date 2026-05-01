@@ -38,7 +38,7 @@
             </svg>
             <div>
                 <p class="text-sm text-primary-800 dark:text-primary-200">
-                    Drag fields between zones to rearrange the pivot. Use the settings button on value fields to change aggregation type.
+                    Drag fields between zones to rearrange the pivot. Use the settings button on value fields to change aggregation type and format. Click the three-dots menu on row/column fields to sort by dimension value or by aggregate total.
                 </p>
             </div>
         </div>
@@ -158,6 +158,34 @@
     </div>
 </section>
 
+<!-- Custom Templates -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Custom Templates</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Templates</span>
+    </div>
+
+    <div class="p-4 bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800 rounded-xl mb-4">
+        <p class="text-sm text-indigo-800 dark:text-indigo-200">
+            Use <code>DataCellTemplate</code>, <code>RowHeaderTemplate</code>, and <code>ColumnHeaderTemplate</code>
+            to customize cell appearance. The example below shows a progress bar in cells and colored row headers.
+        </p>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmPivotTable TItem="Transaction"
+                      Items="_transactions"
+                      Fields="_transactionFields"
+                      RowFieldKeys="_templateRowFields"
+                      ColumnFieldKeys="_templateColumnFields"
+                      ValueFields="_templateValueFields"
+                      ShowConfigurationPanel="false"
+                      ShowTotals="true"
+                      DataCellTemplate="_dataCellTemplate"
+                      RowHeaderTemplate="_rowHeaderTemplate" />
+    </div>
+</section>
+
 <!-- Empty State -->
 <section class="demo-section">
     <div class="flex items-center justify-between mb-4">
@@ -241,7 +269,7 @@
     private readonly List<string> _basicColumnFields = ["Month"];
     private readonly List<PivotValueFieldConfiguration> _basicValueFields =
     [
-        new() { FieldKey = "Amount", Aggregation = "Sum" }
+        new() { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
     ];
 
     // ── Read-Only Configuration ────────────────────────────────────
@@ -283,5 +311,56 @@
     private readonly Dictionary<string, List<object?>> _filterDemoFilterFields = new()
     {
         ["Region"] = ["North", "South"]
+    };
+
+    // ── Template Demo Configuration ────────────────────────────────
+
+    private readonly List<string> _templateRowFields = ["Category"];
+    private readonly List<string> _templateColumnFields = ["Month"];
+    private readonly List<PivotValueFieldConfiguration> _templateValueFields =
+    [
+        new() { FieldKey = "Amount", Aggregation = "Sum" }
+    ];
+
+    private RenderFragment<PivotCellContext> _dataCellTemplate => ctx => builder =>
+    {
+        var pct = ctx.Value is decimal d ? Math.Min(100, (int)(d / 6)) : 0;
+        var color = pct > 80 ? "bg-emerald-500" : pct > 50 ? "bg-amber-500" : "bg-rose-500";
+
+        builder.OpenElement(0, "div");
+        builder.AddAttribute(1, "class", "flex items-center gap-2 w-full");
+
+        builder.OpenElement(2, "div");
+        builder.AddAttribute(3, "class", "flex-1 h-2 bg-slate-200 dark:bg-slate-700 rounded-full overflow-hidden");
+        builder.OpenElement(4, "div");
+        builder.AddAttribute(5, "class", $"h-full {color} rounded-full transition-all");
+        builder.AddAttribute(6, "style", $"width: {pct}%");
+        builder.CloseElement();
+        builder.CloseElement();
+
+        builder.OpenElement(7, "span");
+        builder.AddAttribute(8, "class", "text-xs font-medium text-slate-700 dark:text-slate-300 tabular-nums w-12 text-right");
+        builder.AddContent(9, ctx.FormattedValue);
+        builder.CloseElement();
+
+        builder.CloseElement();
+    };
+
+    private RenderFragment<PivotRowHeaderContext> _rowHeaderTemplate => ctx => builder =>
+    {
+        var color = ctx.Text switch
+        {
+            "Food" => "text-emerald-600 dark:text-emerald-400",
+            "Transport" => "text-blue-600 dark:text-blue-400",
+            "Utilities" => "text-amber-600 dark:text-amber-400",
+            "Entertainment" => "text-purple-600 dark:text-purple-400",
+            "Healthcare" => "text-rose-600 dark:text-rose-400",
+            _ => "text-slate-700 dark:text-slate-300"
+        };
+
+        builder.OpenElement(0, "span");
+        builder.AddAttribute(1, "class", $"font-medium {color}");
+        builder.AddContent(2, ctx.Text);
+        builder.CloseElement();
     };
 }

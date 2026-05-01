@@ -406,4 +406,255 @@ public class PivotEngineTests
                 CollectLeafColumns(node.Children, result);
         }
     }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  2.12  Format strings
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void Transform_WithCurrencyFormat_FormatsCellValues()
+    {
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields =
+            [
+                new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum", Format = "C2" }
+            ]
+        };
+
+        var result = PivotEngine.Transform(TestData, Fields, config);
+
+        // Food total = 1750
+        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        foodRow.Should().NotBeNull();
+        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().MatchRegex(@"\$?1[,.]?750[.,]00");
+    }
+
+    [Fact]
+    public void Transform_WithNumberFormat_FormatsCellValues()
+    {
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields =
+            [
+                new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum", Format = "N2" }
+            ]
+        };
+
+        var result = PivotEngine.Transform(TestData, Fields, config);
+
+        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        foodRow.Should().NotBeNull();
+        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("1").And.Contain("750");
+    }
+
+    [Fact]
+    public void Transform_WithPercentFormat_FormatsCellValues()
+    {
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields =
+            [
+                new PivotValueFieldConfiguration { FieldKey = "Count", Aggregation = "Sum", Format = "P2" }
+            ]
+        };
+
+        var result = PivotEngine.Transform(TestData, Fields, config);
+
+        // Food total count = 33, with P2 format it becomes 3,300.00%
+        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        foodRow.Should().NotBeNull();
+        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("3");
+    }
+
+    [Fact]
+    public void Transform_WithoutFormat_RendersRawValue()
+    {
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields =
+            [
+                new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }
+            ]
+        };
+
+        var result = PivotEngine.Transform(TestData, Fields, config);
+
+        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        foodRow.Should().NotBeNull();
+        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Be("1750");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  2.13  Sorting
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void Transform_SortRows_AscendingByDimension_OrdersAlphabetically()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.Ascending,
+                SortBy = PivotSortBy.Value
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        rowOrder.Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public void Transform_SortRows_DescendingByDimension_OrdersReverseAlphabetically()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.Descending,
+                SortBy = PivotSortBy.Value
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        rowOrder.Should().BeInDescendingOrder();
+    }
+
+    [Fact]
+    public void Transform_SortRows_AscendingByAggregate_OrdersByTotal()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.Ascending,
+                SortBy = PivotSortBy.Aggregate
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        // Transport total = 630, Food total = 1750
+        result.RowTree[0].DisplayValue.Should().Be("Transport"); // lower total first
+        result.RowTree[1].DisplayValue.Should().Be("Food");      // higher total second
+    }
+
+    [Fact]
+    public void Transform_SortRows_DescendingByAggregate_OrdersByTotalDesc()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.Descending,
+                SortBy = PivotSortBy.Aggregate
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        // Food total = 1750, Transport total = 630
+        result.RowTree[0].DisplayValue.Should().Be("Food");      // higher total first
+        result.RowTree[1].DisplayValue.Should().Be("Transport"); // lower total second
+    }
+
+    [Fact]
+    public void Transform_SortColumns_AscendingByDimension_OrdersAlphabetically()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [2] = new PivotField<Transaction>
+            {
+                Key = "Month",
+                Title = "Month",
+                Accessor = t => t.Month,
+                SortDirection = PivotSortDirection.Ascending,
+                SortBy = PivotSortBy.Value
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ColumnFieldKeys = ["Month"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        var colOrder = result.Columns.Select(c => c.DisplayValue).ToList();
+        colOrder.Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public void Transform_SortClear_KeepsNaturalOrder()
+    {
+        var fields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                SortDirection = PivotSortDirection.None,
+                SortBy = PivotSortBy.Value
+            }
+        };
+
+        var config = new PivotTableConfiguration
+        {
+            RowFieldKeys = ["Category"],
+            ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
+        };
+
+        var result = PivotEngine.Transform(TestData, fields, config);
+
+        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        rowOrder.Should().Contain("Food").And.Contain("Transport");
+    }
 }
