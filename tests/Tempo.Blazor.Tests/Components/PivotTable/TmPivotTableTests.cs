@@ -137,7 +137,64 @@ public class TmPivotTableTests : LocalizationTestBase
     }
 
     // ═══════════════════════════════════════════════════════════════
-    //  3.12  Empty state
+    //  3.12  Rebind
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public async Task TmPivotTable_RebindAsync_RefreshesData()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+        };
+
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, items)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        // Verify initial data
+        cut.Find(".tm-pivot-cell").TextContent.Should().Contain("100");
+
+        // Modify data
+        items[0] = new Transaction("Food", "Jan", 999m);
+
+        // Call RebindAsync via component reference on dispatcher
+        var table = cut.Instance;
+        await cut.InvokeAsync(() => table.RebindAsync());
+
+        // Verify refreshed data
+        cut.Find(".tm-pivot-cell").TextContent.Should().Contain("999");
+    }
+
+    [Fact]
+    public async Task TmPivotTable_RebindAsync_InvokesOnDataChanged()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+        };
+
+        var dataChangedFired = false;
+
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, items)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.OnDataChanged, () => { dataChangedFired = true; })
+        );
+
+        var table = cut.Instance;
+        await cut.InvokeAsync(() => table.RebindAsync());
+
+        dataChangedFired.Should().BeTrue();
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  3.13  Empty state
     // ═══════════════════════════════════════════════════════════════
 
     [Fact]
@@ -284,5 +341,152 @@ public class TmPivotTableTests : LocalizationTestBase
 
         var rowDims = cut.FindAll(".tm-pivot-row-dim");
         rowDims.Should().ContainSingle().Which.TextContent.Should().Be("Food");
+    }
+
+    // ═══════════════════════════════════════════════════════════════
+    //  Phase H — HeaderClass + Sizing
+    // ═══════════════════════════════════════════════════════════════
+
+    [Fact]
+    public void TmPivotTable_HeaderClass_AppliesToRowHeaderCell()
+    {
+        var styledFields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                HeaderClass = "my-row-header"
+            }
+        };
+
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, styledFields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        var rowDim = cut.Find(".tm-pivot-row-dim");
+        rowDim.ClassList.Should().Contain("my-row-header");
+    }
+
+    [Fact]
+    public void TmPivotTable_HeaderClass_AppliesToColumnHeaderCell()
+    {
+        var styledFields = new List<PivotField<Transaction>>(Fields)
+        {
+            [1] = new PivotField<Transaction>
+            {
+                Key = "Month",
+                Title = "Month",
+                Accessor = t => t.Month,
+                HeaderClass = "my-col-header"
+            }
+        };
+
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, styledFields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ColumnFieldKeys, ["Month"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        var colHeader = cut.Find(".tm-pivot-col-header");
+        colHeader.ClassList.Should().Contain("my-col-header");
+    }
+
+    [Fact]
+    public void TmPivotTable_HeaderStyle_AppliesInlineStyle()
+    {
+        var styledFields = new List<PivotField<Transaction>>(Fields)
+        {
+            [0] = new PivotField<Transaction>
+            {
+                Key = "Category",
+                Title = "Category",
+                Accessor = t => t.Category,
+                HeaderStyle = "background: red"
+            }
+        };
+
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, styledFields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+        );
+
+        var rowDim = cut.Find(".tm-pivot-row-dim");
+        rowDim.GetAttribute("style").Should().Contain("background: red");
+    }
+
+    [Fact]
+    public void TmPivotTable_WidthHeight_SetsWrapperStyle()
+    {
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.Width, "800px")
+            .Add(p => p.Height, "400px")
+        );
+
+        var wrapper = cut.Find(".tm-pivot-table-wrapper");
+        wrapper.GetAttribute("style").Should().Contain("width: 800px");
+        wrapper.GetAttribute("style").Should().Contain("height: 400px");
+    }
+
+    [Fact]
+    public void TmPivotTable_RowHeadersWidth_AppliesToRowDimCell()
+    {
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.RowHeadersWidth, "150px")
+        );
+
+        var rowDim = cut.Find(".tm-pivot-row-dim");
+        rowDim.GetAttribute("style").Should().Contain("width: 150px");
+    }
+
+    [Fact]
+    public void TmPivotTable_ColumnHeadersWidth_AppliesToColHeaderCell()
+    {
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ColumnFieldKeys, ["Month"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.ColumnHeadersWidth, "120px")
+        );
+
+        var colHeader = cut.Find(".tm-pivot-col-header");
+        colHeader.GetAttribute("style").Should().Contain("width: 120px");
+    }
+
+    [Fact]
+    public void TmPivotTable_ValueFieldHeaderClass_AppliesToValueHeader()
+    {
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration
+            {
+                FieldKey = "Amount",
+                Aggregation = "Sum",
+                HeaderClass = "my-value-header"
+            }])
+        );
+
+        var valueHeader = cut.Find(".tm-pivot-value-header");
+        valueHeader.ClassList.Should().Contain("my-value-header");
     }
 }

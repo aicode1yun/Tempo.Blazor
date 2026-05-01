@@ -1,7 +1,7 @@
 @namespace Tempo.Blazor.Components.PivotTable
 @typeparam TItem
 
-<div class="tm-pivot-table-wrapper @Class" @attributes="AdditionalAttributes">
+<div class="tm-pivot-table-wrapper @Class" style="@WrapperStyle" @attributes="AdditionalAttributes">
     @if (ShowConfigurationPanel)
     {
         <TmPivotFieldPanel TItem="TItem"

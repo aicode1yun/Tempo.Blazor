@@ -419,16 +419,16 @@ public class PivotEngineTests
             RowFieldKeys = ["Category"],
             ValueFields =
             [
-                new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum", Format = "C2" }
+                new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum", Format = "#,##0.00 €" }
             ]
         };
 
-        var result = PivotEngine.Transform(TestData, Fields, config);
+        var result = PivotEngine.Transform(TestData, config, Fields);
 
         // Food total = 1750
-        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        var foodRow = result.Rows.FirstOrDefault(r => r.Key == "Food");
         foodRow.Should().NotBeNull();
-        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().MatchRegex(@"\$?1[,.]?750[.,]00");
+        result.Cells![foodRow!.RowIndex, 0].FormattedValue.Should().MatchRegex(@"1[\s.,]?750[.,]00");
     }
 
     [Fact]
@@ -443,11 +443,11 @@ public class PivotEngineTests
             ]
         };
 
-        var result = PivotEngine.Transform(TestData, Fields, config);
+        var result = PivotEngine.Transform(TestData, config, Fields);
 
-        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        var foodRow = result.Rows.FirstOrDefault(r => r.Key == "Food");
         foodRow.Should().NotBeNull();
-        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("1").And.Contain("750");
+        result.Cells![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("1").And.Contain("750");
     }
 
     [Fact]
@@ -462,12 +462,12 @@ public class PivotEngineTests
             ]
         };
 
-        var result = PivotEngine.Transform(TestData, Fields, config);
+        var result = PivotEngine.Transform(TestData, config, Fields);
 
         // Food total count = 33, with P2 format it becomes 3,300.00%
-        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        var foodRow = result.Rows.FirstOrDefault(r => r.Key == "Food");
         foodRow.Should().NotBeNull();
-        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("3");
+        result.Cells![foodRow!.RowIndex, 0].FormattedValue.Should().Contain("3");
     }
 
     [Fact]
@@ -482,11 +482,11 @@ public class PivotEngineTests
             ]
         };
 
-        var result = PivotEngine.Transform(TestData, Fields, config);
+        var result = PivotEngine.Transform(TestData, config, Fields);
 
-        var foodRow = result.RowTree.FirstOrDefault(r => r.Key == "Food");
+        var foodRow = result.Rows.FirstOrDefault(r => r.Key == "Food");
         foodRow.Should().NotBeNull();
-        result.Matrix![foodRow!.RowIndex, 0].FormattedValue.Should().Be("1750");
+        result.Cells![foodRow!.RowIndex, 0].FormattedValue.Should().Be("1750");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -514,9 +514,9 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
-        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        var rowOrder = result.Rows.Select(r => r.DisplayValue).ToList();
         rowOrder.Should().BeInAscendingOrder();
     }
 
@@ -541,9 +541,9 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
-        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        var rowOrder = result.Rows.Select(r => r.DisplayValue).ToList();
         rowOrder.Should().BeInDescendingOrder();
     }
 
@@ -568,11 +568,11 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
         // Transport total = 630, Food total = 1750
-        result.RowTree[0].DisplayValue.Should().Be("Transport"); // lower total first
-        result.RowTree[1].DisplayValue.Should().Be("Food");      // higher total second
+        result.Rows[0].DisplayValue.Should().Be("Transport"); // lower total first
+        result.Rows[1].DisplayValue.Should().Be("Food");      // higher total second
     }
 
     [Fact]
@@ -596,11 +596,11 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
         // Food total = 1750, Transport total = 630
-        result.RowTree[0].DisplayValue.Should().Be("Food");      // higher total first
-        result.RowTree[1].DisplayValue.Should().Be("Transport"); // lower total second
+        result.Rows[0].DisplayValue.Should().Be("Food");      // higher total first
+        result.Rows[1].DisplayValue.Should().Be("Transport"); // lower total second
     }
 
     [Fact]
@@ -625,7 +625,7 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
         var colOrder = result.Columns.Select(c => c.DisplayValue).ToList();
         colOrder.Should().BeInAscendingOrder();
@@ -652,9 +652,9 @@ public class PivotEngineTests
             ValueFields = [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }]
         };
 
-        var result = PivotEngine.Transform(TestData, fields, config);
+        var result = PivotEngine.Transform(TestData, config, fields);
 
-        var rowOrder = result.RowTree.Select(r => r.DisplayValue).ToList();
+        var rowOrder = result.Rows.Select(r => r.DisplayValue).ToList();
         rowOrder.Should().Contain("Food").And.Contain("Transport");
     }
 }

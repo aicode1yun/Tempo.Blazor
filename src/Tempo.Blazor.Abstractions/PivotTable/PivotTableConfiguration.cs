@@ -34,4 +34,10 @@ public sealed class PivotValueFieldConfiguration
 
     /// <summary>The format string.</summary>
     public string? Format { get; init; }
+
+    /// <summary>Optional CSS class applied to the value field header cell.</summary>
+    public string? HeaderClass { get; init; }
+
+    /// <summary>Optional inline style applied to the value field header cell.</summary>
+    public string? HeaderStyle { get; init; }
 }

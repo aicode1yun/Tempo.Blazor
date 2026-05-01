@@ -356,9 +356,11 @@
    ═══════════════════════════════════════════════════════════════ */
 
 .tm-pivot-table-scroll {
-  overflow-x: auto;
+  overflow: auto;
   border: 1px solid var(--tm-border-color);
   border-radius: var(--tm-radius-md);
+  flex: 1 1 auto;
+  min-height: 0;
 }
 
 .tm-pivot-table {

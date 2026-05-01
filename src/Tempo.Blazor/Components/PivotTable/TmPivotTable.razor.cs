@@ -16,6 +16,7 @@ public partial class TmPivotTable<TItem>
     private PivotTableResult? _result;
     private bool _isLoading;
     private bool _hasInitialized;
+    private bool _skipParametersSetRefresh;
 
     // ── Parameters: Data ─────────────────────────────────────────
 
@@ -24,6 +25,12 @@ public partial class TmPivotTable<TItem>
 
     /// <summary>Server-side data provider. When set, overrides Items and calls GetPivotDataAsync.</summary>
     [Parameter] public IPivotDataProvider<TItem>? DataProvider { get; set; }
+
+    /// <summary>XMLA (OLAP) data provider. Used when <see cref="DataProviderType"/> is <see cref="PivotDataProviderType.Xmla"/>.</summary>
+    [Parameter] public IXmlaPivotDataProvider? XmlaDataProvider { get; set; }
+
+    /// <summary>Determines which data provider backs the pivot table. Default: Client.</summary>
+    [Parameter] public PivotDataProviderType DataProviderType { get; set; } = PivotDataProviderType.Client;
 
     /// <summary>All available field definitions for the pivot table.</summary>
     [Parameter] public List<PivotField<TItem>> Fields { get; set; } = [];
@@ -62,10 +69,25 @@ public partial class TmPivotTable<TItem>
     /// <summary>Heading shown in the empty state when no data is available.</summary>
     [Parameter] public string? EmptyTitle { get; set; }
 
+    /// <summary>CSS width applied to column header cells (e.g. "120px", "15%").</summary>
+    [Parameter] public string? ColumnHeadersWidth { get; set; }
+
+    /// <summary>CSS width applied to row dimension header cells (e.g. "120px", "15%").</summary>
+    [Parameter] public string? RowHeadersWidth { get; set; }
+
+    /// <summary>CSS height applied to the wrapper div (e.g. "400px", "60vh").</summary>
+    [Parameter] public string? Height { get; set; }
+
+    /// <summary>CSS width applied to the wrapper div (e.g. "100%", "800px").</summary>
+    [Parameter] public string? Width { get; set; }
+
     // ── Parameters: Events ───────────────────────────────────────
 
     /// <summary>Fires when the pivot configuration changes.</summary>
     [Parameter] public EventCallback<PivotTableConfiguration> OnConfigurationChanged { get; set; }
+
+    /// <summary>Fires after the pivot data is refreshed or recomputed.</summary>
+    [Parameter] public EventCallback OnDataChanged { get; set; }
 
     // ── Parameters: Templates ────────────────────────────────────
 
@@ -92,6 +114,19 @@ public partial class TmPivotTable<TItem>
 
     private bool HasData => _result is not null && _result.LeafRowCount > 0 && _result.LeafColumnCount > 0;
 
+    private string? WrapperStyle
+    {
+        get
+        {
+            var parts = new List<string>();
+            if (!string.IsNullOrWhiteSpace(Height))
+                parts.Add($"height: {Height}");
+            if (!string.IsNullOrWhiteSpace(Width))
+                parts.Add($"width: {Width}");
+            return parts.Count > 0 ? string.Join("; ", parts) : null;
+        }
+    }
+
     private int RowDimensionCount => RowFieldKeys.Count;
     private int ColumnDimensionCount => ColumnFieldKeys.Count;
 
@@ -105,12 +140,15 @@ public partial class TmPivotTable<TItem>
     {
         if (_hasInitialized) return;
 
-        if (DataProvider is not null)
+        if (IsServerProvider)
             await RefreshDataAsync();
+        else if (IsXmlaProvider)
+            await RefreshXmlaDataAsync();
         else
             RefreshClientData();
 
         _hasInitialized = true;
+        _skipParametersSetRefresh = true;
     }
 
     /// <summary>Re-computes the pivot when configuration parameters change.</summary>
@@ -118,13 +156,39 @@ public partial class TmPivotTable<TItem>
     {
         if (!_hasInitialized) return;
 
-        if (DataProvider is not null)
+        if (_skipParametersSetRefresh)
+        {
+            _skipParametersSetRefresh = false;
+            return;
+        }
+
+        if (IsServerProvider)
             await RefreshDataAsync();
+        else if (IsXmlaProvider)
+            await RefreshXmlaDataAsync();
         else
             RefreshClientData();
     }
 
     // ── Data Refresh ─────────────────────────────────────────────
+
+    /// <summary>
+    /// Explicitly rebinds the pivot table data. Call this when the source data changes programmatically.
+    /// </summary>
+    public async Task RebindAsync()
+    {
+        if (IsServerProvider)
+            await RefreshDataAsync();
+        else if (IsXmlaProvider)
+            await RefreshXmlaDataAsync();
+        else
+        {
+            RefreshClientData();
+            StateHasChanged();
+        }
+
+        await OnDataChanged.InvokeAsync();
+    }
 
     private void RefreshClientData()
     {
@@ -137,6 +201,9 @@ public partial class TmPivotTable<TItem>
         var config = BuildConfiguration();
         _result = PivotEngine.Transform(Items, config, Fields);
     }
+
+    private bool IsServerProvider => DataProviderType == PivotDataProviderType.Server && DataProvider is not null;
+    private bool IsXmlaProvider => DataProviderType == PivotDataProviderType.Xmla && XmlaDataProvider is not null;
 
     private async Task RefreshDataAsync()
     {
@@ -168,6 +235,29 @@ public partial class TmPivotTable<TItem>
         }
     }
 
+    private async Task RefreshXmlaDataAsync()
+    {
+        if (XmlaDataProvider is null)
+        {
+            _result = null;
+            return;
+        }
+
+        _isLoading = true;
+        StateHasChanged();
+
+        try
+        {
+            var config = BuildConfiguration();
+            _result = await XmlaDataProvider.ExecuteQueryAsync(config);
+        }
+        finally
+        {
+            _isLoading = false;
+            StateHasChanged();
+        }
+    }
+
     private async Task OnConfigurationPanelChangedAsync(PivotTableConfiguration config)
     {
         RowFieldKeys = config.RowFieldKeys;
@@ -177,8 +267,10 @@ public partial class TmPivotTable<TItem>
 
         await OnConfigurationChanged.InvokeAsync(config);
 
-        if (DataProvider is not null)
+        if (IsServerProvider)
             await RefreshDataAsync();
+        else if (IsXmlaProvider)
+            await RefreshXmlaDataAsync();
         else
             RefreshClientData();
     }
@@ -187,10 +279,43 @@ public partial class TmPivotTable<TItem>
     {
         await OnConfigurationChanged.InvokeAsync(BuildConfiguration());
 
-        if (DataProvider is not null)
+        if (IsServerProvider)
             await RefreshDataAsync();
+        else if (IsXmlaProvider)
+            await RefreshXmlaDataAsync();
         else
             RefreshClientData();
+    }
+
+    private static string BuildClass(string baseClass, string? extraClass)
+    {
+        if (string.IsNullOrWhiteSpace(extraClass)) return baseClass;
+        return $"{baseClass} {extraClass}";
+    }
+
+    private static string? BuildStyle(string? headerStyle, string? width)
+    {
+        if (string.IsNullOrWhiteSpace(headerStyle) && string.IsNullOrWhiteSpace(width))
+            return null;
+
+        var parts = new List<string>();
+        if (!string.IsNullOrWhiteSpace(width))
+            parts.Add($"width: {width}");
+        if (!string.IsNullOrWhiteSpace(headerStyle))
+            parts.Add(headerStyle);
+        return string.Join("; ", parts);
+    }
+
+    private PivotField<TItem>? GetRowField(int level)
+    {
+        if (level < 0 || level >= RowFieldKeys.Count) return null;
+        return Fields.FirstOrDefault(f => f.Key == RowFieldKeys[level]);
+    }
+
+    private PivotField<TItem>? GetColumnField(int level)
+    {
+        if (level < 0 || level >= ColumnFieldKeys.Count) return null;
+        return Fields.FirstOrDefault(f => f.Key == ColumnFieldKeys[level]);
     }
 
     private PivotTableConfiguration BuildConfiguration() => new()
@@ -226,14 +351,22 @@ public partial class TmPivotTable<TItem>
 
             builder.OpenElement(seq++, "th");
             builder.AddAttribute(seq++, "class", "tm-pivot-corner");
+            if (!string.IsNullOrWhiteSpace(RowHeadersWidth))
+                builder.AddAttribute(seq++, "style", $"width: {RowHeadersWidth}");
             builder.AddAttribute(seq++, "rowspan", cornerRowSpan);
             builder.AddAttribute(seq++, "colspan", cornerColSpan);
             builder.CloseElement();
 
             for (var v = 0; v < valueFieldCount; v++)
             {
+                var valueConfig = v < ValueFields.Count ? ValueFields[v] : null;
+                var cssClass = BuildClass("tm-pivot-value-header", valueConfig?.HeaderClass);
+                var style = BuildStyle(valueConfig?.HeaderStyle, ColumnHeadersWidth);
+
                 builder.OpenElement(seq++, "th");
-                builder.AddAttribute(seq++, "class", "tm-pivot-value-header");
+                builder.AddAttribute(seq++, "class", cssClass);
+                if (style is not null)
+                    builder.AddAttribute(seq++, "style", style);
                 builder.AddContent(seq++, GetValueFieldDisplayName(v));
                 builder.CloseElement();
             }
@@ -251,6 +384,8 @@ public partial class TmPivotTable<TItem>
             {
                 builder.OpenElement(seq++, "th");
                 builder.AddAttribute(seq++, "class", "tm-pivot-corner");
+                if (!string.IsNullOrWhiteSpace(RowHeadersWidth))
+                    builder.AddAttribute(seq++, "style", $"width: {RowHeadersWidth}");
                 builder.AddAttribute(seq++, "rowspan", cornerRowSpan);
                 builder.AddAttribute(seq++, "colspan", cornerColSpan);
                 builder.CloseElement();
@@ -273,6 +408,9 @@ public partial class TmPivotTable<TItem>
             if (node.Level == targetLevel)
             {
                 var effectiveColSpan = node.ColSpan * valueFieldCount;
+                var field = GetColumnField(node.Level);
+                var cssClass = BuildClass("tm-pivot-col-header", field?.HeaderClass);
+                var style = BuildStyle(field?.HeaderStyle, ColumnHeadersWidth);
 
                 if (ColumnHeaderTemplate is not null)
                 {
@@ -287,7 +425,9 @@ public partial class TmPivotTable<TItem>
                     };
 
                     builder.OpenElement(seq++, "th");
-                    builder.AddAttribute(seq++, "class", "tm-pivot-col-header");
+                    builder.AddAttribute(seq++, "class", cssClass);
+                    if (style is not null)
+                        builder.AddAttribute(seq++, "style", style);
                     if (effectiveColSpan > 1)
                         builder.AddAttribute(seq++, "colspan", effectiveColSpan);
                     builder.AddContent(seq++, ColumnHeaderTemplate, ctx);
@@ -296,7 +436,9 @@ public partial class TmPivotTable<TItem>
                 else
                 {
                     builder.OpenElement(seq++, "th");
-                    builder.AddAttribute(seq++, "class", "tm-pivot-col-header");
+                    builder.AddAttribute(seq++, "class", cssClass);
+                    if (style is not null)
+                        builder.AddAttribute(seq++, "style", style);
                     if (effectiveColSpan > 1)
                         builder.AddAttribute(seq++, "colspan", effectiveColSpan);
                     builder.AddContent(seq++, node.DisplayValue);
@@ -317,8 +459,14 @@ public partial class TmPivotTable<TItem>
         {
             for (var v = 0; v < _result!.ValueFieldCount; v++)
             {
+                var valueConfig = v < ValueFields.Count ? ValueFields[v] : null;
+                var cssClass = BuildClass("tm-pivot-value-header", valueConfig?.HeaderClass);
+                var style = BuildStyle(valueConfig?.HeaderStyle, ColumnHeadersWidth);
+
                 builder.OpenElement(seq++, "th");
-                builder.AddAttribute(seq++, "class", "tm-pivot-value-header");
+                builder.AddAttribute(seq++, "class", cssClass);
+                if (style is not null)
+                    builder.AddAttribute(seq++, "style", style);
                 builder.AddContent(seq++, GetValueFieldDisplayName(v));
                 builder.CloseElement();
             }
@@ -362,6 +510,10 @@ public partial class TmPivotTable<TItem>
                 {
                     if (pathNode.RowIndex == node.RowIndex)
                     {
+                        var field = GetRowField(pathNode.Level);
+                        var cssClass = BuildClass("tm-pivot-row-dim", field?.HeaderClass);
+                        var style = BuildStyle(field?.HeaderStyle, RowHeadersWidth);
+
                         if (RowHeaderTemplate is not null)
                         {
                             var rowCtx = new PivotRowHeaderContext
@@ -374,7 +526,9 @@ public partial class TmPivotTable<TItem>
                             };
 
                             builder.OpenElement(seq++, "td");
-                            builder.AddAttribute(seq++, "class", "tm-pivot-row-dim");
+                            builder.AddAttribute(seq++, "class", cssClass);
+                            if (style is not null)
+                                builder.AddAttribute(seq++, "style", style);
                             if (pathNode.RowSpan > 1)
                                 builder.AddAttribute(seq++, "rowspan", pathNode.RowSpan);
                             builder.AddContent(seq++, RowHeaderTemplate, rowCtx);
@@ -383,7 +537,9 @@ public partial class TmPivotTable<TItem>
                         else
                         {
                             builder.OpenElement(seq++, "td");
-                            builder.AddAttribute(seq++, "class", "tm-pivot-row-dim");
+                            builder.AddAttribute(seq++, "class", cssClass);
+                            if (style is not null)
+                                builder.AddAttribute(seq++, "style", style);
                             if (pathNode.RowSpan > 1)
                                 builder.AddAttribute(seq++, "rowspan", pathNode.RowSpan);
                             builder.AddContent(seq++, pathNode.DisplayValue);

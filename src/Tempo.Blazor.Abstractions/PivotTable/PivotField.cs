@@ -27,6 +27,12 @@ public sealed class PivotField<TItem>
     /// <summary>Sort criterion for this dimension field. Default: Value.</summary>
     public PivotSortBy SortBy { get; set; } = PivotSortBy.Value;
 
+    /// <summary>Optional CSS class applied to header cells for this field.</summary>
+    public string? HeaderClass { get; set; }
+
+    /// <summary>Optional inline style applied to header cells for this field.</summary>
+    public string? HeaderStyle { get; set; }
+
     /// <summary>
     /// Gets the formatted display value for a given raw value.
     /// </summary>
