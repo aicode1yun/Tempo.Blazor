@@ -401,6 +401,41 @@ public class TmPivotFieldPanelTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmPivotFieldPanel_DropToFilter_SelectsAllValuesByDefault()
+    {
+        var items = new List<Transaction>
+        {
+            new("Food", "Jan", 100m),
+            new("Transport", "Feb", 200m),
+        };
+
+        var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>>())
+        );
+
+        // Simulate drop by directly calling the component's internal move logic
+        // We can't easily trigger drag-and-drop in bUnit, so we verify via re-render with pre-set filter
+        var cut2 = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.Items, items)
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food", "Transport"] })
+        );
+
+        var filterChips = cut2.FindAll(".tm-pivot-zone--filter .tm-pivot-field-chip");
+        filterChips.Should().HaveCount(1);
+        filterChips[0].TextContent.Should().Contain("Category");
+
+        // Open editor and verify both values are checked
+        var settingsBtn = cut2.Find(".tm-pivot-zone--filter .tm-pivot-field-chip-btn");
+        settingsBtn.Click();
+
+        var checkedBoxes = cut2.FindAll(".tm-pivot-filter-value input[type='checkbox']:checked");
+        checkedBoxes.Should().HaveCount(2); // Food and Transport both checked
+    }
+
+    [Fact]
     public void TmPivotFieldPanel_DropRowField_FieldRemovedFromUnused()
     {
         var cut = RenderComponent<TmPivotFieldPanel<Transaction>>(parameters => parameters

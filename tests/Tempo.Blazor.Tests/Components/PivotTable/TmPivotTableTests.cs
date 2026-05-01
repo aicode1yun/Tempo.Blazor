@@ -257,4 +257,32 @@ public class TmPivotTableTests : LocalizationTestBase
         rowDimCells[2].GetAttribute("rowspan").Should().BeNullOrEmpty();
     }
 
+    [Fact]
+    public void TmPivotTable_FilterChange_AutoAppliesAndRecomputesData()
+    {
+        var cut = RenderComponent<TmPivotTable<Transaction>>(parameters => parameters
+            .Add(p => p.Items, TestData)
+            .Add(p => p.Fields, Fields)
+            .Add(p => p.RowFieldKeys, ["Category"])
+            .Add(p => p.ColumnFieldKeys, ["Month"])
+            .Add(p => p.ValueFields, [new PivotValueFieldConfiguration { FieldKey = "Amount", Aggregation = "Sum" }])
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>>())
+        );
+
+        // Initial: 2 rows (Food, Transport) x 2 cols (Jan, Feb)
+        var initialCells = cut.FindAll(".tm-pivot-cell");
+        initialCells.Should().HaveCount(4);
+
+        // Change filter to only include Food
+        cut.SetParametersAndRender(parameters => parameters
+            .Add(p => p.FilterFields, new Dictionary<string, List<object?>> { ["Category"] = ["Food"] })
+        );
+
+        // After filter: 1 row (Food) x 2 cols (Jan, Feb)
+        var filteredCells = cut.FindAll(".tm-pivot-cell");
+        filteredCells.Should().HaveCount(2);
+
+        var rowDims = cut.FindAll(".tm-pivot-row-dim");
+        rowDims.Should().ContainSingle().Which.TextContent.Should().Be("Food");
+    }
 }

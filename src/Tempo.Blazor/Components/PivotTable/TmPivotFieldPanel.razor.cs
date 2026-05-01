@@ -47,6 +47,9 @@ public partial class TmPivotFieldPanel<TItem>
     /// <summary>When true, enables drag-and-drop. Default: true.</summary>
     [Parameter] public bool AllowDragDrop { get; set; } = true;
 
+    /// <summary>When true, filter changes are applied immediately without clicking Apply. Default: true.</summary>
+    [Parameter] public bool AutoApplyFilters { get; set; } = true;
+
     /// <summary>Fires when the user applies a new configuration.</summary>
     [Parameter] public EventCallback<PivotTableConfiguration> OnConfigurationChanged { get; set; }
 
@@ -134,7 +137,11 @@ public partial class TmPivotFieldPanel<TItem>
                 break;
             case PivotArea.Filter:
                 if (!_draftFilterFields.ContainsKey(fieldKey))
-                    _draftFilterFields[fieldKey] = [];
+                {
+                    // Select all distinct values by default so the filter is effectively a no-op
+                    // until the user explicitly unchecks values.
+                    _draftFilterFields[fieldKey] = GetDistinctFieldValues(fieldKey).ToList();
+                }
                 break;
         }
 
@@ -241,41 +248,52 @@ public partial class TmPivotFieldPanel<TItem>
         return selected.Any(v => Equals(v, value));
     }
 
-    private void ToggleFilterValue(string fieldKey, object? value)
+    private async Task ToggleFilterValue(string fieldKey, object? value)
     {
         if (!_draftFilterFields.TryGetValue(fieldKey, out var selected))
         {
             _draftFilterFields[fieldKey] = [value];
-            StateHasChanged();
-            return;
-        }
-
-        var existing = selected.FirstOrDefault(v => Equals(v, value));
-        if (existing is not null)
-        {
-            selected.Remove(existing);
-            if (selected.Count == 0)
-                _draftFilterFields.Remove(fieldKey);
         }
         else
         {
-            selected.Add(value);
+            var existing = selected.FirstOrDefault(v => Equals(v, value));
+            if (existing is not null)
+            {
+                selected.Remove(existing);
+                if (selected.Count == 0)
+                    _draftFilterFields.Remove(fieldKey);
+            }
+            else
+            {
+                selected.Add(value);
+            }
         }
 
-        StateHasChanged();
+        if (AutoApplyFilters)
+            await FireConfigurationChangedAsync(closeEditors: false);
+        else
+            StateHasChanged();
     }
 
-    private void SelectAllFilterValues(string fieldKey)
+    private async Task SelectAllFilterValues(string fieldKey)
     {
         var values = GetDistinctFieldValues(fieldKey);
         _draftFilterFields[fieldKey] = values.ToList();
-        StateHasChanged();
+
+        if (AutoApplyFilters)
+            await FireConfigurationChangedAsync(closeEditors: false);
+        else
+            StateHasChanged();
     }
 
-    private void ClearFilterValues(string fieldKey)
+    private async Task ClearFilterValues(string fieldKey)
     {
         _draftFilterFields.Remove(fieldKey);
-        StateHasChanged();
+
+        if (AutoApplyFilters)
+            await FireConfigurationChangedAsync(closeEditors: false);
+        else
+            StateHasChanged();
     }
 
     private void ToggleFilterEditor(string fieldKey)
@@ -286,7 +304,7 @@ public partial class TmPivotFieldPanel<TItem>
 
     // ── Actions ──────────────────────────────────────────────────
 
-    private async Task ApplyAsync()
+    private async Task FireConfigurationChangedAsync(bool closeEditors = true)
     {
         var config = new PivotTableConfiguration
         {
@@ -296,9 +314,18 @@ public partial class TmPivotFieldPanel<TItem>
             FilterFields = new Dictionary<string, List<object?>>(_draftFilterFields)
         };
 
-        _editingValueFieldIndex = null;
-        _expandedFilterFieldKey = null;
+        if (closeEditors)
+        {
+            _editingValueFieldIndex = null;
+            _expandedFilterFieldKey = null;
+        }
+
         await OnConfigurationChanged.InvokeAsync(config);
+    }
+
+    private async Task ApplyAsync()
+    {
+        await FireConfigurationChangedAsync(closeEditors: true);
     }
 
     private void Reset()
