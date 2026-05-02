@@ -1,0 +1,153 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Models
+@using Microsoft.AspNetCore.Components.Web
+@using Microsoft.AspNetCore.Components.Web.Virtualization
+
+@if (Sheet is null)
+{
+    <div class="tm-spreadsheet-grid tm-spreadsheet-grid--empty">
+        @Loc["TmSpreadsheet_NoSheet"]
+    </div>
+}
+else
+{
+    <div class="tm-spreadsheet-grid @(Sheet?.ShowGridLines == false ? "tm-spreadsheet-grid--no-gridlines" : "")"
+         role="grid"
+         aria-rowcount="@Sheet.RowCount"
+         aria-colcount="@Sheet.ColumnCount"
+         aria-label="@Loc["TmSpreadsheet_Name"]"
+         tabindex="0"
+         @onkeydown="HandleKeyDown"
+         @onfocus="() => { }"
+         @onmousemove="OnAutoFillMouseMove"
+         @onmouseup="OnAutoFillMouseUp"
+         @oncontextmenu="OnContextMenu"
+         @oncontextmenu:preventDefault
+         @ref="_gridElement">
+        <!-- Column Headers (A, B, C...) -->
+        <div class="tm-spreadsheet-col-headers" role="rowgroup">
+            <div class="tm-spreadsheet-corner"
+                 role="columnheader"
+                 aria-label="@Loc["Tm_SelectAll"]"
+                 @onclick="SelectAllCells"></div>
+            @for (int col = 0; col < Sheet.ColumnCount; col++)
+            {
+                var colIndex = col;
+                <div class="tm-spreadsheet-header-cell @GetColumnHeaderClass(colIndex)"
+                     role="columnheader"
+                     aria-label="@SpreadsheetRange.ColumnIndexToLetters(colIndex)"
+                     style="width: @GetColumnWidth(colIndex)px;@GetColumnHeaderFreezeStyle(colIndex)"
+                     @onclick="() => SelectColumn(colIndex)">
+                    @SpreadsheetRange.ColumnIndexToLetters(colIndex)
+                </div>
+            }
+        </div>
+
+        <!-- Row Headers + Data Cells -->
+        <div class="tm-spreadsheet-body" role="rowgroup">
+            @if (UseVirtualization)
+            {
+                <Virtualize Items="@_rowIndices"
+                            ItemSize="@GetAverageRowHeight()"
+                            OverscanCount="5"
+                            Context="rowIndex">
+                    @RenderRow(rowIndex)
+                </Virtualize>
+            }
+            else
+            {
+                @for (int row = 0; row < Sheet.RowCount; row++)
+                {
+                    @RenderRow(row)
+                }
+            }
+        </div>
+
+        @if (_contextMenuVisible)
+        {
+            <div class="tm-spreadsheet-context-menu"
+                 style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"
+                 @onclick:stopPropagation>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCopy">@Loc["TmSpreadsheet_Copy"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCut">@Loc["TmSpreadsheet_Cut"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuPaste">@Loc["TmSpreadsheet_Paste"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuInsertRow">@Loc["TmSpreadsheet_InsertRow"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuDeleteRow">@Loc["TmSpreadsheet_DeleteRow"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuInsertColumn">@Loc["TmSpreadsheet_InsertColumn"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuDeleteColumn">@Loc["TmSpreadsheet_DeleteColumn"]</div>
+            </div>
+        }
+    </div>
+}
+
+@code {
+    private RenderFragment<int> RenderRow => rowIndex => @<text>
+        <div class="tm-spreadsheet-row" role="row">
+            <div class="tm-spreadsheet-header-cell tm-spreadsheet-row-header @GetRowHeaderClass(rowIndex)"
+                 role="rowheader"
+                 aria-label="@(rowIndex + 1)"
+                 style="height: @GetRowHeight(rowIndex)px;@GetRowHeaderFreezeStyle(rowIndex)"
+                 @onclick="() => SelectRow(rowIndex)">
+                @(rowIndex + 1)
+            </div>
+            @for (int col = 0; col < (Sheet?.ColumnCount ?? 0); col++)
+            {
+                var colIndex = col;
+                var cellRef = SpreadsheetRange.ColumnIndexToLetters(colIndex) + (rowIndex + 1);
+                var cell = Sheet?.Cells.GetValueOrDefault(cellRef);
+                var isActive = IsActiveCell(cellRef);
+                var isSelected = IsCellSelected(cellRef);
+                var isEditing = IsEditing && isActive;
+                var mergedHidden = IsCellMergedAndHidden(rowIndex, colIndex);
+                <div class="tm-spreadsheet-cell @GetCellClass(isActive, isSelected, mergedHidden)"
+                     role="gridcell"
+                     aria-selected="@isSelected.ToString().ToLowerInvariant()"
+                     aria-label="@cellRef"
+                     style="@GetCellStyleString(cell, colIndex, rowIndex)"
+                     title="@cellRef"
+                     @onclick="e => OnCellClick(cellRef, e)"
+                     @ondblclick="() => StartEdit(cellRef)">
+                    @if (isEditing)
+                    {
+                        <input class="tm-spreadsheet-cell-input"
+                               value="@GetEditValue(cell)"
+                               @ref="_editInput"
+                               @oninput="OnEditInput"
+                               @onkeydown="HandleEditKeyDown"
+                               @onkeydown:stopPropagation="true"
+                               @onblur="CommitEdit"
+                               @onclick:stopPropagation />
+                    }
+                    else if (cell?.ImageUrl is not null)
+                    {
+                        <img src="@cell.ImageUrl"
+                             alt=""
+                             style="max-width:100%;max-height:100%;object-fit:contain;" />
+                    }
+                    else if (cell?.Hyperlink is not null)
+                    {
+                        <a href="@cell.Hyperlink"
+                           target="_blank"
+                           rel="noopener noreferrer"
+                           class="tm-spreadsheet-cell-link"
+                           @onclick:stopPropagation>
+                            @GetCellDisplayValue(cell)
+                        </a>
+                    }
+                    else
+                    {
+                        @GetCellDisplayValue(cell)
+                    }
+                    @if (IsSelectionEndCell(rowIndex, colIndex) && !isEditing)
+                    {
+                        <div class="tm-spreadsheet-autofill-handle"
+                             @onmousedown="OnAutoFillMouseDown"
+                             @onmousedown:stopPropagation />
+                    }
+                </div>
+            }
+        </div>
+    </text>;
+}

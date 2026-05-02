@@ -1,0 +1,8 @@
+.tm-spreadsheet {
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    overflow: hidden;
+}

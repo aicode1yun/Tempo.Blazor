@@ -1708,4 +1708,48 @@
   <data name="TmPivotTable_AddToFilter" xml:space="preserve"><value>Přidat do filtrů</value></data>
   <data name="TmPivotTable_RemoveFromAll" xml:space="preserve"><value>Odebrat ze všech oblastí</value></data>
 
+  <data name="TmSpreadsheet_NoSheet" xml:space="preserve"><value>Žádný list k dispozici</value></data>
+  <data name="TmSpreadsheet_Name" xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmSpreadsheet_CellReference" xml:space="preserve"><value>Odkaz na buňku</value></data>
+  <data name="TmSpreadsheet_FormulaBarPlaceholder" xml:space="preserve"><value>Zadejte vzorec nebo hodnotu...</value></data>
+  <data name="TmSpreadsheet_SheetTab" xml:space="preserve"><value>List</value></data>
+  <data name="TmSpreadsheet_AddSheet" xml:space="preserve"><value>Přidat list</value></data>
+  <data name="TmSpreadsheet_RenameSheet" xml:space="preserve"><value>Přejmenovat list</value></data>
+  <data name="TmSpreadsheet_DeleteSheet" xml:space="preserve"><value>Smazat list</value></data>
+  <data name="TmSpreadsheet_DeleteSheetConfirm" xml:space="preserve"><value>Opravdu chcete smazat tento list?</value></data>
+  <data name="TmSpreadsheet_GridLines" xml:space="preserve"><value>Mřížka</value></data>
+  <data name="TmSpreadsheet_MergeCells" xml:space="preserve"><value>Sloučit buňky</value></data>
+  <data name="TmSpreadsheet_Undo" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmSpreadsheet_Redo" xml:space="preserve"><value>Znovu</value></data>
+  <data name="TmSpreadsheet_Copy" xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="TmSpreadsheet_Cut" xml:space="preserve"><value>Vyjmout</value></data>
+  <data name="TmSpreadsheet_Paste" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmSpreadsheet_InsertRow" xml:space="preserve"><value>Vložit řádek</value></data>
+  <data name="TmSpreadsheet_DeleteRow" xml:space="preserve"><value>Smazat řádek</value></data>
+  <data name="TmSpreadsheet_InsertColumn" xml:space="preserve"><value>Vložit sloupec</value></data>
+  <data name="TmSpreadsheet_DeleteColumn" xml:space="preserve"><value>Smazat sloupec</value></data>
+  <data name="TmSpreadsheet_Bold" xml:space="preserve"><value>Tučně</value></data>
+  <data name="TmSpreadsheet_Italic" xml:space="preserve"><value>Kurzíva</value></data>
+  <data name="TmSpreadsheet_Underline" xml:space="preserve"><value>Podtržené</value></data>
+  <data name="TmSpreadsheet_TextColor" xml:space="preserve"><value>Barva textu</value></data>
+  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Barva pozadí</value></data>
+  <data name="TmSpreadsheet_AlignLeft" xml:space="preserve"><value>Zarovnat vlevo</value></data>
+  <data name="TmSpreadsheet_AlignCenter" xml:space="preserve"><value>Zarovnat na střed</value></data>
+  <data name="TmSpreadsheet_AlignRight" xml:space="preserve"><value>Zarovnat vpravo</value></data>
+  <data name="TmSpreadsheet_NumberFormat" xml:space="preserve"><value>Formát čísla</value></data>
+  <data name="TmSpreadsheet_IncreaseDecimals" xml:space="preserve"><value>Zvýšit desetinná místa</value></data>
+  <data name="TmSpreadsheet_DecreaseDecimals" xml:space="preserve"><value>Snížit desetinná místa</value></data>
+  <data name="TmSpreadsheet_Open" xml:space="preserve"><value>Otevřít soubor</value></data>
+  <data name="TmSpreadsheet_Download" xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmSpreadsheet_TabHome" xml:space="preserve"><value>Domů</value></data>
+  <data name="TmSpreadsheet_TabInsert" xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmSpreadsheet_TabView" xml:space="preserve"><value>Zobrazení</value></data>
+  <data name="TmSpreadsheet_TabFile" xml:space="preserve"><value>Soubor</value></data>
+  <data name="TmSpreadsheet_InsertLink" xml:space="preserve"><value>Vložit odkaz</value></data>
+  <data name="TmSpreadsheet_InsertImage" xml:space="preserve"><value>Vložit obrázek</value></data>
+  <data name="TmSpreadsheet_LinkUrl" xml:space="preserve"><value>URL</value></data>
+  <data name="TmSpreadsheet_LinkText" xml:space="preserve"><value>Zobrazený text</value></data>
+  <data name="TmSpreadsheet_LinkTextPlaceholder" xml:space="preserve"><value>Klikněte zde</value></data>
+  <data name="TmSpreadsheet_ImageUrl" xml:space="preserve"><value>URL obrázku</value></data>
+
 </root>

@@ -153,3 +153,8 @@
 @import "components/_scheduler-day.css";
 @import "components/_scheduler-week.css";
 @import "components/_scheduler-timeline.css";
+
+/* 18. Spreadsheet */
+@import "components/_spreadsheet.css";
+@import "components/_spreadsheet-toolbar.css";
+@import "components/_spreadsheet-formula-bar.css";

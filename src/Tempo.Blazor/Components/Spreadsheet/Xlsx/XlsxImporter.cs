@@ -1,0 +1,311 @@
+using System.Globalization;
+using DocumentFormat.OpenXml;
+using DocumentFormat.OpenXml.Packaging;
+using DocumentFormat.OpenXml.Spreadsheet;
+using Tempo.Blazor.Components.Spreadsheet.Enums;
+using Tempo.Blazor.Components.Spreadsheet.Models;
+
+namespace Tempo.Blazor.Components.Spreadsheet.Xlsx;
+
+/// <summary>Imports an XLSX file into a <see cref="SpreadsheetWorkbook"/>.</summary>
+public static class XlsxImporter
+{
+    /// <summary>Imports the given XLSX data and returns a new workbook.</summary>
+    public static SpreadsheetWorkbook Import(byte[] data)
+    {
+        using var stream = new MemoryStream(data);
+        using var doc = SpreadsheetDocument.Open(stream, false);
+        var workbookPart = doc.WorkbookPart ?? throw new InvalidDataException("Missing workbook part.");
+        var sst = workbookPart.GetPartsOfType<SharedStringTablePart>().FirstOrDefault();
+        var stylesPart = workbookPart.GetPartsOfType<WorkbookStylesPart>().FirstOrDefault();
+        var styleMap = stylesPart is not null ? BuildStyleMap(stylesPart) : new Dictionary<int, SpreadsheetCellStyle>();
+
+        var workbook = new SpreadsheetWorkbook();
+        workbook.Sheets.Clear();
+
+        var sheets = workbookPart.Workbook.Sheets?.Elements<Sheet>() ?? Enumerable.Empty<Sheet>();
+        foreach (var sheet in sheets)
+        {
+            if (sheet.Id?.Value is null) continue;
+            var worksheetPart = (WorksheetPart)workbookPart.GetPartById(sheet.Id.Value);
+            var worksheet = worksheetPart.Worksheet;
+            var sheetData = worksheet.Elements<SheetData>().FirstOrDefault();
+            var mergeCells = worksheet.Elements<MergeCells>().FirstOrDefault();
+            var columns = worksheet.Elements<Columns>().FirstOrDefault();
+
+            var ss = new SpreadsheetSheet { Name = sheet.Name?.Value ?? "Sheet" };
+
+            // Column widths
+            if (columns is not null)
+            {
+                foreach (var col in columns.Elements<Column>())
+                {
+                    if (col.Min is null || col.Max is null) continue;
+                    for (uint c = col.Min.Value; c <= col.Max.Value; c++)
+                    {
+                        var width = col.Width?.Value;
+                        if (width is not null)
+                            ss.Columns[(int)(c - 1)] = new SpreadsheetColumn { Index = (int)(c - 1), Width = width * 7.0 }; // approximate px
+                    }
+                }
+            }
+
+            // Row heights and cells
+            if (sheetData is not null)
+            {
+                foreach (var row in sheetData.Elements<Row>())
+                {
+                    var rowIndex = (int)(row.RowIndex?.Value ?? 0) - 1;
+                    if (rowIndex < 0) continue;
+
+                    if (row.Height is not null)
+                        ss.Rows[rowIndex] = new SpreadsheetRow { Index = rowIndex, Height = row.Height.Value };
+
+                    if (row.Hidden?.Value == true && ss.Rows.TryGetValue(rowIndex, out var r))
+                        r.IsHidden = true;
+
+                    foreach (var cell in row.Elements<Cell>())
+                    {
+                        var cellRef = cell.CellReference?.Value;
+                        if (cellRef is null) continue;
+
+                        var sc = new SpreadsheetCell();
+
+                        // Value / formula
+                        if (cell.CellFormula is not null)
+                        {
+                            sc.Formula = cell.CellFormula.Text;
+                            sc.Value = cell.CellValue?.Text;
+                            sc.DataType = SpreadsheetDataType.Text;
+                        }
+                        else
+                        {
+                            var raw = cell.CellValue?.Text;
+                            sc.Value = ConvertValue(raw, cell.DataType?.Value, sst);
+                            sc.DataType = InferDataType(cell.DataType?.Value);
+                        }
+
+                        // Style
+                        if (cell.StyleIndex is not null && styleMap.TryGetValue((int)cell.StyleIndex.Value, out var mappedStyle))
+                            sc.Style = mappedStyle.Clone();
+
+                        ss.Cells[cellRef] = sc;
+                    }
+                }
+            }
+
+            // Merged cells
+            if (mergeCells is not null)
+            {
+                foreach (var mc in mergeCells.Elements<MergeCell>())
+                {
+                    if (mc.Reference?.Value is null) continue;
+                    try
+                    {
+                        ss.MergedCells.Add(SpreadsheetRange.Parse(mc.Reference.Value));
+                    }
+                    catch { /* ignore invalid merge refs */ }
+                }
+            }
+
+            workbook.Sheets.Add(ss);
+        }
+
+        if (workbook.Sheets.Count == 0)
+            workbook.AddSheet("Sheet1");
+
+        return workbook;
+    }
+
+    private static object? ConvertValue(string? raw, CellValues? dataType, SharedStringTablePart? sst)
+    {
+        if (raw is null) return null;
+        if (dataType == CellValues.SharedString && sst?.SharedStringTable is not null)
+        {
+            if (int.TryParse(raw, out var idx) && idx >= 0 && idx < sst.SharedStringTable.ChildElements.Count)
+                return sst.SharedStringTable.ChildElements[idx].InnerText;
+            return raw;
+        }
+        if (dataType == CellValues.Boolean)
+            return raw == "1";
+        if (dataType == CellValues.Number && double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var d))
+            return d;
+        if (dataType == CellValues.Date && double.TryParse(raw, NumberStyles.Any, CultureInfo.InvariantCulture, out var od))
+            return DateTime.FromOADate(od);
+        return raw;
+    }
+
+    private static SpreadsheetDataType InferDataType(CellValues? dataType)
+    {
+        if (dataType == CellValues.Number) return SpreadsheetDataType.Number;
+        if (dataType == CellValues.Boolean) return SpreadsheetDataType.Boolean;
+        if (dataType == CellValues.Date) return SpreadsheetDataType.Date;
+        return SpreadsheetDataType.Text;
+    }
+
+    private static Dictionary<int, SpreadsheetCellStyle> BuildStyleMap(WorkbookStylesPart stylesPart)
+    {
+        var map = new Dictionary<int, SpreadsheetCellStyle>();
+        var stylesheet = stylesPart.Stylesheet;
+        if (stylesheet is null) return map;
+
+        var fonts = stylesheet.Fonts?.Elements<Font>().ToList() ?? new List<Font>();
+        var fills = stylesheet.Fills?.Elements<Fill>().ToList() ?? new List<Fill>();
+        var borders = stylesheet.Borders?.Elements<Border>().ToList() ?? new List<Border>();
+        var cellFormats = stylesheet.CellFormats?.Elements<CellFormat>().ToList() ?? new List<CellFormat>();
+        var numFmts = stylesheet.NumberingFormats?.Elements<NumberingFormat>().ToList() ?? new List<NumberingFormat>();
+
+        for (int i = 0; i < cellFormats.Count; i++)
+        {
+            var cf = cellFormats[i];
+            var style = new SpreadsheetCellStyle();
+
+            // Font
+            if (cf.FontId is not null && cf.FontId.Value < fonts.Count)
+            {
+                var font = fonts[(int)cf.FontId.Value];
+                style.Bold = font.Bold is not null;
+                style.Italic = font.Italic is not null;
+                style.Underline = font.Underline is not null;
+                if (font.FontSize?.Val is not null)
+                    style.FontSize = font.FontSize.Val.Value;
+                if (font.Color?.Rgb is not null)
+                    style.ForeColor = $"#{font.Color.Rgb.Value}";
+                else if (font.Color?.Theme is not null)
+                    style.ForeColor = ThemeColorToHex(font.Color.Theme.Value, font.Color.Tint?.Value);
+                if (font.FontName?.Val is not null)
+                    style.FontFamily = font.FontName.Val.Value;
+            }
+
+            // Fill
+            if (cf.FillId is not null && cf.FillId.Value < fills.Count)
+            {
+                var fill = fills[(int)cf.FillId.Value];
+                if (fill.PatternFill?.ForegroundColor?.Rgb is not null)
+                    style.BackgroundColor = $"#{fill.PatternFill.ForegroundColor.Rgb.Value}";
+                else if (fill.PatternFill?.ForegroundColor?.Theme is not null)
+                    style.BackgroundColor = ThemeColorToHex(fill.PatternFill.ForegroundColor.Theme.Value, fill.PatternFill.ForegroundColor.Tint?.Value);
+            }
+
+            // Alignment
+            if (cf.Alignment is not null)
+            {
+                style.HorizontalAlign = ParseHorizontalAlign(cf.Alignment.Horizontal?.Value);
+                style.VerticalAlign = ParseVerticalAlign(cf.Alignment.Vertical?.Value);
+                style.TextWrap = cf.Alignment.WrapText?.Value == true;
+            }
+
+            // Number format
+            if (cf.NumberFormatId is not null)
+            {
+                var nfId = (int)cf.NumberFormatId.Value;
+                var custom = numFmts.FirstOrDefault(n => n.NumberFormatId?.Value == nfId);
+                style.NumberFormat = custom?.FormatCode?.Value ?? BuiltinNumberFormat(nfId);
+            }
+
+            // Borders
+            if (cf.BorderId is not null && cf.BorderId.Value < borders.Count)
+            {
+                var border = borders[(int)cf.BorderId.Value];
+                style.BorderTop = MapBorder(border.TopBorder);
+                style.BorderRight = MapBorder(border.RightBorder);
+                style.BorderBottom = MapBorder(border.BottomBorder);
+                style.BorderLeft = MapBorder(border.LeftBorder);
+            }
+
+            map[i] = style;
+        }
+
+        return map;
+    }
+
+    private static SpreadsheetBorder MapBorder(OpenXmlElement? edge)
+    {
+        if (edge is not BorderPropertiesType bpt || bpt.Style?.Value is null || bpt.Style.Value == BorderStyleValues.None)
+            return new SpreadsheetBorder(SpreadsheetBorderStyle.None, "#000000");
+
+        SpreadsheetBorderStyle style;
+        if (bpt.Style.Value == BorderStyleValues.Thin) style = SpreadsheetBorderStyle.Thin;
+        else if (bpt.Style.Value == BorderStyleValues.Medium) style = SpreadsheetBorderStyle.Medium;
+        else if (bpt.Style.Value == BorderStyleValues.Thick) style = SpreadsheetBorderStyle.Thick;
+        else if (bpt.Style.Value == BorderStyleValues.Dashed) style = SpreadsheetBorderStyle.Dashed;
+        else if (bpt.Style.Value == BorderStyleValues.Dotted) style = SpreadsheetBorderStyle.Dotted;
+        else if (bpt.Style.Value == BorderStyleValues.Double) style = SpreadsheetBorderStyle.Double;
+        else style = SpreadsheetBorderStyle.Thin;
+
+        var color = "#000000";
+        if (bpt.Color?.Rgb is not null)
+            color = $"#{bpt.Color.Rgb.Value}";
+        else if (bpt.Color?.Theme is not null)
+            color = ThemeColorToHex(bpt.Color.Theme.Value, bpt.Color.Tint?.Value);
+
+        return new SpreadsheetBorder(style, color);
+    }
+
+    private static SpreadsheetHorizontalAlign ParseHorizontalAlign(HorizontalAlignmentValues? value)
+    {
+        if (value == HorizontalAlignmentValues.Center) return SpreadsheetHorizontalAlign.Center;
+        if (value == HorizontalAlignmentValues.Right) return SpreadsheetHorizontalAlign.Right;
+        return SpreadsheetHorizontalAlign.Left;
+    }
+
+    private static SpreadsheetVerticalAlign ParseVerticalAlign(VerticalAlignmentValues? value)
+    {
+        if (value == VerticalAlignmentValues.Top) return SpreadsheetVerticalAlign.Top;
+        if (value == VerticalAlignmentValues.Center) return SpreadsheetVerticalAlign.Middle;
+        return SpreadsheetVerticalAlign.Bottom;
+    }
+
+    private static string BuiltinNumberFormat(int id) => id switch
+    {
+        0 => "General",
+        1 => "0",
+        2 => "0.00",
+        3 => "#,##0",
+        4 => "#,##0.00",
+        9 => "0%",
+        10 => "0.00%",
+        11 => "0.00E+00",
+        12 => "# ?/?",
+        13 => "# ??/??",
+        14 => "mm-dd-yy",
+        15 => "d-mmm-yy",
+        16 => "d-mmm",
+        17 => "mmm-yy",
+        18 => "h:mm AM/PM",
+        19 => "h:mm:ss AM/PM",
+        20 => "h:mm",
+        21 => "h:mm:ss",
+        22 => "m/d/yy h:mm",
+        37 => "#,##0 ;(#,##0)",
+        38 => "#,##0 ;[Red](#,##0)",
+        39 => "#,##0.00;(#,##0.00)",
+        40 => "#,##0.00;[Red](#,##0.00)",
+        45 => "mm:ss",
+        46 => "[h]:mm:ss",
+        47 => "mmss.0",
+        48 => "##0.0E+0",
+        49 => "@",
+        _ => "General"
+    };
+
+    private static string ThemeColorToHex(uint theme, double? tint)
+    {
+        // Simplified: map common theme colors to hex
+        var baseColor = theme switch
+        {
+            0 => "FFFFFF", // light1
+            1 => "000000", // dark1
+            2 => "EEECE1", // light2
+            3 => "1F497D", // dark2
+            4 => "4F81BD", // accent1
+            5 => "C0504D", // accent2
+            6 => "9BBB59", // accent3
+            7 => "8064A2", // accent4
+            8 => "4BACC6", // accent5
+            9 => "F79646", // accent6
+            _ => "000000"
+        };
+        return $"#{baseColor}";
+    }
+}

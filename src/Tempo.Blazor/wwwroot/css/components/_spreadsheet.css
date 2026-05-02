@@ -1,0 +1,307 @@
+/* ═══════════════════════════════════════════════════════════════
+   Spreadsheet — TmSpreadsheet, TmSpreadsheetGrid
+   ═══════════════════════════════════════════════════════════════ */
+
+.tm-spreadsheet {
+    display: flex;
+    flex-direction: column;
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    overflow: hidden;
+}
+
+/* ── Grid ── */
+.tm-spreadsheet-grid {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    overflow: auto;
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    font-size: var(--tm-text-xs);
+    outline: none;
+}
+
+.tm-spreadsheet-grid:focus {
+    outline: none;
+}
+
+.tm-spreadsheet-grid--empty {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--tm-color-text-muted);
+    min-height: 200px;
+}
+
+.tm-spreadsheet-grid--no-gridlines .tm-spreadsheet-cell {
+    border-right: none;
+    border-bottom: none;
+}
+
+/* ── Column Headers ── */
+.tm-spreadsheet-col-headers {
+    display: flex;
+    flex-direction: row;
+    position: sticky;
+    top: 0;
+    z-index: 2;
+}
+
+.tm-spreadsheet-corner {
+    width: 40px;
+    height: 20px;
+    background: var(--tm-color-surface-elevated);
+    border-right: 1px solid var(--tm-color-border);
+    border-bottom: 1px solid var(--tm-color-border);
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-corner:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+/* ── Headers ── */
+.tm-spreadsheet-header-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: var(--tm-color-surface-elevated);
+    border-right: 1px solid var(--tm-color-border);
+    border-bottom: 1px solid var(--tm-color-border);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-text-xs);
+    font-weight: var(--tm-font-medium);
+    user-select: none;
+    flex-shrink: 0;
+    cursor: pointer;
+    transition: background var(--tm-transition-fast), color var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-header-cell:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-header-cell--selected {
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary);
+}
+
+.tm-spreadsheet-row-header {
+    width: 40px;
+    position: sticky;
+    left: 0;
+    z-index: 1;
+}
+
+/* ── Body / Rows ── */
+.tm-spreadsheet-body {
+    display: flex;
+    flex-direction: column;
+}
+
+.tm-spreadsheet-row {
+    display: flex;
+    flex-direction: row;
+}
+
+/* ── Cells ── */
+.tm-spreadsheet-cell {
+    display: flex;
+    align-items: center;
+    padding: 0 var(--tm-space-1);
+    border-right: 1px solid var(--tm-color-border-subtle);
+    border-bottom: 1px solid var(--tm-color-border-subtle);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex-shrink: 0;
+    cursor: cell;
+    box-sizing: border-box;
+    position: relative;
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-cell:hover {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-cell--active {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: -2px;
+    background: var(--tm-color-surface);
+    z-index: 1;
+}
+
+.tm-spreadsheet-cell--selected {
+    background: var(--tm-color-primary-subtle);
+}
+
+.tm-spreadsheet-cell--merged-hidden {
+    display: none;
+}
+
+/* ── Freeze Panes ── */
+.tm-spreadsheet-cell[style*="position: sticky"] {
+    background: var(--tm-color-surface);
+}
+
+/* ── Cell Link ── */
+.tm-spreadsheet-cell-link {
+    color: var(--tm-color-primary);
+    text-decoration: underline;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-spreadsheet-cell-link:hover {
+    color: var(--tm-color-primary-hover);
+}
+
+/* ── AutoFill Handle ── */
+.tm-spreadsheet-autofill-handle {
+    position: absolute;
+    right: -3px;
+    bottom: -3px;
+    width: 6px;
+    height: 6px;
+    background: var(--tm-color-primary);
+    border: 1px solid var(--tm-color-surface);
+    cursor: crosshair;
+    z-index: 4;
+    border-radius: var(--tm-radius-sm);
+    transition: transform var(--tm-transition-fast), background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-autofill-handle:hover {
+    background: var(--tm-color-primary-hover);
+    transform: scale(1.2);
+}
+
+/* ── Cell Input (inline edit) ── */
+.tm-spreadsheet-cell-input {
+    width: 100%;
+    height: 100%;
+    border: none;
+    outline: none;
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0 2px;
+    margin: 0;
+}
+
+/* ── Context Menu ── */
+.tm-spreadsheet-context-menu {
+    position: fixed;
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    box-shadow: var(--tm-shadow-lg);
+    z-index: var(--tm-z-dropdown);
+    min-width: 160px;
+    padding: 4px 0;
+}
+
+.tm-spreadsheet-context-menu__item {
+    padding: 6px 12px;
+    cursor: pointer;
+    font-size: var(--tm-text-sm);
+    color: var(--tm-color-text);
+    transition: background var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-context-menu__item:hover {
+    background: var(--tm-color-primary-subtle);
+}
+
+.tm-spreadsheet-context-menu__divider {
+    height: 1px;
+    background: var(--tm-color-border);
+    margin: 4px 0;
+}
+
+/* ── Dialog ── */
+.tm-spreadsheet-dialog-backdrop {
+    position: fixed;
+    inset: 0;
+    background: var(--tm-bg-overlay);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: var(--tm-z-modal);
+    padding: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog {
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-lg);
+    box-shadow: var(--tm-shadow-xl);
+    min-width: min(360px, 100%);
+    max-width: 100%;
+    padding: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog__title {
+    margin: 0 0 var(--tm-space-3);
+    font-size: var(--tm-text-lg);
+    font-weight: var(--tm-font-weight-semibold);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-dialog__body {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3);
+    margin-bottom: var(--tm-space-4);
+}
+
+.tm-spreadsheet-dialog__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+.tm-spreadsheet-dialog__label {
+    font-size: var(--tm-text-sm);
+    font-weight: var(--tm-font-medium);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-dialog__input {
+    padding: 6px 10px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-size: var(--tm-text-sm);
+    outline: none;
+    transition: border-color var(--tm-transition-fast), box-shadow var(--tm-transition-fast);
+}
+
+.tm-spreadsheet-dialog__input:focus {
+    border-color: var(--tm-color-primary);
+    box-shadow: var(--tm-shadow-focus);
+}
+
+/* ── Responsive ── */
+@media (max-width: 768px) {
+    .tm-spreadsheet-grid {
+        font-size: var(--tm-font-size-xs);
+    }
+
+    .tm-spreadsheet-header-cell {
+        font-size: var(--tm-font-size-xs);
+    }
+
+    .tm-spreadsheet-dialog {
+        min-width: 100%;
+    }
+}

@@ -1,0 +1,273 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<div class="tm-spreadsheet-toolbar">
+    <!-- Tab Headers -->
+    <div class="tm-spreadsheet-toolbar__tabs">
+        @foreach (var tab in _tabs)
+        {
+            <button class="tm-spreadsheet-toolbar__tab @(ActiveTab == tab ? "tm-spreadsheet-toolbar__tab--active" : "")"
+                    @onclick="() => ActiveTab = tab">
+                @Loc[$"TmSpreadsheet_Tab{tab}"]
+            </button>
+        }
+    </div>
+
+    <!-- Home Tab -->
+    @if (ActiveTab == "Home")
+    {
+        <div class="tm-spreadsheet-toolbar__tab-content">
+            <!-- Clipboard Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Undo"]"
+                        @onclick="OnUndo"
+                        disabled="@(!CanUndo)">
+                    <TmIcon Name="undo" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Redo"]"
+                        @onclick="OnRedo"
+                        disabled="@(!CanRedo)">
+                    <TmIcon Name="redo" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Copy"]"
+                        @onclick="OnCopy">
+                    <TmIcon Name="copy" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Cut"]"
+                        @onclick="OnCut">
+                    <TmIcon Name="cut" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Paste"]"
+                        @onclick="OnPaste">
+                    <TmIcon Name="paste" />
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Insert / Delete Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_InsertRow"]"
+                        @onclick="OnInsertRow">
+                    <TmIcon Name="insert-row" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_DeleteRow"]"
+                        @onclick="OnDeleteRow">
+                    <TmIcon Name="delete-row" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_InsertColumn"]"
+                        @onclick="OnInsertColumn">
+                    <TmIcon Name="insert-column" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_DeleteColumn"]"
+                        @onclick="OnDeleteColumn">
+                    <TmIcon Name="delete-column" />
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Font Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <TmSelect Value="SelectedFontFamily"
+                          ValueChanged="OnFontFamilyChanged"
+                          Options="_fontOptions"
+                          Class="tm-spreadsheet-toolbar__select" />
+
+                <TmSelect Value="SelectedFontSize"
+                          ValueChanged="OnFontSizeChanged"
+                          Options="_fontSizeOptions"
+                          Class="tm-spreadsheet-toolbar__select tm-spreadsheet-toolbar__select--narrow" />
+
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsBold)"
+                        title="@Loc["TmSpreadsheet_Bold"]"
+                        @onclick="OnBoldToggle">
+                    <strong>B</strong>
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsItalic)"
+                        title="@Loc["TmSpreadsheet_Italic"]"
+                        @onclick="OnItalicToggle">
+                    <em>I</em>
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsUnderline)"
+                        title="@Loc["TmSpreadsheet_Underline"]"
+                        @onclick="OnUnderlineToggle">
+                    <u>U</u>
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Colors Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasTextColor)"
+                        title="@Loc["TmSpreadsheet_TextColor"]"
+                        @onclick="OnTextColorClick">
+                    <span class="tm-spreadsheet-toolbar__color-preview"
+                          style="border-bottom-color: @(TextColor ?? "currentColor")">A</span>
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasBackgroundColor)"
+                        title="@Loc["TmSpreadsheet_BackgroundColor"]"
+                        @onclick="OnBackgroundColorClick">
+                    <span class="tm-spreadsheet-toolbar__color-preview tm-spreadsheet-toolbar__color-preview--bg"
+                          style="background: @(BackgroundColor ?? "transparent")">
+                        <TmIcon Name="fill" />
+                    </span>
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Alignment Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(SelectedHorizontalAlign == "left")"
+                        title="@Loc["TmSpreadsheet_AlignLeft"]"
+                        @onclick="AlignLeft">
+                    <TmIcon Name="align-left" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(SelectedHorizontalAlign == "center")"
+                        title="@Loc["TmSpreadsheet_AlignCenter"]"
+                        @onclick="AlignCenter">
+                    <TmIcon Name="align-center" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(SelectedHorizontalAlign == "right")"
+                        title="@Loc["TmSpreadsheet_AlignRight"]"
+                        @onclick="AlignRight">
+                    <TmIcon Name="align-right" />
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Number Format Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <TmSelect Value="SelectedNumberFormat"
+                          ValueChanged="OnNumberFormatChanged"
+                          Options="_numberFormatOptions"
+                          Class="tm-spreadsheet-toolbar__select tm-spreadsheet-toolbar__select--wide" />
+
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_IncreaseDecimals"]"
+                        @onclick="OnIncreaseDecimals">
+                    .0→
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_DecreaseDecimals"]"
+                        @onclick="OnDecreaseDecimals">
+                    .00→
+                </button>
+            </div>
+
+            <!-- Custom Home Tools -->
+            @RenderCustomTools("Home")
+        </div>
+    }
+
+    <!-- Insert Tab -->
+    @if (ActiveTab == "Insert")
+    {
+        <div class="tm-spreadsheet-toolbar__tab-content">
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_InsertLink"]"
+                        @onclick="OnInsertLink">
+                    <TmIcon Name="link" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_InsertImage"]"
+                        @onclick="OnInsertImage">
+                    <TmIcon Name="image" />
+                </button>
+            </div>
+
+            @RenderCustomTools("Insert")
+        </div>
+    }
+
+    <!-- View Tab -->
+    @if (ActiveTab == "View")
+    {
+        <div class="tm-spreadsheet-toolbar__tab-content">
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsMergeCellsActive)"
+                        title="@Loc["TmSpreadsheet_MergeCells"]"
+                        @onclick="OnMergeCells">
+                    <TmIcon Name="merge-cells" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(ShowGridLines)"
+                        title="@Loc["TmSpreadsheet_GridLines"]"
+                        @onclick="OnToggleGridLines">
+                    <TmIcon Name="grid" />
+                </button>
+            </div>
+
+            @RenderCustomTools("View")
+        </div>
+    }
+
+    <!-- File Tab -->
+    @if (ActiveTab == "File")
+    {
+        <div class="tm-spreadsheet-toolbar__tab-content">
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Open"]"
+                        @onclick="OnOpen">
+                    <TmIcon Name="folder-open" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_Download"]"
+                        @onclick="OnDownload">
+                    <TmIcon Name="download" />
+                </button>
+            </div>
+
+            @RenderCustomTools("File")
+        </div>
+    }
+</div>
+
+@code {
+    private readonly string[] _tabs = ["Home", "Insert", "View", "File"];
+
+    private RenderFragment RenderCustomTools(string tab)
+    {
+        if (CustomTools is null) return builder => { };
+        var tools = CustomTools.Where(t => t.Tab == tab).OrderBy(t => t.Order).ToList();
+        if (tools.Count == 0) return builder => { };
+
+        return builder =>
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "tm-spreadsheet-toolbar__group");
+            builder.AddAttribute(2, "style", "margin-left:auto;");
+            foreach (var tool in tools)
+            {
+                builder.OpenElement(3, "button");
+                builder.AddAttribute(4, "class", $"tm-spreadsheet-toolbar__button {tool.CssClass}");
+                builder.AddAttribute(5, "title", tool.Title);
+                builder.AddAttribute(6, "onclick", EventCallback.Factory.Create(this, () => OnCustomToolClick.InvokeAsync(tool)));
+                if (!string.IsNullOrEmpty(tool.IconName))
+                {
+                    // For simplicity, render icon name as text if component rendering is complex in code
+                    builder.AddContent(7, tool.IconName);
+                }
+                else
+                {
+                    builder.AddContent(7, tool.Title);
+                }
+                builder.CloseElement();
+            }
+            builder.CloseElement();
+        };
+    }
+}

@@ -1,0 +1,126 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Models
+@using Tempo.Blazor.Components.Spreadsheet.Enums
+
+<div class="tm-spreadsheet @Class"
+     style="width: @(Width ?? "100%"); height: @(Height ?? "600px");"
+     @attributes="AdditionalAttributes">
+    <TmSpreadsheetToolbar CanUndo="CanUndo"
+                          CanRedo="CanRedo"
+                          SelectedFontFamily="ToolbarFontFamily"
+                          SelectedFontSize="ToolbarFontSize"
+                          IsBold="ToolbarIsBold"
+                          IsItalic="ToolbarIsItalic"
+                          IsUnderline="ToolbarIsUnderline"
+                          TextColor="ToolbarTextColor"
+                          BackgroundColor="ToolbarBackgroundColor"
+                          SelectedHorizontalAlign="ToolbarAlign"
+                          SelectedNumberFormat="ToolbarNumberFormat"
+                          OnUndo="Undo"
+                          OnRedo="Redo"
+                          OnCopy="Copy"
+                          OnCut="Cut"
+                          OnPaste="Paste"
+                          OnInsertRow="InsertRow"
+                          OnDeleteRow="DeleteRow"
+                          OnInsertColumn="InsertColumn"
+                          OnDeleteColumn="DeleteColumn"
+                          OnFontFamilyChanged="ApplyFontFamily"
+                          OnFontSizeChanged="ApplyFontSize"
+                          OnBoldToggle="ToggleBold"
+                          OnItalicToggle="ToggleItalic"
+                          OnUnderlineToggle="ToggleUnderline"
+                          OnTextColorClick="ShowTextColorPicker"
+                          OnBackgroundColorClick="ShowBackgroundColorPicker"
+                          OnAlignChanged="ApplyAlign"
+                          OnNumberFormatChanged="ApplyNumberFormat"
+                          OnIncreaseDecimals="IncreaseDecimals"
+                          OnDecreaseDecimals="DecreaseDecimals"
+                          OnOpen="TriggerFileInput"
+                          OnDownload="DownloadXlsx"
+                          IsMergeCellsActive="IsMergeCellsActive"
+                          ShowGridLines="ShowGridLines"
+                          OnInsertLink="ShowInsertLinkDialog"
+                          OnInsertImage="ShowInsertImageDialog"
+                          OnMergeCells="ToggleMergeCells"
+                          OnToggleGridLines="ToggleGridLines" />
+
+    <InputFile id="tm-spreadsheet-file-input"
+               OnChange="HandleFileSelected"
+               style="display:none"
+               accept=".xlsx" />
+
+    <TmSpreadsheetFormulaBar ActiveCellRef="@(_workbook.ActiveSheet?.ActiveCellRef)"
+                             DisplayValue="@(GetActiveCellEditValue())"
+                             IsEditing="@_isFormulaBarEditing"
+                             OnEditStarted="@OnFormulaBarEditStarted"
+                             OnValueCommitted="@OnFormulaBarCommitted"
+                             OnEditCancelled="@OnFormulaBarCancelled"
+                             OnValueChanged="@OnFormulaBarValueChanged"
+                             OnTabPressed="@OnFormulaBarTabPressed" />
+
+    <TmSpreadsheetGrid @ref="_grid"
+                       Sheet="_workbook.ActiveSheet"
+                       RowHeight="RowHeight"
+                       ColumnWidth="ColumnWidth"
+                       ActiveCellChanged="OnGridActiveCellChanged"
+                       CellValueCommitted="OnGridCellValueCommitted"
+                       OnCopyRequested="Copy"
+                       OnPasteRequested="Paste"
+                       OnCutRequested="Cut"
+                       OnInsertRowRequested="InsertRow"
+                       OnDeleteRowRequested="DeleteRow"
+                       OnInsertColumnRequested="InsertColumn"
+                       OnDeleteColumnRequested="DeleteColumn"
+                       OnDeleteRequested="DeleteSelection"
+                       OnUndoRequested="Undo"
+                       OnRedoRequested="Redo"
+                       OnBoldToggleRequested="ToggleBold"
+                       OnItalicToggleRequested="ToggleItalic"
+                       OnUnderlineToggleRequested="ToggleUnderline"
+                       OnSelectAllRequested="GridSelectAll"
+                       OnCellEdit="OnGridCellEdit" />
+
+    <TmSpreadsheetSheetTabs Sheets="_workbook.Sheets"
+                            ActiveIndex="_workbook.ActiveSheetIndex"
+                            OnActiveSheetChanged="SwitchSheet"
+                            OnAddSheetRequested="AddNewSheet"
+                            OnDeleteSheetRequested="DeleteSheet"
+                            OnRenameSheetRequested="RenameSheet" />
+
+    @if (_showInsertLinkDialog)
+    {
+        <div class="tm-spreadsheet-dialog-backdrop" @onclick="() => _showInsertLinkDialog = false">
+            <div class="tm-spreadsheet-dialog" @onclick:stopPropagation>
+                <h3 class="tm-spreadsheet-dialog__title">@Loc["TmSpreadsheet_InsertLink"]</h3>
+                <div class="tm-spreadsheet-dialog__body">
+                    <label class="tm-spreadsheet-dialog__label">@Loc["TmSpreadsheet_LinkUrl"]</label>
+                    <input class="tm-spreadsheet-dialog__input" value="@_insertLinkUrl" @oninput="OnLinkUrlInput" placeholder="https://..." />
+                    <label class="tm-spreadsheet-dialog__label">@Loc["TmSpreadsheet_LinkText"]</label>
+                    <input class="tm-spreadsheet-dialog__input" value="@_insertLinkText" @oninput="OnLinkTextInput" placeholder="@Loc["TmSpreadsheet_LinkTextPlaceholder"]" />
+                </div>
+                <div class="tm-spreadsheet-dialog__actions">
+                    <TmButton Variant="ButtonVariant.Secondary" OnClick="() => _showInsertLinkDialog = false">@Loc["Tm_Cancel"]</TmButton>
+                    <TmButton OnClick="ApplyInsertLink">@Loc["Tm_Apply"]</TmButton>
+                </div>
+            </div>
+        </div>
+    }
+
+    @if (_showInsertImageDialog)
+    {
+        <div class="tm-spreadsheet-dialog-backdrop" @onclick="() => _showInsertImageDialog = false">
+            <div class="tm-spreadsheet-dialog" @onclick:stopPropagation>
+                <h3 class="tm-spreadsheet-dialog__title">@Loc["TmSpreadsheet_InsertImage"]</h3>
+                <div class="tm-spreadsheet-dialog__body">
+                    <label class="tm-spreadsheet-dialog__label">@Loc["TmSpreadsheet_ImageUrl"]</label>
+                    <input class="tm-spreadsheet-dialog__input" value="@_insertImageUrl" @oninput="OnImageUrlInput" placeholder="https://..." />
+                </div>
+                <div class="tm-spreadsheet-dialog__actions">
+                    <TmButton Variant="ButtonVariant.Secondary" OnClick="() => _showInsertImageDialog = false">@Loc["Tm_Cancel"]</TmButton>
+                    <TmButton OnClick="ApplyInsertImage">@Loc["Tm_Apply"]</TmButton>
+                </div>
+            </div>
+        </div>
+    }
+</div>

@@ -1869,4 +1869,48 @@
   <data name="TmPivotTable_AddToFilter" xml:space="preserve"><value>Add to Filters</value></data>
   <data name="TmPivotTable_RemoveFromAll" xml:space="preserve"><value>Remove from all areas</value></data>
 
+  <data name="TmSpreadsheet_NoSheet" xml:space="preserve"><value>No sheet available</value></data>
+  <data name="TmSpreadsheet_Name" xml:space="preserve"><value>Spreadsheet</value></data>
+  <data name="TmSpreadsheet_CellReference" xml:space="preserve"><value>Cell reference</value></data>
+  <data name="TmSpreadsheet_FormulaBarPlaceholder" xml:space="preserve"><value>Enter formula or value...</value></data>
+  <data name="TmSpreadsheet_SheetTab" xml:space="preserve"><value>Sheet</value></data>
+  <data name="TmSpreadsheet_AddSheet" xml:space="preserve"><value>Add sheet</value></data>
+  <data name="TmSpreadsheet_RenameSheet" xml:space="preserve"><value>Rename sheet</value></data>
+  <data name="TmSpreadsheet_DeleteSheet" xml:space="preserve"><value>Delete sheet</value></data>
+  <data name="TmSpreadsheet_DeleteSheetConfirm" xml:space="preserve"><value>Are you sure you want to delete this sheet?</value></data>
+  <data name="TmSpreadsheet_GridLines" xml:space="preserve"><value>Grid lines</value></data>
+  <data name="TmSpreadsheet_MergeCells" xml:space="preserve"><value>Merge cells</value></data>
+  <data name="TmSpreadsheet_Undo" xml:space="preserve"><value>Undo</value></data>
+  <data name="TmSpreadsheet_Redo" xml:space="preserve"><value>Redo</value></data>
+  <data name="TmSpreadsheet_Copy" xml:space="preserve"><value>Copy</value></data>
+  <data name="TmSpreadsheet_Cut" xml:space="preserve"><value>Cut</value></data>
+  <data name="TmSpreadsheet_Paste" xml:space="preserve"><value>Paste</value></data>
+  <data name="TmSpreadsheet_InsertRow" xml:space="preserve"><value>Insert row</value></data>
+  <data name="TmSpreadsheet_DeleteRow" xml:space="preserve"><value>Delete row</value></data>
+  <data name="TmSpreadsheet_InsertColumn" xml:space="preserve"><value>Insert column</value></data>
+  <data name="TmSpreadsheet_DeleteColumn" xml:space="preserve"><value>Delete column</value></data>
+  <data name="TmSpreadsheet_Bold" xml:space="preserve"><value>Bold</value></data>
+  <data name="TmSpreadsheet_Italic" xml:space="preserve"><value>Italic</value></data>
+  <data name="TmSpreadsheet_Underline" xml:space="preserve"><value>Underline</value></data>
+  <data name="TmSpreadsheet_TextColor" xml:space="preserve"><value>Text color</value></data>
+  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Background color</value></data>
+  <data name="TmSpreadsheet_AlignLeft" xml:space="preserve"><value>Align left</value></data>
+  <data name="TmSpreadsheet_AlignCenter" xml:space="preserve"><value>Align center</value></data>
+  <data name="TmSpreadsheet_AlignRight" xml:space="preserve"><value>Align right</value></data>
+  <data name="TmSpreadsheet_NumberFormat" xml:space="preserve"><value>Number format</value></data>
+  <data name="TmSpreadsheet_IncreaseDecimals" xml:space="preserve"><value>Increase decimal places</value></data>
+  <data name="TmSpreadsheet_DecreaseDecimals" xml:space="preserve"><value>Decrease decimal places</value></data>
+  <data name="TmSpreadsheet_Open" xml:space="preserve"><value>Open file</value></data>
+  <data name="TmSpreadsheet_Download" xml:space="preserve"><value>Download</value></data>
+  <data name="TmSpreadsheet_TabHome" xml:space="preserve"><value>Home</value></data>
+  <data name="TmSpreadsheet_TabInsert" xml:space="preserve"><value>Insert</value></data>
+  <data name="TmSpreadsheet_TabView" xml:space="preserve"><value>View</value></data>
+  <data name="TmSpreadsheet_TabFile" xml:space="preserve"><value>File</value></data>
+  <data name="TmSpreadsheet_InsertLink" xml:space="preserve"><value>Insert link</value></data>
+  <data name="TmSpreadsheet_InsertImage" xml:space="preserve"><value>Insert image</value></data>
+  <data name="TmSpreadsheet_LinkUrl" xml:space="preserve"><value>URL</value></data>
+  <data name="TmSpreadsheet_LinkText" xml:space="preserve"><value>Display text</value></data>
+  <data name="TmSpreadsheet_LinkTextPlaceholder" xml:space="preserve"><value>Click here</value></data>
+  <data name="TmSpreadsheet_ImageUrl" xml:space="preserve"><value>Image URL</value></data>
+
 </root>

@@ -1,0 +1,47 @@
+{
+  "itemName": "SpreadsheetCell",
+  "kind": "Class",
+  "category": "Spreadsheet",
+  "namespace": "Tempo.Blazor.Components.Spreadsheet.Models",
+  "description": "Represents a single cell within a spreadsheet sheet. Stores raw value, formula, computed display value, style, and data type.",
+  "properties": [
+    {
+      "name": "Value",
+      "type": "object?",
+      "isRequired": false,
+      "description": "The raw value stored in the cell."
+    },
+    {
+      "name": "Formula",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The formula expression (e.g. =SUM(A1:A10)). Null if no formula."
+    },
+    {
+      "name": "DisplayValue",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The computed or formatted display value. Null until evaluated."
+    },
+    {
+      "name": "Style",
+      "type": "SpreadsheetCellStyle",
+      "isRequired": false,
+      "description": "The visual style of the cell."
+    },
+    {
+      "name": "DataType",
+      "type": "SpreadsheetDataType",
+      "isRequired": false,
+      "default": "Text",
+      "description": "The data type of the cell value."
+    },
+    {
+      "name": "IsReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "default": "false",
+      "description": "Whether the cell is read-only."
+    }
+  ]
+}
