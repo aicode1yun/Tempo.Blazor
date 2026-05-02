@@ -162,8 +162,8 @@
             sheet.SetCellValue(i + 1, 2, 120 + i * 20);
             sheet.SetCellValue(i + 1, 3, 90 + i * 30);
             sheet.SetCellValue(i + 1, 4, 130 + i * 15);
-            sheet.SetCellValue(i + 1, 5, $"=SUM(B{i + 2}:E{i + 2})");
-            sheet.SetCellValue(i + 1, 6, $"=AVERAGE(B{i + 2}:E{i + 2})");
+            sheet.SetCellFormula(i + 1, 5, $"=SUM(B{i + 2}:E{i + 2})");
+            sheet.SetCellFormula(i + 1, 6, $"=AVERAGE(B{i + 2}:E{i + 2})");
         }
 
         // Summary row
@@ -172,10 +172,10 @@
         for (int c = 1; c <= 4; c++)
         {
             char col = (char)('A' + c);
-            sheet.SetCellValue(lastRow, c, $"=SUM({col}2:{col}{lastRow})");
+            sheet.SetCellFormula(lastRow, c, $"=SUM({col}2:{col}{lastRow})");
         }
-        sheet.SetCellValue(lastRow, 5, $"=SUM(B{lastRow + 1}:E{lastRow + 1})");
-        sheet.SetCellValue(lastRow, 6, $"=AVERAGE(B2:E{lastRow})");
+        sheet.SetCellFormula(lastRow, 5, $"=SUM(B{lastRow + 1}:E{lastRow + 1})");
+        sheet.SetCellFormula(lastRow, 6, $"=AVERAGE(B2:E{lastRow})");
 
         // Style headers
         for (int c = 0; c <= 6; c++)

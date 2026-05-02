@@ -18,6 +18,7 @@ else
          aria-label="@Loc["TmSpreadsheet_Name"]"
          tabindex="0"
          @onkeydown="HandleKeyDown"
+         @onkeydown:preventDefault="true"
          @onfocus="() => { }"
          @onmousemove="OnAutoFillMouseMove"
          @onmouseup="OnAutoFillMouseUp"
