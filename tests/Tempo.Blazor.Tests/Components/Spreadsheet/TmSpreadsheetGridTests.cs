@@ -416,6 +416,92 @@ public class TmSpreadsheetGridTests : LocalizationTestBase
         received!.Value.Value.Should().Be("=SUM(A1:A10)");
     }
 
+    // ── Auto-edit on printable key ──
+
+    [Fact]
+    public void PrintableKey_StartsEditWithCharacter()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 2, ColumnCount = 2 };
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var grid = cut.Find(".tm-spreadsheet-grid");
+        grid.KeyDown(new KeyboardEventArgs { Key = "x" });
+
+        cut.Instance.IsEditing.Should().BeTrue();
+        cut.Find(".tm-spreadsheet-cell-input").GetAttribute("value").Should().Be("x");
+    }
+
+    [Fact]
+    public void PrintableKey_WithExistingCellValue_Overrides()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 2, ColumnCount = 2 };
+        sheet.SetCellValue(0, 0, "Old");
+
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var grid = cut.Find(".tm-spreadsheet-grid");
+        grid.KeyDown(new KeyboardEventArgs { Key = "N" });
+
+        cut.Instance.IsEditing.Should().BeTrue();
+        cut.Find(".tm-spreadsheet-cell-input").GetAttribute("value").Should().Be("N");
+    }
+
+    // ── Formula evaluation display ──
+
+    [Fact]
+    public void Render_FormulaCell_DisplaysEvaluatedValue()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 2, ColumnCount = 3 };
+        sheet.SetCellValue(0, 0, 10); // A1 = 10
+        sheet.SetCellValue(0, 1, 20); // B1 = 20
+        sheet.SetCellFormula(0, 2, "=A1+B1"); // C1 = 30
+
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var cells = cut.FindAll(".tm-spreadsheet-cell");
+        cells[2].TextContent.Should().Contain("30");
+    }
+
+    [Fact]
+    public void Render_FormulaCell_DisplaysErrorForInvalidFormula()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 2, ColumnCount = 2 };
+        sheet.SetCellFormula(0, 0, "=INVALID(");
+
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var cells = cut.FindAll(".tm-spreadsheet-cell");
+        cells[0].TextContent.Should().Contain("#ERROR");
+    }
+
+    // ── Cell reference insertion during formula edit ──
+
+    [Fact]
+    public void Click_AnotherCell_DuringTextEdit_CommitsEdit()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 2, ColumnCount = 3 };
+        sheet.ActiveCellRef = "A1";
+
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        // Start editing A1 with plain text
+        cut.FindAll(".tm-spreadsheet-cell")[0].DoubleClick();
+        var input = cut.Find(".tm-spreadsheet-cell-input");
+        input.Input("Hello");
+
+        // Click C1 while editing text — must re-query after re-render
+        cut.FindAll(".tm-spreadsheet-cell")[2].Click();
+
+        // Should commit and move active cell
+        cut.Instance.IsEditing.Should().BeFalse();
+        sheet.ActiveCellRef.Should().Be("C1");
+    }
+
     [Fact]
     public void ActiveCellChanged_EventFires()
     {

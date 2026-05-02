@@ -106,7 +106,20 @@ public class SpreadsheetCommandTests
         var cmd = new SetCellValueCommand(sheet, "A1", null, "=SUM(A2:A10)", null);
         cmd.Execute();
         sheet.Cells["A1"].Formula.Should().Be("=SUM(A2:A10)");
-        sheet.Cells["A1"].Value.Should().BeNull();
+        // Formula is now evaluated immediately; SUM of empty range evaluates to 0
+        sheet.Cells["A1"].Value.Should().Be(0.0);
+    }
+
+    [Fact]
+    public void SetCellValueCommand_SetsFormula_EvaluatesValue()
+    {
+        var sheet = new SpreadsheetSheet();
+        sheet.SetCellValue(1, 0, 5); // A2 = 5
+        sheet.SetCellValue(2, 0, 10); // A3 = 10
+        var cmd = new SetCellValueCommand(sheet, "A1", null, "=A2+A3", null);
+        cmd.Execute();
+        sheet.Cells["A1"].Formula.Should().Be("=A2+A3");
+        sheet.Cells["A1"].Value.Should().Be(15);
     }
 
     [Fact]

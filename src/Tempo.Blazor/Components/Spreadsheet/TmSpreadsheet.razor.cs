@@ -160,6 +160,17 @@ public partial class TmSpreadsheet
         _ = OnCellEdit.InvokeAsync(args);
     }
 
+    private void OnGridCellReferenceRequested(string cellRef)
+    {
+        // Insert cell reference into the current edit value (formula bar or inline)
+        _grid.AppendEditValue(cellRef);
+        if (_isFormulaBarEditing)
+        {
+            _formulaBarEditValue = (_formulaBarEditValue ?? string.Empty) + cellRef;
+        }
+        StateHasChanged();
+    }
+
     private void OnGridCellValueCommitted((string CellRef, string? Value) args)
     {
         if (_commandManager is null || args.Value is null || _workbook.ActiveSheet is null) return;

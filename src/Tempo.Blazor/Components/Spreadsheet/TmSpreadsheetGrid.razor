@@ -133,12 +133,12 @@ else
                            rel="noopener noreferrer"
                            class="tm-spreadsheet-cell-link"
                            @onclick:stopPropagation>
-                            @GetCellDisplayValue(cell)
+                            @GetCellDisplayValue(cellRef, cell)
                         </a>
                     }
                     else
                     {
-                        @GetCellDisplayValue(cell)
+                        @GetCellDisplayValue(cellRef, cell)
                     }
                     @if (IsSelectionEndCell(rowIndex, colIndex) && !isEditing)
                     {

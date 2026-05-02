@@ -47,6 +47,7 @@ public sealed class SetCellValueCommand : ISpreadsheetCommand
         {
             cell.Formula = _newFormula;
             cell.Value = null;
+            _sheet.EvaluateFormula(_cellRef);
         }
 
         if (_newStyle is not null)

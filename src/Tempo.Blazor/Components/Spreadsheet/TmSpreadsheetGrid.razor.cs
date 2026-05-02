@@ -88,6 +88,9 @@ public partial class TmSpreadsheetGrid
     /// <summary>Called when a cell enters or exits edit mode.</summary>
     [Parameter] public EventCallback<SpreadsheetCellEditEventArgs> OnCellEdit { get; set; }
 
+    /// <summary>Called when the user clicks another cell while editing a formula, to insert its reference.</summary>
+    [Parameter] public EventCallback<string> OnCellReferenceRequested { get; set; }
+
     /// <summary>Whether a cell is currently being edited.</summary>
     public bool IsEditing { get; private set; }
 
@@ -317,19 +320,19 @@ public partial class TmSpreadsheetGrid
         return $" position: sticky; top: {top}px; z-index: 3;";
     }
 
-    private string GetCellDisplayValue(SpreadsheetCell? cell)
+    private string GetCellDisplayValue(string cellRef, SpreadsheetCell? cell)
     {
         if (cell is null)
             return string.Empty;
 
-        var cacheKey = $"{cell.GetHashCode()}|{cell.Value}|{cell.Formula}|{cell.Style.NumberFormat}";
+        var cacheKey = $"{cellRef}|{cell.GetHashCode()}|{cell.Value}|{cell.Formula}|{cell.Style.NumberFormat}";
         if (_displayValueCache.TryGetValue(cacheKey, out var cached))
             return cached;
 
         // Lazy formula evaluation – evaluate on first render if not already done
         if (!string.IsNullOrEmpty(cell.Formula) && (cell.DisplayValue is null || cell.Value is null))
         {
-            Sheet?.EvaluateFormula(cell.Formula);
+            Sheet?.EvaluateFormula(cellRef);
         }
 
         var displayValue = !string.IsNullOrEmpty(cell.DisplayValue)
@@ -443,7 +446,15 @@ public partial class TmSpreadsheetGrid
             return;
 
         if (IsEditing)
+        {
+            // If editing a formula, clicking another cell inserts its reference
+            if (_editValue?.StartsWith("=") == true)
+            {
+                OnCellReferenceRequested.InvokeAsync(cellRef);
+                return;
+            }
             CommitEdit();
+        }
 
         if (e.ShiftKey && !string.IsNullOrEmpty(SelectionStartRef))
         {
@@ -649,6 +660,11 @@ public partial class TmSpreadsheetGrid
 
     private void StartEdit(string cellRef)
     {
+        StartEdit(cellRef, null);
+    }
+
+    private void StartEdit(string cellRef, string? initialValue)
+    {
         if (Sheet?.ActiveCellRef != cellRef)
         {
             Sheet!.ActiveCellRef = cellRef;
@@ -658,9 +674,17 @@ public partial class TmSpreadsheetGrid
         }
 
         IsEditing = true;
-        _editValue = null;
+        _editValue = initialValue;
         _shouldFocusAfterRender = true;
         OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet!, Sheet.ActiveCellRef!, true));
+    }
+
+    /// <summary>Appends text to the current edit value. Used for formula cell reference insertion.</summary>
+    public void AppendEditValue(string text)
+    {
+        _editValue = (_editValue ?? string.Empty) + text;
+        _shouldFocusAfterRender = true;
+        StateHasChanged();
     }
 
     private void OnEditInput(ChangeEventArgs e)
@@ -792,6 +816,13 @@ public partial class TmSpreadsheetGrid
                 {
                     var (activeRow, _) = ParseCellRef(Sheet.ActiveCellRef ?? "A1");
                     MoveToCell(activeRow, Sheet.ColumnCount - 1, e.ShiftKey);
+                }
+                break;
+            default:
+                // Auto-start edit mode on printable character (length 1, not a control key)
+                if (e.Key.Length == 1 && !e.AltKey && !e.CtrlKey && !e.MetaKey)
+                {
+                    StartEdit(Sheet?.ActiveCellRef ?? "A1", e.Key);
                 }
                 break;
         }
