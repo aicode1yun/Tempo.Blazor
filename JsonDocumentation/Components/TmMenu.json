@@ -1,0 +1,57 @@
+{
+  "itemName": "TmMenu",
+  "kind": "Component",
+  "category": "Navigation",
+  "description": "A menu component that supports horizontal and vertical orientations with clickable items, icons, separators and nested children.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Navigation"
+  ],
+  "parameters": [
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<MenuItem>",
+      "isRequired": false,
+      "default": "Empty list",
+      "description": "The menu items to display."
+    },
+    {
+      "name": "Orientation",
+      "type": "MenuOrientation",
+      "isRequired": false,
+      "default": "Horizontal",
+      "description": "The orientation of the menu. Defaults to Horizontal."
+    },
+    {
+      "name": "OnItemClick",
+      "type": "EventCallback<MenuItem>",
+      "isRequired": false,
+      "description": "Event fired when an item is clicked."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-menu",
+    "tm-menu--horizontal",
+    "tm-menu--vertical",
+    "tm-menu__item",
+    "tm-menu__item--disabled",
+    "tm-menu__link",
+    "tm-menu__icon",
+    "tm-menu__separator"
+  ],
+  "examples": [
+    {
+      "title": "Horizontal menu",
+      "code": "<TmMenu Items=\"menuItems\" Orientation=\"MenuOrientation.Horizontal\" OnItemClick=\"HandleClick\" />"
+    },
+    {
+      "title": "Vertical menu with icons",
+      "code": "<TmMenu Items=\"navItems\" Orientation=\"MenuOrientation.Vertical\" />"
+    }
+  ]
+}

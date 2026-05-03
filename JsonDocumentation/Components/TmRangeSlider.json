@@ -1,0 +1,100 @@
+{
+  "itemName": "TmRangeSlider",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A range slider component for selecting a numeric range with two handles. Supports min/max constraints, step increments, and value display.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Min",
+      "type": "int",
+      "isRequired": false,
+      "default": "0",
+      "description": "The minimum value of the slider."
+    },
+    {
+      "name": "Max",
+      "type": "int",
+      "isRequired": false,
+      "default": "100",
+      "description": "The maximum value of the slider."
+    },
+    {
+      "name": "Step",
+      "type": "int",
+      "isRequired": false,
+      "default": "1",
+      "description": "The step increment."
+    },
+    {
+      "name": "StartValue",
+      "type": "int?",
+      "isRequired": false,
+      "description": "The start value of the range."
+    },
+    {
+      "name": "StartValueChanged",
+      "type": "EventCallback<int?>",
+      "isRequired": false,
+      "description": "Event fired when the start value changes."
+    },
+    {
+      "name": "EndValue",
+      "type": "int?",
+      "isRequired": false,
+      "description": "The end value of the range."
+    },
+    {
+      "name": "EndValueChanged",
+      "type": "EventCallback<int?>",
+      "isRequired": false,
+      "description": "Event fired when the end value changes."
+    },
+    {
+      "name": "ShowValue",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether to display the current values."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label shown above the slider."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the slider is disabled."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-range-slider",
+    "tm-range-slider__label",
+    "tm-range-slider__track-container",
+    "tm-range-slider__track",
+    "tm-range-slider__fill",
+    "tm-range-slider__input",
+    "tm-range-slider__input--start",
+    "tm-range-slider__input--end"
+  ],
+  "examples": [
+    {
+      "title": "Basic range slider",
+      "code": "<TmRangeSlider @bind-StartValue=\"start\" @bind-EndValue=\"end\" Min=\"0\" Max=\"100\" />"
+    },
+    {
+      "title": "Price filter",
+      "code": "<TmRangeSlider @bind-StartValue=\"minPrice\" @bind-EndValue=\"maxPrice\" Min=\"0\" Max=\"1000\" Step=\"10\" Label=\"Price\" />"
+    }
+  ]
+}

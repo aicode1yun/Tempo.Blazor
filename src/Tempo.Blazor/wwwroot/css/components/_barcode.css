@@ -1,0 +1,25 @@
+.tm-barcode {
+    display: inline-block;
+    line-height: 0;
+}
+
+.tm-barcode svg {
+    display: block;
+    max-width: 100%;
+    height: auto;
+}
+
+.tm-barcode__value {
+    text-align: center;
+    font-size: var(--tm-font-size-sm);
+    line-height: 1.5;
+    padding-top: var(--tm-space-1);
+    color: var(--tm-color-text);
+    font-family: var(--tm-font-sans);
+}
+
+.tm-barcode__error {
+    color: var(--tm-color-error);
+    font-size: var(--tm-font-size-sm);
+    padding: var(--tm-space-2);
+}

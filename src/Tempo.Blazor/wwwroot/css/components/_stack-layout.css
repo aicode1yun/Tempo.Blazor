@@ -1,0 +1,11 @@
+.tm-stack-layout {
+  display: flex;
+}
+
+.tm-stack-layout--horizontal {
+  flex-direction: row;
+}
+
+.tm-stack-layout--vertical {
+  flex-direction: column;
+}

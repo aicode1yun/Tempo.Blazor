@@ -1,0 +1,30 @@
+@namespace Tempo.Blazor.Components.Navigation
+
+<nav class="tm-bottom-nav @AdditionalCssClass" role="navigation" aria-label="@Loc["TmBottomNavigation_AriaLabel"]">
+    @foreach (var item in Items)
+    {
+        var isActive = SelectedItem == item;
+        <div class="tm-bottom-nav__item @(isActive ? "tm-bottom-nav__item--active" : "") @(item.Disabled ? "tm-bottom-nav__item--disabled" : "")">
+            @if (!string.IsNullOrEmpty(item.Href) && !item.Disabled)
+            {
+                <a href="@item.Href" class="tm-bottom-nav__link" @onclick:preventDefault="true" @onclick="() => HandleClick(item)">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <TmIcon Name="@item.Icon" class="tm-bottom-nav__icon" />
+                    }
+                    <span class="tm-bottom-nav__text">@item.Text</span>
+                </a>
+            }
+            else
+            {
+                <button type="button" class="tm-bottom-nav__button" disabled="@item.Disabled" @onclick="() => HandleClick(item)">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <TmIcon Name="@item.Icon" class="tm-bottom-nav__icon" />
+                    }
+                    <span class="tm-bottom-nav__text">@item.Text</span>
+                </button>
+            }
+        </div>
+    }
+</nav>

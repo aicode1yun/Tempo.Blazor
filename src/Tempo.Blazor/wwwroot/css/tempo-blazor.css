@@ -27,6 +27,7 @@
 @import "components/_drawer.css";
 @import "components/_section.css";
 @import "components/_keyboard-shortcuts.css";
+@import "components/_stack-layout.css";
 
 /* 5. Forms */
 @import "components/_button.css";
@@ -41,7 +42,12 @@
 @import "components/_validation-summary.css";
 @import "components/_password-strength.css";
 @import "components/_number-input.css";
+@import "components/_masked-text-box.css";
+@import "components/_rating.css";
+@import "components/_slider.css";
+@import "components/_range-slider.css";
 @import "components/_copy-button.css";
+@import "components/_floating-action-button.css";
 @import "components/_entity-picker.css";
 @import "components/_multiselect.css";
 @import "components/_dynamic-form.css";
@@ -83,6 +89,8 @@
 @import "components/_filterable-dropdown.css";
 @import "components/_command-palette.css";
 @import "components/_context-menu.css";
+@import "components/_bottom-navigation.css";
+@import "components/_menu.css";
 
 /* 10. Filters */
 @import "components/_filter-chip.css";
@@ -158,3 +166,10 @@
 @import "components/_spreadsheet.css";
 @import "components/_spreadsheet-toolbar.css";
 @import "components/_spreadsheet-formula-bar.css";
+
+/* 19. Splitter */
+@import "components/_splitter.css";
+
+/* 20. QR Code & Barcode */
+@import "components/_qr-code.css";
+@import "components/_barcode.css";

@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.Buttons
+
+<div class="tm-fab tm-fab--@Position.ToString().ToLowerInvariant() @(_isOpen ? "tm-fab--open" : "") @AdditionalCssClass">
+    @if (Items?.Count > 0)
+    {
+        <div class="tm-fab__menu">
+            @foreach (var item in Items)
+            {
+                <button type="button"
+                        class="tm-fab__item @(item.Disabled ? "tm-fab__item--disabled" : "")"
+                        disabled="@item.Disabled"
+                        @onclick="() => HandleItemClick(item)"
+                        title="@item.Label">
+                    @if (!string.IsNullOrEmpty(item.Icon))
+                    {
+                        <TmIcon Name="@item.Icon" class="tm-fab__item-icon" />
+                    }
+                    <span class="tm-fab__item-label">@item.Label</span>
+                </button>
+            }
+        </div>
+    }
+
+    <button type="button"
+            class="tm-fab__main"
+            disabled="@Disabled"
+            @onclick="HandleMainClick">
+        @if (!string.IsNullOrEmpty(Icon))
+        {
+            <TmIcon Name="@Icon" class="tm-fab__icon" />
+        }
+        else
+        {
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-fab__icon">
+                <path d="M12 5v14M5 12h14" />
+            </svg>
+        }
+    </button>
+</div>

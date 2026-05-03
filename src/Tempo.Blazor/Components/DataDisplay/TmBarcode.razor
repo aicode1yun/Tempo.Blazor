@@ -1,0 +1,18 @@
+@namespace Tempo.Blazor.Components.DataDisplay
+
+@if (!string.IsNullOrEmpty(_svgContent))
+{
+    <div class="tm-barcode @CssClass">
+        @((MarkupString)_svgContent)
+        @if (DisplayValue && !Format.Equals(BarcodeFormat.QR))
+        {
+            <div class="tm-barcode__value">@Value</div>
+        }
+    </div>
+}
+else if (!string.IsNullOrEmpty(_errorMessage))
+{
+    <div class="tm-barcode tm-barcode__error @CssClass">
+        @_errorMessage
+    </div>
+}

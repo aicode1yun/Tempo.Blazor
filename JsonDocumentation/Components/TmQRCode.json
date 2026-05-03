@@ -1,0 +1,69 @@
+{
+  "itemName": "TmQRCode",
+  "kind": "Component",
+  "category": "DataDisplay",
+  "description": "Renders a QR code as an SVG element. Supports custom size, foreground/background colors, and multiple error correction levels.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.DataDisplay"
+  ],
+  "parameters": [
+    {
+      "name": "Value",
+      "type": "string",
+      "isRequired": false,
+      "default": "Empty",
+      "description": "The text or URL to encode."
+    },
+    {
+      "name": "Size",
+      "type": "int",
+      "isRequired": false,
+      "default": "200",
+      "description": "The size in pixels. Default is 200."
+    },
+    {
+      "name": "ErrorCorrectionLevel",
+      "type": "QRErrorCorrectionLevel",
+      "isRequired": false,
+      "default": "M",
+      "description": "Error correction level. Default is M (15% recovery)."
+    },
+    {
+      "name": "ForegroundColor",
+      "type": "string",
+      "isRequired": false,
+      "default": "#000000",
+      "description": "Foreground color in hex format."
+    },
+    {
+      "name": "BackgroundColor",
+      "type": "string",
+      "isRequired": false,
+      "default": "#ffffff",
+      "description": "Background color in hex format."
+    },
+    {
+      "name": "CssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Optional CSS class."
+    }
+  ],
+  "cssClasses": [
+    "tm-qr-code"
+  ],
+  "examples": [
+    {
+      "title": "Basic QR code",
+      "code": "<TmQRCode Value=\"https://example.com\" />"
+    },
+    {
+      "title": "Large QR code with custom colors",
+      "code": "<TmQRCode Value=\"https://example.com\" Size=\"300\" ForegroundColor=\"#3b82f6\" BackgroundColor=\"#f0f9ff\" />"
+    },
+    {
+      "title": "High error correction",
+      "code": "<TmQRCode Value=\"important-data\" ErrorCorrectionLevel=\"QRErrorCorrectionLevel.H\" />"
+    }
+  ]
+}

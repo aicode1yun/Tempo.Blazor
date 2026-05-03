@@ -1,0 +1,56 @@
+{
+  "itemName": "TmBottomNavigation",
+  "kind": "Component",
+  "category": "Navigation",
+  "description": "A bottom navigation bar component for mobile layouts. Supports items with icons and text, active state highlighting, and click handling.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Navigation"
+  ],
+  "parameters": [
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<BottomNavItem>",
+      "isRequired": false,
+      "default": "Empty list",
+      "description": "The navigation items to display."
+    },
+    {
+      "name": "SelectedItem",
+      "type": "BottomNavItem?",
+      "isRequired": false,
+      "description": "The currently selected item."
+    },
+    {
+      "name": "OnItemClick",
+      "type": "EventCallback<BottomNavItem>",
+      "isRequired": false,
+      "description": "Event fired when an item is clicked."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-bottom-nav",
+    "tm-bottom-nav__item",
+    "tm-bottom-nav__item--active",
+    "tm-bottom-nav__item--disabled",
+    "tm-bottom-nav__link",
+    "tm-bottom-nav__button",
+    "tm-bottom-nav__icon",
+    "tm-bottom-nav__text"
+  ],
+  "examples": [
+    {
+      "title": "Basic bottom navigation",
+      "code": "<TmBottomNavigation Items=\"navItems\" OnItemClick=\"HandleClick\" />"
+    },
+    {
+      "title": "With selected item",
+      "code": "<TmBottomNavigation Items=\"navItems\" SelectedItem=\"selectedItem\" OnItemClick=\"HandleClick\" />"
+    }
+  ]
+}

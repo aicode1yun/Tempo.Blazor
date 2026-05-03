@@ -1,0 +1,336 @@
+@page "/new-components"
+@using Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Components.Navigation
+@using Tempo.Blazor.Components.Buttons
+@using Tempo.Blazor.Components.Layout
+@using Tempo.Blazor.Components.DataDisplay
+<PageTitle>New Components – Tempo.Blazor</PageTitle>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">New Components</h1>
+    <p class="text-slate-600 dark:text-slate-400">Recently added components from the Telerik gap analysis.</p>
+</div>
+
+<!-- MaskedTextBox -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Masked Text Box</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Phone Number</h3>
+            <TmMaskedTextBox Label="Phone"
+                             Mask="(000) 000-0000"
+                             PromptChar="@('_')"
+                             Placeholder="Enter phone number"
+                             @bind-Value="_phone" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_phone</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Date (MM/DD/YYYY)</h3>
+            <TmMaskedTextBox Label="Date"
+                             Mask="00/00/0000"
+                             PromptChar="@('_')"
+                             Placeholder="MM/DD/YYYY"
+                             @bind-Value="_date" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_date</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">SSN</h3>
+            <TmMaskedTextBox Label="Social Security Number"
+                             Mask="000-00-0000"
+                             PromptChar="@('_')"
+                             Placeholder="XXX-XX-XXXX"
+                             @bind-Value="_ssn" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_ssn</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Credit Card</h3>
+            <TmMaskedTextBox Label="Credit Card"
+                             Mask="0000 0000 0000 0000"
+                             PromptChar="@('_')"
+                             Placeholder="XXXX XXXX XXXX XXXX"
+                             @bind-Value="_cc" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_cc</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Without Literals</h3>
+            <TmMaskedTextBox Label="Phone (raw)"
+                             Mask="(000) 000-0000"
+                             PromptChar="@('_')"
+                             IncludeLiterals="false"
+                             @bind-Value="_phoneRaw" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_phoneRaw</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Custom Prompt</h3>
+            <TmMaskedTextBox Label="PIN"
+                             Mask="0000"
+                             PromptChar="@('*')"
+                             @bind-Value="_pin" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_pin</p>
+        </div>
+    </div>
+</section>
+
+<!-- Menu -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Menu</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Horizontal</h3>
+            <TmMenu Items="_menuItems" Orientation="MenuOrientation.Horizontal" OnItemClick="HandleMenuClick" />
+            <p class="text-xs text-slate-500 mt-2">Clicked: @_clickedMenuItem</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Vertical</h3>
+            <TmMenu Items="_menuItemsVertical" Orientation="MenuOrientation.Vertical" OnItemClick="HandleMenuClick" />
+        </div>
+    </div>
+</section>
+
+<!-- Rating -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Rating</h2>
+    <div class="demo-grid demo-grid-3">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic</h3>
+            <TmRating @bind-Value="_rating" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_rating</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Max 10</h3>
+            <TmRating @bind-Value="_rating10" Max="10" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_rating10</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Read-only</h3>
+            <TmRating Value="4" ReadOnly="true" />
+        </div>
+    </div>
+</section>
+
+<!-- Slider -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Slider</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic</h3>
+            <TmSlider @bind-Value="_sliderValue" Min="0" Max="100" Label="Volume" ShowValue="true" />
+            <p class="text-xs text-slate-500 mt-2">Value: @_sliderValue</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">With Ticks</h3>
+            <TmSlider @bind-Value="_sliderTickValue" Min="0" Max="100" Step="5" ShowTicks="true" TickInterval="25" ShowLabels="true" />
+        </div>
+    </div>
+</section>
+
+<!-- RangeSlider -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Range Slider</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic</h3>
+            <TmRangeSlider @bind-StartValue="_rangeStart" @bind-EndValue="_rangeEnd" Min="0" Max="100" ShowValue="true" />
+            <p class="text-xs text-slate-500 mt-2">Range: @_rangeStart – @_rangeEnd</p>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Price Filter</h3>
+            <TmRangeSlider @bind-StartValue="_priceStart" @bind-EndValue="_priceEnd" Min="0" Max="1000" Step="10" Label="Price ($)" />
+        </div>
+    </div>
+</section>
+
+<!-- StackLayout -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Stack Layout</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Vertical Stack</h3>
+            <TmStackLayout Spacing="3" class="p-2 bg-slate-100 dark:bg-slate-800 rounded">
+                <div class="px-4 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Item 1</div>
+                <div class="px-4 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Item 2</div>
+                <div class="px-4 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Item 3</div>
+            </TmStackLayout>
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Horizontal Stack (Space Between)</h3>
+            <TmStackLayout Orientation="StackOrientation.Horizontal" Spacing="2" JustifyContent="JustifyContent.SpaceBetween" class="p-2 bg-slate-100 dark:bg-slate-800 rounded">
+                <div class="px-3 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Left</div>
+                <div class="px-3 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Center</div>
+                <div class="px-3 py-2 bg-white dark:bg-slate-700 rounded shadow-sm">Right</div>
+            </TmStackLayout>
+        </div>
+    </div>
+</section>
+
+<!-- BottomNavigation -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Bottom Navigation</h2>
+    <div class="showcase-card p-0 overflow-hidden" style="transform: translate(0); position: relative; height: 300px;">
+        <div class="absolute inset-0 flex flex-col">
+            <div class="flex-1 flex items-center justify-center bg-slate-50 dark:bg-slate-800">
+                <p class="text-slate-500 dark:text-slate-400">Active: @_activeNavItem</p>
+            </div>
+            <TmBottomNavigation Items="_bottomNavItems"
+                                SelectedItem="_selectedNavItem"
+                                OnItemClick="HandleNavClick" />
+        </div>
+    </div>
+</section>
+
+<!-- FloatingActionButton -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Floating Action Button</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card p-0" style="transform: translate(0); position: relative; height: 280px;">
+            <div class="absolute top-4 left-4 z-10">
+                <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Basic FAB</h3>
+                <p class="text-xs text-slate-500">@_fabAction</p>
+            </div>
+            <TmFloatingActionButton Icon="plus" OnClick="HandleFabClick" />
+        </div>
+        <div class="showcase-card p-0" style="transform: translate(0); position: relative; height: 280px;">
+            <div class="absolute top-4 left-4 z-10">
+                <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Speed Dial</h3>
+                <p class="text-xs text-slate-500">@_fabItemClicked</p>
+            </div>
+            <TmFloatingActionButton Icon="plus"
+                                    Items="_fabItems"
+                                    OnItemClick="HandleFabItemClick" />
+        </div>
+    </div>
+</section>
+
+<!-- Splitter -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Splitter</h2>
+    <div class="showcase-card" style="height: 300px;">
+        <TmSplitter>
+            <TmSplitterPane Size="30%" MinSize="100px">
+                <div class="p-4">
+                    <h3 class="font-medium">Left Pane</h3>
+                    <p class="text-sm text-slate-500">Resize using the handle between panes.</p>
+                </div>
+            </TmSplitterPane>
+            <TmSplitterPane>
+                <div class="p-4">
+                    <h3 class="font-medium">Right Pane</h3>
+                    <p class="text-sm text-slate-500">This pane fills remaining space.</p>
+                </div>
+            </TmSplitterPane>
+        </TmSplitter>
+    </div>
+</section>
+
+<!-- QR Code -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">QR Code</h2>
+    <div class="demo-grid demo-grid-3">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Default</h3>
+            <TmQRCode Value="https://tempo.blazor" />
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Large (300px)</h3>
+            <TmQRCode Value="https://tempo.blazor" Size="300" />
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Custom Colors</h3>
+            <TmQRCode Value="https://tempo.blazor" Size="150" ForegroundColor="#3b82f6" BackgroundColor="#f0f9ff" />
+        </div>
+    </div>
+</section>
+
+<!-- Barcode -->
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Barcode</h2>
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Code 128</h3>
+            <TmBarcode Value="TEST1234" Format="BarcodeFormat.Code128" DisplayValue="true" />
+        </div>
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Custom Size</h3>
+            <TmBarcode Value="ABC-999" Format="BarcodeFormat.Code39" Width="300" Height="120" DisplayValue="true" />
+        </div>
+    </div>
+</section>
+
+@code {
+    private string _phone = string.Empty;
+    private string _date = string.Empty;
+    private string _ssn = string.Empty;
+    private string _cc = string.Empty;
+    private string _phoneRaw = string.Empty;
+    private string _pin = string.Empty;
+
+    private int? _rating = 3;
+    private int? _rating10 = 7;
+
+    private int? _sliderValue = 50;
+    private int? _sliderTickValue = 25;
+
+    private int? _rangeStart = 20;
+    private int? _rangeEnd = 80;
+    private int? _priceStart = 100;
+    private int? _priceEnd = 500;
+
+    private string _clickedMenuItem = string.Empty;
+    private string _activeNavItem = "Home";
+    private string _fabAction = string.Empty;
+    private string _fabItemClicked = string.Empty;
+
+    private BottomNavItem? _selectedNavItem;
+
+    private readonly List<MenuItem> _menuItems = new()
+    {
+        new() { Text = "Home", Icon = "home" },
+        new() { Text = "Products", Icon = "box" },
+        new() { Text = "Services", Icon = "settings" },
+        new() { Text = "Contact", Icon = "mail" }
+    };
+
+    private readonly List<MenuItem> _menuItemsVertical = new()
+    {
+        new() { Text = "Dashboard", Icon = "layout" },
+        new() { Text = "Analytics", Icon = "bar-chart" },
+        new() { Text = "Reports", Icon = "file-text" },
+        new() { Text = "Settings", Icon = "settings" }
+    };
+
+    private readonly List<BottomNavItem> _bottomNavItems = new()
+    {
+        new() { Text = "Home", Icon = "home" },
+        new() { Text = "Search", Icon = "search" },
+        new() { Text = "Favorites", Icon = "heart" },
+        new() { Text = "Profile", Icon = "user" }
+    };
+
+    private readonly List<FabItem> _fabItems = new()
+    {
+        new() { Label = "Create", Icon = "plus" },
+        new() { Label = "Upload", Icon = "upload" },
+        new() { Label = "Share", Icon = "share" }
+    };
+
+    private void HandleMenuClick(MenuItem item)
+    {
+        _clickedMenuItem = item.Text;
+    }
+
+    private void HandleNavClick(BottomNavItem item)
+    {
+        _activeNavItem = item.Text;
+        _selectedNavItem = item;
+    }
+
+    private void HandleFabItemClick(FabItem item)
+    {
+        _fabItemClicked = $"Clicked: {item.Label}";
+    }
+
+    private void HandleFabClick()
+    {
+        _fabAction = "Add clicked";
+    }
+}

@@ -1,0 +1,32 @@
+@namespace Tempo.Blazor.Components.Layout
+@implements IDisposable
+
+<div @ref="_paneRef" class="tm-splitter__pane @GetCssClass()" style="@GetStyle()">
+    @ChildContent
+</div>
+@if (Parent is not null && Parent.IsNotLastPane(this))
+{
+    <div @ref="_resizerRef" class="tm-splitter__resizer"
+         @onpointerdown="HandleResizerPointerDown"
+         @onpointermove="HandleResizerPointerMove"
+         @onpointerup="HandleResizerPointerUp"
+         @onpointercancel="HandleResizerPointerUp">
+        @if (Collapsible)
+        {
+            <button type="button"
+                    class="tm-splitter__collapse-btn"
+                    @onclick="ToggleCollapse">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" class="tm-splitter__collapse-icon">
+                    @if (Parent.Orientation == SplitterOrientation.Horizontal)
+                    {
+                        <path d="M15 18l-6-6 6-6" />
+                    }
+                    else
+                    {
+                        <path d="M18 15l-6-6-6 6" />
+                    }
+                </svg>
+            </button>
+        }
+    </div>
+}

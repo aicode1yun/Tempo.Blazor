@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.Inputs
+
+<div class="tm-slider tm-slider--@Orientation.ToString().ToLowerInvariant() @AdditionalCssClass">
+    @if (!string.IsNullOrEmpty(Label))
+    {
+        <label class="tm-slider__label">@Label</label>
+    }
+    <div class="tm-slider__track-container">
+        <div class="tm-slider__track">
+            <div class="tm-slider__fill" style="@GetFillStyle()"></div>
+        </div>
+        <input type="range"
+               class="tm-slider__input"
+               min="@Min"
+               max="@Max"
+               step="@Step"
+               @bind-value:get="_currentValue"
+               @bind-value:set="SetValueAsync"
+               @bind-value:event="oninput"
+               disabled="@Disabled" />
+        @if (ShowTicks)
+        {
+            <div class="tm-slider__ticks">
+                @for (var i = Min; i <= Max; i += TickInterval)
+                {
+                    <span class="tm-slider__tick" style="@GetTickStyle(i)"></span>
+                    @if (ShowLabels)
+                    {
+                        <span class="tm-slider__tick-label" style="@GetTickLabelStyle(i)">@i</span>
+                    }
+                }
+            </div>
+        }
+    </div>
+    @if (ShowValue)
+    {
+        <span class="tm-slider__value">@_currentValue</span>
+    }
+</div>

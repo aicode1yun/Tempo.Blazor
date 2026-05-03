@@ -1,0 +1,100 @@
+{
+  "itemName": "TmMaskedTextBox",
+  "kind": "Component",
+  "category": "Inputs",
+  "description": "A masked text input that enforces a specific format as the user types. Supports digit, letter, alphanumeric and wildcard mask rules with optional literal inclusion.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Inputs"
+  ],
+  "parameters": [
+    {
+      "name": "Mask",
+      "type": "string",
+      "isRequired": false,
+      "default": "Empty",
+      "description": "The mask pattern. Use '0' for digits, 'L' for letters, 'A' for alphanumeric, '&' for any char. Other characters are treated as literals."
+    },
+    {
+      "name": "PromptChar",
+      "type": "char",
+      "isRequired": false,
+      "default": "'_'",
+      "description": "The character displayed in empty positions. Defaults to underscore."
+    },
+    {
+      "name": "IncludeLiterals",
+      "type": "bool",
+      "isRequired": false,
+      "default": "true",
+      "description": "Whether the value includes literal characters from the mask. When false, only user-typed characters are stored."
+    },
+    {
+      "name": "Value",
+      "type": "string",
+      "isRequired": false,
+      "default": "Empty",
+      "description": "The current value. When IncludeLiterals is true, this includes mask literals. When false, only user-typed characters are stored."
+    },
+    {
+      "name": "ValueChanged",
+      "type": "EventCallback<string>",
+      "isRequired": false,
+      "description": "Event fired when the value changes."
+    },
+    {
+      "name": "Label",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Label shown above the input."
+    },
+    {
+      "name": "Placeholder",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Placeholder text shown when the input is empty."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the input is disabled."
+    },
+    {
+      "name": "ReadOnly",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the input is read-only."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes for the input element."
+    },
+    {
+      "name": "Id",
+      "type": "string?",
+      "isRequired": false,
+      "description": "HTML id attribute for the input."
+    }
+  ],
+  "cssClasses": [
+    "tm-masked-text-box",
+    "tm-masked-text-box__label",
+    "tm-masked-text-box__input"
+  ],
+  "examples": [
+    {
+      "title": "Phone number mask",
+      "code": "<TmMaskedTextBox Mask=\"(000) 000-0000\" PromptChar='_'' @bind-Value=\"phone\" />"
+    },
+    {
+      "title": "Date mask without literals",
+      "code": "<TmMaskedTextBox Mask=\"00/00/0000\" IncludeLiterals=\"false\" @bind-Value=\"date\" />"
+    },
+    {
+      "title": "Credit card mask",
+      "code": "<TmMaskedTextBox Mask=\"0000 0000 0000 0000\" Label=\"Card Number\" @bind-Value=\"card\" />"
+    }
+  ]
+}

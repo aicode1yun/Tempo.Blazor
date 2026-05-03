@@ -1,0 +1,51 @@
+{
+  "itemName": "TmSplitter",
+  "kind": "Component",
+  "category": "Layout",
+  "description": "A resizable two-pane splitter layout component with support for horizontal and vertical orientations, collapsible panes, and min/max size constraints.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Layout"
+  ],
+  "parameters": [
+    {
+      "name": "ChildContent",
+      "type": "RenderFragment?",
+      "isRequired": false,
+      "description": "The child content (TmSplitterPane elements)."
+    },
+    {
+      "name": "Orientation",
+      "type": "SplitterOrientation",
+      "isRequired": false,
+      "default": "Horizontal",
+      "description": "Splitter orientation. Defaults to Horizontal."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-splitter",
+    "tm-splitter--horizontal",
+    "tm-splitter--vertical",
+    "tm-splitter__pane",
+    "tm-splitter__pane--collapsed",
+    "tm-splitter__pane--collapsible",
+    "tm-splitter__resizer",
+    "tm-splitter__collapse-btn",
+    "tm-splitter__collapse-icon"
+  ],
+  "examples": [
+    {
+      "title": "Horizontal splitter",
+      "code": "<TmSplitter>\n    <TmSplitterPane Size=\"30%\" MinSize=\"100px\">\n        <div>Left Pane</div>\n    </TmSplitterPane>\n    <TmSplitterPane>\n        <div>Right Pane</div>\n    </TmSplitterPane>\n</TmSplitter>"
+    },
+    {
+      "title": "Collapsible pane",
+      "code": "<TmSplitter>\n    <TmSplitterPane Size=\"200px\" Collapsible=\"true\">\n        <div>Sidebar</div>\n    </TmSplitterPane>\n    <TmSplitterPane>\n        <div>Main Content</div>\n    </TmSplitterPane>\n</TmSplitter>"
+    }
+  ]
+}

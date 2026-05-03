@@ -1,0 +1,82 @@
+{
+  "itemName": "TmFloatingActionButton",
+  "kind": "Component",
+  "category": "Buttons",
+  "description": "A floating action button component with optional speed dial menu. Supports multiple positions, custom icons, and item click handling.",
+  "requiredImports": [
+    "@using Tempo.Blazor.Components.Buttons"
+  ],
+  "parameters": [
+    {
+      "name": "Icon",
+      "type": "string?",
+      "isRequired": false,
+      "description": "The icon displayed on the main button. Defaults to a plus icon."
+    },
+    {
+      "name": "Position",
+      "type": "FabPosition",
+      "isRequired": false,
+      "default": "BottomRight",
+      "description": "The position of the button on the screen."
+    },
+    {
+      "name": "Disabled",
+      "type": "bool",
+      "isRequired": false,
+      "description": "Whether the button is disabled."
+    },
+    {
+      "name": "Items",
+      "type": "IReadOnlyList<FabItem>?",
+      "isRequired": false,
+      "description": "Optional speed dial items. When provided, clicking the main button opens a menu."
+    },
+    {
+      "name": "OnClick",
+      "type": "EventCallback",
+      "isRequired": false,
+      "description": "Event fired when the main button is clicked."
+    },
+    {
+      "name": "OnItemClick",
+      "type": "EventCallback<FabItem>",
+      "isRequired": false,
+      "description": "Event fired when a speed dial item is clicked."
+    },
+    {
+      "name": "AdditionalCssClass",
+      "type": "string?",
+      "isRequired": false,
+      "description": "Additional CSS classes."
+    }
+  ],
+  "cssClasses": [
+    "tm-fab",
+    "tm-fab--bottom-right",
+    "tm-fab--bottom-left",
+    "tm-fab--top-right",
+    "tm-fab--top-left",
+    "tm-fab--open",
+    "tm-fab__main",
+    "tm-fab__menu",
+    "tm-fab__item",
+    "tm-fab__item--disabled",
+    "tm-fab__item-label",
+    "tm-fab__item-icon"
+  ],
+  "examples": [
+    {
+      "title": "Basic FAB",
+      "code": "<TmFloatingActionButton Icon=\"plus\" OnClick=\"HandleAdd\" />"
+    },
+    {
+      "title": "Speed dial menu",
+      "code": "<TmFloatingActionButton Icon=\"plus\" Items=\"fabItems\" OnItemClick=\"HandleItemClick\" />"
+    },
+    {
+      "title": "Positioned FAB",
+      "code": "<TmFloatingActionButton Icon=\"edit\" Position=\"FabPosition.BottomLeft\" OnClick=\"HandleEdit\" />"
+    }
+  ]
+}
