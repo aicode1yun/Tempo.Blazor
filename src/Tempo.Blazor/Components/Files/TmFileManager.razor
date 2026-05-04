@@ -111,6 +111,7 @@
                             @if (_renamingItem == item)
                             {
                                 <input type="text" class="tm-file-manager__item-rename-input"
+                                       @ref="_renameInputRef"
                                        @bind="_renameValue"
                                        @bind:event="oninput"
                                        @onblur="CommitRenameAsync"

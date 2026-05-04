@@ -58,6 +58,14 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private double _slashMenuLeft;
     private string _slashBlockId = string.Empty;
 
+    // ── Mention menu state ────────────────────────────────────────────────────
+
+    private bool   _mentionMenuVisible;
+    private double _mentionMenuTop;
+    private double _mentionMenuLeft;
+    private string _mentionBlockId  = string.Empty;
+    private bool   _mentionPagesOnly;
+
     // ── Inline toolbar state ──────────────────────────────────────────────────
 
     private bool          _toolbarVisible;
@@ -452,6 +460,51 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     {
         _slashMenuVisible = false;
         _slashBlockId     = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    // ── Mention menu handlers ─────────────────────────────────────────────────
+
+    private Task HandleMentionMenuOpenedAsync((string BlockId, double Top, double Left) args)
+    {
+        _mentionBlockId     = args.BlockId;
+        _mentionMenuTop     = args.Top;
+        _mentionMenuLeft    = args.Left;
+        _mentionMenuVisible = true;
+        _mentionPagesOnly   = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePageLinkMenuOpenedAsync((string BlockId, double Top, double Left) args)
+    {
+        _mentionBlockId     = args.BlockId;
+        _mentionMenuTop     = args.Top;
+        _mentionMenuLeft    = args.Left;
+        _mentionMenuVisible = true;
+        _mentionPagesOnly   = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleMentionItemSelectedAsync((string Type, string Id, string Display) args)
+    {
+        _mentionMenuVisible = false;
+        _mentionBlockId     = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.insertMentionChip", args.Type, args.Id, args.Display);
+        }
+        catch { }
+    }
+
+    private Task HandleMentionMenuClosedAsync()
+    {
+        _mentionMenuVisible = false;
+        _mentionBlockId     = string.Empty;
         StateHasChanged();
         return Task.CompletedTask;
     }

@@ -26,9 +26,8 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
 
     // ── State — sections ──────────────────────────────────────────────────────
 
-    private bool _favoritesExpanded = true;
-    private bool _recentExpanded    = false;
-    private bool _pagesExpanded     = true;
+    private bool _pagesExpanded = true;
+    private bool _showTrash     = false;
 
     // ── State — data ──────────────────────────────────────────────────────────
 
@@ -221,31 +220,23 @@ public partial class TmNotionSidebar : ComponentBase, IAsyncDisposable
         }
     }
 
-    // ── Favorites ─────────────────────────────────────────────────────────────
+    // ── Tree / Favorites changed ──────────────────────────────────────────────
 
-    private async Task ToggleFavoriteAsync(INotionPage page)
-    {
-        try
-        {
-            await Context.DataProvider.ToggleFavoriteAsync(page.Id.ToString(), !page.IsFavorite);
-            _favorites = (await Context.DataProvider.GetFavoritesAsync()).ToList();
-            StateHasChanged();
-        }
-        catch { }
-    }
-
-    // ── Tree changed ──────────────────────────────────────────────────────────
-
-    private async Task OnTreeChangedAsync()
-    {
-        await LoadAllAsync();
-    }
+    private async Task OnTreeChangedAsync()     => await LoadAllAsync();
+    private async Task OnFavoritesChangedAsync() => await LoadAllAsync();
 
     // ── Trash ─────────────────────────────────────────────────────────────────
 
     private async Task OpenTrashAsync()
     {
+        _showTrash = true;
         await OnTrashRequested.InvokeAsync();
+    }
+
+    private async Task CloseTrashAsync()
+    {
+        _showTrash = false;
+        await LoadAllAsync();
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

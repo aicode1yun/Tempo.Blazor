@@ -28,6 +28,12 @@ window.tmNotionEditor = (function () {
     let _slashAnchorNode = null; // text node position just before the '/'
     let _slashAnchorOff  = 0;
 
+    // ── Mention / page-link menu state ─────────────────────────────────────────
+    let _mentionElement    = null; // contenteditable that triggered the mention
+    let _mentionAnchorNode = null; // text node position just before the trigger
+    let _mentionAnchorOff  = 0;
+    let _mentionTriggerLen = 1;    // 1 for '@', 2 for '[['
+
     // ── Shared helpers ─────────────────────────────────────────────────────────
 
     function _on(el, type, fn, opts) {
@@ -456,9 +462,23 @@ window.tmNotionEditor = (function () {
                 const c = getCaretCoords();
                 dotNetRef.invokeMethodAsync('OnSlashTriggered', c.top, c.left).catch(console.error);
             } else if (lastChar === '@' && atWordBoundary) {
+                _mentionElement    = element;
+                _mentionTriggerLen = 1;
+                const r1 = _range();
+                if (r1) {
+                    _mentionAnchorNode = r1.startContainer;
+                    _mentionAnchorOff  = Math.max(0, r1.startOffset - 1);
+                }
                 const c = getCaretCoords();
                 dotNetRef.invokeMethodAsync('OnMentionTriggered', c.top, c.left).catch(console.error);
             } else if (text.endsWith('[[')) {
+                _mentionElement    = element;
+                _mentionTriggerLen = 2;
+                const r2 = _range();
+                if (r2) {
+                    _mentionAnchorNode = r2.startContainer;
+                    _mentionAnchorOff  = Math.max(0, r2.startOffset - 2);
+                }
                 const c = getCaretCoords();
                 dotNetRef.invokeMethodAsync('OnPageLinkTriggered', c.top, c.left).catch(console.error);
             }
@@ -841,6 +861,65 @@ window.tmNotionEditor = (function () {
         _slashElement    = null;
         _slashAnchorNode = null;
         _slashAnchorOff  = 0;
+    }
+
+    function insertMentionChip(mentionType, mentionId, displayText) {
+        if (!_mentionElement) return;
+        try {
+            _mentionElement.focus();
+
+            const sel   = window.getSelection();
+            const range = document.createRange();
+            if (_mentionAnchorNode && _mentionElement.contains(_mentionAnchorNode)) {
+                range.setStart(_mentionAnchorNode, _mentionAnchorOff);
+            } else {
+                range.selectNodeContents(_mentionElement);
+                range.setStart(_mentionElement, 0);
+            }
+            const endRange = document.createRange();
+            endRange.selectNodeContents(_mentionElement);
+            range.setEnd(endRange.endContainer, endRange.endOffset);
+
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('delete');
+
+            const chip = document.createElement('span');
+            chip.contentEditable = 'false';
+            chip.className = 'tm-notion-mention tm-notion-mention--' + mentionType;
+            chip.dataset.type = mentionType;
+            chip.dataset.id   = String(mentionId);
+            chip.textContent  = displayText;
+
+            const curSel   = window.getSelection();
+            const curRange = curSel.getRangeAt(0);
+            curRange.insertNode(chip);
+            curRange.setStartAfter(chip);
+            curRange.collapse(true);
+            curSel.removeAllRanges();
+            curSel.addRange(curRange);
+
+            document.execCommand('insertText', false, ' ');
+
+            // Notify Blazor that content changed so it saves on next blur
+            _mentionElement.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch { /* ignore edge cases */ }
+
+        _mentionElement    = null;
+        _mentionAnchorNode = null;
+        _mentionAnchorOff  = 0;
+        _mentionTriggerLen = 1;
+    }
+
+    function cancelMentionTrigger() {
+        if (_mentionElement) {
+            _mentionElement.focus();
+            _setCursorAtEnd(_mentionElement);
+        }
+        _mentionElement    = null;
+        _mentionAnchorNode = null;
+        _mentionAnchorOff  = 0;
+        _mentionTriggerLen = 1;
     }
 
     function adjustSlashMenuPosition(menuEl) {
@@ -1333,6 +1412,7 @@ window.tmNotionEditor = (function () {
         // 43.1
         getRecentSlashItems, addRecentSlashItem,
         clearSlashQuery, refocusSlashElement,
+        insertMentionChip, cancelMentionTrigger,
         adjustSlashMenuPosition, scrollSlashItemIntoView,
         // 44.1
         initSelectionWatcher, destroySelectionWatcher,

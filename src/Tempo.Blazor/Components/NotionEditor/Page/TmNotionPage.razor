@@ -76,7 +76,9 @@
                                        OnAddBlockAfter="HandleAddBlockAfterAsync"
                                        OnInsertTemplateBlocksAfter="HandleInsertTemplateBlocksAfterAsync"
                                        OnAddBlockAtEnd="HandleAddBlockAtEndAsync"
-                                       OnSlashMenu="HandleSlashMenuOpenedAsync" />
+                                       OnSlashMenu="HandleSlashMenuOpenedAsync"
+                                       OnMentionMenu="HandleMentionMenuOpenedAsync"
+                                       OnPageLinkMenu="HandlePageLinkMenuOpenedAsync" />
                 </CascadingValue>
             }
 
@@ -101,6 +103,14 @@
                    Left="_slashMenuLeft"
                    OnItemSelected="HandleSlashItemSelectedAsync"
                    OnClosed="HandleSlashMenuClosedAsync" />
+
+@* ── Mention menu (portal — position:fixed, outside scroll) *@
+<TmNotionMentionMenu Visible="_mentionMenuVisible"
+                     Top="_mentionMenuTop"
+                     Left="_mentionMenuLeft"
+                     PagesOnly="_mentionPagesOnly"
+                     OnItemSelected="HandleMentionItemSelectedAsync"
+                     OnClosed="HandleMentionMenuClosedAsync" />
 
 @* ── Inline formatting toolbar (portal — position:fixed, outside scroll) *@
 <TmNotionInlineToolbar Visible="_toolbarVisible"

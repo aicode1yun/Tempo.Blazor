@@ -2,10 +2,14 @@
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.NotionEditor.Interfaces
 
-@* ── Search panel (slide-over inside sidebar) ─────────────────────────────── *@
-
-@if (_searchOpen)
+@if (_showTrash)
 {
+    @* ── Trash panel (replaces sidebar content) ──────────────────────────── *@
+    <TmNotionSidebarTrash OnClosed="CloseTrashAsync" />
+}
+else if (_searchOpen)
+{
+    @* ── Search panel ────────────────────────────────────────────────────── *@
     <div class="tm-ns-search" role="search" aria-label="@Loc["TmNotionSidebar_Search"]">
 
         <div class="tm-ns-search__bar">
@@ -152,93 +156,17 @@ else
 
             @if (_favorites.Count > 0)
             {
-                <section class="tm-ns-section" aria-label="@Loc["TmNotionSidebar_Favorites"]">
-
-                    <button class="tm-ns-section__header"
-                            type="button"
-                            aria-expanded="@_favoritesExpanded"
-                            aria-controls="tm-ns-favorites"
-                            @onclick="() => _favoritesExpanded = !_favoritesExpanded">
-                        <svg class="tm-ns-section__chevron @(_favoritesExpanded ? "tm-ns-section__chevron--open" : "")"
-                             width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                            <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span class="tm-ns-section__label">@Loc["TmNotionSidebar_Favorites"]</span>
-                    </button>
-
-                    @if (_favoritesExpanded)
-                    {
-                        <ul class="tm-ns-list" id="tm-ns-favorites" role="list">
-                            @foreach (var page in _favorites)
-                            {
-                                <li role="listitem">
-                                    <button class="tm-ns-page-item @(IsActivePage(page) ? "tm-ns-page-item--active" : "")"
-                                            type="button"
-                                            title="@GetPageTitle(page)"
-                                            aria-current="@(IsActivePage(page) ? "page" : null)"
-                                            @onclick="() => NavigateToAsync(page)">
-                                        <span class="tm-ns-page-item__icon" aria-hidden="true">@GetPageIcon(page)</span>
-                                        <span class="tm-ns-page-item__title">@GetPageTitle(page)</span>
-                                        <button class="tm-ns-page-item__action"
-                                                type="button"
-                                                title="@Loc["TmNotionSidebar_Unfavorite"]"
-                                                aria-label="@Loc["TmNotionSidebar_Unfavorite"]"
-                                                @onclick:stopPropagation="true"
-                                                @onclick="() => ToggleFavoriteAsync(page)">
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                                <path d="M6 1.5l1.3 2.6 2.9.4-2.1 2 .5 2.9L6 8l-2.6 1.4.5-2.9-2.1-2 2.9-.4z"
-                                                      stroke="currentColor" stroke-width="1" fill="currentColor" opacity=".6"/>
-                                            </svg>
-                                        </button>
-                                    </button>
-                                </li>
-                            }
-                        </ul>
-                    }
-
-                </section>
+                <TmNotionSidebarFavorites Pages="@_favorites"
+                                          ActivePageId="@ActivePageId"
+                                          OnChanged="OnFavoritesChangedAsync" />
             }
 
             @* ── Recent ─────────────────────────────────────────────────── *@
 
             @if (_recent.Count > 0)
             {
-                <section class="tm-ns-section" aria-label="@Loc["TmNotionSidebar_Recent"]">
-
-                    <button class="tm-ns-section__header"
-                            type="button"
-                            aria-expanded="@_recentExpanded"
-                            aria-controls="tm-ns-recent"
-                            @onclick="() => _recentExpanded = !_recentExpanded">
-                        <svg class="tm-ns-section__chevron @(_recentExpanded ? "tm-ns-section__chevron--open" : "")"
-                             width="10" height="10" viewBox="0 0 10 10" fill="none" aria-hidden="true">
-                            <path d="M2.5 3.5L5 6l2.5-2.5" stroke="currentColor" stroke-width="1.25"
-                                  stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        <span class="tm-ns-section__label">@Loc["TmNotionSidebar_Recent"]</span>
-                    </button>
-
-                    @if (_recentExpanded)
-                    {
-                        <ul class="tm-ns-list" id="tm-ns-recent" role="list">
-                            @foreach (var page in _recent)
-                            {
-                                <li role="listitem">
-                                    <button class="tm-ns-page-item @(IsActivePage(page) ? "tm-ns-page-item--active" : "")"
-                                            type="button"
-                                            title="@GetPageTitle(page)"
-                                            aria-current="@(IsActivePage(page) ? "page" : null)"
-                                            @onclick="() => NavigateToAsync(page)">
-                                        <span class="tm-ns-page-item__icon" aria-hidden="true">@GetPageIcon(page)</span>
-                                        <span class="tm-ns-page-item__title">@GetPageTitle(page)</span>
-                                    </button>
-                                </li>
-                            }
-                        </ul>
-                    }
-
-                </section>
+                <TmNotionSidebarRecent Pages="@_recent"
+                                       ActivePageId="@ActivePageId" />
             }
 
             @* ── Pages (root tree) ──────────────────────────────────────── *@

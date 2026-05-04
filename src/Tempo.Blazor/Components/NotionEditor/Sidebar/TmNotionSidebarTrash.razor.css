@@ -1,0 +1,341 @@
+/* ── Root ────────────────────────────────────────────────────────────────── */
+
+.tm-nst {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    overflow: hidden;
+}
+
+/* ── Header ──────────────────────────────────────────────────────────────── */
+
+.tm-nst-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 10px 10px 8px;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.06));
+}
+
+.tm-nst-back {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 26px;
+    height: 26px;
+    padding: 0;
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--tm-color-text-secondary, #888);
+    border-radius: 4px;
+    flex-shrink: 0;
+    transition: background 0.1s, color 0.1s;
+}
+
+.tm-nst-back:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.06));
+    color: var(--tm-color-text, #333);
+}
+
+.tm-nst-title {
+    flex: 1;
+    margin: 0;
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tm-color-text, #1a1a1a);
+}
+
+/* ── Search bar ──────────────────────────────────────────────────────────── */
+
+.tm-nst-search {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 6px 8px 4px;
+    padding: 5px 8px;
+    background: var(--tm-color-input-bg, rgba(0, 0, 0, 0.04));
+    border: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.08));
+    border-radius: 6px;
+    flex-shrink: 0;
+    transition: border-color 0.15s;
+}
+
+.tm-nst-search:focus-within {
+    border-color: var(--tm-color-accent, #0066cc);
+    background: var(--tm-color-surface, #fff);
+}
+
+.tm-nst-search__icon {
+    flex-shrink: 0;
+    color: var(--tm-color-text-secondary, #aaa);
+}
+
+.tm-nst-search__input {
+    flex: 1;
+    border: none;
+    background: transparent;
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    outline: none;
+    min-width: 0;
+}
+
+.tm-nst-search__input::placeholder {
+    color: var(--tm-color-text-secondary, #bbb);
+}
+
+/* ── Scrollable content area ─────────────────────────────────────────────── */
+
+.tm-nst-content {
+    flex: 1 1 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 4px 0 8px;
+    scrollbar-width: thin;
+    scrollbar-color: var(--tm-color-border, rgba(0,0,0,0.1)) transparent;
+}
+
+.tm-nst-content::-webkit-scrollbar {
+    width: 4px;
+}
+
+.tm-nst-content::-webkit-scrollbar-thumb {
+    background: var(--tm-color-border, rgba(0,0,0,0.12));
+    border-radius: 2px;
+}
+
+/* ── Status (loading / error) ────────────────────────────────────────────── */
+
+.tm-nst-status {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 12px;
+    font-size: 13px;
+    color: var(--tm-color-text-secondary, #888);
+}
+
+.tm-nst-status--error {
+    color: var(--tm-color-danger, #dc2626);
+}
+
+.tm-nst-status__retry {
+    padding: 2px 8px;
+    border: 1px solid currentColor;
+    border-radius: 4px;
+    background: transparent;
+    font-size: 12px;
+    cursor: pointer;
+    color: inherit;
+    transition: background 0.1s;
+}
+
+.tm-nst-status__retry:hover {
+    background: var(--tm-color-hover, rgba(0,0,0,0.06));
+}
+
+/* ── Spinner ─────────────────────────────────────────────────────────────── */
+
+.tm-nst-spinner {
+    display: inline-block;
+    width: 14px;
+    height: 14px;
+    border: 1.5px solid currentColor;
+    border-top-color: transparent;
+    border-radius: 50%;
+    animation: tm-nst-spin 0.7s linear infinite;
+    flex-shrink: 0;
+}
+
+@keyframes tm-nst-spin {
+    to { transform: rotate(360deg); }
+}
+
+/* ── Empty state ─────────────────────────────────────────────────────────── */
+
+.tm-nst-empty {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 16px;
+    text-align: center;
+}
+
+.tm-nst-empty__icon {
+    color: var(--tm-color-text-secondary, #ccc);
+    opacity: 0.6;
+}
+
+.tm-nst-empty__text {
+    font-size: 13px;
+    color: var(--tm-color-text-secondary, #999);
+}
+
+/* ── List ────────────────────────────────────────────────────────────────── */
+
+.tm-nst-list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* ── Item ────────────────────────────────────────────────────────────────── */
+
+.tm-nst-item {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    padding: 7px 10px;
+    border-bottom: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.04));
+    transition: background 0.1s;
+}
+
+.tm-nst-item:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.03));
+}
+
+.tm-nst-item--confirming {
+    background: var(--tm-color-danger-ghost, rgba(220, 38, 38, 0.04));
+    flex-direction: column;
+    gap: 6px;
+}
+
+.tm-nst-item__icon {
+    flex-shrink: 0;
+    font-size: 16px;
+    line-height: 1.4;
+    margin-top: 1px;
+}
+
+.tm-nst-item__body {
+    flex: 1 1 0;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.tm-nst-item__title {
+    font-size: 13px;
+    color: var(--tm-color-text, #1a1a1a);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    line-height: 1.4;
+}
+
+.tm-nst-item__date {
+    font-size: 11px;
+    color: var(--tm-color-text-secondary, #aaa);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* ── Item action buttons (Restore / Delete permanently) ──────────────────── */
+
+.tm-nst-item__actions {
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+    flex-shrink: 0;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tm-nst-item:hover .tm-nst-item__actions {
+    opacity: 1;
+}
+
+.tm-nst-item__btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 7px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 500;
+    cursor: pointer;
+    border: 1px solid transparent;
+    white-space: nowrap;
+    transition: background 0.1s, border-color 0.1s, color 0.1s;
+}
+
+.tm-nst-item__btn--restore {
+    background: var(--tm-color-success-ghost, rgba(22, 163, 74, 0.08));
+    color: var(--tm-color-success, #16a34a);
+    border-color: var(--tm-color-success-ghost, rgba(22, 163, 74, 0.2));
+}
+
+.tm-nst-item__btn--restore:hover {
+    background: var(--tm-color-success-ghost, rgba(22, 163, 74, 0.15));
+    border-color: var(--tm-color-success, #16a34a);
+}
+
+.tm-nst-item__btn--delete {
+    background: transparent;
+    color: var(--tm-color-text-secondary, #aaa);
+    border-color: var(--tm-color-border, rgba(0, 0, 0, 0.1));
+}
+
+.tm-nst-item__btn--delete:hover {
+    background: var(--tm-color-danger-ghost, rgba(220, 38, 38, 0.08));
+    color: var(--tm-color-danger, #dc2626);
+    border-color: var(--tm-color-danger, #dc2626);
+}
+
+/* ── Inline delete confirmation ──────────────────────────────────────────── */
+
+.tm-nst-item__confirm {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    width: 100%;
+}
+
+.tm-nst-item__confirm-text {
+    font-size: 12px;
+    font-weight: 600;
+    color: var(--tm-color-danger, #dc2626);
+}
+
+.tm-nst-item__confirm-actions {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-nst-item__confirm-yes {
+    flex: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    border: none;
+    background: var(--tm-color-danger, #dc2626);
+    color: #fff;
+    transition: opacity 0.1s;
+}
+
+.tm-nst-item__confirm-yes:hover {
+    opacity: 0.88;
+}
+
+.tm-nst-item__confirm-no {
+    flex: 1;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+    cursor: pointer;
+    border: 1px solid var(--tm-color-border, rgba(0, 0, 0, 0.15));
+    background: transparent;
+    color: var(--tm-color-text-secondary, #666);
+    transition: background 0.1s;
+}
+
+.tm-nst-item__confirm-no:hover {
+    background: var(--tm-color-hover, rgba(0, 0, 0, 0.05));
+}

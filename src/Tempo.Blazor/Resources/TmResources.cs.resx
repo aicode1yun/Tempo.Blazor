@@ -1689,6 +1689,44 @@
   <data name="TmNotionPageTree_LoadingChildren"  xml:space="preserve"><value>Načítání…</value></data>
   <data name="TmNotionPageTree_RenameHint"       xml:space="preserve"><value>Přejmenovat: {0}</value></data>
 
+  <!-- ═══════════════ TmNotionSidebarFavorites + TmNotionSidebarRecent (Phase 82) ═══════════════ -->
+  <data name="TmNotionSidebarFavorites_DragHint"     xml:space="preserve"><value>Přetažením změňte pořadí</value></data>
+  <data name="TmNotionSidebarRecent_JustNow"          xml:space="preserve"><value>Právě teď</value></data>
+  <data name="TmNotionSidebarRecent_MinutesAgo"       xml:space="preserve"><value>Před {0} min</value></data>
+  <data name="TmNotionSidebarRecent_HoursAgo"         xml:space="preserve"><value>Před {0} h</value></data>
+  <data name="TmNotionSidebarRecent_DaysAgo"          xml:space="preserve"><value>Před {0} dny</value></data>
+
+  <!-- ═══════════════ TmNotionSidebarTrash (Phase 83) ═══════════════ -->
+  <data name="TmNotionSidebarTrash_Title"             xml:space="preserve"><value>Koš</value></data>
+  <data name="TmNotionSidebarTrash_Back"              xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmNotionSidebarTrash_SearchPlaceholder" xml:space="preserve"><value>Filtrovat smazané stránky…</value></data>
+  <data name="TmNotionSidebarTrash_Empty"             xml:space="preserve"><value>Koš je prázdný</value></data>
+  <data name="TmNotionSidebarTrash_EmptySearch"       xml:space="preserve"><value>Žádné odpovídající stránky</value></data>
+  <data name="TmNotionSidebarTrash_Loading"           xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionSidebarTrash_LoadError"         xml:space="preserve"><value>Nepodařilo se načíst koš</value></data>
+  <data name="TmNotionSidebarTrash_Restore"           xml:space="preserve"><value>Obnovit</value></data>
+  <data name="TmNotionSidebarTrash_DeletePermanent"   xml:space="preserve"><value>Smazat navždy</value></data>
+  <data name="TmNotionSidebarTrash_DeleteConfirm"     xml:space="preserve"><value>Smazat navždy?</value></data>
+  <data name="TmNotionSidebarTrash_DeleteYes"         xml:space="preserve"><value>Ano, smazat</value></data>
+  <data name="TmNotionSidebarTrash_DeleteNo"          xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionSidebarTrash_Untitled"          xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionSidebarTrash_DeletedToday"      xml:space="preserve"><value>Smazáno dnes</value></data>
+  <data name="TmNotionSidebarTrash_DeletedDaysAgo"    xml:space="preserve"><value>Smazáno před {0} d</value></data>
+  <data name="TmNotionSidebarTrash_DeletedOn"         xml:space="preserve"><value>Smazáno {0}</value></data>
+
+  <!-- ═══════════════ TmNotionMentionMenu ═══════════════ -->
+  <data name="TmNotionMentionMenu_TabPeople"              xml:space="preserve"><value>Lidé</value></data>
+  <data name="TmNotionMentionMenu_TabPages"               xml:space="preserve"><value>Stránky</value></data>
+  <data name="TmNotionMentionMenu_TabDate"                xml:space="preserve"><value>Datum</value></data>
+  <data name="TmNotionMentionMenu_SearchPlaceholder"      xml:space="preserve"><value>Hledat lidi a stránky…</value></data>
+  <data name="TmNotionMentionMenu_PagesSearchPlaceholder" xml:space="preserve"><value>Hledat stránky…</value></data>
+  <data name="TmNotionMentionMenu_NoResults"              xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmNotionMentionMenu_Loading"                xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionMentionMenu_DateToday"              xml:space="preserve"><value>Dnes</value></data>
+  <data name="TmNotionMentionMenu_DateTomorrow"           xml:space="preserve"><value>Zítra</value></data>
+  <data name="TmNotionMentionMenu_DateYesterday"          xml:space="preserve"><value>Včera</value></data>
+  <data name="TmNotionMentionMenu_Untitled"               xml:space="preserve"><value>Bez názvu</value></data>
+
   <!-- ═══════════════ TmPivotTable ═══════════════ -->
   <data name="TmPivotTable_Loading" xml:space="preserve"><value>Načítání kontingenční tabulky...</value></data>
   <data name="TmPivotTable_NoData" xml:space="preserve"><value>Žádná data k zobrazení</value></data>

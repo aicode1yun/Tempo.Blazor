@@ -19,6 +19,8 @@ public partial class TmFileManager
     private FileManagerViewMode _viewMode = FileManagerViewMode.List;
     private FileManagerItem? _renamingItem;
     private string _renameValue = string.Empty;
+    private ElementReference _renameInputRef;
+    private bool _shouldFocusRenameInput;
 
     // ── Parameters ───────────────────────────────────────────────
 
@@ -197,6 +199,17 @@ public partial class TmFileManager
         if (Disabled || _selectedItems.Count != 1) return;
         _renamingItem = _selectedItems[0];
         _renameValue = _renamingItem.Name;
+        _shouldFocusRenameInput = true;
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_shouldFocusRenameInput)
+        {
+            _shouldFocusRenameInput = false;
+            await _renameInputRef.FocusAsync();
+        }
     }
 
     private async Task CommitRenameAsync()
