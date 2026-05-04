@@ -68,15 +68,24 @@ public class DemoFileManagerProvider : IFileManagerDataProvider
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<Stream> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+    public Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<FileUploadInfo> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
         var uploaded = new List<FileManagerItem>();
         foreach (var file in files)
         {
-            var name = $"Uploaded_{Guid.NewGuid():N}.bin";
+            var name = file.FileName;
             var path = $"{folderPath.TrimEnd('/')}/{name}";
-            uploaded.Add(new FileManagerItem { Id = Guid.NewGuid().ToString(), Name = name, Path = path, IsDirectory = false, Size = file.Length });
-            file.Dispose();
+            var extension = System.IO.Path.GetExtension(name);
+            uploaded.Add(new FileManagerItem
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = name,
+                Path = path,
+                IsDirectory = false,
+                Size = file.Size,
+                Extension = extension
+            });
+            file.Stream.Dispose();
         }
         _items.AddRange(uploaded);
         return Task.FromResult<IReadOnlyList<FileManagerItem>>(uploaded);

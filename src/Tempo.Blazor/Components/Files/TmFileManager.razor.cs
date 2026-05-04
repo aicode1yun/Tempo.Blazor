@@ -286,17 +286,23 @@ public partial class TmFileManager
         }
     }
 
-private async Task HandleFileSelectedAsync(InputFileChangeEventArgs e)
+    private async Task HandleFileSelectedAsync(InputFileChangeEventArgs e)
     {
         if (Disabled || DataProvider is null) return;
 
-        var streams = new List<System.IO.Stream>();
+        var files = new List<FileUploadInfo>();
         foreach (var file in e.GetMultipleFiles())
         {
-            streams.Add(file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024)); // 10 MB limit
+            files.Add(new FileUploadInfo
+            {
+                FileName = file.Name,
+                Size = file.Size,
+                ContentType = file.ContentType,
+                Stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024) // 10 MB limit
+            });
         }
 
-        await DataProvider.UploadAsync(_currentPath, streams);
+        await DataProvider.UploadAsync(_currentPath, files);
         await LoadDataAsync();
     }
 

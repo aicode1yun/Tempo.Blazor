@@ -52,11 +52,11 @@ public interface IFileManagerDataProvider
     /// Uploads files to the specified folder.
     /// </summary>
     /// <param name="folderPath">Target folder path.</param>
-    /// <param name="files">Files to upload.</param>
+    /// <param name="files">Files to upload, including metadata and stream.</param>
     /// <param name="progress">Optional progress callback (0-100).</param>
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>List of uploaded items.</returns>
-    Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<Stream> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default);
+    Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<FileUploadInfo> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Returns a download stream for a file.

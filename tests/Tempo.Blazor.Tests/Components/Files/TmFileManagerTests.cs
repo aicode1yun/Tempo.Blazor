@@ -1,5 +1,7 @@
 using Bunit;
+using Bunit.TestDoubles;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Forms;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Files;
@@ -346,6 +348,24 @@ public class TmFileManagerTests : LocalizationTestBase
         cut.Markup.Should().Contain("Documents");
     }
 
+    [Fact]
+    public async Task TmFileManager_Upload_Preserves_FileName()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, provider));
+
+        // Simulate file upload via InputFile
+        var inputFile = cut.FindComponent<InputFile>();
+        inputFile.UploadFiles(
+            InputFileContent.CreateFromText("hello", "MyDocument.pdf", contentType: "application/pdf"));
+
+        await cut.InvokeAsync(() => { });
+
+        // Uploaded file should appear with its original name
+        cut.Markup.Should().Contain("MyDocument.pdf");
+    }
+
     // ── Mock Provider ────────────────────────────────────────────
 
     private sealed class MockFileManagerDataProvider : IFileManagerDataProvider
@@ -404,9 +424,22 @@ public class TmFileManagerTests : LocalizationTestBase
             return Task.CompletedTask;
         }
 
-        public Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<Stream> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
+        public Task<IReadOnlyList<FileManagerItem>> UploadAsync(string folderPath, IReadOnlyList<FileUploadInfo> files, IProgress<int>? progress = null, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<IReadOnlyList<FileManagerItem>>([]);
+            foreach (var file in files)
+            {
+                var path = $"{folderPath.TrimEnd('/')}/{file.FileName}";
+                _allItems.Add(new FileManagerItem
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = file.FileName,
+                    Path = path,
+                    IsDirectory = false,
+                    Size = file.Size,
+                    Extension = System.IO.Path.GetExtension(file.FileName)
+                });
+            }
+            return Task.FromResult<IReadOnlyList<FileManagerItem>>(files.Select(f => _allItems.Last(i => i.Name == f.FileName)).ToList());
         }
 
         public Task<Stream> DownloadAsync(string filePath, CancellationToken cancellationToken = default)
