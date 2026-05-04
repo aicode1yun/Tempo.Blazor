@@ -1,0 +1,87 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+@typeparam TItem
+@typeparam TValue
+@inject ITmLocalizer Loc
+
+<div class="tm-multi-column-combo-box @(Disabled ? "tm-multi-column-combo-box--disabled" : "") @Class" @attributes="AdditionalAttributes">
+    <div class="tm-multi-column-combo-box__trigger"
+         role="combobox"
+         tabindex="0"
+         aria-expanded="@_isOpen.ToString().ToLowerInvariant()"
+         aria-haspopup="grid"
+         @onclick="ToggleAsync">
+        @if (Value is null || IsEmptyValue(Value))
+        {
+            <span class="tm-multi-column-combo-box__placeholder">@(Placeholder ?? Loc["TmMultiColumnComboBox_Placeholder"])</span>
+        }
+        else
+        {
+            <span class="tm-multi-column-combo-box__value">@GetDisplayText(Value)</span>
+        }
+        @if (ShowClearButton && Value is not null && !IsEmptyValue(Value))
+        {
+            <button type="button"
+                    class="tm-multi-column-combo-box__clear"
+                    aria-label="@Loc["TmMultiColumnComboBox_Clear"]"
+                    @onclick="ClearValueAsync"
+                    @onclick:stopPropagation="true">
+                <TmIcon Name="x" />
+            </button>
+        }
+        <TmIcon Name="chevron-down" Class="tm-multi-column-combo-box__arrow" />
+    </div>
+
+    @if (_isOpen)
+    {
+        <div class="tm-multi-column-combo-box__dropdown">
+            @if (Filterable)
+            {
+                <div class="tm-multi-column-combo-box__filter">
+                    <TmSearchInput Value="_filterText"
+                                   ValueChanged="OnFilterChangedAsync"
+                                   Placeholder="@(FilterPlaceholder ?? Loc["TmMultiColumnComboBox_FilterPlaceholder"])" />
+                </div>
+            }
+
+            <div class="tm-multi-column-combo-box__grid-wrapper">
+                <table class="tm-multi-column-combo-box__grid" role="grid">
+                    <thead>
+                        <tr>
+                            @foreach (var col in _columns)
+                            {
+                                <th class="tm-multi-column-combo-box__th" style="@(col.Width is not null ? $"width:{col.Width};" : "")">@col.Title</th>
+                            }
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @if (_filteredItems.Count == 0)
+                        {
+                            <tr>
+                                <td class="tm-multi-column-combo-box__empty" colspan="@_columns.Count">
+                                    @Loc["TmMultiColumnComboBox_NoResults"]
+                                </td>
+                            </tr>
+                        }
+                        else
+                        {
+                            @for (int i = 0; i < _filteredItems.Count; i++)
+                            {
+                                var item = _filteredItems[i];
+                                var isSelected = IsItemSelected(item);
+                                <tr class="tm-multi-column-combo-box__tr @(isSelected ? "tm-multi-column-combo-box__tr--selected" : "")"
+                                    @key="GetItemKey(item)"
+                                    @onclick="() => SelectItemAsync(item)">
+                                    @foreach (var col in _columns)
+                                    {
+                                        <td class="tm-multi-column-combo-box__td">@col.Field(item)</td>
+                                    }
+                                </tr>
+                            }
+                        }
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    }
+</div>

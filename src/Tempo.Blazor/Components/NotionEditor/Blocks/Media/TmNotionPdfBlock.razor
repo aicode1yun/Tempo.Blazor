@@ -43,121 +43,12 @@
     else
     {
         <div class="tm-notion-pdf-block__container" style="height:@(_height)px">
-
-            @* ── Toolbar ──────────────────────────────────────────────────── *@
-            <div class="tm-notion-pdf-block__toolbar" role="toolbar"
-                 aria-label="@Loc["TmNotionPdfBlock_ToolbarLabel"]">
-
-                @if (!_useFallback && _totalPages > 0)
-                {
-                    <div class="tm-notion-pdf-block__pagination">
-                        <button class="tm-notion-pdf-block__tb-btn"
-                                type="button"
-                                disabled="@(_currentPage <= 1)"
-                                aria-label="@Loc["TmNotionPdfBlock_PreviousPage"]"
-                                @onclick="GoToPreviousPageAsync">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <path d="M7.5 2L3.5 6l4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <span class="tm-notion-pdf-block__page-label">
-                            @Loc["TmNotionPdfBlock_Page"] @_currentPage @Loc["TmNotionPdfBlock_Of"] @_totalPages
-                        </span>
-                        <button class="tm-notion-pdf-block__tb-btn"
-                                type="button"
-                                disabled="@(_currentPage >= _totalPages)"
-                                aria-label="@Loc["TmNotionPdfBlock_NextPage"]"
-                                @onclick="GoToNextPageAsync">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <path d="M4.5 2l4 4-4 4" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="tm-notion-pdf-block__separator" aria-hidden="true"></div>
-
-                    <div class="tm-notion-pdf-block__zoom">
-                        <button class="tm-notion-pdf-block__tb-btn"
-                                type="button"
-                                disabled="@(_scale <= 0.5)"
-                                aria-label="@Loc["TmNotionPdfBlock_ZoomOut"]"
-                                @onclick="ZoomOutAsync">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
-                                <line x1="3" y1="5" x2="7" y2="5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                                <line x1="9" y1="9" x2="11" y2="11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                        <span class="tm-notion-pdf-block__zoom-label">@((int)(_scale * 100))%</span>
-                        <button class="tm-notion-pdf-block__tb-btn"
-                                type="button"
-                                disabled="@(_scale >= 2.0)"
-                                aria-label="@Loc["TmNotionPdfBlock_ZoomIn"]"
-                                @onclick="ZoomInAsync">
-                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                <circle cx="5" cy="5" r="4" stroke="currentColor" stroke-width="1.2"/>
-                                <line x1="5" y1="3" x2="5" y2="7" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                                <line x1="3" y1="5" x2="7" y2="5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                                <line x1="9" y1="9" x2="11" y2="11" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
-                            </svg>
-                        </button>
-                    </div>
-
-                    <div class="tm-notion-pdf-block__separator" aria-hidden="true"></div>
-                }
-
-                <div class="tm-notion-pdf-block__file-actions">
-                    <a class="tm-notion-pdf-block__tb-link"
-                       href="@Content?.Url"
-                       target="_blank"
-                       rel="noopener noreferrer"
-                       title="@Loc["TmNotionPdfBlock_Open"]">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                            <path d="M5 1H1v10h10V7M7 1h4m0 0v4m0-4L5 7" stroke="currentColor" stroke-width="1.25" stroke-linecap="round"/>
-                        </svg>
-                        @Loc["TmNotionPdfBlock_Open"]
-                    </a>
-                    <a class="tm-notion-pdf-block__tb-link"
-                       href="@Content?.Url"
-                       download
-                       title="@Loc["TmNotionPdfBlock_Download"]">
-                        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                            <path d="M6 1v7M3 6l3 3 3-3M1 9v2h10V9" stroke="currentColor" stroke-width="1.25" stroke-linecap="round" stroke-linejoin="round"/>
-                        </svg>
-                        @Loc["TmNotionPdfBlock_Download"]
-                    </a>
-                </div>
-
-            </div>
-
-            @* ── PDF canvas (PDF.js) ───────────────────────────────────────── *@
-            @if (!_useFallback)
-            {
-                <div class="tm-notion-pdf-block__canvas-wrap">
-                    <canvas @ref="_canvasRef" class="tm-notion-pdf-block__canvas"></canvas>
-
-                    @if (_isLoading)
-                    {
-                        <div class="tm-notion-pdf-block__loading" aria-live="polite">
-                            <span class="tm-notion-pdf-block__spinner" aria-hidden="true"></span>
-                        </div>
-                    }
-
-                    @if (!string.IsNullOrEmpty(_loadError))
-                    {
-                        <div class="tm-notion-pdf-block__error" role="alert">@_loadError</div>
-                    }
-                </div>
-            }
-            else
-            {
-                @* ── Fallback <embed> ──────────────────────────────────────── *@
-                <embed src="@Content?.Url"
-                       type="application/pdf"
-                       class="tm-notion-pdf-block__embed"
-                       title="@Loc["TmNotionPdfBlock_AddPdf"]" />
-            }
-
+            <TmPdfViewer Url="@Content?.Url"
+                         @bind-Page="_currentPage"
+                         @bind-Scale="_scale"
+                         ShowToolbar="true"
+                         AllowDownload="true"
+                         Height="100%" />
         </div>
 
         @if (!string.IsNullOrEmpty(Content?.Caption) || !ReadOnly)

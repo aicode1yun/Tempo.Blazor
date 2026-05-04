@@ -68,11 +68,16 @@
 
 /* 7. Data Table & Pivot Table */
 @import "components/_data-table.css";
+@import "components/_tree-list.css";
 @import "components/_bulk-action-bar.css";
 @import "components/_pivot-table.css";
 
 /* 8. Pickers */
 @import "components/_picker-shared.css";
+@import "components/_color-gradient.css";
+@import "components/_color-palette.css";
+@import "components/_flat-color-picker.css";
+@import "components/_color-picker.css";
 @import "components/_calendar-grid.css";
 @import "components/_time-input.css";
 @import "components/_time-picker.css";
@@ -110,6 +115,7 @@
 /* 12. Files & Gallery */
 @import "components/_file-drop-zone.css";
 @import "components/_attachment-manager.css";
+@import "components/_file-manager.css";
 @import "components/_image-gallery.css";
 @import "components/_lightbox.css";
 
@@ -137,6 +143,9 @@
 
 /* 14. Charts & Diagrams */
 @import "components/_chart.css";
+@import "components/_stock-chart.css";
+@import "components/_sparkline.css";
+@import "components/_gauge.css";
 @import "components/_workflow-designer.css";
 @import "components/_wireframe-editor.css";
 @import "components/_diagram-editor.css";
@@ -173,3 +182,10 @@
 /* 20. QR Code & Barcode */
 @import "components/_qr-code.css";
 @import "components/_barcode.css";
+
+/* 21. Dock Manager */
+@import "components/_dock-manager.css";
+
+/* 22. AI Tools */
+@import "components/_ai-prompt.css";
+@import "components/_chat.css";

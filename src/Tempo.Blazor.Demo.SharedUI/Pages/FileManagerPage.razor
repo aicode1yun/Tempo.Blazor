@@ -1,0 +1,18 @@
+@page "/file-manager"
+@using Tempo.Blazor.Demo.Services
+<PageTitle>File Manager – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">File Manager</h1>
+    <p class="text-slate-600 dark:text-slate-400">Browse folders, switch between list and grid views, and manage files with a toolbar and breadcrumb navigation.</p>
+</div>
+
+<!-- File Manager -->
+<section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+    <TmFileManager DataProvider="_provider" />
+</section>
+
+@code {
+    private readonly DemoFileManagerProvider _provider = new();
+}

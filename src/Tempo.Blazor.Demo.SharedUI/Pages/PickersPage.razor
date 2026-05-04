@@ -2,6 +2,7 @@
 @using Tempo.Blazor.Models
 @using Tempo.Blazor.Components.Pickers
 @using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Components.Inputs
 @using Tempo.Blazor.Demo.Services
 <PageTitle>Pickers & Files – Tempo.Blazor</PageTitle>
 
@@ -356,6 +357,31 @@
     </div>
 </section>
 
+<!-- Color Pickers -->
+<section class="demo-section mt-8">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Color Picker</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">New</span>
+    </div>
+
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Dropdown Color Picker</h3>
+            <TmColorPicker Value="@_colorValue"
+                           ValueChanged="@((string? v) => _colorValue = v)"
+                           Placeholder="Select color..." />
+            <p class="text-sm text-slate-500 mt-3">Value: <span class="font-mono">@(_colorValue ?? "—")</span></p>
+        </div>
+
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Flat Color Picker</h3>
+            <TmFlatColorPicker Value="@_flatColorValue"
+                               ValueChanged="@((string? v) => _flatColorValue = v)" />
+            <p class="text-sm text-slate-500 mt-3">Value: <span class="font-mono">@(_flatColorValue ?? "—")</span></p>
+        </div>
+    </div>
+</section>
+
 @code {
     [Inject] private IHttpClientFactory HttpFactory { get; set; } = default!;
 
@@ -452,5 +478,9 @@
         DateOnly.FromDateTime(DateTime.Today.AddDays(7)),
         DateOnly.FromDateTime(DateTime.Today.AddDays(14)),
     };
+
+    // Color Picker
+    private string? _colorValue;
+    private string? _flatColorValue = "#3b82f6";
 
 }

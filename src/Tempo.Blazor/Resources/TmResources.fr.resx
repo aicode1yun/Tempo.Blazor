@@ -1643,6 +1643,32 @@
   <data name="TmNotionPdfBlock_LoadError"                    xml:space="preserve"><value>Impossible de charger le PDF.</value></data>
   <data name="TmNotionPdfBlock_ToolbarLabel"                 xml:space="preserve"><value>Contrôles PDF</value></data>
 
+  <!-- TmPdfViewer -->
+  <data name="TmPdfViewer_Page"                              xml:space="preserve"><value>Page</value></data>
+  <data name="TmPdfViewer_Of"                                xml:space="preserve"><value>sur</value></data>
+  <data name="TmPdfViewer_PreviousPage"                      xml:space="preserve"><value>Page précédente</value></data>
+  <data name="TmPdfViewer_NextPage"                          xml:space="preserve"><value>Page suivante</value></data>
+  <data name="TmPdfViewer_ZoomIn"                            xml:space="preserve"><value>Zoom avant</value></data>
+  <data name="TmPdfViewer_ZoomOut"                           xml:space="preserve"><value>Zoom arrière</value></data>
+  <data name="TmPdfViewer_Open"                              xml:space="preserve"><value>Ouvrir</value></data>
+  <data name="TmPdfViewer_Download"                          xml:space="preserve"><value>Télécharger</value></data>
+  <data name="TmPdfViewer_LoadError"                         xml:space="preserve"><value>Impossible de charger le PDF.</value></data>
+  <data name="TmPdfViewer_ToolbarLabel"                      xml:space="preserve"><value>Contrôles PDF</value></data>
+  <data name="TmPdfViewer_NoDocument"                        xml:space="preserve"><value>Aucun document PDF fourni</value></data>
+  <data name="TmPdfViewer_Rotate"                            xml:space="preserve"><value>Pivoter</value></data>
+  <data name="TmPdfViewer_ViewModeSingle"                    xml:space="preserve"><value>Page unique</value></data>
+  <data name="TmPdfViewer_ViewModeContinuous"                xml:space="preserve"><value>Continu</value></data>
+  <data name="TmPdfViewer_Thumbnails"                        xml:space="preserve"><value>Miniatures</value></data>
+  <data name="TmPdfViewer_Search"                            xml:space="preserve"><value>Rechercher</value></data>
+  <data name="TmPdfViewer_SearchResults"                     xml:space="preserve"><value>{0} sur {1}</value></data>
+  <data name="TmAIPrompt_Placeholder"                        xml:space="preserve"><value>Demandez-moi ce que vous voulez...</value></data>
+  <data name="TmAIPrompt_Submit"                             xml:space="preserve"><value>Envoyer</value></data>
+  <data name="TmAIPrompt_CommandsLabel"                      xml:space="preserve"><value>Actions rapides</value></data>
+  <data name="TmAIPrompt_Generating"                         xml:space="preserve"><value>Génération de la réponse...</value></data>
+  <data name="TmAIPrompt_CopyOutput"                         xml:space="preserve"><value>Copier dans le presse-papiers</value></data>
+  <data name="TmAIPrompt_RatePositive"                       xml:space="preserve"><value>Utile</value></data>
+  <data name="TmAIPrompt_RateNegative"                       xml:space="preserve"><value>Pas utile</value></data>
+
   <!-- ═══════════════ TMNOTIONEMOJIPICKER (UI) ═══════════════ -->
   <data name="TmNotionEmojiPicker_SearchPlaceholder"    xml:space="preserve"><value>Rechercher un emoji…</value></data>
   <data name="TmNotionEmojiPicker_NoResults"            xml:space="preserve"><value>Aucun emoji trouvé</value></data>

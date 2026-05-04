@@ -1,0 +1,22 @@
+@namespace Tempo.Blazor.Components.Inputs
+@inject ITmLocalizer Loc
+
+<div class="tm-color-palette @Class" @attributes="AdditionalAttributes">
+    <div class="tm-color-palette-grid" style="grid-template-columns: repeat(@Columns, 1fr);">
+        @foreach (var color in _effectiveColors)
+        {
+            <button type="button"
+                    class="tm-color-palette-swatch @(IsSelected(color) ? "tm-color-palette-swatch--selected" : "")"
+                    style="background-color: @color;"
+                    aria-label="@Loc["TmColorPalette_SelectColor"]"
+                    @onclick="() => SelectColorAsync(color)">
+            </button>
+        }
+    </div>
+    @if (ShowClearButton)
+    {
+        <button type="button" class="tm-color-palette-clear" @onclick="ClearAsync">
+            @Loc["TmColorPalette_Clear"]
+        </button>
+    }
+</div>

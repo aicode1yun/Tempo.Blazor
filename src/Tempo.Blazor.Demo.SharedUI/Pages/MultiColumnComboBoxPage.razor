@@ -1,0 +1,58 @@
+@page "/multi-column-combo-box"
+@using Tempo.Blazor.Abstractions.Models
+<PageTitle>Multi-Column Combo Box – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Multi-Column Combo Box</h1>
+    <p class="text-slate-600 dark:text-slate-400">A rich combo box with a multi-column grid dropdown for selecting items with multiple visible fields.</p>
+</div>
+
+<!-- MultiColumnComboBox -->
+<section class="showcase-card">
+    <div class="mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Product Selector</h2>
+        <p class="text-sm text-slate-600 dark:text-slate-400">Click the trigger to open a dropdown with a grid showing Name, Category, and Price columns.</p>
+    </div>
+
+    <TmMultiColumnComboBox TItem="Product"
+                           TValue="int"
+                           Data="_products"
+                           ValueField="p => p.Id"
+                           TextField="p => p.Name"
+                           Columns="_columns"
+                           @bind-Value="_selectedProductId" />
+
+    @if (_selectedProductId != 0)
+    {
+        <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                <span class="font-medium">Selected:</span> Product ID @_selectedProductId
+                – @_products.FirstOrDefault(p => p.Id == _selectedProductId)?.Name
+            </p>
+        </div>
+    }
+</section>
+
+@code {
+    private int _selectedProductId;
+
+    private readonly List<Product> _products = new()
+    {
+        new(1, "Laptop Pro", "Electronics", 1299m),
+        new(2, "Wireless Mouse", "Electronics", 49m),
+        new(3, "Mechanical Keyboard", "Electronics", 159m),
+        new(4, "Office Desk", "Furniture", 450m),
+        new(5, "Ergonomic Chair", "Furniture", 320m),
+        new(6, "Bookshelf", "Furniture", 180m),
+    };
+
+    private readonly List<MultiColumnComboBoxColumn<Product>> _columns = new()
+    {
+        new() { Title = "Product", Field = p => p.Name },
+        new() { Title = "Category", Field = p => p.Category },
+        new() { Title = "Price", Field = p => $"${p.Price:F0}", Width = "90px" },
+    };
+
+    private record Product(int Id, string Name, string Category, decimal Price);
+}

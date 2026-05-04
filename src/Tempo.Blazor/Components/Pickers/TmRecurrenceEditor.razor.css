@@ -1,0 +1,123 @@
+.tm-recurrence-editor {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-4, 1rem);
+    padding: var(--tm-space-4, 1rem);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-lg, 0.5rem);
+    background: var(--tm-surface, #ffffff);
+    font-family: var(--tm-font-sans, ui-sans-serif, system-ui, sans-serif);
+    max-width: 480px;
+}
+
+.tm-recurrence-editor__field {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2, 0.5rem);
+}
+
+.tm-recurrence-editor__label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--tm-text-primary, #111827);
+}
+
+/* Interval */
+.tm-recurrence-editor__interval {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 0.5rem);
+}
+
+.tm-recurrence-editor__interval-label {
+    font-size: 0.875rem;
+    color: var(--tm-text-secondary, #6b7280);
+}
+
+/* Days of week */
+.tm-recurrence-editor__days {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--tm-space-2, 0.5rem);
+}
+
+.tm-recurrence-editor__day {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 40px;
+    height: 36px;
+    padding: 0 var(--tm-space-2, 0.5rem);
+    border: 1px solid var(--tm-border-color, #d1d5db);
+    border-radius: var(--tm-radius-md, 0.375rem);
+    background: var(--tm-surface, #ffffff);
+    cursor: pointer;
+    font-size: 0.875rem;
+    color: var(--tm-text-secondary, #6b7280);
+    transition: all 0.15s ease;
+    user-select: none;
+}
+
+.tm-recurrence-editor__day:hover {
+    border-color: var(--tm-color-primary, #3b82f6);
+    color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-recurrence-editor__day--checked {
+    background: var(--tm-color-primary-subtle, #dbeafe);
+    border-color: var(--tm-color-primary, #3b82f6);
+    color: var(--tm-color-primary, #3b82f6);
+    font-weight: 500;
+}
+
+.tm-recurrence-editor__day input {
+    position: absolute;
+    opacity: 0;
+    width: 0;
+    height: 0;
+}
+
+/* Monthly / End options */
+.tm-recurrence-editor__monthly-options,
+.tm-recurrence-editor__end-options,
+.tm-recurrence-editor__yearly-options {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-3, 0.75rem);
+}
+
+.tm-recurrence-editor__radio-label {
+    display: flex;
+    align-items: center;
+    gap: var(--tm-space-2, 0.5rem);
+    font-size: 0.875rem;
+    color: var(--tm-text-secondary, #6b7280);
+    cursor: pointer;
+}
+
+.tm-recurrence-editor__radio-label input[type="radio"] {
+    accent-color: var(--tm-color-primary, #3b82f6);
+}
+
+.tm-recurrence-editor__yearly-options {
+    flex-direction: row;
+    align-items: center;
+}
+
+/* Summary */
+.tm-recurrence-editor__summary {
+    padding-top: var(--tm-space-3, 0.75rem);
+    border-top: 1px solid var(--tm-border-color, #d1d5db);
+    font-size: 0.875rem;
+}
+
+.tm-recurrence-editor__summary-label {
+    font-weight: 600;
+    color: var(--tm-text-primary, #111827);
+}
+
+.tm-recurrence-editor__summary-text {
+    font-family: ui-monospace, SFMono-Regular, monospace;
+    color: var(--tm-text-secondary, #6b7280);
+    word-break: break-all;
+}

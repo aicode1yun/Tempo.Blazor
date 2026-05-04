@@ -1,0 +1,135 @@
+@namespace Tempo.Blazor.Components.Chat
+@using Tempo.Blazor.Models
+
+<div class="tm-chat @Class" @attributes="AdditionalAttributes">
+
+    <!-- Messages -->
+    <div class="tm-chat__messages" @ref="_messagesContainer">
+        @if (Messages.Count == 0)
+        {
+            <div class="tm-chat__empty">
+                <TmIcon Name="message-circle" Size="IconSize.Xl" />
+                <p>@Loc["TmChat_EmptyTitle"]</p>
+                <span>@Loc["TmChat_EmptySubtitle"]</span>
+            </div>
+        }
+        else
+        {
+            @foreach (var message in Messages)
+            {
+                <div class="@GetMessageCssClass(message)" data-message-id="@message.Id">
+                    @if (message.Type == ChatMessageType.System)
+                    {
+                        <span class="tm-chat__system-text">@message.Text</span>
+                    }
+                    else
+                    {
+                        <!-- Avatar -->
+                        @if (message.Type == ChatMessageType.Incoming || !IsCurrentUser(message.Author))
+                        {
+                            <div class="tm-chat__avatar tm-chat__avatar--incoming">
+                                @if (!string.IsNullOrEmpty(message.Author?.Avatar))
+                                {
+                                    <span>@message.Author.Avatar</span>
+                                }
+                                else
+                                {
+                                    <TmIcon Name="user" Size="IconSize.Sm" />
+                                }
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="tm-chat__avatar tm-chat__avatar--outgoing">
+                                @if (!string.IsNullOrEmpty(CurrentUser.Avatar))
+                                {
+                                    <span>@CurrentUser.Avatar</span>
+                                }
+                                else
+                                {
+                                    <TmIcon Name="user" Size="IconSize.Sm" />
+                                }
+                            </div>
+                        }
+
+                        <!-- Bubble -->
+                        <div class="tm-chat__bubble">
+                            <div class="tm-chat__meta">
+                                <span class="tm-chat__author">@(message.Author?.Name ?? CurrentUser.Name)</span>
+                                <span class="tm-chat__message-time">@FormatTimestamp(message.Timestamp)</span>
+                            </div>
+
+                            <div class="tm-chat__text">
+                                @if (message.IsError)
+                                {
+                                    <span class="tm-chat__error-text">@message.Text</span>
+                                }
+                                else if (message.IsSending)
+                                {
+                                    <span>@message.Text</span>
+                                    <span class="tm-chat__sending-dots" aria-hidden="true"></span>
+                                }
+                                else
+                                {
+                                    <span>@message.Text</span>
+                                }
+                            </div>
+
+                            @if (message.Attachments.Count > 0)
+                            {
+                                <div class="tm-chat__attachments">
+                                    @foreach (var attachment in message.Attachments)
+                                    {
+                                        <button type="button"
+                                                class="tm-chat__attachment"
+                                                @onclick="() => HandleAttachmentClick(attachment)"
+                                                title="@attachment.Name">
+                                            <TmIcon Name="file" Size="IconSize.Sm" />
+                                            <span class="tm-chat__attachment-name">@attachment.Name</span>
+                                            @if (attachment.Size.HasValue)
+                                            {
+                                                <span class="tm-chat__attachment-size">@FormatFileSize(attachment.Size)</span>
+                                            }
+                                        </button>
+                                    }
+                                </div>
+                            }
+                        </div>
+                    }
+                </div>
+            }
+        }
+
+        <!-- Typing indicator -->
+        @if (TypingUsers.Count > 0)
+        {
+            <div class="tm-chat__typing-indicator">
+                <div class="tm-chat__typing-dots" aria-hidden="true">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </div>
+                <span class="tm-chat__typing-text">@GetTypingText()</span>
+            </div>
+        }
+    </div>
+
+    <!-- Input area -->
+    <div class="tm-chat__input-area">
+        <textarea class="tm-chat__input"
+                  rows="1"
+                  placeholder="@PlaceholderText"
+                  disabled="@Disabled"
+                  @bind="_inputText"
+                  @bind:event="oninput"
+                  @onkeydown="HandleKeyDownAsync"></textarea>
+        <button type="button"
+                class="tm-chat__send-btn"
+                disabled="@IsSendDisabled"
+                aria-label="@Loc["TmChat_Send"]"
+                @onclick="HandleSendAsync">
+            <TmIcon Name="send" Size="IconSize.Sm" />
+        </button>
+    </div>
+
+</div>

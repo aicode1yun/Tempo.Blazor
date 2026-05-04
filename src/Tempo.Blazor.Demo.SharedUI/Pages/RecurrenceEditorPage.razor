@@ -1,0 +1,28 @@
+@page "/recurrence-editor"
+<PageTitle>Recurrence Editor – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Recurrence Editor</h1>
+    <p class="text-slate-600 dark:text-slate-400">Configure recurring event rules in iCal RRULE format with an intuitive UI.</p>
+</div>
+
+<!-- Recurrence Editor -->
+<section class="showcase-card">
+    <TmRecurrenceEditor @bind-Value="_rrule"
+                        StartDate="DateTime.Today"
+                        ShowSummary="true" />
+
+    @if (!string.IsNullOrEmpty(_rrule))
+    {
+        <div class="mt-4 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                <span class="font-medium">Current RRULE:</span> <code class="text-xs">@_rrule</code>
+            </p>
+        </div>
+    }
+</section>
+
+@code {
+    private string _rrule = "FREQ=WEEKLY;BYDAY=MO,WE,FR;COUNT=20";
+}

@@ -1,0 +1,105 @@
+@page "/tree-list"
+@using Tempo.Blazor.Components.DataTable
+
+<PageTitle>Tree List – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Tree List</h1>
+    <p class="text-slate-600 dark:text-slate-400">Hierarchical data table with expandable rows, sorting, filtering, and selection.</p>
+</div>
+
+<!-- Basic TreeList -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Tree List</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Flat data rendered as an expandable tree with columns</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Data Table</span>
+    </div>
+
+    <div class="showcase-card" style="min-height: 400px;">
+        <TmTreeList TItem="Employee"
+                    Items="_employees"
+                    IdSelector="e => e.Id"
+                    ParentIdSelector="e => e.ManagerId"
+                    Selectable="true"
+                    OnRowSelect="HandleRowSelect"
+                    SortBy="e => e.Name">
+            <TmTreeListColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+            <TmTreeListColumn TItem="Employee" Title="Role" Field="e => e.Role" />
+            <TmTreeListColumn TItem="Employee" Title="Department" Field="e => e.Department" />
+            <TmTreeListColumn TItem="Employee" Title="Salary" Field="e => e.Salary" Format="{0:C0}" />
+        </TmTreeList>
+    </div>
+
+    @if (_selectedEmployee is not null)
+    {
+        <div class="mt-4 p-4 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                <strong>Selected:</strong> @_selectedEmployee.Name — @_selectedEmployee.Role
+            </p>
+        </div>
+    }
+</section>
+
+<!-- Filtered TreeList -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Filtered Tree List</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Only Engineering department rows with their ancestors</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-green-100 dark:bg-green-900/30 text-green-700 dark:text-green-300 rounded-full">Filter</span>
+    </div>
+
+    <div class="showcase-card" style="min-height: 300px;">
+        <TmTreeList TItem="Employee"
+                    Items="_employees"
+                    IdSelector="e => e.Id"
+                    ParentIdSelector="e => e.ManagerId"
+                    Filter="_engineeringFilter">
+            <TmTreeListColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+            <TmTreeListColumn TItem="Employee" Title="Role" Field="e => e.Role" />
+            <TmTreeListColumn TItem="Employee" Title="Department" Field="e => e.Department" />
+        </TmTreeList>
+    </div>
+</section>
+
+@code {
+    private Employee? _selectedEmployee;
+
+    private List<Employee> _employees = new()
+    {
+        new() { Id = 1, Name = "Alice Johnson", Role = "CEO", Department = "Executive", Salary = 250000 },
+        new() { Id = 2, Name = "Bob Smith", Role = "CTO", Department = "Engineering", Salary = 200000, ManagerId = 1 },
+        new() { Id = 3, Name = "Carol White", Role = "CFO", Department = "Finance", Salary = 200000, ManagerId = 1 },
+        new() { Id = 4, Name = "David Lee", Role = "Engineering Manager", Department = "Engineering", Salary = 160000, ManagerId = 2 },
+        new() { Id = 5, Name = "Eva Brown", Role = "Senior Developer", Department = "Engineering", Salary = 140000, ManagerId = 4 },
+        new() { Id = 6, Name = "Frank Miller", Role = "Senior Developer", Department = "Engineering", Salary = 140000, ManagerId = 4 },
+        new() { Id = 7, Name = "Grace Taylor", Role = "Junior Developer", Department = "Engineering", Salary = 90000, ManagerId = 5 },
+        new() { Id = 8, Name = "Henry Wilson", Role = "Junior Developer", Department = "Engineering", Salary = 90000, ManagerId = 5 },
+        new() { Id = 9, Name = "Ivy Chen", Role = "QA Lead", Department = "Engineering", Salary = 130000, ManagerId = 2 },
+        new() { Id = 10, Name = "Jack Davis", Role = "QA Engineer", Department = "Engineering", Salary = 100000, ManagerId = 9 },
+        new() { Id = 11, Name = "Karen Moore", Role = "Finance Manager", Department = "Finance", Salary = 150000, ManagerId = 3 },
+        new() { Id = 12, Name = "Leo Clark", Role = "Accountant", Department = "Finance", Salary = 90000, ManagerId = 11 },
+    };
+
+    private void HandleRowSelect(Employee emp)
+    {
+        _selectedEmployee = emp;
+    }
+
+    private static readonly Func<Employee, bool> _engineeringFilter = e => e.Department == "Engineering";
+
+    public class Employee
+    {
+        public int Id { get; set; }
+        public string Name { get; set; } = "";
+        public string Role { get; set; } = "";
+        public string Department { get; set; } = "";
+        public decimal Salary { get; set; }
+        public int? ManagerId { get; set; }
+    }
+}

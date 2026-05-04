@@ -1,0 +1,135 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-gantt @Class" @attributes="AdditionalAttributes">
+    <!-- Toolbar -->
+    <div class="tm-gantt__toolbar">
+        <div class="tm-gantt__toolbar-group">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="() => SetViewAsync(GanttView.Day)">
+                @Loc["TmGantt_DayView"]
+            </TmButton>
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="() => SetViewAsync(GanttView.Week)">
+                @Loc["TmGantt_WeekView"]
+            </TmButton>
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="() => SetViewAsync(GanttView.Month)">
+                @Loc["TmGantt_MonthView"]
+            </TmButton>
+        </div>
+        <div class="tm-gantt__toolbar-group">
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomOutAsync">
+                <TmIcon Name="zoom-out" />
+            </TmButton>
+            <span class="tm-gantt__zoom-level">@(_zoomLevel)%</span>
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost" OnClick="ZoomInAsync">
+                <TmIcon Name="zoom-in" />
+            </TmButton>
+        </div>
+    </div>
+
+    <!-- Main area: Tree + Timeline -->
+    <div class="tm-gantt__main">
+        <!-- Left: Task Tree -->
+        <div class="tm-gantt__tree">
+            <div class="tm-gantt__tree-header">
+                <span class="tm-gantt__tree-header-cell">@Loc["TmGantt_TaskTitle"]</span>
+                <span class="tm-gantt__tree-header-cell tm-gantt__tree-header-cell--narrow">@Loc["TmGantt_Start"]</span>
+                <span class="tm-gantt__tree-header-cell tm-gantt__tree-header-cell--narrow">@Loc["TmGantt_End"]</span>
+                <span class="tm-gantt__tree-header-cell tm-gantt__tree-header-cell--narrow">%</span>
+            </div>
+            <div class="tm-gantt__tree-body">
+                @foreach (var node in _visibleNodes)
+                {
+                    <div class="tm-gantt__tree-row @GetRowClass(node)"
+                         style="padding-left: @(node.Depth * 20)px"
+                         @onclick="() => SelectTaskAsync(node.Task)">
+                        <span class="tm-gantt__tree-cell">
+                            @if (node.Children.Count > 0)
+                            {
+                                <button type="button" class="tm-gantt__expand-btn" @onclick:stopPropagation="true" @onclick="() => ToggleExpandAsync(node.Task)">
+                                    <TmIcon Name="@(node.Task.IsExpanded ? "chevron-down" : "chevron-right")" />
+                                </button>
+                            }
+                            else
+                            {
+                                <span class="tm-gantt__expand-spacer"></span>
+                            }
+                            @if (node.Task.IsMilestone)
+                            {
+                                <TmIcon Name="diamond" Class="tm-gantt__milestone-icon" />
+                            }
+                            <span class="tm-gantt__task-title">@node.Task.Title</span>
+                        </span>
+                        <span class="tm-gantt__tree-cell tm-gantt__tree-cell--narrow">@node.Task.Start.ToString("dd.MM.yyyy")</span>
+                        <span class="tm-gantt__tree-cell tm-gantt__tree-cell--narrow">@node.Task.End.ToString("dd.MM.yyyy")</span>
+                        <span class="tm-gantt__tree-cell tm-gantt__tree-cell--narrow">@node.Task.PercentComplete</span>
+                    </div>
+                }
+            </div>
+        </div>
+
+        <!-- Right: Timeline -->
+        <div class="tm-gantt__timeline" @ref="_timelineRef">
+            <!-- Timeline Header -->
+            <div class="tm-gantt__timeline-header">
+                @foreach (var header in _timelineHeaders)
+                {
+                    <div class="tm-gantt__timeline-header-cell" style="width: @(header.Width)px">
+                        @header.Label
+                    </div>
+                }
+            </div>
+
+            <!-- Timeline Body -->
+            <div class="tm-gantt__timeline-body">
+                <!-- Grid lines -->
+                <div class="tm-gantt__grid">
+                    @foreach (var header in _timelineHeaders)
+                    {
+                        <div class="tm-gantt__grid-line" style="left: @(header.Offset)px; width: @(header.Width)px"></div>
+                    }
+                </div>
+
+                <!-- Dependency lines (SVG) -->
+                <svg class="tm-gantt__dependencies" style="width: @(_totalTimelineWidth)px">
+                    @foreach (var dep in _visibleDependencies)
+                    {
+                        <line x1="@dep.X1" y1="@dep.Y1" x2="@dep.X2" y2="@dep.Y2"
+                              class="tm-gantt__dependency-line" />
+                        <polygon points="@GetArrowPoints(dep.X2, dep.Y2)"
+                                 class="tm-gantt__dependency-arrow" />
+                    }
+                </svg>
+
+                <!-- Task bars -->
+                @foreach (var bar in _taskBars)
+                {
+                    <div class="tm-gantt__task-row"
+                         style="top: @(bar.Top)px; height: @(RowHeight)px">
+                        @if (bar.Task.IsMilestone)
+                        {
+                            <div class="tm-gantt__milestone"
+                                 style="left: @(bar.Left - 6)px"
+                                 title="@bar.Task.Title"
+                                 @onclick="() => SelectTaskAsync(bar.Task)">
+                            </div>
+                        }
+                        else
+                        {
+                            <div class="tm-gantt__bar @GetBarClass(bar.Task)"
+                                 style="left: @(bar.Left)px; width: @(bar.Width)px"
+                                 title="@bar.Task.Title (@bar.Task.PercentComplete%)"
+                                 @onclick="() => SelectTaskAsync(bar.Task)">
+                                <div class="tm-gantt__bar-progress" style="width: @(bar.Task.PercentComplete)%"></div>
+                                @if (bar.Width > 60)
+                                {
+                                    <span class="tm-gantt__bar-label">@bar.Task.Title</span>
+                                }
+                            </div>
+                        }
+                    </div>
+                }
+            </div>
+        </div>
+    </div>
+</div>

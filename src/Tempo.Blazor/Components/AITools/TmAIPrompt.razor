@@ -1,0 +1,115 @@
+@namespace Tempo.Blazor.Components.AITools
+
+<div class="tm-ai-prompt @Class" @attributes="AdditionalAttributes">
+
+    <!-- Commands -->
+    @if (Commands.Count > 0)
+    {
+        <div class="tm-ai-prompt__commands" role="list" aria-label="@Loc["TmAIPrompt_CommandsLabel"]">
+            @foreach (var command in Commands)
+            {
+                <button type="button"
+                        class="tm-ai-prompt__command"
+                        disabled="@command.IsDisabled"
+                        title="@command.Description"
+                        @onclick="() => HandleCommandClick(command)"
+                        role="listitem">
+                    @if (!string.IsNullOrEmpty(command.Icon))
+                    {
+                        <TmIcon Name="@command.Icon" Size="IconSize.Sm" />
+                    }
+                    <span>@command.Title</span>
+                </button>
+            }
+        </div>
+    }
+
+    <!-- Output -->
+    @if (Output is not null)
+    {
+        <div class="tm-ai-prompt__output">
+            @if (!string.IsNullOrEmpty(Output.Title))
+            {
+                <div class="tm-ai-prompt__output-header">
+                    <span class="tm-ai-prompt__output-title">@Output.Title</span>
+                </div>
+            }
+
+            <div class="tm-ai-prompt__output-body">
+                @if (Output.IsLoading)
+                {
+                    <div class="tm-ai-prompt__output-loading">
+                        <TmSpinner Size="SpinnerSize.Sm" />
+                        <span>@Loc["TmAIPrompt_Generating"]</span>
+                    </div>
+                }
+                else
+                {
+                    <div class="tm-ai-prompt__output-content">
+                        @switch (Output.Format)
+                        {
+                            case AIPromptOutputFormat.Code:
+                                <pre class="tm-ai-prompt__output-code"><code>@Output.Content</code></pre>
+                                break;
+                            case AIPromptOutputFormat.Markdown:
+                                <div class="tm-ai-prompt__output-markdown">@Output.Content</div>
+                                break;
+                            default:
+                                <p class="tm-ai-prompt__output-text">@Output.Content</p>
+                                break;
+                        }
+                    </div>
+                }
+            </div>
+
+            @if (!Output.IsLoading)
+            {
+                <div class="tm-ai-prompt__output-actions">
+                    <button type="button"
+                            class="tm-ai-prompt__action-btn"
+                            aria-label="@Loc["TmAIPrompt_CopyOutput"]"
+                            @onclick="HandleCopyAsync"
+                            title="@Loc["TmAIPrompt_CopyOutput"]">
+                        <TmIcon Name="copy" Size="IconSize.Sm" />
+                    </button>
+
+                    <div class="tm-ai-prompt__action-separator" aria-hidden="true"></div>
+
+                    <button type="button"
+                            class="tm-ai-prompt__action-btn @(Output.Rating == true ? "tm-ai-prompt__action-btn--active" : "")"
+                            aria-label="@Loc["TmAIPrompt_RatePositive"]"
+                            @onclick="() => HandleRateAsync(true)"
+                            title="@Loc["TmAIPrompt_RatePositive"]">
+                        <TmIcon Name="thumbs-up" Size="IconSize.Sm" />
+                    </button>
+                    <button type="button"
+                            class="tm-ai-prompt__action-btn @(Output.Rating == false ? "tm-ai-prompt__action-btn--active" : "")"
+                            aria-label="@Loc["TmAIPrompt_RateNegative"]"
+                            @onclick="() => HandleRateAsync(false)"
+                            title="@Loc["TmAIPrompt_RateNegative"]">
+                        <TmIcon Name="thumbs-down" Size="IconSize.Sm" />
+                    </button>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Input -->
+    <div class="tm-ai-prompt__input-wrap">
+        <textarea class="tm-ai-prompt__input"
+                  rows="2"
+                  placeholder="@(_placeholderText)"
+                  disabled="@Disabled"
+                  @bind="_inputValue"
+                  @bind:event="oninput"
+                  @onkeydown="HandleKeyDownAsync"></textarea>
+        <button type="button"
+                class="tm-ai-prompt__submit"
+                disabled="@(_isSubmitDisabled)"
+                aria-label="@Loc["TmAIPrompt_Submit"]"
+                @onclick="HandleSubmitAsync">
+            <TmIcon Name="send" Size="IconSize.Sm" />
+        </button>
+    </div>
+
+</div>

@@ -621,6 +621,38 @@
     </div>
 </section>
 
+<!-- Signature Pad -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Signature Pad</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Freehand signature capture with SVG rendering</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">New</span>
+    </div>
+    
+    <div class="demo-grid demo-grid-2">
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Basic Signature</h3>
+            <TmSignature @bind-Value="_signatureValue" />
+            @if (!string.IsNullOrEmpty(_signatureValue))
+            {
+                <p class="text-xs text-slate-500 mt-2">Signature captured (@_signatureValue.Length chars)</p>
+            }
+        </div>
+        
+        <div class="showcase-card">
+            <h3 class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-4">Custom Style</h3>
+            <TmSignature @bind-Value="_signatureValue2"
+                         StrokeColor="#3b82f6"
+                         StrokeWidth="3"
+                         BackgroundColor="#eff6ff"
+                         Width="350"
+                         Height="150" />
+        </div>
+    </div>
+</section>
+
 @code {
     // Expression Editor
     private string _exprValue = "Dear {{sender.name}}, your message ";
@@ -861,4 +893,8 @@
         _personModel = new PersonFormModel();
         _submitSuccess = false;
     }
+
+    // Signature Pad
+    private string? _signatureValue;
+    private string? _signatureValue2;
 }

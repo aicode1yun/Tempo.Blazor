@@ -320,6 +320,33 @@
     </div>
 </section>
 
+<!-- Tree List -->
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Tree List</h2>
+            <p class="text-sm text-slate-500 dark:text-slate-400">Hierarchical data with expand/collapse and selection</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Hierarchy</span>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmTreeList Items="_treeEmployees"
+                    IdSelector="e => e.Id"
+                    ParentIdSelector="e => e.ManagerId"
+                    Selectable="true"
+                    OnRowSelect="@(async (Employee e) => { _selectedTreeEmployee = e; })">
+            <TmTreeListColumn TItem="Employee" Title="Name" Field="e => e.Name" />
+            <TmTreeListColumn TItem="Employee" Title="Role" Field="e => e.Role" />
+            <TmTreeListColumn TItem="Employee" Title="Department" Field="e => e.Dept" />
+        </TmTreeList>
+    </div>
+    @if (_selectedTreeEmployee is not null)
+    {
+        <p class="text-sm text-slate-600 mt-3">Selected: <strong>@_selectedTreeEmployee.Name</strong></p>
+    }
+</section>
+
 @code {
     [Inject] private PersonHttpDataProvider PersonProvider { get; set; } = default!;
     [Inject] private ViewHttpProvider ViewProvider { get; set; } = default!;
@@ -340,7 +367,7 @@
     ];
     private IReadOnlyList<ActiveFilter> _activeEmployeeFilters = [];
 
-    private record Employee(string Name, string Role, string Dept, int Score, string Email = "");
+    private record Employee(string Name, string Role, string Dept, int Score, string Email = "", int Id = 0, int? ManagerId = null);
 
     private static readonly string[] Roles = ["Admin", "User", "Manager"];
     private static readonly string[] Depts = ["Engineering", "Marketing", "Sales", "IT", "HR"];
@@ -354,7 +381,24 @@
             Roles[i % Roles.Length],
             Depts[i % Depts.Length],
             60 + i * 3,
-            $"emp{i}@example.com")).ToList();
+            $"emp{i}@example.com",
+            Id: i)).ToList();
+
+    private readonly List<Employee> _treeEmployees = new()
+    {
+        new("Alice Johnson", "CEO", "Executive", 95, "alice@example.com", Id: 1),
+        new("Bob Smith", "CTO", "Engineering", 88, "bob@example.com", Id: 2, ManagerId: 1),
+        new("Carol White", "CFO", "Finance", 90, "carol@example.com", Id: 3, ManagerId: 1),
+        new("David Lee", "Lead Dev", "Engineering", 85, "david@example.com", Id: 4, ManagerId: 2),
+        new("Eve Brown", "DevOps", "Engineering", 82, "eve@example.com", Id: 5, ManagerId: 2),
+        new("Frank Miller", "Developer", "Engineering", 78, "frank@example.com", Id: 6, ManagerId: 4),
+        new("Grace Taylor", "Developer", "Engineering", 80, "grace@example.com", Id: 7, ManagerId: 4),
+        new("Henry Davis", "Accountant", "Finance", 75, "henry@example.com", Id: 8, ManagerId: 3),
+    };
+
+    private Employee? _selectedTreeEmployee;
+
+    private void OnTreeRowSelect(Employee employee) => _selectedTreeEmployee = employee;
 
     private IEnumerable<Employee> _filteredEmployees => ApplyEmployeeFilters(_employees, _activeEmployeeFilters);
 

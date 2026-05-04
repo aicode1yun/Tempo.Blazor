@@ -1,0 +1,110 @@
+@namespace Tempo.Blazor.Components.DataTable
+@typeparam TItem
+@using Tempo.Blazor.Abstractions.Models
+
+@* Hidden container to trigger TmTreeListColumn registration via CascadingValue. *@
+<CascadingValue Value="this" IsFixed="true" Name="TmTreeListParent">
+    <span style="display:none" aria-hidden="true">@ChildContent</span>
+</CascadingValue>
+
+<div class="tm-tree-list-wrapper @Class" @attributes="AdditionalAttributes">
+    <table class="tm-tree-list">
+        <thead>
+            <tr>
+                <th class="tm-tree-list-cell tm-tree-list-cell--expand" scope="col">
+                    <span class="tm-tree-list-header-text">@Loc["TmTreeList_ExpandColumn"]</span>
+                </th>
+                @foreach (var col in _columns)
+                {
+                    <th class="tm-tree-list-cell @GetAlignClass(col.Align)" scope="col" style="@GetColumnWidthStyle(col)">
+                        @if (col.HeaderTemplate is not null)
+                        {
+                            @col.HeaderTemplate
+                        }
+                        else
+                        {
+                            <span class="tm-tree-list-header-text">@col.Title</span>
+                        }
+                    </th>
+                }
+            </tr>
+        </thead>
+        <tbody>
+            @if (_visibleRows.Count == 0)
+            {
+                <tr>
+                    <td class="tm-tree-list-cell tm-tree-list-cell--empty" colspan="@(_columns.Count + 1)">
+                        @Loc["TmTreeList_NoData"]
+                    </td>
+                </tr>
+            }
+            else
+            {
+                @foreach (var ctx in _visibleRows)
+                {
+                    <tr class="tm-tree-list-row @GetRowClass(ctx)"
+                        @onclick="e => HandleRowClickAsync(ctx, e)"
+                        @ondblclick="() => HandleRowDoubleClickAsync(ctx)"
+                        @onmousedown="() => HandleRowMouseDown(ctx)"
+                        @onmouseenter="() => HandleRowMouseEnter(ctx)"
+                        @onmouseup="() => HandleRowMouseUp(ctx)">
+                        <td class="tm-tree-list-cell tm-tree-list-cell--expand">
+                            <div class="tm-tree-list-expand" style="padding-left: @((ctx.Level * IndentSize).ToString("0.0##", System.Globalization.CultureInfo.InvariantCulture))rem">
+                                @if (ctx.HasChildren)
+                                {
+                                    <button type="button"
+                                            class="tm-tree-list-toggle"
+                                            aria-label="@(ctx.IsExpanded ? Loc["TmTreeList_Collapse"] : Loc["TmTreeList_Expand"])"
+                                            @onclick:stopPropagation
+                                            @onclick="() => ToggleExpandAsync(ctx)">
+                                        <TmIcon Name="@(ctx.IsExpanded ? "chevron-down" : "chevron-right")" />
+                                    </button>
+                                }
+                            </div>
+                        </td>
+                        @foreach (var col in _columns)
+                        {
+                            <td class="tm-tree-list-cell @GetAlignClass(col.Align) @col.CssClass @GetEditingCellClass(ctx, col)"
+                                style="@GetColumnWidthStyle(col)">
+                                @if (IsEditing(ctx) && col.Editable)
+                                {
+                                    <div class="tm-tree-list-edit-cell"
+                                         @onfocusout="CommitEditAsync"
+                                         @onkeydown="HandleEditKeyDown"
+                                         tabindex="-1">
+                                        @if (col.EditTemplate is not null)
+                                        {
+                                            @col.EditTemplate(ctx.Item)
+                                        }
+                                    </div>
+                                }
+                                else
+                                {
+                                    @if (col.CellTemplate is not null)
+                                    {
+                                        @col.CellTemplate(ctx.Item)
+                                    }
+                                    else if (col.Field is not null)
+                                    {
+                                        @(col.Field(ctx.Item)?.ToString() ?? string.Empty)
+                                    }
+                                }
+                            </td>
+                        }
+                    </tr>
+                }
+            }
+        </tbody>
+    </table>
+
+    @if (PageSize > 0 && _visibleRows.Count > 0)
+    {
+        <TmPagination CurrentPage="_currentPage"
+                      TotalPages="TotalPages"
+                      TotalCount="_totalVisibleCount"
+                      PageSize="PageSize"
+                      PageSizeOptions="PageSizeOptions"
+                      OnPageChange="HandlePageChangeAsync"
+                      OnPageSizeChange="HandlePageSizeChangeAsync" />
+    }
+</div>

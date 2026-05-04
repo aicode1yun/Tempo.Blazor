@@ -1,0 +1,142 @@
+@namespace Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Interfaces
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-file-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class" @attributes="AdditionalAttributes">
+    <!-- Toolbar -->
+    <div class="tm-file-manager__toolbar">
+        <div class="tm-file-manager__toolbar-group">
+            @if (ShowNewFolderButton && !Disabled)
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="CreateFolderAsync">
+                    <TmIcon Name="folder-plus" />
+                    <span>@Loc["TmFileManager_NewFolder"]</span>
+                </button>
+            }
+            @if (ShowUploadButton && !Disabled)
+            {
+                <label class="tm-file-manager__toolbar-button tm-file-manager__upload">
+                    <TmIcon Name="upload" />
+                    <span>@Loc["TmFileManager_Upload"]</span>
+                    <InputFile style="display:none" multiple OnChange="HandleFileSelectedAsync" />
+                </label>
+            }
+            @if (ShowDeleteButton && !Disabled)
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="DeleteSelectedAsync" disabled="@(_selectedItems.Count == 0)">
+                    <TmIcon Name="trash" />
+                    <span>@Loc["TmFileManager_Delete"]</span>
+                </button>
+            }
+            @if (ShowRenameButton && !Disabled)
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="StartRenameAsync" disabled="@(_selectedItems.Count != 1)">
+                    <TmIcon Name="edit" />
+                    <span>@Loc["TmFileManager_Rename"]</span>
+                </button>
+            }
+        </div>
+
+        <div class="tm-file-manager__toolbar-group">
+            <button type="button" class="tm-file-manager__view-toggle @(ViewMode == FileManagerViewMode.List ? "tm-file-manager__view-toggle--active" : "")" @onclick="() => SetViewMode(FileManagerViewMode.List)" title="@Loc["TmFileManager_ListView"]">
+                <TmIcon Name="list" />
+            </button>
+            <button type="button" class="tm-file-manager__view-toggle @(ViewMode == FileManagerViewMode.Grid ? "tm-file-manager__view-toggle--active" : "")" @onclick="() => SetViewMode(FileManagerViewMode.Grid)" title="@Loc["TmFileManager_GridView"]">
+                <TmIcon Name="grid" />
+            </button>
+        </div>
+    </div>
+
+    <!-- Breadcrumb -->
+    <div class="tm-file-manager__breadcrumb">
+        <button type="button" class="tm-file-manager__breadcrumb-root" @onclick="NavigateToRoot">
+            <TmIcon Name="home" />
+        </button>
+        @foreach (var segment in _breadcrumbSegments)
+        {
+            <span class="tm-file-manager__breadcrumb-separator">/</span>
+            <button type="button" class="tm-file-manager__breadcrumb-item" @onclick="() => NavigateTo(segment.Path)">
+                @segment.Name
+            </button>
+        }
+    </div>
+
+    <!-- Main area: Sidebar + Content -->
+    <div class="tm-file-manager__main">
+        <!-- Folder Tree Sidebar -->
+        @if (ShowFolderTree)
+        {
+            <div class="tm-file-manager__sidebar">
+                <div class="tm-file-manager__sidebar-header">
+                    <span class="tm-file-manager__sidebar-title">@Loc["TmFileManager_Folders"]</span>
+                </div>
+                <div class="tm-file-manager__folder-list">
+                    @if (_folderTree is not null)
+                    {
+                        @foreach (var folder in _folderTree)
+                        {
+                            <button type="button"
+                                    class="tm-file-manager__folder-item @GetFolderClass(folder)"
+                                    @onclick="() => NavigateTo(folder.Path)">
+                                <TmIcon Name="@(folder.Path == _currentPath ? "folder-open" : "folder")" />
+                                <span>@folder.Name</span>
+                            </button>
+                        }
+                    }
+                </div>
+            </div>
+        }
+
+        <!-- Content Area -->
+        <div class="tm-file-manager__content tm-file-manager__content--@(_viewMode.ToString().ToLowerInvariant())">
+            @if (_items.Count == 0)
+            {
+                <div class="tm-file-manager__empty">
+                    <TmIcon Name="inbox" Class="tm-file-manager__empty-icon" />
+                    <p class="tm-file-manager__empty-text">@Loc["TmFileManager_EmptyFolder"]</p>
+                </div>
+            }
+            else
+            {
+                @foreach (var item in _items)
+                {
+                    <div class="tm-file-manager__item @GetItemClass(item)"
+                         @onclick="() => SelectItem(item)"
+                         @ondblclick="() => OnItemDoubleClickAsync(item)">
+                        <div class="tm-file-manager__item-icon">
+                            <TmIcon Name="@GetItemIcon(item)" />
+                        </div>
+                        <div class="tm-file-manager__item-info">
+                            @if (_renamingItem == item)
+                            {
+                                <input type="text" class="tm-file-manager__item-rename-input"
+                                       @bind="_renameValue"
+                                       @bind:event="oninput"
+                                       @onblur="CommitRenameAsync"
+                                       @onkeydown="HandleRenameKeyDown"
+                                       @onclick:stopPropagation />
+                            }
+                            else
+                            {
+                                <span class="tm-file-manager__item-name">@item.Name</span>
+                            }
+                            @if (ViewMode == FileManagerViewMode.List)
+                            {
+                                <span class="tm-file-manager__item-meta">
+                                    @(item.IsDirectory ? Loc["TmFileManager_Folder"] : FormatSize(item.Size))
+                                    @(item.ModifiedDate.HasValue ? $" • {item.ModifiedDate.Value:dd.MM.yyyy HH:mm}" : "")
+                                </span>
+                            }
+                        </div>
+                        @if (ViewMode == FileManagerViewMode.List && !item.IsDirectory)
+                        {
+                            <span class="tm-file-manager__item-size">@FormatSize(item.Size)</span>
+                        }
+                    </div>
+                }
+            }
+        </div>
+    </div>
+
+</div>

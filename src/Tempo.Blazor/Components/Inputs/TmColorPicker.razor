@@ -1,0 +1,44 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @Class" @attributes="AdditionalAttributes">
+    <div class="tm-color-picker-trigger"
+         @onclick="ToggleDropdown"
+         role="button"
+         tabindex="0"
+         aria-haspopup="true"
+         aria-expanded="@_isOpen">
+        <div class="tm-color-picker-trigger-bg">
+            <div class="tm-color-picker-trigger-color"
+                 style="background: @(string.IsNullOrEmpty(Value) ? "transparent" : Value)"></div>
+        </div>
+        <span class="tm-color-picker-trigger-text">
+            @(string.IsNullOrEmpty(Value) ? (Placeholder ?? Loc["TmColorPicker_SelectColor"]) : Value)
+        </span>
+        <TmIcon Name="chevron-down" Class="tm-color-picker-trigger-icon" />
+    </div>
+
+    @if (_isOpen)
+    {
+        <div class="tm-color-picker-dropdown">
+            <TmFlatColorPicker Value="@_pendingValue"
+                               ValueChanged="OnFlatValueChangedAsync"
+                               Format="Format"
+                               ShowAlpha="ShowAlpha"
+                               ShowPalette="ShowPalette"
+                               ShowPreview="false"
+                               ShowClearButton="ShowClearButton" />
+
+            @if (ShowApplyButton)
+            {
+                <TmButton Variant="ButtonVariant.Primary"
+                          Block="true"
+                          Class="tm-color-picker-apply"
+                          OnClick="ApplyAsync">
+                    @Loc["Tm_Apply"]
+                </TmButton>
+            }
+        </div>
+    }
+</div>

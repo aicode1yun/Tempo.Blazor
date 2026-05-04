@@ -1,0 +1,71 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Tempo.Blazor.Abstractions.Models
+@inject ITmLocalizer Loc
+
+<div class="tm-color-gradient @Class" @attributes="AdditionalAttributes">
+    @* SV Gradient Area *@
+    <div class="tm-color-gradient-area"
+         style="background-color: @(_hueColor);"
+         @onpointerdown="OnGradientPointerDown"
+         @onpointermove="OnGradientPointerMove"
+         @onpointerup="OnGradientPointerUp">
+        <div class="tm-color-gradient-saturation"></div>
+        <div class="tm-color-gradient-value"></div>
+        <div class="tm-color-gradient-thumb"
+             style="left: @((_saturation * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%; top: @((100 - _value * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;">
+        </div>
+    </div>
+
+    @* Hue Slider *@
+    <div class="tm-color-gradient-hue-track"
+         @onpointerdown="OnHuePointerDown"
+         @onpointermove="OnHuePointerMove"
+         @onpointerup="OnHuePointerUp">
+        <div class="tm-color-gradient-hue-fill" style="width: @((_hue / 360 * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+        <div class="tm-color-gradient-hue-thumb" style="left: @((_hue / 360 * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+    </div>
+
+    @* Alpha Slider *@
+    @if (ShowAlpha)
+    {
+        <div class="tm-color-gradient-alpha-track"
+             @onpointerdown="OnAlphaPointerDown"
+             @onpointermove="OnAlphaPointerMove"
+             @onpointerup="OnAlphaPointerUp">
+            <div class="tm-color-gradient-alpha-bg"></div>
+            <div class="tm-color-gradient-alpha-fill" style="width: @((_alpha * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%; background: linear-gradient(to right, transparent, @ColorHelper.ToRgb(_r, _g, _b));"></div>
+            <div class="tm-color-gradient-alpha-thumb" style="left: @((_alpha * 100).ToString("0.##", System.Globalization.CultureInfo.InvariantCulture))%;"></div>
+        </div>
+    }
+
+    @* RGBA Inputs *@
+    <div class="tm-color-gradient-inputs">
+        <div class="tm-color-gradient-input-group">
+            <label class="tm-color-gradient-input-label">R</label>
+            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_r" @onchange="OnRedChanged" />
+        </div>
+        <div class="tm-color-gradient-input-group">
+            <label class="tm-color-gradient-input-label">G</label>
+            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_g" @onchange="OnGreenChanged" />
+        </div>
+        <div class="tm-color-gradient-input-group">
+            <label class="tm-color-gradient-input-label">B</label>
+            <input type="number" min="0" max="255" class="tm-color-gradient-input" value="@_b" @onchange="OnBlueChanged" />
+        </div>
+        @if (ShowAlpha)
+        {
+            <div class="tm-color-gradient-input-group">
+                <label class="tm-color-gradient-input-label">A</label>
+                <input type="number" min="0" max="1" step="0.01" class="tm-color-gradient-input" value="@_alpha.ToString("0.##", System.Globalization.CultureInfo.InvariantCulture)" @onchange="OnAlphaInputChanged" />
+            </div>
+        }
+    </div>
+
+    @* Preview *@
+    <div class="tm-color-gradient-preview-row">
+        <div class="tm-color-gradient-preview-bg">
+            <div class="tm-color-gradient-preview" style="background: @ColorHelper.ToRgba(_r, _g, _b, _alpha);"></div>
+        </div>
+        <span class="tm-color-gradient-value-text">@FormatValue()</span>
+    </div>
+</div>

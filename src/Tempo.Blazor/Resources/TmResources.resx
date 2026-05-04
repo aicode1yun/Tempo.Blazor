@@ -1226,6 +1226,32 @@
   <data name="TmNotionPdfBlock_LoadError"                    xml:space="preserve"><value>Could not load the PDF.</value></data>
   <data name="TmNotionPdfBlock_ToolbarLabel"                 xml:space="preserve"><value>PDF controls</value></data>
 
+  <!-- TmPdfViewer -->
+  <data name="TmPdfViewer_Page"                              xml:space="preserve"><value>Page</value></data>
+  <data name="TmPdfViewer_Of"                                xml:space="preserve"><value>of</value></data>
+  <data name="TmPdfViewer_PreviousPage"                      xml:space="preserve"><value>Previous page</value></data>
+  <data name="TmPdfViewer_NextPage"                          xml:space="preserve"><value>Next page</value></data>
+  <data name="TmPdfViewer_ZoomIn"                            xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmPdfViewer_ZoomOut"                           xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmPdfViewer_Open"                              xml:space="preserve"><value>Open</value></data>
+  <data name="TmPdfViewer_Download"                          xml:space="preserve"><value>Download</value></data>
+  <data name="TmPdfViewer_LoadError"                         xml:space="preserve"><value>Could not load the PDF.</value></data>
+  <data name="TmPdfViewer_ToolbarLabel"                      xml:space="preserve"><value>PDF controls</value></data>
+  <data name="TmPdfViewer_NoDocument"                        xml:space="preserve"><value>No PDF document provided</value></data>
+  <data name="TmPdfViewer_Rotate"                            xml:space="preserve"><value>Rotate</value></data>
+  <data name="TmPdfViewer_ViewModeSingle"                    xml:space="preserve"><value>Single page</value></data>
+  <data name="TmPdfViewer_ViewModeContinuous"                xml:space="preserve"><value>Continuous</value></data>
+  <data name="TmPdfViewer_Thumbnails"                        xml:space="preserve"><value>Thumbnails</value></data>
+  <data name="TmPdfViewer_Search"                            xml:space="preserve"><value>Search</value></data>
+  <data name="TmPdfViewer_SearchResults"                     xml:space="preserve"><value>{0} of {1}</value></data>
+  <data name="TmAIPrompt_Placeholder"                        xml:space="preserve"><value>Ask me anything...</value></data>
+  <data name="TmAIPrompt_Submit"                             xml:space="preserve"><value>Send</value></data>
+  <data name="TmAIPrompt_CommandsLabel"                      xml:space="preserve"><value>Quick actions</value></data>
+  <data name="TmAIPrompt_Generating"                         xml:space="preserve"><value>Generating response...</value></data>
+  <data name="TmAIPrompt_CopyOutput"                         xml:space="preserve"><value>Copy to clipboard</value></data>
+  <data name="TmAIPrompt_RatePositive"                       xml:space="preserve"><value>Helpful</value></data>
+  <data name="TmAIPrompt_RateNegative"                       xml:space="preserve"><value>Not helpful</value></data>
+
   <data name="TmNotionToggleBlock_Expand"                    xml:space="preserve"><value>Expand / collapse</value></data>
   <data name="TmNotionToggleBlock_ChildrenLoading"           xml:space="preserve"><value>Loading content…</value></data>
 
@@ -1912,5 +1938,60 @@
   <data name="TmSpreadsheet_LinkText" xml:space="preserve"><value>Display text</value></data>
   <data name="TmSpreadsheet_LinkTextPlaceholder" xml:space="preserve"><value>Click here</value></data>
   <data name="TmSpreadsheet_ImageUrl" xml:space="preserve"><value>Image URL</value></data>
+  <data name="TmTreeList_ExpandColumn" xml:space="preserve"><value> </value></data>
+  <data name="TmTreeList_NoData" xml:space="preserve"><value>No data</value></data>
+  <data name="TmTreeList_Expand" xml:space="preserve"><value>Expand</value></data>
+  <data name="TmTreeList_Collapse" xml:space="preserve"><value>Collapse</value></data>
+  <data name="TmSignature_Clear" xml:space="preserve"><value>Clear</value></data>
+  <data name="TmFileManager_NewFolder" xml:space="preserve"><value>New Folder</value></data>
+  <data name="TmFileManager_Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="TmFileManager_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmFileManager_Rename" xml:space="preserve"><value>Rename</value></data>
+  <data name="TmFileManager_ListView" xml:space="preserve"><value>List View</value></data>
+  <data name="TmFileManager_GridView" xml:space="preserve"><value>Grid View</value></data>
+  <data name="TmFileManager_Folders" xml:space="preserve"><value>Folders</value></data>
+  <data name="TmFileManager_Folder" xml:space="preserve"><value>Folder</value></data>
+  <data name="TmFileManager_EmptyFolder" xml:space="preserve"><value>This folder is empty</value></data>
+  <data name="TmMultiColumnComboBox_Placeholder" xml:space="preserve"><value>Select an item...</value></data>
+  <data name="TmMultiColumnComboBox_Clear" xml:space="preserve"><value>Clear selection</value></data>
+  <data name="TmMultiColumnComboBox_FilterPlaceholder" xml:space="preserve"><value>Search...</value></data>
+  <data name="TmMultiColumnComboBox_NoResults" xml:space="preserve"><value>No results found</value></data>
+  <data name="TmRecurrenceEditor_Pattern" xml:space="preserve"><value>Pattern</value></data>
+  <data name="TmRecurrenceEditor_Every" xml:space="preserve"><value>Every</value></data>
+  <data name="TmRecurrenceEditor_On" xml:space="preserve"><value>On</value></data>
+  <data name="TmRecurrenceEditor_End" xml:space="preserve"><value>End</value></data>
+  <data name="TmRecurrenceEditor_Never" xml:space="preserve"><value>Never</value></data>
+  <data name="TmRecurrenceEditor_After" xml:space="preserve"><value>After</value></data>
+  <data name="TmRecurrenceEditor_Occurrences" xml:space="preserve"><value>occurrences</value></data>
+  <data name="TmRecurrenceEditor_OnDate" xml:space="preserve"><value>On date</value></data>
+  <data name="TmRecurrenceEditor_Day" xml:space="preserve"><value>Day</value></data>
+  <data name="TmRecurrenceEditor_The" xml:space="preserve"><value>The</value></data>
+  <data name="TmRecurrenceEditor_Summary" xml:space="preserve"><value>Summary</value></data>
+  <data name="TmGantt_DayView" xml:space="preserve"><value>Day</value></data>
+  <data name="TmGantt_WeekView" xml:space="preserve"><value>Week</value></data>
+  <data name="TmGantt_MonthView" xml:space="preserve"><value>Month</value></data>
+  <data name="TmGantt_TaskTitle" xml:space="preserve"><value>Task</value></data>
+  <data name="TmGantt_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="TmGantt_End" xml:space="preserve"><value>End</value></data>
+  <data name="TmDockManager_Close" xml:space="preserve"><value>Close</value></data>
+  <data name="TmDockManager_Float" xml:space="preserve"><value>Float</value></data>
+  <data name="TmDockManager_Dock" xml:space="preserve"><value>Dock</value></data>
+  <data name="TmDockManager_DockTop" xml:space="preserve"><value>Dock Top</value></data>
+  <data name="TmDockManager_DockLeft" xml:space="preserve"><value>Dock Left</value></data>
+  <data name="TmDockManager_DockCenter" xml:space="preserve"><value>Dock Center</value></data>
+  <data name="TmDockManager_DockRight" xml:space="preserve"><value>Dock Right</value></data>
+  <data name="TmDockManager_DockBottom" xml:space="preserve"><value>Dock Bottom</value></data>
+  <data name="TmChat_Placeholder" xml:space="preserve"><value>Type a message…</value></data>
+  <data name="TmChat_Send" xml:space="preserve"><value>Send message</value></data>
+  <data name="TmChat_EmptyTitle" xml:space="preserve"><value>No messages yet</value></data>
+  <data name="TmChat_EmptySubtitle" xml:space="preserve"><value>Start the conversation by typing below.</value></data>
+  <data name="TmChat_TypingSingle" xml:space="preserve"><value>{0} is typing…</value></data>
+  <data name="TmChat_TypingTwo" xml:space="preserve"><value>{0} and {1} are typing…</value></data>
+  <data name="TmChat_TypingMany" xml:space="preserve"><value>{0} and {1} others are typing…</value></data>
+
+  <!-- StockChart, Sparkline, Gauge -->
+  <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Stock chart</value></data>
+  <data name="TmSparkline_AriaLabel" xml:space="preserve"><value>Sparkline chart</value></data>
+  <data name="TmGauge_AriaLabel" xml:space="preserve"><value>Gauge</value></data>
 
 </root>

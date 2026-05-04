@@ -1,0 +1,36 @@
+@namespace Tempo.Blazor.Components.Charts
+@using System.Globalization
+@using Tempo.Blazor.Models
+
+<div class="@CssClass" style="@WrapperStyle">
+    @if (Data is null || Data.Count == 0)
+    {
+        <div class="tm-stock-chart__empty">
+            <span>@Loc["Tm_NoResults"]</span>
+        </div>
+    }
+    else
+    {
+        <svg viewBox="0 0 @SvgW @SvgH" preserveAspectRatio="xMidYMid meet" width="100%" height="100%"
+             aria-label="@Loc["TmStockChart_AriaLabel"]" role="img">
+            @RenderGrid
+            @RenderAxes
+            @if (Type == StockChartType.Candlestick)
+            {
+                @RenderCandlesticks
+            }
+            else if (Type == StockChartType.OHLC)
+            {
+                @RenderOHLC
+            }
+            else if (Type == StockChartType.Line)
+            {
+                @RenderLine
+            }
+            @if (ShowVolume)
+            {
+                @RenderVolume
+            }
+        </svg>
+    }
+</div>

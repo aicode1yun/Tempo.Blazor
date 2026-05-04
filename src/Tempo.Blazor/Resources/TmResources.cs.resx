@@ -1215,6 +1215,32 @@
   <data name="TmNotionPdfBlock_LoadError"                    xml:space="preserve"><value>PDF se nepodařilo načíst.</value></data>
   <data name="TmNotionPdfBlock_ToolbarLabel"                 xml:space="preserve"><value>Ovládání PDF</value></data>
 
+  <!-- TmPdfViewer -->
+  <data name="TmPdfViewer_Page"                              xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmPdfViewer_Of"                                xml:space="preserve"><value>z</value></data>
+  <data name="TmPdfViewer_PreviousPage"                      xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="TmPdfViewer_NextPage"                          xml:space="preserve"><value>Další stránka</value></data>
+  <data name="TmPdfViewer_ZoomIn"                            xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmPdfViewer_ZoomOut"                           xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmPdfViewer_Open"                              xml:space="preserve"><value>Otevřít</value></data>
+  <data name="TmPdfViewer_Download"                          xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmPdfViewer_LoadError"                         xml:space="preserve"><value>PDF se nepodařilo načíst.</value></data>
+  <data name="TmPdfViewer_ToolbarLabel"                      xml:space="preserve"><value>Ovládání PDF</value></data>
+  <data name="TmPdfViewer_NoDocument"                        xml:space="preserve"><value>Nebyl zadán žádný PDF dokument</value></data>
+  <data name="TmPdfViewer_Rotate"                            xml:space="preserve"><value>Otočit</value></data>
+  <data name="TmPdfViewer_ViewModeSingle"                    xml:space="preserve"><value>Jedna stránka</value></data>
+  <data name="TmPdfViewer_ViewModeContinuous"                xml:space="preserve"><value>Kontinuální</value></data>
+  <data name="TmPdfViewer_Thumbnails"                        xml:space="preserve"><value>Miniatury</value></data>
+  <data name="TmPdfViewer_Search"                            xml:space="preserve"><value>Hledat</value></data>
+  <data name="TmPdfViewer_SearchResults"                     xml:space="preserve"><value>{0} z {1}</value></data>
+  <data name="TmAIPrompt_Placeholder"                        xml:space="preserve"><value>Zeptejte se mě na cokoliv...</value></data>
+  <data name="TmAIPrompt_Submit"                             xml:space="preserve"><value>Odeslat</value></data>
+  <data name="TmAIPrompt_CommandsLabel"                      xml:space="preserve"><value>Rychlé akce</value></data>
+  <data name="TmAIPrompt_Generating"                         xml:space="preserve"><value>Generuji odpověď...</value></data>
+  <data name="TmAIPrompt_CopyOutput"                         xml:space="preserve"><value>Kopírovat do schránky</value></data>
+  <data name="TmAIPrompt_RatePositive"                       xml:space="preserve"><value>Užitečné</value></data>
+  <data name="TmAIPrompt_RateNegative"                       xml:space="preserve"><value>Neužitečné</value></data>
+
   <!-- ═══════════════ TMNOTIONEMOJIPICKER (UI) ═══════════════ -->
   <data name="TmNotionEmojiPicker_SearchPlaceholder"    xml:space="preserve"><value>Hledat emoji…</value></data>
   <data name="TmNotionEmojiPicker_NoResults"            xml:space="preserve"><value>Žádné emoji nenalezeno</value></data>
@@ -1751,5 +1777,60 @@
   <data name="TmSpreadsheet_LinkText" xml:space="preserve"><value>Zobrazený text</value></data>
   <data name="TmSpreadsheet_LinkTextPlaceholder" xml:space="preserve"><value>Klikněte zde</value></data>
   <data name="TmSpreadsheet_ImageUrl" xml:space="preserve"><value>URL obrázku</value></data>
+  <data name="TmTreeList_ExpandColumn" xml:space="preserve"><value> </value></data>
+  <data name="TmTreeList_NoData" xml:space="preserve"><value>Žádná data</value></data>
+  <data name="TmTreeList_Expand" xml:space="preserve"><value>Rozbalit</value></data>
+  <data name="TmTreeList_Collapse" xml:space="preserve"><value>Sbalit</value></data>
+  <data name="TmSignature_Clear" xml:space="preserve"><value>Vymazat</value></data>
+  <data name="TmFileManager_NewFolder" xml:space="preserve"><value>Nová složka</value></data>
+  <data name="TmFileManager_Upload" xml:space="preserve"><value>Nahrát</value></data>
+  <data name="TmFileManager_Delete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmFileManager_Rename" xml:space="preserve"><value>Přejmenovat</value></data>
+  <data name="TmFileManager_ListView" xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmFileManager_GridView" xml:space="preserve"><value>Mřížka</value></data>
+  <data name="TmFileManager_Folders" xml:space="preserve"><value>Složky</value></data>
+  <data name="TmFileManager_Folder" xml:space="preserve"><value>Složka</value></data>
+  <data name="TmFileManager_EmptyFolder" xml:space="preserve"><value>Tato složka je prázdná</value></data>
+  <data name="TmMultiColumnComboBox_Placeholder" xml:space="preserve"><value>Vyberte položku...</value></data>
+  <data name="TmMultiColumnComboBox_Clear" xml:space="preserve"><value>Vymazat výběr</value></data>
+  <data name="TmMultiColumnComboBox_FilterPlaceholder" xml:space="preserve"><value>Hledat...</value></data>
+  <data name="TmMultiColumnComboBox_NoResults" xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmRecurrenceEditor_Pattern" xml:space="preserve"><value>Opakování</value></data>
+  <data name="TmRecurrenceEditor_Every" xml:space="preserve"><value>Každý</value></data>
+  <data name="TmRecurrenceEditor_On" xml:space="preserve"><value>V</value></data>
+  <data name="TmRecurrenceEditor_End" xml:space="preserve"><value>Konec</value></data>
+  <data name="TmRecurrenceEditor_Never" xml:space="preserve"><value>Nikdy</value></data>
+  <data name="TmRecurrenceEditor_After" xml:space="preserve"><value>Po</value></data>
+  <data name="TmRecurrenceEditor_Occurrences" xml:space="preserve"><value>výskytech</value></data>
+  <data name="TmRecurrenceEditor_OnDate" xml:space="preserve"><value>Dne</value></data>
+  <data name="TmRecurrenceEditor_Day" xml:space="preserve"><value>Den</value></data>
+  <data name="TmRecurrenceEditor_The" xml:space="preserve"><value></value></data>
+  <data name="TmRecurrenceEditor_Summary" xml:space="preserve"><value>Souhrn</value></data>
+  <data name="TmGantt_DayView" xml:space="preserve"><value>Den</value></data>
+  <data name="TmGantt_WeekView" xml:space="preserve"><value>Týden</value></data>
+  <data name="TmGantt_MonthView" xml:space="preserve"><value>Měsíc</value></data>
+  <data name="TmGantt_TaskTitle" xml:space="preserve"><value>Úkol</value></data>
+  <data name="TmGantt_Start" xml:space="preserve"><value>Začátek</value></data>
+  <data name="TmGantt_End" xml:space="preserve"><value>Konec</value></data>
+  <data name="TmDockManager_Close" xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmDockManager_Float" xml:space="preserve"><value>Plovoucí</value></data>
+  <data name="TmDockManager_Dock" xml:space="preserve"><value>Ukotvit</value></data>
+  <data name="TmDockManager_DockTop" xml:space="preserve"><value>Ukotvit nahoru</value></data>
+  <data name="TmDockManager_DockLeft" xml:space="preserve"><value>Ukotvit vlevo</value></data>
+  <data name="TmDockManager_DockCenter" xml:space="preserve"><value>Ukotvit do středu</value></data>
+  <data name="TmDockManager_DockRight" xml:space="preserve"><value>Ukotvit vpravo</value></data>
+  <data name="TmDockManager_DockBottom" xml:space="preserve"><value>Ukotvit dolů</value></data>
+  <data name="TmChat_Placeholder" xml:space="preserve"><value>Napište zprávu…</value></data>
+  <data name="TmChat_Send" xml:space="preserve"><value>Odeslat zprávu</value></data>
+  <data name="TmChat_EmptyTitle" xml:space="preserve"><value>Zatím žádné zprávy</value></data>
+  <data name="TmChat_EmptySubtitle" xml:space="preserve"><value>Začněte konverzaci psaním níže.</value></data>
+  <data name="TmChat_TypingSingle" xml:space="preserve"><value>{0} píše…</value></data>
+  <data name="TmChat_TypingTwo" xml:space="preserve"><value>{0} a {1} píší…</value></data>
+  <data name="TmChat_TypingMany" xml:space="preserve"><value>{0} a {1} další píší…</value></data>
+
+  <!-- StockChart, Sparkline, Gauge -->
+  <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Akciový graf</value></data>
+  <data name="TmSparkline_AriaLabel" xml:space="preserve"><value>Mini graf</value></data>
+  <data name="TmGauge_AriaLabel" xml:space="preserve"><value>Měřidlo</value></data>
 
 </root>

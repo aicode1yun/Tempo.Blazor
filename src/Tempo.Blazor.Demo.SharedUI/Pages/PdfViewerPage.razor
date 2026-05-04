@@ -1,0 +1,152 @@
+@page "/pdf-viewer"
+@using Tempo.Blazor.Components.Files
+<PageTitle>PDF Viewer – Tempo.Blazor</PageTitle>
+
+<!-- Page Header -->
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">PDF Viewer</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        A reusable PDF viewer powered by PDF.js v5. Supports page navigation, zoom, rotation, thumbnails, search, text layer, and continuous scroll.
+    </p>
+</div>
+
+<!-- Basic Usage -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Basic Usage</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Core</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Standard single-page viewer with toolbar, page navigation, and zoom controls.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     AllowDownload="true"
+                     Height="500px" />
+    </div>
+</section>
+
+<!-- Thumbnails -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Thumbnails Sidebar</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 rounded-full">Navigation</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Visual thumbnail overview for quick page navigation.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     ShowThumbnails="true"
+                     AllowDownload="true"
+                     Height="500px" />
+    </div>
+</section>
+
+<!-- Search -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Document Search</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Search</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Full-text search across all pages with match counter.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     ShowSearch="true"
+                     AllowDownload="true"
+                     Height="500px" />
+    </div>
+</section>
+
+<!-- Text Layer -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Selectable Text Layer</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-purple-100 dark:bg-purple-900/30 text-purple-700 dark:text-purple-300 rounded-full">Accessibility</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Transparent text layer rendered over the canvas enables text selection and screen-reader compatibility.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     ShowTextLayer="true"
+                     AllowDownload="true"
+                     Height="500px" />
+    </div>
+</section>
+
+<!-- Continuous Scroll -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Continuous Scroll</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">View Mode</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Scroll through all pages seamlessly instead of navigating page by page.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     ShowViewModeToggle="true"
+                     ViewMode="PdfViewMode.Continuous"
+                     AllowDownload="true"
+                     Height="600px" />
+    </div>
+</section>
+
+<!-- Rotation -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Page Rotation</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Transform</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Rotate the document in 90° increments (0° → 90° → 180° → 270°).
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     AllowRotation="true"
+                     AllowDownload="true"
+                     Height="500px" />
+    </div>
+</section>
+
+<!-- All Features Combined -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">All Features Combined</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300 rounded-full">Full</span>
+    </div>
+
+    <div class="showcase-card">
+        <p class="text-sm text-slate-600 dark:text-slate-400 mb-4">
+            Thumbnails, search, text layer, rotation, and view mode toggle enabled simultaneously.
+        </p>
+        <TmPdfViewer Url="@_demoPdfUrl"
+                     ShowToolbar="true"
+                     ShowThumbnails="true"
+                     ShowSearch="true"
+                     ShowTextLayer="true"
+                     ShowViewModeToggle="true"
+                     AllowRotation="true"
+                     AllowDownload="true"
+                     Height="600px" />
+    </div>
+</section>
+
+@code {
+    private const string _demoPdfUrl = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf";
+}
