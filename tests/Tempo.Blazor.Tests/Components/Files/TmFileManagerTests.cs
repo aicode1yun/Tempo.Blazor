@@ -182,6 +182,22 @@ public class TmFileManagerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmFileManager_Create_Folder_Starts_Inline_Rename()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        // Click New Folder button
+        var newFolderBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("New Folder"));
+        newFolderBtn.Click();
+
+        // Should show rename input for the newly created folder
+        cut.FindAll(".tm-file-manager__item-rename-input").Count.Should().Be(1);
+        cut.Markup.Should().Contain("New Folder");
+    }
+
+    [Fact]
     public void TmFileManager_Rename_Enter_Commits()
     {
         var provider = CreateMockProvider();

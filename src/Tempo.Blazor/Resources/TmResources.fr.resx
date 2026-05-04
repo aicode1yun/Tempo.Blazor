@@ -2161,4 +2161,135 @@
   <data name="TmPivotTable_AddToFilter" xml:space="preserve"><value>Ajouter aux filtres</value></data>
   <data name="TmPivotTable_RemoveFromAll" xml:space="preserve"><value>Retirer de toutes les zones</value></data>
 
+  <!-- ═══════════════ TmNotionBlockCommentPanel ═══════════════ -->
+  <data name="TmNotionBlockComment_PanelLabel"       xml:space="preserve"><value>Commentaire du bloc</value></data>
+  <data name="TmNotionBlockComment_Title"            xml:space="preserve"><value>Commentaire</value></data>
+  <data name="TmNotionBlockComment_Resolve"          xml:space="preserve"><value>Résoudre</value></data>
+  <data name="TmNotionBlockComment_Unresolve"        xml:space="preserve"><value>Rouvrir</value></data>
+  <data name="TmNotionBlockComment_Resolved"         xml:space="preserve"><value>Résolu</value></data>
+  <data name="TmNotionBlockComment_Thread"           xml:space="preserve"><value>Fil de commentaires</value></data>
+  <data name="TmNotionBlockComment_Loading"          xml:space="preserve"><value>Chargement des commentaires…</value></data>
+  <data name="TmNotionBlockComment_NoComments"       xml:space="preserve"><value>Aucun commentaire pour l'instant</value></data>
+  <data name="TmNotionBlockComment_Edited"           xml:space="preserve"><value>modifié</value></data>
+  <data name="TmNotionBlockComment_EntryActions"     xml:space="preserve"><value>Actions du commentaire</value></data>
+  <data name="TmNotionBlockComment_Edit"             xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmNotionBlockComment_Delete"           xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionBlockComment_EditLabel"        xml:space="preserve"><value>Modifier le commentaire</value></data>
+  <data name="TmNotionBlockComment_Save"             xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TmNotionBlockComment_Cancel"           xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmNotionBlockComment_ReplyPlaceholder" xml:space="preserve"><value>Répondre…</value></data>
+  <data name="TmNotionBlockComment_ReplyLabel"       xml:space="preserve"><value>Écrire une réponse</value></data>
+  <data name="TmNotionBlockComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Entrée pour envoyer</value></data>
+  <data name="TmNotionBlockComment_Reply"            xml:space="preserve"><value>Répondre</value></data>
+  <data name="TmNotionBlockComment_Comment"          xml:space="preserve"><value>Commenter</value></data>
+  <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Impossible de charger les commentaires.</value></data>
+  <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Impossible d'envoyer le commentaire.</value></data>
+  <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>L'action a échoué. Veuillez réessayer.</value></data>
+
+  <!-- ═══════════════ TmNotionTextCommentPanel ═══════════════ -->
+  <data name="TmNotionTextComment_PanelLabel"       xml:space="preserve"><value>Commentaire sur le texte</value></data>
+  <data name="TmNotionTextComment_HighlightedText"  xml:space="preserve"><value>Texte surligné</value></data>
+  <data name="TmNotionTextComment_Resolve"          xml:space="preserve"><value>Résoudre</value></data>
+  <data name="TmNotionTextComment_Unresolve"        xml:space="preserve"><value>Rouvrir</value></data>
+  <data name="TmNotionTextComment_Resolved"         xml:space="preserve"><value>Résolu</value></data>
+  <data name="TmNotionTextComment_Thread"           xml:space="preserve"><value>Fil de commentaires</value></data>
+  <data name="TmNotionTextComment_Loading"          xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionTextComment_NoComments"       xml:space="preserve"><value>Aucun commentaire pour l'instant</value></data>
+  <data name="TmNotionTextComment_Edited"           xml:space="preserve"><value>modifié</value></data>
+  <data name="TmNotionTextComment_Edit"             xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmNotionTextComment_Delete"           xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionTextComment_EditLabel"        xml:space="preserve"><value>Modifier le commentaire</value></data>
+  <data name="TmNotionTextComment_Save"             xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TmNotionTextComment_Cancel"           xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmNotionTextComment_ReplyPlaceholder" xml:space="preserve"><value>Répondre…</value></data>
+  <data name="TmNotionTextComment_ReplyLabel"       xml:space="preserve"><value>Écrire une réponse</value></data>
+  <data name="TmNotionTextComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Entrée pour envoyer</value></data>
+  <data name="TmNotionTextComment_Reply"            xml:space="preserve"><value>Répondre</value></data>
+  <data name="TmNotionTextComment_Comment"          xml:space="preserve"><value>Commenter</value></data>
+  <data name="TmNotionTextComment_LoadError"        xml:space="preserve"><value>Impossible de charger les commentaires.</value></data>
+  <data name="TmNotionTextComment_SendError"        xml:space="preserve"><value>Impossible d'envoyer le commentaire.</value></data>
+  <data name="TmNotionTextComment_ActionError"      xml:space="preserve"><value>L'action a échoué. Veuillez réessayer.</value></data>
+
+  <!-- ═══════════════ TmNotionPageCommentPanel ═══════════════ -->
+  <data name="TmNotionPageComment_PanelLabel"       xml:space="preserve"><value>Commentaires de la page</value></data>
+  <data name="TmNotionPageComment_Toggle"           xml:space="preserve"><value>Commentaires</value></data>
+  <data name="TmNotionPageComment_BadgeLabel"       xml:space="preserve"><value>{0} commentaires non résolus</value></data>
+  <data name="TmNotionPageComment_Loading"          xml:space="preserve"><value>Chargement des commentaires…</value></data>
+  <data name="TmNotionPageComment_NoComments"       xml:space="preserve"><value>Aucun commentaire. Soyez le premier à commenter.</value></data>
+  <data name="TmNotionPageComment_Thread"           xml:space="preserve"><value>Fils de commentaires</value></data>
+  <data name="TmNotionPageComment_Resolve"          xml:space="preserve"><value>Résoudre</value></data>
+  <data name="TmNotionPageComment_Unresolve"        xml:space="preserve"><value>Rouvrir</value></data>
+  <data name="TmNotionPageComment_Resolved"         xml:space="preserve"><value>Résolu</value></data>
+  <data name="TmNotionPageComment_Edited"           xml:space="preserve"><value>modifié</value></data>
+  <data name="TmNotionPageComment_Edit"             xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmNotionPageComment_Delete"           xml:space="preserve"><value>Supprimer</value></data>
+  <data name="TmNotionPageComment_EditLabel"        xml:space="preserve"><value>Modifier le commentaire</value></data>
+  <data name="TmNotionPageComment_Save"             xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TmNotionPageComment_Cancel"           xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmNotionPageComment_ReplyTrigger"     xml:space="preserve"><value>Répondre…</value></data>
+  <data name="TmNotionPageComment_ReplyPlaceholder" xml:space="preserve"><value>Répondre à ce fil…</value></data>
+  <data name="TmNotionPageComment_ReplyLabel"       xml:space="preserve"><value>Écrire une réponse</value></data>
+  <data name="TmNotionPageComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Entrée pour envoyer</value></data>
+  <data name="TmNotionPageComment_Reply"            xml:space="preserve"><value>Répondre</value></data>
+  <data name="TmNotionPageComment_NewPlaceholder"   xml:space="preserve"><value>Ajouter un commentaire à cette page…</value></data>
+  <data name="TmNotionPageComment_NewLabel"         xml:space="preserve"><value>Nouveau commentaire</value></data>
+  <data name="TmNotionPageComment_Comment"          xml:space="preserve"><value>Commenter</value></data>
+  <data name="TmNotionPageComment_LoadError"        xml:space="preserve"><value>Impossible de charger les commentaires.</value></data>
+  <data name="TmNotionPageComment_SendError"        xml:space="preserve"><value>Impossible d'envoyer le commentaire.</value></data>
+  <data name="TmNotionPageComment_ActionError"      xml:space="preserve"><value>L'action a échoué. Veuillez réessayer.</value></data>
+
+  <!-- ═══════════════ TmNotionPageHistory ═══════════════ -->
+  <data name="TmNotionPageHistory_PanelLabel"          xml:space="preserve"><value>Historique de la page</value></data>
+  <data name="TmNotionPageHistory_Title"               xml:space="preserve"><value>Historique de la page</value></data>
+  <data name="TmNotionPageHistory_VersionList"         xml:space="preserve"><value>Liste des versions</value></data>
+  <data name="TmNotionPageHistory_Current"             xml:space="preserve"><value>Actuelle</value></data>
+  <data name="TmNotionPageHistory_Loading"             xml:space="preserve"><value>Chargement des versions…</value></data>
+  <data name="TmNotionPageHistory_NoVersions"          xml:space="preserve"><value>Aucune version trouvée.</value></data>
+  <data name="TmNotionPageHistory_PageInfo"            xml:space="preserve"><value>Page {0} sur {1}</value></data>
+  <data name="TmNotionPageHistory_PreviousPage"        xml:space="preserve"><value>Page précédente</value></data>
+  <data name="TmNotionPageHistory_NextPage"            xml:space="preserve"><value>Page suivante</value></data>
+  <data name="TmNotionPageHistory_EmptyTitle"          xml:space="preserve"><value>Sélectionnez une version</value></data>
+  <data name="TmNotionPageHistory_EmptySub"            xml:space="preserve"><value>Cliquez sur une version à gauche pour prévisualiser son contenu.</value></data>
+  <data name="TmNotionPageHistory_PreviewLabel"        xml:space="preserve"><value>Aperçu de la version (lecture seule)</value></data>
+  <data name="TmNotionPageHistory_LoadingPreview"      xml:space="preserve"><value>Chargement de l'aperçu…</value></data>
+  <data name="TmNotionPageHistory_EmptySnapshot"       xml:space="preserve"><value>Cette version ne contient aucun contenu.</value></data>
+  <data name="TmNotionPageHistory_EditedBy"            xml:space="preserve"><value>par {0}</value></data>
+  <data name="TmNotionPageHistory_Compare"             xml:space="preserve"><value>Comparer</value></data>
+  <data name="TmNotionPageHistory_CompareTooltip"      xml:space="preserve"><value>Comparer cette version avec une autre</value></data>
+  <data name="TmNotionPageHistory_CompareBannerSelect" xml:space="preserve"><value>Sélectionnez une version à comparer</value></data>
+  <data name="TmNotionPageHistory_Cancel"              xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmNotionPageHistory_ExitDiff"            xml:space="preserve"><value>Quitter la comparaison</value></data>
+  <data name="TmNotionPageHistory_Restore"             xml:space="preserve"><value>Restaurer cette version</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirmTitle" xml:space="preserve"><value>Restaurer cette version ?</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirmBody"  xml:space="preserve"><value>La page sera restaurée à la version du {0}. La version actuelle sera sauvegardée comme nouvelle entrée d'historique.</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirm"      xml:space="preserve"><value>Restaurer</value></data>
+  <data name="TmNotionPageHistory_RestoreSuccess"      xml:space="preserve"><value>Page restaurée avec succès.</value></data>
+  <data name="TmNotionPageHistory_DiffLegend"          xml:space="preserve"><value>Légende des différences</value></data>
+  <data name="TmNotionPageHistory_DiffAdded"           xml:space="preserve"><value>Ajouté</value></data>
+  <data name="TmNotionPageHistory_DiffRemoved"         xml:space="preserve"><value>Supprimé</value></data>
+  <data name="TmNotionPageHistory_DiffModified"        xml:space="preserve"><value>Modifié</value></data>
+  <data name="TmNotionPageHistory_DiffMoved"           xml:space="preserve"><value>Déplacé</value></data>
+  <data name="TmNotionPageHistory_DiffBefore"          xml:space="preserve"><value>Avant</value></data>
+  <data name="TmNotionPageHistory_DiffAfter"           xml:space="preserve"><value>Après</value></data>
+  <data name="TmNotionPageHistory_LoadingDiff"         xml:space="preserve"><value>Comparaison des versions…</value></data>
+  <data name="TmNotionPageHistory_NoDiff"              xml:space="preserve"><value>Aucune différence entre ces versions.</value></data>
+  <data name="TmNotionPageHistory_BlockParagraph"      xml:space="preserve"><value>Paragraphe</value></data>
+  <data name="TmNotionPageHistory_BlockH1"             xml:space="preserve"><value>Titre 1</value></data>
+  <data name="TmNotionPageHistory_BlockH2"             xml:space="preserve"><value>Titre 2</value></data>
+  <data name="TmNotionPageHistory_BlockH3"             xml:space="preserve"><value>Titre 3</value></data>
+  <data name="TmNotionPageHistory_BlockQuote"          xml:space="preserve"><value>Citation</value></data>
+  <data name="TmNotionPageHistory_BlockCallout"        xml:space="preserve"><value>Encadré</value></data>
+  <data name="TmNotionPageHistory_BlockCode"           xml:space="preserve"><value>Code</value></data>
+  <data name="TmNotionPageHistory_BlockBullet"         xml:space="preserve"><value>Liste à puces</value></data>
+  <data name="TmNotionPageHistory_BlockNumbered"       xml:space="preserve"><value>Liste numérotée</value></data>
+  <data name="TmNotionPageHistory_BlockTodo"           xml:space="preserve"><value>Tâche</value></data>
+  <data name="TmNotionPageHistory_BlockToggle"         xml:space="preserve"><value>Accordéon</value></data>
+  <data name="TmNotionPageHistory_BlockImage"          xml:space="preserve"><value>Image</value></data>
+  <data name="TmNotionPageHistory_BlockTable"          xml:space="preserve"><value>Tableau</value></data>
+  <data name="TmNotionPageHistory_BlockDivider"        xml:space="preserve"><value>Séparateur</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadVersions"   xml:space="preserve"><value>Impossible de charger les versions de la page.</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadPreview"    xml:space="preserve"><value>Impossible de charger le contenu de cette version.</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadDiff"       xml:space="preserve"><value>La comparaison des versions a échoué.</value></data>
+  <data name="TmNotionPageHistory_ErrorRestore"        xml:space="preserve"><value>La restauration a échoué. Veuillez réessayer.</value></data>
+
 </root>

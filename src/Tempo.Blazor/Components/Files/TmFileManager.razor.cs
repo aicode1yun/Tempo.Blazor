@@ -177,11 +177,22 @@ public partial class TmFileManager
     private async Task CreateFolderAsync()
     {
         if (Disabled || DataProvider is null) return;
-        // In production, show a dialog for folder name input.
-        // For now, create with a default name that the provider handles.
-        var folderName = $"New Folder";
-        await DataProvider.CreateFolderAsync(_currentPath, folderName);
+        var folderName = "New Folder";
+        var newItem = await DataProvider.CreateFolderAsync(_currentPath, folderName);
         await LoadDataAsync();
+
+        // Find the newly created folder in the refreshed list and start inline rename
+        var createdItem = _items.FirstOrDefault(i => i.Id == newItem.Id);
+        if (createdItem is not null)
+        {
+            _selectedItems.Clear();
+            _selectedItems.Add(createdItem);
+            await OnSelectionChanged.InvokeAsync(_selectedItems);
+
+            _renamingItem = createdItem;
+            _renameValue = createdItem.Name;
+            _shouldFocusRenameInput = true;
+        }
     }
 
     private async Task DeleteSelectedAsync()

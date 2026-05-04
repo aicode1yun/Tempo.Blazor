@@ -1871,4 +1871,135 @@
   <data name="TmSparkline_AriaLabel" xml:space="preserve"><value>Mini graf</value></data>
   <data name="TmGauge_AriaLabel" xml:space="preserve"><value>Měřidlo</value></data>
 
+  <!-- ═══════════════ TmNotionBlockCommentPanel ═══════════════ -->
+  <data name="TmNotionBlockComment_PanelLabel"       xml:space="preserve"><value>Komentář bloku</value></data>
+  <data name="TmNotionBlockComment_Title"            xml:space="preserve"><value>Komentář</value></data>
+  <data name="TmNotionBlockComment_Resolve"          xml:space="preserve"><value>Vyřešit</value></data>
+  <data name="TmNotionBlockComment_Unresolve"        xml:space="preserve"><value>Znovu otevřít</value></data>
+  <data name="TmNotionBlockComment_Resolved"         xml:space="preserve"><value>Vyřešeno</value></data>
+  <data name="TmNotionBlockComment_Thread"           xml:space="preserve"><value>Vlákno komentářů</value></data>
+  <data name="TmNotionBlockComment_Loading"          xml:space="preserve"><value>Načítám komentáře…</value></data>
+  <data name="TmNotionBlockComment_NoComments"       xml:space="preserve"><value>Zatím žádné komentáře</value></data>
+  <data name="TmNotionBlockComment_Edited"           xml:space="preserve"><value>upraveno</value></data>
+  <data name="TmNotionBlockComment_EntryActions"     xml:space="preserve"><value>Akce komentáře</value></data>
+  <data name="TmNotionBlockComment_Edit"             xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmNotionBlockComment_Delete"           xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionBlockComment_EditLabel"        xml:space="preserve"><value>Upravit komentář</value></data>
+  <data name="TmNotionBlockComment_Save"             xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmNotionBlockComment_Cancel"           xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionBlockComment_ReplyPlaceholder" xml:space="preserve"><value>Odpovědět…</value></data>
+  <data name="TmNotionBlockComment_ReplyLabel"       xml:space="preserve"><value>Napište odpověď</value></data>
+  <data name="TmNotionBlockComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter pro odeslání</value></data>
+  <data name="TmNotionBlockComment_Reply"            xml:space="preserve"><value>Odpovědět</value></data>
+  <data name="TmNotionBlockComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
+  <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
+  <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>
+
+  <!-- ═══════════════ TmNotionTextCommentPanel ═══════════════ -->
+  <data name="TmNotionTextComment_PanelLabel"       xml:space="preserve"><value>Komentář k textu</value></data>
+  <data name="TmNotionTextComment_HighlightedText"  xml:space="preserve"><value>Označený text</value></data>
+  <data name="TmNotionTextComment_Resolve"          xml:space="preserve"><value>Vyřešit</value></data>
+  <data name="TmNotionTextComment_Unresolve"        xml:space="preserve"><value>Znovu otevřít</value></data>
+  <data name="TmNotionTextComment_Resolved"         xml:space="preserve"><value>Vyřešeno</value></data>
+  <data name="TmNotionTextComment_Thread"           xml:space="preserve"><value>Vlákno komentářů</value></data>
+  <data name="TmNotionTextComment_Loading"          xml:space="preserve"><value>Načítám…</value></data>
+  <data name="TmNotionTextComment_NoComments"       xml:space="preserve"><value>Zatím žádné komentáře</value></data>
+  <data name="TmNotionTextComment_Edited"           xml:space="preserve"><value>upraveno</value></data>
+  <data name="TmNotionTextComment_Edit"             xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmNotionTextComment_Delete"           xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionTextComment_EditLabel"        xml:space="preserve"><value>Upravit komentář</value></data>
+  <data name="TmNotionTextComment_Save"             xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmNotionTextComment_Cancel"           xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionTextComment_ReplyPlaceholder" xml:space="preserve"><value>Odpovědět…</value></data>
+  <data name="TmNotionTextComment_ReplyLabel"       xml:space="preserve"><value>Napište odpověď</value></data>
+  <data name="TmNotionTextComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter pro odeslání</value></data>
+  <data name="TmNotionTextComment_Reply"            xml:space="preserve"><value>Odpovědět</value></data>
+  <data name="TmNotionTextComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionTextComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
+  <data name="TmNotionTextComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
+  <data name="TmNotionTextComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>
+
+  <!-- ═══════════════ TmNotionPageCommentPanel ═══════════════ -->
+  <data name="TmNotionPageComment_PanelLabel"       xml:space="preserve"><value>Komentáře stránky</value></data>
+  <data name="TmNotionPageComment_Toggle"           xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmNotionPageComment_BadgeLabel"       xml:space="preserve"><value>{0} nevyřešených komentářů</value></data>
+  <data name="TmNotionPageComment_Loading"          xml:space="preserve"><value>Načítám komentáře…</value></data>
+  <data name="TmNotionPageComment_NoComments"       xml:space="preserve"><value>Zatím žádné komentáře. Buďte první.</value></data>
+  <data name="TmNotionPageComment_Thread"           xml:space="preserve"><value>Vlákna komentářů</value></data>
+  <data name="TmNotionPageComment_Resolve"          xml:space="preserve"><value>Vyřešit</value></data>
+  <data name="TmNotionPageComment_Unresolve"        xml:space="preserve"><value>Znovu otevřít</value></data>
+  <data name="TmNotionPageComment_Resolved"         xml:space="preserve"><value>Vyřešeno</value></data>
+  <data name="TmNotionPageComment_Edited"           xml:space="preserve"><value>upraveno</value></data>
+  <data name="TmNotionPageComment_Edit"             xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmNotionPageComment_Delete"           xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmNotionPageComment_EditLabel"        xml:space="preserve"><value>Upravit komentář</value></data>
+  <data name="TmNotionPageComment_Save"             xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmNotionPageComment_Cancel"           xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionPageComment_ReplyTrigger"     xml:space="preserve"><value>Odpovědět…</value></data>
+  <data name="TmNotionPageComment_ReplyPlaceholder" xml:space="preserve"><value>Odpovědět na toto vlákno…</value></data>
+  <data name="TmNotionPageComment_ReplyLabel"       xml:space="preserve"><value>Napište odpověď</value></data>
+  <data name="TmNotionPageComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter pro odeslání</value></data>
+  <data name="TmNotionPageComment_Reply"            xml:space="preserve"><value>Odpovědět</value></data>
+  <data name="TmNotionPageComment_NewPlaceholder"   xml:space="preserve"><value>Přidejte komentář k této stránce…</value></data>
+  <data name="TmNotionPageComment_NewLabel"         xml:space="preserve"><value>Nový komentář</value></data>
+  <data name="TmNotionPageComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionPageComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
+  <data name="TmNotionPageComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
+  <data name="TmNotionPageComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>
+
+  <!-- ═══════════════ TmNotionPageHistory ═══════════════ -->
+  <data name="TmNotionPageHistory_PanelLabel"          xml:space="preserve"><value>Historie stránky</value></data>
+  <data name="TmNotionPageHistory_Title"               xml:space="preserve"><value>Historie stránky</value></data>
+  <data name="TmNotionPageHistory_VersionList"         xml:space="preserve"><value>Seznam verzí</value></data>
+  <data name="TmNotionPageHistory_Current"             xml:space="preserve"><value>Aktuální</value></data>
+  <data name="TmNotionPageHistory_Loading"             xml:space="preserve"><value>Načítám verze…</value></data>
+  <data name="TmNotionPageHistory_NoVersions"          xml:space="preserve"><value>Žádné verze nenalezeny.</value></data>
+  <data name="TmNotionPageHistory_PageInfo"            xml:space="preserve"><value>Strana {0} z {1}</value></data>
+  <data name="TmNotionPageHistory_PreviousPage"        xml:space="preserve"><value>Předchozí strana</value></data>
+  <data name="TmNotionPageHistory_NextPage"            xml:space="preserve"><value>Další strana</value></data>
+  <data name="TmNotionPageHistory_EmptyTitle"          xml:space="preserve"><value>Vyberte verzi</value></data>
+  <data name="TmNotionPageHistory_EmptySub"            xml:space="preserve"><value>Kliknutím na verzi vlevo zobrazíte náhled obsahu.</value></data>
+  <data name="TmNotionPageHistory_PreviewLabel"        xml:space="preserve"><value>Náhled verze (pouze pro čtení)</value></data>
+  <data name="TmNotionPageHistory_LoadingPreview"      xml:space="preserve"><value>Načítám náhled…</value></data>
+  <data name="TmNotionPageHistory_EmptySnapshot"       xml:space="preserve"><value>Tato verze neobsahuje žádný obsah.</value></data>
+  <data name="TmNotionPageHistory_EditedBy"            xml:space="preserve"><value>od {0}</value></data>
+  <data name="TmNotionPageHistory_Compare"             xml:space="preserve"><value>Porovnat</value></data>
+  <data name="TmNotionPageHistory_CompareTooltip"      xml:space="preserve"><value>Porovnat tuto verzi s jinou</value></data>
+  <data name="TmNotionPageHistory_CompareBannerSelect" xml:space="preserve"><value>Vyberte verzi pro porovnání</value></data>
+  <data name="TmNotionPageHistory_Cancel"              xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmNotionPageHistory_ExitDiff"            xml:space="preserve"><value>Ukončit porovnání</value></data>
+  <data name="TmNotionPageHistory_Restore"             xml:space="preserve"><value>Obnovit tuto verzi</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirmTitle" xml:space="preserve"><value>Obnovit tuto verzi?</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirmBody"  xml:space="preserve"><value>Stránka bude obnovena do verze z {0}. Aktuální verze bude uložena jako nový záznam v historii.</value></data>
+  <data name="TmNotionPageHistory_RestoreConfirm"      xml:space="preserve"><value>Obnovit</value></data>
+  <data name="TmNotionPageHistory_RestoreSuccess"      xml:space="preserve"><value>Stránka byla úspěšně obnovena.</value></data>
+  <data name="TmNotionPageHistory_DiffLegend"          xml:space="preserve"><value>Legenda rozdílů</value></data>
+  <data name="TmNotionPageHistory_DiffAdded"           xml:space="preserve"><value>Přidáno</value></data>
+  <data name="TmNotionPageHistory_DiffRemoved"         xml:space="preserve"><value>Odstraněno</value></data>
+  <data name="TmNotionPageHistory_DiffModified"        xml:space="preserve"><value>Upraveno</value></data>
+  <data name="TmNotionPageHistory_DiffMoved"           xml:space="preserve"><value>Přesunuto</value></data>
+  <data name="TmNotionPageHistory_DiffBefore"          xml:space="preserve"><value>Před</value></data>
+  <data name="TmNotionPageHistory_DiffAfter"           xml:space="preserve"><value>Po</value></data>
+  <data name="TmNotionPageHistory_LoadingDiff"         xml:space="preserve"><value>Porovnávám verze…</value></data>
+  <data name="TmNotionPageHistory_NoDiff"              xml:space="preserve"><value>Mezi těmito verzemi nejsou žádné rozdíly.</value></data>
+  <data name="TmNotionPageHistory_BlockParagraph"      xml:space="preserve"><value>Odstavec</value></data>
+  <data name="TmNotionPageHistory_BlockH1"             xml:space="preserve"><value>Nadpis 1</value></data>
+  <data name="TmNotionPageHistory_BlockH2"             xml:space="preserve"><value>Nadpis 2</value></data>
+  <data name="TmNotionPageHistory_BlockH3"             xml:space="preserve"><value>Nadpis 3</value></data>
+  <data name="TmNotionPageHistory_BlockQuote"          xml:space="preserve"><value>Citát</value></data>
+  <data name="TmNotionPageHistory_BlockCallout"        xml:space="preserve"><value>Výzva</value></data>
+  <data name="TmNotionPageHistory_BlockCode"           xml:space="preserve"><value>Kód</value></data>
+  <data name="TmNotionPageHistory_BlockBullet"         xml:space="preserve"><value>Odrážky</value></data>
+  <data name="TmNotionPageHistory_BlockNumbered"       xml:space="preserve"><value>Číslovaný seznam</value></data>
+  <data name="TmNotionPageHistory_BlockTodo"           xml:space="preserve"><value>Úkol</value></data>
+  <data name="TmNotionPageHistory_BlockToggle"         xml:space="preserve"><value>Přepínač</value></data>
+  <data name="TmNotionPageHistory_BlockImage"          xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmNotionPageHistory_BlockTable"          xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmNotionPageHistory_BlockDivider"        xml:space="preserve"><value>Oddělovač</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadVersions"   xml:space="preserve"><value>Verze stránky se nepodařilo načíst.</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadPreview"    xml:space="preserve"><value>Obsah této verze se nepodařilo načíst.</value></data>
+  <data name="TmNotionPageHistory_ErrorLoadDiff"       xml:space="preserve"><value>Porovnání verzí se nezdařilo.</value></data>
+  <data name="TmNotionPageHistory_ErrorRestore"        xml:space="preserve"><value>Obnovení verze se nezdařilo. Zkuste to znovu.</value></data>
+
 </root>
