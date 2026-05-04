@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
 
@@ -9,6 +10,8 @@ namespace Tempo.Blazor.Components.Files;
 /// <summary>
 /// A full-featured file manager component with folder tree navigation,
 /// list/grid views, toolbar actions, and breadcrumb path display.
+/// Supports keyboard navigation like Windows Explorer (arrow keys, Enter,
+/// Delete, F2, Ctrl+A, Backspace, Ctrl+Click, Shift+Click).
 /// </summary>
 public partial class TmFileManager
 {
@@ -23,6 +26,14 @@ public partial class TmFileManager
     private bool _shouldFocusRenameInput;
     private bool _showDeleteDialog;
     private readonly List<FileManagerItem> _itemsToDelete = [];
+
+    // ── Keyboard navigation state ────────────────────────────────
+    private int _focusedIndex = -1;   // index of the keyboard-focused item
+    private int _anchorIndex = -1;    // anchor for Shift+selection
+    private int _gridColumnCount = 1; // columns in grid view (detected from JS)
+    private ElementReference _contentRef;
+
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     // ── Parameters ───────────────────────────────────────────────
 
@@ -104,6 +115,10 @@ public partial class TmFileManager
         {
             _items = [];
         }
+
+        // Reset keyboard focus when folder content changes
+        _focusedIndex = _items.Count > 0 ? 0 : -1;
+        _anchorIndex = _focusedIndex;
     }
 
     // ── Navigation ───────────────────────────────────────────────
@@ -157,11 +172,44 @@ public partial class TmFileManager
 
     // ── Selection ────────────────────────────────────────────────
 
-    private async Task SelectItem(FileManagerItem item)
+    private async Task HandleItemClickAsync(FileManagerItem item, MouseEventArgs e)
     {
         if (Disabled) return;
-        _selectedItems.Clear();
-        _selectedItems.Add(item);
+
+        var index = _items.IndexOf(item);
+        if (index < 0) return;
+
+        if (e.CtrlKey)
+        {
+            // Toggle selection
+            if (_selectedItems.Contains(item))
+                _selectedItems.Remove(item);
+            else
+                _selectedItems.Add(item);
+
+            _focusedIndex = index;
+            _anchorIndex = index;
+        }
+        else if (e.ShiftKey && _anchorIndex >= 0 && _anchorIndex < _items.Count)
+        {
+            // Range selection
+            var start = Math.Min(_anchorIndex, index);
+            var end = Math.Max(_anchorIndex, index);
+            _selectedItems.Clear();
+            for (int i = start; i <= end; i++)
+                _selectedItems.Add(_items[i]);
+
+            _focusedIndex = index;
+        }
+        else
+        {
+            // Normal single selection
+            _selectedItems.Clear();
+            _selectedItems.Add(item);
+            _focusedIndex = index;
+            _anchorIndex = index;
+        }
+
         await OnSelectionChanged.InvokeAsync(_selectedItems);
     }
 
@@ -171,7 +219,125 @@ public partial class TmFileManager
     {
         if (Disabled) return;
         _viewMode = mode;
+        _gridColumnCount = mode == FileManagerViewMode.Grid ? 4 : 1;
         await ViewModeChanged.InvokeAsync(mode);
+    }
+
+    // ── Keyboard handling ────────────────────────────────────────
+
+    private async Task HandleKeyDown(KeyboardEventArgs e)
+    {
+        if (Disabled || _renamingItem is not null) return;
+
+        // Ctrl+A — Select All
+        if ((e.CtrlKey || e.MetaKey) && e.Key.Equals("a", StringComparison.OrdinalIgnoreCase))
+        {
+            SelectAll();
+            return;
+        }
+
+        switch (e.Key)
+        {
+            case "ArrowUp":
+            case "ArrowDown":
+            case "ArrowLeft":
+            case "ArrowRight":
+                await HandleArrowKeyAsync(e);
+                break;
+
+            case "Enter":
+                if (_focusedIndex >= 0 && _focusedIndex < _items.Count)
+                    await OnItemDoubleClickAsync(_items[_focusedIndex]);
+                break;
+
+            case "Delete":
+                if (_selectedItems.Count > 0)
+                    DeleteSelectedAsync();
+                break;
+
+            case "F2":
+                if (_selectedItems.Count == 1)
+                    StartRenameAsync();
+                break;
+
+            case "Backspace":
+                if (_currentPath != "/")
+                {
+                    var parent = GetParentPath(_currentPath);
+                    await NavigateTo(parent);
+                }
+                break;
+        }
+    }
+
+    private async Task HandleArrowKeyAsync(KeyboardEventArgs e)
+    {
+        if (_items.Count == 0) return;
+
+        if (_focusedIndex < 0 || _focusedIndex >= _items.Count)
+            _focusedIndex = 0;
+
+        var columns = _viewMode == FileManagerViewMode.Grid ? Math.Max(1, _gridColumnCount) : 1;
+        var newIndex = _focusedIndex;
+
+        switch (e.Key)
+        {
+            case "ArrowUp":
+                newIndex = _viewMode == FileManagerViewMode.Grid
+                    ? _focusedIndex - columns
+                    : _focusedIndex - 1;
+                break;
+
+            case "ArrowDown":
+                newIndex = _viewMode == FileManagerViewMode.Grid
+                    ? _focusedIndex + columns
+                    : _focusedIndex + 1;
+                break;
+
+            case "ArrowLeft":
+                newIndex = _focusedIndex - 1;
+                break;
+
+            case "ArrowRight":
+                newIndex = _focusedIndex + 1;
+                break;
+        }
+
+        // Clamp to valid range
+        if (newIndex < 0) newIndex = 0;
+        if (newIndex >= _items.Count) newIndex = _items.Count - 1;
+
+        if (newIndex == _focusedIndex) return;
+
+        if (e.ShiftKey && _anchorIndex >= 0 && _anchorIndex < _items.Count)
+        {
+            // Extend/shrink range selection
+            var start = Math.Min(_anchorIndex, newIndex);
+            var end = Math.Max(_anchorIndex, newIndex);
+            _selectedItems.Clear();
+            for (int i = start; i <= end; i++)
+                _selectedItems.Add(_items[i]);
+        }
+        else if (!e.CtrlKey)
+        {
+            // Normal: move selection to new item
+            _selectedItems.Clear();
+            _selectedItems.Add(_items[newIndex]);
+            _anchorIndex = newIndex;
+        }
+        // Ctrl+arrow: just move focus without changing selection (not implemented — could be added)
+
+        _focusedIndex = newIndex;
+        await OnSelectionChanged.InvokeAsync(_selectedItems);
+    }
+
+    private void SelectAll()
+    {
+        _selectedItems.Clear();
+        _selectedItems.AddRange(_items);
+        _focusedIndex = _items.Count > 0 ? 0 : -1;
+        _anchorIndex = _focusedIndex;
+        OnSelectionChanged.InvokeAsync(_selectedItems);
     }
 
     // ── Toolbar actions ──────────────────────────────────────────
@@ -250,6 +416,21 @@ public partial class TmFileManager
         {
             _shouldFocusRenameInput = false;
             await _renameInputRef.FocusAsync();
+        }
+
+        // Detect grid column count from rendered DOM
+        if (_viewMode == FileManagerViewMode.Grid && _contentRef.Id is not null)
+        {
+            try
+            {
+                var cols = await JSRuntime.InvokeAsync<int>("TempoFileManager.getGridColumnCount", _contentRef);
+                if (cols > 0)
+                    _gridColumnCount = cols;
+            }
+            catch
+            {
+                // JS not available (e.g. bUnit) — keep fallback
+            }
         }
     }
 
@@ -357,5 +538,13 @@ public partial class TmFileManager
             >= KB => $"{b / (double)KB:F2} KB",
             _ => $"{b} B"
         };
+    }
+
+    private static string GetParentPath(string itemPath)
+    {
+        itemPath = itemPath.TrimEnd('/');
+        var lastSlash = itemPath.LastIndexOf('/');
+        if (lastSlash <= 0) return "/";
+        return itemPath.Substring(0, lastSlash);
     }
 }

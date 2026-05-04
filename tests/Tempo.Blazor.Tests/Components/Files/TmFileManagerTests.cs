@@ -2,6 +2,7 @@ using Bunit;
 using Bunit.TestDoubles;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components.Forms;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Files;
@@ -278,6 +279,30 @@ public class TmFileManagerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmFileManager_Rename_Enter_Does_Not_Open_Folder()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, provider));
+
+        // Select Documents folder and start rename
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
+        item.Click();
+        var renameBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Rename"));
+        renameBtn.Click();
+
+        // Press Enter to commit rename
+        var input = cut.Find(".tm-file-manager__item-rename-input");
+        input.Input("RenamedDocs");
+        input.KeyDown("Enter");
+
+        // Should still be in root (both root folders visible), not navigated into Documents
+        cut.Markup.Should().Contain("Pictures");
+        cut.Markup.Should().Contain("RenamedDocs");
+    }
+
+    [Fact]
     public void TmFileManager_Delete_Click_Shows_Confirm_Dialog()
     {
         var cut = RenderComponent<TmFileManager>(p => p
@@ -364,6 +389,162 @@ public class TmFileManagerTests : LocalizationTestBase
 
         // Uploaded file should appear with its original name
         cut.Markup.Should().Contain("MyDocument.pdf");
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_ArrowDown_Selects_Next_Item()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "ArrowDown" });
+
+        // focusedIndex starts at 0 (Documents), ArrowDown → 1 (Pictures)
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(1);
+        selected[0].TextContent.Should().Contain("Pictures");
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_ArrowDown_Twice_Clamps_To_Last()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "ArrowDown" });
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "ArrowDown" });
+
+        // Only 2 items in root; second ArrowDown should clamp to last item (Pictures)
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(1);
+        selected[0].TextContent.Should().Contain("Pictures");
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_Enter_Navigates_Folder()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        // focusedIndex starts at 0 = Documents
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        // Should navigate into Documents and show Report.pdf
+        cut.Markup.Should().Contain("Report.pdf");
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_Delete_Shows_Confirm_Dialog()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "ArrowDown" });
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "Delete" });
+
+        cut.Find(".tm-dialog").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_F2_Starts_Rename()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "ArrowDown" });
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "F2" });
+
+        cut.FindAll(".tm-file-manager__item-rename-input").Count.Should().Be(1);
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_CtrlA_Selects_All()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "a", CtrlKey = true });
+
+        // Root contains Documents and Pictures folders
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void TmFileManager_Keyboard_Backspace_Goes_Up()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        // Navigate to Documents first
+        var folder = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
+        folder.DoubleClick();
+
+        // Now in Documents — press Backspace
+        var wrapper = cut.Find(".tm-file-manager");
+        wrapper.KeyDown(new KeyboardEventArgs { Key = "Backspace" });
+
+        // Should be back at root
+        cut.Markup.Should().Contain("Documents");
+        cut.Markup.Should().Contain("Pictures");
+    }
+
+    [Fact]
+    public void TmFileManager_CtrlClick_Toggles_Selection()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var items = cut.FindAll(".tm-file-manager__item");
+        items[0].Click(new MouseEventArgs { CtrlKey = true });
+
+        // Re-query after render
+        items = cut.FindAll(".tm-file-manager__item");
+        items[1].Click(new MouseEventArgs { CtrlKey = true });
+
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(2);
+    }
+
+    [Fact]
+    public void TmFileManager_CtrlClick_Deselects()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        var items = cut.FindAll(".tm-file-manager__item");
+        items[0].Click(new MouseEventArgs { CtrlKey = true });
+
+        // Re-query after render
+        items = cut.FindAll(".tm-file-manager__item");
+        items[0].Click(new MouseEventArgs { CtrlKey = true });
+
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(0);
+    }
+
+    [Fact]
+    public void TmFileManager_ShiftClick_Selects_Range()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, provider));
+
+        var items = cut.FindAll(".tm-file-manager__item");
+        items[0].Click(); // normal click = anchor
+
+        // Re-query after render
+        items = cut.FindAll(".tm-file-manager__item");
+        items[1].Click(new MouseEventArgs { ShiftKey = true });
+
+        var selected = cut.FindAll(".tm-file-manager__item--selected");
+        selected.Count.Should().Be(2);
     }
 
     // ── Mock Provider ────────────────────────────────────────────

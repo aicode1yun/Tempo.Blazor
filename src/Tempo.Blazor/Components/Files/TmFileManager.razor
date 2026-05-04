@@ -3,7 +3,7 @@
 @using Tempo.Blazor.Abstractions.Models
 @inject ITmLocalizer Loc
 
-<div class="tm-file-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class" @attributes="AdditionalAttributes">
+<div class="tm-file-manager @(Disabled ? "tm-file-manager--disabled" : "") @Class" @attributes="AdditionalAttributes" tabindex="0" @onkeydown="HandleKeyDown">
     <!-- Toolbar -->
     <div class="tm-file-manager__toolbar">
         <div class="tm-file-manager__toolbar-group">
@@ -89,7 +89,7 @@
         }
 
         <!-- Content Area -->
-        <div class="tm-file-manager__content tm-file-manager__content--@(_viewMode.ToString().ToLowerInvariant())">
+        <div class="tm-file-manager__content tm-file-manager__content--@(_viewMode.ToString().ToLowerInvariant())" @ref="_contentRef">
             @if (_items.Count == 0)
             {
                 <div class="tm-file-manager__empty">
@@ -102,7 +102,7 @@
                 @foreach (var item in _items)
                 {
                     <div class="tm-file-manager__item @GetItemClass(item)"
-                         @onclick="() => SelectItem(item)"
+                         @onclick="(MouseEventArgs e) => HandleItemClickAsync(item, e)"
                          @ondblclick="() => OnItemDoubleClickAsync(item)">
                         <div class="tm-file-manager__item-icon">
                             <TmIcon Name="@GetItemIcon(item)" />
@@ -116,6 +116,7 @@
                                        @bind:event="oninput"
                                        @onblur="CommitRenameAsync"
                                        @onkeydown="HandleRenameKeyDown"
+                                       @onkeydown:stopPropagation
                                        @onclick:stopPropagation />
                             }
                             else
