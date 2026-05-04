@@ -140,4 +140,15 @@
         </div>
     </div>
 
+    <!-- Delete Confirmation Dialog -->
+    <TmDialog Type="DialogType.Confirm"
+              Variant="DialogVariant.Warning"
+              Show="@_showDeleteDialog"
+              Title="@Loc["TmFileManager_DeleteTitle"]"
+              Message="@string.Format(Loc["TmFileManager_DeleteMessage"], _itemsToDelete.Count)"
+              OkButtonText="@Loc["TmFileManager_ConfirmDelete"]"
+              CancelButtonText="@Loc["TmFileManager_CancelDelete"]"
+              IsDangerous="true"
+              OnResult="HandleDeleteDialogResult" />
+
 </div>

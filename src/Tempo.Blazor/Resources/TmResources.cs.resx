@@ -1823,6 +1823,10 @@
   <data name="TmFileManager_NewFolder" xml:space="preserve"><value>Nová složka</value></data>
   <data name="TmFileManager_Upload" xml:space="preserve"><value>Nahrát</value></data>
   <data name="TmFileManager_Delete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmFileManager_DeleteTitle" xml:space="preserve"><value>Smazat položky</value></data>
+  <data name="TmFileManager_DeleteMessage" xml:space="preserve"><value>Opravdu chcete smazat {0} vybranou/ché položku/ky? Tuto akci nelze vrátit zpět.</value></data>
+  <data name="TmFileManager_ConfirmDelete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmFileManager_CancelDelete" xml:space="preserve"><value>Zrušit</value></data>
   <data name="TmFileManager_Rename" xml:space="preserve"><value>Přejmenovat</value></data>
   <data name="TmFileManager_ListView" xml:space="preserve"><value>Seznam</value></data>
   <data name="TmFileManager_GridView" xml:space="preserve"><value>Mřížka</value></data>

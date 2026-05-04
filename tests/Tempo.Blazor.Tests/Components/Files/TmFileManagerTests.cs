@@ -275,6 +275,77 @@ public class TmFileManagerTests : LocalizationTestBase
         cut.Markup.Should().Contain("BlurredDocs");
     }
 
+    [Fact]
+    public void TmFileManager_Delete_Click_Shows_Confirm_Dialog()
+    {
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        // Select Documents folder
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
+        item.Click();
+
+        // Click delete button
+        var deleteBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Delete"));
+        deleteBtn.Click();
+
+        // Should show delete confirmation dialog
+        cut.Find(".tm-dialog").Should().NotBeNull();
+        cut.Markup.Should().Contain("Delete Items");
+    }
+
+    [Fact]
+    public void TmFileManager_Delete_Confirm_Removes_Item()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, provider));
+
+        // Select Documents folder
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
+        item.Click();
+
+        // Click delete button
+        var deleteBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Delete"));
+        deleteBtn.Click();
+
+        // Confirm delete
+        var confirmBtn = cut.FindAll(".tm-dialog-footer button")
+            .First(b => b.TextContent.Contains("Delete"));
+        confirmBtn.Click();
+
+        // Item should be removed
+        cut.Markup.Should().NotContain("Documents");
+    }
+
+    [Fact]
+    public void TmFileManager_Delete_Cancel_Keeps_Item()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmFileManager>(p => p
+            .Add(c => c.DataProvider, provider));
+
+        // Select Documents folder
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Documents"));
+        item.Click();
+
+        // Click delete button
+        var deleteBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Delete"));
+        deleteBtn.Click();
+
+        // Cancel delete
+        var cancelBtn = cut.FindAll(".tm-dialog-footer button")
+            .First(b => b.TextContent.Contains("Cancel"));
+        cancelBtn.Click();
+
+        // Dialog should close and item should still exist
+        cut.FindAll(".tm-dialog").Should().BeEmpty();
+        cut.Markup.Should().Contain("Documents");
+    }
+
     // ── Mock Provider ────────────────────────────────────────────
 
     private sealed class MockFileManagerDataProvider : IFileManagerDataProvider

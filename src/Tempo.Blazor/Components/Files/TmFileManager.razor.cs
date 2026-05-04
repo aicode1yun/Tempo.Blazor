@@ -21,6 +21,8 @@ public partial class TmFileManager
     private string _renameValue = string.Empty;
     private ElementReference _renameInputRef;
     private bool _shouldFocusRenameInput;
+    private bool _showDeleteDialog;
+    private readonly List<FileManagerItem> _itemsToDelete = [];
 
     // ── Parameters ───────────────────────────────────────────────
 
@@ -195,14 +197,42 @@ public partial class TmFileManager
         }
     }
 
-    private async Task DeleteSelectedAsync()
+    private void DeleteSelectedAsync()
     {
-        if (Disabled || DataProvider is null || _selectedItems.Count == 0) return;
-        var paths = _selectedItems.Select(i => i.Path).ToList();
+        if (Disabled || _selectedItems.Count == 0) return;
+        _itemsToDelete.Clear();
+        _itemsToDelete.AddRange(_selectedItems);
+        _showDeleteDialog = true;
+    }
+
+    private async Task ConfirmDeleteAsync()
+    {
+        if (DataProvider is null || _itemsToDelete.Count == 0) return;
+        var paths = _itemsToDelete.Select(i => i.Path).ToList();
         await DataProvider.DeleteAsync(paths);
+        _itemsToDelete.Clear();
         _selectedItems.Clear();
+        _showDeleteDialog = false;
         await OnSelectionChanged.InvokeAsync(_selectedItems);
         await LoadDataAsync();
+    }
+
+    private void CancelDelete()
+    {
+        _itemsToDelete.Clear();
+        _showDeleteDialog = false;
+    }
+
+    private async Task HandleDeleteDialogResult(bool? result)
+    {
+        if (result == true)
+        {
+            await ConfirmDeleteAsync();
+        }
+        else
+        {
+            CancelDelete();
+        }
     }
 
     private void StartRenameAsync()

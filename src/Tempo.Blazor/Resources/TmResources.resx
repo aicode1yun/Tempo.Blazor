@@ -1984,6 +1984,10 @@
   <data name="TmFileManager_NewFolder" xml:space="preserve"><value>New Folder</value></data>
   <data name="TmFileManager_Upload" xml:space="preserve"><value>Upload</value></data>
   <data name="TmFileManager_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmFileManager_DeleteTitle" xml:space="preserve"><value>Delete Items</value></data>
+  <data name="TmFileManager_DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete {0} selected item(s)? This action cannot be undone.</value></data>
+  <data name="TmFileManager_ConfirmDelete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmFileManager_CancelDelete" xml:space="preserve"><value>Cancel</value></data>
   <data name="TmFileManager_Rename" xml:space="preserve"><value>Rename</value></data>
   <data name="TmFileManager_ListView" xml:space="preserve"><value>List View</value></data>
   <data name="TmFileManager_GridView" xml:space="preserve"><value>Grid View</value></data>
