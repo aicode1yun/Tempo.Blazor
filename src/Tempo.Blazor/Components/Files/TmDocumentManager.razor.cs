@@ -51,6 +51,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private bool _showAttachmentUploadForm;
     private DocumentManagerItem<TMetadata>? _attachmentTargetItem;
     private List<FileUploadInfo> _attachmentUploadFiles = [];
+    private List<FileAttachment> _editAttachments = [];
 
     private bool _showCustomDeleteForm;
     private DeleteContext<TMetadata>? _deleteContext;
@@ -570,6 +571,14 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (DataProvider is null || _attachmentTargetItem is null || _attachmentUploadFiles.Count == 0) return;
 
         await DataProvider.AddAttachmentsAsync(_attachmentTargetItem.Id, _attachmentUploadFiles);
+
+        // Refresh edit attachments if we're editing the same item
+        if (_editingItem is not null && _editingItem.Id == _attachmentTargetItem.Id)
+        {
+            var refreshed = await DataProvider.GetItemDetailAsync(_attachmentTargetItem.Id);
+            _editAttachments = refreshed.Attachments.ToList();
+        }
+
         _showAttachmentUploadForm = false;
         _attachmentTargetItem = null;
         _attachmentUploadFiles = [];
@@ -595,7 +604,10 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     {
         if (DataProvider is null || _selectedItems.Count != 1) return;
         var stream = await DataProvider.DownloadAttachmentAsync(_selectedItems[0].Id, attachmentId);
-        await using (stream) { }
+        var attachment = _selectedItems[0].Attachments.FirstOrDefault(a => a.Id == attachmentId);
+        var fileName = attachment?.Name ?? "download";
+        using var streamRef = new DotNetStreamReference(stream);
+        await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", fileName, streamRef);
     }
 
     private AttachmentListContext<TMetadata> GetAttachmentListContext(DocumentManagerItem<TMetadata> item)
@@ -747,27 +759,42 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (file is null) return;
 
         var stream = await DataProvider.DownloadAsync(file.Id);
-        // Note: actual download to browser requires JS interop or NavigationManager
-        // This is a placeholder for the data-provider call.
-        await using (stream) { }
+        using var streamRef = new DotNetStreamReference(stream);
+        await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", file.Name, streamRef);
     }
 
-    private void StartEditAsync()
+    private async Task StartEditAsync()
     {
-        if (Disabled || _selectedItems.Count != 1 || !CanEditSelection()) return;
+        if (Disabled || DataProvider is null || _selectedItems.Count != 1 || !CanEditSelection()) return;
         _editingItem = _selectedItems[0];
         _editMetadata = _editingItem.Metadata;
+        _editAttachments = _editingItem.Attachments.ToList();
         _showEditForm = true;
+
+        var refreshed = await DataProvider.GetItemDetailAsync(_selectedItems[0].Id);
+        _editingItem = refreshed;
+        _editMetadata = refreshed.Metadata;
+        _editAttachments = refreshed.Attachments.ToList();
     }
 
     private async Task SubmitEditAsync()
     {
         if (_editingItem is null || DataProvider is null || _editContext?.Metadata is null) return;
+
+        // Sync attachment removals made during editing
+        var originalIds = _editingItem.Attachments.Select(a => a.Id).ToHashSet();
+        var currentIds = _editAttachments.Select(a => a.Id).ToHashSet();
+        foreach (var id in originalIds.Except(currentIds))
+        {
+            await DataProvider.RemoveAttachmentAsync(_editingItem.Id, id);
+        }
+
         await DataProvider.UpdateMetadataAsync(_editingItem.Id, _editContext.Metadata);
         _showEditForm = false;
         _editingItem = null;
         _editMetadata = null;
         _editContext = null;
+        _editAttachments = [];
         await LoadDataAsync();
     }
 
@@ -777,7 +804,13 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         _editingItem = null;
         _editMetadata = null;
         _editContext = null;
+        _editAttachments = [];
         return Task.CompletedTask;
+    }
+
+    private void StageAttachmentRemoval(string attachmentId)
+    {
+        _editAttachments.RemoveAll(a => a.Id == attachmentId);
     }
 
     private async Task ShowDetailAsync(DocumentManagerItem<TMetadata> item)

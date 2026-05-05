@@ -278,7 +278,7 @@
                                 else
                                 {
                                     <ul class="tm-document-manager__attachment-list">
-                                        @foreach (var att in _editingItem.Attachments)
+                                        @foreach (var att in _editAttachments)
                                         {
                                             <li class="tm-document-manager__attachment-item">
                                                 <span class="tm-document-manager__attachment-name">@att.Name</span>
@@ -287,7 +287,7 @@
                                                     <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
                                                         <TmIcon Name="download" />
                                                     </button>
-                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => RemoveAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Delete"]">
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => StageAttachmentRemoval(att.Id)" title="@Loc["TmFileManager_Delete"]">
                                                         <TmIcon Name="trash" />
                                                     </button>
                                                 </div>
@@ -392,9 +392,6 @@
                                             <div class="tm-document-manager__attachment-actions">
                                                 <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
                                                     <TmIcon Name="download" />
-                                                </button>
-                                                <button type="button" class="tm-document-manager__attachment-action" @onclick="() => RemoveAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Delete"]">
-                                                    <TmIcon Name="trash" />
                                                 </button>
                                             </div>
                                         </li>

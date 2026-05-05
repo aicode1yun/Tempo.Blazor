@@ -9,3 +9,16 @@ window.TempoFileManager.getGridColumnCount = function (element) {
     // gridTemplateColumns returns something like "120px 120px 120px" or "1fr 1fr"
     return template.trim().split(/\s+/).length;
 };
+
+window.TempoFileManager.downloadFileFromStream = async function (fileName, contentStreamReference) {
+    const arrayBuffer = await contentStreamReference.arrayBuffer();
+    const blob = new Blob([arrayBuffer]);
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+    anchor.href = url;
+    anchor.download = fileName;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+};
