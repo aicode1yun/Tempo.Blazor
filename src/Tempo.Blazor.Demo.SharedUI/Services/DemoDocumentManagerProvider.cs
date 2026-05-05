@@ -12,6 +12,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
 {
     private readonly List<DocumentManagerItem<DocumentMetadata>> _items;
     private readonly Dictionary<string, List<FileAttachment>> _attachments = new();
+    private readonly Dictionary<string, Dictionary<string, byte[]>> _attachmentData = new();
 
     public DemoDocumentManagerProvider(bool readOnly = false)
     {
@@ -147,6 +148,12 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             var item = _items.FirstOrDefault(i => i.Id == kvp.Key);
             if (item is not null)
                 item.Attachments = kvp.Value;
+
+            _attachmentData[kvp.Key] = new Dictionary<string, byte[]>();
+            foreach (var att in kvp.Value)
+            {
+                _attachmentData[kvp.Key][att.Id] = new byte[1024];
+            }
         }
 
         if (readOnly)
@@ -231,7 +238,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         return Task.CompletedTask;
     }
 
-    public Task<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>> UploadAsync(
+    public async Task<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>> UploadAsync(
         string folderPath, IReadOnlyList<FileUploadInfo> files,
         DocumentMetadata? metadata = null,
         string? name = null,
@@ -257,16 +264,23 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             };
 
             var attachments = new List<FileAttachment>();
+            _attachmentData[entity.Id] = new Dictionary<string, byte[]>();
             foreach (var file in files)
             {
-                attachments.Add(new FileAttachment
+                using var ms = new MemoryStream();
+                await file.Stream.CopyToAsync(ms);
+                var data = ms.ToArray();
+
+                var attachment = new FileAttachment
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = file.FileName,
                     Size = file.Size,
                     ContentType = file.ContentType,
                     CreatedDate = DateTime.Now
-                });
+                };
+                attachments.Add(attachment);
+                _attachmentData[entity.Id][attachment.Id] = data;
                 file.Stream.Dispose();
             }
 
@@ -299,11 +313,18 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             _items.AddRange(uploaded);
         }
 
-        return Task.FromResult<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>>(uploaded);
+        return uploaded;
     }
 
     public Task<Stream> DownloadAsync(string fileId, CancellationToken cancellationToken = default)
     {
+        var item = _items.FirstOrDefault(i => i.Id == fileId);
+        if (item?.Attachments.Count > 0)
+        {
+            var attId = item.Attachments[0].Id;
+            if (_attachmentData.TryGetValue(fileId, out var dict) && dict.TryGetValue(attId, out var data))
+                return Task.FromResult<Stream>(new MemoryStream(data));
+        }
         return Task.FromResult<Stream>(new MemoryStream([0x00, 0x01, 0x02]));
     }
 
@@ -356,23 +377,32 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         return Task.FromResult<IReadOnlyList<FileAttachment>>([]);
     }
 
-    public Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+    public async Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
         string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default)
     {
         if (!_attachments.ContainsKey(itemId))
             _attachments[itemId] = [];
 
         var list = _attachments[itemId];
+        if (!_attachmentData.ContainsKey(itemId))
+            _attachmentData[itemId] = new Dictionary<string, byte[]>();
+        var dataDict = _attachmentData[itemId];
         foreach (var file in files)
         {
-            list.Add(new FileAttachment
+            using var ms = new MemoryStream();
+            await file.Stream.CopyToAsync(ms);
+            var data = ms.ToArray();
+
+            var attachment = new FileAttachment
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = file.FileName,
                 Size = file.Size,
                 ContentType = file.ContentType,
                 CreatedDate = DateTime.Now
-            });
+            };
+            list.Add(attachment);
+            dataDict[attachment.Id] = data;
             file.Stream.Dispose();
         }
 
@@ -380,7 +410,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         if (item is not null)
             item.Attachments = list;
 
-        return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+        return list;
     }
 
     public Task RemoveAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
@@ -392,12 +422,16 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             if (item is not null)
                 item.Attachments = list;
         }
+        if (_attachmentData.TryGetValue(itemId, out var dict))
+            dict.Remove(attachmentId);
         return Task.CompletedTask;
     }
 
     public Task<Stream> DownloadAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
     {
-        return Task.FromResult<Stream>(new MemoryStream([0x00, 0x01, 0x02]));
+        if (_attachmentData.TryGetValue(itemId, out var dict) && dict.TryGetValue(attachmentId, out var data))
+            return Task.FromResult<Stream>(new MemoryStream(data));
+        return Task.FromResult<Stream>(new MemoryStream());
     }
 
     private static string GetParentPath(string itemPath)
