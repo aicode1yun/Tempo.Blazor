@@ -375,7 +375,8 @@
     max-height: 90vh;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: visible;
 }
 
 .tm-document-manager__modal-header {
@@ -414,7 +415,6 @@
 
 .tm-document-manager__modal-body {
     padding: var(--tm-space-4, 1rem);
-    overflow-y: auto;
 }
 
 /* Detail panel — slide-in from right */

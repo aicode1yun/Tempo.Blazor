@@ -19,21 +19,25 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             new()
             {
                 Id = "f1", Name = "Documents", Path = "/Documents", IsDirectory = true,
+                Metadata = new DocumentMetadata { Category = "Work", Description = "Document folder", Owner = "Admin", Tags = ["docs"] },
                 Permissions = new DocumentManagerPermission { CanDelete = false, CanRename = false }
             },
             new()
             {
                 Id = "f2", Name = "Pictures", Path = "/Pictures", IsDirectory = true,
+                Metadata = new DocumentMetadata { Category = "Media", Description = "Image folder", Owner = "Admin", Tags = ["images"] },
                 Permissions = new DocumentManagerPermission { CanDelete = true, CanRename = true }
             },
             new()
             {
                 Id = "f3", Name = "Music", Path = "/Music", IsDirectory = true,
+                Metadata = new DocumentMetadata { Category = "Media", Description = "Audio folder", Owner = "Admin", Tags = ["audio"] },
                 Permissions = new DocumentManagerPermission { CanUpload = false, CanCreateFolder = false }
             },
             new()
             {
                 Id = "f4", Name = "Archive", Path = "/Archive", IsDirectory = true,
+                Metadata = new DocumentMetadata { Category = "Archive", Description = "Old files", Owner = "Admin", Tags = ["old"] },
                 Permissions = new DocumentManagerPermission { CanRead = false }
             },
 

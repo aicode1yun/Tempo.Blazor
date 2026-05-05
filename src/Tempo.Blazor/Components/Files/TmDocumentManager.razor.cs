@@ -38,14 +38,17 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     // ── Custom forms ─────────────────────────────────────────────
     private bool _showNewFolderForm;
-    private string _newFolderName = string.Empty;
+    // _newFolderContext.Name is the single source of truth for new folder names
     private TMetadata? _newFolderMetadata;
+    private NewFolderContext<TMetadata>? _newFolderContext;
 
     private bool _showCustomDeleteForm;
+    private DeleteContext<TMetadata>? _deleteContext;
 
     private bool _showEditForm;
     private DocumentManagerItem<TMetadata>? _editingItem;
     private TMetadata? _editMetadata;
+    private EditContext<TMetadata>? _editContext;
 
     // ── Detail panel ─────────────────────────────────────────────
     private bool _showDetailPanel;
@@ -441,20 +444,34 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private void OpenNewFolderForm()
     {
         if (Disabled || DataProvider is null) return;
-        _newFolderName = "New Folder";
-        _newFolderMetadata = null;
+        // Default name is set in GetNewFolderContext()
+        _newFolderMetadata = TryCreateDefaultMetadata();
         _showNewFolderForm = true;
+    }
+
+    private static TMetadata? TryCreateDefaultMetadata()
+    {
+        try
+        {
+            return Activator.CreateInstance<TMetadata>();
+        }
+        catch
+        {
+            return null;
+        }
     }
 
     private async Task SubmitNewFolderAsync()
     {
-        if (DataProvider is null) return;
+        if (DataProvider is null || _newFolderContext is null) return;
 
-        var name = _newFolderName.Trim();
+        var name = _newFolderContext.Name.Trim();
         if (string.IsNullOrEmpty(name)) return;
 
-        var newItem = await DataProvider.CreateFolderAsync(_currentPath, name, _newFolderMetadata);
+        var newItem = await DataProvider.CreateFolderAsync(_currentPath, name, _newFolderContext.Metadata);
         _showNewFolderForm = false;
+        _newFolderMetadata = null;
+        _newFolderContext = null;
         await LoadDataAsync();
 
         var createdItem = _items.FirstOrDefault(i => i.Id == newItem.Id);
@@ -463,18 +480,14 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
             _selectedItems.Clear();
             _selectedItems.Add(createdItem);
             await OnSelectionChanged.InvokeAsync(_selectedItems);
-
-            _renamingItem = createdItem;
-            _renameValue = createdItem.Name;
-            _shouldFocusRenameInput = true;
         }
     }
 
     private Task CancelNewFolder()
     {
         _showNewFolderForm = false;
-        _newFolderName = string.Empty;
         _newFolderMetadata = null;
+        _newFolderContext = null;
         return Task.CompletedTask;
     }
 
@@ -509,6 +522,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         _itemsToDelete.Clear();
         _showDeleteDialog = false;
         _showCustomDeleteForm = false;
+        _deleteContext = null;
         return Task.CompletedTask;
     }
 
@@ -599,11 +613,12 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     private async Task SubmitEditAsync()
     {
-        if (_editingItem is null || DataProvider is null || _editMetadata is null) return;
-        await DataProvider.UpdateMetadataAsync(_editingItem.Id, _editMetadata);
+        if (_editingItem is null || DataProvider is null || _editContext?.Metadata is null) return;
+        await DataProvider.UpdateMetadataAsync(_editingItem.Id, _editContext.Metadata);
         _showEditForm = false;
         _editingItem = null;
         _editMetadata = null;
+        _editContext = null;
         await LoadDataAsync();
     }
 
@@ -612,6 +627,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         _showEditForm = false;
         _editingItem = null;
         _editMetadata = null;
+        _editContext = null;
         return Task.CompletedTask;
     }
 
@@ -676,7 +692,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     private NewFolderContext<TMetadata> GetNewFolderContext() => new()
     {
-        Name = _newFolderName,
+        Name = "New Folder",
         Metadata = _newFolderMetadata,
         OnSubmit = SubmitNewFolderAsync,
         OnCancel = CancelNewFolder

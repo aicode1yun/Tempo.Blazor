@@ -206,7 +206,7 @@
     <!-- Custom New Folder Form Overlay -->
     @if (_showNewFolderForm && NewFolderForm is not null)
     {
-        var ctx = GetNewFolderContext();
+        _newFolderContext ??= GetNewFolderContext();
         <div class="tm-document-manager__overlay" @onclick="CancelNewFolder">
             <div class="tm-document-manager__modal" @onclick:stopPropagation>
                 <div class="tm-document-manager__modal-header">
@@ -216,7 +216,7 @@
                     </button>
                 </div>
                 <div class="tm-document-manager__modal-body">
-                    @NewFolderForm(ctx)
+                    @NewFolderForm(_newFolderContext)
                 </div>
             </div>
         </div>
@@ -225,7 +225,7 @@
     <!-- Custom Delete Form Overlay -->
     @if (_showCustomDeleteForm && DeleteForm is not null)
     {
-        var ctx = GetDeleteContext();
+        _deleteContext ??= GetDeleteContext();
         <div class="tm-document-manager__overlay" @onclick="CancelDelete">
             <div class="tm-document-manager__modal" @onclick:stopPropagation>
                 <div class="tm-document-manager__modal-header">
@@ -235,7 +235,7 @@
                     </button>
                 </div>
                 <div class="tm-document-manager__modal-body">
-                    @DeleteForm(ctx)
+                    @DeleteForm(_deleteContext)
                 </div>
             </div>
         </div>
@@ -244,8 +244,8 @@
     <!-- Custom Edit Form Overlay -->
     @if (_showEditForm && EditForm is not null)
     {
-        var ctx = GetEditContext();
-        @if (ctx is not null)
+        _editContext ??= GetEditContext();
+        @if (_editContext is not null)
         {
             <div class="tm-document-manager__overlay" @onclick="CancelEdit">
                 <div class="tm-document-manager__modal" @onclick:stopPropagation>
@@ -256,7 +256,7 @@
                         </button>
                     </div>
                     <div class="tm-document-manager__modal-body">
-                        @EditForm(ctx)
+                        @EditForm(_editContext)
                     </div>
                 </div>
             </div>

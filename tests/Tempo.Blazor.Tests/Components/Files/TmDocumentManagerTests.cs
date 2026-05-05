@@ -118,10 +118,15 @@ public class TmDocumentManagerTests : LocalizationTestBase
         {
             builder.OpenElement(0, "div");
             builder.AddAttribute(1, "class", "test-new-folder-form");
-            builder.OpenElement(2, "button");
-            builder.AddAttribute(3, "class", "test-new-folder-submit");
-            builder.AddAttribute(4, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Context.OnSubmit?.Invoke() ?? Task.CompletedTask));
-            builder.AddContent(5, "Create");
+            builder.OpenElement(2, "input");
+            builder.AddAttribute(3, "class", "test-new-folder-name");
+            builder.AddAttribute(4, "value", Context.Name);
+            builder.AddAttribute(5, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, e => Context.Name = e.Value?.ToString() ?? ""));
+            builder.CloseElement();
+            builder.OpenElement(6, "button");
+            builder.AddAttribute(7, "class", "test-new-folder-submit");
+            builder.AddAttribute(8, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Context.OnSubmit?.Invoke() ?? Task.CompletedTask));
+            builder.AddContent(9, "Create");
             builder.CloseElement();
             builder.CloseElement();
         }
@@ -262,13 +267,19 @@ public class TmDocumentManagerTests : LocalizationTestBase
         // Custom form should appear
         cut.Find(".test-new-folder-form").Should().NotBeNull();
 
-        // Submit custom form directly via context
-        var formComponent = cut.FindComponent<TestNewFolderForm>();
-        await cut.InvokeAsync(() => formComponent.Instance.Context.OnSubmit!());
+        // Type a custom folder name
+        var nameInput = cut.Find(".test-new-folder-name");
+        nameInput.Change("MyCustomFolder");
         cut.Render();
 
-        // Form should close
+        // Submit via button click (tests two-way binding through the context field)
+        var submitBtn = cut.Find(".test-new-folder-submit");
+        submitBtn.Click();
+        cut.Render();
+
+        // Form should close and the new folder should appear with the correct name
         cut.FindAll(".test-new-folder-form").Should().BeEmpty();
+        cut.Markup.Should().Contain("MyCustomFolder");
     }
 
     [Fact]
