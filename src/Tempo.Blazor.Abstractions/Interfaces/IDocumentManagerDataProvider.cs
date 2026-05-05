@@ -42,10 +42,12 @@ public interface IDocumentManagerDataProvider<TMetadata> where TMetadata : class
         CancellationToken cancellationToken = default);
 
     /// <summary>Uploads files to the specified folder.</summary>
+    /// <param name="name">When provided, a single entity with this name is created and all files are stored as its attachments.</param>
     Task<IReadOnlyList<DocumentManagerItem<TMetadata>>> UploadAsync(
         string folderPath,
         IReadOnlyList<FileUploadInfo> files,
         TMetadata? metadata = null,
+        string? name = null,
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
 

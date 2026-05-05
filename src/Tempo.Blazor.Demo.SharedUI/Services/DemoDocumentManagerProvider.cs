@@ -234,28 +234,71 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
     public Task<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>> UploadAsync(
         string folderPath, IReadOnlyList<FileUploadInfo> files,
         DocumentMetadata? metadata = null,
+        string? name = null,
         IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
         var uploaded = new List<DocumentManagerItem<DocumentMetadata>>();
-        foreach (var file in files)
+
+        if (!string.IsNullOrEmpty(name) && files.Count > 0)
         {
-            var name = file.FileName;
+            // Single entity mode: one named entity with all files as attachments
             var path = $"{folderPath.TrimEnd('/')}/{name}";
-            var extension = System.IO.Path.GetExtension(name);
-            uploaded.Add(new DocumentManagerItem<DocumentMetadata>
+            var extension = System.IO.Path.GetExtension(files[0].FileName);
+            var entity = new DocumentManagerItem<DocumentMetadata>
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = name,
                 Path = path,
                 IsDirectory = false,
-                Size = file.Size,
+                Size = files.Sum(f => f.Size),
                 Extension = extension,
                 Metadata = metadata,
                 ModifiedDate = DateTime.Now
-            });
-            file.Stream.Dispose();
+            };
+
+            var attachments = new List<FileAttachment>();
+            foreach (var file in files)
+            {
+                attachments.Add(new FileAttachment
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = file.FileName,
+                    Size = file.Size,
+                    ContentType = file.ContentType,
+                    CreatedDate = DateTime.Now
+                });
+                file.Stream.Dispose();
+            }
+
+            _attachments[entity.Id] = attachments;
+            entity.Attachments = attachments;
+            _items.Add(entity);
+            uploaded.Add(entity);
         }
-        _items.AddRange(uploaded);
+        else
+        {
+            // Legacy mode: one entity per file
+            foreach (var file in files)
+            {
+                var itemName = file.FileName;
+                var path = $"{folderPath.TrimEnd('/')}/{itemName}";
+                var extension = System.IO.Path.GetExtension(itemName);
+                uploaded.Add(new DocumentManagerItem<DocumentMetadata>
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = itemName,
+                    Path = path,
+                    IsDirectory = false,
+                    Size = file.Size,
+                    Extension = extension,
+                    Metadata = metadata,
+                    ModifiedDate = DateTime.Now
+                });
+                file.Stream.Dispose();
+            }
+            _items.AddRange(uploaded);
+        }
+
         return Task.FromResult<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>>(uploaded);
     }
 

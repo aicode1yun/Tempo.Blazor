@@ -110,8 +110,12 @@
         var reviewDate = ToDateOnly(ctx.Metadata?.ReviewDate);
         return @<div class="p-4 space-y-3">
             <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Name</label>
+                <TmTextInput @bind-Value="ctx.Name" Placeholder="Document name" />
+            </div>
+            <div>
                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Files</label>
-                <TmFileDropZone OnFilesSelected="e => HandleUploadFilesSelected(ctx, e)" />
+                <TmFileDropZone Multiple="true" OnFilesSelected="e => HandleUploadFilesSelected(ctx, e)" />
             </div>
             @if (ctx.Files.Count > 0)
             {

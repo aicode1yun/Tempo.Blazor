@@ -521,7 +521,8 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     {
         if (DataProvider is null || _uploadContext is null || _uploadContext.Files.Count == 0) return;
 
-        var uploaded = await DataProvider.UploadAsync(_currentPath, _uploadContext.Files, metadata: _uploadContext.Metadata);
+        var name = !string.IsNullOrWhiteSpace(_uploadContext.Name) ? _uploadContext.Name : null;
+        var uploaded = await DataProvider.UploadAsync(_currentPath, _uploadContext.Files, metadata: _uploadContext.Metadata, name: name);
         _showUploadForm = false;
         _uploadMetadata = null;
         _uploadContext = null;

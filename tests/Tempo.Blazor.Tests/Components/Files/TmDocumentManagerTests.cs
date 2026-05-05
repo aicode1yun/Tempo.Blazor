@@ -401,6 +401,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
         uploadBtn.Click();
 
         var formComponent = cut.FindComponent<TestUploadForm>();
+        formComponent.Instance.Context.Name = "Bundle";
         formComponent.Instance.Context.Files = new List<FileUploadInfo>
         {
             new() { FileName = "a.txt", Size = 10, Stream = new System.IO.MemoryStream() },
@@ -414,7 +415,11 @@ public class TmDocumentManagerTests : LocalizationTestBase
         var allItems = typeof(MockDocumentManagerDataProvider)
             .GetField("_allItems", BindingFlags.NonPublic | BindingFlags.Instance)
             ?.GetValue(provider) as List<DocumentManagerItem<TestMetadata>>;
-        allItems?.Count(i => i.Name is "a.txt" or "b.txt" or "c.txt").Should().Be(3);
+
+        // Single entity named "Bundle" with 3 attachments
+        var bundle = allItems?.FirstOrDefault(i => i.Name == "Bundle");
+        bundle.Should().NotBeNull();
+        bundle!.Attachments.Count.Should().Be(3);
     }
 
     [Fact]
@@ -740,26 +745,66 @@ public class TmDocumentManagerTests : LocalizationTestBase
         public Task<IReadOnlyList<DocumentManagerItem<TestMetadata>>> UploadAsync(
             string folderPath, IReadOnlyList<FileUploadInfo> files,
             TestMetadata? metadata = null,
+            string? name = null,
             IProgress<int>? progress = null, CancellationToken cancellationToken = default)
         {
             UploadCalled = true;
-            foreach (var file in files)
+            var uploaded = new List<DocumentManagerItem<TestMetadata>>();
+
+            if (!string.IsNullOrEmpty(name) && files.Count > 0)
             {
-                var path = $"{folderPath.TrimEnd('/')}/{file.FileName}";
-                _allItems.Add(new DocumentManagerItem<TestMetadata>
+                var entity = new DocumentManagerItem<TestMetadata>
                 {
                     Id = Guid.NewGuid().ToString(),
-                    Name = file.FileName,
-                    Path = path,
+                    Name = name,
+                    Path = $"{folderPath.TrimEnd('/')}/{name}",
                     IsDirectory = false,
-                    Size = file.Size,
-                    Extension = System.IO.Path.GetExtension(file.FileName),
+                    Size = files.Sum(f => f.Size),
+                    Extension = System.IO.Path.GetExtension(files[0].FileName),
                     Metadata = metadata
-                });
-                file.Stream.Dispose();
+                };
+
+                var attachments = new List<FileAttachment>();
+                foreach (var file in files)
+                {
+                    attachments.Add(new FileAttachment
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = file.FileName,
+                        Size = file.Size,
+                        ContentType = file.ContentType,
+                        CreatedDate = DateTime.Now
+                    });
+                    file.Stream.Dispose();
+                }
+
+                _attachments[entity.Id] = attachments;
+                entity.Attachments = attachments;
+                _allItems.Add(entity);
+                uploaded.Add(entity);
             }
-            return Task.FromResult<IReadOnlyList<DocumentManagerItem<TestMetadata>>>(
-                _allItems.Where(i => files.Any(f => f.FileName == i.Name)).ToList());
+            else
+            {
+                foreach (var file in files)
+                {
+                    var path = $"{folderPath.TrimEnd('/')}/{file.FileName}";
+                    var item = new DocumentManagerItem<TestMetadata>
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Name = file.FileName,
+                        Path = path,
+                        IsDirectory = false,
+                        Size = file.Size,
+                        Extension = System.IO.Path.GetExtension(file.FileName),
+                        Metadata = metadata
+                    };
+                    _allItems.Add(item);
+                    uploaded.Add(item);
+                    file.Stream.Dispose();
+                }
+            }
+
+            return Task.FromResult<IReadOnlyList<DocumentManagerItem<TestMetadata>>>(uploaded);
         }
 
         public Task<Stream> DownloadAsync(string fileId, CancellationToken cancellationToken = default)
