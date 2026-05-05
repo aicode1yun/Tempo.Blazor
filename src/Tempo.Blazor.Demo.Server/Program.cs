@@ -3,6 +3,7 @@ using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.FluentValidation;
 using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.Services;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -21,6 +22,7 @@ builder.Services.AddHttpClient("DemoApi", c =>
     c.BaseAddress = new Uri(builder.Configuration["DemoApi:BaseUrl"] ?? "https://localhost:5100"));
 
 // Register SharedUI services
+builder.Services.AddScoped<SignalRCollaborationProvider>();
 builder.Services.AddScoped<PersonHttpDataProvider>();
 builder.Services.AddScoped<ActivityHttpService>();
 builder.Services.AddScoped<AttachmentHttpProvider>();
@@ -28,6 +30,10 @@ builder.Services.AddScoped<ImageHttpGalleryProvider>();
 builder.Services.AddScoped<ViewHttpProvider>();
 builder.Services.AddScoped<DemoNotionDataProvider>();
 builder.Services.AddScoped<DemoNotionBlockProvider>();
+builder.Services.AddScoped<MockNotionCommentProvider>();
+builder.Services.AddScoped<MockNotionHistoryProvider>();
+builder.Services.AddScoped<MockNotionMentionProvider>();
+builder.Services.AddScoped<MockNotionSearchProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();

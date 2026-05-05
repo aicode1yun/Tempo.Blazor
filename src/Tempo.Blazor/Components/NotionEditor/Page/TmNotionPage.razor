@@ -4,10 +4,21 @@
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.NotionEditor.Blocks
 @using Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Models
 
 <article class="tm-notion-page @_pageMods"
          data-page-id="@Page.Id"
          @ref="_pageRef">
+
+    @* ── Page settings button (top-right corner) ────────────────────────────── *@
+    <div class="tm-notion-page__settings-btn">
+        <TmNotionPageSettingsMenu Page="Page"
+                                  ReadOnly="ReadOnly"
+                                  OnPageUpdated="OnPageSettingsUpdated"
+                                  OnPageDeleted="HandlePageDeletedAsync"
+                                  OnPageHistoryRequested="HandlePageHistoryRequestedAsync"
+                                  OnNavigateToImportedPage="HandleNavigateToImportedPageAsync" />
+    </div>
 
     @* ── Page header (cover + icon + title + description) ──────────────────── *@
     <TmNotionPageHeader Page="Page"
@@ -111,6 +122,12 @@
                      PagesOnly="_mentionPagesOnly"
                      OnItemSelected="HandleMentionItemSelectedAsync"
                      OnClosed="HandleMentionMenuClosedAsync" />
+
+@* ── Page history panel (portal — position:fixed) *@
+<TmNotionPageHistory Visible="_historyVisible"
+                     PageId="@Page.Id.ToString("D")"
+                     OnClosed="() => { _historyVisible = false; StateHasChanged(); }"
+                     OnRestored="HandleHistoryRestoredAsync" />
 
 @* ── Inline formatting toolbar (portal — position:fixed, outside scroll) *@
 <TmNotionInlineToolbar Visible="_toolbarVisible"

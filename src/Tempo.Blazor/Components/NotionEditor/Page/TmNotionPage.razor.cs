@@ -50,6 +50,8 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private INotionPage?     _lastPage;
 
     private ElementReference _pageRef;
+    private bool             _historyVisible;
+    private bool             _collabSubscribed;
 
     // ── Slash menu state ─────────────────────────────────────────────────────
 
@@ -97,8 +99,21 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         if (!ReferenceEquals(Page, _lastPage))
         {
             _lastPage = Page;
+
+            if (!_collabSubscribed && Context.CollaborationSync is { } sync)
+            {
+                sync.RemoteBlockChanged += OnRemoteBlockChanged;
+                _collabSubscribed = true;
+            }
+
             await RefreshAsync();
         }
+    }
+
+    private async void OnRemoteBlockChanged(BlockChange _)
+    {
+        // Remote edit arrived — reload all blocks for the page (last-write-wins)
+        await InvokeAsync(RefreshAsync);
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -245,6 +260,37 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     /// <summary>Returns the current ordered list of blocks (read-only view).</summary>
     public IReadOnlyList<IPageBlock> Blocks => _blocks;
+
+    // ── Page settings handlers ────────────────────────────────────────────────
+
+    private async Task OnPageSettingsUpdated(INotionPage updated)
+    {
+        await OnPageUpdated.InvokeAsync(updated);
+        StateHasChanged();
+    }
+
+    private async Task HandlePageDeletedAsync()
+    {
+        await OnNavigateToPage.InvokeAsync(string.Empty);
+    }
+
+    private Task HandlePageHistoryRequestedAsync()
+    {
+        _historyVisible = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleNavigateToImportedPageAsync(string pageId)
+    {
+        await OnNavigateToPage.InvokeAsync(pageId);
+    }
+
+    private async Task HandleHistoryRestoredAsync(string pageId)
+    {
+        _historyVisible = false;
+        await RefreshAsync();
+    }
 
     // ── Title enter handler ───────────────────────────────────────────────────
 
@@ -581,6 +627,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_collabSubscribed && Context.CollaborationSync is { } sync)
+            sync.RemoteBlockChanged -= OnRemoteBlockChanged;
+
         if (_toolbarWatcherReady)
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.destroySelectionWatcher", _pageRef); }

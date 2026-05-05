@@ -14,6 +14,23 @@
     background:       var(--tm-notion-bg, var(--tm-bg-page));
     color:            var(--tm-text-primary);
     font-family:      var(--tm-notion-font-sans);
+    position:         relative;
+}
+
+/* ── Settings button (top-right absolute overlay) ────────────── */
+
+.tm-notion-page__settings-btn {
+    position: absolute;
+    top: 10px;
+    right: 14px;
+    z-index: 100;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.tm-notion-page:hover .tm-notion-page__settings-btn,
+.tm-notion-page__settings-btn:focus-within {
+    opacity: 1;
 }
 
 /* ── Content wrapper ──────────────────────────────────────────── */

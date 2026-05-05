@@ -2006,4 +2006,186 @@
   <data name="TmNotionPageHistory_ErrorLoadDiff"       xml:space="preserve"><value>Porovnání verzí se nezdařilo.</value></data>
   <data name="TmNotionPageHistory_ErrorRestore"        xml:space="preserve"><value>Obnovení verze se nezdařilo. Zkuste to znovu.</value></data>
 
+  <!-- Collaboration -->
+  <data name="TmNotionCollab_ActiveUsers"              xml:space="preserve"><value>Aktivní spolupracovníci</value></data>
+  <data name="TmNotionCollab_Connecting"               xml:space="preserve"><value>Připojování…</value></data>
+  <data name="TmNotionCollab_Disconnected"             xml:space="preserve"><value>Odpojeno</value></data>
+  <data name="TmNotionCollab_Connected"                xml:space="preserve"><value>Připojeno</value></data>
+
+  <!-- Editor shell -->
+  <data name="TmNotionEditor_Loading"                  xml:space="preserve"><value>Načítání stránky…</value></data>
+  <data name="TmNotionEditor_LoadError"                xml:space="preserve"><value>Stránku se nepodařilo načíst. {0}</value></data>
+  <data name="TmNotionEditor_Locked"                   xml:space="preserve"><value>Pouze pro čtení</value></data>
+  <data name="TmNotionEditor_NavigateBack"             xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmNotionEditor_SidebarLabel"             xml:space="preserve"><value>Navigace</value></data>
+  <data name="TmNotionEditor_ToggleSidebar"            xml:space="preserve"><value>Přepnout postranní panel</value></data>
+  <data name="TmNotionEditor_Untitled"                 xml:space="preserve"><value>Bez názvu</value></data>
+
+  <!-- Block placeholders & add button -->
+  <data name="TmNotionBlock_AddBlock"                  xml:space="preserve"><value>Přidat blok níže</value></data>
+  <data name="TmNotionBlock_ParagraphPlaceholder"      xml:space="preserve"><value>Napište '/' pro příkazy…</value></data>
+  <data name="TmNotionBlock_ListPlaceholder"           xml:space="preserve"><value>Položka seznamu</value></data>
+  <data name="TmNotionBlock_TogglePlaceholder"         xml:space="preserve"><value>Přepínač</value></data>
+  <data name="TmNotionBlock_QuotePlaceholder"          xml:space="preserve"><value>Prázdný citát</value></data>
+  <data name="TmNotionBlock_CalloutPlaceholder"        xml:space="preserve"><value>Výzva</value></data>
+  <data name="TmNotionBlock_EquationPlaceholder"       xml:space="preserve"><value>Zadejte LaTeX výraz…</value></data>
+
+  <!-- Block handle -->
+  <data name="TmNotionBlockHandle_DragToReorder"       xml:space="preserve"><value>Přetáhněte pro přeuspořádání</value></data>
+  <data name="TmNotionBlockHandle_OpenMenu"            xml:space="preserve"><value>Možnosti bloku</value></data>
+
+  <!-- Block context menu -->
+  <data name="TmNotionBlockContextMenu_TurnInto"       xml:space="preserve"><value>Změnit na</value></data>
+  <data name="TmNotionBlockContextMenu_Color"          xml:space="preserve"><value>Barva</value></data>
+  <data name="TmNotionBlockContextMenu_TextColor"      xml:space="preserve"><value>Barva textu</value></data>
+  <data name="TmNotionBlockContextMenu_Background"     xml:space="preserve"><value>Pozadí</value></data>
+  <data name="TmNotionBlockContextMenu_Comment"        xml:space="preserve"><value>Komentář</value></data>
+  <data name="TmNotionBlockContextMenu_Duplicate"      xml:space="preserve"><value>Duplikovat</value></data>
+  <data name="TmNotionBlockContextMenu_CopyLink"       xml:space="preserve"><value>Kopírovat odkaz na blok</value></data>
+  <data name="TmNotionBlockContextMenu_MoveTo"         xml:space="preserve"><value>Přesunout do</value></data>
+  <data name="TmNotionBlockContextMenu_Delete"         xml:space="preserve"><value>Smazat</value></data>
+
+  <!-- Page -->
+  <data name="TmNotionPage_TitlePlaceholder"           xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionPage_WriteHint"                  xml:space="preserve"><value>Stiskněte Enter nebo klikněte sem pro zahájení psaní…</value></data>
+  <data name="TmNotionPage_AddIcon"                    xml:space="preserve"><value>Přidat ikonu</value></data>
+  <data name="TmNotionPage_AddCover"                   xml:space="preserve"><value>Přidat obálku</value></data>
+  <data name="TmNotionPage_ChangeCover"                xml:space="preserve"><value>Změnit obálku</value></data>
+  <data name="TmNotionPage_RemoveCover"                xml:space="preserve"><value>Odebrat obálku</value></data>
+  <data name="TmNotionPage_IconLabel"                  xml:space="preserve"><value>Ikona stránky</value></data>
+  <data name="TmNotionPage_CommentsLabel"              xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmNotionPage_BlocksLoadError"            xml:space="preserve"><value>Obsah se nepodařilo načíst. {0}</value></data>
+
+  <!-- Page header -->
+  <data name="TmNotionPageHeader_AddDescription"       xml:space="preserve"><value>Přidat popis</value></data>
+  <data name="TmNotionPageHeader_RemoveDescription"    xml:space="preserve"><value>Odebrat popis</value></data>
+  <data name="TmNotionPageHeader_DescriptionPlaceholder" xml:space="preserve"><value>Přidejte popis…</value></data>
+  <data name="TmNotionPageHeader_DragToReposition"     xml:space="preserve"><value>Přetáhněte pro přemístění</value></data>
+  <data name="TmNotionPageHeader_SetCover"             xml:space="preserve"><value>Nastavit obálku</value></data>
+  <data name="TmNotionPageHeader_CoverDialogTitle"     xml:space="preserve"><value>Změnit obálku</value></data>
+  <data name="TmNotionPageHeader_CoverPresets"         xml:space="preserve"><value>Přednastavené barvy</value></data>
+  <data name="TmNotionPageHeader_CoverUrl"             xml:space="preserve"><value>URL obrázku</value></data>
+  <data name="TmNotionPageHeader_EmojiPickerTitle"     xml:space="preserve"><value>Vybrat ikonu</value></data>
+  <data name="TmNotionPageHeader_EmojiSearch"          xml:space="preserve"><value>Hledat emoji…</value></data>
+  <data name="TmNotionPageHeader_RemoveIcon"           xml:space="preserve"><value>Odebrat ikonu</value></data>
+
+  <!-- Emoji picker -->
+  <data name="TmNotionEmojiPicker_Title"               xml:space="preserve"><value>Vybrat emoji</value></data>
+  <data name="TmNotionEmojiPicker_Search"              xml:space="preserve"><value>Hledat emoji…</value></data>
+  <data name="TmNotionEmojiPicker_Remove"              xml:space="preserve"><value>Odebrat ikonu</value></data>
+
+  <!-- Heading block -->
+  <data name="TmNotionHeadingBlock_Placeholder"        xml:space="preserve"><value>Nadpis</value></data>
+  <data name="TmNotionHeadingBlock_ToggleSection"      xml:space="preserve"><value>Přepnout sekci</value></data>
+
+  <!-- Toggle block -->
+  <data name="TmNotionToggleBlock_Expand"              xml:space="preserve"><value>Rozbalit / sbalit</value></data>
+  <data name="TmNotionToggleBlock_ChildrenLoading"     xml:space="preserve"><value>Načítání obsahu…</value></data>
+
+  <!-- Divider block -->
+  <data name="TmNotionDividerBlock_Label"              xml:space="preserve"><value>Oddělovač</value></data>
+
+  <!-- Code block -->
+  <data name="TmNotionCodeBlock_CaptionPlaceholder"    xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionCodeBlock_SelectLanguage"        xml:space="preserve"><value>Jazyk</value></data>
+  <data name="TmNotionCodeBlock_CopyCode"              xml:space="preserve"><value>Kopírovat</value></data>
+  <data name="TmNotionCodeBlock_Copied"                xml:space="preserve"><value>Zkopírováno!</value></data>
+
+  <!-- Callout block -->
+  <data name="TmNotionCalloutBlock_ChangeIcon"         xml:space="preserve"><value>Změnit ikonu</value></data>
+
+  <!-- Column list block -->
+  <data name="TmNotionColumnListBlock_AddColumn"       xml:space="preserve"><value>Přidat sloupec</value></data>
+  <data name="TmNotionColumnListBlock_DragToResize"    xml:space="preserve"><value>Přetáhněte pro změnu šířky sloupců</value></data>
+
+  <!-- Bookmark block -->
+  <data name="TmNotionBookmarkBlock_UrlPlaceholder"    xml:space="preserve"><value>Vložte odkaz pro vytvoření záložky…</value></data>
+  <data name="TmNotionBookmarkBlock_Confirm"           xml:space="preserve"><value>Vytvořit záložku</value></data>
+  <data name="TmNotionBookmarkBlock_Resolving"         xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionBookmarkBlock_CaptionPlaceholder" xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionBookmarkBlock_ErrorInvalidUrl"   xml:space="preserve"><value>Zadejte prosím platnou URL adresu.</value></data>
+  <data name="TmNotionBookmarkBlock_ErrorResolve"      xml:space="preserve"><value>Náhled záložky nelze načíst. Zkontrolujte URL a zkuste to znovu.</value></data>
+
+  <!-- Embed block -->
+  <data name="TmNotionEmbedBlock_UrlPlaceholder"       xml:space="preserve"><value>Vložte odkaz pro vložení (Figma, Miro, CodePen…)</value></data>
+  <data name="TmNotionEmbedBlock_Confirm"              xml:space="preserve"><value>Vložit</value></data>
+  <data name="TmNotionEmbedBlock_Replace"              xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmNotionEmbedBlock_OpenSource"           xml:space="preserve"><value>Otevřít zdroj</value></data>
+  <data name="TmNotionEmbedBlock_CaptionPlaceholder"   xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionEmbedBlock_ErrorInvalidUrl"      xml:space="preserve"><value>Zadejte prosím platnou URL adresu.</value></data>
+  <data name="TmNotionEmbedBlock_ErrorGeneric"         xml:space="preserve"><value>Tuto URL nelze vložit. Zkontrolujte odkaz a zkuste to znovu.</value></data>
+
+  <!-- Diagram block -->
+  <data name="TmNotionDiagramBlock_CreateDiagram"      xml:space="preserve"><value>Vytvořit diagram</value></data>
+  <data name="TmNotionDiagramBlock_Edit"               xml:space="preserve"><value>Upravit diagram</value></data>
+  <data name="TmNotionDiagramBlock_CaptionPlaceholder" xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionDiagramEditModal_Title"          xml:space="preserve"><value>Editor diagramů</value></data>
+  <data name="TmNotionDiagramEditModal_Save"           xml:space="preserve"><value>Uložit a zavřít</value></data>
+  <data name="TmNotionDiagramEditModal_Discard"        xml:space="preserve"><value>Zahodit změny</value></data>
+
+  <!-- Wireframe block -->
+  <data name="TmNotionWireframeBlock_CreateWireframe"  xml:space="preserve"><value>Vytvořit drátový model</value></data>
+  <data name="TmNotionWireframeBlock_Edit"             xml:space="preserve"><value>Upravit drátový model</value></data>
+  <data name="TmNotionWireframeBlock_CaptionPlaceholder" xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionWireframeEditModal_Title"        xml:space="preserve"><value>Editor drátových modelů</value></data>
+  <data name="TmNotionWireframeEditModal_Save"         xml:space="preserve"><value>Uložit a zavřít</value></data>
+  <data name="TmNotionWireframeEditModal_Discard"      xml:space="preserve"><value>Zahodit změny</value></data>
+
+  <!-- Page search (Ctrl+P) -->
+  <data name="TmNotionPageSearch_Placeholder"          xml:space="preserve"><value>Hledat stránky a obsah…</value></data>
+  <data name="TmNotionPageSearch_DialogLabel"          xml:space="preserve"><value>Hledat stránky</value></data>
+  <data name="TmNotionPageSearch_StartTyping"          xml:space="preserve"><value>Začněte psát pro vyhledávání stránek a bloků</value></data>
+  <data name="TmNotionPageSearch_Loading"              xml:space="preserve"><value>Hledání…</value></data>
+  <data name="TmNotionPageSearch_NoResults"            xml:space="preserve"><value>Žádné výsledky</value></data>
+  <data name="TmNotionPageSearch_NoProvider"           xml:space="preserve"><value>Vyhledávací provider není nakonfigurován</value></data>
+  <data name="TmNotionPageSearch_SectionPages"         xml:space="preserve"><value>Stránky</value></data>
+  <data name="TmNotionPageSearch_SectionBlocks"        xml:space="preserve"><value>V obsahu</value></data>
+  <data name="TmNotionPageSearch_Untitled"             xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionPageSearch_ResultsLabel"         xml:space="preserve"><value>Výsledky hledání</value></data>
+  <data name="TmNotionPageSearch_HintOpen"             xml:space="preserve"><value>Otevřít</value></data>
+  <data name="TmNotionPageSearch_HintNavigate"         xml:space="preserve"><value>Navigovat</value></data>
+  <data name="TmNotionPageSearch_HintClose"            xml:space="preserve"><value>Zavřít</value></data>
+  <data name="TmNotionPageSearch_FilterLabel"          xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmNotionPageSearch_FilterTitle"          xml:space="preserve"><value>Pokročilé filtry</value></data>
+  <data name="TmNotionPageSearch_FilterAuthorLabel"    xml:space="preserve"><value>Autor</value></data>
+  <data name="TmNotionPageSearch_FilterAuthorPlaceholder" xml:space="preserve"><value>ID uživatele nebo jméno</value></data>
+  <data name="TmNotionPageSearch_FilterDateFromLabel"  xml:space="preserve"><value>Vytvořeno po</value></data>
+  <data name="TmNotionPageSearch_FilterDateToLabel"    xml:space="preserve"><value>Vytvořeno před</value></data>
+  <data name="TmNotionPageSearch_FilterClear"          xml:space="preserve"><value>Smazat filtry</value></data>
+
+  <!-- Page settings menu -->
+  <data name="TmNotionPageSettingsMenu_TriggerLabel"         xml:space="preserve"><value>Nastavení stránky</value></data>
+  <data name="TmNotionPageSettingsMenu_FullWidth"            xml:space="preserve"><value>Celá šířka</value></data>
+  <data name="TmNotionPageSettingsMenu_SmallText"            xml:space="preserve"><value>Malý text</value></data>
+  <data name="TmNotionPageSettingsMenu_LockPage"             xml:space="preserve"><value>Uzamknout stránku</value></data>
+  <data name="TmNotionPageSettingsMenu_PageHistory"          xml:space="preserve"><value>Historie stránky</value></data>
+  <data name="TmNotionPageSettingsMenu_AddToFavorites"       xml:space="preserve"><value>Přidat do oblíbených</value></data>
+  <data name="TmNotionPageSettingsMenu_RemoveFromFavorites"  xml:space="preserve"><value>Odebrat z oblíbených</value></data>
+  <data name="TmNotionPageSettingsMenu_Export"               xml:space="preserve"><value>Exportovat</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportMarkdown"       xml:space="preserve"><value>Exportovat jako Markdown</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportHtml"           xml:space="preserve"><value>Exportovat jako HTML</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportPdf"            xml:space="preserve"><value>Exportovat jako PDF</value></data>
+  <data name="TmNotionPageSettingsMenu_Import"               xml:space="preserve"><value>Importovat</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportMarkdown"       xml:space="preserve"><value>Importovat Markdown (.md)</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportHtml"           xml:space="preserve"><value>Importovat HTML (.html)</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportWord"           xml:space="preserve"><value>Importovat Word (.docx)</value></data>
+  <data name="TmNotionPageSettingsMenu_CopyLink"             xml:space="preserve"><value>Kopírovat odkaz</value></data>
+  <data name="TmNotionPageSettingsMenu_LinkCopied"           xml:space="preserve"><value>Odkaz zkopírován do schránky</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveTo"               xml:space="preserve"><value>Přesunout do</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToLabel"          xml:space="preserve"><value>Přesunout stránku do</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToSearchPlaceholder" xml:space="preserve"><value>Hledat stránky…</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToSearching"      xml:space="preserve"><value>Hledání…</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToNoResults"      xml:space="preserve"><value>Žádné stránky nenalezeny</value></data>
+  <data name="TmNotionPageSettingsMenu_Delete"               xml:space="preserve"><value>Přesunout do koše</value></data>
+  <data name="TmNotionPageSettingsMenu_DeleteConfirmText"    xml:space="preserve"><value>Tato stránka bude přesunuta do koše. Můžete ji obnovit později.</value></data>
+  <data name="TmNotionPageSettingsMenu_DeleteConfirm"        xml:space="preserve"><value>Přesunout do koše</value></data>
+  <data name="TmNotionPageSettingsMenu_Untitled"             xml:space="preserve"><value>Bez názvu</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorUpdate"          xml:space="preserve"><value>Nepodařilo se aktualizovat nastavení stránky.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorExport"          xml:space="preserve"><value>Export se nezdařil. Zkuste to znovu.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorImport"          xml:space="preserve"><value>Import se nezdařil. Zkuste to znovu.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorFavorite"        xml:space="preserve"><value>Nepodařilo se aktualizovat oblíbené.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorMove"            xml:space="preserve"><value>Stránku se nepodařilo přesunout.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorCopy"            xml:space="preserve"><value>Nepodařilo se zkopírovat odkaz.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorDelete"          xml:space="preserve"><value>Stránku se nepodařilo smazat.</value></data>
+
 </root>

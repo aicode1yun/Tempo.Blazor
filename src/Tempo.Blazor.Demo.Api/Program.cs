@@ -2,6 +2,7 @@ using Microsoft.EntityFrameworkCore;
 using Tempo.Blazor.Components.Diagram.Services;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.Demo.Api.Endpoints;
+using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.Models;
 
@@ -18,7 +19,10 @@ builder.Services.AddCors(o => o.AddDefaultPolicy(p =>
         "http://localhost:5010",
         "https://localhost:7106")
      .AllowAnyMethod()
-     .AllowAnyHeader()));
+     .AllowAnyHeader()
+     .AllowCredentials()));   // required for SignalR WebSocket handshake
+
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -60,6 +64,7 @@ app.MapDiagramExportEndpoints();
 app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();
 app.MapDatabaseEndpoints();
+app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
 
 using (var scope = app.Services.CreateScope())
 {

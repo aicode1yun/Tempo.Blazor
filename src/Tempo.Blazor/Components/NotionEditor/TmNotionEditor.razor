@@ -4,6 +4,7 @@
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.NotionEditor.Page
 @using Tempo.Blazor.Components.NotionEditor.Sidebar
+@using Tempo.Blazor.Components.NotionEditor.UI
 
 <div class="tm-notion-editor @_editorModifiers @Class"
      data-notion-scroll-root
@@ -78,6 +79,12 @@
 
                 <span class="tm-notion-topbar__spacer" aria-hidden="true"></span>
 
+                @* ── Collaboration avatar bar ──────────────────────────── *@
+                @if (_context.CollaborationProvider is not null)
+                {
+                    <TmNotionCollaborationCursors />
+                }
+
                 @if (ReadOnly)
                 {
                     <span class="tm-notion-locked-badge" role="status" aria-label="@Loc["TmNotionEditor_Locked"]">
@@ -131,6 +138,9 @@
             }
 
         </div>
+
+        @* ── Page Search (Ctrl+P / Cmd+P) ──────────────────────────────────── *@
+        <TmNotionPageSearch />
 
     </CascadingValue>
 

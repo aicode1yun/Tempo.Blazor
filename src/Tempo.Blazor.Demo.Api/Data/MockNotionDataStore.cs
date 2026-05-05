@@ -11,28 +11,101 @@ public class MockNotionDataStore
         InitializeMockData();
     }
 
+    // Fixed page IDs for stable cross-references
+    public static readonly Guid Page1Id = Guid.Parse("11111111-1111-1111-1111-111111111111");
+    public static readonly Guid Page2Id = Guid.Parse("22222222-2222-2222-2222-222222222222");
+    public static readonly Guid Page3Id = Guid.Parse("33333333-3333-3333-3333-333333333333");
+    public static readonly Guid Page4Id = Guid.Parse("44444444-4444-4444-4444-444444444444");
+    public static readonly Guid Page5Id = Guid.Parse("55555555-5555-5555-5555-555555555555");
+    public static readonly Guid Page6Id = Guid.Parse("66666666-6666-6666-6666-666666666666");
+
     private void InitializeMockData()
     {
-        var pageId = Guid.Parse("11111111-1111-1111-1111-111111111111");
+        var now = DateTime.UtcNow;
 
-        var page = new NotionPage
+        _pages[Page1Id] = new NotionPage
         {
-            Id = pageId,
-            ParentId = null,
-            Title = "Getting Started with Notion Editor",
-            Description = "A demo page to test the Notion Editor functionality",
-            IconEmoji = "📝",
-            IsFullWidth = false,
-            IsSmallText = false,
-            IsLocked = false,
-            CreatedAt = DateTime.UtcNow,
-            CreatedByUserId = "demo-user",
-            LastEditedAt = DateTime.UtcNow,
-            LastEditedByUserId = "demo-user",
-            IsFavorite = true
+            Id                 = Page1Id,
+            ParentId           = null,
+            Title              = "Getting Started with Notion Editor",
+            Description        = "A demo page to test the Notion Editor functionality",
+            IconEmoji          = "📝",
+            CreatedAt          = now.AddDays(-7),
+            CreatedByUserId    = "alice",
+            LastEditedAt       = now.AddHours(-2),
+            LastEditedByUserId = "demo",
+            IsFavorite         = true
         };
 
-        _pages[page.Id] = page;
+        _pages[Page2Id] = new NotionPage
+        {
+            Id                 = Page2Id,
+            ParentId           = null,
+            Title              = "Product Roadmap",
+            Description        = "Quarterly planning and feature roadmap",
+            IconEmoji          = "📌",
+            CreatedAt          = now.AddDays(-14),
+            CreatedByUserId    = "alice",
+            LastEditedAt       = now.AddDays(-1),
+            LastEditedByUserId = "alice",
+            IsFavorite         = true
+        };
+
+        _pages[Page3Id] = new NotionPage
+        {
+            Id                 = Page3Id,
+            ParentId           = null,
+            Title              = "Meeting Notes",
+            Description        = "Weekly team meeting notes and action items",
+            IconEmoji          = "🗒️",
+            CreatedAt          = now.AddDays(-5),
+            CreatedByUserId    = "bob",
+            LastEditedAt       = now.AddHours(-1),
+            LastEditedByUserId = "bob",
+            IsFavorite         = false
+        };
+
+        _pages[Page4Id] = new NotionPage
+        {
+            Id                 = Page4Id,
+            ParentId           = null,
+            Title              = "Engineering Wiki",
+            Description        = "Technical documentation and architecture guides",
+            IconEmoji          = "💻",
+            CreatedAt          = now.AddDays(-30),
+            CreatedByUserId    = "charlie",
+            LastEditedAt       = now.AddDays(-3),
+            LastEditedByUserId = "charlie",
+            IsFavorite         = false
+        };
+
+        _pages[Page5Id] = new NotionPage
+        {
+            Id                 = Page5Id,
+            ParentId           = Page4Id,
+            Title              = "Architecture Guide",
+            Description        = "System architecture, patterns, and design decisions",
+            IconEmoji          = "🏗️",
+            CreatedAt          = now.AddDays(-25),
+            CreatedByUserId    = "charlie",
+            LastEditedAt       = now.AddDays(-5),
+            LastEditedByUserId = "charlie",
+            IsFavorite         = false
+        };
+
+        _pages[Page6Id] = new NotionPage
+        {
+            Id                 = Page6Id,
+            ParentId           = Page4Id,
+            Title              = "Development Setup",
+            Description        = "Local environment setup and tooling guide",
+            IconEmoji          = "🔧",
+            CreatedAt          = now.AddDays(-20),
+            CreatedByUserId    = "bob",
+            LastEditedAt       = now.AddDays(-2),
+            LastEditedByUserId = "bob",
+            IsFavorite         = false
+        };
     }
 
     public async Task<INotionPage> GetPageAsync(string pageId)

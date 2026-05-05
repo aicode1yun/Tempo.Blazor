@@ -19,10 +19,10 @@ public class DemoNotionDataProvider : INotionDataProvider
 
     public async Task<IEnumerable<INotionPage>> GetChildPagesAsync(string? parentId)
     {
-        if (parentId == null)
-            return [];
-
-        var pages = await _http.GetFromJsonAsync<List<NotionPage>>($"/api/notion/pages/{parentId}/children");
+        var url = parentId == null
+            ? "/api/notion/pages/root/children"
+            : $"/api/notion/pages/{parentId}/children";
+        var pages = await _http.GetFromJsonAsync<List<NotionPage>>(url);
         return pages ?? [];
     }
 
@@ -76,7 +76,7 @@ public class DemoNotionDataProvider : INotionDataProvider
 
     public async Task RestorePageAsync(string pageId)
     {
-        await Task.CompletedTask;
+        await _http.PostAsync($"/api/notion/pages/{pageId}/restore", null);
     }
 
     public async Task PermanentlyDeletePageAsync(string pageId)
@@ -93,7 +93,7 @@ public class DemoNotionDataProvider : INotionDataProvider
 
     public async Task MovePageAsync(string pageId, string? newParentId)
     {
-        await Task.CompletedTask;
+        await _http.PostAsJsonAsync($"/api/notion/pages/{pageId}/move", new { newParentId });
     }
 
     public async Task<INotionPage> DuplicatePageAsync(string pageId)

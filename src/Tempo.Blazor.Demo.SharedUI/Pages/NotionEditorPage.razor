@@ -2,11 +2,14 @@
 @using Tempo.Blazor.Components.NotionEditor
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.Demo.Services
-@using System.Net.Http.Json
-@inject IHttpClientFactory HttpClientFactory
 @inject ITmLocalizer Loc
 @inject DemoNotionDataProvider DataProvider
 @inject DemoNotionBlockProvider BlockProvider
+@inject MockNotionCommentProvider CommentProvider
+@inject MockNotionHistoryProvider HistoryProvider
+@inject MockNotionMentionProvider MentionProvider
+@inject MockNotionSearchProvider SearchProvider
+@inject SignalRCollaborationProvider CollaborationProvider
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
 
@@ -53,9 +56,14 @@
     }
     else if (_currentPage != null)
     {
-        <div style="height: 500px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: auto; background: white;">
+        <div style="height: 600px; border: 1px solid var(--slate-200); border-radius: 8px; overflow: hidden; background: white;">
             <TmNotionEditor DataProvider="@DataProvider"
                             BlockProvider="@BlockProvider"
+                            CommentProvider="@CommentProvider"
+                            HistoryProvider="@HistoryProvider"
+                            MentionProvider="@MentionProvider"
+                            SearchProvider="@SearchProvider"
+                            CollaborationProvider="@CollaborationProvider"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"
                             Class="h-full" />
@@ -405,6 +413,173 @@
     </div>
 </section>
 
+<!-- ═══ Features checklist — Phase 4 ══════════════════════════════════════════ -->
+<section class="demo-section mt-6">
+    <h3 class="text-lg font-semibold text-slate-800 dark:text-slate-200 mb-4">Phase 4 Features — Comments, Search &amp; History</h3>
+    <p class="text-sm text-slate-500 dark:text-slate-400 mb-4">
+        The editor now has <strong>6 pages</strong> in the sidebar (2 root, 1 with sub-pages) and all Phase 4 providers wired up.
+    </p>
+
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🗂️</span> Sidebar &amp; Navigation
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>6 pages: Favorites, Recent, Pages, Trash sections</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Page hierarchy: Engineering Wiki → 2 sub-pages</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Expand / collapse sub-pages in tree</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Click page in sidebar → navigates to it</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🔍</span> Page Search
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Ctrl+P opens full-screen search dialog</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Searches all 6 pages by title (string.Contains)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>↑↓ keyboard navigation + Enter to open</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Escape closes the dialog</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">💬</span> Comments
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Block comment panel with pre-seeded threads</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Reply, resolve, unresolve comments</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Text anchor comment (select text → ⌘+⇧+M)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Page-level comment count badge</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">🕓</span> Page History
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>3 pre-seeded versions for "Getting Started"</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Preview block snapshot per version</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Restore version → inserts as new head</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Open via ⚙️ Page Settings → Page History</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">@@</span> Mentions
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Type @@ to open mention menu</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>5 demo users (Alice, Bob, Charlie, Diana, Demo)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Type [[ to search and link pages</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Inserts inline mention chip</span>
+                </li>
+            </ul>
+        </div>
+
+        <div class="rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+            <h4 class="font-medium text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-2">
+                <span class="text-lg">⚙️</span> Page Settings
+            </h4>
+            <ul class="space-y-2 text-sm">
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Full width / small text / lock toggles</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Export Markdown / HTML (downloads file)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Import Markdown / HTML (uploads file)</span>
+                </li>
+                <li class="flex items-center gap-2">
+                    <span class="text-green-600 dark:text-green-400 font-bold">✓</span>
+                    <span>Copy page link / Move to / Favorites / Delete</span>
+                </li>
+            </ul>
+        </div>
+
+    </div>
+
+    <div class="mt-4 p-4 rounded bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-200 dark:border-indigo-800">
+        <p class="text-sm text-indigo-900 dark:text-indigo-100">
+            <strong>How to test Phase 4:</strong>
+            Use <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">Ctrl+P</kbd> to open page search.
+            Hover a block to reveal the comment icon. Open the ⚙️ button (top-right of editor) for page settings and history.
+            Type <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">@@</kbd> in a text block to @@-mention a user.
+            Type <kbd class="px-1 py-0.5 bg-indigo-100 dark:bg-indigo-800 rounded text-xs">[[</kbd> to link another page.
+            The sidebar shows all 6 pages — click any to navigate.
+        </p>
+    </div>
+</section>
+
 @code {
     private INotionPage? _currentPage;
     private string _statusMessage = "";
@@ -420,23 +595,10 @@
     {
         try
         {
-            _isLoading = true;
+            _isLoading     = true;
             _statusMessage = "";
-
-            var httpClient = HttpClientFactory.CreateClient("DemoApi");
-
-            // Get all pages to find the first one
-            var pages = await httpClient.GetFromJsonAsync<List<NotionPage>>("/api/notion/pages");
-            if (pages?.Count > 0)
-            {
-                _currentPage = pages[0];
-                _statusMessage = "Editor loaded successfully";
-            }
-            else
-            {
-                _statusMessage = "No pages found";
-                _statusIsError = true;
-            }
+            _currentPage   = await DataProvider.GetPageAsync("11111111-1111-1111-1111-111111111111");
+            _statusMessage = "Editor loaded successfully";
         }
         catch (Exception ex)
         {
@@ -449,8 +611,5 @@
         }
     }
 
-    private async Task RefreshData()
-    {
-        await LoadEditorDataAsync();
-    }
+    private async Task RefreshData() => await LoadEditorDataAsync();
 }

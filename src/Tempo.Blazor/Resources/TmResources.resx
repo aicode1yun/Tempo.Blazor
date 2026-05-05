@@ -2167,4 +2167,67 @@
   <data name="TmNotionPageHistory_ErrorLoadDiff"       xml:space="preserve"><value>Could not compare versions.</value></data>
   <data name="TmNotionPageHistory_ErrorRestore"        xml:space="preserve"><value>Could not restore this version. Please try again.</value></data>
 
+  <!-- ═══════════════ TmNotionPageSearch ═══════════════ -->
+  <data name="TmNotionPageSearch_DialogLabel"               xml:space="preserve"><value>Search pages</value></data>
+  <data name="TmNotionPageSearch_Placeholder"               xml:space="preserve"><value>Search pages and content…</value></data>
+  <data name="TmNotionPageSearch_FilterLabel"               xml:space="preserve"><value>Filter</value></data>
+  <data name="TmNotionPageSearch_FilterTitle"               xml:space="preserve"><value>Advanced filters</value></data>
+  <data name="TmNotionPageSearch_FilterAuthorLabel"         xml:space="preserve"><value>Author</value></data>
+  <data name="TmNotionPageSearch_FilterAuthorPlaceholder"   xml:space="preserve"><value>User ID or name</value></data>
+  <data name="TmNotionPageSearch_FilterDateFromLabel"       xml:space="preserve"><value>Created after</value></data>
+  <data name="TmNotionPageSearch_FilterDateToLabel"         xml:space="preserve"><value>Created before</value></data>
+  <data name="TmNotionPageSearch_FilterClear"               xml:space="preserve"><value>Clear filters</value></data>
+  <data name="TmNotionPageSearch_ResultsLabel"              xml:space="preserve"><value>Search results</value></data>
+  <data name="TmNotionPageSearch_SectionPages"              xml:space="preserve"><value>Pages</value></data>
+  <data name="TmNotionPageSearch_SectionBlocks"             xml:space="preserve"><value>In content</value></data>
+  <data name="TmNotionPageSearch_Loading"                   xml:space="preserve"><value>Searching…</value></data>
+  <data name="TmNotionPageSearch_StartTyping"               xml:space="preserve"><value>Type to search pages and blocks</value></data>
+  <data name="TmNotionPageSearch_NoResults"                 xml:space="preserve"><value>No results found</value></data>
+  <data name="TmNotionPageSearch_Untitled"                  xml:space="preserve"><value>Untitled</value></data>
+  <data name="TmNotionPageSearch_HintNavigate"              xml:space="preserve"><value>Navigate</value></data>
+  <data name="TmNotionPageSearch_HintOpen"                  xml:space="preserve"><value>Open</value></data>
+  <data name="TmNotionPageSearch_HintClose"                 xml:space="preserve"><value>Close</value></data>
+  <data name="TmNotionPageSearch_NoProvider"                xml:space="preserve"><value>Search provider not configured</value></data>
+
+  <!-- ═══════════════ TmNotionPageSettingsMenu ═══════════════ -->
+  <data name="TmNotionPageSettingsMenu_TriggerLabel"              xml:space="preserve"><value>Page settings</value></data>
+  <data name="TmNotionPageSettingsMenu_FullWidth"                 xml:space="preserve"><value>Full width</value></data>
+  <data name="TmNotionPageSettingsMenu_SmallText"                 xml:space="preserve"><value>Small text</value></data>
+  <data name="TmNotionPageSettingsMenu_LockPage"                  xml:space="preserve"><value>Lock page</value></data>
+  <data name="TmNotionPageSettingsMenu_Export"                    xml:space="preserve"><value>Export</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportMarkdown"            xml:space="preserve"><value>Export as Markdown</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportHtml"                xml:space="preserve"><value>Export as HTML</value></data>
+  <data name="TmNotionPageSettingsMenu_ExportPdf"                 xml:space="preserve"><value>Export as PDF</value></data>
+  <data name="TmNotionPageSettingsMenu_Import"                    xml:space="preserve"><value>Import</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportMarkdown"            xml:space="preserve"><value>Import Markdown (.md)</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportHtml"                xml:space="preserve"><value>Import HTML (.html)</value></data>
+  <data name="TmNotionPageSettingsMenu_ImportWord"                xml:space="preserve"><value>Import Word (.docx)</value></data>
+  <data name="TmNotionPageSettingsMenu_PageHistory"               xml:space="preserve"><value>Page history</value></data>
+  <data name="TmNotionPageSettingsMenu_CopyLink"                  xml:space="preserve"><value>Copy link</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveTo"                    xml:space="preserve"><value>Move to</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToLabel"               xml:space="preserve"><value>Move page to</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToSearchPlaceholder"   xml:space="preserve"><value>Search pages…</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToSearching"           xml:space="preserve"><value>Searching…</value></data>
+  <data name="TmNotionPageSettingsMenu_MoveToNoResults"           xml:space="preserve"><value>No pages found</value></data>
+  <data name="TmNotionPageSettingsMenu_AddToFavorites"            xml:space="preserve"><value>Add to favorites</value></data>
+  <data name="TmNotionPageSettingsMenu_RemoveFromFavorites"       xml:space="preserve"><value>Remove from favorites</value></data>
+  <data name="TmNotionPageSettingsMenu_Delete"                    xml:space="preserve"><value>Move to trash</value></data>
+  <data name="TmNotionPageSettingsMenu_DeleteConfirmText"         xml:space="preserve"><value>This page will be moved to trash. You can restore it later.</value></data>
+  <data name="TmNotionPageSettingsMenu_DeleteConfirm"             xml:space="preserve"><value>Move to trash</value></data>
+  <data name="TmNotionPageSettingsMenu_LinkCopied"                xml:space="preserve"><value>Link copied to clipboard</value></data>
+  <data name="TmNotionPageSettingsMenu_Untitled"                  xml:space="preserve"><value>Untitled</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorUpdate"               xml:space="preserve"><value>Could not update page settings.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorExport"               xml:space="preserve"><value>Export failed. Please try again.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorImport"               xml:space="preserve"><value>Import failed. Please try again.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorFavorite"             xml:space="preserve"><value>Could not update favorites.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorMove"                 xml:space="preserve"><value>Could not move page.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorCopy"                 xml:space="preserve"><value>Could not copy link.</value></data>
+  <data name="TmNotionPageSettingsMenu_ErrorDelete"               xml:space="preserve"><value>Could not delete page.</value></data>
+
+  <!-- Collaboration -->
+  <data name="TmNotionCollab_ActiveUsers"              xml:space="preserve"><value>Active collaborators</value></data>
+  <data name="TmNotionCollab_Connecting"               xml:space="preserve"><value>Connecting…</value></data>
+  <data name="TmNotionCollab_Disconnected"             xml:space="preserve"><value>Disconnected</value></data>
+  <data name="TmNotionCollab_Connected"                xml:space="preserve"><value>Connected</value></data>
+
 </root>

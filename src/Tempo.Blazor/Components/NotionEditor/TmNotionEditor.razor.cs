@@ -76,6 +76,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private ElementReference           _rootRef;
     private ElementReference           _mainRef;
     private IJSObjectReference?        _jsScrollListener;
+    private NotionCollaborationSync?   _collabSync;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -88,6 +89,9 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     protected override void OnInitialized()
     {
+        if (CollaborationProvider is not null)
+            _collabSync = new NotionCollaborationSync();
+
         _context = BuildContext();
     }
 
@@ -129,6 +133,10 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
             _navStack.Push(pageId);
             _currentPageId = pageId;
             _currentPage   = page;
+
+            if (_collabSync is not null && CollaborationProvider is not null)
+                await _collabSync.JoinAsync(CollaborationProvider, pageId, "demo");
+
             await OnPageChanged.InvokeAsync(page);
         }
         catch (Exception ex)
@@ -216,6 +224,7 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         CommentProvider       = CommentProvider,
         HistoryProvider       = HistoryProvider,
         CollaborationProvider = CollaborationProvider,
+        CollaborationSync     = _collabSync,
         MentionProvider       = MentionProvider,
         BookmarkProvider          = BookmarkProvider,
         FileProvider              = FileProvider,
@@ -230,6 +239,10 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        if (_collabSync is not null)
+        {
+            try { await _collabSync.DisposeAsync(); } catch { }
+        }
         if (_jsScrollListener is not null)
         {
             try { await _jsScrollListener.DisposeAsync(); } catch { }

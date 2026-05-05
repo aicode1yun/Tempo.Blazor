@@ -11,43 +11,32 @@ public static class NotionEditorEndpoints
         var pageGroup = app.MapGroup("/api/notion/pages").WithTags("Notion Editor");
         var blockGroup = app.MapGroup("/api/notion/blocks").WithTags("Notion Editor");
 
-        // Pages endpoints
-        pageGroup.MapGet("/{pageId}", (string pageId, MockNotionDataStore store) =>
-        {
-            try
-            {
-                var page = store.GetPageAsync(pageId).Result;
-                return Results.Ok(page);
-            }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
-        });
+        // ── Page CRUD ─────────────────────────────────────────────────────────
 
         pageGroup.MapGet("/", (MockNotionDataStore store) =>
+            Results.Ok(store.GetAllPages()));
+
+        // Literal routes must be registered before parameterised {pageId}
+        pageGroup.MapGet("/root/children", (MockNotionDataStore store) =>
+            Results.Ok(store.GetChildPagesAsync(null).Result));
+
+        pageGroup.MapGet("/favorites", (MockNotionDataStore store) =>
+            Results.Ok(store.GetFavoritesAsync().Result));
+
+        pageGroup.MapGet("/recent/{count}", (int count, MockNotionDataStore store) =>
+            Results.Ok(store.GetRecentPagesAsync(count).Result));
+
+        pageGroup.MapGet("/trash", (MockNotionDataStore store) =>
+            Results.Ok(store.GetTrashAsync().Result));
+
+        pageGroup.MapGet("/{pageId}", (string pageId, MockNotionDataStore store) =>
         {
-            var pages = store.GetAllPages();
-            return Results.Ok(pages);
+            try   { return Results.Ok(store.GetPageAsync(pageId).Result); }
+            catch { return Results.NotFound(); }
         });
 
         pageGroup.MapGet("/{parentId}/children", (string parentId, MockNotionDataStore store) =>
-        {
-            var children = store.GetChildPagesAsync(parentId).Result;
-            return Results.Ok(children);
-        });
-
-        pageGroup.MapGet("/favorites", (MockNotionDataStore store) =>
-        {
-            var favorites = store.GetFavoritesAsync().Result;
-            return Results.Ok(favorites);
-        });
-
-        pageGroup.MapGet("/recent/{count}", (int count, MockNotionDataStore store) =>
-        {
-            var recent = store.GetRecentPagesAsync(count).Result;
-            return Results.Ok(recent);
-        });
+            Results.Ok(store.GetChildPagesAsync(parentId).Result));
 
         pageGroup.MapPost("/", (CreatePageRequest request, MockNotionDataStore store) =>
         {
@@ -62,24 +51,46 @@ public static class NotionEditorEndpoints
                 var page = store.GetPageAsync(pageId).Result;
                 if (page is NotionPage notionPage)
                 {
-                    notionPage.Title = request.Title ?? notionPage.Title;
-                    notionPage.Description = request.Description ?? notionPage.Description;
-                    notionPage.IconEmoji = request.IconEmoji ?? notionPage.IconEmoji;
+                    notionPage.Title        = request.Title        ?? notionPage.Title;
+                    notionPage.Description  = request.Description  ?? notionPage.Description;
+                    notionPage.IconEmoji    = request.IconEmoji    ?? notionPage.IconEmoji;
+                    notionPage.IsFullWidth  = request.IsFullWidth  ?? notionPage.IsFullWidth;
+                    notionPage.IsSmallText  = request.IsSmallText  ?? notionPage.IsSmallText;
+                    notionPage.IsLocked     = request.IsLocked     ?? notionPage.IsLocked;
                     store.UpdatePageAsync(notionPage).Wait();
                     return Results.Ok(notionPage);
                 }
-                return Results.BadRequest("Invalid page type");
+                return Results.BadRequest();
             }
-            catch (KeyNotFoundException)
-            {
-                return Results.NotFound();
-            }
+            catch { return Results.NotFound(); }
         });
 
         pageGroup.MapDelete("/{pageId}", (string pageId, MockNotionDataStore store) =>
         {
             store.DeletePageAsync(pageId).Wait();
             return Results.NoContent();
+        });
+
+        pageGroup.MapPost("/{pageId}/restore", (string pageId, MockNotionDataStore store) =>
+        {
+            store.RestorePageAsync(pageId).Wait();
+            return Results.NoContent();
+        });
+
+        pageGroup.MapPost("/{pageId}/move", (string pageId, MovePageRequest req, MockNotionDataStore store) =>
+        {
+            store.MovePageAsync(pageId, req.NewParentId).Wait();
+            return Results.NoContent();
+        });
+
+        pageGroup.MapPost("/{pageId}/duplicate", (string pageId, MockNotionDataStore store) =>
+        {
+            try
+            {
+                var dup = store.DuplicatePageAsync(pageId).Result;
+                return Results.Created($"/api/notion/pages/{dup.Id}", dup);
+            }
+            catch { return Results.NotFound(); }
         });
 
         pageGroup.MapPost("/{pageId}/favorite/{isFavorite}", (string pageId, bool isFavorite, MockNotionDataStore store) =>
@@ -151,6 +162,8 @@ public static class NotionEditorEndpoints
 }
 
 public record CreatePageRequest(string Title, string? ParentId = null);
-public record UpdatePageRequest(string? Title, string? Description, string? IconEmoji);
+public record UpdatePageRequest(string? Title, string? Description, string? IconEmoji,
+    bool? IsFullWidth = null, bool? IsSmallText = null, bool? IsLocked = null);
+public record MovePageRequest(string? NewParentId);
 public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);

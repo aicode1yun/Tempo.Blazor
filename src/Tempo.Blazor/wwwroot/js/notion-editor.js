@@ -729,6 +729,33 @@ window.tmNotionEditor = (function () {
         el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }
 
+    // ── 91.1  Collaboration cursor overlays ──────────────────────────────────
+
+    function updateCollabCursors(cursors) {
+        // Clear previous markers
+        document.querySelectorAll('[data-collab-user]').forEach(el => {
+            el.classList.remove('tm-collab-active');
+            el.removeAttribute('data-collab-user');
+            el.style.removeProperty('--collab-color');
+        });
+        if (!cursors || !cursors.length) return;
+        cursors.forEach(({ blockId, displayName, color }) => {
+            const blockEl = document.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+            if (!blockEl) return;
+            blockEl.classList.add('tm-collab-active');
+            blockEl.setAttribute('data-collab-user', displayName);
+            blockEl.style.setProperty('--collab-color', color);
+        });
+    }
+
+    function clearCollabCursors() {
+        document.querySelectorAll('[data-collab-user]').forEach(el => {
+            el.classList.remove('tm-collab-active');
+            el.removeAttribute('data-collab-user');
+            el.style.removeProperty('--collab-color');
+        });
+    }
+
     function initSmoothScrollSpy(containerElement, dotNetRef) {
         if (!containerElement) return;
         if (_scrollSpies.has(containerElement)) _scrollSpies.get(containerElement).cleanup();
@@ -1375,6 +1402,66 @@ window.tmNotionEditor = (function () {
         _sidebarResizes.delete(handleEl);
     }
 
+    // ── 87.1 Page Search (Ctrl+P / Cmd+P) ────────────────────────────────────
+
+    let _pageSearchDotNet   = null;
+    let _pageSearchListener = null;
+
+    function registerPageSearch(dotNetRef) {
+        destroyPageSearch();
+        _pageSearchDotNet = dotNetRef;
+        _pageSearchListener = function (e) {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'p' && !e.shiftKey && !e.altKey) {
+                e.preventDefault();
+                _pageSearchDotNet.invokeMethodAsync('OpenPageSearch').catch(console.error);
+            }
+        };
+        document.addEventListener('keydown', _pageSearchListener, true);
+    }
+
+    function destroyPageSearch() {
+        if (_pageSearchListener) {
+            document.removeEventListener('keydown', _pageSearchListener, true);
+            _pageSearchListener = null;
+        }
+        _pageSearchDotNet = null;
+    }
+
+    // ── 88.1 Page Settings Helpers ────────────────────────────────────────────
+
+    async function downloadFileStream(fileName, contentStreamRef, mimeType) {
+        const buf  = await contentStreamRef.arrayBuffer();
+        const blob = new Blob([buf], { type: mimeType || 'application/octet-stream' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = fileName;
+        a.style.display = 'none';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        setTimeout(() => URL.revokeObjectURL(url), 15000);
+    }
+
+    async function copyToClipboard(text) {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(text);
+        } else {
+            const el = document.createElement('textarea');
+            el.value = text;
+            el.style.position = 'fixed';
+            el.style.opacity  = '0';
+            document.body.appendChild(el);
+            el.select();
+            document.execCommand('copy');
+            document.body.removeChild(el);
+        }
+    }
+
+    function getPageUrl(pageId) {
+        return window.location.origin + window.location.pathname + '#' + pageId;
+    }
+
     // ── Public API ─────────────────────────────────────────────────────────────
     return {
         // 26.1
@@ -1399,6 +1486,8 @@ window.tmNotionEditor = (function () {
         initColumnResize, destroyColumnResize,
         // 26.9
         scrollToBlock, initSmoothScrollSpy, destroyScrollSpy,
+        // 91.1
+        updateCollabCursors, clearCollabCursors,
         // 30.1
         startCoverDrag,
         // 32.1
@@ -1426,7 +1515,11 @@ window.tmNotionEditor = (function () {
         // 47.1
         adjustTypeSwitcherPosition,
         // 80.1
-        initSidebarResize, destroySidebarResize
+        initSidebarResize, destroySidebarResize,
+        // 87.1
+        registerPageSearch, destroyPageSearch,
+        // 88.1
+        downloadFileStream, copyToClipboard, getPageUrl
     };
 })();
 

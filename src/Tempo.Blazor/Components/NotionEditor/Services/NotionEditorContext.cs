@@ -24,6 +24,9 @@ public sealed class NotionEditorContext
     public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; init; }
     public INotionSyncedBlockProvider?    SyncedBlockProvider      { get; init; }
 
+    /// <summary>Active collaboration sync service (null when CollaborationProvider is absent).</summary>
+    public NotionCollaborationSync?        CollaborationSync         { get; init; }
+
     /// <summary>
     /// Navigates to the given page by ID. Supplied by TmNotionEditor and used by
     /// child page / linked page / breadcrumb blocks to trigger in-editor navigation.

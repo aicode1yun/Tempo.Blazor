@@ -277,6 +277,122 @@ public class MockNotionBlockStore
             IconEmoji    = "📋",
             ActiveViewId = Guid.Parse("e0000000-0000-0000-0000-000000000001")
         });
+
+        // ── Phase 4: Comments, Search, History hints ──────────────────────────
+
+        Add(BlockType.Heading2, 35, new HeadingBlockContent { Level = 2, Html = "Phase 4: Comments &amp; History" });
+        Add(BlockType.Callout, 36, new CalloutBlockContent
+        {
+            IconEmoji = "💬",
+            Html = "Try the comment panel: hover a block and click the comment icon. Page history is available via the ⚙️ settings button (top-right). Use <kbd>Ctrl+P</kbd> to search pages.",
+            BackgroundColor = "blue"
+        });
+
+        // ── Page 2 — Product Roadmap ──────────────────────────────────────────
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading1, 0,
+            new HeadingBlockContent { Level = 1, Html = "Product Roadmap" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Callout, 1,
+            new CalloutBlockContent { IconEmoji = "📌", Html = "Living document — updated every sprint. Last reviewed by <strong>Alice Johnson</strong>.", BackgroundColor = "yellow" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading2, 2,
+            new HeadingBlockContent { Level = 2, Html = "Q1 2025 — In Progress" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.TodoItem, 3,
+            new TodoBlockContent { Html = "Notion-style block editor — Phase 4 providers", IsChecked = false });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.TodoItem, 4,
+            new TodoBlockContent { Html = "Collaborative cursors & real-time sync", IsChecked = false });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.TodoItem, 5,
+            new TodoBlockContent { Html = "Export to PDF via QuestPDF", IsChecked = true });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Heading2, 6,
+            new HeadingBlockContent { Level = 2, Html = "Q2 2025 — Planned" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.BulletList, 7,
+            new ListBlockContent { Html = "Mobile-responsive layouts" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.BulletList, 8,
+            new ListBlockContent { Html = "Notion API integration bridge" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.BulletList, 9,
+            new ListBlockContent { Html = "AI-powered block suggestions" });
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Divider, 10,
+            new DividerBlockContent());
+        AddTo(MockNotionDataStore.Page2Id, BlockType.Paragraph, 11,
+            new TextBlockContent { Html = "Questions? Ping <strong>Alice Johnson</strong> on Slack." });
+
+        // ── Page 3 — Meeting Notes ────────────────────────────────────────────
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Heading1, 0,
+            new HeadingBlockContent { Level = 1, Html = "Weekly Team Meeting" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Paragraph, 1,
+            new TextBlockContent { Html = "<em>Date: May 5, 2025 · Attendees: Alice, Bob, Charlie, Diana</em>" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Heading2, 2,
+            new HeadingBlockContent { Level = 2, Html = "Agenda" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.NumberedList, 3,
+            new ListBlockContent { Html = "Sprint retrospective" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.NumberedList, 4,
+            new ListBlockContent { Html = "Phase 4 demo walkthrough" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.NumberedList, 5,
+            new ListBlockContent { Html = "Q2 planning kick-off" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.Heading2, 6,
+            new HeadingBlockContent { Level = 2, Html = "Action Items" });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.TodoItem, 7,
+            new TodoBlockContent { Html = "Bob: merge comment provider PR by EOD", IsChecked = false });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.TodoItem, 8,
+            new TodoBlockContent { Html = "Alice: update roadmap with Q2 items", IsChecked = true });
+        AddTo(MockNotionDataStore.Page3Id, BlockType.TodoItem, 9,
+            new TodoBlockContent { Html = "Charlie: write Architecture Guide first draft", IsChecked = false });
+
+        // ── Page 4 — Engineering Wiki ─────────────────────────────────────────
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Heading1, 0,
+            new HeadingBlockContent { Level = 1, Html = "Engineering Wiki" });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Paragraph, 1,
+            new TextBlockContent { Html = "Central hub for technical documentation, architecture decisions, and developer guides." });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Heading2, 2,
+            new HeadingBlockContent { Level = 2, Html = "Sub-pages" });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.BulletList, 3,
+            new ListBlockContent { Html = "🏗️ Architecture Guide — system design and patterns" });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.BulletList, 4,
+            new ListBlockContent { Html = "🔧 Development Setup — local env and tooling" });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Heading2, 5,
+            new HeadingBlockContent { Level = 2, Html = "Tech Stack" });
+        AddTo(MockNotionDataStore.Page4Id, BlockType.Code, 6,
+            new CodeBlockContent { Language = "yaml", Code = "frontend:\n  framework: Blazor (.NET 9)\n  component-lib: Tempo.Blazor\nbackend:\n  api: ASP.NET Core Minimal API\n  db: SQLite (demo) / PostgreSQL (prod)" });
+
+        // ── Page 5 — Architecture Guide ───────────────────────────────────────
+        AddTo(MockNotionDataStore.Page5Id, BlockType.Heading1, 0,
+            new HeadingBlockContent { Level = 1, Html = "Architecture Guide" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.Callout, 1,
+            new CalloutBlockContent { IconEmoji = "🏗️", Html = "This document describes the high-level architecture of the Tempo.Blazor component library.", BackgroundColor = "gray" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.Heading2, 2,
+            new HeadingBlockContent { Level = 2, Html = "Layer Overview" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.BulletList, 3,
+            new ListBlockContent { Html = "<strong>Abstractions</strong> — interfaces, models, enums (no Blazor dependency)" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.BulletList, 4,
+            new ListBlockContent { Html = "<strong>Tempo.Blazor</strong> — Razor components, scoped CSS, JS interop" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.BulletList, 5,
+            new ListBlockContent { Html = "<strong>Demo.Api</strong> — minimal API with in-memory mock stores" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.BulletList, 6,
+            new ListBlockContent { Html = "<strong>Demo.SharedUI</strong> — HTTP providers + demo pages" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.Heading2, 7,
+            new HeadingBlockContent { Level = 2, Html = "Design Principles" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.NumberedList, 8,
+            new ListBlockContent { Html = "Interface-first: all providers are defined as interfaces in Abstractions" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.NumberedList, 9,
+            new ListBlockContent { Html = "Cascading context: <code>NotionEditorContext</code> propagates providers to all children" });
+        AddTo(MockNotionDataStore.Page5Id, BlockType.NumberedList, 10,
+            new ListBlockContent { Html = "Scoped CSS: every component has its own <code>.razor.css</code>" });
+
+        // ── Page 6 — Development Setup ────────────────────────────────────────
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Heading1, 0,
+            new HeadingBlockContent { Level = 1, Html = "Development Setup" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Paragraph, 1,
+            new TextBlockContent { Html = "Follow these steps to get the Tempo.Blazor demo running locally." });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Heading2, 2,
+            new HeadingBlockContent { Level = 2, Html = "Prerequisites" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.BulletList, 3,
+            new ListBlockContent { Html = ".NET 9 SDK or later" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.BulletList, 4,
+            new ListBlockContent { Html = "Node.js 20+ (for JS tooling)" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Heading2, 5,
+            new HeadingBlockContent { Level = 2, Html = "Quick Start" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Code, 6,
+            new CodeBlockContent { Language = "bash", Code = "git clone https://github.com/your-org/Tempo.Blazor2\ncd Tempo.Blazor2\n\n# Start API\ndotnet run --project src/Tempo.Blazor.Demo.Api\n\n# Start Server (separate terminal)\ndotnet run --project src/Tempo.Blazor.Demo.Server" });
+        AddTo(MockNotionDataStore.Page6Id, BlockType.Callout, 7,
+            new CalloutBlockContent { IconEmoji = "💡", Html = "The API runs on <code>https://localhost:5100</code> and the Server on <code>https://localhost:7106</code> by default.", BackgroundColor = "blue" });
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -285,6 +401,12 @@ public class MockNotionBlockStore
     {
         var id = Guid.NewGuid();
         _blocks[id] = MakeBlock(id, _pageId, null, type, order, content);
+    }
+
+    private void AddTo(Guid pageId, BlockType type, int order, IBlockContent content)
+    {
+        var id = Guid.NewGuid();
+        _blocks[id] = MakeBlock(id, pageId, null, type, order, content);
     }
 
     private static PageBlock MakeBlock(Guid id, Guid pageId, Guid? parentBlockId,
