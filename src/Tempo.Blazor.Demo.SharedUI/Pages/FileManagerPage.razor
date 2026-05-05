@@ -1,5 +1,9 @@
-@page "/file-manager"
+﻿@page "/file-manager"
 @using Tempo.Blazor.Demo.Services
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.Buttons
+@using Tempo.Blazor.Components.Inputs
 <PageTitle>File Manager – Tempo.Blazor</PageTitle>
 
 <!-- Page Header -->
@@ -8,11 +12,160 @@
     <p class="text-slate-600 dark:text-slate-400">Browse folders, switch between list and grid views, and manage files with a toolbar and breadcrumb navigation.</p>
 </div>
 
-<!-- File Manager -->
-<section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
-    <TmFileManager DataProvider="_provider" />
-</section>
+<TmTabs ActiveTabId="@_activeTab" ActiveTabIdChanged="@(v => _activeTab = v)">
+    <TmTabPanel Id="simple" Title="Simple File Manager" Icon="folder">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmFileManager DataProvider="_fileProvider" />
+        </section>
+    </TmTabPanel>
+
+    <TmTabPanel Id="dms" Title="DMS with Metadata" Icon="database">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmDocumentManager TMetadata="DocumentMetadata"
+                               DataProvider="_dmsProvider"
+                               ItemMetaTemplate="MetaTemplate"
+                               NewFolderForm="NewFolderTemplate"
+                               DeleteForm="DeleteTemplate"
+                               EditForm="EditTemplate"
+                               DetailPanel="DetailTemplate"
+                               ItemContextMenu="ContextMenuTemplate" />
+        </section>
+    </TmTabPanel>
+
+    <TmTabPanel Id="readonly" Title="Read-Only DMS" Icon="lock">
+        <section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
+            <TmDocumentManager TMetadata="DocumentMetadata"
+                               DataProvider="_readonlyProvider"
+                               ShowNewFolderButton="false"
+                               ShowUploadButton="false"
+                               ShowDeleteButton="false"
+                               ShowRenameButton="false"
+                               ShowEditButton="false"
+                               ShowMoveButton="false"
+                               ShowCopyButton="false" />
+        </section>
+    </TmTabPanel>
+</TmTabs>
 
 @code {
-    private readonly DemoFileManagerProvider _provider = new();
+    private string _activeTab = "simple";
+    private readonly DemoFileManagerProvider _fileProvider = new();
+    private readonly DemoDocumentManagerProvider _dmsProvider = new();
+    private readonly DemoDocumentManagerProvider _readonlyProvider = new(readOnly: true);
+
+    private RenderFragment<DocumentManagerItem<DocumentMetadata>> MetaTemplate => item =>
+        @<span class="text-xs text-slate-500 dark:text-slate-400">
+            @(item.Metadata?.Category ?? "—") • @(string.Join(", ", item.Metadata?.Tags ?? []))
+        </span>;
+
+    private RenderFragment<NewFolderContext<DocumentMetadata>> NewFolderTemplate => ctx =>
+        @<div class="p-4 space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Folder Name</label>
+                <TmTextInput @bind-Value="ctx.Name" Placeholder="New folder name" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Category" Placeholder="Category" />
+            </div>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="() => ctx.OnSubmit?.Invoke()">Create</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+
+    private RenderFragment<DeleteContext<DocumentMetadata>> DeleteTemplate => ctx =>
+        @<div class="p-4 space-y-3">
+            <p class="text-sm text-slate-600 dark:text-slate-400">
+                You are about to delete <strong>@ctx.Items.Count</strong> item(s):
+            </p>
+            <ul class="list-disc list-inside text-sm text-slate-700 dark:text-slate-300">
+                @foreach (var item in ctx.Items)
+                {
+                    <li>@item.Name</li>
+                }
+            </ul>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Danger" OnClick="() => ctx.OnConfirm?.Invoke()">Delete</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+
+    private RenderFragment<EditContext<DocumentMetadata>> EditTemplate => ctx =>
+        @<div class="p-4 space-y-3">
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Category</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Category" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Description</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Description" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Owner</label>
+                <TmTextInput @bind-Value="ctx.Metadata.Owner" />
+            </div>
+            <div class="flex gap-2 pt-2">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="() => ctx.OnSubmit?.Invoke()">Save</TmButton>
+                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => ctx.OnCancel?.Invoke()">Cancel</TmButton>
+            </div>
+        </div>;
+
+    private RenderFragment<DetailContext<DocumentMetadata>> DetailTemplate => ctx =>
+        @<div class="p-4 space-y-4">
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Name</span>
+                <p class="text-sm text-slate-900 dark:text-white">@ctx.Item.Name</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Category</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Category ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Description</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Description ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Owner</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Metadata?.Owner ?? "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Tags</span>
+                <div class="flex flex-wrap gap-1 mt-1">
+                    @foreach (var tag in ctx.Item.Metadata?.Tags ?? [])
+                    {
+                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-200">@tag</span>
+                    }
+                </div>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Size</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.Size.HasValue ? $"{ctx.Item.Size.Value / 1024.0:F1} KB" : "—")</p>
+            </div>
+            <div>
+                <span class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400 font-semibold">Modified</span>
+                <p class="text-sm text-slate-900 dark:text-white">@(ctx.Item.ModifiedDate?.ToString("dd.MM.yyyy HH:mm") ?? "—")</p>
+            </div>
+        </div>;
+
+    private RenderFragment<ContextMenuContext<DocumentMetadata>> ContextMenuTemplate => ctx =>
+        @<div class="py-1">
+            @foreach (var action in ctx.AvailableActions)
+            {
+                <button type="button"
+                        class="w-full text-left px-3 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700"
+                        @onclick="() => ctx.OnActionSelected?.Invoke(action)">
+                    @(action switch
+                    {
+                        "open" => "Open",
+                        "rename" => "Rename",
+                        "delete" => "Delete",
+                        "edit" => "Edit Metadata",
+                        "detail" => "Properties",
+                        "download" => "Download",
+                        _ => action
+                    })
+                </button>
+            }
+        </div>;
 }
