@@ -1,5 +1,6 @@
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Demo.Services;
 
@@ -10,6 +11,7 @@ namespace Tempo.Blazor.Demo.Services;
 public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<DocumentMetadata>
 {
     private readonly List<DocumentManagerItem<DocumentMetadata>> _items;
+    private readonly Dictionary<string, List<FileAttachment>> _attachments = new();
 
     public DemoDocumentManagerProvider(bool readOnly = false)
     {
@@ -130,6 +132,23 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
             },
         ];
 
+        // Seed some attachments for demo
+        _attachments["d1"] =
+        [
+            new FileAttachment { Id = "a1", Name = "Annual Report.pdf", Size = 1_024_000, ContentType = "application/pdf", CreatedDate = new DateTime(2025, 3, 15) },
+            new FileAttachment { Id = "a2", Name = "Appendix.xlsx", Size = 256_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", CreatedDate = new DateTime(2025, 3, 15) }
+        ];
+        _attachments["d2"] =
+        [
+            new FileAttachment { Id = "a3", Name = "Budget.xlsx", Size = 512_000, ContentType = "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", CreatedDate = new DateTime(2025, 4, 1) }
+        ];
+        foreach (var kvp in _attachments)
+        {
+            var item = _items.FirstOrDefault(i => i.Id == kvp.Key);
+            if (item is not null)
+                item.Attachments = kvp.Value;
+        }
+
         if (readOnly)
         {
             foreach (var item in _items)
@@ -214,6 +233,7 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
 
     public Task<IReadOnlyList<DocumentManagerItem<DocumentMetadata>>> UploadAsync(
         string folderPath, IReadOnlyList<FileUploadInfo> files,
+        DocumentMetadata? metadata = null,
         IProgress<int>? progress = null, CancellationToken cancellationToken = default)
     {
         var uploaded = new List<DocumentManagerItem<DocumentMetadata>>();
@@ -229,7 +249,9 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
                 Path = path,
                 IsDirectory = false,
                 Size = file.Size,
-                Extension = extension
+                Extension = extension,
+                Metadata = metadata,
+                ModifiedDate = DateTime.Now
             });
             file.Stream.Dispose();
         }
@@ -277,6 +299,62 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         };
         _items.Add(copy);
         return Task.FromResult(copy);
+    }
+
+    public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<string?>(null);
+    }
+
+    public Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+    {
+        if (_attachments.TryGetValue(itemId, out var list))
+            return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+        return Task.FromResult<IReadOnlyList<FileAttachment>>([]);
+    }
+
+    public Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+        string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default)
+    {
+        if (!_attachments.ContainsKey(itemId))
+            _attachments[itemId] = [];
+
+        var list = _attachments[itemId];
+        foreach (var file in files)
+        {
+            list.Add(new FileAttachment
+            {
+                Id = Guid.NewGuid().ToString(),
+                Name = file.FileName,
+                Size = file.Size,
+                ContentType = file.ContentType,
+                CreatedDate = DateTime.Now
+            });
+            file.Stream.Dispose();
+        }
+
+        var item = _items.FirstOrDefault(i => i.Id == itemId);
+        if (item is not null)
+            item.Attachments = list;
+
+        return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+    }
+
+    public Task RemoveAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
+    {
+        if (_attachments.TryGetValue(itemId, out var list))
+        {
+            list.RemoveAll(a => a.Id == attachmentId);
+            var item = _items.FirstOrDefault(i => i.Id == itemId);
+            if (item is not null)
+                item.Attachments = list;
+        }
+        return Task.CompletedTask;
+    }
+
+    public Task<Stream> DownloadAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<Stream>(new MemoryStream([0x00, 0x01, 0x02]));
     }
 
     private static string GetParentPath(string itemPath)

@@ -1,6 +1,27 @@
 namespace Tempo.Blazor.Abstractions.Models;
 
 /// <summary>
+/// Context passed to the <c>UploadForm</c> render fragment of <c>TmDocumentManager&lt;TMetadata&gt;</c>.
+/// </summary>
+public class UploadContext<TMetadata> where TMetadata : class
+{
+    /// <summary>The display name for the upload (defaults to first file name).</summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>The files selected for upload (two-way bindable).</summary>
+    public IReadOnlyList<FileUploadInfo> Files { get; set; } = [];
+
+    /// <summary>Optional metadata for the uploaded file(s).</summary>
+    public TMetadata? Metadata { get; set; }
+
+    /// <summary>Called when the user confirms upload.</summary>
+    public Func<Task>? OnSubmit { get; set; }
+
+    /// <summary>Called when the user cancels.</summary>
+    public Func<Task>? OnCancel { get; set; }
+}
+
+/// <summary>
 /// Context passed to the <c>NewFolderForm</c> render fragment of <c>TmDocumentManager&lt;TMetadata&gt;</c>.
 /// </summary>
 public class NewFolderContext<TMetadata> where TMetadata : class
@@ -58,6 +79,27 @@ public class DetailContext<TMetadata> where TMetadata : class
 {
     /// <summary>The item whose details are displayed.</summary>
     public DocumentManagerItem<TMetadata> Item { get; set; } = null!;
+}
+
+/// <summary>
+/// Context passed to the <c>AttachmentListTemplate</c> render fragment of <c>TmDocumentManager&lt;TMetadata&gt;</c>.
+/// </summary>
+public class AttachmentListContext<TMetadata> where TMetadata : class
+{
+    /// <summary>The item whose attachments are displayed.</summary>
+    public DocumentManagerItem<TMetadata> Item { get; set; } = null!;
+
+    /// <summary>Current attachments.</summary>
+    public IReadOnlyList<FileAttachment> Attachments { get; set; } = [];
+
+    /// <summary>Called when the user uploads new attachments.</summary>
+    public Func<IReadOnlyList<FileUploadInfo>, Task>? OnAddAttachment { get; set; }
+
+    /// <summary>Called when the user removes an attachment by its Id.</summary>
+    public Func<string, Task>? OnRemoveAttachment { get; set; }
+
+    /// <summary>Called when the user downloads an attachment by its Id.</summary>
+    public Func<string, Task>? OnDownloadAttachment { get; set; }
 }
 
 /// <summary>

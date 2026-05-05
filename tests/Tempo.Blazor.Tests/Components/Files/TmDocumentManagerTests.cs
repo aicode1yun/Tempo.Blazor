@@ -3,9 +3,11 @@ using FluentAssertions;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Rendering;
 using Microsoft.AspNetCore.Components.Web;
+using System.Reflection;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Files;
+using Tempo.Blazor.Models;
 using Tempo.Blazor.Tests.Localization;
 using Xunit;
 
@@ -74,6 +76,13 @@ public class TmDocumentManagerTests : LocalizationTestBase
         builder.CloseComponent();
     };
 
+    private RenderFragment<UploadContext<TestMetadata>> UploadForm => ctx => builder =>
+    {
+        builder.OpenComponent<TestUploadForm>(0);
+        builder.AddAttribute(1, "Context", ctx);
+        builder.CloseComponent();
+    };
+
     private RenderFragment<DeleteContext<TestMetadata>> DeleteForm => ctx => builder =>
     {
         builder.OpenComponent<TestDeleteForm>(0);
@@ -127,6 +136,29 @@ public class TmDocumentManagerTests : LocalizationTestBase
             builder.AddAttribute(7, "class", "test-new-folder-submit");
             builder.AddAttribute(8, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Context.OnSubmit?.Invoke() ?? Task.CompletedTask));
             builder.AddContent(9, "Create");
+            builder.CloseElement();
+            builder.CloseElement();
+        }
+    }
+
+    private sealed class TestUploadForm : ComponentBase
+    {
+        [Parameter] public UploadContext<TestMetadata> Context { get; set; } = null!;
+        protected override void OnParametersSet()
+        {
+            if (Context.Files.Count == 0)
+            {
+                Context.Files = [new FileUploadInfo { FileName = "test.txt", Size = 100, Stream = new System.IO.MemoryStream() }];
+            }
+        }
+        protected override void BuildRenderTree(RenderTreeBuilder builder)
+        {
+            builder.OpenElement(0, "div");
+            builder.AddAttribute(1, "class", "test-upload-form");
+            builder.OpenElement(2, "button");
+            builder.AddAttribute(3, "class", "test-upload-submit");
+            builder.AddAttribute(4, "onclick", EventCallback.Factory.Create<MouseEventArgs>(this, _ => Context.OnSubmit?.Invoke() ?? Task.CompletedTask));
+            builder.AddContent(5, "Upload");
             builder.CloseElement();
             builder.CloseElement();
         }
@@ -283,6 +315,206 @@ public class TmDocumentManagerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void DocumentManager_Upload_Button_Renders_When_UploadForm_Provided()
+    {
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider())
+            .Add(c => c.UploadForm, UploadForm));
+
+        cut.FindAll(".tm-file-manager__toolbar-button")
+            .Any(b => b.TextContent.Contains("Upload") && b.TagName.Equals("button", StringComparison.OrdinalIgnoreCase))
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public void DocumentManager_Upload_Button_Hidden_When_No_UploadForm()
+    {
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, CreateMockProvider()));
+
+        // Without UploadForm, the toolbar shows the default InputFile label which also contains "Upload"
+        // but uses a <label> element, not a <button>
+        cut.FindAll(".tm-file-manager__toolbar-button")
+            .Any(b => b.TextContent.Contains("Upload") && b.TagName.Equals("button", StringComparison.OrdinalIgnoreCase))
+            .Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task DocumentManager_Upload_Custom_Form_Submits()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.UploadForm, UploadForm));
+
+        // Click Upload button
+        var uploadBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Upload") && b.TagName.Equals("button", StringComparison.OrdinalIgnoreCase));
+        uploadBtn.Click();
+
+        // Custom form should appear
+        cut.Find(".test-upload-form").Should().NotBeNull();
+
+        // Submit directly via the TestUploadForm component (avoids async button click issues)
+        var formComponent = cut.FindComponent<TestUploadForm>();
+        await cut.InvokeAsync(() => formComponent.Instance.Context.OnSubmit!());
+        cut.Render();
+
+        // Verify upload was called and form closed
+        provider.UploadCalled.Should().BeTrue();
+        cut.FindAll(".test-upload-form").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DocumentManager_Upload_Form_Cancels()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.UploadForm, UploadForm));
+
+        // Click Upload button
+        var uploadBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Upload") && b.TagName.Equals("button", StringComparison.OrdinalIgnoreCase));
+        uploadBtn.Click();
+
+        // Cancel via overlay click
+        var overlay = cut.Find(".tm-document-manager__overlay");
+        overlay.Click();
+        cut.Render();
+
+        // Form should close
+        cut.FindAll(".test-upload-form").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task DocumentManager_Multiple_Attachments_Upload_In_Initial_Upload()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.UploadForm, UploadForm)
+            .Add(c => c.AllowMultipleAttachments, true));
+
+        var uploadBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Upload") && b.TagName.Equals("button", StringComparison.OrdinalIgnoreCase));
+        uploadBtn.Click();
+
+        var formComponent = cut.FindComponent<TestUploadForm>();
+        formComponent.Instance.Context.Files = new List<FileUploadInfo>
+        {
+            new() { FileName = "a.txt", Size = 10, Stream = new System.IO.MemoryStream() },
+            new() { FileName = "b.txt", Size = 20, Stream = new System.IO.MemoryStream() },
+            new() { FileName = "c.txt", Size = 30, Stream = new System.IO.MemoryStream() }
+        };
+        await cut.InvokeAsync(() => formComponent.Instance.Context.OnSubmit!());
+        cut.Render();
+
+        provider.UploadCalled.Should().BeTrue();
+        var allItems = typeof(MockDocumentManagerDataProvider)
+            .GetField("_allItems", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.GetValue(provider) as List<DocumentManagerItem<TestMetadata>>;
+        allItems?.Count(i => i.Name is "a.txt" or "b.txt" or "c.txt").Should().Be(3);
+    }
+
+    [Fact]
+    public void DocumentManager_DetailPanel_Renders_Attachments()
+    {
+        var provider = CreateMockProvider();
+        var allItems = typeof(MockDocumentManagerDataProvider)
+            .GetField("_allItems", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.GetValue(provider) as List<DocumentManagerItem<TestMetadata>>;
+        var rootfile = allItems?.First(i => i.Id == "rootfile");
+        if (rootfile is not null)
+        {
+            rootfile.Attachments = new List<FileAttachment>
+            {
+                new() { Id = "a1", Name = "attachment1.txt", Size = 100 },
+                new() { Id = "a2", Name = "attachment2.txt", Size = 200 }
+            };
+        }
+
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.DetailPanel, DetailPanel)
+            .Add(c => c.AllowMultipleAttachments, true));
+
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Readme.txt"));
+        item.Click();
+
+        var detailBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Detail"));
+        detailBtn.Click();
+
+        cut.Find(".test-detail-panel").Should().NotBeNull();
+        cut.Markup.Should().Contain("attachment1.txt");
+        cut.Markup.Should().Contain("attachment2.txt");
+    }
+
+    [Fact]
+    public async Task DocumentManager_Attachment_Upload_Adds_To_Item()
+    {
+        var provider = CreateMockProvider();
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.EditForm, EditForm)
+            .Add(c => c.AllowMultipleAttachments, true));
+
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Readme.txt"));
+        item.Click();
+
+        var editBtn = cut.FindAll(".tm-file-manager__toolbar-button")
+            .First(b => b.TextContent.Contains("Edit"));
+        editBtn.Click();
+
+        var addAttBtn = cut.FindAll("button").First(b => b.TextContent.Contains("Add Attachment"));
+        addAttBtn.Click();
+
+        var filesField = typeof(TmDocumentManager<TestMetadata>)
+            .GetField("_attachmentUploadFiles", BindingFlags.NonPublic | BindingFlags.Instance);
+        filesField?.SetValue(cut.Instance, new List<FileUploadInfo>
+        {
+            new() { FileName = "extra.txt", Size = 50, Stream = new System.IO.MemoryStream() }
+        });
+
+        var submitMethod = typeof(TmDocumentManager<TestMetadata>)
+            .GetMethod("SubmitAttachmentUploadAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        await cut.InvokeAsync(() => (submitMethod?.Invoke(cut.Instance, null) as Task)!);
+
+        provider.AddAttachmentsCalled.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DocumentManager_Attachment_Remove_Calls_Provider()
+    {
+        var provider = CreateMockProvider();
+        var allItems = typeof(MockDocumentManagerDataProvider)
+            .GetField("_allItems", BindingFlags.NonPublic | BindingFlags.Instance)
+            ?.GetValue(provider) as List<DocumentManagerItem<TestMetadata>>;
+        var rootfile = allItems?.First(i => i.Id == "rootfile");
+        if (rootfile is not null)
+        {
+            rootfile.Attachments = new List<FileAttachment>
+            {
+                new() { Id = "a1", Name = "old.txt", Size = 100 }
+            };
+        }
+
+        var cut = RenderComponent<TmDocumentManager<TestMetadata>>(p => p
+            .Add(c => c.DataProvider, provider)
+            .Add(c => c.AllowMultipleAttachments, true));
+
+        var item = cut.FindAll(".tm-file-manager__item").First(e => e.TextContent.Contains("Readme.txt"));
+        item.Click();
+
+        var removeMethod = typeof(TmDocumentManager<TestMetadata>)
+            .GetMethod("RemoveAttachmentAsync", BindingFlags.NonPublic | BindingFlags.Instance);
+        await cut.InvokeAsync(() => (removeMethod?.Invoke(cut.Instance, ["a1"]) as Task)!);
+
+        provider.RemoveAttachmentCalled.Should().BeTrue();
+    }
+
+    [Fact]
     public async Task DocumentManager_Delete_Custom_Form_Confirms()
     {
         var provider = CreateMockProvider();
@@ -428,6 +660,7 @@ public class TmDocumentManagerTests : LocalizationTestBase
     private sealed class MockDocumentManagerDataProvider : IDocumentManagerDataProvider<TestMetadata>
     {
         private readonly List<DocumentManagerItem<TestMetadata>> _allItems;
+        private readonly Dictionary<string, List<FileAttachment>> _attachments = new();
 
         public MockDocumentManagerDataProvider(List<DocumentManagerItem<TestMetadata>> items)
         {
@@ -437,6 +670,9 @@ public class TmDocumentManagerTests : LocalizationTestBase
         public string? LastRenamedId { get; private set; }
         public string? LastRenamedNewName { get; private set; }
         public bool UpdateMetadataCalled { get; private set; }
+        public bool UploadCalled { get; private set; }
+        public bool AddAttachmentsCalled { get; private set; }
+        public bool RemoveAttachmentCalled { get; private set; }
 
         public Task<IReadOnlyList<DocumentManagerItem<TestMetadata>>> GetFolderContentsAsync(
             string? folderPath = null, CancellationToken cancellationToken = default)
@@ -503,8 +739,10 @@ public class TmDocumentManagerTests : LocalizationTestBase
 
         public Task<IReadOnlyList<DocumentManagerItem<TestMetadata>>> UploadAsync(
             string folderPath, IReadOnlyList<FileUploadInfo> files,
+            TestMetadata? metadata = null,
             IProgress<int>? progress = null, CancellationToken cancellationToken = default)
         {
+            UploadCalled = true;
             foreach (var file in files)
             {
                 var path = $"{folderPath.TrimEnd('/')}/{file.FileName}";
@@ -515,7 +753,8 @@ public class TmDocumentManagerTests : LocalizationTestBase
                     Path = path,
                     IsDirectory = false,
                     Size = file.Size,
-                    Extension = System.IO.Path.GetExtension(file.FileName)
+                    Extension = System.IO.Path.GetExtension(file.FileName),
+                    Metadata = metadata
                 });
                 file.Stream.Dispose();
             }
@@ -561,6 +800,64 @@ public class TmDocumentManagerTests : LocalizationTestBase
             };
             _allItems.Add(copy);
             return Task.FromResult(copy);
+        }
+
+        public Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<string?>(null);
+        }
+
+        public Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+        {
+            if (_attachments.TryGetValue(itemId, out var list))
+                return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+            return Task.FromResult<IReadOnlyList<FileAttachment>>([]);
+        }
+
+        public Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+            string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default)
+        {
+            AddAttachmentsCalled = true;
+            if (!_attachments.ContainsKey(itemId))
+                _attachments[itemId] = [];
+
+            var list = _attachments[itemId];
+            foreach (var file in files)
+            {
+                list.Add(new FileAttachment
+                {
+                    Id = Guid.NewGuid().ToString(),
+                    Name = file.FileName,
+                    Size = file.Size,
+                    ContentType = file.ContentType,
+                    CreatedDate = DateTime.Now
+                });
+                file.Stream.Dispose();
+            }
+
+            var item = _allItems.FirstOrDefault(i => i.Id == itemId);
+            if (item is not null)
+                item.Attachments = list;
+
+            return Task.FromResult<IReadOnlyList<FileAttachment>>(list);
+        }
+
+        public Task RemoveAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
+        {
+            RemoveAttachmentCalled = true;
+            if (_attachments.TryGetValue(itemId, out var list))
+            {
+                list.RemoveAll(a => a.Id == attachmentId);
+                var item = _allItems.FirstOrDefault(i => i.Id == itemId);
+                if (item is not null)
+                    item.Attachments = list;
+            }
+            return Task.CompletedTask;
+        }
+
+        public Task<Stream> DownloadAttachmentAsync(string itemId, string attachmentId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<Stream>(new System.IO.MemoryStream());
         }
 
         private static string GetParentPath(string itemPath)

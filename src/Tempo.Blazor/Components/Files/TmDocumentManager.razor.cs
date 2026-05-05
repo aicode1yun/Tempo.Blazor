@@ -42,6 +42,16 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private TMetadata? _newFolderMetadata;
     private NewFolderContext<TMetadata>? _newFolderContext;
 
+    // ── Upload ───────────────────────────────────────────────────
+    private bool _showUploadForm;
+    private TMetadata? _uploadMetadata;
+    private UploadContext<TMetadata>? _uploadContext;
+
+    // ── Attachments ──────────────────────────────────────────────
+    private bool _showAttachmentUploadForm;
+    private DocumentManagerItem<TMetadata>? _attachmentTargetItem;
+    private List<FileUploadInfo> _attachmentUploadFiles = [];
+
     private bool _showCustomDeleteForm;
     private DeleteContext<TMetadata>? _deleteContext;
 
@@ -117,6 +127,15 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
     /// <summary>How the detail panel is displayed. Default is <see cref="DocumentManagerDetailMode.SlideIn"/>.</summary>
     [Parameter] public DocumentManagerDetailMode DetailMode { get; set; } = DocumentManagerDetailMode.SlideIn;
+
+    /// <summary>When <c>true</c>, allows one logical item to hold multiple physical file attachments.</summary>
+    [Parameter] public bool AllowMultipleAttachments { get; set; }
+
+    /// <summary>Custom template for rendering the attachment list inside the detail panel or edit modal.</summary>
+    [Parameter] public RenderFragment<AttachmentListContext<TMetadata>>? AttachmentListTemplate { get; set; }
+
+    /// <summary>Custom form for uploading files with metadata. When null, a simple file input is used.</summary>
+    [Parameter] public RenderFragment<UploadContext<TMetadata>>? UploadForm { get; set; }
 
     /// <summary>Custom form for creating a new folder. When null, a default inline input is used.</summary>
     [Parameter] public RenderFragment<NewFolderContext<TMetadata>>? NewFolderForm { get; set; }
@@ -491,6 +510,120 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         return Task.CompletedTask;
     }
 
+    private void OpenUploadForm()
+    {
+        if (Disabled || DataProvider is null || UploadForm is null) return;
+        _uploadMetadata = TryCreateDefaultMetadata();
+        _showUploadForm = true;
+    }
+
+    private async Task SubmitUploadAsync()
+    {
+        if (DataProvider is null || _uploadContext is null || _uploadContext.Files.Count == 0) return;
+
+        var uploaded = await DataProvider.UploadAsync(_currentPath, _uploadContext.Files, metadata: _uploadContext.Metadata);
+        _showUploadForm = false;
+        _uploadMetadata = null;
+        _uploadContext = null;
+        await LoadDataAsync();
+
+        if (uploaded.Count > 0)
+        {
+            var first = _items.FirstOrDefault(i => i.Id == uploaded[0].Id);
+            if (first is not null)
+            {
+                _selectedItems.Clear();
+                _selectedItems.Add(first);
+                await OnSelectionChanged.InvokeAsync(_selectedItems);
+            }
+        }
+    }
+
+    private Task CancelUpload()
+    {
+        _showUploadForm = false;
+        _uploadMetadata = null;
+        _uploadContext = null;
+        return Task.CompletedTask;
+    }
+
+    private UploadContext<TMetadata> GetUploadContext() => new()
+    {
+        Name = string.Empty,
+        Files = [],
+        Metadata = _uploadMetadata,
+        OnSubmit = SubmitUploadAsync,
+        OnCancel = CancelUpload
+    };
+
+    private void OpenAttachmentUploadForm(DocumentManagerItem<TMetadata> item)
+    {
+        if (Disabled || DataProvider is null || !AllowMultipleAttachments) return;
+        _attachmentTargetItem = item;
+        _attachmentUploadFiles = [];
+        _showAttachmentUploadForm = true;
+    }
+
+    private async Task SubmitAttachmentUploadAsync()
+    {
+        if (DataProvider is null || _attachmentTargetItem is null || _attachmentUploadFiles.Count == 0) return;
+
+        await DataProvider.AddAttachmentsAsync(_attachmentTargetItem.Id, _attachmentUploadFiles);
+        _showAttachmentUploadForm = false;
+        _attachmentTargetItem = null;
+        _attachmentUploadFiles = [];
+        await LoadDataAsync();
+    }
+
+    private Task CancelAttachmentUpload()
+    {
+        _showAttachmentUploadForm = false;
+        _attachmentTargetItem = null;
+        _attachmentUploadFiles = [];
+        return Task.CompletedTask;
+    }
+
+    private async Task RemoveAttachmentAsync(string attachmentId)
+    {
+        if (DataProvider is null || _selectedItems.Count != 1) return;
+        await DataProvider.RemoveAttachmentAsync(_selectedItems[0].Id, attachmentId);
+        await LoadDataAsync();
+    }
+
+    private async Task DownloadAttachmentAsync(string attachmentId)
+    {
+        if (DataProvider is null || _selectedItems.Count != 1) return;
+        var stream = await DataProvider.DownloadAttachmentAsync(_selectedItems[0].Id, attachmentId);
+        await using (stream) { }
+    }
+
+    private AttachmentListContext<TMetadata> GetAttachmentListContext(DocumentManagerItem<TMetadata> item)
+    {
+        return new AttachmentListContext<TMetadata>
+        {
+            Item = item,
+            Attachments = item.Attachments,
+            OnAddAttachment = async files =>
+            {
+                if (DataProvider is null) return;
+                await DataProvider.AddAttachmentsAsync(item.Id, files);
+                await LoadDataAsync();
+            },
+            OnRemoveAttachment = async attachmentId =>
+            {
+                if (DataProvider is null) return;
+                await DataProvider.RemoveAttachmentAsync(item.Id, attachmentId);
+                await LoadDataAsync();
+            },
+            OnDownloadAttachment = async attachmentId =>
+            {
+                if (DataProvider is null) return;
+                var stream = await DataProvider.DownloadAttachmentAsync(item.Id, attachmentId);
+                await using (stream) { }
+            }
+        };
+    }
+
     private void DeleteSelectedAsync()
     {
         if (Disabled || _selectedItems.Count == 0 || !CanDeleteSelection()) return;
@@ -576,7 +709,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (Disabled || DataProvider is null) return;
 
         var files = new List<FileUploadInfo>();
-        foreach (var file in e.GetMultipleFiles())
+        foreach (var file in e.GetMultipleFiles(AllowMultipleAttachments ? int.MaxValue : 1))
         {
             files.Add(new FileUploadInfo
             {
@@ -589,6 +722,21 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
 
         await DataProvider.UploadAsync(_currentPath, files);
         await LoadDataAsync();
+    }
+
+    private void HandleAttachmentFilesSelected(InputFileChangeEventArgs e)
+    {
+        _attachmentUploadFiles = [];
+        foreach (var file in e.GetMultipleFiles())
+        {
+            _attachmentUploadFiles.Add(new FileUploadInfo
+            {
+                FileName = file.Name,
+                Size = file.Size,
+                ContentType = file.ContentType,
+                Stream = file.OpenReadStream(maxAllowedSize: 10 * 1024 * 1024)
+            });
+        }
     }
 
     private async Task DownloadSelectedAsync()

@@ -50,4 +50,7 @@ public class DocumentManagerItem<TMetadata> where TMetadata : class
 
     /// <summary>Optional tags or labels.</summary>
     public IReadOnlyList<string>? Tags { get; set; }
+
+    /// <summary>Physical file attachments linked to this item.</summary>
+    public IReadOnlyList<FileAttachment> Attachments { get; set; } = [];
 }

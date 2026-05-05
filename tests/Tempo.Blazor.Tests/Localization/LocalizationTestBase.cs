@@ -816,6 +816,11 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Folders"] = "Folders",
         ["TmFileManager_Folder"] = "Folder",
         ["TmFileManager_EmptyFolder"] = "This folder is empty",
+        ["TmFileManager_UploadTitle"] = "Upload Files",
+        ["TmFileManager_Edit"] = "Edit",
+        ["TmFileManager_Detail"] = "Detail",
+        ["TmFileManager_AddAttachment"] = "Add Attachment",
+        ["TmFileManager_Attachments"] = "Attachments",
 
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Select an item...",
@@ -1524,6 +1529,11 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Folders"] = "Slozky",
         ["TmFileManager_Folder"] = "Slozka",
         ["TmFileManager_EmptyFolder"] = "Tato složka je prázdná",
+        ["TmFileManager_UploadTitle"] = "Nahrát soubory",
+        ["TmFileManager_Edit"] = "Upravit",
+        ["TmFileManager_Detail"] = "Detail",
+        ["TmFileManager_AddAttachment"] = "Přidat přílohu",
+        ["TmFileManager_Attachments"] = "Přílohy",
 
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Vyberte polozku...",

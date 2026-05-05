@@ -21,11 +21,21 @@
             }
             @if (ShowUploadButton && !Disabled)
             {
-                <label class="tm-file-manager__toolbar-button tm-file-manager__upload">
-                    <TmIcon Name="upload" />
-                    <span>@Loc["TmFileManager_Upload"]</span>
-                    <InputFile style="display:none" multiple OnChange="HandleFileSelectedAsync" />
-                </label>
+                if (UploadForm is not null)
+                {
+                    <button type="button" class="tm-file-manager__toolbar-button" @onclick="OpenUploadForm">
+                        <TmIcon Name="upload" />
+                        <span>@Loc["TmFileManager_Upload"]</span>
+                    </button>
+                }
+                else
+                {
+                    <label class="tm-file-manager__toolbar-button tm-file-manager__upload">
+                        <TmIcon Name="upload" />
+                        <span>@Loc["TmFileManager_Upload"]</span>
+                        <InputFile style="display:none" multiple="@AllowMultipleAttachments" OnChange="HandleFileSelectedAsync" />
+                    </label>
+                }
             }
             @if (ShowDeleteButton && !Disabled && CanDeleteSelection())
             {
@@ -257,10 +267,94 @@
                     </div>
                     <div class="tm-document-manager__modal-body">
                         @EditForm(_editContext)
+                        @if (AllowMultipleAttachments && _editingItem is not null)
+                        {
+                            <div class="tm-document-manager__attachment-section">
+                                <span class="tm-document-manager__attachment-section-title">@Loc["TmFileManager_Attachments"]</span>
+                                @if (AttachmentListTemplate is not null)
+                                {
+                                    @AttachmentListTemplate(GetAttachmentListContext(_editingItem))
+                                }
+                                else
+                                {
+                                    <ul class="tm-document-manager__attachment-list">
+                                        @foreach (var att in _editingItem.Attachments)
+                                        {
+                                            <li class="tm-document-manager__attachment-item">
+                                                <span class="tm-document-manager__attachment-name">@att.Name</span>
+                                                <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                                <div class="tm-document-manager__attachment-actions">
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
+                                                        <TmIcon Name="download" />
+                                                    </button>
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => RemoveAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Delete"]">
+                                                        <TmIcon Name="trash" />
+                                                    </button>
+                                                </div>
+                                            </li>
+                                        }
+                                    </ul>
+                                }
+                                <TmButton Variant="ButtonVariant.Secondary" OnClick="() => OpenAttachmentUploadForm(_editingItem)">
+                                    <TmIcon Name="plus" />
+                                    <span>@Loc["TmFileManager_AddAttachment"]</span>
+                                </TmButton>
+                            </div>
+                        }
                     </div>
                 </div>
             </div>
         }
+    }
+
+    <!-- Custom Upload Form Overlay -->
+    @if (_showUploadForm && UploadForm is not null)
+    {
+        _uploadContext ??= GetUploadContext();
+        <div class="tm-document-manager__overlay" @onclick="CancelUpload">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_UploadTitle"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelUpload">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    @UploadForm(_uploadContext)
+                </div>
+            </div>
+        </div>
+    }
+
+    <!-- Attachment Upload Overlay -->
+    @if (_showAttachmentUploadForm)
+    {
+        <div class="tm-document-manager__overlay" @onclick="CancelAttachmentUpload">
+            <div class="tm-document-manager__modal" @onclick:stopPropagation>
+                <div class="tm-document-manager__modal-header">
+                    <span class="tm-document-manager__modal-title">@Loc["TmFileManager_AddAttachment"]</span>
+                    <button type="button" class="tm-document-manager__modal-close" @onclick="CancelAttachmentUpload">
+                        <TmIcon Name="x" />
+                    </button>
+                </div>
+                <div class="tm-document-manager__modal-body">
+                    <TmFileDropZone OnFilesSelected="HandleAttachmentFilesSelected" />
+                    @if (_attachmentUploadFiles.Count > 0)
+                    {
+                        <ul class="tm-document-manager__attachment-preview">
+                            @foreach (var f in _attachmentUploadFiles)
+                            {
+                                <li>@f.FileName (@FormatSize(f.Size))</li>
+                            }
+                        </ul>
+                    }
+                    <div class="tm-document-manager__attachment-actions">
+                        <TmButton Variant="ButtonVariant.Primary" OnClick="SubmitAttachmentUploadAsync">@Loc["TmFileManager_Upload"]</TmButton>
+                        <TmButton Variant="ButtonVariant.Secondary" OnClick="CancelAttachmentUpload">@Loc["TmFileManager_Cancel"]</TmButton>
+                    </div>
+                </div>
+            </div>
+        </div>
     }
 
     <!-- Detail Panel (Slide-in) -->
@@ -279,6 +373,36 @@
                 </div>
                 <div class="tm-document-manager__detail-body">
                     @DetailPanel(ctx)
+                    @if (AllowMultipleAttachments && ctx.Item.Attachments.Count > 0)
+                    {
+                        <div class="tm-document-manager__attachment-section">
+                            <span class="tm-document-manager__attachment-section-title">@Loc["TmFileManager_Attachments"]</span>
+                            @if (AttachmentListTemplate is not null)
+                            {
+                                @AttachmentListTemplate(GetAttachmentListContext(ctx.Item))
+                            }
+                            else
+                            {
+                                <ul class="tm-document-manager__attachment-list">
+                                    @foreach (var att in ctx.Item.Attachments)
+                                    {
+                                        <li class="tm-document-manager__attachment-item">
+                                            <span class="tm-document-manager__attachment-name">@att.Name</span>
+                                            <span class="tm-document-manager__attachment-size">@FormatSize(att.Size)</span>
+                                            <div class="tm-document-manager__attachment-actions">
+                                                <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
+                                                    <TmIcon Name="download" />
+                                                </button>
+                                                <button type="button" class="tm-document-manager__attachment-action" @onclick="() => RemoveAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Delete"]">
+                                                    <TmIcon Name="trash" />
+                                                </button>
+                                            </div>
+                                        </li>
+                                    }
+                                </ul>
+                            }
+                        </div>
+                    }
                 </div>
             </div>
         }

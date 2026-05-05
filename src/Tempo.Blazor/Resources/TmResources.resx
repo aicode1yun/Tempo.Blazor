@@ -1983,6 +1983,7 @@
   <data name="TmSignature_Clear" xml:space="preserve"><value>Clear</value></data>
   <data name="TmFileManager_NewFolder" xml:space="preserve"><value>New Folder</value></data>
   <data name="TmFileManager_Upload" xml:space="preserve"><value>Upload</value></data>
+  <data name="TmFileManager_UploadTitle" xml:space="preserve"><value>Upload Files</value></data>
   <data name="TmFileManager_Delete" xml:space="preserve"><value>Delete</value></data>
   <data name="TmFileManager_DeleteTitle" xml:space="preserve"><value>Delete Items</value></data>
   <data name="TmFileManager_DeleteMessage" xml:space="preserve"><value>Are you sure you want to delete {0} selected item(s)? This action cannot be undone.</value></data>
@@ -2229,5 +2230,12 @@
   <data name="TmNotionCollab_Connecting"               xml:space="preserve"><value>Connecting…</value></data>
   <data name="TmNotionCollab_Disconnected"             xml:space="preserve"><value>Disconnected</value></data>
   <data name="TmNotionCollab_Connected"                xml:space="preserve"><value>Connected</value></data>
+
+  <!-- Document Manager -->
+  <data name="TmFileManager_UploadTitle"               xml:space="preserve"><value>Upload Files</value></data>
+  <data name="TmFileManager_Edit"                      xml:space="preserve"><value>Edit</value></data>
+  <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
+  <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Add Attachment</value></data>
+  <data name="TmFileManager_Attachments"               xml:space="preserve"><value>Attachments</value></data>
 
 </root>

@@ -1,4 +1,5 @@
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Models;
 
 namespace Tempo.Blazor.Abstractions.Interfaces;
 
@@ -44,10 +45,11 @@ public interface IDocumentManagerDataProvider<TMetadata> where TMetadata : class
     Task<IReadOnlyList<DocumentManagerItem<TMetadata>>> UploadAsync(
         string folderPath,
         IReadOnlyList<FileUploadInfo> files,
+        TMetadata? metadata = null,
         IProgress<int>? progress = null,
         CancellationToken cancellationToken = default);
 
-    /// <summary>Returns a download stream for a file by its Id.</summary>
+    /// <summary>Downloads the primary (first) attachment stream for a file by its Id.</summary>
     Task<Stream> DownloadAsync(
         string fileId,
         CancellationToken cancellationToken = default);
@@ -69,4 +71,27 @@ public interface IDocumentManagerDataProvider<TMetadata> where TMetadata : class
         string itemId,
         string targetFolderPath,
         CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Uploads a single 256 KB chunk. Returns an upload session ID (null on first chunk
+    /// response if the provider uses an implicit session). <see cref="FileChunkData.IsLast"/>
+    /// signals the final chunk.
+    /// </summary>
+    Task<string?> UploadChunkAsync(FileChunkData chunk, CancellationToken cancellationToken = default);
+
+    /// <summary>Retrieves all attachments for a specific item.</summary>
+    Task<IReadOnlyList<FileAttachment>> GetAttachmentsAsync(
+        string itemId, CancellationToken cancellationToken = default);
+
+    /// <summary>Adds new file attachments to an existing item.</summary>
+    Task<IReadOnlyList<FileAttachment>> AddAttachmentsAsync(
+        string itemId, IReadOnlyList<FileUploadInfo> files, CancellationToken cancellationToken = default);
+
+    /// <summary>Removes a single attachment from an item.</summary>
+    Task RemoveAttachmentAsync(
+        string itemId, string attachmentId, CancellationToken cancellationToken = default);
+
+    /// <summary>Downloads a specific attachment as a stream.</summary>
+    Task<Stream> DownloadAttachmentAsync(
+        string itemId, string attachmentId, CancellationToken cancellationToken = default);
 }
