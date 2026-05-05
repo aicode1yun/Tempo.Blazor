@@ -48,7 +48,7 @@ public class MockNotionBlockStore
         Add(BlockType.Heading2,  10, new HeadingBlockContent { Level = 2, Html = "PDF Viewer" });
         Add(BlockType.Pdf,       11, new PdfBlockContent
         {
-            Url     = "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf",
+            Url     = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf",
             Caption = "TraceMonkey — demo PDF (Mozilla)"
         });
 
@@ -77,7 +77,7 @@ public class MockNotionBlockStore
             FileName      = "sample-report.pdf",
             FileSizeBytes = 2_457_600,
             ContentType   = "application/pdf",
-            Url           = "https://raw.githubusercontent.com/mozilla/pdf.js/master/web/compressed.tracemonkey-pldi-09.pdf",
+            Url           = "https://mozilla.github.io/pdf.js/web/compressed.tracemonkey-pldi-09.pdf",
             Caption       = "Sample PDF report (2.4 MB)"
         });
 

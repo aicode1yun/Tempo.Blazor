@@ -213,6 +213,17 @@
               IsDangerous="true"
               OnResult="HandleDeleteDialogResult" />
 
+    <!-- Attachment Delete Confirmation Dialog -->
+    <TmDialog Type="DialogType.Confirm"
+              Variant="DialogVariant.Warning"
+              Show="_showAttachmentDeleteDialog"
+              Title="@Loc["TmFileManager_DeleteAttachmentTitle"]"
+              Message="@Loc["TmFileManager_DeleteAttachmentMessage"]"
+              OkButtonText="@Loc["TmFileManager_ConfirmDelete"]"
+              CancelButtonText="@Loc["TmFileManager_CancelDelete"]"
+              IsDangerous="true"
+              OnResult="HandleAttachmentDeleteDialogResult" />
+
     <!-- Custom New Folder Form Overlay -->
     @if (_showNewFolderForm && NewFolderForm is not null)
     {
@@ -287,7 +298,7 @@
                                                     <button type="button" class="tm-document-manager__attachment-action" @onclick="() => DownloadAttachmentAsync(att.Id)" title="@Loc["TmFileManager_Download"]">
                                                         <TmIcon Name="download" />
                                                     </button>
-                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => StageAttachmentRemoval(att.Id)" title="@Loc["TmFileManager_Delete"]">
+                                                    <button type="button" class="tm-document-manager__attachment-action" @onclick="() => PromptAttachmentRemoval(att.Id)" title="@Loc["TmFileManager_Delete"]">
                                                         <TmIcon Name="trash" />
                                                     </button>
                                                 </div>

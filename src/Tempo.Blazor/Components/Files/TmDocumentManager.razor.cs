@@ -52,6 +52,8 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private DocumentManagerItem<TMetadata>? _attachmentTargetItem;
     private List<FileUploadInfo> _attachmentUploadFiles = [];
     private List<FileAttachment> _editAttachments = [];
+    private bool _showAttachmentDeleteDialog;
+    private string? _attachmentIdToDelete;
 
     private bool _showCustomDeleteForm;
     private DeleteContext<TMetadata>? _deleteContext;
@@ -808,9 +810,23 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         return Task.CompletedTask;
     }
 
+    private void PromptAttachmentRemoval(string attachmentId)
+    {
+        _attachmentIdToDelete = attachmentId;
+        _showAttachmentDeleteDialog = true;
+    }
+
     private void StageAttachmentRemoval(string attachmentId)
     {
         _editAttachments.RemoveAll(a => a.Id == attachmentId);
+    }
+
+    private void HandleAttachmentDeleteDialogResult(bool? result)
+    {
+        if (result == true && _attachmentIdToDelete is not null)
+            StageAttachmentRemoval(_attachmentIdToDelete);
+        _attachmentIdToDelete = null;
+        _showAttachmentDeleteDialog = false;
     }
 
     private async Task ShowDetailAsync(DocumentManagerItem<TMetadata> item)
@@ -919,48 +935,49 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private async Task HandleContextMenuActionAsync(string action)
     {
         if (_contextMenuItem is null) return;
+        var item = _contextMenuItem;
         CloseContextMenu();
 
         switch (action)
         {
             case "open":
-                await OnItemDoubleClickAsync(_contextMenuItem);
+                await OnItemDoubleClickAsync(item);
                 break;
             case "rename":
-                if (CanRename(_contextMenuItem))
+                if (CanRename(item))
                 {
                     _selectedItems.Clear();
-                    _selectedItems.Add(_contextMenuItem);
+                    _selectedItems.Add(item);
                     await OnSelectionChanged.InvokeAsync(_selectedItems);
                     StartRenameAsync();
                 }
                 break;
             case "delete":
-                if (CanDelete(_contextMenuItem))
+                if (CanDelete(item))
                 {
                     _selectedItems.Clear();
-                    _selectedItems.Add(_contextMenuItem);
+                    _selectedItems.Add(item);
                     await OnSelectionChanged.InvokeAsync(_selectedItems);
                     DeleteSelectedAsync();
                 }
                 break;
             case "edit":
-                if (CanWrite(_contextMenuItem))
+                if (CanWrite(item))
                 {
                     _selectedItems.Clear();
-                    _selectedItems.Add(_contextMenuItem);
+                    _selectedItems.Add(item);
                     await OnSelectionChanged.InvokeAsync(_selectedItems);
                     StartEditAsync();
                 }
                 break;
             case "detail":
-                await ShowDetailAsync(_contextMenuItem);
+                await ShowDetailAsync(item);
                 break;
             case "download":
-                if (CanDownload(_contextMenuItem) && !_contextMenuItem.IsDirectory)
+                if (CanDownload(item) && !item.IsDirectory)
                 {
                     _selectedItems.Clear();
-                    _selectedItems.Add(_contextMenuItem);
+                    _selectedItems.Add(item);
                     await OnSelectionChanged.InvokeAsync(_selectedItems);
                     await DownloadSelectedAsync();
                 }

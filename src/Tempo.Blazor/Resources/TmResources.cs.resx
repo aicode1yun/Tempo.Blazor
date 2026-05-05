@@ -1826,6 +1826,8 @@
   <data name="TmFileManager_Delete" xml:space="preserve"><value>Smazat</value></data>
   <data name="TmFileManager_DeleteTitle" xml:space="preserve"><value>Smazat položky</value></data>
   <data name="TmFileManager_DeleteMessage" xml:space="preserve"><value>Opravdu chcete smazat {0} vybranou/ché položku/ky? Tuto akci nelze vrátit zpět.</value></data>
+  <data name="TmFileManager_DeleteAttachmentTitle" xml:space="preserve"><value>Smazat přílohu</value></data>
+  <data name="TmFileManager_DeleteAttachmentMessage" xml:space="preserve"><value>Opravdu chcete smazat tuto přílohu? Tuto akci nelze vrátit zpět.</value></data>
   <data name="TmFileManager_ConfirmDelete" xml:space="preserve"><value>Smazat</value></data>
   <data name="TmFileManager_CancelDelete" xml:space="preserve"><value>Zrušit</value></data>
   <data name="TmFileManager_Rename" xml:space="preserve"><value>Přejmenovat</value></data>
