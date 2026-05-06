@@ -35,12 +35,13 @@ else
             @for (int col = 0; col < Sheet.ColumnCount; col++)
             {
                 var colIndex = col;
+                var columnName = GetColumnLetters(colIndex);
                 <div class="tm-spreadsheet-header-cell @GetColumnHeaderClass(colIndex)"
                      role="columnheader"
-                     aria-label="@SpreadsheetRange.ColumnIndexToLetters(colIndex)"
+                     aria-label="@columnName"
                      style="width: @GetColumnWidth(colIndex)px;@GetColumnHeaderFreezeStyle(colIndex)"
                      @onclick="() => SelectColumn(colIndex)">
-                    @SpreadsheetRange.ColumnIndexToLetters(colIndex)
+                    @columnName
                     <div class="tm-spreadsheet-col-resizer"
                          @onmousedown="e => OnColResizerMouseDown(e, colIndex)"
                          @onmousedown:stopPropagation
@@ -163,10 +164,10 @@ else
             @for (int col = 0; col < (Sheet?.ColumnCount ?? 0); col++)
             {
                 var colIndex = col;
-                var cellRef = SpreadsheetRange.ColumnIndexToLetters(colIndex) + (rowIndex + 1);
+                var cellRef = GetCellRef(rowIndex, colIndex);
                 var cell = Sheet?.Cells.GetValueOrDefault(cellRef);
                 var isActive = IsActiveCell(cellRef);
-                var isSelected = IsCellSelected(cellRef);
+                var isSelected = IsCellSelected(rowIndex, colIndex, cellRef);
                 var isEditing = IsEditing && isActive;
                 var mergedHidden = IsCellMergedAndHidden(rowIndex, colIndex);
                 <div class="tm-spreadsheet-cell @GetCellClass(isActive, isSelected, mergedHidden, cellRef)"

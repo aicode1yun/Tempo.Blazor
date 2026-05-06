@@ -250,6 +250,25 @@ public class TmSpreadsheetGridTests : LocalizationTestBase
     }
 
     [Fact]
+    public void ArrowDown_SchedulesEnsureCellVisibleInterop()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 100, ColumnCount = 20 };
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var grid = cut.Find(".tm-spreadsheet-grid");
+        grid.KeyDown("ArrowDown");
+
+        cut.WaitForAssertion(() =>
+        {
+            JSInterop.Invocations
+                .Where(i => i.Identifier == "tmSpreadsheetGrid.ensureCellVisible")
+                .Should()
+                .ContainSingle();
+        });
+    }
+
+    [Fact]
     public void ArrowRight_MovesActiveCell()
     {
         var sheet = new SpreadsheetSheet { RowCount = 3, ColumnCount = 3 };

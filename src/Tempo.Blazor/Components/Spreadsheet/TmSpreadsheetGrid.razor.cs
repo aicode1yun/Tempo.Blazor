@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using System.Runtime.CompilerServices;
 using Tempo.Blazor.Components.Spreadsheet.Format;
 using Tempo.Blazor.Components.Spreadsheet.Formula;
 using Tempo.Blazor.Components.Spreadsheet.Models;
@@ -17,6 +18,7 @@ public partial class TmSpreadsheetGrid
     private ElementReference _editInput;
     private string? _editValue;
     private bool _shouldFocusAfterRender;
+    private (int Row, int Col)? _pendingVisibleCell;
 
     private bool _isAutoFillDragging;
     private string? _autoFillSourceRange;
@@ -60,6 +62,27 @@ public partial class TmSpreadsheetGrid
 
     private List<int> _rowIndices = [];
     private readonly Dictionary<string, string> _displayValueCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<string, string> _cellStyleCache = new(StringComparer.OrdinalIgnoreCase);
+    private readonly Dictionary<(int Row, int Col), SpreadsheetRange> _mergedStartLookup = [];
+    private readonly HashSet<(int Row, int Col)> _mergedHiddenLookup = [];
+    private double[] _rowHeights = [];
+    private double[] _columnWidths = [];
+    private double[] _rowOffsets = [];
+    private double[] _columnOffsets = [];
+    private string[] _columnLetters = [];
+    private SpreadsheetSheet? _cachedSheet;
+    private int _cachedRowCount;
+    private int _cachedColumnCount;
+    private double _cachedRowHeight;
+    private double _cachedColumnWidth;
+    private int _cachedRowsHash;
+    private int _cachedColumnsHash;
+    private int _cachedMergedHash;
+    private (string? StartRef, string? EndRef, string? ActiveRef, (int StartRow, int StartCol, int EndRow, int EndCol) Bounds)? _selectionBoundsCache;
+    private const double RowHeaderWidth = 40;
+    private const double ColumnHeaderHeight = 20;
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     /// <summary>The sheet to render.</summary>
     [Parameter] public SpreadsheetSheet? Sheet { get; set; }
@@ -178,8 +201,8 @@ public partial class TmSpreadsheetGrid
     /// <summary>Gets the current live edit value (not yet committed to the cell).</summary>
     public string? CurrentEditValue => _editValue;
 
-    /// <summary>Whether row virtualization is active (no freeze rows, not editing).</summary>
-    private bool UseVirtualization => Sheet?.FreezeRowCount == 0 && !IsEditing;
+    /// <summary>Whether row virtualization is active (no freeze rows).</summary>
+    private bool UseVirtualization => Sheet?.FreezeRowCount == 0;
 
     /// <summary>Gets the currently active cell reference.</summary>
     public string? ActiveCellRef => Sheet?.ActiveCellRef;
@@ -206,6 +229,193 @@ public partial class TmSpreadsheetGrid
         {
             _rowIndices = Enumerable.Range(0, Sheet.RowCount).ToList();
         }
+
+        RefreshRenderCachesIfNeeded();
+    }
+
+    private void RefreshRenderCachesIfNeeded()
+    {
+        if (Sheet is null)
+        {
+            ClearRenderCaches();
+            return;
+        }
+
+        var rowsHash = ComputeRowsHash();
+        var columnsHash = ComputeColumnsHash();
+        var mergedHash = ComputeMergedCellsHash();
+        var geometryChanged = _cachedSheet is not null
+            && ReferenceEquals(_cachedSheet, Sheet)
+            && (_cachedRowCount != Sheet.RowCount
+                || _cachedColumnCount != Sheet.ColumnCount
+                || Math.Abs(_cachedRowHeight - RowHeight) > double.Epsilon
+                || Math.Abs(_cachedColumnWidth - ColumnWidth) > double.Epsilon
+                || _cachedRowsHash != rowsHash
+                || _cachedColumnsHash != columnsHash);
+
+        var shouldRebuild = !ReferenceEquals(_cachedSheet, Sheet)
+            || geometryChanged
+            || _cachedRowCount != Sheet.RowCount
+            || _cachedColumnCount != Sheet.ColumnCount
+            || Math.Abs(_cachedRowHeight - RowHeight) > double.Epsilon
+            || Math.Abs(_cachedColumnWidth - ColumnWidth) > double.Epsilon
+            || _cachedRowsHash != rowsHash
+            || _cachedColumnsHash != columnsHash
+            || _cachedMergedHash != mergedHash;
+
+        if (!shouldRebuild)
+            return;
+
+        _cachedSheet = Sheet;
+        _cachedRowCount = Sheet.RowCount;
+        _cachedColumnCount = Sheet.ColumnCount;
+        _cachedRowHeight = RowHeight;
+        _cachedColumnWidth = ColumnWidth;
+        _cachedRowsHash = rowsHash;
+        _cachedColumnsHash = columnsHash;
+        _cachedMergedHash = mergedHash;
+
+        RebuildGeometryCache();
+        RebuildColumnLetterCache();
+        RebuildMergedCellCache();
+
+        if (geometryChanged)
+            _cellStyleCache.Clear();
+    }
+
+    private void ClearRenderCaches()
+    {
+        _cachedSheet = null;
+        _cachedRowCount = 0;
+        _cachedColumnCount = 0;
+        _cachedRowsHash = 0;
+        _cachedColumnsHash = 0;
+        _cachedMergedHash = 0;
+        _rowHeights = [];
+        _columnWidths = [];
+        _rowOffsets = [];
+        _columnOffsets = [];
+        _columnLetters = [];
+        _mergedStartLookup.Clear();
+        _mergedHiddenLookup.Clear();
+        _selectionBoundsCache = null;
+        _cellStyleCache.Clear();
+    }
+
+    private void InvalidateGeometryCache()
+    {
+        _cachedSheet = null;
+        _cellStyleCache.Clear();
+    }
+
+    private int ComputeRowsHash()
+    {
+        if (Sheet is null) return 0;
+        var hash = new HashCode();
+        hash.Add(Sheet.Rows.Count);
+        foreach (var (index, row) in Sheet.Rows.OrderBy(kv => kv.Key))
+        {
+            hash.Add(index);
+            hash.Add(row.Height);
+            hash.Add(row.IsHidden);
+        }
+        return hash.ToHashCode();
+    }
+
+    private int ComputeColumnsHash()
+    {
+        if (Sheet is null) return 0;
+        var hash = new HashCode();
+        hash.Add(Sheet.Columns.Count);
+        foreach (var (index, column) in Sheet.Columns.OrderBy(kv => kv.Key))
+        {
+            hash.Add(index);
+            hash.Add(column.Width);
+            hash.Add(column.IsHidden);
+        }
+        return hash.ToHashCode();
+    }
+
+    private int ComputeMergedCellsHash()
+    {
+        if (Sheet is null) return 0;
+        var hash = new HashCode();
+        hash.Add(Sheet.MergedCells.Count);
+        foreach (var range in Sheet.MergedCells)
+        {
+            hash.Add(range.StartRow);
+            hash.Add(range.StartCol);
+            hash.Add(range.EndRow);
+            hash.Add(range.EndCol);
+        }
+        return hash.ToHashCode();
+    }
+
+    private void RebuildGeometryCache()
+    {
+        if (Sheet is null)
+            return;
+
+        _rowHeights = new double[Sheet.RowCount];
+        _rowOffsets = new double[Sheet.RowCount + 1];
+        for (var row = 0; row < Sheet.RowCount; row++)
+        {
+            var height = GetConfiguredRowHeight(row);
+            _rowHeights[row] = height;
+            _rowOffsets[row + 1] = _rowOffsets[row] + height;
+        }
+
+        _columnWidths = new double[Sheet.ColumnCount];
+        _columnOffsets = new double[Sheet.ColumnCount + 1];
+        for (var col = 0; col < Sheet.ColumnCount; col++)
+        {
+            var width = GetConfiguredColumnWidth(col);
+            _columnWidths[col] = width;
+            _columnOffsets[col + 1] = _columnOffsets[col] + width;
+        }
+    }
+
+    private void RebuildColumnLetterCache()
+    {
+        if (Sheet is null)
+            return;
+
+        _columnLetters = new string[Sheet.ColumnCount];
+        for (var col = 0; col < Sheet.ColumnCount; col++)
+        {
+            _columnLetters[col] = SpreadsheetRange.ColumnIndexToLetters(col);
+        }
+    }
+
+    private void RebuildMergedCellCache()
+    {
+        _mergedStartLookup.Clear();
+        _mergedHiddenLookup.Clear();
+        if (Sheet is null)
+            return;
+
+        foreach (var range in Sheet.MergedCells)
+        {
+            _mergedStartLookup[(range.StartRow, range.StartCol)] = range;
+            for (var row = range.StartRow; row <= range.EndRow; row++)
+            {
+                for (var col = range.StartCol; col <= range.EndCol; col++)
+                {
+                    if (row == range.StartRow && col == range.StartCol)
+                        continue;
+                    _mergedHiddenLookup.Add((row, col));
+                }
+            }
+        }
+    }
+
+    private void EnsureRenderCaches()
+    {
+        if (!ReferenceEquals(_cachedSheet, Sheet)
+            || Sheet is not null && (_rowHeights.Length != Sheet.RowCount || _columnWidths.Length != Sheet.ColumnCount))
+        {
+            RefreshRenderCachesIfNeeded();
+        }
     }
 
     /// <summary>Start cell of a range selection.</summary>
@@ -223,14 +433,27 @@ public partial class TmSpreadsheetGrid
     /// </summary>
     private (int StartRow, int StartCol, int EndRow, int EndCol) GetSelectionBounds()
     {
-        var start = ParseCellRef(SelectionStartRef ?? Sheet?.ActiveCellRef ?? "A1");
-        var end = ParseCellRef(SelectionEndRef ?? SelectionStartRef ?? Sheet?.ActiveCellRef ?? "A1");
-        return (
+        var startRef = SelectionStartRef ?? Sheet?.ActiveCellRef ?? "A1";
+        var endRef = SelectionEndRef ?? SelectionStartRef ?? Sheet?.ActiveCellRef ?? "A1";
+        var activeRef = Sheet?.ActiveCellRef;
+        if (_selectionBoundsCache is { } cached
+            && cached.StartRef == startRef
+            && cached.EndRef == endRef
+            && cached.ActiveRef == activeRef)
+        {
+            return cached.Bounds;
+        }
+
+        var start = ParseCellRef(startRef);
+        var end = ParseCellRef(endRef);
+        var bounds = (
             Math.Min(start.Row, end.Row),
             Math.Min(start.Col, end.Col),
             Math.Max(start.Row, end.Row),
             Math.Max(start.Col, end.Col)
         );
+        _selectionBoundsCache = (startRef, endRef, activeRef, bounds);
+        return bounds;
     }
 
     private static (int Row, int Col) ParseCellRef(string cellRef)
@@ -247,6 +470,20 @@ public partial class TmSpreadsheetGrid
         return $"{SpreadsheetRange.ColumnIndexToLetters(col)}{row + 1}";
     }
 
+    private string GetColumnLetters(int col)
+    {
+        EnsureRenderCaches();
+        if ((uint)col < (uint)_columnLetters.Length)
+            return _columnLetters[col];
+
+        return SpreadsheetRange.ColumnIndexToLetters(col);
+    }
+
+    private string GetCellRef(int row, int col)
+    {
+        return $"{GetColumnLetters(col)}{row + 1}";
+    }
+
     /// <summary>Gets all cell references in the current selection (including active cell).</summary>
     public IEnumerable<string> GetSelectedCellRefs()
     {
@@ -256,7 +493,7 @@ public partial class TmSpreadsheetGrid
         {
             for (var c = bounds.StartCol; c <= bounds.EndCol; c++)
             {
-                yield return ToCellRef(r, c);
+                yield return GetCellRef(r, c);
             }
         }
     }
@@ -266,7 +503,7 @@ public partial class TmSpreadsheetGrid
         return Sheet?.ActiveCellRef?.Equals(cellRef, StringComparison.OrdinalIgnoreCase) == true;
     }
 
-    private bool IsCellSelected(string cellRef)
+    private bool IsCellSelected(int row, int col, string cellRef)
     {
         if (Sheet?.ActiveCellRef?.Equals(cellRef, StringComparison.OrdinalIgnoreCase) == true)
             return true;
@@ -275,7 +512,6 @@ public partial class TmSpreadsheetGrid
             return false;
 
         var bounds = GetSelectionBounds();
-        var (row, col) = ParseCellRef(cellRef);
         return row >= bounds.StartRow && row <= bounds.EndRow && col >= bounds.StartCol && col <= bounds.EndCol;
     }
 
@@ -292,18 +528,16 @@ public partial class TmSpreadsheetGrid
 
     private SpreadsheetRange? GetMergedRangeStart(int row, int col)
     {
-        if (Sheet?.MergedCells is null) return null;
-        foreach (var range in Sheet.MergedCells)
-        {
-            if (range.StartRow == row && range.StartCol == col)
-                return range;
-        }
-        return null;
+        EnsureRenderCaches();
+        return _mergedStartLookup.TryGetValue((row, col), out var range) ? range : null;
     }
 
     private SpreadsheetRange? GetMergedRangeCovering(int row, int col)
     {
-        if (Sheet?.MergedCells is null) return null;
+        EnsureRenderCaches();
+        if (!_mergedHiddenLookup.Contains((row, col)) || Sheet?.MergedCells is null)
+            return null;
+
         foreach (var range in Sheet.MergedCells)
         {
             if (range.Contains(row, col) && !(range.StartRow == row && range.StartCol == col))
@@ -312,11 +546,15 @@ public partial class TmSpreadsheetGrid
         return null;
     }
 
-    private bool IsCellMergedAndHidden(int row, int col) => GetMergedRangeCovering(row, col) is not null;
+    private bool IsCellMergedAndHidden(int row, int col)
+    {
+        EnsureRenderCaches();
+        return _mergedHiddenLookup.Contains((row, col));
+    }
 
     private bool IsSelectionEndCell(int row, int col)
     {
-        if (!HasRangeSelection) return Sheet?.ActiveCellRef == $"{SpreadsheetRange.ColumnIndexToLetters(col)}{row + 1}";
+        if (!HasRangeSelection) return Sheet?.ActiveCellRef == GetCellRef(row, col);
         var bounds = GetSelectionBounds();
         return row == bounds.EndRow && col == bounds.EndCol;
     }
@@ -357,19 +595,37 @@ public partial class TmSpreadsheetGrid
 
     private double GetRowHeight(int rowIndex)
     {
-        if (IsRowHidden(rowIndex)) return 0;
         if (_isResizingRow && rowIndex == _resizingRowIndex)
             return _resizePreviewHeight;
+
+        EnsureRenderCaches();
+        return (uint)rowIndex < (uint)_rowHeights.Length
+            ? _rowHeights[rowIndex]
+            : GetConfiguredRowHeight(rowIndex);
+    }
+
+    private double GetColumnWidth(int colIndex)
+    {
+        if (_isResizingCol && colIndex == _resizingColIndex)
+            return _resizePreviewWidth;
+
+        EnsureRenderCaches();
+        return (uint)colIndex < (uint)_columnWidths.Length
+            ? _columnWidths[colIndex]
+            : GetConfiguredColumnWidth(colIndex);
+    }
+
+    private double GetConfiguredRowHeight(int rowIndex)
+    {
+        if (IsRowHidden(rowIndex)) return 0;
         if (Sheet?.Rows.TryGetValue(rowIndex, out var row) == true && row.Height.HasValue)
             return row.Height.Value;
         return RowHeight;
     }
 
-    private double GetColumnWidth(int colIndex)
+    private double GetConfiguredColumnWidth(int colIndex)
     {
         if (IsColumnHidden(colIndex)) return 0;
-        if (_isResizingCol && colIndex == _resizingColIndex)
-            return _resizePreviewWidth;
         if (Sheet?.Columns.TryGetValue(colIndex, out var col) == true && col.Width.HasValue)
             return col.Width.Value;
         return ColumnWidth;
@@ -385,18 +641,40 @@ public partial class TmSpreadsheetGrid
 
     private double GetCumulativeRowHeight(int upToRow)
     {
-        var sum = 0.0;
-        for (int r = 0; r < upToRow && r < Sheet?.RowCount; r++)
-            sum += GetRowHeight(r);
-        return sum;
+        if (_isResizingRow)
+        {
+            var sum = 0.0;
+            var rowCount = Sheet?.RowCount ?? 0;
+            for (var row = 0; row < upToRow && row < rowCount; row++)
+                sum += GetRowHeight(row);
+            return sum;
+        }
+
+        EnsureRenderCaches();
+        if (_rowOffsets.Length == 0)
+            return 0;
+
+        var index = Math.Clamp(upToRow, 0, _rowOffsets.Length - 1);
+        return _rowOffsets[index];
     }
 
     private double GetCumulativeColumnWidth(int upToCol)
     {
-        var sum = 0.0;
-        for (int c = 0; c < upToCol && c < Sheet?.ColumnCount; c++)
-            sum += GetColumnWidth(c);
-        return sum;
+        if (_isResizingCol)
+        {
+            var sum = 0.0;
+            var columnCount = Sheet?.ColumnCount ?? 0;
+            for (var col = 0; col < upToCol && col < columnCount; col++)
+                sum += GetColumnWidth(col);
+            return sum;
+        }
+
+        EnsureRenderCaches();
+        if (_columnOffsets.Length == 0)
+            return 0;
+
+        var index = Math.Clamp(upToCol, 0, _columnOffsets.Length - 1);
+        return _columnOffsets[index];
     }
 
     private bool IsFrozenRow(int rowIndex) => Sheet?.FreezeRowCount > 0 && rowIndex < Sheet.FreezeRowCount;
@@ -407,12 +685,12 @@ public partial class TmSpreadsheetGrid
         var sb = new System.Text.StringBuilder();
         if (IsFrozenRow(rowIndex))
         {
-            var top = 20 + GetCumulativeRowHeight(rowIndex); // 20 = header height
+            var top = ColumnHeaderHeight + GetCumulativeRowHeight(rowIndex);
             sb.Append($"position: sticky; top: {top}px;");
         }
         if (IsFrozenCol(colIndex))
         {
-            var left = 40 + GetCumulativeColumnWidth(colIndex); // 40 = row header width
+            var left = RowHeaderWidth + GetCumulativeColumnWidth(colIndex);
             sb.Append($" position: sticky; left: {left}px;");
         }
         if (IsFrozenRow(rowIndex) || IsFrozenCol(colIndex))
@@ -429,14 +707,14 @@ public partial class TmSpreadsheetGrid
     private string GetColumnHeaderFreezeStyle(int colIndex)
     {
         if (!IsFrozenCol(colIndex)) return string.Empty;
-        var left = 40 + GetCumulativeColumnWidth(colIndex);
+        var left = RowHeaderWidth + GetCumulativeColumnWidth(colIndex);
         return $" position: sticky; left: {left}px; z-index: 3;";
     }
 
     private string GetRowHeaderFreezeStyle(int rowIndex)
     {
         if (!IsFrozenRow(rowIndex)) return string.Empty;
-        var top = 20 + GetCumulativeRowHeight(rowIndex);
+        var top = ColumnHeaderHeight + GetCumulativeRowHeight(rowIndex);
         return $" position: sticky; top: {top}px; z-index: 3;";
     }
 
@@ -467,13 +745,13 @@ public partial class TmSpreadsheetGrid
     public void ClearDisplayValueCache()
     {
         _displayValueCache.Clear();
+        _cellStyleCache.Clear();
     }
 
     /// <summary>Builds the inline CSS style string for a cell including dimensions, font, colors, alignment and borders.</summary>
     private string GetCellStyleString(SpreadsheetCell? cell, int colIndex, int rowIndex)
     {
         var style = cell?.Style;
-        var sb = new System.Text.StringBuilder();
         var merged = GetMergedRangeStart(rowIndex, colIndex);
         var width = GetColumnWidth(colIndex);
         var height = GetRowHeight(rowIndex);
@@ -484,58 +762,120 @@ public partial class TmSpreadsheetGrid
             for (int r = merged.StartRow + 1; r <= merged.EndRow; r++)
                 height += GetRowHeight(r);
         }
-        sb.Append($"width: {width}px; height: {height}px;");
+
         var freezeStyle = GetFreezeCellStyle(rowIndex, colIndex);
+        if (style is null)
+        {
+            return string.IsNullOrEmpty(freezeStyle)
+                ? $"width: {width}px; height: {height}px;"
+                : $"width: {width}px; height: {height}px; {freezeStyle}";
+        }
+
+        var cacheKey = BuildCellStyleCacheKey(cell, style, colIndex, rowIndex, width, height, freezeStyle);
+        if (_cellStyleCache.TryGetValue(cacheKey, out var cachedStyle))
+            return cachedStyle;
+
+        var sb = new System.Text.StringBuilder();
+        sb.Append($"width: {width}px; height: {height}px;");
         if (!string.IsNullOrEmpty(freezeStyle))
             sb.Append($" {freezeStyle}");
 
-        if (style is not null)
+        // Font
+        sb.Append($" font-family: {style.FontFamily}; font-size: {style.FontSize}pt;");
+        if (style.Bold) sb.Append(" font-weight: bold;");
+        if (style.Italic) sb.Append(" font-style: italic;");
+        if (style.Underline || style.DoubleUnderline || style.StrikeThrough)
         {
-            // Font
-            sb.Append($" font-family: {style.FontFamily}; font-size: {style.FontSize}pt;");
-            if (style.Bold) sb.Append(" font-weight: bold;");
-            if (style.Italic) sb.Append(" font-style: italic;");
-            if (style.Underline || style.DoubleUnderline || style.StrikeThrough)
-            {
-                var decorations = new System.Text.StringBuilder();
-                if (style.DoubleUnderline) decorations.Append(" underline");
-                else if (style.Underline) decorations.Append(" underline");
-                if (style.StrikeThrough) decorations.Append(" line-through");
-                sb.Append($" text-decoration:{decorations};");
-                if (style.DoubleUnderline) sb.Append(" text-decoration-style: double;");
-            }
-
-            // Colors
-            if (!string.IsNullOrEmpty(style.ForeColor) && style.ForeColor != "#000000")
-                sb.Append($" color: {style.ForeColor};");
-            if (!string.IsNullOrEmpty(style.BackgroundColor) && style.BackgroundColor != "transparent")
-                sb.Append($" background-color: {style.BackgroundColor};");
-
-            // Alignment
-            sb.Append($" justify-content: {GetJustifyContent(GetEffectiveHAlign(style, cell))};");
-            sb.Append($" align-items: {GetAlignItems(style.VerticalAlign)};");
-            if (style.TextWrap)
-                sb.Append(" white-space: normal; word-break: break-word;");
-            if (style.Indent > 0)
-                sb.Append($" padding-left: {style.Indent * 12}px;");
-            if (style.TextRotation != 0)
-            {
-                if (style.TextRotation == 90)
-                    sb.Append(" writing-mode: vertical-rl; transform: rotate(180deg);");
-                else if (style.TextRotation == -90)
-                    sb.Append(" writing-mode: vertical-lr;");
-                else
-                    sb.Append($" transform: rotate({-style.TextRotation}deg);");
-            }
-
-            // Borders
-            AppendBorderStyle(sb, "border-top", style.BorderTop);
-            AppendBorderStyle(sb, "border-right", style.BorderRight);
-            AppendBorderStyle(sb, "border-bottom", style.BorderBottom);
-            AppendBorderStyle(sb, "border-left", style.BorderLeft);
+            var decorations = new System.Text.StringBuilder();
+            if (style.DoubleUnderline) decorations.Append(" underline");
+            else if (style.Underline) decorations.Append(" underline");
+            if (style.StrikeThrough) decorations.Append(" line-through");
+            sb.Append($" text-decoration:{decorations};");
+            if (style.DoubleUnderline) sb.Append(" text-decoration-style: double;");
         }
 
-        return sb.ToString();
+        // Colors
+        if (!string.IsNullOrEmpty(style.ForeColor) && style.ForeColor != "#000000")
+            sb.Append($" color: {style.ForeColor};");
+        if (!string.IsNullOrEmpty(style.BackgroundColor) && style.BackgroundColor != "transparent")
+            sb.Append($" background-color: {style.BackgroundColor};");
+
+        // Alignment
+        sb.Append($" justify-content: {GetJustifyContent(GetEffectiveHAlign(style, cell))};");
+        sb.Append($" align-items: {GetAlignItems(style.VerticalAlign)};");
+        if (style.TextWrap)
+            sb.Append(" white-space: normal; word-break: break-word;");
+        if (style.Indent > 0)
+            sb.Append($" padding-left: {style.Indent * 12}px;");
+        if (style.TextRotation != 0)
+        {
+            if (style.TextRotation == 90)
+                sb.Append(" writing-mode: vertical-rl; transform: rotate(180deg);");
+            else if (style.TextRotation == -90)
+                sb.Append(" writing-mode: vertical-lr;");
+            else
+                sb.Append($" transform: rotate({-style.TextRotation}deg);");
+        }
+
+        // Borders
+        AppendBorderStyle(sb, "border-top", style.BorderTop);
+        AppendBorderStyle(sb, "border-right", style.BorderRight);
+        AppendBorderStyle(sb, "border-bottom", style.BorderBottom);
+        AppendBorderStyle(sb, "border-left", style.BorderLeft);
+
+        var styleString = sb.ToString();
+        _cellStyleCache[cacheKey] = styleString;
+        return styleString;
+    }
+
+    private static string BuildCellStyleCacheKey(
+        SpreadsheetCell? cell,
+        SpreadsheetCellStyle style,
+        int colIndex,
+        int rowIndex,
+        double width,
+        double height,
+        string freezeStyle)
+    {
+        return string.Join('|',
+            rowIndex,
+            colIndex,
+            width.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            height.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            RuntimeHelpers.GetHashCode(style),
+            cell?.Value?.GetType().FullName ?? string.Empty,
+            freezeStyle,
+            BuildStyleSignature(style));
+    }
+
+    private static string BuildStyleSignature(SpreadsheetCellStyle style)
+    {
+        return string.Join('|',
+            style.FontFamily,
+            style.FontSize.ToString(System.Globalization.CultureInfo.InvariantCulture),
+            style.Bold,
+            style.Italic,
+            style.Underline,
+            style.DoubleUnderline,
+            style.StrikeThrough,
+            style.Indent,
+            style.TextRotation,
+            style.ShrinkToFit,
+            style.ForeColor,
+            style.BackgroundColor,
+            style.HorizontalAlign,
+            style.VerticalAlign,
+            style.TextWrap,
+            style.NumberFormat,
+            BuildBorderSignature(style.BorderTop),
+            BuildBorderSignature(style.BorderRight),
+            BuildBorderSignature(style.BorderBottom),
+            BuildBorderSignature(style.BorderLeft));
+    }
+
+    private static string BuildBorderSignature(SpreadsheetBorder border)
+    {
+        return $"{border.Style}:{border.Color}";
     }
 
     private static void AppendBorderStyle(System.Text.StringBuilder sb, string property, SpreadsheetBorder border)
@@ -600,6 +940,7 @@ public partial class TmSpreadsheetGrid
             SelectionStartRef = cellRef;
             SelectionEndRef = cellRef;
             ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+            ScheduleCellVisibility(cellRef);
             OnFormatPainterApply.InvokeAsync(cellRef);
             _shouldFocusAfterRender = true;
             return;
@@ -636,6 +977,7 @@ public partial class TmSpreadsheetGrid
         }
 
         ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        ScheduleCellVisibility(cellRef);
         _shouldFocusAfterRender = true;
     }
 
@@ -773,6 +1115,7 @@ public partial class TmSpreadsheetGrid
         if (double.TryParse(_colWidthInputValue, System.Globalization.NumberStyles.Any,
             System.Globalization.CultureInfo.InvariantCulture, out var width) && width >= 16)
         {
+            InvalidateGeometryCache();
             OnColumnResizeRequested.InvokeAsync((_contextMenuColIndex, width));
         }
         _showColWidthDialog = false;
@@ -783,6 +1126,7 @@ public partial class TmSpreadsheetGrid
         if (double.TryParse(_rowHeightInputValue, System.Globalization.NumberStyles.Any,
             System.Globalization.CultureInfo.InvariantCulture, out var height) && height >= 8)
         {
+            InvalidateGeometryCache();
             OnRowResizeRequested.InvokeAsync((_contextMenuRowIndex, height));
         }
         _showRowHeightDialog = false;
@@ -824,7 +1168,7 @@ public partial class TmSpreadsheetGrid
         var maxLen = 0;
         for (var r = 0; r < Sheet.RowCount; r++)
         {
-            var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(colIndex)}{r + 1}";
+            var cellRef = GetCellRef(r, colIndex);
             if (Sheet.Cells.TryGetValue(cellRef, out var cell))
             {
                 var text = cell.DisplayValue ?? cell.Value?.ToString() ?? string.Empty;
@@ -832,6 +1176,7 @@ public partial class TmSpreadsheetGrid
             }
         }
         var autoWidth = Math.Max(40.0, maxLen * 7.5 + 16);
+        InvalidateGeometryCache();
         OnColumnResizeRequested.InvokeAsync((colIndex, autoWidth));
     }
 
@@ -840,7 +1185,7 @@ public partial class TmSpreadsheetGrid
         if (Sheet is null) return;
         _isAutoFillDragging = true;
         var bounds = GetSelectionBounds();
-        _autoFillSourceRange = $"{ToCellRef(bounds.StartRow, bounds.StartCol)}:{ToCellRef(bounds.EndRow, bounds.EndCol)}";
+        _autoFillSourceRange = $"{GetCellRef(bounds.StartRow, bounds.StartCol)}:{GetCellRef(bounds.EndRow, bounds.EndCol)}";
         _autoFillPreviewRange = _autoFillSourceRange;
     }
 
@@ -880,11 +1225,11 @@ public partial class TmSpreadsheetGrid
         var selCols = bounds.EndCol - bounds.StartCol + 1;
         if (selRows > selCols || (selRows == 1 && selCols == 1 && endRow > bounds.EndRow))
         {
-            _autoFillPreviewRange = $"{ToCellRef(startRow, startCol)}:{ToCellRef(endRow, startCol)}";
+            _autoFillPreviewRange = $"{GetCellRef(startRow, startCol)}:{GetCellRef(endRow, startCol)}";
         }
         else
         {
-            _autoFillPreviewRange = $"{ToCellRef(startRow, startCol)}:{ToCellRef(startRow, endCol)}";
+            _autoFillPreviewRange = $"{GetCellRef(startRow, startCol)}:{GetCellRef(startRow, endCol)}";
         }
         StateHasChanged();
     }
@@ -895,6 +1240,7 @@ public partial class TmSpreadsheetGrid
         {
             var finalWidth = Math.Max(16, _resizePreviewWidth);
             _isResizingCol = false;
+            InvalidateGeometryCache();
             OnColumnResizeRequested.InvokeAsync((_resizingColIndex, finalWidth));
             StateHasChanged();
             return;
@@ -904,6 +1250,7 @@ public partial class TmSpreadsheetGrid
         {
             var finalHeight = Math.Max(8, _resizePreviewHeight);
             _isResizingRow = false;
+            InvalidateGeometryCache();
             OnRowResizeRequested.InvokeAsync((_resizingRowIndex, finalHeight));
             StateHasChanged();
             return;
@@ -944,29 +1291,41 @@ public partial class TmSpreadsheetGrid
         // Simplified hit-test: assumes grid starts at (0,0) in viewport
         // A proper implementation would use JS interop to get bounding rect
         if (Sheet is null) return (-1, -1);
-        var headerHeight = 20;
-        var rowHeaderWidth = 40;
+        var headerHeight = ColumnHeaderHeight;
+        var rowHeaderWidth = RowHeaderWidth;
         var y = clientY - headerHeight;
         var x = clientX - rowHeaderWidth;
         if (y < 0 || x < 0) return (-1, -1);
 
-        var row = 0;
-        var accumulatedY = 0.0;
-        while (row < Sheet.RowCount && accumulatedY + GetRowHeight(row) < y)
-        {
-            accumulatedY += GetRowHeight(row);
-            row++;
-        }
-
-        var col = 0;
-        var accumulatedX = 0.0;
-        while (col < Sheet.ColumnCount && accumulatedX + GetColumnWidth(col) < x)
-        {
-            accumulatedX += GetColumnWidth(col);
-            col++;
-        }
+        var row = FindRowAtOffset(y);
+        var col = FindColumnAtOffset(x);
 
         return (Math.Min(row, Sheet.RowCount - 1), Math.Min(col, Sheet.ColumnCount - 1));
+    }
+
+    private int FindRowAtOffset(double offset)
+    {
+        EnsureRenderCaches();
+        return FindIndexAtOffset(_rowOffsets, offset);
+    }
+
+    private int FindColumnAtOffset(double offset)
+    {
+        EnsureRenderCaches();
+        return FindIndexAtOffset(_columnOffsets, offset);
+    }
+
+    private static int FindIndexAtOffset(double[] offsets, double offset)
+    {
+        if (offsets.Length <= 1)
+            return 0;
+
+        var index = Array.BinarySearch(offsets, offset);
+        if (index >= 0)
+            return Math.Clamp(index, 0, offsets.Length - 2);
+
+        index = ~index - 1;
+        return Math.Clamp(index, 0, offsets.Length - 2);
     }
 
     private void SelectRow(int rowIndex)
@@ -978,6 +1337,7 @@ public partial class TmSpreadsheetGrid
         SelectionStartRef = startRef;
         SelectionEndRef = endRef;
         ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        ScheduleCellVisibility(rowIndex, 0);
     }
 
     private void SelectColumn(int colIndex)
@@ -989,6 +1349,7 @@ public partial class TmSpreadsheetGrid
         SelectionStartRef = startRef;
         SelectionEndRef = endRef;
         ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        ScheduleCellVisibility(0, colIndex);
     }
 
     public void SelectAllCells()
@@ -1000,6 +1361,7 @@ public partial class TmSpreadsheetGrid
         SelectionStartRef = startRef;
         SelectionEndRef = endRef;
         ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        ScheduleCellVisibility(0, 0);
     }
 
     private void StartEdit(string cellRef)
@@ -1009,12 +1371,17 @@ public partial class TmSpreadsheetGrid
 
     private void StartEdit(string cellRef, string? initialValue)
     {
-        if (Sheet?.ActiveCellRef != cellRef)
+        var sheet = Sheet;
+        if (sheet is null)
+            return;
+
+        if (!string.Equals(sheet.ActiveCellRef, cellRef, StringComparison.OrdinalIgnoreCase))
         {
-            Sheet!.ActiveCellRef = cellRef;
+            sheet.ActiveCellRef = cellRef;
             SelectionStartRef = cellRef;
             SelectionEndRef = cellRef;
-            ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+            ActiveCellChanged.InvokeAsync(sheet.ActiveCellRef);
+            ScheduleCellVisibility(cellRef);
         }
 
         IsEditing = true;
@@ -1022,7 +1389,7 @@ public partial class TmSpreadsheetGrid
 
         // If no initial value provided, load the cell's formula or value so that
         // existing formulas immediately enter formula-point mode and highlight refs.
-        if (_editValue is null && Sheet?.Cells.TryGetValue(cellRef, out var cell) == true)
+        if (_editValue is null && sheet.Cells.TryGetValue(cellRef, out var cell))
         {
             _editValue = cell.Formula ?? cell.Value?.ToString() ?? string.Empty;
         }
@@ -1033,7 +1400,7 @@ public partial class TmSpreadsheetGrid
         }
 
         _shouldFocusAfterRender = true;
-        OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet!, Sheet.ActiveCellRef!, true));
+        OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(sheet, sheet.ActiveCellRef!, true));
     }
 
     /// <summary>Appends text to the current edit value. Used for formula cell reference insertion.</summary>
@@ -1259,6 +1626,7 @@ public partial class TmSpreadsheetGrid
             SelectionEndRef = newRef;
         }
         ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        ScheduleCellVisibility(row, col);
     }
 
     private void MoveToLastUsedCell(bool extendSelection = false)
@@ -1273,6 +1641,64 @@ public partial class TmSpreadsheetGrid
             if (col > lastCol) lastCol = col;
         }
         MoveToCell(lastRow, lastCol, extendSelection);
+    }
+
+    private void ScheduleCellVisibility(string cellRef)
+    {
+        var (row, col) = ParseCellRef(cellRef);
+        ScheduleCellVisibility(row, col);
+    }
+
+    private void ScheduleCellVisibility(int row, int col)
+    {
+        if (Sheet is null) return;
+        _pendingVisibleCell = (
+            Math.Clamp(row, 0, Sheet.RowCount - 1),
+            Math.Clamp(col, 0, Sheet.ColumnCount - 1));
+    }
+
+    private CellVisibilityRequest BuildCellVisibilityRequest(int row, int col)
+    {
+        var left = RowHeaderWidth + GetCumulativeColumnWidth(col);
+        var top = ColumnHeaderHeight + GetCumulativeRowHeight(row);
+        var width = GetColumnWidth(col);
+        var height = GetRowHeight(row);
+
+        return new CellVisibilityRequest(
+            Left: left,
+            Top: top,
+            Right: left + width,
+            Bottom: top + height,
+            Width: width,
+            Height: height,
+            FrozenRow: IsFrozenRow(row),
+            FrozenColumn: IsFrozenCol(col));
+    }
+
+    private async Task EnsurePendingCellVisibleAsync()
+    {
+        if (_pendingVisibleCell is not { } pending || Sheet is null)
+            return;
+
+        _pendingVisibleCell = null;
+        var request = BuildCellVisibilityRequest(pending.Row, pending.Col);
+
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "tmSpreadsheetGrid.ensureCellVisible",
+                _gridElement,
+                request,
+                new { RowHeaderWidth, ColumnHeaderHeight });
+        }
+        catch (JSException)
+        {
+            // The helper script may be missing in a consuming app; keyboard navigation must still work.
+        }
+        catch (InvalidOperationException)
+        {
+            // JS interop is unavailable during prerender/static rendering.
+        }
     }
 
     // ── Formula-point mode helpers ───────────────────────────────────────────
@@ -1351,6 +1777,8 @@ public partial class TmSpreadsheetGrid
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        await EnsurePendingCellVisibleAsync();
+
         if (_shouldFocusAfterRender)
         {
             _shouldFocusAfterRender = false;
@@ -1364,4 +1792,14 @@ public partial class TmSpreadsheetGrid
             }
         }
     }
+
+    private sealed record CellVisibilityRequest(
+        double Left,
+        double Top,
+        double Right,
+        double Bottom,
+        double Width,
+        double Height,
+        bool FrozenRow,
+        bool FrozenColumn);
 }
