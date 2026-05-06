@@ -856,6 +856,19 @@ public partial class TmSpreadsheetGrid
 
         IsEditing = true;
         _editValue = initialValue;
+
+        // If no initial value provided, load the cell's formula or value so that
+        // existing formulas immediately enter formula-point mode and highlight refs.
+        if (_editValue is null && Sheet?.Cells.TryGetValue(cellRef, out var cell) == true)
+        {
+            _editValue = cell.Formula ?? cell.Value?.ToString() ?? string.Empty;
+        }
+
+        if (_editValue?.StartsWith("=") == true)
+        {
+            RefreshFormulaRefColors();
+        }
+
         _shouldFocusAfterRender = true;
         OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet!, Sheet.ActiveCellRef!, true));
     }
