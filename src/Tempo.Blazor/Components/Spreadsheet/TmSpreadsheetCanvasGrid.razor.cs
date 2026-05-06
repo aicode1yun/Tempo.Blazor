@@ -22,6 +22,8 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     private readonly HashSet<(int Row, int Col)> _mergedHiddenLookup = [];
     private ElementReference _rootElement;
     private ElementReference _canvasElement;
+    private ElementReference _headerCanvasElement;
+    private ElementReference _selectionCanvasElement;
     private ElementReference _editInput;
     private DotNetObjectReference<TmSpreadsheetCanvasGrid>? _dotNetRef;
     private SpreadsheetSheet? _geometrySheet;
@@ -49,6 +51,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     private bool _showRowHeightDialog;
     private string _colWidthInputValue = string.Empty;
     private string _rowHeightInputValue = string.Empty;
+    private long _canvasInteractionVersion;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -287,8 +290,10 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         int startRow,
         int startCol,
         int endRow,
-        int endCol)
+        int endCol,
+        long interactionVersion)
     {
+        CaptureCanvasInteractionVersion(interactionVersion);
         SyncSelectionFromCanvas(row, col, startRow, startCol, endRow, endCol);
 
         var next = new SpreadsheetViewportState(
@@ -308,6 +313,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         _viewport = next;
         _needsRender = true;
         return InvokeAsync(StateHasChanged);
+    }
+
+    private void CaptureCanvasInteractionVersion(long interactionVersion)
+    {
+        if (interactionVersion > _canvasInteractionVersion)
+            _canvasInteractionVersion = interactionVersion;
     }
 
     private void SyncSelectionFromCanvas(int row, int col, int startRow, int startCol, int endRow, int endCol)
@@ -405,11 +416,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     }
 
     [JSInvokable]
-    public Task OnCanvasSelectionChanged(int row, int col, int startRow, int startCol, int endRow, int endCol)
+    public Task OnCanvasSelectionChanged(int row, int col, int startRow, int startCol, int endRow, int endCol, long interactionVersion)
     {
         if (Sheet is null)
             return Task.CompletedTask;
 
+        CaptureCanvasInteractionVersion(interactionVersion);
         SyncSelectionFromCanvas(row, col, startRow, startCol, endRow, endCol);
         return ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
     }
@@ -453,10 +465,15 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         row = Math.Clamp(row, 0, Sheet.RowCount - 1);
         col = Math.Clamp(col, 0, Sheet.ColumnCount - 1);
         var cellRef = SpreadsheetSelectionState.ToCellRef(row, col);
+        var previousValue = Sheet.Cells.TryGetValue(cellRef, out var cell)
+            ? cell.Formula ?? cell.Value?.ToString() ?? string.Empty
+            : string.Empty;
+        var changed = !string.Equals(previousValue, value ?? string.Empty, StringComparison.Ordinal);
+
         SetActiveCell(row, col, extendSelection: false, render: false);
         _ = CellValueCommitted.InvokeAsync((cellRef, value));
         _ = OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet, cellRef, false));
-        _needsRender = true;
+        _needsRender = changed;
         return Task.CompletedTask;
     }
 
@@ -819,6 +836,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             ActiveCellRef = sheet.ActiveCellRef,
             IsFormulaPointMode = IsInFormulaPointMode,
             IsFormatPainterActive,
+            InteractionVersion = _canvasInteractionVersion,
             Selection = new { selection.StartRow, selection.StartCol, selection.EndRow, selection.EndCol },
             Rows = rows,
             Columns = columns,
@@ -949,6 +967,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             BackgroundColor = string.IsNullOrWhiteSpace(style.BackgroundColor) || style.BackgroundColor == "transparent" ? null : style.BackgroundColor,
             HorizontalAlign = GetEffectiveHAlign(style, cell).ToString().ToLowerInvariant(),
             VerticalAlign = style.VerticalAlign.ToString().ToLowerInvariant(),
+            NumberFormat = style.NumberFormat,
             TextWrap = style.TextWrap,
             BorderTop = BuildCanvasBorder(style.BorderTop),
             BorderRight = BuildCanvasBorder(style.BorderRight),
@@ -1142,7 +1161,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         _dotNetRef ??= DotNetObjectReference.Create(this);
         try
         {
-            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.register", _rootElement, _canvasElement, _dotNetRef);
+            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.register", _rootElement, _canvasElement, _headerCanvasElement, _selectionCanvasElement, _dotNetRef);
             _registered = true;
         }
         catch (JSException) { }

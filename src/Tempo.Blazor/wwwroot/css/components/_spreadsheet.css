@@ -40,13 +40,32 @@
     outline: none;
 }
 
-.tm-spreadsheet-canvas-grid__canvas {
+.tm-spreadsheet-canvas-grid__layer {
     position: sticky;
     top: 0;
     left: 0;
     z-index: 1;
     display: block;
     pointer-events: none;
+}
+
+.tm-spreadsheet-canvas-grid__canvas {
+    position: absolute;
+    inset: 0 auto auto 0;
+    display: block;
+    pointer-events: none;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--content {
+    z-index: 1;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--headers {
+    z-index: 2;
+}
+
+.tm-spreadsheet-canvas-grid__canvas--selection {
+    z-index: 3;
 }
 
 .tm-spreadsheet-canvas-grid__size {

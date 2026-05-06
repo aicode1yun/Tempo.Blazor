@@ -20,9 +20,14 @@ else
          @onkeydown="HandleKeyDown"
          @onkeydown:preventDefault="true"
          @ref="_rootElement">
-        <canvas class="tm-spreadsheet-canvas-grid__canvas"
-                aria-hidden="true"
-                @ref="_canvasElement"></canvas>
+        <div class="tm-spreadsheet-canvas-grid__layer" aria-hidden="true">
+            <canvas class="tm-spreadsheet-canvas-grid__canvas tm-spreadsheet-canvas-grid__canvas--content"
+                    @ref="_canvasElement"></canvas>
+            <canvas class="tm-spreadsheet-canvas-grid__canvas tm-spreadsheet-canvas-grid__canvas--headers"
+                    @ref="_headerCanvasElement"></canvas>
+            <canvas class="tm-spreadsheet-canvas-grid__canvas tm-spreadsheet-canvas-grid__canvas--selection"
+                    @ref="_selectionCanvasElement"></canvas>
+        </div>
         <div class="tm-spreadsheet-canvas-grid__size"
              style="width:@TotalScrollableWidthPx;height:@TotalScrollableHeightPx;"></div>
 
