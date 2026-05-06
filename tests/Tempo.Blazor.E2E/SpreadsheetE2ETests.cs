@@ -129,6 +129,26 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasRenderer_TypingStartsEditAndKeepsAcceptingCharacters()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        await grid.PressAsync("a");
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.Keyboard.TypeAsync("bc");
+
+        var value = await editor.InputValueAsync();
+        Assert.AreEqual("abc", value);
+    }
+
+    [TestMethod]
     public async Task CanvasRenderer_RapidArrowDownKeepsSelectionMonotonicWhileScrolling()
     {
         var page = await CreatePageAsync();
@@ -265,6 +285,48 @@ public class SpreadsheetE2ETests : WasmTestBase
         await page.WaitForFunctionAsync(
             $"el => window.tmSpreadsheetCanvas.getDebugMetrics(el).selectionRedrawCount > {before}",
             await grid.ElementHandleAsync());
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_RapidArrowDownStaysOnLocalHotPath()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasArrowHotPathProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                for (let i = 0; i < 80; i++) {
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'ArrowDown',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }
+
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const model = el.__tmSpreadsheetCanvas?.model;
+                    resolve({
+                        activeRef: model?.activeCellRef || model?.ActiveCellRef || '',
+                        keyboardInteractions: after.keyboardInteractions - before.keyboardInteractions,
+                        selectionCallbacks: after.selectionCallbackCount - before.selectionCallbackCount,
+                        keyCommandCallbacks: after.keyCommandCallbackCount - before.keyCommandCallbackCount,
+                        scrollTop: el.scrollTop
+                    });
+                }));
+            })");
+
+        Assert.IsTrue(ParseRow(result.ActiveRef) >= 70, $"Expected rapid local ArrowDown navigation to advance far down the sheet. Ref: {result.ActiveRef}.");
+        Assert.IsTrue(result.KeyboardInteractions >= 80, $"Expected every ArrowDown to stay on the canvas keyboard path. Count: {result.KeyboardInteractions}.");
+        Assert.IsTrue(result.SelectionCallbacks <= 2, $"Expected selection sync to coalesce into at most two .NET callbacks. Count: {result.SelectionCallbacks}.");
+        Assert.AreEqual(0, result.KeyCommandCallbacks, $"Arrow navigation should not use the .NET key command callback. Count: {result.KeyCommandCallbacks}.");
+        Assert.IsTrue(result.ScrollTop > 0, $"Expected local ArrowDown navigation to scroll the canvas. scrollTop: {result.ScrollTop}.");
     }
 
     [TestMethod]
@@ -836,5 +898,14 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int UnderlinePixels { get; set; }
         public int BorderPixels { get; set; }
         public string FontCache { get; set; } = string.Empty;
+    }
+
+    private sealed class CanvasArrowHotPathProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public int KeyboardInteractions { get; set; }
+        public int SelectionCallbacks { get; set; }
+        public int KeyCommandCallbacks { get; set; }
+        public double ScrollTop { get; set; }
     }
 }

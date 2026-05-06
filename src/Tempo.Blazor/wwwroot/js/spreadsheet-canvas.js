@@ -282,6 +282,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             dragAutoscrollFrames: 0,
             viewportCallbackCount: 0,
             selectionCallbackCount: 0,
+            keyCommandCallbackCount: 0,
             keyboardInteractions: 0,
             scrollInteractions: 0,
             pointerInteractions: 0,
@@ -751,6 +752,59 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return handled;
     }
 
+    function handleCommandKey(root, ev) {
+        const s = getState(root);
+        if (!s?.dotNet || !s.model) return false;
+
+        const key = ev.key || "";
+        const shortcutKey = key.length === 1 ? key.toLowerCase() : key;
+        const isShortcut = ev.ctrlKey || ev.metaKey;
+        const isShortcutCommand = isShortcut && (
+            ["c", "v", "x", "z", "y", "b", "i", "u", "a", "1", "5"].includes(shortcutKey) ||
+            key === "Home" ||
+            key === "End"
+        );
+        const isEditCommand = key === "Enter" || key === "F2" || key === "Escape" || key === "Delete";
+        const isTextCommand = key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey;
+        if (!isShortcutCommand && !isEditCommand && !isTextCommand) return false;
+
+        ev.preventDefault();
+        ev.stopImmediatePropagation();
+        if (isTextCommand && key !== "=" && !read(s.model, "IsFormulaPointMode", false) && !read(s.model, "IsFormatPainterActive", false)) {
+            openLocalEditorAtActive(root, key);
+            return true;
+        }
+
+        if (s.metrics) s.metrics.keyCommandCallbackCount += 1;
+        s.dotNet.invokeMethodAsync(
+            "OnCanvasKeyCommand",
+            key,
+            !!ev.shiftKey,
+            !!ev.ctrlKey,
+            !!ev.altKey,
+            !!ev.metaKey
+        ).catch(() => {});
+        return true;
+    }
+
+    function openLocalEditorAtActive(root, initialValue) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        openLocalEditor(root, {
+            row: active.row,
+            col: active.col,
+            cell: findCell(model, active.row, active.col)
+        }, initialValue);
+    }
+
+    function isEditableKeyTarget(target) {
+        if (!(target instanceof Element)) return false;
+        return !!target.closest("input, textarea, select, [contenteditable=''], [contenteditable='true'], .tm-spreadsheet-canvas-grid__editor");
+    }
+
     function closeLocalEditor(root, commit) {
         const s = getState(root);
         const editor = s?.editor;
@@ -771,7 +825,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         root.focus?.({ preventScroll: true });
     }
 
-    function openLocalEditor(root, hit) {
+    function openLocalEditor(root, hit, initialValue) {
         const s = getState(root);
         const model = s?.model;
         if (!s || !model || !hit) return;
@@ -779,8 +833,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         closeLocalEditor(root, false);
 
         const cell = hit.cell || findCell(model, hit.row, hit.col);
-        const row = findFrameAt(read(model, "Rows", []), cell ? read(cell, "Top", 0) : hit.row, "Top", "Height");
-        const col = findFrameAt(read(model, "Columns", []), cell ? read(cell, "Left", 0) : hit.col, "Left", "Width");
+        const rows = read(model, "Rows", []);
+        const columns = read(model, "Columns", []);
+        const row = cell
+            ? findFrameAt(rows, read(cell, "Top", 0), "Top", "Height")
+            : (rows[hit.row] || rows[0]);
+        const col = cell
+            ? findFrameAt(columns, read(cell, "Left", 0), "Left", "Width")
+            : (columns[hit.col] || columns[0]);
         const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
         const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
         const left = rowHeaderWidth + (cell ? read(cell, "Left", 0) : read(col, "Left", 0));
@@ -790,7 +850,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
         const input = document.createElement("input");
         input.className = "tm-spreadsheet-canvas-grid__editor";
-        input.value = cell ? read(cell, "Value", "") || "" : "";
+        input.value = initialValue ?? (cell ? read(cell, "Value", "") || "" : "");
         input.style.left = `${left}px`;
         input.style.top = `${top}px`;
         input.style.width = `${Math.max(16, width)}px`;
@@ -812,7 +872,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         root.appendChild(input);
         s.editor = { input, row: hit.row, col: hit.col };
         input.focus({ preventScroll: true });
-        input.select();
+        if (initialValue === undefined || initialValue === null) {
+            input.select();
+        } else {
+            input.setSelectionRange(input.value.length, input.value.length);
+        }
     }
 
     function toCellRef(row, col) {
@@ -985,8 +1049,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ev.preventDefault();
         };
         const onKeyDown = ev => {
+            if (isEditableKeyTarget(ev.target)) return;
             if (s.editor) return;
-            handleNavigationKey(root, ev);
+            if (handleNavigationKey(root, ev)) return;
+            handleCommandKey(root, ev);
         };
         const onClick = ev => {
             if (s.suppressClick) {
@@ -1029,7 +1095,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         root.addEventListener("pointermove", onPointerMove);
         root.addEventListener("pointerdown", onPointerDownWrapper);
         root.addEventListener("pointerup", onPointerUp);
-        root.addEventListener("keydown", onKeyDown);
+        root.addEventListener("keydown", onKeyDown, true);
         root.addEventListener("click", onClick);
         root.addEventListener("dblclick", onDblClick);
         root.addEventListener("contextmenu", onContextMenu);
@@ -1038,7 +1104,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ["pointermove", onPointerMove],
             ["pointerdown", onPointerDownWrapper],
             ["pointerup", onPointerUp],
-            ["keydown", onKeyDown],
+            ["keydown", onKeyDown, true],
             ["click", onClick],
             ["dblclick", onDblClick],
             ["contextmenu", onContextMenu]
@@ -1060,8 +1126,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     window.tmSpreadsheetCanvas.dispose = function (root) {
         const s = getState(root);
         if (!root || !s) return;
-        for (const [event, listener] of s.listeners || []) {
-            root.removeEventListener(event, listener);
+        for (const [event, listener, options] of s.listeners || []) {
+            root.removeEventListener(event, listener, options);
         }
         if (s.resizeObserver) s.resizeObserver.disconnect();
         if (s.localFrame) cancelAnimationFrame(s.localFrame);

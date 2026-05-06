@@ -17,8 +17,6 @@ else
          aria-label="@Loc["TmSpreadsheet_Name"]"
          aria-activedescendant="@ActiveCellDomId"
          tabindex="0"
-         @onkeydown="HandleKeyDown"
-         @onkeydown:preventDefault="true"
          @ref="_rootElement">
         <div class="tm-spreadsheet-canvas-grid__layer" aria-hidden="true">
             <canvas class="tm-spreadsheet-canvas-grid__canvas tm-spreadsheet-canvas-grid__canvas--content"

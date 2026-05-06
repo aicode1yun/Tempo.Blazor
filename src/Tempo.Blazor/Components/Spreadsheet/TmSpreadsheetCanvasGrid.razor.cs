@@ -525,45 +525,66 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         return InvokeAsync(StateHasChanged);
     }
 
+    /// <summary>Handles non-navigation keyboard commands forwarded by the canvas hot path.</summary>
+    [JSInvokable]
+    public Task OnCanvasKeyCommand(string? key, bool shiftKey, bool ctrlKey, bool altKey, bool metaKey)
+    {
+        if (IsEditing || Sheet is null)
+            return Task.CompletedTask;
+
+        var shouldRender = HandleCanvasKeyCommand(key ?? string.Empty, shiftKey, ctrlKey, altKey, metaKey);
+        return shouldRender ? InvokeAsync(StateHasChanged) : Task.CompletedTask;
+    }
+
     private void HandleKeyDown(KeyboardEventArgs e)
     {
         if (IsEditing || Sheet is null)
             return;
 
-        if (e.CtrlKey)
+        if (HandleCanvasKeyCommand(e.Key, e.ShiftKey, e.CtrlKey, e.AltKey, e.MetaKey))
+            StateHasChanged();
+    }
+
+    private bool HandleCanvasKeyCommand(string key, bool shiftKey, bool ctrlKey, bool altKey, bool metaKey)
+    {
+        if (Sheet is null)
+            return false;
+
+        if (ctrlKey || metaKey)
         {
-            switch (e.Key)
+            var shortcutKey = key.Length == 1 ? key.ToLowerInvariant() : key;
+            switch (shortcutKey)
             {
-                case "c": _ = OnCopyRequested.InvokeAsync(); return;
-                case "v": _ = OnPasteRequested.InvokeAsync(); return;
-                case "x": _ = OnCutRequested.InvokeAsync(); return;
-                case "z": _ = OnUndoRequested.InvokeAsync(); return;
-                case "y": _ = OnRedoRequested.InvokeAsync(); return;
-                case "b": _ = OnBoldToggleRequested.InvokeAsync(); return;
-                case "i": _ = OnItalicToggleRequested.InvokeAsync(); return;
-                case "u": _ = OnUnderlineToggleRequested.InvokeAsync(); return;
-                case "a": _ = OnSelectAllRequested.InvokeAsync(); return;
-                case "1": _ = OnFormatCellsRequested.InvokeAsync(); return;
-                case "5": _ = OnStrikeThroughToggleRequested.InvokeAsync(); return;
-                case "Home": MoveToCell(0, 0, e.ShiftKey); return;
-                case "End": MoveToLastUsedCell(e.ShiftKey); return;
+                case "c": _ = OnCopyRequested.InvokeAsync(); return false;
+                case "v": _ = OnPasteRequested.InvokeAsync(); return false;
+                case "x": _ = OnCutRequested.InvokeAsync(); return false;
+                case "z": _ = OnUndoRequested.InvokeAsync(); return false;
+                case "y": _ = OnRedoRequested.InvokeAsync(); return false;
+                case "b": _ = OnBoldToggleRequested.InvokeAsync(); return false;
+                case "i": _ = OnItalicToggleRequested.InvokeAsync(); return false;
+                case "u": _ = OnUnderlineToggleRequested.InvokeAsync(); return false;
+                case "a": _ = OnSelectAllRequested.InvokeAsync(); return false;
+                case "1": _ = OnFormatCellsRequested.InvokeAsync(); return false;
+                case "5": _ = OnStrikeThroughToggleRequested.InvokeAsync(); return false;
+                case "Home": MoveToCell(0, 0, shiftKey); return true;
+                case "End": MoveToLastUsedCell(shiftKey); return true;
             }
         }
 
-        switch (e.Key)
+        switch (key)
         {
-            case "ArrowUp": MoveActiveCell(-1, 0, e.ShiftKey); break;
-            case "ArrowDown": MoveActiveCell(1, 0, e.ShiftKey); break;
-            case "ArrowLeft": MoveActiveCell(0, -1, e.ShiftKey); break;
-            case "ArrowRight": MoveActiveCell(0, 1, e.ShiftKey); break;
-            case "Tab": MoveActiveCell(0, e.ShiftKey ? -1 : 1); break;
+            case "ArrowUp": MoveActiveCell(-1, 0, shiftKey); break;
+            case "ArrowDown": MoveActiveCell(1, 0, shiftKey); break;
+            case "ArrowLeft": MoveActiveCell(0, -1, shiftKey); break;
+            case "ArrowRight": MoveActiveCell(0, 1, shiftKey); break;
+            case "Tab": MoveActiveCell(0, shiftKey ? -1 : 1); break;
             case "Home":
                 var (row, _) = SpreadsheetSelectionState.ParseCellRef(Sheet.ActiveCellRef ?? "A1");
-                MoveToCell(row, 0, e.ShiftKey);
+                MoveToCell(row, 0, shiftKey);
                 break;
             case "End":
                 var (activeRow, _) = SpreadsheetSelectionState.ParseCellRef(Sheet.ActiveCellRef ?? "A1");
-                MoveToCell(activeRow, Sheet.ColumnCount - 1, e.ShiftKey);
+                MoveToCell(activeRow, Sheet.ColumnCount - 1, shiftKey);
                 break;
             case "Enter":
             case "F2":
@@ -579,12 +600,15 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
                 _ = OnDeleteRequested.InvokeAsync();
                 break;
             default:
-                if (e.Key.Length == 1 && !e.AltKey && !e.CtrlKey && !e.MetaKey)
-                    StartEdit(Sheet.ActiveCellRef ?? "A1", e.Key);
+                if (key.Length == 1 && !altKey && !ctrlKey && !metaKey)
+                    StartEdit(Sheet.ActiveCellRef ?? "A1", key);
+                else
+                    return false;
                 break;
         }
 
         _needsRender = true;
+        return true;
     }
 
     private void HandleEditKeyDown(KeyboardEventArgs e)

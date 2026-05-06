@@ -374,7 +374,7 @@ public class TmSpreadsheetKeyboardTests : LocalizationTestBase
     }
 
     [Fact]
-    public void CanvasGrid_ArrowRight_MovesActiveCell()
+    public async Task CanvasGrid_LocalSelectionSync_MovesActiveCell()
     {
         var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
             .Add(p => p.RenderMode, SpreadsheetRenderMode.Canvas)
@@ -382,7 +382,8 @@ public class TmSpreadsheetKeyboardTests : LocalizationTestBase
             .Add(p => p.ColumnsCount, 5));
         var sheet = cut.Instance.Workbook.ActiveSheet!;
 
-        cut.Find(".tm-spreadsheet-canvas-grid").KeyDown(new KeyboardEventArgs { Key = "ArrowRight" });
+        var canvasGrid = cut.FindComponent<TmSpreadsheetCanvasGrid>();
+        await canvasGrid.Instance.OnCanvasSelectionChanged(0, 1, 0, 1, 0, 1, 1);
 
         sheet.ActiveCellRef.Should().Be("B1");
     }
