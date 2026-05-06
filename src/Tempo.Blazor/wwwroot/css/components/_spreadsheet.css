@@ -26,6 +26,61 @@
     outline: none;
 }
 
+.tm-spreadsheet-canvas-grid {
+    position: relative;
+    flex: 1 1 auto;
+    overflow: auto;
+    background: var(--tm-color-surface);
+    font-family: var(--tm-font-mono, ui-monospace, monospace);
+    font-size: var(--tm-text-xs);
+    outline: none;
+}
+
+.tm-spreadsheet-canvas-grid:focus {
+    outline: none;
+}
+
+.tm-spreadsheet-canvas-grid__canvas {
+    position: sticky;
+    top: 0;
+    left: 0;
+    z-index: 1;
+    display: block;
+    pointer-events: none;
+}
+
+.tm-spreadsheet-canvas-grid__size {
+    position: absolute;
+    inset: 0 auto auto 0;
+    pointer-events: none;
+    z-index: 0;
+}
+
+.tm-spreadsheet-canvas-grid__editor {
+    position: absolute;
+    z-index: 3;
+    box-sizing: border-box;
+    border: 2px solid var(--tm-color-primary);
+    outline: none;
+    background: var(--tm-color-surface);
+    color: var(--tm-color-text);
+    font-family: inherit;
+    font-size: inherit;
+    padding: 0 var(--tm-space-1);
+}
+
+.tm-sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
 .tm-spreadsheet-grid--empty {
     display: flex;
     align-items: center;

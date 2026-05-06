@@ -1,0 +1,389 @@
+@page "/spreadsheet-benchmark"
+@inject IJSRuntime JS
+@using System.Diagnostics
+@using Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Enums
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+<PageTitle>Spreadsheet Benchmark - Tempo.Blazor</PageTitle>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Spreadsheet Benchmark</h1>
+    <p class="text-slate-600 dark:text-slate-400">DOM and canvas renderer comparison on large logical sheets.</p>
+</div>
+
+<section class="demo-section">
+    <div class="flex flex-col xl:flex-row xl:items-end gap-4">
+        <div class="w-full xl:w-72">
+            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-2" for="benchmark-dataset">Dataset</label>
+            <select id="benchmark-dataset"
+                    class="w-full rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+                    @bind="_selectedDatasetId">
+                @foreach (var dataset in Datasets)
+                {
+                    <option value="@dataset.Id">@dataset.Label</option>
+                }
+            </select>
+        </div>
+
+        <div class="flex flex-wrap gap-2">
+            <button type="button"
+                    data-testid="spreadsheet-benchmark-load"
+                    class="inline-flex items-center justify-center rounded-lg border border-slate-300 dark:border-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800"
+                    @onclick="LoadDatasetAsync">
+                Load dataset
+            </button>
+            <button type="button"
+                    data-testid="spreadsheet-benchmark-run-dom"
+                    class="inline-flex items-center justify-center rounded-lg bg-slate-900 dark:bg-slate-100 px-4 py-2 text-sm font-semibold text-white dark:text-slate-900 disabled:opacity-50"
+                    disabled="@_isRunning"
+                    @onclick="RunDomBenchmarkAsync">
+                Run DOM
+            </button>
+            <button type="button"
+                    data-testid="spreadsheet-benchmark-run-canvas"
+                    class="inline-flex items-center justify-center rounded-lg bg-primary-600 px-4 py-2 text-sm font-semibold text-white hover:bg-primary-700 disabled:opacity-50"
+                    disabled="@_isRunning"
+                    @onclick="RunCanvasBenchmarkAsync">
+                Run canvas
+            </button>
+            <button type="button"
+                    data-testid="spreadsheet-benchmark-run-both"
+                    class="inline-flex items-center justify-center rounded-lg border border-primary-300 dark:border-primary-700 px-4 py-2 text-sm font-semibold text-primary-700 dark:text-primary-300 hover:bg-primary-50 dark:hover:bg-primary-900/20 disabled:opacity-50"
+                    disabled="@_isRunning"
+                    @onclick="RunBothBenchmarksAsync">
+                Run both
+            </button>
+        </div>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-3 mt-5">
+        <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Logical size</div>
+            <div class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">@CurrentDataset.Rows.ToString("N0") x @CurrentDataset.Columns.ToString("N0")</div>
+        </div>
+        <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Sampled cells</div>
+            <div class="mt-1 text-2xl font-semibold text-slate-900 dark:text-white">@SampledCellCount.ToString("N0")</div>
+        </div>
+        <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div class="text-xs font-semibold uppercase text-slate-500 dark:text-slate-400">Status</div>
+            <div class="mt-1 text-lg font-semibold text-slate-900 dark:text-white">@_status</div>
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Results</h2>
+        @if (_results.Count > 0)
+        {
+            <button type="button"
+                    class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white"
+                    @onclick="ClearResults">
+                Clear
+            </button>
+        }
+    </div>
+
+    <div class="overflow-x-auto rounded-lg border border-slate-200 dark:border-slate-800">
+        <table class="min-w-full divide-y divide-slate-200 dark:divide-slate-800 text-sm">
+            <thead class="bg-slate-100 dark:bg-slate-900">
+                <tr>
+                    <th class="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Renderer</th>
+                    <th class="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Dataset</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">First render</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Scroll FPS</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow move avg</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Paste sim.</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">JS heap</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200 dark:divide-slate-800 bg-white dark:bg-slate-950">
+                @if (_results.Count == 0)
+                {
+                    <tr>
+                        <td colspan="7" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No benchmark results yet.</td>
+                    </tr>
+                }
+                else
+                {
+                    @foreach (var result in _results)
+                    {
+                        <tr data-testid="spreadsheet-benchmark-result-row">
+                            <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">@result.Renderer</td>
+                            <td class="px-4 py-3 text-slate-600 dark:text-slate-400">@result.DatasetLabel</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.FirstRenderMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.ScrollFps:N1}")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyNavigationMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.PasteSimulationMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@FormatBytes(result.UsedJsHeapSize)</td>
+                        </tr>
+                    }
+                }
+            </tbody>
+        </table>
+    </div>
+</section>
+
+<section class="demo-section">
+    <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-4">Recommended Limits</h2>
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-4">
+        <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div class="text-sm font-semibold text-slate-900 dark:text-white">DOM renderer</div>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Best for regular editing surfaces up to roughly 10,000 x 100 when full HTML semantics are preferred. Switch earlier when wide horizontal scrolling or frequent keyboard movement feels uneven.</p>
+        </div>
+        <div class="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 p-4">
+            <div class="text-sm font-semibold text-slate-900 dark:text-white">Canvas renderer</div>
+            <p class="mt-2 text-sm text-slate-600 dark:text-slate-400">Preferred for large sheets from 10,000 x 100 through 100,000 x 100. Keep the workbook model sparse or data-provider backed when logical cell counts reach millions.</p>
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Benchmark Surface</h2>
+        <span class="text-sm text-slate-500 dark:text-slate-400">@_activeRenderMode renderer</span>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden" data-spreadsheet-benchmark-surface>
+        @if (_showGrid)
+        {
+            <TmSpreadsheet @key="_renderKey"
+                           @ref="_benchmarkSpreadsheet"
+                           RowsCount="@CurrentDataset.Rows"
+                           ColumnsCount="@CurrentDataset.Columns"
+                           Height="520px"
+                           RenderMode="@_activeRenderMode" />
+        }
+    </div>
+</section>
+
+@code {
+    private static readonly DatasetOption[] Datasets =
+    [
+        new("1000x50", "1,000 x 50", 1_000, 50),
+        new("10000x100", "10,000 x 100", 10_000, 100),
+        new("100000x100", "100,000 x 100", 100_000, 100)
+    ];
+
+    private readonly Queue<SpreadsheetRenderMode> _benchmarkQueue = new();
+    private readonly List<BenchmarkResult> _results = new();
+    private TmSpreadsheet? _benchmarkSpreadsheet;
+    private SpreadsheetRenderMode _activeRenderMode = SpreadsheetRenderMode.Canvas;
+    private string _selectedDatasetId = Datasets[0].Id;
+    private string _status = "Ready";
+    private bool _showGrid = true;
+    private bool _isRunning;
+    private bool _pendingPopulate;
+    private bool _pendingMeasure;
+    private int _renderKey;
+    private Stopwatch? _renderStopwatch;
+
+    private DatasetOption CurrentDataset => Datasets.First(d => d.Id == _selectedDatasetId);
+    private int SampledCellCount => Math.Min(CurrentDataset.Rows, 240) * Math.Min(CurrentDataset.Columns, 16);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (_pendingPopulate && _benchmarkSpreadsheet?.Workbook.ActiveSheet is not null)
+        {
+            _pendingPopulate = false;
+            PopulateDataset(_benchmarkSpreadsheet.Workbook.ActiveSheet, CurrentDataset);
+            _pendingMeasure = _isRunning;
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (_pendingMeasure && _benchmarkSpreadsheet?.Workbook.ActiveSheet is not null)
+        {
+            _pendingMeasure = false;
+            await MeasureCurrentRendererAsync(_benchmarkSpreadsheet.Workbook.ActiveSheet);
+        }
+    }
+
+    private Task LoadDatasetAsync()
+    {
+        _benchmarkQueue.Clear();
+        _isRunning = false;
+        _activeRenderMode = SpreadsheetRenderMode.Canvas;
+        _status = $"Loaded {CurrentDataset.Label}";
+        QueueGridRender(shouldMeasure: false);
+        return Task.CompletedTask;
+    }
+
+    private Task RunDomBenchmarkAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Dom);
+
+    private Task RunCanvasBenchmarkAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Canvas);
+
+    private Task RunBothBenchmarksAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Dom, SpreadsheetRenderMode.Canvas);
+
+    private async Task RunBenchmarksAsync(params SpreadsheetRenderMode[] modes)
+    {
+        _benchmarkQueue.Clear();
+        foreach (var mode in modes)
+        {
+            _benchmarkQueue.Enqueue(mode);
+        }
+
+        _isRunning = true;
+        await StartNextBenchmarkAsync();
+    }
+
+    private Task StartNextBenchmarkAsync()
+    {
+        if (!_benchmarkQueue.TryDequeue(out var mode))
+        {
+            _isRunning = false;
+            _status = "Ready";
+            StateHasChanged();
+            return Task.CompletedTask;
+        }
+
+        _activeRenderMode = mode;
+        _status = $"Measuring {mode} on {CurrentDataset.Label}";
+        QueueGridRender(shouldMeasure: true);
+        return Task.CompletedTask;
+    }
+
+    private void QueueGridRender(bool shouldMeasure)
+    {
+        _renderKey++;
+        _showGrid = true;
+        _pendingPopulate = true;
+        _pendingMeasure = false;
+        _renderStopwatch = shouldMeasure ? Stopwatch.StartNew() : null;
+        StateHasChanged();
+    }
+
+    private async Task MeasureCurrentRendererAsync(SpreadsheetSheet sheet)
+    {
+        await Task.Delay(50);
+        _renderStopwatch?.Stop();
+        var firstRenderMs = _renderStopwatch?.Elapsed.TotalMilliseconds ?? 0;
+
+        var selector = _activeRenderMode == SpreadsheetRenderMode.Canvas
+            ? "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid"
+            : "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-grid";
+
+        BrowserBenchmarkMetrics metrics;
+        try
+        {
+            metrics = await JS.InvokeAsync<BrowserBenchmarkMetrics>(
+                "tmSpreadsheetBenchmark.run",
+                selector,
+                new { scrollDurationMs = 1_200, keyNavigationCount = 20 });
+        }
+        catch (JSException)
+        {
+            metrics = new BrowserBenchmarkMetrics();
+        }
+
+        var pasteSimulationMs = MeasurePasteSimulation(sheet);
+        _results.Insert(0, new BenchmarkResult(
+            _activeRenderMode.ToString(),
+            CurrentDataset.Label,
+            firstRenderMs,
+            metrics.ScrollFps,
+            metrics.KeyNavigationMs,
+            pasteSimulationMs,
+            metrics.UsedJsHeapSize));
+
+        if (_benchmarkQueue.Count > 0)
+        {
+            await StartNextBenchmarkAsync();
+            return;
+        }
+
+        _isRunning = false;
+        _status = "Ready";
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static void PopulateDataset(SpreadsheetSheet sheet, DatasetOption dataset)
+    {
+        sheet.RowCount = dataset.Rows;
+        sheet.ColumnCount = dataset.Columns;
+        sheet.Cells.Clear();
+        sheet.Rows.Clear();
+        sheet.Columns.Clear();
+        sheet.MergedCells.Clear();
+        sheet.ActiveCellRef = "A1";
+
+        var rows = Math.Min(dataset.Rows, 240);
+        var columns = Math.Min(dataset.Columns, 16);
+
+        for (var col = 0; col < columns; col++)
+        {
+            sheet.SetCellValue(0, col, $"Metric {col + 1}");
+            sheet.GetCell(0, col)!.Style.Bold = true;
+            sheet.GetCell(0, col)!.Style.BackgroundColor = "#e2e8f0";
+        }
+
+        for (var row = 1; row < rows; row++)
+        {
+            sheet.SetCellValue(row, 0, $"Row {row + 1:N0}");
+            for (var col = 1; col < columns; col++)
+            {
+                sheet.SetCellValue(row, col, (row * 17 + col * 31) % 10_000);
+            }
+        }
+
+        if (dataset.Rows > 1 && dataset.Columns > 1)
+        {
+            sheet.SetCellValue(dataset.Rows - 1, dataset.Columns - 1, "Last logical cell");
+        }
+    }
+
+    private static double MeasurePasteSimulation(SpreadsheetSheet sheet)
+    {
+        var stopwatch = Stopwatch.StartNew();
+        var rows = Math.Min(100, sheet.RowCount);
+        var columns = Math.Min(20, sheet.ColumnCount);
+        var startRow = Math.Min(10, Math.Max(0, sheet.RowCount - rows));
+
+        for (var row = 0; row < rows; row++)
+        {
+            for (var col = 0; col < columns; col++)
+            {
+                sheet.SetCellValue(startRow + row, col, $"Paste {row + 1}:{col + 1}");
+            }
+        }
+
+        stopwatch.Stop();
+        return stopwatch.Elapsed.TotalMilliseconds;
+    }
+
+    private static string FormatBytes(double? bytes)
+    {
+        if (bytes is null or <= 0)
+        {
+            return "N/A";
+        }
+
+        var megabytes = bytes.Value / 1024 / 1024;
+        return $"{megabytes:N1} MB";
+    }
+
+    private void ClearResults()
+    {
+        _results.Clear();
+    }
+
+    private sealed record DatasetOption(string Id, string Label, int Rows, int Columns);
+
+    private sealed record BenchmarkResult(
+        string Renderer,
+        string DatasetLabel,
+        double FirstRenderMs,
+        double ScrollFps,
+        double KeyNavigationMs,
+        double PasteSimulationMs,
+        double? UsedJsHeapSize);
+
+    private sealed class BrowserBenchmarkMetrics
+    {
+        public double ScrollFps { get; set; }
+        public double KeyNavigationMs { get; set; }
+        public double? UsedJsHeapSize { get; set; }
+    }
+}

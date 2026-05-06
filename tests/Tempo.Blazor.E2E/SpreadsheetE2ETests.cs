@@ -63,4 +63,121 @@ public class SpreadsheetE2ETests : WasmTestBase
             Timeout = 10000
         });
     }
+
+    [TestMethod]
+    public async Task CanvasRenderer_RendersNonBlankCanvasAndScrollsHorizontally()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var canvas = grid.Locator("canvas").First;
+        await page.WaitForFunctionAsync(
+            @"canvas => {
+                if (!canvas || canvas.width === 0 || canvas.height === 0) return false;
+                const ctx = canvas.getContext('2d');
+                const data = ctx.getImageData(0, 0, Math.min(canvas.width, 64), Math.min(canvas.height, 64)).data;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] !== 0 && (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255)) return true;
+                }
+                return false;
+            }",
+            await canvas.ElementHandleAsync());
+
+        await grid.ClickAsync();
+        for (var i = 0; i < 45; i++)
+        {
+            await grid.PressAsync("ArrowRight");
+        }
+
+        await page.WaitForFunctionAsync(
+            "el => el.scrollLeft > 0",
+            await grid.ElementHandleAsync());
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_DoubleClickStartsCellEdit()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        var canvas = grid.Locator("canvas").First;
+        await page.WaitForFunctionAsync(
+            "canvas => canvas && canvas.width > 0 && canvas.height > 0",
+            await canvas.ElementHandleAsync());
+
+        await grid.DblClickAsync(new LocatorDblClickOptions
+        {
+            Force = true,
+            Position = new() { X = 120, Y = 56 }
+        });
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 5000
+        });
+        var isFocused = await editor.EvaluateAsync<bool>("el => document.activeElement === el");
+        Assert.IsTrue(isFocused, "Expected double-clicked canvas cell editor to receive focus.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_RapidArrowDownKeepsSelectionMonotonicWhileScrolling()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var previousRow = 1;
+        for (var i = 0; i < 80; i++)
+        {
+            await grid.PressAsync("ArrowDown");
+            var activeRef = await grid.EvaluateAsync<string>(
+                "el => el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || ''");
+            var row = ParseRow(activeRef);
+            Assert.IsTrue(row >= previousRow, $"Expected active row to stay monotonic. Previous: {previousRow}, current: {row}, ref: {activeRef}.");
+            previousRow = row;
+        }
+
+        var scrollTop = await grid.EvaluateAsync<double>("el => el.scrollTop");
+        Assert.IsTrue(scrollTop > 0, $"Expected ArrowDown navigation to scroll canvas grid. scrollTop: {scrollTop}.");
+        Assert.IsTrue(previousRow >= 70, $"Expected rapid ArrowDown navigation to reach a later row. Last row: {previousRow}.");
+    }
+
+    [TestMethod]
+    public async Task BenchmarkPage_RunsCanvasBenchmark()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        await page.GetByTestId("spreadsheet-benchmark-run-canvas").ClickAsync();
+
+        var result = page.GetByTestId("spreadsheet-benchmark-result-row").First;
+        await result.WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 30000
+        });
+
+        var text = await result.InnerTextAsync();
+        Assert.IsTrue(text.Contains("Canvas"), $"Expected a canvas benchmark result row, got: {text}");
+    }
+
+    private static int ParseRow(string cellRef)
+    {
+        var digits = new string(cellRef.Where(char.IsDigit).ToArray());
+        return int.TryParse(digits, out var row) ? row : 0;
+    }
 }

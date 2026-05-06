@@ -1,6 +1,7 @@
 @page "/spreadsheet"
 @inject IJSRuntime JS
 @using Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Enums
 @using Tempo.Blazor.Components.Spreadsheet.Models
 <PageTitle>Spreadsheet – Tempo.Blazor</PageTitle>
 
@@ -124,10 +125,27 @@
     </div>
 </section>
 
+<!-- Canvas Spreadsheet Renderer -->
+<section class="demo-section">
+    <div class="flex items-center space-x-2 mb-4">
+        <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Canvas Renderer</h2>
+        <span class="px-2 py-0.5 text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full">Large Dataset</span>
+    </div>
+
+    <div class="showcase-card p-0 overflow-hidden">
+        <TmSpreadsheet @ref="_canvasSpreadsheet"
+                       RowsCount="1000"
+                       ColumnsCount="120"
+                       Height="500px"
+                       RenderMode="SpreadsheetRenderMode.Canvas" />
+    </div>
+</section>
+
 @code {
     private TmSpreadsheet _basicSpreadsheet = null!;
     private TmSpreadsheet _formulaSpreadsheet = null!;
     private TmSpreadsheet _xlsxSpreadsheet = null!;
+    private TmSpreadsheet _canvasSpreadsheet = null!;
     private SpreadsheetChangeEventArgs? _lastChange;
     private string? _importStatus;
 

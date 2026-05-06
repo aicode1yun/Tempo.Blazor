@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Spreadsheet.Commands;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
+using Tempo.Blazor.Components.Spreadsheet.Rendering;
 using Tempo.Blazor.Components.Spreadsheet.Xlsx;
 
 namespace Tempo.Blazor.Components.Spreadsheet;
@@ -14,7 +15,7 @@ namespace Tempo.Blazor.Components.Spreadsheet;
 /// </summary>
 public partial class TmSpreadsheet
 {
-    private TmSpreadsheetGrid _grid = null!;
+    private ISpreadsheetGridController? _grid;
     private SpreadsheetWorkbook _workbook = new();
     private SpreadsheetCommandManager? _commandManager;
     private bool _isFormulaBarEditing;
@@ -69,6 +70,9 @@ public partial class TmSpreadsheet
 
     /// <summary>The default column width in pixels. Defaults to 64.</summary>
     [Parameter] public double ColumnWidth { get; set; } = 64;
+
+    /// <summary>Renderer used for the spreadsheet grid surface. Defaults to DOM for full compatibility.</summary>
+    [Parameter] public SpreadsheetRenderMode RenderMode { get; set; } = SpreadsheetRenderMode.Dom;
 
     /// <summary>Additional CSS classes to apply to the root element.</summary>
     [Parameter] public string? Class { get; set; }
@@ -177,8 +181,8 @@ public partial class TmSpreadsheet
             _ = OnSelect.InvokeAsync(new SpreadsheetSelectEventArgs(
                 _workbook.ActiveSheet,
                 cellRef,
-                _grid.SelectionStartRef,
-                _grid.SelectionEndRef));
+                _grid?.SelectionStartRef,
+                _grid?.SelectionEndRef));
         }
         StateHasChanged();
     }
@@ -224,9 +228,9 @@ public partial class TmSpreadsheet
             var quotedName = sheetName.Contains(' ') ? $"'{sheetName}'" : sheetName;
             fullRef = $"{quotedName}!{cellRef}";
         }
-        _grid.InsertCellRefIntoFormula(fullRef);
+        _grid?.InsertCellRefIntoFormula(fullRef);
         if (_isFormulaBarEditing)
-            _formulaBarEditValue = _grid.CurrentEditValue;
+            _formulaBarEditValue = _grid?.CurrentEditValue;
         StateHasChanged();
     }
 
@@ -312,7 +316,8 @@ public partial class TmSpreadsheet
 
     private async Task OnFormulaBarTabPressed()
     {
-        await _grid.FocusAsync();
+        if (_grid is not null)
+            await _grid.FocusAsync();
     }
 
     private void ApplyValueToActiveCell(string? value)
@@ -478,6 +483,7 @@ public partial class TmSpreadsheet
     private void ClearFormatting()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         _commandManager.Execute(new SetCellStyleCommand(_workbook.ActiveSheet, refs, s =>
@@ -509,6 +515,7 @@ public partial class TmSpreadsheet
     private void ClearContent()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         _commandManager.Execute(new ClearCellContentCommand(_workbook.ActiveSheet, refs));
@@ -721,6 +728,7 @@ public partial class TmSpreadsheet
     private void ApplyStyleToSelection(Action<SpreadsheetCellStyle> mutate)
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         var cmd = new SetCellStyleCommand(_workbook.ActiveSheet, refs, mutate);
@@ -743,13 +751,14 @@ public partial class TmSpreadsheet
 
     private void GridSelectAll()
     {
-        _grid.SelectAllCells();
+        _grid?.SelectAllCells();
     }
 
     // ── Clipboard ──
     private void Copy()
     {
         if (_workbook.ActiveSheet is null) return;
+        if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         var cmd = new CopyCommand(_workbook.ActiveSheet, refs);
@@ -767,6 +776,7 @@ public partial class TmSpreadsheet
     private void Cut()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         var cmd = new CutCommand(_workbook.ActiveSheet, refs);
@@ -808,7 +818,7 @@ public partial class TmSpreadsheet
 
     private void DeleteSelection()
     {
-        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        if (_workbook.ActiveSheet is null || _commandManager is null || _grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         var cmd = new DeleteCellsCommand(_workbook.ActiveSheet, refs);
@@ -1027,4 +1037,3 @@ public partial class TmSpreadsheet
     }
 
 }
-

@@ -1,5 +1,6 @@
 using Bunit;
 using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Components.Spreadsheet;
 using Tempo.Blazor.Tests.Localization;
@@ -15,6 +16,17 @@ public class TmSpreadsheetTests : LocalizationTestBase
 
         cut.Find(".tm-spreadsheet").Should().NotBeNull();
         cut.FindComponent<TmSpreadsheetGrid>().Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Render_CanvasMode_RendersCanvasGrid()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.Canvas));
+
+        cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
+        cut.Find("canvas.tm-spreadsheet-canvas-grid__canvas").Should().NotBeNull();
+        cut.FindComponents<TmSpreadsheetGrid>().Should().BeEmpty();
     }
 
     [Fact]

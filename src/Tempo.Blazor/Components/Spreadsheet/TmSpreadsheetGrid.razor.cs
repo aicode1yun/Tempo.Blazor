@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Tempo.Blazor.Components.Spreadsheet.Format;
 using Tempo.Blazor.Components.Spreadsheet.Formula;
 using Tempo.Blazor.Components.Spreadsheet.Models;
+using Tempo.Blazor.Components.Spreadsheet.Rendering;
 
 namespace Tempo.Blazor.Components.Spreadsheet;
 
@@ -12,7 +13,7 @@ namespace Tempo.Blazor.Components.Spreadsheet;
 /// Renders the interactive grid of a single spreadsheet sheet including row and column headers,
 /// cell selection, inline editing, and keyboard navigation.
 /// </summary>
-public partial class TmSpreadsheetGrid : IAsyncDisposable
+public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridController
 {
     private ElementReference _gridElement;
     private ElementReference _editInput;

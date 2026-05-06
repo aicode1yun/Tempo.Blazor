@@ -1,0 +1,110 @@
+@namespace Tempo.Blazor.Components.Spreadsheet
+@using Microsoft.AspNetCore.Components.Web
+@using Tempo.Blazor.Components.Spreadsheet.Models
+
+@if (Sheet is null)
+{
+    <div class="tm-spreadsheet-canvas-grid tm-spreadsheet-grid--empty">
+        @Loc["TmSpreadsheet_NoSheet"]
+    </div>
+}
+else
+{
+    <div class="tm-spreadsheet-canvas-grid @(Sheet.ShowGridLines ? "" : "tm-spreadsheet-grid--no-gridlines") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "") @(IsFormatPainterActive ? "tm-spreadsheet-grid--format-painter" : "")"
+         role="grid"
+         aria-rowcount="@Sheet.RowCount"
+         aria-colcount="@Sheet.ColumnCount"
+         aria-label="@Loc["TmSpreadsheet_Name"]"
+         aria-activedescendant="@ActiveCellDomId"
+         tabindex="0"
+         @onkeydown="HandleKeyDown"
+         @onkeydown:preventDefault="true"
+         @ref="_rootElement">
+        <canvas class="tm-spreadsheet-canvas-grid__canvas"
+                aria-hidden="true"
+                @ref="_canvasElement"></canvas>
+        <div class="tm-spreadsheet-canvas-grid__size"
+             style="width:@TotalScrollableWidthPx;height:@TotalScrollableHeightPx;"></div>
+
+        @if (IsEditing)
+        {
+            <input class="tm-spreadsheet-canvas-grid__editor"
+                   id="@ActiveCellDomId"
+                   value="@_editValue"
+                   style="@GetEditorStyle()"
+                   @ref="_editInput"
+                   @oninput="OnEditInput"
+                   @onkeydown="HandleEditKeyDown"
+                   @onkeydown:stopPropagation="true"
+                   @onblur="OnEditBlur"
+                   @onclick:stopPropagation />
+        }
+
+        <div class="tm-sr-only" aria-live="polite">@LiveRegionText</div>
+
+        @if (_contextMenuVisible)
+        {
+            <div class="tm-spreadsheet-context-menu"
+                 style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"
+                 @onclick:stopPropagation>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuFormatCells">@Loc["TmSpreadsheet_FormatCells"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCopy">@Loc["TmSpreadsheet_Copy"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCut">@Loc["TmSpreadsheet_Cut"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuPaste">@Loc["TmSpreadsheet_Paste"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuInsertRow">@Loc["TmSpreadsheet_InsertRow"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuDeleteRow">@Loc["TmSpreadsheet_DeleteRow"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuInsertColumn">@Loc["TmSpreadsheet_InsertColumn"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuDeleteColumn">@Loc["TmSpreadsheet_DeleteColumn"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetColumnWidth">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetRowHeight">@Loc["TmSpreadsheet_SetRowHeight"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearFormatting">@Loc["TmSpreadsheet_ClearFormatting"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearContent">@Loc["TmSpreadsheet_ClearContent"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearAll">@Loc["TmSpreadsheet_ClearAll"]</div>
+            </div>
+        }
+
+        @if (_showColWidthDialog)
+        {
+            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showColWidthDialog = false">
+                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+                    <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
+                    <input class="tm-spreadsheet-resize-dialog__input"
+                           type="number" min="16" max="1000"
+                           value="@_colWidthInputValue"
+                           @oninput="e => _colWidthInputValue = e.Value?.ToString() ?? _colWidthInputValue"
+                           @onkeydown="OnColWidthInputKeyDown" />
+                    <div class="tm-spreadsheet-resize-dialog__actions">
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--cancel"
+                                @onclick="() => _showColWidthDialog = false">@Loc["Tm_Cancel"]</button>
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--ok"
+                                @onclick="ApplyColWidth">@Loc["Tm_Apply"]</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showRowHeightDialog)
+        {
+            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showRowHeightDialog = false">
+                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+                    <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetRowHeight"]</div>
+                    <input class="tm-spreadsheet-resize-dialog__input"
+                           type="number" min="8" max="500"
+                           value="@_rowHeightInputValue"
+                           @oninput="e => _rowHeightInputValue = e.Value?.ToString() ?? _rowHeightInputValue"
+                           @onkeydown="OnRowHeightInputKeyDown" />
+                    <div class="tm-spreadsheet-resize-dialog__actions">
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--cancel"
+                                @onclick="() => _showRowHeightDialog = false">@Loc["Tm_Cancel"]</button>
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--ok"
+                                @onclick="ApplyRowHeight">@Loc["Tm_Apply"]</button>
+                    </div>
+                </div>
+            </div>
+        }
+    </div>
+}
