@@ -174,7 +174,7 @@ else
                                @oninput="OnEditInput"
                                @onkeydown="HandleEditKeyDown"
                                @onkeydown:stopPropagation="true"
-                               @onblur="CommitEdit"
+                               @onblur="OnEditBlur"
                                @onclick:stopPropagation />
                     }
                     else if (cell?.ImageUrl is not null)

@@ -46,6 +46,9 @@ public partial class TmSpreadsheetGrid
     private string? _formulaPointDragAnchor;
     private string? _formulaPointDragCurrent;
 
+    // When true, the next blur on the edit input must not commit (formula-point click on another cell)
+    private bool _suppressNextBlurCommit;
+
     // Formula-point mode — reference colour cache
     private readonly Dictionary<string, int> _formulaRefColors = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<(int Sr, int Sc, int Er, int Ec, int Ci)> _formulaRangeColors = [];
@@ -880,6 +883,23 @@ public partial class TmSpreadsheetGrid
         RefreshFormulaRefColors();
     }
 
+    /// <summary>
+    /// Blur handler for the edit input. In formula-point mode a click on another cell
+    /// sets <see cref="_suppressNextBlurCommit"/> in <see cref="OnCellMouseDown"/> so that
+    /// the edit survives the focus loss and can continue after the reference is inserted.
+    /// </summary>
+    private void OnEditBlur(FocusEventArgs e)
+    {
+        if (_suppressNextBlurCommit)
+        {
+            _suppressNextBlurCommit = false;
+            _shouldFocusAfterRender = true;
+            StateHasChanged();
+            return;
+        }
+        CommitEdit();
+    }
+
     private void HandleEditKeyDown(KeyboardEventArgs e)
     {
         switch (e.Key)
@@ -1112,6 +1132,7 @@ public partial class TmSpreadsheetGrid
     {
         if (!IsInFormulaPointMode) return;
         if (IsActiveCell(cellRef)) return;
+        _suppressNextBlurCommit = true;
         _isFormulaPointDragging = true;
         _formulaPointDragAnchor = cellRef;
         _formulaPointDragCurrent = cellRef;
