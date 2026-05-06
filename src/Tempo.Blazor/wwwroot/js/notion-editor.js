@@ -602,6 +602,19 @@ window.tmNotionEditor = (function () {
         });
 
         let isDown = false, startX = 0, startW = 0;
+        let _iframeStyles = [];
+
+        const disableIframes = () => {
+            _iframeStyles = [];
+            element.querySelectorAll('iframe').forEach(iframe => {
+                _iframeStyles.push({ el: iframe, original: iframe.style.pointerEvents });
+                iframe.style.pointerEvents = 'none';
+            });
+        };
+        const restoreIframes = () => {
+            _iframeStyles.forEach(item => { item.el.style.pointerEvents = item.original; });
+            _iframeStyles = [];
+        };
 
         const onDown = (e) => {
             e.preventDefault();
@@ -610,6 +623,7 @@ window.tmNotionEditor = (function () {
             startW  = element.offsetWidth;
             document.body.style.cursor     = 'ew-resize';
             document.body.style.userSelect = 'none';
+            disableIframes();
         };
         const onMove = (e) => {
             if (!isDown) return;
@@ -619,6 +633,7 @@ window.tmNotionEditor = (function () {
             if (!isDown) return;
             isDown = false;
             document.body.style.cursor = document.body.style.userSelect = '';
+            restoreIframes();
             dotNetRef.invokeMethodAsync('OnResize', element.offsetWidth, element.offsetHeight)
                      .catch(console.error);
         };
@@ -635,6 +650,7 @@ window.tmNotionEditor = (function () {
                 handle.removeEventListener('mousedown', onDown);
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                restoreIframes();
                 handle.parentNode?.removeChild(handle);
             }
         });
