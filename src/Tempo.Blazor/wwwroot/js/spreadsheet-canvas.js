@@ -42,6 +42,15 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         });
     }
 
+    function scheduleForcedViewportSync(root) {
+        const s = getState(root);
+        if (!s || s.forcedViewportFrame) return;
+        s.forcedViewportFrame = requestAnimationFrame(() => {
+            s.forcedViewportFrame = 0;
+            sendViewport(root, true);
+        });
+    }
+
     function sendViewport(root, force) {
         const s = getState(root);
         if (!s) return;
@@ -50,27 +59,39 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.viewportTimer = 0;
         }
 
-        if (s.viewportInFlight && !force) {
+        if (s.viewportInFlight) {
             s.viewportPending = true;
+            s.viewportPendingForce = s.viewportPendingForce || !!force;
             return;
         }
 
         s.viewportInFlight = true;
         s.viewportPending = false;
+        s.viewportPendingForce = false;
         s.syncedScrollLeft = root.scrollLeft || 0;
         s.syncedScrollTop = root.scrollTop || 0;
         s.lastViewportSync = performance.now();
+        const selection = getSelectionSnapshot(root);
 
         s.dotNet.invokeMethodAsync(
             "OnCanvasViewportChanged",
             root.scrollLeft || 0,
             root.scrollTop || 0,
             root.clientWidth || 0,
-            root.clientHeight || 0
+            root.clientHeight || 0,
+            selection.row,
+            selection.col,
+            selection.startRow,
+            selection.startCol,
+            selection.endRow,
+            selection.endCol
         ).catch(() => {}).finally(() => {
             s.viewportInFlight = false;
             if (s.viewportPending) {
-                sendViewport(root, true);
+                const pendingForce = !!s.viewportPendingForce;
+                s.viewportPending = false;
+                s.viewportPendingForce = false;
+                sendViewport(root, pendingForce);
             }
         });
     }
@@ -99,6 +120,20 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (!s.viewportTimer) {
             s.viewportTimer = setTimeout(() => sendViewport(root, false), 120);
         }
+    }
+
+    function getSelectionSnapshot(root) {
+        const model = getState(root)?.model;
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        const selection = read(model, "Selection", {});
+        return {
+            row: active.row,
+            col: active.col,
+            startRow: read(selection, "StartRow", active.row),
+            startCol: read(selection, "StartCol", active.col),
+            endRow: read(selection, "EndRow", active.row),
+            endCol: read(selection, "EndCol", active.col)
+        };
     }
 
     function buildPalette(root) {
@@ -289,7 +324,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function ensureCellVisibleLocal(root, row, col) {
         const s = getState(root);
         const model = s?.model;
-        if (!model) return;
+        if (!model) return false;
 
         const rows = read(model, "Rows", []);
         const columns = read(model, "Columns", []);
@@ -318,7 +353,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         nextTop = Math.max(0, nextTop);
         if (Math.abs(nextLeft - root.scrollLeft) > 0.5 || Math.abs(nextTop - root.scrollTop) > 0.5) {
             root.scrollTo({ left: nextLeft, top: nextTop, behavior: "auto" });
+            return true;
         }
+
+        return false;
     }
 
     function navigateLocal(root, dRow, dCol, extendSelection) {
@@ -334,9 +372,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (row === active.row && col === active.col) return true;
 
         updateLocalActiveCell(root, row, col, extendSelection);
-        ensureCellVisibleLocal(root, row, col);
+        const scrolled = ensureCellVisibleLocal(root, row, col);
         scheduleSelectionSync(root);
-        notifyViewport(root, false);
+        if (scrolled) scheduleForcedViewportSync(root);
+        else notifyViewport(root, false);
         return true;
     }
 
@@ -350,9 +389,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         row = Math.max(0, Math.min(rowCount - 1, row));
         col = Math.max(0, Math.min(colCount - 1, col));
         updateLocalActiveCell(root, row, col, extendSelection);
-        ensureCellVisibleLocal(root, row, col);
+        const scrolled = ensureCellVisibleLocal(root, row, col);
         scheduleSelectionSync(root);
-        notifyViewport(root, false);
+        if (scrolled) scheduleForcedViewportSync(root);
+        else notifyViewport(root, false);
         return true;
     }
 
@@ -465,9 +505,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             model: null,
             localFrame: 0,
             viewportFrame: 0,
+            forcedViewportFrame: 0,
             viewportTimer: 0,
             viewportInFlight: false,
             viewportPending: false,
+            viewportPendingForce: false,
             pointerFrame: 0,
             pointerPoint: null,
             selectionSyncTimer: 0,
@@ -598,6 +640,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (s.resizeObserver) s.resizeObserver.disconnect();
         if (s.localFrame) cancelAnimationFrame(s.localFrame);
         if (s.viewportFrame) cancelAnimationFrame(s.viewportFrame);
+        if (s.forcedViewportFrame) cancelAnimationFrame(s.forcedViewportFrame);
         if (s.pointerFrame) cancelAnimationFrame(s.pointerFrame);
         if (s.viewportTimer) clearTimeout(s.viewportTimer);
         if (s.selectionSyncTimer) clearTimeout(s.selectionSyncTimer);

@@ -129,6 +129,33 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasRenderer_RapidArrowDownKeepsSelectionMonotonicWhileScrolling()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var previousRow = 1;
+        for (var i = 0; i < 80; i++)
+        {
+            await grid.PressAsync("ArrowDown");
+            var activeRef = await grid.EvaluateAsync<string>(
+                "el => el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || ''");
+            var row = ParseRow(activeRef);
+            Assert.IsTrue(row >= previousRow, $"Expected active row to stay monotonic. Previous: {previousRow}, current: {row}, ref: {activeRef}.");
+            previousRow = row;
+        }
+
+        var scrollTop = await grid.EvaluateAsync<double>("el => el.scrollTop");
+        Assert.IsTrue(scrollTop > 0, $"Expected ArrowDown navigation to scroll canvas grid. scrollTop: {scrollTop}.");
+        Assert.IsTrue(previousRow >= 70, $"Expected rapid ArrowDown navigation to reach a later row. Last row: {previousRow}.");
+    }
+
+    [TestMethod]
     public async Task BenchmarkPage_RunsCanvasBenchmark()
     {
         var page = await CreatePageAsync();
@@ -146,5 +173,11 @@ public class SpreadsheetE2ETests : WasmTestBase
 
         var text = await result.InnerTextAsync();
         Assert.IsTrue(text.Contains("Canvas"), $"Expected a canvas benchmark result row, got: {text}");
+    }
+
+    private static int ParseRow(string cellRef)
+    {
+        var digits = new string(cellRef.Where(char.IsDigit).ToArray());
+        return int.TryParse(digits, out var row) ? row : 0;
     }
 }

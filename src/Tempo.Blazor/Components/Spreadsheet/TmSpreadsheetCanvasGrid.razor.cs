@@ -277,8 +277,20 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     }
 
     [JSInvokable]
-    public Task OnCanvasViewportChanged(double scrollLeft, double scrollTop, double clientWidth, double clientHeight)
+    public Task OnCanvasViewportChanged(
+        double scrollLeft,
+        double scrollTop,
+        double clientWidth,
+        double clientHeight,
+        int row,
+        int col,
+        int startRow,
+        int startCol,
+        int endRow,
+        int endCol)
     {
+        SyncSelectionFromCanvas(row, col, startRow, startCol, endRow, endCol);
+
         var next = new SpreadsheetViewportState(
             Math.Max(0, scrollLeft),
             Math.Max(0, scrollTop),
@@ -296,6 +308,25 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         _viewport = next;
         _needsRender = true;
         return InvokeAsync(StateHasChanged);
+    }
+
+    private void SyncSelectionFromCanvas(int row, int col, int startRow, int startCol, int endRow, int endCol)
+    {
+        if (Sheet is null)
+            return;
+
+        row = Math.Clamp(row, 0, Sheet.RowCount - 1);
+        col = Math.Clamp(col, 0, Sheet.ColumnCount - 1);
+        startRow = Math.Clamp(startRow, 0, Sheet.RowCount - 1);
+        startCol = Math.Clamp(startCol, 0, Sheet.ColumnCount - 1);
+        endRow = Math.Clamp(endRow, 0, Sheet.RowCount - 1);
+        endCol = Math.Clamp(endCol, 0, Sheet.ColumnCount - 1);
+
+        var activeRef = SpreadsheetSelectionState.ToCellRef(row, col);
+        _selection.ActiveCellRef = activeRef;
+        _selection.SelectionStartRef = SpreadsheetSelectionState.ToCellRef(startRow, startCol);
+        _selection.SelectionEndRef = SpreadsheetSelectionState.ToCellRef(endRow, endCol);
+        Sheet.ActiveCellRef = activeRef;
     }
 
     [JSInvokable]
@@ -379,18 +410,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         if (Sheet is null)
             return Task.CompletedTask;
 
-        row = Math.Clamp(row, 0, Sheet.RowCount - 1);
-        col = Math.Clamp(col, 0, Sheet.ColumnCount - 1);
-        startRow = Math.Clamp(startRow, 0, Sheet.RowCount - 1);
-        startCol = Math.Clamp(startCol, 0, Sheet.ColumnCount - 1);
-        endRow = Math.Clamp(endRow, 0, Sheet.RowCount - 1);
-        endCol = Math.Clamp(endCol, 0, Sheet.ColumnCount - 1);
-
-        var activeRef = SpreadsheetSelectionState.ToCellRef(row, col);
-        _selection.ActiveCellRef = activeRef;
-        _selection.SelectionStartRef = SpreadsheetSelectionState.ToCellRef(startRow, startCol);
-        _selection.SelectionEndRef = SpreadsheetSelectionState.ToCellRef(endRow, endCol);
-        Sheet.ActiveCellRef = activeRef;
+        SyncSelectionFromCanvas(row, col, startRow, startCol, endRow, endCol);
         return ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
     }
 
