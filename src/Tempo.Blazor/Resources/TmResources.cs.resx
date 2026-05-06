@@ -1805,6 +1805,8 @@
   <data name="TmSpreadsheet_NumberFormat" xml:space="preserve"><value>Formát čísla</value></data>
   <data name="TmSpreadsheet_IncreaseDecimals" xml:space="preserve"><value>Zvýšit desetinná místa</value></data>
   <data name="TmSpreadsheet_DecreaseDecimals" xml:space="preserve"><value>Snížit desetinná místa</value></data>
+  <data name="TmSpreadsheet_PercentageFormat" xml:space="preserve"><value>Procenta</value></data>
+  <data name="TmSpreadsheet_ThousandsFormat" xml:space="preserve"><value>Oddělovač tisíců</value></data>
   <data name="TmSpreadsheet_Open" xml:space="preserve"><value>Otevřít soubor</value></data>
   <data name="TmSpreadsheet_Download" xml:space="preserve"><value>Stáhnout</value></data>
   <data name="TmSpreadsheet_TabHome" xml:space="preserve"><value>Domů</value></data>
@@ -1817,6 +1819,95 @@
   <data name="TmSpreadsheet_LinkText" xml:space="preserve"><value>Zobrazený text</value></data>
   <data name="TmSpreadsheet_LinkTextPlaceholder" xml:space="preserve"><value>Klikněte zde</value></data>
   <data name="TmSpreadsheet_ImageUrl" xml:space="preserve"><value>URL obrázku</value></data>
+  <data name="TmSpreadsheet_FormatCells" xml:space="preserve"><value>Formát buněk</value></data>
+  <data name="TmSpreadsheet_TabNumber" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmSpreadsheet_TabAlignment" xml:space="preserve"><value>Zarovnání</value></data>
+  <data name="TmSpreadsheet_TabFont" xml:space="preserve"><value>Písmo</value></data>
+  <data name="TmSpreadsheet_TabBorder" xml:space="preserve"><value>Ohraničení</value></data>
+  <data name="TmSpreadsheet_TabFill" xml:space="preserve"><value>Výplň</value></data>
+  <data name="TmSpreadsheet_Preview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmSpreadsheet_Category" xml:space="preserve"><value>Kategorie</value></data>
+  <data name="TmSpreadsheet_DecimalPlaces" xml:space="preserve"><value>Desetinná místa</value></data>
+  <data name="TmSpreadsheet_ThousandSeparator" xml:space="preserve"><value>Oddělovač tisíců</value></data>
+  <data name="TmSpreadsheet_CurrencySymbol" xml:space="preserve"><value>Symbol měny</value></data>
+  <data name="TmSpreadsheet_DateFormat" xml:space="preserve"><value>Formát data</value></data>
+  <data name="TmSpreadsheet_FormatCode" xml:space="preserve"><value>Kód formátu</value></data>
+  <data name="TmSpreadsheet_NumCat_General" xml:space="preserve"><value>Obecný</value></data>
+  <data name="TmSpreadsheet_NumCat_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmSpreadsheet_NumCat_Currency" xml:space="preserve"><value>Měna</value></data>
+  <data name="TmSpreadsheet_NumCat_Accounting" xml:space="preserve"><value>Účetnický</value></data>
+  <data name="TmSpreadsheet_NumCat_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmSpreadsheet_NumCat_Percentage" xml:space="preserve"><value>Procenta</value></data>
+  <data name="TmSpreadsheet_NumCat_Custom" xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmSpreadsheet_NumCat_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmSpreadsheet_NumCat_GeneralDesc" xml:space="preserve"><value>Obecný formát – žádný specifický formát čísla.</value></data>
+  <data name="TmSpreadsheet_NumCat_TextDesc" xml:space="preserve"><value>Buňky formátu Text jsou zpracovávány jako text, i když obsahují číslo.</value></data>
+  <data name="TmSpreadsheet_HorizontalAlign" xml:space="preserve"><value>Horizontální</value></data>
+  <data name="TmSpreadsheet_VerticalAlign" xml:space="preserve"><value>Vertikální</value></data>
+  <data name="TmSpreadsheet_AlignGeneral" xml:space="preserve"><value>Obecné</value></data>
+  <data name="TmSpreadsheet_AlignJustify" xml:space="preserve"><value>Zarovnat</value></data>
+  <data name="TmSpreadsheet_VAlignTop" xml:space="preserve"><value>Nahoru</value></data>
+  <data name="TmSpreadsheet_VAlignMiddle" xml:space="preserve"><value>Na střed</value></data>
+  <data name="TmSpreadsheet_VAlignBottom" xml:space="preserve"><value>Dolů</value></data>
+  <data name="TmSpreadsheet_Indent" xml:space="preserve"><value>Odsazení</value></data>
+  <data name="TmSpreadsheet_TextRotation" xml:space="preserve"><value>Otočení textu</value></data>
+  <data name="TmSpreadsheet_TextWrap" xml:space="preserve"><value>Obtékání textu</value></data>
+  <data name="TmSpreadsheet_ShrinkToFit" xml:space="preserve"><value>Zmenšit na místo</value></data>
+  <data name="TmSpreadsheet_FontFamily" xml:space="preserve"><value>Písmo</value></data>
+  <data name="TmSpreadsheet_FontSize" xml:space="preserve"><value>Velikost</value></data>
+  <data name="TmSpreadsheet_FontStyle" xml:space="preserve"><value>Řez</value></data>
+  <data name="TmSpreadsheet_Strikethrough" xml:space="preserve"><value>Přeškrtnutí</value></data>
+  <data name="TmSpreadsheet_IndentIncrease" xml:space="preserve"><value>Zvětšit odsazení</value></data>
+  <data name="TmSpreadsheet_IndentDecrease" xml:space="preserve"><value>Zmenšit odsazení</value></data>
+  <data name="TmSpreadsheet_FormatPainter" xml:space="preserve"><value>Malíř formátů</value></data>
+  <data name="TmSpreadsheet_HideRow" xml:space="preserve"><value>Skrýt řádek</value></data>
+  <data name="TmSpreadsheet_UnhideRows" xml:space="preserve"><value>Odkrýt řádky</value></data>
+  <data name="TmSpreadsheet_HideColumn" xml:space="preserve"><value>Skrýt sloupec</value></data>
+  <data name="TmSpreadsheet_UnhideColumns" xml:space="preserve"><value>Odkrýt sloupce</value></data>
+  <data name="TmSpreadsheet_BorderPresets" xml:space="preserve"><value>Předvolby</value></data>
+  <data name="TmSpreadsheet_BorderStyle" xml:space="preserve"><value>Styl čáry</value></data>
+  <data name="TmSpreadsheet_BorderColor" xml:space="preserve"><value>Barva čáry</value></data>
+  <data name="TmSpreadsheet_BorderEdges" xml:space="preserve"><value>Hrany</value></data>
+  <data name="TmSpreadsheet_BorderNone" xml:space="preserve"><value>Žádné ohraničení</value></data>
+  <data name="TmSpreadsheet_BorderOutside" xml:space="preserve"><value>Vnější ohraničení</value></data>
+  <data name="TmSpreadsheet_BorderAllBorders" xml:space="preserve"><value>Všechny hranice</value></data>
+  <data name="TmSpreadsheet_BorderThickBox" xml:space="preserve"><value>Silná vnější hranice</value></data>
+  <data name="TmSpreadsheet_BorderTop" xml:space="preserve"><value>Horní hranice</value></data>
+  <data name="TmSpreadsheet_BorderBottom" xml:space="preserve"><value>Dolní hranice</value></data>
+  <data name="TmSpreadsheet_BorderLeft" xml:space="preserve"><value>Levá hranice</value></data>
+  <data name="TmSpreadsheet_BorderRight" xml:space="preserve"><value>Pravá hranice</value></data>
+  <data name="TmSpreadsheet_BorderStyleNone" xml:space="preserve"><value>Žádný</value></data>
+  <data name="TmSpreadsheet_BorderStyleThin" xml:space="preserve"><value>Tenký</value></data>
+  <data name="TmSpreadsheet_BorderStyleMedium" xml:space="preserve"><value>Střední</value></data>
+  <data name="TmSpreadsheet_BorderStyleThick" xml:space="preserve"><value>Silný</value></data>
+  <data name="TmSpreadsheet_BorderStyleDashed" xml:space="preserve"><value>Přerušovaný</value></data>
+  <data name="TmSpreadsheet_BorderStyleDotted" xml:space="preserve"><value>Tečkovaný</value></data>
+  <data name="TmSpreadsheet_BorderStyleDouble" xml:space="preserve"><value>Dvojitý</value></data>
+  <data name="TmSpreadsheet_BackgroundColor" xml:space="preserve"><value>Barva pozadí</value></data>
+  <data name="TmSpreadsheet_NoFill" xml:space="preserve"><value>Bez výplně</value></data>
+  <data name="TmSpreadsheet_CustomColor" xml:space="preserve"><value>Vlastní barva</value></data>
+  <data name="TmSpreadsheet_BorderPicker" xml:space="preserve"><value>Výběr ohraničení</value></data>
+  <data name="TmSpreadsheet_MoreBorders" xml:space="preserve"><value>Více ohraničení...</value></data>
+  <data name="TmSpreadsheet_BorderSection_Borders" xml:space="preserve"><value>Ohraničení</value></data>
+  <data name="TmSpreadsheet_BorderSection_Bottom" xml:space="preserve"><value>Dolní</value></data>
+  <data name="TmSpreadsheet_BorderSection_Other" xml:space="preserve"><value>Ostatní</value></data>
+  <data name="TmSpreadsheet_BorderThickBottom" xml:space="preserve"><value>Silná dolní hranice</value></data>
+  <data name="TmSpreadsheet_BorderDoubleBottom" xml:space="preserve"><value>Dvojitá dolní hranice</value></data>
+  <data name="TmSpreadsheet_BorderTopAndThickBottom" xml:space="preserve"><value>Horní a silná dolní hranice</value></data>
+  <data name="TmSpreadsheet_Border_None" xml:space="preserve"><value>Žádné ohraničení</value></data>
+  <data name="TmSpreadsheet_Border_AllBorders" xml:space="preserve"><value>Všechny hranice</value></data>
+  <data name="TmSpreadsheet_Border_OutsideBorders" xml:space="preserve"><value>Vnější ohraničení</value></data>
+  <data name="TmSpreadsheet_Border_ThickBox" xml:space="preserve"><value>Silná vnější hranice</value></data>
+  <data name="TmSpreadsheet_Border_BottomBorder" xml:space="preserve"><value>Dolní hranice</value></data>
+  <data name="TmSpreadsheet_Border_ThickBottom" xml:space="preserve"><value>Silná dolní hranice</value></data>
+  <data name="TmSpreadsheet_Border_DoubleBottom" xml:space="preserve"><value>Dvojitá dolní hranice</value></data>
+  <data name="TmSpreadsheet_Border_TopBorder" xml:space="preserve"><value>Horní hranice</value></data>
+  <data name="TmSpreadsheet_Border_LeftBorder" xml:space="preserve"><value>Levá hranice</value></data>
+  <data name="TmSpreadsheet_Border_RightBorder" xml:space="preserve"><value>Pravá hranice</value></data>
+  <data name="TmSpreadsheet_Border_TopAndThickBottom" xml:space="preserve"><value>Horní a silná dolní hranice</value></data>
+  <data name="TmSpreadsheet_ClearFormatting" xml:space="preserve"><value>Vymazat formátování</value></data>
+  <data name="TmSpreadsheet_ClearContent" xml:space="preserve"><value>Vymazat obsah</value></data>
+  <data name="TmSpreadsheet_ClearAll" xml:space="preserve"><value>Vymazat vše</value></data>
   <data name="TmTreeList_ExpandColumn" xml:space="preserve"><value> </value></data>
   <data name="TmTreeList_NoData" xml:space="preserve"><value>Žádná data</value></data>
   <data name="TmTreeList_Expand" xml:space="preserve"><value>Rozbalit</value></data>

@@ -35,7 +35,7 @@ public static class XlsxImporter
 
             var ss = new SpreadsheetSheet { Name = sheet.Name?.Value ?? "Sheet" };
 
-            // Column widths
+            // Column widths and hidden state
             if (columns is not null)
             {
                 foreach (var col in columns.Elements<Column>())
@@ -43,9 +43,15 @@ public static class XlsxImporter
                     if (col.Min is null || col.Max is null) continue;
                     for (uint c = col.Min.Value; c <= col.Max.Value; c++)
                     {
+                        var idx = (int)(c - 1);
+                        if (!ss.Columns.TryGetValue(idx, out var sc))
+                        {
+                            sc = new SpreadsheetColumn { Index = idx };
+                            ss.Columns[idx] = sc;
+                        }
                         var width = col.Width?.Value;
-                        if (width is not null)
-                            ss.Columns[(int)(c - 1)] = new SpreadsheetColumn { Index = (int)(c - 1), Width = width * 7.0 }; // approximate px
+                        if (width is not null) sc.Width = width * 7.0;
+                        if (col.Hidden?.Value == true) sc.IsHidden = true;
                     }
                 }
             }
@@ -58,11 +64,16 @@ public static class XlsxImporter
                     var rowIndex = (int)(row.RowIndex?.Value ?? 0) - 1;
                     if (rowIndex < 0) continue;
 
-                    if (row.Height is not null)
-                        ss.Rows[rowIndex] = new SpreadsheetRow { Index = rowIndex, Height = row.Height.Value };
-
-                    if (row.Hidden?.Value == true && ss.Rows.TryGetValue(rowIndex, out var r))
-                        r.IsHidden = true;
+                    if (row.Height is not null || row.Hidden?.Value == true)
+                    {
+                        if (!ss.Rows.TryGetValue(rowIndex, out var r))
+                        {
+                            r = new SpreadsheetRow { Index = rowIndex };
+                            ss.Rows[rowIndex] = r;
+                        }
+                        if (row.Height is not null) r.Height = row.Height.Value;
+                        if (row.Hidden?.Value == true) r.IsHidden = true;
+                    }
 
                     foreach (var cell in row.Elements<Cell>())
                     {
@@ -246,7 +257,8 @@ public static class XlsxImporter
     {
         if (value == HorizontalAlignmentValues.Center) return SpreadsheetHorizontalAlign.Center;
         if (value == HorizontalAlignmentValues.Right) return SpreadsheetHorizontalAlign.Right;
-        return SpreadsheetHorizontalAlign.Left;
+        if (value == HorizontalAlignmentValues.Left) return SpreadsheetHorizontalAlign.Left;
+        return SpreadsheetHorizontalAlign.General;
     }
 
     private static SpreadsheetVerticalAlign ParseVerticalAlign(VerticalAlignmentValues? value)

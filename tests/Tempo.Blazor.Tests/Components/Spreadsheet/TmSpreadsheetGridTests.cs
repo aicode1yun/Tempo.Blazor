@@ -26,9 +26,9 @@ public class TmSpreadsheetGridTests : LocalizationTestBase
 
         var colHeaders = cut.FindAll(".tm-spreadsheet-col-headers .tm-spreadsheet-header-cell");
         colHeaders.Count.Should().Be(3);
-        colHeaders[0].TextContent.Should().Be("A");
-        colHeaders[1].TextContent.Should().Be("B");
-        colHeaders[2].TextContent.Should().Be("C");
+        colHeaders[0].TextContent.Trim().Should().Be("A");
+        colHeaders[1].TextContent.Trim().Should().Be("B");
+        colHeaders[2].TextContent.Trim().Should().Be("C");
     }
 
     [Fact]
@@ -135,9 +135,9 @@ public class TmSpreadsheetGridTests : LocalizationTestBase
             .Add(p => p.Sheet, sheet));
 
         var colHeaders = cut.FindAll(".tm-spreadsheet-col-headers .tm-spreadsheet-header-cell");
-        colHeaders[25].TextContent.Should().Be("Z");
-        colHeaders[26].TextContent.Should().Be("AA");
-        colHeaders[27].TextContent.Should().Be("AB");
+        colHeaders[25].TextContent.Trim().Should().Be("Z");
+        colHeaders[26].TextContent.Trim().Should().Be("AA");
+        colHeaders[27].TextContent.Trim().Should().Be("AB");
     }
 
     // ═══════════════════════════════════════════════════════════════
@@ -614,6 +614,6 @@ public class TmSpreadsheetGridTests : LocalizationTestBase
         grid.ContextMenu();
 
         cut.FindAll(".tm-spreadsheet-context-menu").Count.Should().Be(1);
-        cut.FindAll(".tm-spreadsheet-context-menu__item").Count.Should().Be(7);
+        cut.FindAll(".tm-spreadsheet-context-menu__item").Count.Should().Be(18);
     }
 }

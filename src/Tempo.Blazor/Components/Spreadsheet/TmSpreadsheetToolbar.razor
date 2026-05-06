@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.Spreadsheet
+@using Tempo.Blazor.Components.Spreadsheet.Enums
 @using Tempo.Blazor.Components.Spreadsheet.Models
 
 <div class="tm-spreadsheet-toolbar">
@@ -45,6 +46,12 @@
                         title="@Loc["TmSpreadsheet_Paste"]"
                         @onclick="OnPaste">
                     <TmIcon Name="paste" />
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsFormatPainterActive)"
+                        title="@Loc["TmSpreadsheet_FormatPainter"]"
+                        @onclick="OnFormatPainterClick"
+                        @ondblclick="OnFormatPainterDoubleClick">
+                    <TmIcon Name="format-painter" />
                 </button>
             </div>
 
@@ -103,6 +110,27 @@
                         @onclick="OnUnderlineToggle">
                     <u>U</u>
                 </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsStrikeThrough)"
+                        title="@Loc["TmSpreadsheet_Strikethrough"]"
+                        @onclick="OnStrikeThroughToggle">
+                    <s>S</s>
+                </button>
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
+            <!-- Indent Group -->
+            <div class="tm-spreadsheet-toolbar__group">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_IndentDecrease"]"
+                        @onclick="OnIndentDecrease">
+                    ←|
+                </button>
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc["TmSpreadsheet_IndentIncrease"]"
+                        @onclick="OnIndentIncrease">
+                    |→
+                </button>
             </div>
 
             <div class="tm-spreadsheet-toolbar__divider"></div>
@@ -148,6 +176,71 @@
 
             <div class="tm-spreadsheet-toolbar__divider"></div>
 
+            <!-- Border Picker -->
+            @if (_isBorderDropdownOpen)
+            {
+                <div class="tm-border-picker-overlay" @onclick="() => _isBorderDropdownOpen = false"></div>
+            }
+            <div class="tm-border-picker">
+                <button class="tm-spreadsheet-toolbar__button"
+                        title="@Loc[$"TmSpreadsheet_Border_{_lastBorderPreset}"]"
+                        @onclick="ApplyLastBorderPreset">
+                    @GetBorderPresetIcon(_lastBorderPreset)
+                </button>
+                <button class="tm-spreadsheet-toolbar__button tm-border-picker__chevron"
+                        title="@Loc["TmSpreadsheet_BorderPicker"]"
+                        @onclick="() => _isBorderDropdownOpen = !_isBorderDropdownOpen">
+                    ▾
+                </button>
+                @if (_isBorderDropdownOpen)
+                {
+                    <div class="tm-border-picker__dropdown" @onclick:stopPropagation>
+                        <div class="tm-border-picker__section-label">@Loc["TmSpreadsheet_BorderSection_Borders"]</div>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.None)">
+                            <span class="tm-border-picker__icon">☐</span> @Loc["TmSpreadsheet_BorderNone"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.AllBorders)">
+                            <span class="tm-border-picker__icon">⊞</span> @Loc["TmSpreadsheet_BorderAllBorders"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.OutsideBorders)">
+                            <span class="tm-border-picker__icon">▣</span> @Loc["TmSpreadsheet_BorderOutside"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.ThickBox)">
+                            <span class="tm-border-picker__icon">◼</span> @Loc["TmSpreadsheet_BorderThickBox"]
+                        </button>
+                        <div class="tm-border-picker__section-label">@Loc["TmSpreadsheet_BorderSection_Bottom"]</div>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.BottomBorder)">
+                            <span class="tm-border-picker__icon">▬</span> @Loc["TmSpreadsheet_BorderBottom"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.ThickBottom)">
+                            <span class="tm-border-picker__icon">▰</span> @Loc["TmSpreadsheet_BorderThickBottom"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.DoubleBottom)">
+                            <span class="tm-border-picker__icon">═</span> @Loc["TmSpreadsheet_BorderDoubleBottom"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.TopAndThickBottom)">
+                            <span class="tm-border-picker__icon">⊟</span> @Loc["TmSpreadsheet_BorderTopAndThickBottom"]
+                        </button>
+                        <div class="tm-border-picker__section-label">@Loc["TmSpreadsheet_BorderSection_Other"]</div>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.TopBorder)">
+                            <span class="tm-border-picker__icon">▭</span> @Loc["TmSpreadsheet_BorderTop"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.LeftBorder)">
+                            <span class="tm-border-picker__icon">▏</span> @Loc["TmSpreadsheet_BorderLeft"]
+                        </button>
+                        <button class="tm-border-picker__item" @onclick="() => ApplyBorderPreset(BorderPreset.RightBorder)">
+                            <span class="tm-border-picker__icon">▕</span> @Loc["TmSpreadsheet_BorderRight"]
+                        </button>
+                        <div class="tm-border-picker__divider"></div>
+                        <button class="tm-border-picker__item" @onclick="OpenBorderDialog">
+                            <span class="tm-border-picker__icon">⚙</span> @Loc["TmSpreadsheet_MoreBorders"]
+                        </button>
+                    </div>
+                }
+            </div>
+
+            <div class="tm-spreadsheet-toolbar__divider"></div>
+
             <!-- Number Format Group -->
             <div class="tm-spreadsheet-toolbar__group">
                 <TmSelect Value="SelectedNumberFormat"
@@ -155,6 +248,16 @@
                           Options="_numberFormatOptions"
                           Class="tm-spreadsheet-toolbar__select tm-spreadsheet-toolbar__select--wide" />
 
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsPercentageFormat)"
+                        title="@Loc["TmSpreadsheet_PercentageFormat"]"
+                        @onclick="OnPercentageFormat">
+                    %
+                </button>
+                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(IsThousandsFormat)"
+                        title="@Loc["TmSpreadsheet_ThousandsFormat"]"
+                        @onclick="OnThousandsFormat">
+                    ,
+                </button>
                 <button class="tm-spreadsheet-toolbar__button"
                         title="@Loc["TmSpreadsheet_IncreaseDecimals"]"
                         @onclick="OnIncreaseDecimals">

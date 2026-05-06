@@ -140,14 +140,15 @@ public static class XlsxExporter
                 foreach (var kv in sheet.Columns.OrderBy(c => c.Key))
                 {
                     var col = kv.Value;
-                    if (col.Width is null) continue;
-                    cols.Append(new Column
+                    if (col.Width is null && !col.IsHidden) continue;
+                    var xlsxCol = new Column
                     {
                         Min = (uint)(col.Index + 1),
                         Max = (uint)(col.Index + 1),
-                        Width = col.Width.Value / 7.0, // approximate reverse
-                        CustomWidth = true
-                    });
+                    };
+                    if (col.Width is not null) { xlsxCol.Width = col.Width.Value / 7.0; xlsxCol.CustomWidth = true; }
+                    if (col.IsHidden) xlsxCol.Hidden = true;
+                    cols.Append(xlsxCol);
                 }
                 if (cols.ChildElements.Count > 0)
                     worksheet.Append(cols);
@@ -167,10 +168,10 @@ public static class XlsxExporter
                 var rowIndex = rowGroup.Key;
                 var row = new Row { RowIndex = (uint)rowIndex };
 
-                if (sheet.Rows.TryGetValue(rowIndex - 1, out var rowMeta) && rowMeta.Height is not null)
+                if (sheet.Rows.TryGetValue(rowIndex - 1, out var rowMeta))
                 {
-                    row.Height = rowMeta.Height.Value;
-                    row.CustomHeight = true;
+                    if (rowMeta.Height is not null) { row.Height = rowMeta.Height.Value; row.CustomHeight = true; }
+                    if (rowMeta.IsHidden) row.Hidden = true;
                 }
 
                 foreach (var kv in rowGroup.OrderBy(c => c.Key))
@@ -327,8 +328,10 @@ public static class XlsxExporter
 
     private static HorizontalAlignmentValues? MapHorizontalAlign(SpreadsheetHorizontalAlign align) => align switch
     {
+        SpreadsheetHorizontalAlign.Left => HorizontalAlignmentValues.Left,
         SpreadsheetHorizontalAlign.Center => HorizontalAlignmentValues.Center,
         SpreadsheetHorizontalAlign.Right => HorizontalAlignmentValues.Right,
+        SpreadsheetHorizontalAlign.Justify => HorizontalAlignmentValues.Justify,
         _ => null
     };
 

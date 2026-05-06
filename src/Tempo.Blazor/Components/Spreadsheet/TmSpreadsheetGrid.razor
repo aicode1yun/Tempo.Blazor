@@ -11,7 +11,7 @@
 }
 else
 {
-    <div class="tm-spreadsheet-grid @(Sheet?.ShowGridLines == false ? "tm-spreadsheet-grid--no-gridlines" : "") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "")"
+    <div class="tm-spreadsheet-grid @(Sheet?.ShowGridLines == false ? "tm-spreadsheet-grid--no-gridlines" : "") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "") @(IsFormatPainterActive ? "tm-spreadsheet-grid--format-painter" : "")"
          role="grid"
          aria-rowcount="@Sheet.RowCount"
          aria-colcount="@Sheet.ColumnCount"
@@ -76,6 +76,8 @@ else
             <div class="tm-spreadsheet-context-menu"
                  style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"
                  @onclick:stopPropagation>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuFormatCells">@Loc["TmSpreadsheet_FormatCells"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCopy">@Loc["TmSpreadsheet_Copy"]</div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCut">@Loc["TmSpreadsheet_Cut"]</div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuPaste">@Loc["TmSpreadsheet_Paste"]</div>
@@ -88,6 +90,17 @@ else
                 <div class="tm-spreadsheet-context-menu__divider"></div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetColumnWidth">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetRowHeight">@Loc["TmSpreadsheet_SetRowHeight"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuActivateFormatPainter">@Loc["TmSpreadsheet_FormatPainter"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearFormatting">@Loc["TmSpreadsheet_ClearFormatting"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearContent">@Loc["TmSpreadsheet_ClearContent"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuClearAll">@Loc["TmSpreadsheet_ClearAll"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuHideRow">@Loc["TmSpreadsheet_HideRow"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuUnhideRows">@Loc["TmSpreadsheet_UnhideRows"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuHideColumn">@Loc["TmSpreadsheet_HideColumn"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuUnhideColumns">@Loc["TmSpreadsheet_UnhideColumns"]</div>
             </div>
         }
 
@@ -135,7 +148,7 @@ else
 
 @code {
     private RenderFragment<int> RenderRow => rowIndex => @<text>
-        <div class="tm-spreadsheet-row" role="row">
+        <div class="tm-spreadsheet-row @(IsRowHidden(rowIndex) ? "tm-spreadsheet-row--hidden" : "")" role="row">
             <div class="tm-spreadsheet-header-cell tm-spreadsheet-row-header @GetRowHeaderClass(rowIndex)"
                  role="rowheader"
                  aria-label="@(rowIndex + 1)"

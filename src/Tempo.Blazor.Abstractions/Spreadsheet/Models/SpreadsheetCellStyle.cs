@@ -22,6 +22,21 @@ public sealed class SpreadsheetCellStyle
     /// <summary>Whether the text is underlined.</summary>
     public bool Underline { get; set; }
 
+    /// <summary>Whether the text has double underline.</summary>
+    public bool DoubleUnderline { get; set; }
+
+    /// <summary>Whether the text is struck through.</summary>
+    public bool StrikeThrough { get; set; }
+
+    /// <summary>Indent level (0–15). Each level adds 12px left padding.</summary>
+    public int Indent { get; set; }
+
+    /// <summary>Text rotation in degrees (-90 to 90). 0 = normal horizontal.</summary>
+    public int TextRotation { get; set; }
+
+    /// <summary>Whether to shrink text to fit the cell width.</summary>
+    public bool ShrinkToFit { get; set; }
+
     /// <summary>The foreground (text) color in hex format. Defaults to black.</summary>
     public string ForeColor { get; set; } = "#000000";
 
@@ -29,7 +44,7 @@ public sealed class SpreadsheetCellStyle
     public string BackgroundColor { get; set; } = "transparent";
 
     /// <summary>The horizontal alignment of cell content.</summary>
-    public SpreadsheetHorizontalAlign HorizontalAlign { get; set; } = SpreadsheetHorizontalAlign.Left;
+    public SpreadsheetHorizontalAlign HorizontalAlign { get; set; } = SpreadsheetHorizontalAlign.General;
 
     /// <summary>The vertical alignment of cell content.</summary>
     public SpreadsheetVerticalAlign VerticalAlign { get; set; } = SpreadsheetVerticalAlign.Bottom;
@@ -60,6 +75,11 @@ public sealed class SpreadsheetCellStyle
         Bold = Bold,
         Italic = Italic,
         Underline = Underline,
+        DoubleUnderline = DoubleUnderline,
+        StrikeThrough = StrikeThrough,
+        Indent = Indent,
+        TextRotation = TextRotation,
+        ShrinkToFit = ShrinkToFit,
         ForeColor = ForeColor,
         BackgroundColor = BackgroundColor,
         HorizontalAlign = HorizontalAlign,

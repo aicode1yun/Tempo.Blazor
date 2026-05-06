@@ -12,10 +12,14 @@
                           IsBold="ToolbarIsBold"
                           IsItalic="ToolbarIsItalic"
                           IsUnderline="ToolbarIsUnderline"
+                          IsStrikeThrough="ToolbarIsStrikeThrough"
+                          IsFormatPainterActive="ToolbarIsFormatPainterActive"
                           TextColor="ToolbarTextColor"
                           BackgroundColor="ToolbarBackgroundColor"
                           SelectedHorizontalAlign="ToolbarAlign"
                           SelectedNumberFormat="ToolbarNumberFormat"
+                          IsPercentageFormat="ToolbarIsPercentageFormat"
+                          IsThousandsFormat="ToolbarIsThousandsFormat"
                           OnUndo="Undo"
                           OnRedo="Redo"
                           OnCopy="Copy"
@@ -30,12 +34,18 @@
                           OnBoldToggle="ToggleBold"
                           OnItalicToggle="ToggleItalic"
                           OnUnderlineToggle="ToggleUnderline"
+                          OnStrikeThroughToggle="ToggleStrikeThrough"
+                          OnIndentIncrease="IncreaseIndent"
+                          OnIndentDecrease="DecreaseIndent"
+                          OnFormatCells="ShowFormatCellsDialog"
                           OnTextColorClick="ShowTextColorPicker"
                           OnBackgroundColorClick="ShowBackgroundColorPicker"
                           OnAlignChanged="ApplyAlign"
                           OnNumberFormatChanged="ApplyNumberFormat"
                           OnIncreaseDecimals="IncreaseDecimals"
                           OnDecreaseDecimals="DecreaseDecimals"
+                          OnPercentageFormat="ApplyPercentageFormat"
+                          OnThousandsFormat="ApplyThousandsFormat"
                           OnOpen="TriggerFileInput"
                           OnDownload="DownloadXlsx"
                           IsMergeCellsActive="IsMergeCellsActive"
@@ -43,7 +53,11 @@
                           OnInsertLink="ShowInsertLinkDialog"
                           OnInsertImage="ShowInsertImageDialog"
                           OnMergeCells="ToggleMergeCells"
-                          OnToggleGridLines="ToggleGridLines" />
+                          OnToggleGridLines="ToggleGridLines"
+                          OnBorderPresetChanged="ApplyBorderPreset"
+                          OnOpenBorderDialog="ShowFormatCellsDialogOnBorderTab"
+                          OnFormatPainterClick="OnFormatPainterButtonClick"
+                          OnFormatPainterDoubleClick="OnFormatPainterButtonDoubleClick" />
 
     <InputFile id="tm-spreadsheet-file-input"
                OnChange="HandleFileSelected"
@@ -82,7 +96,20 @@
                        OnCellEdit="OnGridCellEdit"
                        OnCellReferenceRequested="OnGridCellReferenceRequested"
                        OnColumnResizeRequested="OnColumnResizeRequested"
-                       OnRowResizeRequested="OnRowResizeRequested" />
+                       OnRowResizeRequested="OnRowResizeRequested"
+                       OnFormatCellsRequested="ShowFormatCellsDialog"
+                       OnStrikeThroughToggleRequested="ToggleStrikeThrough"
+                       IsFormatPainterActive="_formatPainterActive"
+                       OnFormatPainterApply="OnFormatPainterApply"
+                       OnFormatPainterCancel="DeactivateFormatPainter"
+                       OnHideRowsRequested="HideRows"
+                       OnUnhideRowsRequested="UnhideRows"
+                       OnHideColumnsRequested="HideColumns"
+                       OnUnhideColumnsRequested="UnhideColumns"
+                       OnFormatPainterActivateRequested="ActivateFormatPainterFromContextMenu"
+                       OnClearFormattingRequested="ClearFormatting"
+                       OnClearContentRequested="ClearContent"
+                       OnClearAllRequested="ClearAll" />
 
     <TmSpreadsheetSheetTabs Sheets="_workbook.Sheets"
                             ActiveIndex="_workbook.ActiveSheetIndex"
@@ -127,5 +154,12 @@
                 </div>
             </div>
         </div>
+    }
+
+    @if (_showFormatCellsDialog)
+    {
+        <TmSpreadsheetFormatCellsDialog Style="_formatCellsStyle"
+                                        OnApply="OnFormatCellsApply"
+                                        OnClose="() => _showFormatCellsDialog = false" />
     }
 </div>

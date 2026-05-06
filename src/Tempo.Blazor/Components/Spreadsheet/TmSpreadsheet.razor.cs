@@ -21,6 +21,11 @@ public partial class TmSpreadsheet
     private string? _formulaBarEditValue;
     private bool _showInsertLinkDialog;
     private bool _showInsertImageDialog;
+    private bool _showFormatCellsDialog;
+    private SpreadsheetCellStyle _formatCellsStyle = new();
+    private SpreadsheetCellStyle? _formatPainterStyle;
+    private bool _formatPainterActive;
+    private bool _formatPainterSticky;
     private string? _insertLinkUrl;
     private string? _insertLinkText;
     private string? _insertImageUrl;
@@ -83,10 +88,31 @@ public partial class TmSpreadsheet
     private bool ToolbarIsBold => GetActiveCellStyle()?.Bold ?? false;
     private bool ToolbarIsItalic => GetActiveCellStyle()?.Italic ?? false;
     private bool ToolbarIsUnderline => GetActiveCellStyle()?.Underline ?? false;
+    private bool ToolbarIsStrikeThrough => GetActiveCellStyle()?.StrikeThrough ?? false;
+    private bool ToolbarIsFormatPainterActive => _formatPainterActive;
     private string? ToolbarTextColor => GetActiveCellStyle()?.ForeColor;
     private string? ToolbarBackgroundColor => GetActiveCellStyle()?.BackgroundColor;
-    private string? ToolbarAlign => GetActiveCellStyle()?.HorizontalAlign.ToString().ToLowerInvariant();
+    private string? ToolbarAlign
+    {
+        get
+        {
+            var style = GetActiveCellStyle();
+            if (style is null) return null;
+            if (style.HorizontalAlign != SpreadsheetHorizontalAlign.General)
+                return style.HorizontalAlign.ToString().ToLowerInvariant();
+            var cellRef = _workbook.ActiveSheet?.ActiveCellRef;
+            var cell = cellRef is null ? null : _workbook.ActiveSheet?.Cells.GetValueOrDefault(cellRef);
+            return cell?.Value switch
+            {
+                double => "right",
+                bool => "center",
+                _ => "left"
+            };
+        }
+    }
     private string? ToolbarNumberFormat => GetActiveCellStyle()?.NumberFormat ?? "General";
+    private bool ToolbarIsPercentageFormat => (GetActiveCellStyle()?.NumberFormat ?? "General").Contains('%');
+    private bool ToolbarIsThousandsFormat => (GetActiveCellStyle()?.NumberFormat ?? "General").Contains("#,#");
     private bool IsMergeCellsActive
     {
         get
@@ -330,6 +356,276 @@ public partial class TmSpreadsheet
         ApplyStyleToSelection(s => s.Underline = !s.Underline);
     }
 
+    private void ToggleStrikeThrough()
+    {
+        ApplyStyleToSelection(s => s.StrikeThrough = !s.StrikeThrough);
+    }
+
+    private void IncreaseIndent()
+    {
+        ApplyStyleToSelection(s => s.Indent = Math.Clamp(s.Indent + 1, 0, 15));
+    }
+
+    private void DecreaseIndent()
+    {
+        ApplyStyleToSelection(s => s.Indent = Math.Clamp(s.Indent - 1, 0, 15));
+    }
+
+    private void ShowFormatCellsDialog()
+    {
+        _formatCellsStyle = GetActiveCellStyle()?.Clone() ?? new SpreadsheetCellStyle();
+        _showFormatCellsDialog = true;
+    }
+
+    private void OnFormatCellsApply(SpreadsheetCellStyle style)
+    {
+        var captured = style.Clone();
+        ApplyStyleToSelection(s =>
+        {
+            s.FontFamily = captured.FontFamily;
+            s.FontSize = captured.FontSize;
+            s.Bold = captured.Bold;
+            s.Italic = captured.Italic;
+            s.Underline = captured.Underline;
+            s.DoubleUnderline = captured.DoubleUnderline;
+            s.StrikeThrough = captured.StrikeThrough;
+            s.Indent = captured.Indent;
+            s.TextRotation = captured.TextRotation;
+            s.ShrinkToFit = captured.ShrinkToFit;
+            s.ForeColor = captured.ForeColor;
+            s.BackgroundColor = captured.BackgroundColor;
+            s.HorizontalAlign = captured.HorizontalAlign;
+            s.VerticalAlign = captured.VerticalAlign;
+            s.TextWrap = captured.TextWrap;
+            s.NumberFormat = captured.NumberFormat;
+            s.BorderTop = new SpreadsheetBorder(captured.BorderTop.Style, captured.BorderTop.Color);
+            s.BorderRight = new SpreadsheetBorder(captured.BorderRight.Style, captured.BorderRight.Color);
+            s.BorderBottom = new SpreadsheetBorder(captured.BorderBottom.Style, captured.BorderBottom.Color);
+            s.BorderLeft = new SpreadsheetBorder(captured.BorderLeft.Style, captured.BorderLeft.Color);
+        });
+        _showFormatCellsDialog = false;
+    }
+
+    private void ShowFormatCellsDialogOnBorderTab()
+    {
+        _formatCellsStyle = GetActiveCellStyle()?.Clone() ?? new SpreadsheetCellStyle();
+        _showFormatCellsDialog = true;
+    }
+
+    private void ActivateFormatPainter(bool sticky)
+    {
+        _formatPainterStyle = GetActiveCellStyle()?.Clone() ?? new SpreadsheetCellStyle();
+        _formatPainterActive = true;
+        _formatPainterSticky = sticky;
+        StateHasChanged();
+    }
+
+    private void DeactivateFormatPainter()
+    {
+        _formatPainterActive = false;
+        _formatPainterSticky = false;
+        _formatPainterStyle = null;
+        StateHasChanged();
+    }
+
+    private void HideRows((int Start, int End) range)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var indices = Enumerable.Range(range.Start, range.End - range.Start + 1);
+        _commandManager.Execute(new HideRowsCommand(_workbook.ActiveSheet, indices, hidden: true));
+        StateHasChanged();
+    }
+
+    private void UnhideRows((int Start, int End) range)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var start = Math.Max(0, range.Start);
+        var end = Math.Min(_workbook.ActiveSheet.RowCount - 1, range.End);
+        var hiddenRows = Enumerable.Range(start, end - start + 1)
+            .Where(i => _workbook.ActiveSheet.Rows.TryGetValue(i, out var r) && r.IsHidden)
+            .ToList();
+        if (hiddenRows.Count == 0) return;
+        _commandManager.Execute(new HideRowsCommand(_workbook.ActiveSheet, hiddenRows, hidden: false));
+        StateHasChanged();
+    }
+
+    private void HideColumns((int Start, int End) range)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var indices = Enumerable.Range(range.Start, range.End - range.Start + 1);
+        _commandManager.Execute(new HideColumnsCommand(_workbook.ActiveSheet, indices, hidden: true));
+        StateHasChanged();
+    }
+
+    private void UnhideColumns((int Start, int End) range)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var start = Math.Max(0, range.Start);
+        var end = Math.Min(_workbook.ActiveSheet.ColumnCount - 1, range.End);
+        var hiddenCols = Enumerable.Range(start, end - start + 1)
+            .Where(i => _workbook.ActiveSheet.Columns.TryGetValue(i, out var c) && c.IsHidden)
+            .ToList();
+        if (hiddenCols.Count == 0) return;
+        _commandManager.Execute(new HideColumnsCommand(_workbook.ActiveSheet, hiddenCols, hidden: false));
+        StateHasChanged();
+    }
+
+    private void ActivateFormatPainterFromContextMenu()
+    {
+        ActivateFormatPainter(sticky: false);
+    }
+
+    private void ClearFormatting()
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var refs = _grid.GetSelectedCellRefs().ToList();
+        if (refs.Count == 0) return;
+        _commandManager.Execute(new SetCellStyleCommand(_workbook.ActiveSheet, refs, s =>
+        {
+            s.FontFamily = null;
+            s.FontSize = 0;
+            s.Bold = false;
+            s.Italic = false;
+            s.Underline = false;
+            s.DoubleUnderline = false;
+            s.StrikeThrough = false;
+            s.Indent = 0;
+            s.TextRotation = 0;
+            s.ShrinkToFit = false;
+            s.ForeColor = null;
+            s.BackgroundColor = null;
+            s.HorizontalAlign = SpreadsheetHorizontalAlign.General;
+            s.VerticalAlign = SpreadsheetVerticalAlign.Bottom;
+            s.TextWrap = false;
+            s.NumberFormat = "General";
+            s.BorderTop = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
+            s.BorderRight = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
+            s.BorderBottom = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
+            s.BorderLeft = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
+        }));
+        StateHasChanged();
+    }
+
+    private void ClearContent()
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        var refs = _grid.GetSelectedCellRefs().ToList();
+        if (refs.Count == 0) return;
+        _commandManager.Execute(new ClearCellContentCommand(_workbook.ActiveSheet, refs));
+        StateHasChanged();
+    }
+
+    private void ClearAll()
+    {
+        DeleteSelection();
+    }
+
+    private void OnFormatPainterButtonClick()
+    {
+        if (_formatPainterActive)
+            DeactivateFormatPainter();
+        else
+            ActivateFormatPainter(sticky: false);
+    }
+
+    private void OnFormatPainterButtonDoubleClick()
+    {
+        ActivateFormatPainter(sticky: true);
+    }
+
+    private void OnFormatPainterApply(string cellRef)
+    {
+        if (_formatPainterStyle is null) return;
+        var captured = _formatPainterStyle.Clone();
+        ApplyStyleToSelection(s =>
+        {
+            s.FontFamily = captured.FontFamily;
+            s.FontSize = captured.FontSize;
+            s.Bold = captured.Bold;
+            s.Italic = captured.Italic;
+            s.Underline = captured.Underline;
+            s.DoubleUnderline = captured.DoubleUnderline;
+            s.StrikeThrough = captured.StrikeThrough;
+            s.Indent = captured.Indent;
+            s.TextRotation = captured.TextRotation;
+            s.ShrinkToFit = captured.ShrinkToFit;
+            s.ForeColor = captured.ForeColor;
+            s.BackgroundColor = captured.BackgroundColor;
+            s.HorizontalAlign = captured.HorizontalAlign;
+            s.VerticalAlign = captured.VerticalAlign;
+            s.TextWrap = captured.TextWrap;
+            s.NumberFormat = captured.NumberFormat;
+            s.BorderTop = new SpreadsheetBorder(captured.BorderTop.Style, captured.BorderTop.Color);
+            s.BorderRight = new SpreadsheetBorder(captured.BorderRight.Style, captured.BorderRight.Color);
+            s.BorderBottom = new SpreadsheetBorder(captured.BorderBottom.Style, captured.BorderBottom.Color);
+            s.BorderLeft = new SpreadsheetBorder(captured.BorderLeft.Style, captured.BorderLeft.Color);
+        });
+        if (!_formatPainterSticky)
+            DeactivateFormatPainter();
+    }
+
+    private void ApplyBorderPreset(BorderPreset preset)
+    {
+        var thin = SpreadsheetBorderStyle.Thin;
+        var thick = SpreadsheetBorderStyle.Thick;
+        var dbl = SpreadsheetBorderStyle.Double;
+        const string black = "#000000";
+
+        ApplyStyleToSelection(s =>
+        {
+            static SpreadsheetBorder B(SpreadsheetBorderStyle st) => new(st, black);
+            static SpreadsheetBorder None() => new(SpreadsheetBorderStyle.None, black);
+
+            switch (preset)
+            {
+                case BorderPreset.None:
+                    s.BorderTop = None(); s.BorderRight = None();
+                    s.BorderBottom = None(); s.BorderLeft = None();
+                    break;
+                case BorderPreset.AllBorders:
+                    s.BorderTop = B(thin); s.BorderRight = B(thin);
+                    s.BorderBottom = B(thin); s.BorderLeft = B(thin);
+                    break;
+                case BorderPreset.OutsideBorders:
+                    s.BorderTop = B(thin); s.BorderRight = B(thin);
+                    s.BorderBottom = B(thin); s.BorderLeft = B(thin);
+                    break;
+                case BorderPreset.ThickBox:
+                    s.BorderTop = B(thick); s.BorderRight = B(thick);
+                    s.BorderBottom = B(thick); s.BorderLeft = B(thick);
+                    break;
+                case BorderPreset.BottomBorder:
+                    s.BorderTop = None(); s.BorderRight = None();
+                    s.BorderBottom = B(thin); s.BorderLeft = None();
+                    break;
+                case BorderPreset.ThickBottom:
+                    s.BorderTop = None(); s.BorderRight = None();
+                    s.BorderBottom = B(thick); s.BorderLeft = None();
+                    break;
+                case BorderPreset.DoubleBottom:
+                    s.BorderTop = None(); s.BorderRight = None();
+                    s.BorderBottom = B(dbl); s.BorderLeft = None();
+                    break;
+                case BorderPreset.TopBorder:
+                    s.BorderTop = B(thin); s.BorderRight = None();
+                    s.BorderBottom = None(); s.BorderLeft = None();
+                    break;
+                case BorderPreset.LeftBorder:
+                    s.BorderTop = None(); s.BorderRight = None();
+                    s.BorderBottom = None(); s.BorderLeft = B(thin);
+                    break;
+                case BorderPreset.RightBorder:
+                    s.BorderTop = None(); s.BorderRight = B(thin);
+                    s.BorderBottom = None(); s.BorderLeft = None();
+                    break;
+                case BorderPreset.TopAndThickBottom:
+                    s.BorderTop = B(thin); s.BorderRight = None();
+                    s.BorderBottom = B(thick); s.BorderLeft = None();
+                    break;
+            }
+        });
+    }
+
     private void ShowTextColorPicker()
     {
         // Phase 4 will implement a real color picker popup.
@@ -385,6 +681,40 @@ public partial class TmSpreadsheet
         {
             s.NumberFormat = RemoveDecimalPlace(s.NumberFormat);
         });
+    }
+
+    private void ApplyPercentageFormat()
+    {
+        ApplyStyleToSelection(s => s.NumberFormat = "0%");
+    }
+
+    private void ApplyThousandsFormat()
+    {
+        ApplyStyleToSelection(s => s.NumberFormat = ToggleThousandsSeparator(s.NumberFormat));
+    }
+
+    private static string ToggleThousandsSeparator(string format)
+    {
+        if (format.Contains("#,#"))
+            return RemoveThousandsSeparator(format);
+        return AddThousandsSeparator(format);
+    }
+
+    private static string AddThousandsSeparator(string format)
+    {
+        if (format == "General" || format == "@") return "#,##0";
+        // "0" → "#,##0", "0.00" → "#,##0.00", "0.000" → "#,##0.000"
+        if (format.StartsWith('0'))
+            return "#,##" + format;
+        return "#,##0";
+    }
+
+    private static string RemoveThousandsSeparator(string format)
+    {
+        // "#,##0" → "0", "#,##0.00" → "0.00"
+        if (format.StartsWith("#,##"))
+            return format["#,##".Length..];
+        return format.Replace(",", string.Empty);
     }
 
     private static string AddDecimalPlace(string format)

@@ -370,8 +370,8 @@ public class TmSpreadsheetTests : LocalizationTestBase
         var input = cut.Find(".tm-spreadsheet-cell-input");
         input.Input("=SUM(");
 
-        // Click C1 while editing formula
-        cut.InvokeAsync(() => cut.FindAll(".tm-spreadsheet-cell")[2].Click());
+        // MouseDown C1 while editing formula (insertion happens on mousedown in formula point mode)
+        cut.InvokeAsync(() => cut.FindAll(".tm-spreadsheet-cell")[2].MouseDown());
 
         // Should still be editing with the cell reference appended
         var grid = cut.FindComponent<TmSpreadsheetGrid>();

@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Models;
 
@@ -74,6 +75,12 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Whether the current selection is underlined.</summary>
     [Parameter] public bool IsUnderline { get; set; }
 
+    /// <summary>Whether the current selection has strikethrough.</summary>
+    [Parameter] public bool IsStrikeThrough { get; set; }
+
+    /// <summary>Whether Format Painter is currently active.</summary>
+    [Parameter] public bool IsFormatPainterActive { get; set; }
+
     /// <summary>Current text color (CSS color value).</summary>
     [Parameter] public string? TextColor { get; set; }
 
@@ -86,6 +93,12 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Currently selected number format.</summary>
     [Parameter] public string? SelectedNumberFormat { get; set; } = "General";
 
+    /// <summary>Whether the current selection uses a percentage format.</summary>
+    [Parameter] public bool IsPercentageFormat { get; set; }
+
+    /// <summary>Whether the current selection uses a thousands-separator format.</summary>
+    [Parameter] public bool IsThousandsFormat { get; set; }
+
     /// <summary>Whether the current selection covers a merged cell range.</summary>
     [Parameter] public bool IsMergeCellsActive { get; set; }
 
@@ -94,6 +107,12 @@ public partial class TmSpreadsheetToolbar
 
     /// <summary>Custom tools to inject into the toolbar.</summary>
     [Parameter] public List<SpreadsheetCustomTool>? CustomTools { get; set; }
+
+    /// <summary>Called when the Format Painter button is single-clicked.</summary>
+    [Parameter] public EventCallback OnFormatPainterClick { get; set; }
+
+    /// <summary>Called when the Format Painter button is double-clicked (sticky mode).</summary>
+    [Parameter] public EventCallback OnFormatPainterDoubleClick { get; set; }
 
     /// <summary>Called when the Undo button is clicked.</summary>
     [Parameter] public EventCallback OnUndo { get; set; }
@@ -137,6 +156,18 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Called when the Underline toggle is clicked.</summary>
     [Parameter] public EventCallback OnUnderlineToggle { get; set; }
 
+    /// <summary>Called when the StrikeThrough toggle is clicked.</summary>
+    [Parameter] public EventCallback OnStrikeThroughToggle { get; set; }
+
+    /// <summary>Called when the Increase Indent button is clicked.</summary>
+    [Parameter] public EventCallback OnIndentIncrease { get; set; }
+
+    /// <summary>Called when the Decrease Indent button is clicked.</summary>
+    [Parameter] public EventCallback OnIndentDecrease { get; set; }
+
+    /// <summary>Called when the Format Cells button/dialog is requested.</summary>
+    [Parameter] public EventCallback OnFormatCells { get; set; }
+
     /// <summary>Called when the text color button is clicked.</summary>
     [Parameter] public EventCallback OnTextColorClick { get; set; }
 
@@ -154,6 +185,12 @@ public partial class TmSpreadsheetToolbar
 
     /// <summary>Called when the Decrease Decimals button is clicked.</summary>
     [Parameter] public EventCallback OnDecreaseDecimals { get; set; }
+
+    /// <summary>Called when the Percentage (%) button is clicked.</summary>
+    [Parameter] public EventCallback OnPercentageFormat { get; set; }
+
+    /// <summary>Called when the Thousands separator (,) button is clicked.</summary>
+    [Parameter] public EventCallback OnThousandsFormat { get; set; }
 
     /// <summary>Called when the Open button is clicked.</summary>
     [Parameter] public EventCallback OnOpen { get; set; }
@@ -176,12 +213,56 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Called when a custom tool is clicked.</summary>
     [Parameter] public EventCallback<SpreadsheetCustomTool> OnCustomToolClick { get; set; }
 
+    /// <summary>Called when a border preset is selected from the border picker dropdown.</summary>
+    [Parameter] public EventCallback<BorderPreset> OnBorderPresetChanged { get; set; }
+
+    /// <summary>Called when the "More Borders..." option is chosen (opens Format Cells on Border tab).</summary>
+    [Parameter] public EventCallback OnOpenBorderDialog { get; set; }
+
+    // Border picker dropdown state
+    private bool _isBorderDropdownOpen;
+    private BorderPreset _lastBorderPreset = BorderPreset.AllBorders;
+
     private bool HasTextColor => !string.IsNullOrEmpty(TextColor);
     private bool HasBackgroundColor => !string.IsNullOrEmpty(BackgroundColor);
 
     private async Task AlignLeft() => await OnAlignChanged.InvokeAsync("left");
     private async Task AlignCenter() => await OnAlignChanged.InvokeAsync("center");
     private async Task AlignRight() => await OnAlignChanged.InvokeAsync("right");
+
+    private async Task ApplyBorderPreset(BorderPreset preset)
+    {
+        _lastBorderPreset = preset;
+        _isBorderDropdownOpen = false;
+        await OnBorderPresetChanged.InvokeAsync(preset);
+    }
+
+    private async Task ApplyLastBorderPreset()
+    {
+        await OnBorderPresetChanged.InvokeAsync(_lastBorderPreset);
+    }
+
+    private async Task OpenBorderDialog()
+    {
+        _isBorderDropdownOpen = false;
+        await OnOpenBorderDialog.InvokeAsync();
+    }
+
+    private static string GetBorderPresetIcon(BorderPreset preset) => preset switch
+    {
+        BorderPreset.None => "☐",
+        BorderPreset.AllBorders => "⊞",
+        BorderPreset.OutsideBorders => "▣",
+        BorderPreset.ThickBox => "◼",
+        BorderPreset.BottomBorder => "▬",
+        BorderPreset.ThickBottom => "▰",
+        BorderPreset.DoubleBottom => "═",
+        BorderPreset.TopBorder => "▭",
+        BorderPreset.LeftBorder => "▏",
+        BorderPreset.RightBorder => "▕",
+        BorderPreset.TopAndThickBottom => "⊟",
+        _ => "▣"
+    };
 
     private static string GetActiveClass(bool isActive)
     {

@@ -102,7 +102,7 @@ public class SpreadsheetCellModelTests
         style.Underline.Should().BeFalse();
         style.ForeColor.Should().Be("#000000");
         style.BackgroundColor.Should().Be("transparent");
-        style.HorizontalAlign.Should().Be(SpreadsheetHorizontalAlign.Left);
+        style.HorizontalAlign.Should().Be(SpreadsheetHorizontalAlign.General);
         style.VerticalAlign.Should().Be(SpreadsheetVerticalAlign.Bottom);
         style.TextWrap.Should().BeFalse();
         style.NumberFormat.Should().Be("General");

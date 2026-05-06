@@ -130,6 +130,45 @@ public partial class TmSpreadsheetGrid
     /// <summary>Called when the user resizes a row (drag or dialog). Parent should apply ResizeRowCommand.</summary>
     [Parameter] public EventCallback<(int RowIndex, double Height)> OnRowResizeRequested { get; set; }
 
+    /// <summary>Called when the user requests the Format Cells dialog (Ctrl+1).</summary>
+    [Parameter] public EventCallback OnFormatCellsRequested { get; set; }
+
+    /// <summary>Called when the user requests strikethrough toggle (Ctrl+5).</summary>
+    [Parameter] public EventCallback OnStrikeThroughToggleRequested { get; set; }
+
+    /// <summary>Whether Format Painter mode is currently active.</summary>
+    [Parameter] public bool IsFormatPainterActive { get; set; }
+
+    /// <summary>Called when the user clicks a cell while Format Painter is active.</summary>
+    [Parameter] public EventCallback<string> OnFormatPainterApply { get; set; }
+
+    /// <summary>Called when the user presses Escape while Format Painter is active.</summary>
+    [Parameter] public EventCallback OnFormatPainterCancel { get; set; }
+
+    /// <summary>Called when the user requests to hide selected rows (context menu).</summary>
+    [Parameter] public EventCallback<(int Start, int End)> OnHideRowsRequested { get; set; }
+
+    /// <summary>Called when the user requests to unhide rows near the selection.</summary>
+    [Parameter] public EventCallback<(int Start, int End)> OnUnhideRowsRequested { get; set; }
+
+    /// <summary>Called when the user requests to hide selected columns (context menu).</summary>
+    [Parameter] public EventCallback<(int Start, int End)> OnHideColumnsRequested { get; set; }
+
+    /// <summary>Called when the user requests to unhide columns near the selection.</summary>
+    [Parameter] public EventCallback<(int Start, int End)> OnUnhideColumnsRequested { get; set; }
+
+    /// <summary>Called when the user requests to activate Format Painter from the context menu.</summary>
+    [Parameter] public EventCallback OnFormatPainterActivateRequested { get; set; }
+
+    /// <summary>Called when the user requests to clear formatting from the selection (context menu).</summary>
+    [Parameter] public EventCallback OnClearFormattingRequested { get; set; }
+
+    /// <summary>Called when the user requests to clear cell content (values/formulas) from the selection (context menu).</summary>
+    [Parameter] public EventCallback OnClearContentRequested { get; set; }
+
+    /// <summary>Called when the user requests to clear everything (values, formulas, and formatting) from the selection (context menu).</summary>
+    [Parameter] public EventCallback OnClearAllRequested { get; set; }
+
     /// <summary>Whether a cell is currently being edited.</summary>
     public bool IsEditing { get; private set; }
 
@@ -284,20 +323,41 @@ public partial class TmSpreadsheetGrid
 
     private string GetRowHeaderClass(int rowIndex)
     {
-        if (!HasRangeSelection) return string.Empty;
-        var bounds = GetSelectionBounds();
-        return rowIndex >= bounds.StartRow && rowIndex <= bounds.EndRow ? "tm-spreadsheet-header-cell--selected" : string.Empty;
+        var classes = new System.Text.StringBuilder();
+        if (HasRangeSelection)
+        {
+            var bounds = GetSelectionBounds();
+            if (rowIndex >= bounds.StartRow && rowIndex <= bounds.EndRow)
+                classes.Append("tm-spreadsheet-header-cell--selected ");
+        }
+        if (rowIndex > 0 && IsRowHidden(rowIndex - 1))
+            classes.Append("tm-spreadsheet-header-cell--hidden-above ");
+        return classes.ToString().Trim();
     }
 
     private string GetColumnHeaderClass(int colIndex)
     {
-        if (!HasRangeSelection) return string.Empty;
-        var bounds = GetSelectionBounds();
-        return colIndex >= bounds.StartCol && colIndex <= bounds.EndCol ? "tm-spreadsheet-header-cell--selected" : string.Empty;
+        var classes = new System.Text.StringBuilder();
+        if (HasRangeSelection)
+        {
+            var bounds = GetSelectionBounds();
+            if (colIndex >= bounds.StartCol && colIndex <= bounds.EndCol)
+                classes.Append("tm-spreadsheet-header-cell--selected ");
+        }
+        if (colIndex > 0 && IsColumnHidden(colIndex - 1))
+            classes.Append("tm-spreadsheet-header-cell--hidden-before ");
+        return classes.ToString().Trim();
     }
+
+    private bool IsRowHidden(int rowIndex) =>
+        Sheet?.Rows.TryGetValue(rowIndex, out var r) == true && r.IsHidden;
+
+    private bool IsColumnHidden(int colIndex) =>
+        Sheet?.Columns.TryGetValue(colIndex, out var c) == true && c.IsHidden;
 
     private double GetRowHeight(int rowIndex)
     {
+        if (IsRowHidden(rowIndex)) return 0;
         if (_isResizingRow && rowIndex == _resizingRowIndex)
             return _resizePreviewHeight;
         if (Sheet?.Rows.TryGetValue(rowIndex, out var row) == true && row.Height.HasValue)
@@ -307,6 +367,7 @@ public partial class TmSpreadsheetGrid
 
     private double GetColumnWidth(int colIndex)
     {
+        if (IsColumnHidden(colIndex)) return 0;
         if (_isResizingCol && colIndex == _resizingColIndex)
             return _resizePreviewWidth;
         if (Sheet?.Columns.TryGetValue(colIndex, out var col) == true && col.Width.HasValue)
@@ -318,6 +379,7 @@ public partial class TmSpreadsheetGrid
     {
         if (_isResizingCol) return "cursor: col-resize;";
         if (_isResizingRow) return "cursor: row-resize;";
+        if (IsFormatPainterActive) return "cursor: crosshair;";
         return string.Empty;
     }
 
@@ -433,7 +495,15 @@ public partial class TmSpreadsheetGrid
             sb.Append($" font-family: {style.FontFamily}; font-size: {style.FontSize}pt;");
             if (style.Bold) sb.Append(" font-weight: bold;");
             if (style.Italic) sb.Append(" font-style: italic;");
-            if (style.Underline) sb.Append(" text-decoration: underline;");
+            if (style.Underline || style.DoubleUnderline || style.StrikeThrough)
+            {
+                var decorations = new System.Text.StringBuilder();
+                if (style.DoubleUnderline) decorations.Append(" underline");
+                else if (style.Underline) decorations.Append(" underline");
+                if (style.StrikeThrough) decorations.Append(" line-through");
+                sb.Append($" text-decoration:{decorations};");
+                if (style.DoubleUnderline) sb.Append(" text-decoration-style: double;");
+            }
 
             // Colors
             if (!string.IsNullOrEmpty(style.ForeColor) && style.ForeColor != "#000000")
@@ -442,10 +512,21 @@ public partial class TmSpreadsheetGrid
                 sb.Append($" background-color: {style.BackgroundColor};");
 
             // Alignment
-            sb.Append($" justify-content: {GetJustifyContent(style.HorizontalAlign)};");
+            sb.Append($" justify-content: {GetJustifyContent(GetEffectiveHAlign(style, cell))};");
             sb.Append($" align-items: {GetAlignItems(style.VerticalAlign)};");
             if (style.TextWrap)
                 sb.Append(" white-space: normal; word-break: break-word;");
+            if (style.Indent > 0)
+                sb.Append($" padding-left: {style.Indent * 12}px;");
+            if (style.TextRotation != 0)
+            {
+                if (style.TextRotation == 90)
+                    sb.Append(" writing-mode: vertical-rl; transform: rotate(180deg);");
+                else if (style.TextRotation == -90)
+                    sb.Append(" writing-mode: vertical-lr;");
+                else
+                    sb.Append($" transform: rotate({-style.TextRotation}deg);");
+            }
 
             // Borders
             AppendBorderStyle(sb, "border-top", style.BorderTop);
@@ -471,6 +552,19 @@ public partial class TmSpreadsheetGrid
             _ => "1px solid"
         };
         sb.Append($" {property}: {cssStyle} {border.Color};");
+    }
+
+    private static Enums.SpreadsheetHorizontalAlign GetEffectiveHAlign(SpreadsheetCellStyle? style, SpreadsheetCell? cell)
+    {
+        var align = style?.HorizontalAlign ?? Enums.SpreadsheetHorizontalAlign.General;
+        if (align != Enums.SpreadsheetHorizontalAlign.General)
+            return align;
+        return cell?.Value switch
+        {
+            double => Enums.SpreadsheetHorizontalAlign.Right,
+            bool => Enums.SpreadsheetHorizontalAlign.Center,
+            _ => Enums.SpreadsheetHorizontalAlign.Left
+        };
     }
 
     private static string GetJustifyContent(Enums.SpreadsheetHorizontalAlign align) => align switch
@@ -499,6 +593,17 @@ public partial class TmSpreadsheetGrid
     private void OnCellClick(string cellRef, MouseEventArgs e)
     {
         if (_isAutoFillDragging) return;
+
+        if (IsFormatPainterActive)
+        {
+            Sheet!.ActiveCellRef = cellRef;
+            SelectionStartRef = cellRef;
+            SelectionEndRef = cellRef;
+            ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+            OnFormatPainterApply.InvokeAsync(cellRef);
+            _shouldFocusAfterRender = true;
+            return;
+        }
 
         if (IsEditing && IsActiveCell(cellRef))
             return;
@@ -547,6 +652,64 @@ public partial class TmSpreadsheetGrid
     private void CloseContextMenu()
     {
         _contextMenuVisible = false;
+    }
+
+    private void ContextMenuFormatCells()
+    {
+        CloseContextMenu();
+        OnFormatCellsRequested.InvokeAsync();
+    }
+
+    private void ContextMenuActivateFormatPainter()
+    {
+        CloseContextMenu();
+        OnFormatPainterActivateRequested.InvokeAsync();
+    }
+
+    private void ContextMenuClearFormatting()
+    {
+        CloseContextMenu();
+        OnClearFormattingRequested.InvokeAsync();
+    }
+
+    private void ContextMenuClearContent()
+    {
+        CloseContextMenu();
+        OnClearContentRequested.InvokeAsync();
+    }
+
+    private void ContextMenuClearAll()
+    {
+        CloseContextMenu();
+        OnClearAllRequested.InvokeAsync();
+    }
+
+    private void ContextMenuHideRow()
+    {
+        CloseContextMenu();
+        var bounds = GetSelectionBounds();
+        OnHideRowsRequested.InvokeAsync((bounds.StartRow, bounds.EndRow));
+    }
+
+    private void ContextMenuUnhideRows()
+    {
+        CloseContextMenu();
+        var bounds = GetSelectionBounds();
+        OnUnhideRowsRequested.InvokeAsync((Math.Max(0, bounds.StartRow - 1), bounds.EndRow + 1));
+    }
+
+    private void ContextMenuHideColumn()
+    {
+        CloseContextMenu();
+        var bounds = GetSelectionBounds();
+        OnHideColumnsRequested.InvokeAsync((bounds.StartCol, bounds.EndCol));
+    }
+
+    private void ContextMenuUnhideColumns()
+    {
+        CloseContextMenu();
+        var bounds = GetSelectionBounds();
+        OnUnhideColumnsRequested.InvokeAsync((Math.Max(0, bounds.StartCol - 1), bounds.EndCol + 1));
     }
 
     private void ContextMenuCopy()
@@ -1002,6 +1165,12 @@ public partial class TmSpreadsheetGrid
                 case "a":
                     OnSelectAllRequested.InvokeAsync();
                     return;
+                case "1":
+                    OnFormatCellsRequested.InvokeAsync();
+                    return;
+                case "5":
+                    OnStrikeThroughToggleRequested.InvokeAsync();
+                    return;
                 case "Home":
                     MoveToCell(0, 0, e.ShiftKey);
                     return;
@@ -1035,6 +1204,11 @@ public partial class TmSpreadsheetGrid
                 MoveActiveCell(0, e.ShiftKey ? -1 : 1);
                 break;
             case "Escape":
+                if (IsFormatPainterActive)
+                {
+                    OnFormatPainterCancel.InvokeAsync();
+                    return;
+                }
                 SelectionEndRef = SelectionStartRef;
                 break;
             case "Delete":
