@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -12,6 +13,9 @@ public partial class TmNotionColumnBlock : ComponentBase
 
     [CascadingParameter]
     private NotionEditorContext Context { get; set; } = default!;
+
+    [Inject]
+    private IJSRuntime JS { get; set; } = default!;
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
@@ -31,26 +35,38 @@ public partial class TmNotionColumnBlock : ComponentBase
     private bool             _childrenLoaded;
     private Guid?            _activeChildId;
     private IPageBlock?      _lastBlock;
+    private ElementReference _elementRef;
+    private double           _lastAppliedWidthPercent = -1;
 
     // ── Computed ─────────────────────────────────────────────────────────────
-
-    private string _flexBasisStyle => WidthPercent > 0
-        ? $"{WidthPercent:F2}%"
-        : "0%";
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override void OnParametersSet()
     {
         if (ReferenceEquals(Block, _lastBlock)) return;
-        _lastBlock      = Block;
-        _childrenLoaded = false;
+        _lastBlock               = Block;
+        _childrenLoaded          = false;
+        _lastAppliedWidthPercent = -1; // force re-apply width to new element
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (!_childrenLoaded && !_loadingChildren)
             await LoadChildrenAsync();
+
+        if (Math.Abs(WidthPercent - _lastAppliedWidthPercent) > 0.01)
+        {
+            _lastAppliedWidthPercent = WidthPercent;
+            if (_elementRef.Context is not null)
+            {
+                try
+                {
+                    await JS.InvokeVoidAsync("tmNotionEditor.setColumnWidth", _elementRef, WidthPercent);
+                }
+                catch { }
+            }
+        }
     }
 
     // ── Children loading ──────────────────────────────────────────────────────

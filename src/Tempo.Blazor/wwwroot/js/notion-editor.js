@@ -663,6 +663,15 @@ window.tmNotionEditor = (function () {
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
+    // 54.0 — Column width helper
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function setColumnWidth(element, widthPercent) {
+        if (!element) return;
+        element.style.flexBasis = widthPercent.toFixed(2) + '%';
+    }
+
+    // ═══════════════════════════════════════════════════════════════════════════
     // 54.1 — Column resize
     // ═══════════════════════════════════════════════════════════════════════════
 
@@ -688,11 +697,26 @@ window.tmNotionEditor = (function () {
                 const totalW     = containerElement.offsetWidth;
                 const leftStart  = leftCol.offsetWidth;
                 const rightStart = rightCol.offsetWidth;
-                const minW       = Math.max(80, totalW * 0.1);
+                const minW       = Math.max(parseFloat(getComputedStyle(leftCol).minWidth) || 120, totalW * 0.1);
+
+                // Disable iframes during drag so they don't steal mouse events
+                let _iframeStyles = [];
+                const disableIframes = () => {
+                    _iframeStyles = [];
+                    containerElement.querySelectorAll('iframe').forEach(iframe => {
+                        _iframeStyles.push({ el: iframe, original: iframe.style.pointerEvents });
+                        iframe.style.pointerEvents = 'none';
+                    });
+                };
+                const restoreIframes = () => {
+                    _iframeStyles.forEach(item => { item.el.style.pointerEvents = item.original; });
+                    _iframeStyles = [];
+                };
 
                 document.body.style.cursor     = 'col-resize';
                 document.body.style.userSelect = 'none';
                 divider.classList.add('tm-notion-column-list__divider--active');
+                disableIframes();
 
                 const onMove = (e2) => {
                     const delta    = e2.clientX - startX;
@@ -708,6 +732,7 @@ window.tmNotionEditor = (function () {
                     divider.classList.remove('tm-notion-column-list__divider--active');
                     document.removeEventListener('mousemove', onMove);
                     document.removeEventListener('mouseup',   onUp);
+                    restoreIframes();
 
                     const allCols   = Array.from(containerElement.querySelectorAll('[data-col-index]'))
                         .sort((a, b) => parseInt(a.dataset.colIndex) - parseInt(b.dataset.colIndex));
@@ -1498,6 +1523,8 @@ window.tmNotionEditor = (function () {
         handlePaste, copyBlocksToClipboard,
         // 26.8
         initResizeHandle, destroyResizeHandle,
+        // 54.0
+        setColumnWidth,
         // 54.1
         initColumnResize, destroyColumnResize,
         // 26.9

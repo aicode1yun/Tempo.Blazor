@@ -2,9 +2,9 @@
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.Components.NotionEditor.Blocks
 
-<div class="tm-notion-column"
+<div @ref="_elementRef" class="tm-notion-column"
      data-col-index="@ColumnIndex"
-     style="flex-basis:@(_flexBasisStyle);min-width:var(--tm-column-min-width,120px);flex-grow:0;flex-shrink:0;">
+     style="min-width:var(--tm-column-min-width,120px);flex-grow:0;flex-shrink:0;">
 
     @if (_loadingChildren)
     {
