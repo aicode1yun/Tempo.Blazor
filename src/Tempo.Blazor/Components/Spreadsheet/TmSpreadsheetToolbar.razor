@@ -135,22 +135,58 @@
 
             <div class="tm-spreadsheet-toolbar__divider"></div>
 
-            <!-- Colors Group -->
+            <!-- Text Color Picker -->
             <div class="tm-spreadsheet-toolbar__group">
-                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasTextColor)"
-                        title="@Loc["TmSpreadsheet_TextColor"]"
-                        @onclick="OnTextColorClick">
-                    <span class="tm-spreadsheet-toolbar__color-preview"
-                          style="border-bottom-color: @(TextColor ?? "currentColor")">A</span>
-                </button>
-                <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasBackgroundColor)"
-                        title="@Loc["TmSpreadsheet_BackgroundColor"]"
-                        @onclick="OnBackgroundColorClick">
-                    <span class="tm-spreadsheet-toolbar__color-preview tm-spreadsheet-toolbar__color-preview--bg"
-                          style="background: @(BackgroundColor ?? "transparent")">
-                        <TmIcon Name="fill" />
-                    </span>
-                </button>
+                <div class="tm-color-picker-inline">
+                    <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasTextColor)"
+                            title="@Loc["TmSpreadsheet_TextColor"]"
+                            @onclick="() => OnTextColorChanged.InvokeAsync(TextColor)">
+                        <span class="tm-spreadsheet-toolbar__color-preview"
+                              style="border-bottom-color: @(TextColor ?? "currentColor")">A</span>
+                    </button>
+                    <button class="tm-spreadsheet-toolbar__button tm-color-picker-inline__chevron"
+                            title="@Loc["TmSpreadsheet_TextColorPicker"]"
+                            @onclick="() => _isTextColorOpen = !_isTextColorOpen">
+                        ▾
+                    </button>
+                    @if (_isTextColorOpen)
+                    {
+                        <div class="tm-color-picker-inline__dropdown" @onclick:stopPropagation>
+                            <TmFlatColorPicker Value="@(TextColor ?? "#000000")"
+                                               ValueChanged="OnTextColorSelected"
+                                               ShowAlpha="false"
+                                               ShowPreview="false"
+                                               ShowClearButton="true" />
+                        </div>
+                    }
+                </div>
+
+                <!-- Background Color Picker -->
+                <div class="tm-color-picker-inline">
+                    <button class="tm-spreadsheet-toolbar__button @GetActiveClass(HasBackgroundColor)"
+                            title="@Loc["TmSpreadsheet_BackgroundColor"]"
+                            @onclick="() => OnBackgroundColorChanged.InvokeAsync(BackgroundColor)">
+                        <span class="tm-spreadsheet-toolbar__color-preview tm-spreadsheet-toolbar__color-preview--bg"
+                              style="background: @(BackgroundColor ?? "transparent")">
+                            <TmIcon Name="fill" />
+                        </span>
+                    </button>
+                    <button class="tm-spreadsheet-toolbar__button tm-color-picker-inline__chevron"
+                            title="@Loc["TmSpreadsheet_BackgroundColorPicker"]"
+                            @onclick="() => _isBackgroundColorOpen = !_isBackgroundColorOpen">
+                        ▾
+                    </button>
+                    @if (_isBackgroundColorOpen)
+                    {
+                        <div class="tm-color-picker-inline__dropdown" @onclick:stopPropagation>
+                            <TmFlatColorPicker Value="@(BackgroundColor ?? "transparent")"
+                                               ValueChanged="OnBackgroundColorSelected"
+                                               ShowAlpha="false"
+                                               ShowPreview="false"
+                                               ShowClearButton="true" />
+                        </div>
+                    }
+                </div>
             </div>
 
             <div class="tm-spreadsheet-toolbar__divider"></div>

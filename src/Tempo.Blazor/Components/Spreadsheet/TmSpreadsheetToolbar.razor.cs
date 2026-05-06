@@ -168,11 +168,11 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Called when the Format Cells button/dialog is requested.</summary>
     [Parameter] public EventCallback OnFormatCells { get; set; }
 
-    /// <summary>Called when the text color button is clicked.</summary>
-    [Parameter] public EventCallback OnTextColorClick { get; set; }
+    /// <summary>Called when the text color is selected from the color picker.</summary>
+    [Parameter] public EventCallback<string?> OnTextColorChanged { get; set; }
 
-    /// <summary>Called when the background color button is clicked.</summary>
-    [Parameter] public EventCallback OnBackgroundColorClick { get; set; }
+    /// <summary>Called when the background color is selected from the color picker.</summary>
+    [Parameter] public EventCallback<string?> OnBackgroundColorChanged { get; set; }
 
     /// <summary>Called when the horizontal alignment changes.</summary>
     [Parameter] public EventCallback<string?> OnAlignChanged { get; set; }
@@ -219,8 +219,10 @@ public partial class TmSpreadsheetToolbar
     /// <summary>Called when the "More Borders..." option is chosen (opens Format Cells on Border tab).</summary>
     [Parameter] public EventCallback OnOpenBorderDialog { get; set; }
 
-    // Border picker dropdown state
+    // Dropdown states
     private bool _isBorderDropdownOpen;
+    private bool _isTextColorOpen;
+    private bool _isBackgroundColorOpen;
     private BorderPreset _lastBorderPreset = BorderPreset.AllBorders;
 
     private bool HasTextColor => !string.IsNullOrEmpty(TextColor);
@@ -246,6 +248,18 @@ public partial class TmSpreadsheetToolbar
     {
         _isBorderDropdownOpen = false;
         await OnOpenBorderDialog.InvokeAsync();
+    }
+
+    private async Task OnTextColorSelected(string? color)
+    {
+        _isTextColorOpen = false;
+        await OnTextColorChanged.InvokeAsync(color);
+    }
+
+    private async Task OnBackgroundColorSelected(string? color)
+    {
+        _isBackgroundColorOpen = false;
+        await OnBackgroundColorChanged.InvokeAsync(color);
     }
 
     private static string GetBorderPresetIcon(BorderPreset preset) => preset switch

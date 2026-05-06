@@ -626,31 +626,14 @@ public partial class TmSpreadsheet
         });
     }
 
-    private void ShowTextColorPicker()
+    private void ApplyTextColor(string? color)
     {
-        // Phase 4 will implement a real color picker popup.
-        // For now toggle between black, red, blue as a demo.
-        var current = GetActiveCellStyle()?.ForeColor ?? "#000000";
-        var next = current switch
-        {
-            "#000000" => "#FF0000",
-            "#FF0000" => "#0000FF",
-            _ => "#000000"
-        };
-        ApplyStyleToSelection(s => s.ForeColor = next);
+        ApplyStyleToSelection(s => s.ForeColor = string.IsNullOrEmpty(color) ? "#000000" : color);
     }
 
-    private void ShowBackgroundColorPicker()
+    private void ApplyBackgroundColor(string? color)
     {
-        var current = GetActiveCellStyle()?.BackgroundColor ?? "transparent";
-        var next = current switch
-        {
-            "transparent" => "#FFFF00",
-            "#FFFF00" => "#90EE90",
-            "#90EE90" => "transparent",
-            _ => "transparent"
-        };
-        ApplyStyleToSelection(s => s.BackgroundColor = next);
+        ApplyStyleToSelection(s => s.BackgroundColor = string.IsNullOrEmpty(color) ? "transparent" : color);
     }
 
     private void ApplyAlign(string? align)

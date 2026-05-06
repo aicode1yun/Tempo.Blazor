@@ -231,6 +231,36 @@
     margin: var(--tm-space-1) 0;
 }
 
+/* ── Inline Color Picker ── */
+
+.tm-color-picker-inline {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+
+.tm-color-picker-inline__chevron {
+    width: 16px !important;
+    font-size: 10px !important;
+    padding: 0 !important;
+    margin-left: -2px;
+}
+
+.tm-color-picker-inline__dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    z-index: 100;
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    box-shadow: var(--tm-shadow-lg);
+    padding: var(--tm-space-2);
+    min-width: 220px;
+    max-height: 320px;
+    overflow-y: auto;
+}
+
 /* ── Responsive ── */
 @media (max-width: 768px) {
     .tm-spreadsheet-toolbar__tab {
