@@ -54,6 +54,27 @@ public class FormulaLexerTests
     }
 
     [Fact]
+    public void Tokenize_AbsoluteColRelativeRow()
+    {
+        var tokens = FormulaLexer.Tokenize("=$A1");
+        tokens.Should().Contain(t => t.Type == TokenType.CellRef && t.Value == "$A1");
+    }
+
+    [Fact]
+    public void Tokenize_RelativeColAbsoluteRow()
+    {
+        var tokens = FormulaLexer.Tokenize("=A$1");
+        tokens.Should().Contain(t => t.Type == TokenType.CellRef && t.Value == "A$1");
+    }
+
+    [Fact]
+    public void Tokenize_AbsoluteRangeRef()
+    {
+        var tokens = FormulaLexer.Tokenize("=$A$1:$B$3");
+        tokens.Should().Contain(t => t.Type == TokenType.RangeRef && t.Value == "$A$1:$B$3");
+    }
+
+    [Fact]
     public void Tokenize_RangeRef()
     {
         var tokens = FormulaLexer.Tokenize("=A1:B10");

@@ -1,3 +1,4 @@
+using Tempo.Blazor.Components.Spreadsheet.Formula;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 
 namespace Tempo.Blazor.Components.Spreadsheet.Commands;
@@ -27,6 +28,7 @@ public sealed class PasteCommand : ISpreadsheetCommand
         var dRow = targetStart.StartRow - sourceStart.StartRow;
         var dCol = targetStart.StartCol - sourceStart.StartCol;
 
+        var destRefs = new List<string>();
         foreach (var kv in SpreadsheetClipboard.Cells)
         {
             var src = SpreadsheetRange.Parse(kv.Key + ":" + kv.Key);
@@ -35,7 +37,28 @@ public sealed class PasteCommand : ISpreadsheetCommand
             var destRef = $"{SpreadsheetRange.ColumnIndexToLetters(destCol)}{destRow + 1}";
 
             _previousCells[destRef] = _sheet.Cells.TryGetValue(destRef, out var existing) ? existing.Clone() : null;
-            _sheet.Cells[destRef] = kv.Value.Clone();
+
+            var clonedCell = kv.Value.Clone();
+            // For copy (not cut): adjust relative formula references by the paste offset
+            if (!SpreadsheetClipboard.IsCut && clonedCell.Formula is not null)
+            {
+                clonedCell.Formula = FormulaReferenceAdjuster.AdjustFormula(clonedCell.Formula, dRow, dCol);
+                clonedCell.Value = null;
+                clonedCell.DisplayValue = null;
+            }
+
+            _sheet.Cells[destRef] = clonedCell;
+            destRefs.Add(destRef);
+        }
+
+        // Update dependency graph and evaluate adjusted formulas
+        foreach (var destRef in destRefs)
+        {
+            if (_sheet.Cells.TryGetValue(destRef, out var cell) && cell.Formula is not null)
+            {
+                _sheet.UpdateDependencies(destRef);
+                _sheet.EvaluateFormula(destRef);
+            }
         }
 
         if (SpreadsheetClipboard.IsCut)

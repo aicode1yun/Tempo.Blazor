@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Spreadsheet.Format;
+using Tempo.Blazor.Components.Spreadsheet.Formula;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 
 namespace Tempo.Blazor.Components.Spreadsheet;
@@ -20,6 +21,35 @@ public partial class TmSpreadsheetGrid
     private bool _isAutoFillDragging;
     private string? _autoFillSourceRange;
     private string? _autoFillPreviewRange;
+
+    private bool _isResizingCol;
+    private int _resizingColIndex;
+    private double _resizeStartX;
+    private double _resizeStartWidth;
+    private double _resizePreviewWidth;
+
+    private bool _isResizingRow;
+    private int _resizingRowIndex;
+    private double _resizeStartY;
+    private double _resizeStartHeight;
+    private double _resizePreviewHeight;
+
+    private bool _showColWidthDialog;
+    private bool _showRowHeightDialog;
+    private int _contextMenuColIndex;
+    private int _contextMenuRowIndex;
+    private string _colWidthInputValue = "";
+    private string _rowHeightInputValue = "";
+
+    // Formula-point mode — range drag
+    private bool _isFormulaPointDragging;
+    private string? _formulaPointDragAnchor;
+    private string? _formulaPointDragCurrent;
+
+    // Formula-point mode — reference colour cache
+    private readonly Dictionary<string, int> _formulaRefColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<(int Sr, int Sc, int Er, int Ec, int Ci)> _formulaRangeColors = [];
+    private const int FormulaRefColorCount = 6;
 
     private bool _contextMenuVisible;
     private double _contextMenuX;
@@ -91,8 +121,20 @@ public partial class TmSpreadsheetGrid
     /// <summary>Called when the user clicks another cell while editing a formula, to insert its reference.</summary>
     [Parameter] public EventCallback<string> OnCellReferenceRequested { get; set; }
 
+    /// <summary>Called when the user resizes a column (drag or dialog). Parent should apply ResizeColumnCommand.</summary>
+    [Parameter] public EventCallback<(int ColIndex, double Width)> OnColumnResizeRequested { get; set; }
+
+    /// <summary>Called when the user resizes a row (drag or dialog). Parent should apply ResizeRowCommand.</summary>
+    [Parameter] public EventCallback<(int RowIndex, double Height)> OnRowResizeRequested { get; set; }
+
     /// <summary>Whether a cell is currently being edited.</summary>
     public bool IsEditing { get; private set; }
+
+    /// <summary>True while editing a formula (value starts with '=').</summary>
+    public bool IsInFormulaPointMode => IsEditing && _editValue?.StartsWith("=") == true;
+
+    /// <summary>Gets the current live edit value (not yet committed to the cell).</summary>
+    public string? CurrentEditValue => _editValue;
 
     /// <summary>Whether row virtualization is active (no freeze rows, not editing).</summary>
     private bool UseVirtualization => Sheet?.FreezeRowCount == 0 && !IsEditing;
@@ -195,12 +237,14 @@ public partial class TmSpreadsheetGrid
         return row >= bounds.StartRow && row <= bounds.EndRow && col >= bounds.StartCol && col <= bounds.EndCol;
     }
 
-    private string GetCellClass(bool isActive, bool isSelected, bool isMergedHidden)
+    private string GetCellClass(bool isActive, bool isSelected, bool isMergedHidden, string cellRef)
     {
         var classes = new System.Text.StringBuilder();
         if (isActive) classes.Append(" tm-spreadsheet-cell--active");
-        if (isSelected) classes.Append(" tm-spreadsheet-cell--selected");
+        if (isSelected && !IsInFormulaPointMode) classes.Append(" tm-spreadsheet-cell--selected");
         if (isMergedHidden) classes.Append(" tm-spreadsheet-cell--merged-hidden");
+        var colorIdx = GetFormulaRefColorIndex(cellRef);
+        if (colorIdx >= 0) classes.Append($" tm-spreadsheet-cell--formula-ref-{colorIdx}");
         return classes.ToString().Trim();
     }
 
@@ -251,6 +295,8 @@ public partial class TmSpreadsheetGrid
 
     private double GetRowHeight(int rowIndex)
     {
+        if (_isResizingRow && rowIndex == _resizingRowIndex)
+            return _resizePreviewHeight;
         if (Sheet?.Rows.TryGetValue(rowIndex, out var row) == true && row.Height.HasValue)
             return row.Height.Value;
         return RowHeight;
@@ -258,9 +304,18 @@ public partial class TmSpreadsheetGrid
 
     private double GetColumnWidth(int colIndex)
     {
+        if (_isResizingCol && colIndex == _resizingColIndex)
+            return _resizePreviewWidth;
         if (Sheet?.Columns.TryGetValue(colIndex, out var col) == true && col.Width.HasValue)
             return col.Width.Value;
         return ColumnWidth;
+    }
+
+    private string GetGridCursorStyle()
+    {
+        if (_isResizingCol) return "cursor: col-resize;";
+        if (_isResizingRow) return "cursor: row-resize;";
+        return string.Empty;
     }
 
     private double GetCumulativeRowHeight(int upToRow)
@@ -447,12 +502,8 @@ public partial class TmSpreadsheetGrid
 
         if (IsEditing)
         {
-            // If editing a formula, clicking another cell inserts its reference
-            if (_editValue?.StartsWith("=") == true)
-            {
-                OnCellReferenceRequested.InvokeAsync(cellRef);
-                return;
-            }
+            // Formula-point mode: reference insertion is handled by onmousedown / onmouseenter
+            if (IsInFormulaPointMode) return;
             CommitEdit();
         }
 
@@ -485,6 +536,9 @@ public partial class TmSpreadsheetGrid
         _contextMenuX = e.ClientX;
         _contextMenuY = e.ClientY;
         _contextMenuVisible = true;
+        var (row, col) = ParseCellRef(Sheet?.ActiveCellRef ?? "A1");
+        _contextMenuColIndex = col;
+        _contextMenuRowIndex = row;
     }
 
     private void CloseContextMenu()
@@ -534,6 +588,87 @@ public partial class TmSpreadsheetGrid
         OnDeleteColumnRequested.InvokeAsync();
     }
 
+    private void ContextMenuSetColumnWidth()
+    {
+        CloseContextMenu();
+        _colWidthInputValue = ((int)Math.Round(GetColumnWidth(_contextMenuColIndex))).ToString();
+        _showColWidthDialog = true;
+    }
+
+    private void ContextMenuSetRowHeight()
+    {
+        CloseContextMenu();
+        _rowHeightInputValue = ((int)Math.Round(GetRowHeight(_contextMenuRowIndex))).ToString();
+        _showRowHeightDialog = true;
+    }
+
+    private void ApplyColWidth()
+    {
+        if (double.TryParse(_colWidthInputValue, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var width) && width >= 16)
+        {
+            OnColumnResizeRequested.InvokeAsync((_contextMenuColIndex, width));
+        }
+        _showColWidthDialog = false;
+    }
+
+    private void ApplyRowHeight()
+    {
+        if (double.TryParse(_rowHeightInputValue, System.Globalization.NumberStyles.Any,
+            System.Globalization.CultureInfo.InvariantCulture, out var height) && height >= 8)
+        {
+            OnRowResizeRequested.InvokeAsync((_contextMenuRowIndex, height));
+        }
+        _showRowHeightDialog = false;
+    }
+
+    private void OnColWidthInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ApplyColWidth();
+        else if (e.Key == "Escape") _showColWidthDialog = false;
+    }
+
+    private void OnRowHeightInputKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter") ApplyRowHeight();
+        else if (e.Key == "Escape") _showRowHeightDialog = false;
+    }
+
+    private void OnColResizerMouseDown(MouseEventArgs e, int colIndex)
+    {
+        _isResizingCol = true;
+        _resizingColIndex = colIndex;
+        _resizeStartX = e.ClientX;
+        _resizeStartWidth = GetColumnWidth(colIndex);
+        _resizePreviewWidth = _resizeStartWidth;
+    }
+
+    private void OnRowResizerMouseDown(MouseEventArgs e, int rowIndex)
+    {
+        _isResizingRow = true;
+        _resizingRowIndex = rowIndex;
+        _resizeStartY = e.ClientY;
+        _resizeStartHeight = GetRowHeight(rowIndex);
+        _resizePreviewHeight = _resizeStartHeight;
+    }
+
+    private void OnColResizerDoubleClick(int colIndex)
+    {
+        if (Sheet is null) return;
+        var maxLen = 0;
+        for (var r = 0; r < Sheet.RowCount; r++)
+        {
+            var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(colIndex)}{r + 1}";
+            if (Sheet.Cells.TryGetValue(cellRef, out var cell))
+            {
+                var text = cell.DisplayValue ?? cell.Value?.ToString() ?? string.Empty;
+                if (text.Length > maxLen) maxLen = text.Length;
+            }
+        }
+        var autoWidth = Math.Max(40.0, maxLen * 7.5 + 16);
+        OnColumnResizeRequested.InvokeAsync((colIndex, autoWidth));
+    }
+
     private void OnAutoFillMouseDown(MouseEventArgs e)
     {
         if (Sheet is null) return;
@@ -545,6 +680,22 @@ public partial class TmSpreadsheetGrid
 
     private void OnAutoFillMouseMove(MouseEventArgs e)
     {
+        if (_isResizingCol)
+        {
+            var delta = e.ClientX - _resizeStartX;
+            _resizePreviewWidth = Math.Max(16, _resizeStartWidth + delta);
+            StateHasChanged();
+            return;
+        }
+
+        if (_isResizingRow)
+        {
+            var delta = e.ClientY - _resizeStartY;
+            _resizePreviewHeight = Math.Max(8, _resizeStartHeight + delta);
+            StateHasChanged();
+            return;
+        }
+
         if (!_isAutoFillDragging || Sheet is null) return;
 
         // Calculate target cell from mouse position relative to grid
@@ -574,6 +725,33 @@ public partial class TmSpreadsheetGrid
 
     private void OnAutoFillMouseUp(MouseEventArgs e)
     {
+        if (_isResizingCol)
+        {
+            var finalWidth = Math.Max(16, _resizePreviewWidth);
+            _isResizingCol = false;
+            OnColumnResizeRequested.InvokeAsync((_resizingColIndex, finalWidth));
+            StateHasChanged();
+            return;
+        }
+
+        if (_isResizingRow)
+        {
+            var finalHeight = Math.Max(8, _resizePreviewHeight);
+            _isResizingRow = false;
+            OnRowResizeRequested.InvokeAsync((_resizingRowIndex, finalHeight));
+            StateHasChanged();
+            return;
+        }
+
+        if (_isFormulaPointDragging)
+        {
+            _isFormulaPointDragging = false;
+            _formulaPointDragAnchor = null;
+            _formulaPointDragCurrent = null;
+            _shouldFocusAfterRender = true;
+            return;
+        }
+
         if (!_isAutoFillDragging || Sheet is null || _autoFillSourceRange is null || _autoFillPreviewRange is null)
         {
             _isAutoFillDragging = false;
@@ -687,9 +865,19 @@ public partial class TmSpreadsheetGrid
         StateHasChanged();
     }
 
+    /// <summary>Inserts or replaces the last cell reference in the formula (formula-point mode).</summary>
+    public void InsertCellRefIntoFormula(string cellRef)
+    {
+        _editValue = FormulaReferenceAdjuster.InsertOrReplaceLastRef(_editValue ?? "=", cellRef);
+        RefreshFormulaRefColors();
+        _shouldFocusAfterRender = true;
+        StateHasChanged();
+    }
+
     private void OnEditInput(ChangeEventArgs e)
     {
         _editValue = e.Value?.ToString();
+        RefreshFormulaRefColors();
     }
 
     private void HandleEditKeyDown(KeyboardEventArgs e)
@@ -707,6 +895,13 @@ public partial class TmSpreadsheetGrid
                 CommitEdit();
                 MoveActiveCell(0, e.ShiftKey ? -1 : 1); // horizontal
                 break;
+            case "F4":
+                if (_editValue?.StartsWith("=") == true)
+                {
+                    _editValue = FormulaReferenceAdjuster.CycleLastAbsoluteRef(_editValue);
+                    StateHasChanged();
+                }
+                break;
         }
     }
 
@@ -714,6 +909,8 @@ public partial class TmSpreadsheetGrid
     {
         if (!IsEditing) return;
         IsEditing = false;
+        _formulaRefColors.Clear();
+        _formulaRangeColors.Clear();
         var cellRef = Sheet?.ActiveCellRef;
         if (cellRef is not null && _editValue is not null)
         {
@@ -729,6 +926,8 @@ public partial class TmSpreadsheetGrid
     private void CancelEdit()
     {
         IsEditing = false;
+        _formulaRefColors.Clear();
+        _formulaRangeColors.Clear();
         _editValue = null;
         _shouldFocusAfterRender = true;
         OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet!, Sheet?.ActiveCellRef ?? "A1", false));
@@ -867,6 +1066,79 @@ public partial class TmSpreadsheetGrid
             if (col > lastCol) lastCol = col;
         }
         MoveToCell(lastRow, lastCol, extendSelection);
+    }
+
+    // ── Formula-point mode helpers ───────────────────────────────────────────
+
+    private void RefreshFormulaRefColors()
+    {
+        _formulaRefColors.Clear();
+        _formulaRangeColors.Clear();
+        if (!IsInFormulaPointMode || string.IsNullOrEmpty(_editValue)) return;
+        var refs = FormulaReferenceAdjuster.ParseFormulaReferences(_editValue);
+        for (int i = 0; i < refs.Count; i++)
+        {
+            var raw = refs[i];
+            var colorIdx = i % FormulaRefColorCount;
+            if (raw.Contains(':'))
+            {
+                try
+                {
+                    var range = SpreadsheetRange.Parse(raw);
+                    _formulaRangeColors.Add((range.StartRow, range.StartCol, range.EndRow, range.EndCol, colorIdx));
+                }
+                catch { }
+            }
+            else
+            {
+                _formulaRefColors[raw.Replace("$", "").ToUpperInvariant()] = colorIdx;
+            }
+        }
+    }
+
+    private int GetFormulaRefColorIndex(string cellRef)
+    {
+        if (_formulaRefColors.Count == 0 && _formulaRangeColors.Count == 0) return -1;
+        if (_formulaRefColors.TryGetValue(cellRef.Replace("$", "").ToUpperInvariant(), out var idx)) return idx;
+        var (row, col) = ParseCellRef(cellRef);
+        foreach (var (sr, sc, er, ec, ci) in _formulaRangeColors)
+        {
+            if (row >= sr && row <= er && col >= sc && col <= ec) return ci;
+        }
+        return -1;
+    }
+
+    private void OnCellMouseDown(string cellRef, MouseEventArgs e)
+    {
+        if (!IsInFormulaPointMode) return;
+        if (IsActiveCell(cellRef)) return;
+        _isFormulaPointDragging = true;
+        _formulaPointDragAnchor = cellRef;
+        _formulaPointDragCurrent = cellRef;
+        _ = OnCellReferenceRequested.InvokeAsync(cellRef);
+    }
+
+    private void OnCellMouseEnter(string cellRef)
+    {
+        if (!_isFormulaPointDragging || _formulaPointDragAnchor is null) return;
+        if (cellRef == _formulaPointDragCurrent) return;
+        _formulaPointDragCurrent = cellRef;
+        var rangeRef = BuildFormulaPointRange(_formulaPointDragAnchor, cellRef);
+        _editValue = FormulaReferenceAdjuster.InsertOrReplaceLastRef(_editValue ?? "=", rangeRef);
+        RefreshFormulaRefColors();
+        StateHasChanged();
+    }
+
+    private static string BuildFormulaPointRange(string anchor, string current)
+    {
+        var (ar, ac) = ParseCellRef(anchor);
+        var (cr, cc) = ParseCellRef(current);
+        var sr = Math.Min(ar, cr);
+        var er = Math.Max(ar, cr);
+        var sc = Math.Min(ac, cc);
+        var ec = Math.Max(ac, cc);
+        if (sr == er && sc == ec) return anchor;
+        return $"{ToCellRef(sr, sc)}:{ToCellRef(er, ec)}";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)

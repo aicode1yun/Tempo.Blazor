@@ -35,13 +35,24 @@ public partial class TmSpreadsheetSheetTabs
     /// <summary>Called when a sheet should be renamed.</summary>
     [Parameter] public EventCallback<(int Index, string NewName)> OnRenameSheetRequested { get; set; }
 
+    /// <summary>Whether formula-point mode is active (tab click selects sheet for formula rather than switching view).</summary>
+    [Parameter] public bool IsFormulaPointMode { get; set; }
+
+    /// <summary>Called when a tab is clicked in formula-point mode to switch the displayed sheet for ref selection.</summary>
+    [Parameter] public EventCallback<int> OnSheetSelectedForFormula { get; set; }
+
     private void OnTabClick(int index)
     {
         CloseContextMenu();
         if (_editingIndex == index) return;
         _editingIndex = -1;
         if (index != ActiveIndex)
-            OnActiveSheetChanged.InvokeAsync(index);
+        {
+            if (IsFormulaPointMode)
+                OnSheetSelectedForFormula.InvokeAsync(index);
+            else
+                OnActiveSheetChanged.InvokeAsync(index);
+        }
     }
 
     private void OnCloseClick(MouseEventArgs e, int index)

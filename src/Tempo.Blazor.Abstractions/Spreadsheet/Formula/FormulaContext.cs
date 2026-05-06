@@ -17,7 +17,7 @@ public sealed class FormulaContext
     /// <summary>Resolves a cell reference to its raw value.</summary>
     public object? ResolveCellRef(string cellRef)
     {
-        var cell = Sheet.Cells.GetValueOrDefault(cellRef.ToUpperInvariant());
+        var cell = Sheet.Cells.GetValueOrDefault(cellRef.Replace("$", "").ToUpperInvariant());
         if (cell is null) return null;
         // If the referenced cell has a formula, evaluate it recursively
         if (!string.IsNullOrEmpty(cell.Formula) && cell.DisplayValue is null)

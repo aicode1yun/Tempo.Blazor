@@ -40,6 +40,20 @@ public class FormulaParserTests
     }
 
     [Fact]
+    public void Parse_AbsoluteCellRef_PreservesDoларSign()
+    {
+        var node = Parse("=$A$1");
+        node.Should().BeOfType<CellRefNode>().Which.Ref.Should().Be("$A$1");
+    }
+
+    [Fact]
+    public void Parse_MixedAbsoluteCellRef()
+    {
+        var node = Parse("=$B5");
+        node.Should().BeOfType<CellRefNode>().Which.Ref.Should().Be("$B5");
+    }
+
+    [Fact]
     public void Parse_RangeRef()
     {
         var node = Parse("=A1:B10");

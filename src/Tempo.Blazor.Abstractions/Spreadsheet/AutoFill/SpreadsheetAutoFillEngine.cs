@@ -1,5 +1,6 @@
 using System.Globalization;
 using System.Text.RegularExpressions;
+using Tempo.Blazor.Components.Spreadsheet.Formula;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 
 namespace Tempo.Blazor.Components.Spreadsheet.AutoFill;
@@ -47,10 +48,29 @@ public sealed class SpreadsheetAutoFillEngine
 
     private void FillVertical(SpreadsheetRange source, SpreadsheetRange target)
     {
+        var col = source.StartCol;
+
+        // If the single source cell has a formula, fill with adjusted formulas
+        if (source.RowCount == 1)
+        {
+            var srcRef = $"{SpreadsheetRange.ColumnIndexToLetters(col)}{source.StartRow + 1}";
+            var srcCell = _sheet.Cells.GetValueOrDefault(srcRef);
+            if (srcCell?.Formula is not null)
+            {
+                for (var row = target.StartRow; row <= target.EndRow; row++)
+                {
+                    var dRow = row - source.StartRow;
+                    var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(col)}{row + 1}";
+                    FillFormulaCell(cellRef, srcCell.Formula, dRow, 0);
+                }
+                return;
+            }
+        }
+
+        // Value pattern fill
         var values = GetColumnValues(source);
         var pattern = DetectPattern(values);
 
-        var col = source.StartCol;
         for (var row = target.StartRow; row <= target.EndRow; row++)
         {
             var index = row - target.StartRow;
@@ -62,10 +82,29 @@ public sealed class SpreadsheetAutoFillEngine
 
     private void FillHorizontal(SpreadsheetRange source, SpreadsheetRange target)
     {
+        var row = source.StartRow;
+
+        // If the single source cell has a formula, fill with adjusted formulas
+        if (source.ColumnCount == 1)
+        {
+            var srcRef = $"{SpreadsheetRange.ColumnIndexToLetters(source.StartCol)}{row + 1}";
+            var srcCell = _sheet.Cells.GetValueOrDefault(srcRef);
+            if (srcCell?.Formula is not null)
+            {
+                for (var col = target.StartCol; col <= target.EndCol; col++)
+                {
+                    var dCol = col - source.StartCol;
+                    var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(col)}{row + 1}";
+                    FillFormulaCell(cellRef, srcCell.Formula, 0, dCol);
+                }
+                return;
+            }
+        }
+
+        // Value pattern fill
         var values = GetRowValues(source);
         var pattern = DetectPattern(values);
 
-        var row = source.StartRow;
         for (var col = target.StartCol; col <= target.EndCol; col++)
         {
             var index = col - target.StartCol;
@@ -78,12 +117,36 @@ public sealed class SpreadsheetAutoFillEngine
     private void FillSingle(SpreadsheetRange source, SpreadsheetRange target)
     {
         var sourceRef = $"{SpreadsheetRange.ColumnIndexToLetters(source.StartCol)}{source.StartRow + 1}";
-        var value = _sheet.Cells.GetValueOrDefault(sourceRef)?.Value;
+        var srcCell = _sheet.Cells.GetValueOrDefault(sourceRef);
 
+        if (srcCell?.Formula is not null)
+        {
+            foreach (var cellRef in target.CellRefs)
+            {
+                var range = SpreadsheetRange.Parse(cellRef + ":" + cellRef);
+                var dRow = range.StartRow - source.StartRow;
+                var dCol = range.StartCol - source.StartCol;
+                FillFormulaCell(cellRef, srcCell.Formula, dRow, dCol);
+            }
+            return;
+        }
+
+        var value = srcCell?.Value;
         foreach (var cellRef in target.CellRefs)
         {
             _sheet.Cells[cellRef] = new SpreadsheetCell { Value = value };
         }
+    }
+
+    private void FillFormulaCell(string cellRef, string sourceFormula, int dRow, int dCol)
+    {
+        var adjustedFormula = FormulaReferenceAdjuster.AdjustFormula(sourceFormula, dRow, dCol);
+        var cell = _sheet.GetOrCreateCell(cellRef);
+        cell.Formula = adjustedFormula;
+        cell.Value = null;
+        cell.DisplayValue = null;
+        _sheet.UpdateDependencies(cellRef);
+        _sheet.EvaluateFormula(cellRef);
     }
 
     private List<object?> GetColumnValues(SpreadsheetRange range)

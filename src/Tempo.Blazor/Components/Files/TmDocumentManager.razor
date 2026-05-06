@@ -65,6 +65,13 @@
                     <span>@Loc["TmFileManager_Download"]</span>
                 </button>
             }
+            @if (ShowDownloadButton && !Disabled && CanDownloadAllSelection())
+            {
+                <button type="button" class="tm-file-manager__toolbar-button" @onclick="DownloadAllSelectedAsync">
+                    <TmIcon Name="archive" />
+                    <span>@Loc["TmFileManager_DownloadAll"]</span>
+                </button>
+            }
             @if (ShowMoveButton && !Disabled && CanMoveSelection())
             {
                 <button type="button" class="tm-file-manager__toolbar-button" @onclick="MoveSelectedAsync">

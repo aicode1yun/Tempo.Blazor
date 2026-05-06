@@ -225,11 +225,17 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
     private bool CanDownload(DocumentManagerItem<TMetadata> item)
         => !RespectPermissions || (item.Permissions?.CanDownload ?? true);
 
+    private bool CanDownloadAll(DocumentManagerItem<TMetadata> item)
+        => !item.IsDirectory && item.Attachments.Count > 1 && CanDownload(item);
+
     private bool CanShare(DocumentManagerItem<TMetadata> item)
         => !RespectPermissions || (item.Permissions?.CanShare ?? true);
 
     private bool CanDeleteSelection()
         => _selectedItems.Count > 0 && _selectedItems.All(CanDelete);
+
+    private bool CanDownloadAllSelection()
+        => _selectedItems.Count == 1 && CanDownloadAll(_selectedItems[0]);
 
     private bool CanRenameSelection()
         => _selectedItems.Count == 1 && CanRename(_selectedItems[0]);
@@ -761,8 +767,21 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (file is null) return;
 
         var stream = await DataProvider.DownloadAsync(file.Id);
+        var fileName = file.Attachments.FirstOrDefault()?.Name ?? file.Name;
         using var streamRef = new DotNetStreamReference(stream);
-        await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", file.Name, streamRef);
+        await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", fileName, streamRef);
+    }
+
+    private async Task DownloadAllSelectedAsync()
+    {
+        if (DataProvider is null || _selectedItems.Count != 1) return;
+        var file = _selectedItems[0];
+        if (file.IsDirectory || !CanDownloadAll(file)) return;
+
+        var stream = await DataProvider.DownloadAllAttachmentsAsync(file.Id);
+        var zipName = $"{file.Name}.zip";
+        using var streamRef = new DotNetStreamReference(stream);
+        await JSRuntime.InvokeVoidAsync("TempoFileManager.downloadFileFromStream", zipName, streamRef);
     }
 
     private async Task StartEditAsync()
@@ -885,6 +904,7 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
         if (CanWrite(item) && EditForm is not null) actions.Add("edit");
         if (DetailPanel is not null) actions.Add("detail");
         if (!item.IsDirectory && CanDownload(item)) actions.Add("download");
+        if (CanDownloadAll(item)) actions.Add("downloadAll");
         return actions;
     }
 
@@ -980,6 +1000,15 @@ public partial class TmDocumentManager<TMetadata> where TMetadata : class
                     _selectedItems.Add(item);
                     await OnSelectionChanged.InvokeAsync(_selectedItems);
                     await DownloadSelectedAsync();
+                }
+                break;
+            case "downloadAll":
+                if (CanDownloadAll(item))
+                {
+                    _selectedItems.Clear();
+                    _selectedItems.Add(item);
+                    await OnSelectionChanged.InvokeAsync(_selectedItems);
+                    await DownloadAllSelectedAsync();
                 }
                 break;
         }

@@ -11,12 +11,13 @@
 }
 else
 {
-    <div class="tm-spreadsheet-grid @(Sheet?.ShowGridLines == false ? "tm-spreadsheet-grid--no-gridlines" : "")"
+    <div class="tm-spreadsheet-grid @(Sheet?.ShowGridLines == false ? "tm-spreadsheet-grid--no-gridlines" : "") @(IsInFormulaPointMode ? "tm-spreadsheet-grid--formula-point" : "")"
          role="grid"
          aria-rowcount="@Sheet.RowCount"
          aria-colcount="@Sheet.ColumnCount"
          aria-label="@Loc["TmSpreadsheet_Name"]"
          tabindex="0"
+         style="@GetGridCursorStyle()"
          @onkeydown="HandleKeyDown"
          @onkeydown:preventDefault="true"
          @onfocus="() => { }"
@@ -40,6 +41,12 @@ else
                      style="width: @GetColumnWidth(colIndex)px;@GetColumnHeaderFreezeStyle(colIndex)"
                      @onclick="() => SelectColumn(colIndex)">
                     @SpreadsheetRange.ColumnIndexToLetters(colIndex)
+                    <div class="tm-spreadsheet-col-resizer"
+                         @onmousedown="e => OnColResizerMouseDown(e, colIndex)"
+                         @onmousedown:stopPropagation
+                         @ondblclick="() => OnColResizerDoubleClick(colIndex)"
+                         @ondblclick:stopPropagation
+                         @onclick:stopPropagation></div>
                 </div>
             }
         </div>
@@ -78,6 +85,49 @@ else
                 <div class="tm-spreadsheet-context-menu__divider"></div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuInsertColumn">@Loc["TmSpreadsheet_InsertColumn"]</div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuDeleteColumn">@Loc["TmSpreadsheet_DeleteColumn"]</div>
+                <div class="tm-spreadsheet-context-menu__divider"></div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetColumnWidth">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
+                <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuSetRowHeight">@Loc["TmSpreadsheet_SetRowHeight"]</div>
+            </div>
+        }
+
+        @if (_showColWidthDialog)
+        {
+            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showColWidthDialog = false">
+                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+                    <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
+                    <input class="tm-spreadsheet-resize-dialog__input"
+                           type="number" min="16" max="1000"
+                           value="@_colWidthInputValue"
+                           @oninput="e => _colWidthInputValue = e.Value?.ToString() ?? _colWidthInputValue"
+                           @onkeydown="OnColWidthInputKeyDown" />
+                    <div class="tm-spreadsheet-resize-dialog__actions">
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--cancel"
+                                @onclick="() => _showColWidthDialog = false">@Loc["Tm_Cancel"]</button>
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--ok"
+                                @onclick="ApplyColWidth">@Loc["Tm_Apply"]</button>
+                    </div>
+                </div>
+            </div>
+        }
+
+        @if (_showRowHeightDialog)
+        {
+            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showRowHeightDialog = false">
+                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+                    <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetRowHeight"]</div>
+                    <input class="tm-spreadsheet-resize-dialog__input"
+                           type="number" min="8" max="500"
+                           value="@_rowHeightInputValue"
+                           @oninput="e => _rowHeightInputValue = e.Value?.ToString() ?? _rowHeightInputValue"
+                           @onkeydown="OnRowHeightInputKeyDown" />
+                    <div class="tm-spreadsheet-resize-dialog__actions">
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--cancel"
+                                @onclick="() => _showRowHeightDialog = false">@Loc["Tm_Cancel"]</button>
+                        <button class="tm-spreadsheet-resize-dialog__btn tm-spreadsheet-resize-dialog__btn--ok"
+                                @onclick="ApplyRowHeight">@Loc["Tm_Apply"]</button>
+                    </div>
+                </div>
             </div>
         }
     </div>
@@ -92,6 +142,10 @@ else
                  style="height: @GetRowHeight(rowIndex)px;@GetRowHeaderFreezeStyle(rowIndex)"
                  @onclick="() => SelectRow(rowIndex)">
                 @(rowIndex + 1)
+                <div class="tm-spreadsheet-row-resizer"
+                     @onmousedown="e => OnRowResizerMouseDown(e, rowIndex)"
+                     @onmousedown:stopPropagation
+                     @onclick:stopPropagation></div>
             </div>
             @for (int col = 0; col < (Sheet?.ColumnCount ?? 0); col++)
             {
@@ -102,14 +156,16 @@ else
                 var isSelected = IsCellSelected(cellRef);
                 var isEditing = IsEditing && isActive;
                 var mergedHidden = IsCellMergedAndHidden(rowIndex, colIndex);
-                <div class="tm-spreadsheet-cell @GetCellClass(isActive, isSelected, mergedHidden)"
+                <div class="tm-spreadsheet-cell @GetCellClass(isActive, isSelected, mergedHidden, cellRef)"
                      role="gridcell"
                      aria-selected="@isSelected.ToString().ToLowerInvariant()"
                      aria-label="@cellRef"
                      style="@GetCellStyleString(cell, colIndex, rowIndex)"
                      title="@cellRef"
                      @onclick="e => OnCellClick(cellRef, e)"
-                     @ondblclick="() => StartEdit(cellRef)">
+                     @ondblclick="() => StartEdit(cellRef)"
+                     @onmousedown="e => OnCellMouseDown(cellRef, e)"
+                     @onmouseenter="() => OnCellMouseEnter(cellRef)">
                     @if (isEditing)
                     {
                         <input class="tm-spreadsheet-cell-input"

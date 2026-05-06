@@ -80,11 +80,15 @@
                        OnUnderlineToggleRequested="ToggleUnderline"
                        OnSelectAllRequested="GridSelectAll"
                        OnCellEdit="OnGridCellEdit"
-                       OnCellReferenceRequested="OnGridCellReferenceRequested" />
+                       OnCellReferenceRequested="OnGridCellReferenceRequested"
+                       OnColumnResizeRequested="OnColumnResizeRequested"
+                       OnRowResizeRequested="OnRowResizeRequested" />
 
     <TmSpreadsheetSheetTabs Sheets="_workbook.Sheets"
                             ActiveIndex="_workbook.ActiveSheetIndex"
+                            IsFormulaPointMode="@(_grid?.IsInFormulaPointMode == true)"
                             OnActiveSheetChanged="SwitchSheet"
+                            OnSheetSelectedForFormula="OnGridSheetSwitchForFormula"
                             OnAddSheetRequested="AddNewSheet"
                             OnDeleteSheetRequested="DeleteSheet"
                             OnRenameSheetRequested="RenameSheet" />

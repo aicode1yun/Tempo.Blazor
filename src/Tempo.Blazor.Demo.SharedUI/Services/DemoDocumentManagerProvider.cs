@@ -1,3 +1,4 @@
+using System.IO.Compression;
 using Tempo.Blazor.Abstractions.Interfaces;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Models;
@@ -432,6 +433,28 @@ public class DemoDocumentManagerProvider : IDocumentManagerDataProvider<Document
         if (_attachmentData.TryGetValue(itemId, out var dict) && dict.TryGetValue(attachmentId, out var data))
             return Task.FromResult<Stream>(new MemoryStream(data));
         return Task.FromResult<Stream>(new MemoryStream());
+    }
+
+    public Task<Stream> DownloadAllAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+    {
+        if (!_attachments.TryGetValue(itemId, out var attachments) || attachments.Count == 0)
+            return Task.FromResult<Stream>(new MemoryStream());
+
+        var ms = new MemoryStream();
+        using (var archive = new ZipArchive(ms, ZipArchiveMode.Create, true))
+        {
+            foreach (var att in attachments)
+            {
+                if (_attachmentData.TryGetValue(itemId, out var dict) && dict.TryGetValue(att.Id, out var data))
+                {
+                    var entry = archive.CreateEntry(att.Name);
+                    using var entryStream = entry.Open();
+                    entryStream.Write(data, 0, data.Length);
+                }
+            }
+        }
+        ms.Position = 0;
+        return Task.FromResult<Stream>(ms);
     }
 
     private static string GetParentPath(string itemPath)

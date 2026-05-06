@@ -26,6 +26,8 @@ public partial class TmSpreadsheet
     private string? _insertImageUrl;
     [Inject] private IJSRuntime JS { get; set; } = null!;
     private System.Threading.CancellationTokenSource? _onChangeDebounceCts;
+    private int _formulaOriginSheetIndex = -1;
+    private string? _formulaOriginCellRef;
 
     /// <summary>XLSX file data to load into the spreadsheet.</summary>
     [Parameter] public byte[]? Data { get; set; }
@@ -157,33 +159,87 @@ public partial class TmSpreadsheet
 
     private void OnGridCellEdit(SpreadsheetCellEditEventArgs args)
     {
+        if (!args.IsEditing && _formulaOriginSheetIndex >= 0)
+        {
+            var originIdx = _formulaOriginSheetIndex;
+            _formulaOriginSheetIndex = -1;
+            _formulaOriginCellRef = null;
+            if (_workbook.ActiveSheetIndex != originIdx)
+            {
+                _workbook.ActiveSheetIndex = originIdx;
+                _commandManager = _workbook.ActiveSheet is not null
+                    ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
+                    : null;
+            }
+        }
         _ = OnCellEdit.InvokeAsync(args);
+    }
+
+    private void OnColumnResizeRequested((int ColIndex, double Width) args)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        _commandManager.Execute(new ResizeColumnCommand(_workbook.ActiveSheet, args.ColIndex, args.Width));
+        StateHasChanged();
+    }
+
+    private void OnRowResizeRequested((int RowIndex, double Height) args)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null) return;
+        _commandManager.Execute(new ResizeRowCommand(_workbook.ActiveSheet, args.RowIndex, args.Height));
+        StateHasChanged();
     }
 
     private void OnGridCellReferenceRequested(string cellRef)
     {
-        // Insert cell reference into the current edit value (formula bar or inline)
-        _grid.AppendEditValue(cellRef);
-        if (_isFormulaBarEditing)
+        var fullRef = cellRef;
+        if (_formulaOriginSheetIndex >= 0 && _workbook.ActiveSheetIndex != _formulaOriginSheetIndex)
         {
-            _formulaBarEditValue = (_formulaBarEditValue ?? string.Empty) + cellRef;
+            var sheetName = _workbook.Sheets[_workbook.ActiveSheetIndex].Name;
+            var quotedName = sheetName.Contains(' ') ? $"'{sheetName}'" : sheetName;
+            fullRef = $"{quotedName}!{cellRef}";
         }
+        _grid.InsertCellRefIntoFormula(fullRef);
+        if (_isFormulaBarEditing)
+            _formulaBarEditValue = _grid.CurrentEditValue;
+        StateHasChanged();
+    }
+
+    private void OnGridSheetSwitchForFormula(int index)
+    {
+        if (index < 0 || index >= _workbook.Sheets.Count) return;
+        if (_formulaOriginSheetIndex < 0)
+        {
+            _formulaOriginSheetIndex = _workbook.ActiveSheetIndex;
+            _formulaOriginCellRef = _workbook.ActiveSheet?.ActiveCellRef;
+        }
+        _workbook.ActiveSheetIndex = index;
         StateHasChanged();
     }
 
     private void OnGridCellValueCommitted((string CellRef, string? Value) args)
     {
-        if (_commandManager is null || args.Value is null || _workbook.ActiveSheet is null) return;
-        var previous = _workbook.ActiveSheet.Cells.GetValueOrDefault(args.CellRef);
+        if (_commandManager is null || args.Value is null) return;
+
+        // In cross-sheet formula-point mode commit to origin sheet/cell
+        var targetSheet = (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null
+            && _formulaOriginSheetIndex < _workbook.Sheets.Count)
+            ? _workbook.Sheets[_formulaOriginSheetIndex]
+            : _workbook.ActiveSheet;
+        var targetCellRef = (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null)
+            ? _formulaOriginCellRef
+            : args.CellRef;
+
+        if (targetSheet is null) return;
+        var previous = targetSheet.Cells.GetValueOrDefault(targetCellRef);
         var cmd = new SetCellValueCommand(
-            _workbook.ActiveSheet,
-            args.CellRef,
+            targetSheet,
+            targetCellRef,
             args.Value.StartsWith('=') ? null : args.Value,
             args.Value.StartsWith('=') ? args.Value : null);
         _commandManager.Execute(cmd);
         _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
-            _workbook.ActiveSheet,
-            args.CellRef,
+            targetSheet,
+            targetCellRef,
             previous?.Value,
             args.Value.StartsWith('=') ? null : args.Value,
             previous?.Formula,

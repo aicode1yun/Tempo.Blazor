@@ -562,4 +562,55 @@ public class SpreadsheetCommandTests
         sheet.Cells["B1"].Value.Should().Be("center");
         sheet.Cells["C1"].Value.Should().Be("right");
     }
+
+    // ── PasteCommand – formula adjustment ──
+
+    [Fact]
+    public void PasteCommand_Copy_AdjustsRelativeFormula()
+    {
+        // Arrange: B1 contains =A1+1; copy it; paste into C2
+        var sheet = new SpreadsheetSheet { RowCount = 10, ColumnCount = 10 };
+        sheet.Cells["A1"] = new SpreadsheetCell { Value = 10.0 };
+        sheet.Cells["A2"] = new SpreadsheetCell { Value = 20.0 };
+        var copy = new CopyCommand(sheet, ["B1"]);
+        copy.Execute();
+        // Manually set formula on clipboard cell (simulate user editing)
+        SpreadsheetClipboard.Cells!["B1"] = new SpreadsheetCell { Formula = "=A1+1" };
+
+        var paste = new PasteCommand(sheet, "C2");
+        paste.Execute();
+
+        // C2 is 1 row down and 1 col right from B1 → formula should be =B2+1
+        sheet.Cells["C2"].Formula.Should().Be("=B2+1");
+    }
+
+    [Fact]
+    public void PasteCommand_Copy_PreservesAbsoluteReference()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 10, ColumnCount = 10 };
+        var copy = new CopyCommand(sheet, ["A1"]);
+        copy.Execute();
+        SpreadsheetClipboard.Cells!["A1"] = new SpreadsheetCell { Formula = "=$A$1*2" };
+
+        var paste = new PasteCommand(sheet, "D5");
+        paste.Execute();
+
+        // Fully absolute → no change
+        sheet.Cells["D5"].Formula.Should().Be("=$A$1*2");
+    }
+
+    [Fact]
+    public void PasteCommand_Cut_DoesNotAdjustFormula()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 10, ColumnCount = 10 };
+        var cut = new CutCommand(sheet, ["B1"]);
+        sheet.Cells["B1"] = new SpreadsheetCell { Formula = "=A1+1" };
+        cut.Execute();
+
+        var paste = new PasteCommand(sheet, "C2");
+        paste.Execute();
+
+        // Cut keeps formula as-is
+        sheet.Cells["C2"].Formula.Should().Be("=A1+1");
+    }
 }

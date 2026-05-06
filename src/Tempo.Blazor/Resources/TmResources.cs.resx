@@ -1792,6 +1792,8 @@
   <data name="TmSpreadsheet_DeleteRow" xml:space="preserve"><value>Smazat řádek</value></data>
   <data name="TmSpreadsheet_InsertColumn" xml:space="preserve"><value>Vložit sloupec</value></data>
   <data name="TmSpreadsheet_DeleteColumn" xml:space="preserve"><value>Smazat sloupec</value></data>
+  <data name="TmSpreadsheet_SetColumnWidth" xml:space="preserve"><value>Nastavit šířku sloupce…</value></data>
+  <data name="TmSpreadsheet_SetRowHeight" xml:space="preserve"><value>Nastavit výšku řádku…</value></data>
   <data name="TmSpreadsheet_Bold" xml:space="preserve"><value>Tučně</value></data>
   <data name="TmSpreadsheet_Italic" xml:space="preserve"><value>Kurzíva</value></data>
   <data name="TmSpreadsheet_Underline" xml:space="preserve"><value>Podtržené</value></data>
@@ -1828,6 +1830,8 @@
   <data name="TmFileManager_DeleteMessage" xml:space="preserve"><value>Opravdu chcete smazat {0} vybranou/ché položku/ky? Tuto akci nelze vrátit zpět.</value></data>
   <data name="TmFileManager_DeleteAttachmentTitle" xml:space="preserve"><value>Smazat přílohu</value></data>
   <data name="TmFileManager_DeleteAttachmentMessage" xml:space="preserve"><value>Opravdu chcete smazat tuto přílohu? Tuto akci nelze vrátit zpět.</value></data>
+  <data name="TmFileManager_Download" xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmFileManager_DownloadAll" xml:space="preserve"><value>Stáhnout vše</value></data>
   <data name="TmFileManager_ConfirmDelete" xml:space="preserve"><value>Smazat</value></data>
   <data name="TmFileManager_CancelDelete" xml:space="preserve"><value>Zrušit</value></data>
   <data name="TmFileManager_Rename" xml:space="preserve"><value>Přejmenovat</value></data>

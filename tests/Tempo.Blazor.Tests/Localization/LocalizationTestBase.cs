@@ -821,6 +821,8 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Detail"] = "Detail",
         ["TmFileManager_AddAttachment"] = "Add Attachment",
         ["TmFileManager_Attachments"] = "Attachments",
+        ["TmFileManager_Download"] = "Download",
+        ["TmFileManager_DownloadAll"] = "Download All",
 
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Select an item...",
@@ -1534,6 +1536,8 @@ public abstract class LocalizationTestBase : TestContext
         ["TmFileManager_Detail"] = "Detail",
         ["TmFileManager_AddAttachment"] = "Přidat přílohu",
         ["TmFileManager_Attachments"] = "Přílohy",
+        ["TmFileManager_Download"] = "Stáhnout",
+        ["TmFileManager_DownloadAll"] = "Stáhnout vše",
 
         // TmMultiColumnComboBox
         ["TmMultiColumnComboBox_Placeholder"] = "Vyberte polozku...",

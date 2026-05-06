@@ -96,4 +96,8 @@ public interface IDocumentManagerDataProvider<TMetadata> where TMetadata : class
     /// <summary>Downloads a specific attachment as a stream.</summary>
     Task<Stream> DownloadAttachmentAsync(
         string itemId, string attachmentId, CancellationToken cancellationToken = default);
+
+    /// <summary>Downloads all attachments for an item as a single ZIP archive stream.</summary>
+    Task<Stream> DownloadAllAttachmentsAsync(
+        string itemId, CancellationToken cancellationToken = default);
 }

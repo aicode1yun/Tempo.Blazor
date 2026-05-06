@@ -905,6 +905,11 @@ public class TmDocumentManagerTests : LocalizationTestBase
             return Task.FromResult<Stream>(new System.IO.MemoryStream());
         }
 
+        public Task<Stream> DownloadAllAttachmentsAsync(string itemId, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<Stream>(new System.IO.MemoryStream());
+        }
+
         private static string GetParentPath(string itemPath)
         {
             itemPath = itemPath.TrimEnd('/');
