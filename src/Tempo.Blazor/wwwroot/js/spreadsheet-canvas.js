@@ -191,6 +191,18 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
     }
 
+    function parseCellRef(cellRef) {
+        const match = /^([A-Z]+)(\d+)$/i.exec(String(cellRef || "A1"));
+        if (!match) return { row: 0, col: 0 };
+
+        let col = 0;
+        for (const ch of match[1].toUpperCase()) {
+            col = col * 26 + ch.charCodeAt(0) - 64;
+        }
+
+        return { row: Math.max(0, Number(match[2]) - 1), col: Math.max(0, col - 1) };
+    }
+
     function findFrameAt(frames, offset, startName, sizeName) {
         for (const frame of frames) {
             const start = read(frame, startName, 0);
@@ -198,6 +210,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             if (size > 0 && offset >= start && offset < start + size) {
                 return frame;
             }
+        }
+
+        return null;
+    }
+
+    function getFrameByIndex(frames, index) {
+        for (const frame of frames) {
+            if (read(frame, "Index", -1) === index) return frame;
         }
 
         return null;
@@ -242,6 +262,124 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         renderModel(root, s.canvas, model);
+    }
+
+    function scheduleSelectionSync(root) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!s || !model) return;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        const selection = read(model, "Selection", {});
+        if (s.selectionSyncTimer) clearTimeout(s.selectionSyncTimer);
+        s.selectionSyncTimer = setTimeout(() => {
+            s.selectionSyncTimer = 0;
+            s.dotNet.invokeMethodAsync(
+                "OnCanvasSelectionChanged",
+                active.row,
+                active.col,
+                read(selection, "StartRow", active.row),
+                read(selection, "StartCol", active.col),
+                read(selection, "EndRow", active.row),
+                read(selection, "EndCol", active.col)
+            ).catch(() => {});
+        }, 70);
+    }
+
+    function ensureCellVisibleLocal(root, row, col) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return;
+
+        const rows = read(model, "Rows", []);
+        const columns = read(model, "Columns", []);
+        const rowFrame = getFrameByIndex(rows, row);
+        const colFrame = getFrameByIndex(columns, col);
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const rowHeight = rowFrame ? read(rowFrame, "Height", 20) : 20;
+        const colWidth = colFrame ? read(colFrame, "Width", 64) : 64;
+        const top = rowFrame ? read(rowFrame, "Top", row * rowHeight) : row * rowHeight;
+        const left = colFrame ? read(colFrame, "Left", col * colWidth) : col * colWidth;
+        const bottom = top + rowHeight;
+        const right = left + colWidth;
+        const bodyWidth = Math.max(0, root.clientWidth - rowHeaderWidth);
+        const bodyHeight = Math.max(0, root.clientHeight - columnHeaderHeight);
+        let nextLeft = root.scrollLeft || 0;
+        let nextTop = root.scrollTop || 0;
+
+        if (left < nextLeft) nextLeft = left;
+        else if (right > nextLeft + bodyWidth) nextLeft = right - bodyWidth;
+
+        if (top < nextTop) nextTop = top;
+        else if (bottom > nextTop + bodyHeight) nextTop = bottom - bodyHeight;
+
+        nextLeft = Math.max(0, nextLeft);
+        nextTop = Math.max(0, nextTop);
+        if (Math.abs(nextLeft - root.scrollLeft) > 0.5 || Math.abs(nextTop - root.scrollTop) > 0.5) {
+            root.scrollTo({ left: nextLeft, top: nextTop, behavior: "auto" });
+        }
+    }
+
+    function navigateLocal(root, dRow, dCol, extendSelection) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return false;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        const rowCount = read(model, "RowCount", active.row + 1);
+        const colCount = read(model, "ColumnCount", active.col + 1);
+        const row = Math.max(0, Math.min(rowCount - 1, active.row + dRow));
+        const col = Math.max(0, Math.min(colCount - 1, active.col + dCol));
+        if (row === active.row && col === active.col) return true;
+
+        updateLocalActiveCell(root, row, col, extendSelection);
+        ensureCellVisibleLocal(root, row, col);
+        scheduleSelectionSync(root);
+        notifyViewport(root, false);
+        return true;
+    }
+
+    function moveLocalTo(root, row, col, extendSelection) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return false;
+
+        const rowCount = read(model, "RowCount", row + 1);
+        const colCount = read(model, "ColumnCount", col + 1);
+        row = Math.max(0, Math.min(rowCount - 1, row));
+        col = Math.max(0, Math.min(colCount - 1, col));
+        updateLocalActiveCell(root, row, col, extendSelection);
+        ensureCellVisibleLocal(root, row, col);
+        scheduleSelectionSync(root);
+        notifyViewport(root, false);
+        return true;
+    }
+
+    function handleNavigationKey(root, ev) {
+        if (ev.altKey || ev.metaKey || ev.ctrlKey) return false;
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return false;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        let handled = false;
+        switch (ev.key) {
+            case "ArrowUp": handled = navigateLocal(root, -1, 0, ev.shiftKey); break;
+            case "ArrowDown": handled = navigateLocal(root, 1, 0, ev.shiftKey); break;
+            case "ArrowLeft": handled = navigateLocal(root, 0, -1, ev.shiftKey); break;
+            case "ArrowRight": handled = navigateLocal(root, 0, 1, ev.shiftKey); break;
+            case "Tab": handled = navigateLocal(root, 0, ev.shiftKey ? -1 : 1, false); break;
+            case "Home": handled = moveLocalTo(root, active.row, 0, ev.shiftKey); break;
+            case "End": handled = moveLocalTo(root, active.row, read(model, "ColumnCount", active.col + 1) - 1, ev.shiftKey); break;
+        }
+
+        if (handled) {
+            ev.preventDefault();
+            ev.stopImmediatePropagation();
+        }
+
+        return handled;
     }
 
     function closeLocalEditor(root, commit) {
@@ -330,6 +468,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             viewportTimer: 0,
             viewportInFlight: false,
             viewportPending: false,
+            pointerFrame: 0,
+            pointerPoint: null,
+            selectionSyncTimer: 0,
             lastViewportSync: 0,
             syncedScrollLeft: root.scrollLeft || 0,
             syncedScrollTop: root.scrollTop || 0,
@@ -344,13 +485,23 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             scheduleLocalRender(root);
             notifyViewport(root, false);
         };
-        const onPointerMove = ev => {
+        const updatePointerCursor = () => {
+            s.pointerFrame = 0;
+            const point = s.pointerPoint;
+            if (!point) return;
             if (s.resize) {
                 root.style.cursor = s.resize.kind === "column" ? "col-resize" : "row-resize";
                 return;
             }
-            const hit = hitResize(root, ev);
+
+            const hit = hitResize(root, point);
             root.style.cursor = hit ? (hit.kind === "column" ? "col-resize" : "row-resize") : "";
+        };
+        const onPointerMove = ev => {
+            s.pointerPoint = { clientX: ev.clientX, clientY: ev.clientY };
+            if (!s.pointerFrame) {
+                s.pointerFrame = requestAnimationFrame(updatePointerCursor);
+            }
         };
         const onPointerDown = ev => {
             const hit = hitResize(root, ev);
@@ -369,6 +520,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const method = resize.kind === "column" ? "OnCanvasColumnResize" : "OnCanvasRowResize";
             dotNet.invokeMethodAsync(method, resize.index, next).catch(() => {});
             ev.preventDefault();
+        };
+        const onKeyDown = ev => {
+            if (s.editor) return;
+            handleNavigationKey(root, ev);
         };
         const onClick = ev => {
             if (s.resize) return;
@@ -406,6 +561,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         root.addEventListener("pointermove", onPointerMove);
         root.addEventListener("pointerdown", onPointerDown);
         root.addEventListener("pointerup", onPointerUp);
+        root.addEventListener("keydown", onKeyDown);
         root.addEventListener("click", onClick);
         root.addEventListener("dblclick", onDblClick);
         root.addEventListener("contextmenu", onContextMenu);
@@ -414,6 +570,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ["pointermove", onPointerMove],
             ["pointerdown", onPointerDown],
             ["pointerup", onPointerUp],
+            ["keydown", onKeyDown],
             ["click", onClick],
             ["dblclick", onDblClick],
             ["contextmenu", onContextMenu]
@@ -441,7 +598,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (s.resizeObserver) s.resizeObserver.disconnect();
         if (s.localFrame) cancelAnimationFrame(s.localFrame);
         if (s.viewportFrame) cancelAnimationFrame(s.viewportFrame);
+        if (s.pointerFrame) cancelAnimationFrame(s.pointerFrame);
         if (s.viewportTimer) clearTimeout(s.viewportTimer);
+        if (s.selectionSyncTimer) clearTimeout(s.selectionSyncTimer);
         closeLocalEditor(root, false);
         root.style.cursor = "";
         delete root[stateKey];
@@ -564,8 +723,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const scrollTop = read(model, "ScrollTop", 0);
         const freezeRows = read(model, "FreezeRowCount", 0);
         const freezeCols = read(model, "FreezeColumnCount", 0);
+        const cells = read(model, "Cells", []);
 
-        for (const cell of read(model, "Cells", [])) {
+        for (const cell of cells) {
             const row = read(cell, "Row", 0);
             const col = read(cell, "Col", 0);
             const frozenCol = col < freezeCols;
@@ -578,16 +738,31 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
             const style = read(cell, "Style", {});
             const bg = read(style, "BackgroundColor", null);
-            ctx.fillStyle = read(cell, "Selected", false) ? palette.primarySubtle : (bg || palette.surface);
-            ctx.fillRect(x, y, w, h);
+            const selected = read(cell, "Selected", false);
+            if (selected || bg) {
+                ctx.fillStyle = selected ? palette.primarySubtle : bg;
+                ctx.fillRect(x, y, w, h);
+            }
 
             drawCellContent(ctx, root, cell, style, palette, x, y, w, h);
+        }
 
-            if (showGridLines) {
-                ctx.strokeStyle = palette.subtle;
-                ctx.lineWidth = 1;
-                ctx.strokeRect(Math.floor(x) + 0.5, Math.floor(y) + 0.5, w, h);
-            }
+        if (showGridLines) {
+            drawGridLines(ctx, model, palette, width, height, rowHeaderWidth, columnHeaderHeight);
+        }
+
+        for (const cell of cells) {
+            const row = read(cell, "Row", 0);
+            const col = read(cell, "Col", 0);
+            const frozenCol = col < freezeCols;
+            const frozenRow = row < freezeRows;
+            const x = rowHeaderWidth + read(cell, "Left", 0) - (frozenCol ? 0 : scrollLeft);
+            const y = columnHeaderHeight + read(cell, "Top", 0) - (frozenRow ? 0 : scrollTop);
+            const w = read(cell, "Width", 0);
+            const h = read(cell, "Height", 0);
+            if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height || w <= 0 || h <= 0) continue;
+
+            const style = read(cell, "Style", {});
 
             drawBorders(ctx, style, x, y, w, h, palette);
 
@@ -602,6 +777,46 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 ctx.fillRect(x + w - 4, y + h - 4, 6, 6);
             }
         }
+    }
+
+    function drawGridLines(ctx, model, palette, width, height, rowHeaderWidth, columnHeaderHeight) {
+        ctx.strokeStyle = palette.subtle;
+        ctx.lineWidth = 1;
+        ctx.beginPath();
+        const verticalLines = new Set();
+        const horizontalLines = new Set();
+
+        for (const col of read(model, "Columns", [])) {
+            const x = screenX(model, col);
+            const w = read(col, "Width", 0);
+            if (w <= 0 || x + w < rowHeaderWidth || x > width) continue;
+            const left = Math.floor(Math.max(rowHeaderWidth, x)) + 0.5;
+            const right = Math.floor(x + w) + 0.5;
+            if (left >= rowHeaderWidth && left <= width) verticalLines.add(left);
+            if (right >= rowHeaderWidth && right <= width) verticalLines.add(right);
+        }
+
+        for (const row of read(model, "Rows", [])) {
+            const y = screenY(model, row);
+            const h = read(row, "Height", 0);
+            if (h <= 0 || y + h < columnHeaderHeight || y > height) continue;
+            const top = Math.floor(Math.max(columnHeaderHeight, y)) + 0.5;
+            const bottom = Math.floor(y + h) + 0.5;
+            if (top >= columnHeaderHeight && top <= height) horizontalLines.add(top);
+            if (bottom >= columnHeaderHeight && bottom <= height) horizontalLines.add(bottom);
+        }
+
+        for (const x of verticalLines) {
+            ctx.moveTo(x, columnHeaderHeight);
+            ctx.lineTo(x, height);
+        }
+
+        for (const y of horizontalLines) {
+            ctx.moveTo(rowHeaderWidth, y);
+            ctx.lineTo(width, y);
+        }
+
+        ctx.stroke();
     }
 
     function drawCellContent(ctx, root, cell, style, palette, x, y, w, h) {
