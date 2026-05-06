@@ -12,7 +12,7 @@ namespace Tempo.Blazor.Components.Spreadsheet;
 /// Renders the interactive grid of a single spreadsheet sheet including row and column headers,
 /// cell selection, inline editing, and keyboard navigation.
 /// </summary>
-public partial class TmSpreadsheetGrid
+public partial class TmSpreadsheetGrid : IAsyncDisposable
 {
     private ElementReference _gridElement;
     private ElementReference _editInput;
@@ -70,6 +70,10 @@ public partial class TmSpreadsheetGrid
     private double[] _rowOffsets = [];
     private double[] _columnOffsets = [];
     private string[] _columnLetters = [];
+    private double _horizontalScrollLeft;
+    private double _viewportWidth = DefaultHorizontalViewportWidth;
+    private DotNetObjectReference<TmSpreadsheetGrid>? _dotNetRef;
+    private bool _viewportObserverRegistered;
     private SpreadsheetSheet? _cachedSheet;
     private int _cachedRowCount;
     private int _cachedColumnCount;
@@ -81,6 +85,9 @@ public partial class TmSpreadsheetGrid
     private (string? StartRef, string? EndRef, string? ActiveRef, (int StartRow, int StartCol, int EndRow, int EndCol) Bounds)? _selectionBoundsCache;
     private const double RowHeaderWidth = 40;
     private const double ColumnHeaderHeight = 20;
+    private const double DefaultHorizontalViewportWidth = 1024;
+    private const int HorizontalOverscanColumnCount = 3;
+    private const int HorizontalVirtualizationColumnThreshold = 32;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -204,6 +211,8 @@ public partial class TmSpreadsheetGrid
     /// <summary>Whether row virtualization is active (no freeze rows).</summary>
     private bool UseVirtualization => Sheet?.FreezeRowCount == 0;
 
+    private bool UseHorizontalVirtualization => Sheet?.ColumnCount > HorizontalVirtualizationColumnThreshold;
+
     /// <summary>Gets the currently active cell reference.</summary>
     public string? ActiveCellRef => Sheet?.ActiveCellRef;
 
@@ -296,6 +305,8 @@ public partial class TmSpreadsheetGrid
         _rowOffsets = [];
         _columnOffsets = [];
         _columnLetters = [];
+        _horizontalScrollLeft = 0;
+        _viewportWidth = DefaultHorizontalViewportWidth;
         _mergedStartLookup.Clear();
         _mergedHiddenLookup.Clear();
         _selectionBoundsCache = null;
@@ -306,6 +317,148 @@ public partial class TmSpreadsheetGrid
     {
         _cachedSheet = null;
         _cellStyleCache.Clear();
+    }
+
+    private int GetFrozenColumnCount()
+    {
+        if (Sheet is null)
+            return 0;
+
+        return Math.Clamp(Sheet.FreezeColumnCount, 0, Sheet.ColumnCount);
+    }
+
+    private IReadOnlyList<int> GetFrozenColumnIndices()
+    {
+        var frozenCount = GetFrozenColumnCount();
+        if (frozenCount == 0)
+            return [];
+
+        var columns = new int[frozenCount];
+        for (var col = 0; col < frozenCount; col++)
+            columns[col] = col;
+        return columns;
+    }
+
+    private IReadOnlyList<int> GetScrollableColumnIndices()
+    {
+        if (Sheet is null)
+            return [];
+
+        var frozenCount = GetFrozenColumnCount();
+        if (!UseHorizontalVirtualization)
+        {
+            var fullColumns = new int[Sheet.ColumnCount - frozenCount];
+            for (var col = frozenCount; col < Sheet.ColumnCount; col++)
+                fullColumns[col - frozenCount] = col;
+            return fullColumns;
+        }
+
+        var (startCol, endCol) = GetVisibleScrollableColumnRange();
+        if (endCol < startCol)
+            return [];
+
+        var columns = new int[endCol - startCol + 1];
+        for (var col = startCol; col <= endCol; col++)
+            columns[col - startCol] = col;
+        return columns;
+    }
+
+    private (int StartCol, int EndCol) GetVisibleScrollableColumnRange()
+    {
+        if (Sheet is null)
+            return (0, -1);
+
+        var frozenCount = GetFrozenColumnCount();
+        if (!UseHorizontalVirtualization)
+            return (frozenCount, Sheet.ColumnCount - 1);
+
+        if (frozenCount >= Sheet.ColumnCount)
+            return (Sheet.ColumnCount, Sheet.ColumnCount - 1);
+
+        EnsureRenderCaches();
+
+        var frozenWidth = GetCumulativeColumnWidth(frozenCount);
+        var viewportWidth = Math.Max(ColumnWidth * 4, _viewportWidth - RowHeaderWidth - frozenWidth);
+        var visibleLeft = Math.Max(frozenWidth, _horizontalScrollLeft + frozenWidth);
+        var visibleRight = Math.Max(visibleLeft, visibleLeft + viewportWidth);
+
+        var startCol = Math.Max(frozenCount, FindColumnAtOffset(visibleLeft) - HorizontalOverscanColumnCount);
+        var endCol = Math.Min(Sheet.ColumnCount - 1, FindColumnAtOffset(visibleRight) + HorizontalOverscanColumnCount);
+
+        return (startCol, Math.Max(startCol, endCol));
+    }
+
+    private double GetLeftColumnSpacerWidth()
+    {
+        if (Sheet is null || !UseHorizontalVirtualization)
+            return 0;
+
+        var frozenCount = GetFrozenColumnCount();
+        var (startCol, _) = GetVisibleScrollableColumnRange();
+        if (startCol <= frozenCount)
+            return 0;
+
+        return Math.Max(0, GetCumulativeColumnWidth(startCol) - GetCumulativeColumnWidth(frozenCount));
+    }
+
+    private double GetRightColumnSpacerWidth()
+    {
+        if (Sheet is null || !UseHorizontalVirtualization)
+            return 0;
+
+        var (_, endCol) = GetVisibleScrollableColumnRange();
+        if (endCol >= Sheet.ColumnCount - 1)
+            return 0;
+
+        return Math.Max(0, GetCumulativeColumnWidth(Sheet.ColumnCount) - GetCumulativeColumnWidth(endCol + 1));
+    }
+
+    private string GetColumnHeaderSpacerStyle(double width)
+    {
+        return $"width: {width}px; height: {ColumnHeaderHeight}px;";
+    }
+
+    private string GetRowColumnSpacerStyle(double width, int rowIndex)
+    {
+        return $"width: {width}px; height: {GetRowHeight(rowIndex)}px;";
+    }
+
+    private void EnsureColumnInVirtualViewport(int col)
+    {
+        if (Sheet is null || !UseHorizontalVirtualization || IsFrozenCol(col))
+            return;
+
+        var frozenWidth = GetCumulativeColumnWidth(GetFrozenColumnCount());
+        var viewportWidth = Math.Max(ColumnWidth * 4, _viewportWidth - RowHeaderWidth - frozenWidth);
+        var left = GetCumulativeColumnWidth(col);
+        var right = GetCumulativeColumnWidth(col + 1);
+        var visibleLeft = _horizontalScrollLeft + frozenWidth;
+        var visibleRight = visibleLeft + viewportWidth;
+
+        if (left < visibleLeft)
+        {
+            _horizontalScrollLeft = Math.Max(0, left - frozenWidth);
+        }
+        else if (right > visibleRight)
+        {
+            _horizontalScrollLeft = Math.Max(0, right - viewportWidth - frozenWidth);
+        }
+    }
+
+    [JSInvokable]
+    public Task OnSpreadsheetViewportChanged(double scrollLeft, double clientWidth)
+    {
+        var nextScrollLeft = Math.Max(0, scrollLeft);
+        var nextViewportWidth = clientWidth > 0 ? clientWidth : DefaultHorizontalViewportWidth;
+        if (Math.Abs(_horizontalScrollLeft - nextScrollLeft) < 0.5
+            && Math.Abs(_viewportWidth - nextViewportWidth) < 0.5)
+        {
+            return Task.CompletedTask;
+        }
+
+        _horizontalScrollLeft = nextScrollLeft;
+        _viewportWidth = nextViewportWidth;
+        return InvokeAsync(StateHasChanged);
     }
 
     private int ComputeRowsHash()
@@ -1655,6 +1808,7 @@ public partial class TmSpreadsheetGrid
         _pendingVisibleCell = (
             Math.Clamp(row, 0, Sheet.RowCount - 1),
             Math.Clamp(col, 0, Sheet.ColumnCount - 1));
+        EnsureColumnInVirtualViewport(_pendingVisibleCell.Value.Col);
     }
 
     private CellVisibilityRequest BuildCellVisibilityRequest(int row, int col)
@@ -1777,6 +1931,11 @@ public partial class TmSpreadsheetGrid
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (firstRender)
+        {
+            await RegisterViewportObserverAsync();
+        }
+
         await EnsurePendingCellVisibleAsync();
 
         if (_shouldFocusAfterRender)
@@ -1791,6 +1950,42 @@ public partial class TmSpreadsheetGrid
                 try { await _gridElement.FocusAsync(); } catch { /* ElementReference may not be bound yet */ }
             }
         }
+    }
+
+    private async Task RegisterViewportObserverAsync()
+    {
+        if (_viewportObserverRegistered)
+            return;
+
+        _dotNetRef ??= DotNetObjectReference.Create(this);
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetGrid.observeViewport", _gridElement, _dotNetRef);
+            _viewportObserverRegistered = true;
+        }
+        catch (JSException)
+        {
+            // The helper script may be missing in a consuming app; the grid still renders with the fallback viewport.
+        }
+        catch (InvalidOperationException)
+        {
+            // JS interop is unavailable during prerender/static rendering.
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_viewportObserverRegistered)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmSpreadsheetGrid.disposeViewportObserver", _gridElement);
+            }
+            catch (JSException) { }
+            catch (InvalidOperationException) { }
+        }
+
+        _dotNetRef?.Dispose();
     }
 
     private sealed record CellVisibilityRequest(

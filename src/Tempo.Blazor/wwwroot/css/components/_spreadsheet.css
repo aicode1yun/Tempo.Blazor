@@ -120,6 +120,12 @@
     overflow: hidden;
 }
 
+.tm-spreadsheet-column-spacer {
+    flex-shrink: 0;
+    pointer-events: none;
+    box-sizing: border-box;
+}
+
 /* ── Cells ── */
 .tm-spreadsheet-cell {
     display: flex;

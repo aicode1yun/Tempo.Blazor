@@ -72,6 +72,54 @@ public class TmSpreadsheetPerformanceTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_WideSheet_RendersFewerColumnHeadersThanTotalSheet()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 5, ColumnCount = 200 };
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet));
+
+        var headers = cut.FindAll(".tm-spreadsheet-col-headers .tm-spreadsheet-header-cell");
+
+        headers.Count.Should().BeLessThan(sheet.ColumnCount);
+        cut.FindAll(".tm-spreadsheet-column-spacer").Count.Should().BeGreaterThan(0);
+    }
+
+    [Fact]
+    public async Task HorizontalViewportChanged_RendersScrolledColumns()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 5, ColumnCount = 200 };
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet)
+            .Add(p => p.ColumnWidth, 64));
+
+        var targetRef = $"{SpreadsheetRange.ColumnIndexToLetters(80)}1";
+
+        await cut.InvokeAsync(() => cut.Instance.OnSpreadsheetViewportChanged(80 * 64, 360));
+
+        var cells = cut.FindAll(".tm-spreadsheet-cell");
+        cells.Should().Contain(c => c.GetAttribute("title") == targetRef);
+        cells.Should().NotContain(c => c.GetAttribute("title") == "A1");
+    }
+
+    [Fact]
+    public async Task HorizontalViewportChanged_KeepsFrozenColumnsRendered()
+    {
+        var sheet = new SpreadsheetSheet { RowCount = 5, ColumnCount = 200, FreezeColumnCount = 2 };
+        var cut = RenderComponent<TmSpreadsheetGrid>(parameters => parameters
+            .Add(p => p.Sheet, sheet)
+            .Add(p => p.ColumnWidth, 64));
+
+        var targetRef = $"{SpreadsheetRange.ColumnIndexToLetters(80)}1";
+
+        await cut.InvokeAsync(() => cut.Instance.OnSpreadsheetViewportChanged(80 * 64, 360));
+
+        var cells = cut.FindAll(".tm-spreadsheet-cell");
+        cells.Should().Contain(c => c.GetAttribute("title") == "A1");
+        cells.Should().Contain(c => c.GetAttribute("title") == "B1");
+        cells.Should().Contain(c => c.GetAttribute("title") == targetRef);
+    }
+
+    [Fact]
     public void Render_BuildsColumnLetterCache()
     {
         var sheet = new SpreadsheetSheet { RowCount = 3, ColumnCount = 30 };

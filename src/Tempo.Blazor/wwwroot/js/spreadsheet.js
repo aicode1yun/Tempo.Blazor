@@ -1,5 +1,56 @@
 window.tmSpreadsheetGrid = window.tmSpreadsheetGrid || {};
 
+window.tmSpreadsheetGrid.observeViewport = function (grid, dotNetRef) {
+    if (!grid || !dotNetRef) return;
+
+    if (typeof grid.__tmSpreadsheetViewportCleanup === "function") {
+        grid.__tmSpreadsheetViewportCleanup();
+    }
+
+    let frame = 0;
+    const notify = () => {
+        if (frame) return;
+        frame = requestAnimationFrame(() => {
+            frame = 0;
+            dotNetRef.invokeMethodAsync(
+                "OnSpreadsheetViewportChanged",
+                grid.scrollLeft || 0,
+                grid.clientWidth || 0
+            ).catch(() => {
+                // Component was disposed before the queued viewport update ran.
+            });
+        });
+    };
+
+    const resizeObserver = typeof ResizeObserver !== "undefined"
+        ? new ResizeObserver(notify)
+        : null;
+
+    grid.addEventListener("scroll", notify, { passive: true });
+    if (resizeObserver) {
+        resizeObserver.observe(grid);
+    }
+
+    grid.__tmSpreadsheetViewportCleanup = () => {
+        grid.removeEventListener("scroll", notify);
+        if (resizeObserver) {
+            resizeObserver.disconnect();
+        }
+        if (frame) {
+            cancelAnimationFrame(frame);
+            frame = 0;
+        }
+        delete grid.__tmSpreadsheetViewportCleanup;
+    };
+
+    notify();
+};
+
+window.tmSpreadsheetGrid.disposeViewportObserver = function (grid) {
+    if (!grid || typeof grid.__tmSpreadsheetViewportCleanup !== "function") return;
+    grid.__tmSpreadsheetViewportCleanup();
+};
+
 window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
     if (!grid || !cell) return;
 
