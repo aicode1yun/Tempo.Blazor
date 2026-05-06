@@ -16,10 +16,13 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
 {
     private const int RowOverscanCount = 32;
     private const int ColumnOverscanCount = 10;
+    private const int FormulaRefColorCount = 6;
     private readonly SpreadsheetGridGeometry _geometry = new();
     private readonly SpreadsheetSelectionState _selection = new();
     private readonly Dictionary<(int Row, int Col), SpreadsheetRange> _mergedStartLookup = [];
     private readonly HashSet<(int Row, int Col)> _mergedHiddenLookup = [];
+    private readonly Dictionary<string, int> _formulaRefColors = new(StringComparer.OrdinalIgnoreCase);
+    private readonly List<(int Sr, int Sc, int Er, int Ec, int Ci)> _formulaRangeColors = [];
     private ElementReference _rootElement;
     private ElementReference _canvasElement;
     private ElementReference _headerCanvasElement;
@@ -202,6 +205,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             _selection.ActiveCellRef = Sheet.ActiveCellRef;
             _selection.SelectionStartRef ??= Sheet.ActiveCellRef;
             _selection.SelectionEndRef ??= Sheet.ActiveCellRef;
+            _needsRender = true;
         }
     }
 
@@ -274,6 +278,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     public void InsertCellRefIntoFormula(string cellRef)
     {
         _editValue = FormulaReferenceAdjuster.InsertOrReplaceLastRef(_editValue ?? "=", cellRef);
+        RefreshFormulaRefColors();
         _shouldFocusEditorAfterRender = true;
         _needsRender = true;
         StateHasChanged();
@@ -694,6 +699,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         _editValue = initialValue;
         if (_editValue is null && Sheet.Cells.TryGetValue(cellRef, out var cell))
             _editValue = cell.Formula ?? cell.Value?.ToString() ?? string.Empty;
+        RefreshFormulaRefColors();
 
         _shouldFocusEditorAfterRender = true;
         _needsRender = true;
@@ -704,6 +710,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     private void OnEditInput(ChangeEventArgs e)
     {
         _editValue = e.Value?.ToString();
+        RefreshFormulaRefColors();
         _needsRender = true;
     }
 
@@ -725,6 +732,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return;
 
         IsEditing = false;
+        ClearFormulaRefColors();
         var cellRef = Sheet?.ActiveCellRef;
         if (cellRef is not null && _editValue is not null)
             _ = CellValueCommitted.InvokeAsync((cellRef, _editValue));
@@ -742,6 +750,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return;
 
         IsEditing = false;
+        ClearFormulaRefColors();
         _ = OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet!, Sheet?.ActiveCellRef ?? "A1", false));
         _editValue = null;
         _shouldFocusAfterRender = true;
@@ -926,6 +935,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
                     Active = string.Equals(sheet.ActiveCellRef, cellRef, StringComparison.OrdinalIgnoreCase),
                     Selected = selected,
                     SelectionEnd = IsSelectionEndCell(rowIndex, colIndex),
+                    FormulaRefColorIndex = GetFormulaRefColorIndex(cellRef),
                     ImageUrl = cell?.ImageUrl,
                     Hyperlink = cell?.Hyperlink,
                     Style = BuildCanvasStyle(cell?.Style, cell)
@@ -1038,6 +1048,57 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return string.Equals(Sheet?.ActiveCellRef, SpreadsheetSelectionState.ToCellRef(row, col), StringComparison.OrdinalIgnoreCase);
         var bounds = _selection.GetBounds();
         return row == bounds.EndRow && col == bounds.EndCol;
+    }
+
+    private void RefreshFormulaRefColors()
+    {
+        ClearFormulaRefColors();
+        if (!IsInFormulaPointMode || string.IsNullOrEmpty(_editValue))
+            return;
+
+        var refs = FormulaReferenceAdjuster.ParseFormulaReferences(_editValue);
+        for (var i = 0; i < refs.Count; i++)
+        {
+            var raw = refs[i].Replace("$", "", StringComparison.Ordinal).ToUpperInvariant();
+            var colorIdx = i % FormulaRefColorCount;
+            if (raw.Contains(':', StringComparison.Ordinal))
+            {
+                try
+                {
+                    var range = SpreadsheetRange.Parse(raw);
+                    _formulaRangeColors.Add((range.StartRow, range.StartCol, range.EndRow, range.EndCol, colorIdx));
+                }
+                catch { }
+            }
+            else
+            {
+                _formulaRefColors[raw] = colorIdx;
+            }
+        }
+    }
+
+    private void ClearFormulaRefColors()
+    {
+        _formulaRefColors.Clear();
+        _formulaRangeColors.Clear();
+    }
+
+    private int GetFormulaRefColorIndex(string cellRef)
+    {
+        if (_formulaRefColors.Count == 0 && _formulaRangeColors.Count == 0)
+            return -1;
+
+        if (_formulaRefColors.TryGetValue(cellRef.Replace("$", "", StringComparison.Ordinal).ToUpperInvariant(), out var idx))
+            return idx;
+
+        var (row, col) = SpreadsheetSelectionState.ParseCellRef(cellRef);
+        foreach (var (sr, sc, er, ec, ci) in _formulaRangeColors)
+        {
+            if (row >= sr && row <= er && col >= sc && col <= ec)
+                return ci;
+        }
+
+        return -1;
     }
 
     private bool IsFrozenRow(int row) => Sheet?.FreezeRowCount > 0 && row < Sheet.FreezeRowCount;

@@ -260,7 +260,16 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             text: css(root, "--tm-color-text", "#0f172a"),
             muted: css(root, "--tm-color-text-muted", "#64748b"),
             primary: css(root, "--tm-color-primary", "#2563eb"),
-            primarySubtle: css(root, "--tm-color-primary-subtle", "rgba(37, 99, 235, 0.12)")
+            primarySubtle: css(root, "--tm-color-primary-subtle", "rgba(37, 99, 235, 0.12)"),
+            selectionFill: "rgba(37, 99, 235, 0.12)",
+            formulaRefs: [
+                { stroke: "#1e8fe0", fill: "rgba(30, 143, 224, 0.08)" },
+                { stroke: "#e04030", fill: "rgba(224, 64, 48, 0.08)" },
+                { stroke: "#20a040", fill: "rgba(32, 160, 64, 0.08)" },
+                { stroke: "#a040c0", fill: "rgba(160, 64, 192, 0.08)" },
+                { stroke: "#e08020", fill: "rgba(224, 128, 32, 0.08)" },
+                { stroke: "#208080", fill: "rgba(32, 128, 128, 0.08)" }
+            ]
         };
     }
 
@@ -1567,6 +1576,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const freezeRows = read(model, "FreezeRowCount", 0);
         const freezeCols = read(model, "FreezeColumnCount", 0);
         const hover = getState(root)?.hoverCell;
+        const formulaPoint = read(model, "IsFormulaPointMode", false);
 
         for (const cell of read(model, "Cells", [])) {
             const row = read(cell, "Row", 0);
@@ -1579,13 +1589,23 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const h = read(cell, "Height", 0);
             if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height || w <= 0 || h <= 0) continue;
 
+            const formulaColorIndex = Number(read(cell, "FormulaRefColorIndex", -1));
+            if (formulaColorIndex >= 0) {
+                const refColor = palette.formulaRefs[formulaColorIndex % palette.formulaRefs.length];
+                ctx.fillStyle = refColor.fill;
+                ctx.fillRect(x, y, w, h);
+                ctx.strokeStyle = refColor.stroke;
+                ctx.lineWidth = 2;
+                ctx.strokeRect(Math.floor(x) + 1, Math.floor(y) + 1, Math.max(0, w - 2), Math.max(0, h - 2));
+            }
+
             if (hover && hover.row === row && hover.col === col && !read(cell, "Selected", false)) {
                 ctx.fillStyle = "rgba(148, 163, 184, 0.12)";
                 ctx.fillRect(x, y, w, h);
             }
 
-            if (read(cell, "Selected", false)) {
-                ctx.fillStyle = palette.primarySubtle;
+            if (read(cell, "Selected", false) && !formulaPoint) {
+                ctx.fillStyle = palette.selectionFill;
                 ctx.fillRect(x, y, w, h);
             }
 
@@ -1673,7 +1693,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         ctx.clip();
         ctx.fillText(value, textX, textY);
 
-        if (paint.underline || paint.strikeThrough || paint.hyperlink) {
+        if (paint.underline || paint.doubleUnderline || paint.strikeThrough || paint.hyperlink) {
             const textWidth = measureTextWidth(ctx, root, font, value);
             const lineY = paint.strikeThrough ? textY - fontSize * 0.25 : textY + 2;
             const startX = textXForDecoration(ctx.textAlign, textX, textWidth);
@@ -1682,6 +1702,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ctx.beginPath();
             ctx.moveTo(startX, lineY);
             ctx.lineTo(startX + textWidth, lineY);
+            if (paint.doubleUnderline && !paint.strikeThrough) {
+                ctx.moveTo(startX, lineY + 2);
+                ctx.lineTo(startX + textWidth, lineY + 2);
+            }
             ctx.stroke();
         }
         ctx.restore();
@@ -1745,6 +1769,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             read(style, "HorizontalAlign", "left"),
             read(style, "VerticalAlign", "bottom"),
             read(style, "Underline", false) ? 1 : 0,
+            read(style, "DoubleUnderline", false) ? 1 : 0,
             read(style, "StrikeThrough", false) ? 1 : 0,
             read(cell, "Hyperlink", null) ? 1 : 0
         ].join("|");
@@ -1765,6 +1790,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             horizontalAlign: horizontalAlign(horizontalAlignValue),
             verticalBaseline: verticalBaseline(verticalAlignValue),
             underline: !!read(style, "Underline", false),
+            doubleUnderline: !!read(style, "DoubleUnderline", false),
             strikeThrough: !!read(style, "StrikeThrough", false),
             hyperlink: !!read(cell, "Hyperlink", null)
         };
@@ -1825,8 +1851,24 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         ctx.lineWidth = paint.width;
         ctx.setLineDash(paint.dash);
         ctx.beginPath();
-        ctx.moveTo(x1, y1);
-        ctx.lineTo(x2, y2);
+        if (paint.double) {
+            const horizontal = Math.abs(y1 - y2) < 0.5;
+            const offset = 1.5;
+            if (horizontal) {
+                ctx.moveTo(x1, y1 - offset);
+                ctx.lineTo(x2, y2 - offset);
+                ctx.moveTo(x1, y1 + offset);
+                ctx.lineTo(x2, y2 + offset);
+            } else {
+                ctx.moveTo(x1 - offset, y1);
+                ctx.lineTo(x2 - offset, y2);
+                ctx.moveTo(x1 + offset, y1);
+                ctx.lineTo(x2 + offset, y2);
+            }
+        } else {
+            ctx.moveTo(x1, y1);
+            ctx.lineTo(x2, y2);
+        }
         ctx.stroke();
         ctx.setLineDash([]);
     }
@@ -1850,7 +1892,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const paint = {
             color: read(border, "Color", null) || palette.border,
             width: style === "medium" ? 2 : style === "thick" ? 3 : 1,
-            dash: style === "dashed" ? [4, 3] : style === "dotted" ? [1, 2] : []
+            dash: style === "dashed" ? [4, 3] : style === "dotted" ? [1, 2] : [],
+            double: style === "double"
         };
         if (cache) {
             cache.set(key, paint);

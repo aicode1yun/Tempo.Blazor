@@ -576,6 +576,126 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasRenderer_SelectedCellKeepsTextAndDrawsFormatting()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            "el => window.tmSpreadsheetCanvas?.getDebugMetrics?.(el)?.redrawCount > 0",
+            await grid.ElementHandleAsync());
+
+        var result = await grid.EvaluateAsync<CanvasFormattingProbeResult>(
+            @"el => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const cells = model.cells || model.Cells;
+                const cell = cells.find(c => (c.row ?? c.Row) === 0 && (c.col ?? c.Col) === 0) || cells[0];
+                cell.value = 'Visible';
+                cell.Value = 'Visible';
+                cell.active = true;
+                cell.Active = true;
+                cell.selected = true;
+                cell.Selected = true;
+                cell.selectionEnd = true;
+                cell.SelectionEnd = true;
+                cell.style = cell.Style = {
+                    fontFamily: 'Arial',
+                    FontFamily: 'Arial',
+                    fontSize: 14,
+                    FontSize: 14,
+                    bold: true,
+                    Bold: true,
+                    italic: true,
+                    Italic: true,
+                    underline: true,
+                    Underline: true,
+                    foreColor: '#111827',
+                    ForeColor: '#111827',
+                    horizontalAlign: 'left',
+                    HorizontalAlign: 'left',
+                    verticalAlign: 'bottom',
+                    VerticalAlign: 'bottom',
+                    borderBottom: { style: 'thick', color: '#111827', Style: 'thick', Color: '#111827' },
+                    BorderBottom: { style: 'thick', color: '#111827', Style: 'thick', Color: '#111827' }
+                };
+                window.tmSpreadsheetCanvas.render(el, state.canvas, model);
+
+                const content = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--content');
+                const selection = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--selection');
+                const dpr = window.devicePixelRatio || 1;
+                const composite = document.createElement('canvas');
+                composite.width = content.width;
+                composite.height = content.height;
+                const ctx = composite.getContext('2d');
+                ctx.drawImage(content, 0, 0);
+                ctx.drawImage(selection, 0, 0);
+                const darkPixels = (x, y, w, h) => {
+                    const data = ctx.getImageData(Math.round(x * dpr), Math.round(y * dpr), Math.round(w * dpr), Math.round(h * dpr)).data;
+                    let count = 0;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] > 0 && data[i] < 180 && data[i + 1] < 180 && data[i + 2] < 180) count++;
+                    }
+                    return count;
+                };
+
+                return {
+                    darkTextPixels: darkPixels(42, 24, 58, 16),
+                    underlinePixels: darkPixels(42, 35, 58, 5),
+                    borderPixels: darkPixels(40, 38, 64, 5),
+                    fontCache: [...state.fontStringCache.values()].join('|')
+                };
+            }");
+
+        Assert.IsTrue(result.DarkTextPixels > 8, $"Expected selected cell text to stay visible. Dark pixels: {result.DarkTextPixels}.");
+        Assert.IsTrue(result.UnderlinePixels > 8, $"Expected underline pixels to be drawn. Dark pixels: {result.UnderlinePixels}.");
+        Assert.IsTrue(result.BorderPixels > 20, $"Expected a bottom border to be drawn. Dark pixels: {result.BorderPixels}.");
+        Assert.IsTrue(result.FontCache.Contains("italic 700", StringComparison.Ordinal), $"Expected italic bold canvas font. Cache: {result.FontCache}");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_DrawsFormulaReferenceHighlights()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            "el => window.tmSpreadsheetCanvas?.getDebugMetrics?.(el)?.redrawCount > 0",
+            await grid.ElementHandleAsync());
+
+        var bluePixels = await grid.EvaluateAsync<int>(
+            @"el => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const cells = model.cells || model.Cells;
+                const cell = cells.find(c => (c.row ?? c.Row) === 1 && (c.col ?? c.Col) === 1) || cells[0];
+                cell.formulaRefColorIndex = 0;
+                cell.FormulaRefColorIndex = 0;
+                window.tmSpreadsheetCanvas.render(el, state.canvas, model);
+
+                const selection = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--selection');
+                const dpr = window.devicePixelRatio || 1;
+                const ctx = selection.getContext('2d');
+                const left = (cell.left ?? cell.Left) - (model.scrollLeft ?? model.ScrollLeft ?? 0) + (model.rowHeaderWidth ?? model.RowHeaderWidth ?? 40);
+                const top = (cell.top ?? cell.Top) - (model.scrollTop ?? model.ScrollTop ?? 0) + (model.columnHeaderHeight ?? model.ColumnHeaderHeight ?? 20);
+                const data = ctx.getImageData(Math.round(left * dpr), Math.round(top * dpr), Math.round((cell.width ?? cell.Width) * dpr), Math.round((cell.height ?? cell.Height) * dpr)).data;
+                let count = 0;
+                for (let i = 0; i < data.length; i += 4) {
+                    if (data[i + 3] > 0 && data[i] < 80 && data[i + 1] > 90 && data[i + 2] > 120) count++;
+                }
+                return count;
+            }");
+
+        Assert.IsTrue(bluePixels > 20, $"Expected formula reference highlight pixels. Count: {bluePixels}.");
+    }
+
+    [TestMethod]
     public async Task CanvasRenderer_ExposesRedrawDebugMetrics()
     {
         var page = await CreatePageAsync();
@@ -708,5 +828,13 @@ public class SpreadsheetE2ETests : WasmTestBase
         }
 
         return column;
+    }
+
+    private sealed class CanvasFormattingProbeResult
+    {
+        public int DarkTextPixels { get; set; }
+        public int UnderlinePixels { get; set; }
+        public int BorderPixels { get; set; }
+        public string FontCache { get; set; } = string.Empty;
     }
 }
