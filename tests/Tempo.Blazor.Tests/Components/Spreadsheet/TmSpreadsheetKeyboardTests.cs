@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Components.Spreadsheet;
+using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.Spreadsheet;
@@ -370,5 +371,19 @@ public class TmSpreadsheetKeyboardTests : LocalizationTestBase
 
         committedValue.Should().Be("NewValue");
         tabPressed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void CanvasGrid_ArrowRight_MovesActiveCell()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.Canvas)
+            .Add(p => p.RowsCount, 5)
+            .Add(p => p.ColumnsCount, 5));
+        var sheet = cut.Instance.Workbook.ActiveSheet!;
+
+        cut.Find(".tm-spreadsheet-canvas-grid").KeyDown(new KeyboardEventArgs { Key = "ArrowRight" });
+
+        sheet.ActiveCellRef.Should().Be("B1");
     }
 }
