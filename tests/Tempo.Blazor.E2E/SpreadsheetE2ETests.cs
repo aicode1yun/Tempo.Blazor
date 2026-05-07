@@ -498,6 +498,105 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_EditingDependencyRecalculatesFormulaCell()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        await EditCanvasCellAsync(page, grid, "A5", "10");
+        await EditCanvasCellAsync(page, grid, "B5", "10");
+        await EditCanvasCellAsync(page, grid, "C5", "=A5+B5");
+
+        var initialFormula = await WaitForCanvasCellSnapshotAsync(
+            grid,
+            "C5",
+            snapshot => snapshot.Formula == "=A5+B5" && snapshot.Value == "20",
+            "Expected C5 to recalculate to 20 after creating =A5+B5.");
+
+        Assert.AreEqual("20", initialFormula.Value, "Expected C5 to render the initial formula result.");
+        Assert.AreEqual("=A5+B5", initialFormula.Formula, "Expected C5 to keep the committed formula text.");
+
+        await EditCanvasCellAsync(page, grid, "B5", "15");
+
+        var updatedFormula = await WaitForCanvasCellSnapshotAsync(
+            grid,
+            "C5",
+            snapshot => snapshot.Formula == "=A5+B5" && snapshot.Value == "25",
+            "Expected C5 to refresh after editing dependent cell B5.");
+
+        Assert.AreEqual("25", updatedFormula.Value, "Expected dependent formula cell C5 to recalculate after B5 changes.");
+        Assert.AreEqual("=A5+B5", updatedFormula.Formula, "Expected dependent formula sync not to lose the formula text.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_F4CyclesAbsoluteReferencesInFormulaEditor()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var cell = await GetCanvasCellCenterAsync(grid, "C5");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = cell.X, Y = cell.Y }
+        });
+
+        await grid.PressAsync("=");
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.Keyboard.TypeAsync("A1");
+
+        CollectionAssert.AreEqual(
+            new[] { "=A1", "=$A$1", "=A$1", "=$A1", "=A1" },
+            await ReadFormulaEditorCycleAsync(page, editor),
+            "Expected F4 to cycle the last formula reference through Excel-style absolute reference states.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_ContextMenuClickKeepsOriginalActiveCell()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var cell = await GetCanvasCellCenterAsync(grid, "C5");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = cell.X, Y = cell.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "C5");
+
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Button = MouseButton.Right,
+            Position = new() { X = cell.X, Y = cell.Y }
+        });
+
+        var menu = page.Locator(".tm-spreadsheet-context-menu").First;
+        await menu.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await menu.Locator(".tm-spreadsheet-context-menu__item").First.ClickAsync();
+
+        var dialog = page.Locator(".tm-fcd").First;
+        await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var activeRef = await GetCanvasActiveRefAsync(grid);
+        Assert.AreEqual("C5", activeRef, "Clicking a context-menu item must not select the spreadsheet cell underneath the menu.");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_PublicApiCellUpdatesReachCanvasStore()
     {
         var page = await CreatePageAsync();
@@ -3593,6 +3692,127 @@ public class SpreadsheetE2ETests : WasmTestBase
             new PageWaitForFunctionOptions { Timeout = 30000 });
     }
 
+    private static async Task EditCanvasCellAsync(IPage page, ILocator grid, string cellRef, string value)
+    {
+        var point = await GetCanvasCellCenterAsync(grid, cellRef);
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = point.X, Y = point.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, cellRef);
+
+        var firstKey = value[..1];
+        await grid.PressAsync(firstKey);
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        if (value.Length > 1)
+            await page.Keyboard.TypeAsync(value[1..]);
+
+        await page.Keyboard.PressAsync("Enter");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+    }
+
+    private static async Task<CanvasCellPointResult> GetCanvasCellCenterAsync(ILocator grid, string cellRef)
+    {
+        var row = ParseRow(cellRef) - 1;
+        var col = ParseColumn(cellRef) - 1;
+        return await grid.EvaluateAsync<CanvasCellPointResult>(
+            @"(el, args) => {
+                const row = Number(args?.row ?? 0);
+                const col = Number(args?.col ?? 0);
+                const key = `${row}:${col}`;
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state?.model || {};
+                const cell = state?.sheetState?.cellStore?.cells?.get(key);
+                if (!cell) {
+                    return { x: -1, y: -1 };
+                }
+
+                const left = Number(cell.left ?? cell.Left ?? 0);
+                const top = Number(cell.top ?? cell.Top ?? 0);
+                const width = Number(cell.width ?? cell.Width ?? 0);
+                const height = Number(cell.height ?? cell.Height ?? 0);
+                const rowHeaderWidth = Number(model.rowHeaderWidth ?? model.RowHeaderWidth ?? 40);
+                const columnHeaderHeight = Number(model.columnHeaderHeight ?? model.ColumnHeaderHeight ?? 20);
+                const scrollLeft = Number(model.scrollLeft ?? model.ScrollLeft ?? 0);
+                const scrollTop = Number(model.scrollTop ?? model.ScrollTop ?? 0);
+                return {
+                    x: Math.round(rowHeaderWidth + left - scrollLeft + width / 2),
+                    y: Math.round(columnHeaderHeight + top - scrollTop + height / 2)
+                };
+            }",
+            new { row, col });
+    }
+
+    private static Task<CanvasCellSnapshotResult> ReadCanvasCellSnapshotAsync(ILocator grid, string cellRef)
+    {
+        var row = ParseRow(cellRef) - 1;
+        var col = ParseColumn(cellRef) - 1;
+        return grid.EvaluateAsync<CanvasCellSnapshotResult>(
+            @"(el, args) => {
+                const key = `${Number(args?.row ?? 0)}:${Number(args?.col ?? 0)}`;
+                const cell = el.__tmSpreadsheetCanvas?.sheetState?.cellStore?.cells?.get(key);
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    value: String(cell?.value ?? cell?.Value ?? ''),
+                    formula: String(cell?.formula ?? cell?.Formula ?? '')
+                };
+            }",
+            new { row, col });
+    }
+
+    private static async Task<CanvasCellSnapshotResult> WaitForCanvasCellSnapshotAsync(
+        ILocator grid,
+        string cellRef,
+        Func<CanvasCellSnapshotResult, bool> predicate,
+        string failureMessage)
+    {
+        CanvasCellSnapshotResult? snapshot = null;
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            snapshot = await ReadCanvasCellSnapshotAsync(grid, cellRef);
+            if (predicate(snapshot))
+                return snapshot;
+
+            await Task.Delay(100);
+        }
+
+        Assert.Fail($"{failureMessage} Last snapshot for {cellRef}: value '{snapshot?.Value}', formula '{snapshot?.Formula}', active '{snapshot?.ActiveRef}'.");
+        return snapshot!;
+    }
+
+    private static async Task WaitForCanvasActiveRefAsync(ILocator grid, string expectedRef)
+    {
+        for (var attempt = 0; attempt < 20; attempt++)
+        {
+            if (string.Equals(await GetCanvasActiveRefAsync(grid), expectedRef, StringComparison.OrdinalIgnoreCase))
+                return;
+
+            await Task.Delay(50);
+        }
+
+        var actualRef = await GetCanvasActiveRefAsync(grid);
+        Assert.Fail($"Expected active cell {expectedRef}, but got {actualRef}.");
+    }
+
+    private static async Task<string[]> ReadFormulaEditorCycleAsync(IPage page, ILocator editor)
+    {
+        var states = new List<string>
+        {
+            await editor.InputValueAsync()
+        };
+
+        for (var i = 0; i < 4; i++)
+        {
+            await page.Keyboard.PressAsync("F4");
+            states.Add(await editor.InputValueAsync());
+        }
+
+        return states.ToArray();
+    }
+
     private static void AssertPhase12Probe(string name, CanvasPhase12InteractionProbe probe)
     {
         Assert.IsTrue(probe.FirstFrameMs > 0, $"{name} should report first-frame latency.");
@@ -3632,6 +3852,19 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int UnderlinePixels { get; set; }
         public int BorderPixels { get; set; }
         public string FontCache { get; set; } = string.Empty;
+    }
+
+    private sealed class CanvasCellPointResult
+    {
+        public int X { get; set; }
+        public int Y { get; set; }
+    }
+
+    private sealed class CanvasCellSnapshotResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public string Value { get; set; } = string.Empty;
+        public string Formula { get; set; } = string.Empty;
     }
 
     private sealed class CanvasJsFirstStateProbeResult

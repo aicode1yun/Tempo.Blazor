@@ -72,6 +72,7 @@ public sealed class SpreadsheetSheet
     {
         var cellRef = $"{SpreadsheetRange.ColumnIndexToLetters(col)}{row + 1}";
         var cell = GetOrCreateCell(cellRef);
+        ClearDependencies(cellRef);
         cell.Value = value;
         cell.Formula = null;
         cell.DisplayValue = null;
@@ -112,6 +113,7 @@ public sealed class SpreadsheetSheet
     /// <summary>Updates the dependency graph for the given cell after its formula changes.</summary>
     public void UpdateDependencies(string cellRef)
     {
+        ClearDependencies(cellRef);
         if (!Cells.TryGetValue(cellRef, out var cell)) return;
         if (string.IsNullOrEmpty(cell.Formula)) return;
 
@@ -127,10 +129,41 @@ public sealed class SpreadsheetSheet
         }
     }
 
+    private void ClearDependencies(string cellRef)
+    {
+        if (string.IsNullOrWhiteSpace(cellRef))
+            return;
+
+        foreach (var entry in _dependents.ToArray())
+        {
+            if (!entry.Value.Remove(cellRef))
+                continue;
+
+            if (entry.Value.Count == 0)
+                _dependents.Remove(entry.Key);
+        }
+    }
+
     /// <summary>Recursively recalculates all cells that depend on the given cell.</summary>
     public void RecalculateDependents(string cellRef)
     {
         RecalculateDependents(cellRef, new HashSet<string>(StringComparer.OrdinalIgnoreCase));
+    }
+
+    /// <summary>
+    /// Returns the given cells plus every transitive dependent cell that may need
+    /// a renderer refresh after recalculation.
+    /// </summary>
+    public IReadOnlyList<string> GetCellAndDependentRefs(IEnumerable<string> cellRefs)
+    {
+        var visited = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var cellRef in cellRefs)
+        {
+            if (!string.IsNullOrWhiteSpace(cellRef))
+                CollectCellAndDependents(cellRef, visited);
+        }
+
+        return visited.ToArray();
     }
 
     private void RecalculateDependents(string cellRef, HashSet<string> visited)
@@ -143,6 +176,18 @@ public sealed class SpreadsheetSheet
             EvaluateFormula(dependentRef);
             RecalculateDependents(dependentRef, visited);
         }
+    }
+
+    private void CollectCellAndDependents(string cellRef, HashSet<string> visited)
+    {
+        if (!visited.Add(cellRef))
+            return;
+
+        if (!_dependents.TryGetValue(cellRef, out var dependents))
+            return;
+
+        foreach (var dependentRef in dependents)
+            CollectCellAndDependents(dependentRef, visited);
     }
 
     /// <summary>Creates a deep copy of this sheet.</summary>

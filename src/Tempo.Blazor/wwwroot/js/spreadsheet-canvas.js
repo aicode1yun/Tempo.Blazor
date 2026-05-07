@@ -2114,6 +2114,44 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return refs;
     }
 
+    function cycleSingleAbsoluteReference(cellRef) {
+        const match = /^(\$?)([A-Za-z]{1,3})(\$?)(\d{1,7})$/i.exec(String(cellRef || ""));
+        if (!match) return String(cellRef || "");
+
+        const colAbs = match[1] === "$";
+        const col = match[2].toUpperCase();
+        const rowAbs = match[3] === "$";
+        const row = match[4];
+
+        let nextColAbs;
+        let nextRowAbs;
+        if (!colAbs && !rowAbs) {
+            nextColAbs = true;
+            nextRowAbs = true;
+        } else if (colAbs && rowAbs) {
+            nextColAbs = false;
+            nextRowAbs = true;
+        } else if (!colAbs && rowAbs) {
+            nextColAbs = true;
+            nextRowAbs = false;
+        } else {
+            nextColAbs = false;
+            nextRowAbs = false;
+        }
+
+        return `${nextColAbs ? "$" : ""}${col}${nextRowAbs ? "$" : ""}${row}`;
+    }
+
+    function cycleAbsoluteReferenceToken(token) {
+        const value = String(token || "");
+        const parts = value.split(":");
+        if (parts.length === 2) {
+            return `${cycleSingleAbsoluteReference(parts[0])}:${cycleSingleAbsoluteReference(parts[1])}`;
+        }
+
+        return cycleSingleAbsoluteReference(value);
+    }
+
     function getFormulaTokenAtCaret(refs, caret) {
         const position = Math.max(0, Number(caret) || 0);
         let previous = null;
@@ -3395,6 +3433,29 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return true;
     }
 
+    function cycleLastFormulaAbsoluteReference(root) {
+        const s = getState(root);
+        const editor = s?.editor;
+        if (!s || !editor?.input) return false;
+
+        const input = editor.input;
+        const text = input.value || "";
+        if (!text.startsWith("=")) return false;
+
+        const refs = parseFormulaReferences(text);
+        const token = refs.length > 0 ? refs[refs.length - 1] : null;
+        if (!token) return false;
+
+        const replacement = cycleAbsoluteReferenceToken(token.text);
+        input.value = text.slice(0, token.start) + replacement + text.slice(token.end);
+        const nextCaret = token.start + replacement.length;
+        input.setSelectionRange(nextCaret, nextCaret);
+        bumpLocalRevision(root, "formula-editor");
+        updateSheetEditorValue(root);
+        updateFormulaEditorState(root, "formula-f4");
+        return true;
+    }
+
     function buildFormulaRangeRef(anchor, current) {
         const start = toCellRef(anchor.row, anchor.col);
         const end = toCellRef(current.row, current.col);
@@ -3436,6 +3497,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function isEditableKeyTarget(target) {
         if (!(target instanceof Element)) return false;
         return !!target.closest("input, textarea, select, [contenteditable=''], [contenteditable='true'], .tm-spreadsheet-canvas-grid__editor");
+    }
+
+    function isSpreadsheetOverlayTarget(target) {
+        return target instanceof Element
+            && !!target.closest(".tm-spreadsheet-context-menu, .tm-spreadsheet-resize-dialog, .tm-spreadsheet-resize-dialog-backdrop");
     }
 
     function closeLocalEditor(root, commit) {
@@ -3585,6 +3651,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 ev.preventDefault();
                 ev.stopPropagation();
                 closeLocalEditor(root, false);
+            } else if (ev.key === "F4") {
+                if (!cycleLastFormulaAbsoluteReference(root)) return;
+                ev.preventDefault();
+                ev.stopPropagation();
             } else {
                 bumpLocalRevision(root, "editor");
                 ev.stopPropagation();
@@ -3866,6 +3936,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ev.preventDefault();
         };
         const onPointerDownWrapper = ev => {
+            if (isSpreadsheetOverlayTarget(ev.target)) {
+                setPossibleDrag(root, null);
+                return;
+            }
+
             if (ev.button !== 0) {
                 onPointerDown(ev);
                 return;
@@ -3960,6 +4035,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             handleCommandKey(root, ev);
         };
         const onClick = ev => {
+            if (isSpreadsheetOverlayTarget(ev.target)) {
+                ev.preventDefault();
+                return;
+            }
             if (s.suppressClick) {
                 s.suppressClick = false;
                 ev.preventDefault();
@@ -3988,6 +4067,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             invokeDotNet(root, "OnCanvasPointer", [p.x, p.y, !!ev.shiftKey, !!ev.ctrlKey], true).catch(() => {});
         };
         const onDblClick = ev => {
+            if (isSpreadsheetOverlayTarget(ev.target)) {
+                ev.preventDefault();
+                return;
+            }
             const p = toContentPoint(root, ev);
             const hit = hitCell(root, p);
             if (hit) {
@@ -4000,6 +4083,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onContextMenu = ev => {
             ev.preventDefault();
+            if (isSpreadsheetOverlayTarget(ev.target)) {
+                ev.stopPropagation();
+                return;
+            }
             const p = toContentPoint(root, ev);
             invokeDotNet(root, "OnCanvasContextMenu", [p.x, p.y, ev.clientX, ev.clientY], true).catch(() => {});
         };

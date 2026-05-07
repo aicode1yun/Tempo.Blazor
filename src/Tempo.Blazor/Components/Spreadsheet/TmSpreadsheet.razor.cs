@@ -147,7 +147,7 @@ public partial class TmSpreadsheet
 
     private void InvalidateRenderedCells(IEnumerable<string> cellRefs)
     {
-        _grid?.InvalidateRenderedCells(cellRefs);
+        _grid?.InvalidateRenderedCells(ExpandActiveSheetAffectedCellRefs(cellRefs));
     }
 
     private void InvalidateRenderedRows(IEnumerable<int> rowIndices)
@@ -175,7 +175,20 @@ public partial class TmSpreadsheet
         var grid = CanvasJsEngineGrid;
         return grid is null
             ? Task.CompletedTask
-            : grid.ApplyEngineCellPatchesAsync(cellRefs);
+            : grid.ApplyEngineCellPatchesAsync(ExpandActiveSheetAffectedCellRefs(cellRefs));
+    }
+
+    private IReadOnlyList<string> ExpandActiveSheetAffectedCellRefs(IEnumerable<string> cellRefs)
+    {
+        var refs = cellRefs
+            .Where(static cellRef => !string.IsNullOrWhiteSpace(cellRef))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+
+        if (refs.Length == 0)
+            return refs;
+
+        return _workbook.ActiveSheet?.GetCellAndDependentRefs(refs) ?? refs;
     }
 
     private Task PreviewCanvasJsEngineStyleAsync(IEnumerable<string> cellRefs, Action<SpreadsheetCellStyle> mutate)

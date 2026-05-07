@@ -42,11 +42,13 @@ public sealed class SetCellValueCommand : ISpreadsheetCommand
         {
             cell.Value = _newValue;
             cell.Formula = null;
+            _sheet.UpdateDependencies(_cellRef);
         }
         else if (_newFormula is not null)
         {
             cell.Formula = _newFormula;
             cell.Value = null;
+            _sheet.UpdateDependencies(_cellRef);
             _sheet.EvaluateFormula(_cellRef);
         }
 
@@ -70,6 +72,7 @@ public sealed class SetCellValueCommand : ISpreadsheetCommand
         var cell = _sheet.GetOrCreateCell(_cellRef);
         cell.Value = _oldValue;
         cell.Formula = _oldFormula;
+        _sheet.UpdateDependencies(_cellRef);
         cell.Style = _oldStyle?.Clone() ?? new SpreadsheetCellStyle();
         cell.DisplayValue = null;
         _sheet.RecalculateDependents(_cellRef);

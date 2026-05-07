@@ -63,7 +63,11 @@ else
         {
             <div class="tm-spreadsheet-context-menu"
                  style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"
-                 @onclick:stopPropagation>
+                 @onclick:stopPropagation
+                 @onmousedown:stopPropagation
+                 @onpointerdown:stopPropagation
+                 @oncontextmenu:preventDefault
+                 @oncontextmenu:stopPropagation>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuFormatCells">@Loc["TmSpreadsheet_FormatCells"]</div>
                 <div class="tm-spreadsheet-context-menu__divider"></div>
                 <div class="tm-spreadsheet-context-menu__item" @onclick="ContextMenuCopy">@Loc["TmSpreadsheet_Copy"]</div>
@@ -86,8 +90,14 @@ else
 
         @if (_showColWidthDialog)
         {
-            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showColWidthDialog = false">
-                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+            <div class="tm-spreadsheet-resize-dialog-backdrop"
+                 @onclick="() => _showColWidthDialog = false"
+                 @onmousedown:stopPropagation
+                 @onpointerdown:stopPropagation>
+                <div class="tm-spreadsheet-resize-dialog"
+                     @onclick:stopPropagation
+                     @onmousedown:stopPropagation
+                     @onpointerdown:stopPropagation>
                     <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetColumnWidth"]</div>
                     <input class="tm-spreadsheet-resize-dialog__input"
                            type="number" min="16" max="1000"
@@ -106,8 +116,14 @@ else
 
         @if (_showRowHeightDialog)
         {
-            <div class="tm-spreadsheet-resize-dialog-backdrop" @onclick="() => _showRowHeightDialog = false">
-                <div class="tm-spreadsheet-resize-dialog" @onclick:stopPropagation>
+            <div class="tm-spreadsheet-resize-dialog-backdrop"
+                 @onclick="() => _showRowHeightDialog = false"
+                 @onmousedown:stopPropagation
+                 @onpointerdown:stopPropagation>
+                <div class="tm-spreadsheet-resize-dialog"
+                     @onclick:stopPropagation
+                     @onmousedown:stopPropagation
+                     @onpointerdown:stopPropagation>
                     <div class="tm-spreadsheet-resize-dialog__label">@Loc["TmSpreadsheet_SetRowHeight"]</div>
                     <input class="tm-spreadsheet-resize-dialog__input"
                            type="number" min="8" max="500"
