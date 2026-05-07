@@ -2,6 +2,7 @@
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.Feedback
 
 @* ── Inline panel — rendered inside page header area ─────────────────────── *@
 <div class="tm-npcp @(Expanded ? "tm-npcp--expanded" : "")"
@@ -245,6 +246,16 @@
             {
                 <div class="tm-npcp__error" role="alert">@_error</div>
             }
+
+            @* ── Delete confirmation dialog ───────────────────────────────────────────── *@
+            <TmDialog Show="_showDeleteConfirm"
+                      Type="DialogType.Confirm"
+                      Title="@Loc["TmNotionPageComment_Delete"]"
+                      Message="@Loc["TmNotionPageComment_DeleteConfirm"]"
+                      IsDangerous="true"
+                      OkButtonText="@Loc["Tm_Delete"]"
+                      CancelButtonText="@Loc["Tm_Cancel"]"
+                      OnResult="HandleDeleteConfirmResult" />
 
         </div>
     }

@@ -39,6 +39,8 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
 
     private Guid?          _editingEntryId;
     private string         _editText = string.Empty;
+    private bool           _showDeleteConfirm;
+    private INotionCommentEntry? _pendingDeleteEntry;
 
     private ElementReference _editRef;
 
@@ -190,11 +192,22 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
         }
     }
 
-    private async Task DeleteEntryAsync(INotionCommentEntry entry)
+    private void DeleteEntryAsync(INotionCommentEntry entry)
     {
         if (Context.CommentProvider is null || _comment is null) return;
-        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc["TmNotionBlockComment_DeleteConfirm"]);
-        if (!confirmed) return;
+        _pendingDeleteEntry = entry;
+        _showDeleteConfirm  = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDeleteConfirmResult(bool? result)
+    {
+        _showDeleteConfirm = false;
+        if (result != true || _pendingDeleteEntry is null || _comment is null)
+        {
+            _pendingDeleteEntry = null;
+            return;
+        }
 
         _error = string.Empty;
         try
@@ -207,6 +220,10 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
         catch
         {
             _error = Loc["TmNotionBlockComment_ActionError"];
+        }
+        finally
+        {
+            _pendingDeleteEntry = null;
         }
     }
 

@@ -37,6 +37,9 @@ public partial class TmNotionPageCommentPanel : ComponentBase
 
     private Guid?  _editingEntryId;
     private string _editText = string.Empty;
+    private bool   _showDeleteConfirm;
+    private IBlockComment?       _pendingDeleteComment;
+    private INotionCommentEntry? _pendingDeleteEntry;
 
     private bool   _initialized;
 
@@ -254,21 +257,39 @@ public partial class TmNotionPageCommentPanel : ComponentBase
         }
     }
 
-    private async Task DeleteEntryAsync(IBlockComment comment, INotionCommentEntry entry)
+    private void DeleteEntryAsync(IBlockComment comment, INotionCommentEntry entry)
     {
         if (Context.CommentProvider is null) return;
-        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc["TmNotionPageComment_DeleteConfirm"]);
-        if (!confirmed) return;
+        _pendingDeleteComment = comment;
+        _pendingDeleteEntry   = entry;
+        _showDeleteConfirm    = true;
+        StateHasChanged();
+    }
+
+    private async Task HandleDeleteConfirmResult(bool? result)
+    {
+        _showDeleteConfirm = false;
+        if (result != true || _pendingDeleteComment is null)
+        {
+            _pendingDeleteComment = null;
+            _pendingDeleteEntry   = null;
+            return;
+        }
 
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(comment.Id.ToString());
+            await Context.CommentProvider.DeleteCommentAsync(_pendingDeleteComment.Id.ToString());
             await LoadAsync();
         }
         catch
         {
             _error = Loc["TmNotionPageComment_ActionError"];
+        }
+        finally
+        {
+            _pendingDeleteComment = null;
+            _pendingDeleteEntry   = null;
         }
     }
 

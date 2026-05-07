@@ -130,10 +130,12 @@ public class NotionCommentsE2ETests : WasmTestBase
         var entryBefore = page.Locator(".tm-nbcp__entry-text").Filter(new() { HasText = "Comment to delete" }).First;
         Assert.IsTrue(await entryBefore.IsVisibleAsync());
 
-        page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
-
         var deleteBtn = page.Locator(".tm-nbcp__entry-action--danger").First;
         await deleteBtn.ClickAsync();
+
+        var okBtn = page.Locator(".tm-dialog-btn-ok").First;
+        await okBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await okBtn.ClickAsync();
         await page.WaitForTimeoutAsync(500);
 
         var entryAfter = page.Locator(".tm-nbcp__entry-text").Filter(new() { HasText = "Comment to delete" });
@@ -279,10 +281,12 @@ public class NotionCommentsE2ETests : WasmTestBase
         var entryBefore = page.Locator(".tm-npcp__entry-text").Filter(new() { HasText = "Page comment to delete" }).First;
         Assert.IsTrue(await entryBefore.IsVisibleAsync());
 
-        page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
-
         var deleteBtn = page.Locator(".tm-npcp__entry-action--danger").First;
         await deleteBtn.ClickAsync();
+
+        var okBtn = page.Locator(".tm-dialog-btn-ok").First;
+        await okBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await okBtn.ClickAsync();
         await page.WaitForTimeoutAsync(500);
 
         var entryAfter = page.Locator(".tm-npcp__entry-text").Filter(new() { HasText = "Page comment to delete" });
@@ -349,10 +353,12 @@ public class NotionCommentsE2ETests : WasmTestBase
         var entryBefore = page.Locator(".tm-ntcp__entry-text").Filter(new() { HasText = "Text comment to delete" }).First;
         Assert.IsTrue(await entryBefore.IsVisibleAsync());
 
-        page.Dialog += async (_, dialog) => await dialog.AcceptAsync();
-
         var deleteBtn = page.Locator(".tm-ntcp__entry-action--danger").First;
         await deleteBtn.ClickAsync();
+
+        var okBtn = page.Locator(".tm-dialog-btn-ok").First;
+        await okBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await okBtn.ClickAsync();
         await page.WaitForTimeoutAsync(500);
 
         var entryAfter = page.Locator(".tm-ntcp__entry-text").Filter(new() { HasText = "Text comment to delete" });

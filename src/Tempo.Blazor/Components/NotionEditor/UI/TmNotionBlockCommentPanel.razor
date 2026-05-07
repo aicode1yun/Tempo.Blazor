@@ -2,6 +2,7 @@
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
+@using Tempo.Blazor.Components.Feedback
 
 @* ── Backdrop ────────────────────────────────────────────────────────────── *@
 @if (Visible)
@@ -222,3 +223,13 @@
 
     </div>
 }
+
+@* ── Delete confirmation dialog ───────────────────────────────────────────── *@
+<TmDialog Show="_showDeleteConfirm"
+          Type="DialogType.Confirm"
+          Title="@Loc["TmNotionBlockComment_Delete"]"
+          Message="@Loc["TmNotionBlockComment_DeleteConfirm"]"
+          IsDangerous="true"
+          OkButtonText="@Loc["Tm_Delete"]"
+          CancelButtonText="@Loc["Tm_Cancel"]"
+          OnResult="HandleDeleteConfirmResult" />

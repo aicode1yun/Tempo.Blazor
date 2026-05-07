@@ -3,7 +3,7 @@
 .tm-ntcp-backdrop {
     position: fixed;
     inset: 0;
-    z-index: 9998;
+    z-index: 1020;
     background: transparent;
 }
 
@@ -11,7 +11,7 @@
 
 .tm-ntcp {
     position: fixed;
-    z-index: 9999;
+    z-index: 1030;
     width: 300px;
     max-height: 480px;
     display: flex;
