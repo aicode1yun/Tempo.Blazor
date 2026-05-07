@@ -55,6 +55,9 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     private string _colWidthInputValue = string.Empty;
     private string _rowHeightInputValue = string.Empty;
     private long _canvasInteractionVersion;
+    private long _lastCanvasCommandId;
+    private bool _lastShowGridLines = true;
+    private bool _lastFormatPainterActive;
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
 
@@ -67,11 +70,17 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     /// <summary>Default column width in pixels.</summary>
     [Parameter] public double ColumnWidth { get; set; } = 64;
 
+    /// <summary>Enables the JavaScript-first canvas engine mode where Blazor provides workbook state and targeted patches.</summary>
+    [Parameter] public bool UseJsEngine { get; set; }
+
     /// <summary>Called when the active cell changes.</summary>
     [Parameter] public EventCallback<string?> ActiveCellChanged { get; set; }
 
     /// <summary>Called when a cell value is committed after editing.</summary>
     [Parameter] public EventCallback<(string CellRef, string? Value)> CellValueCommitted { get; set; }
+
+    /// <summary>Called when a batch of cell values is committed from the JavaScript engine.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<CanvasCellEditCommit>> CellValuesCommittedBatch { get; set; }
 
     /// <summary>Called when the user requests a copy operation.</summary>
     [Parameter] public EventCallback OnCopyRequested { get; set; }
@@ -182,11 +191,88 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     public string? CurrentEditValue => _editValue;
 
     private string ActiveCellDomId => $"tm-spreadsheet-canvas-active-{GetHashCode():x}";
-    private string LiveRegionText => $"{Sheet?.ActiveCellRef ?? "A1"} {GetActiveCellDisplayValue()}";
+    private string LiveRegionDomId => $"tm-spreadsheet-canvas-live-{GetHashCode():x}";
+    private string CanvasAccessibilityDescriptionDomId => $"tm-spreadsheet-canvas-a11y-{GetHashCode():x}";
+    private string ActiveCellAriaText => $"{Sheet?.ActiveCellRef ?? "A1"} {GetActiveCellDisplayValue()}".Trim();
+    private string LiveRegionText => ActiveCellAriaText;
+    private int ActiveCellAriaRowIndex => GetActiveCellCoordinates().row + 1;
+    private int ActiveCellAriaColIndex => GetActiveCellCoordinates().col + 1;
     private string TotalScrollableWidthPx => $"{_geometry.ContentWidth + SpreadsheetGridConstants.RowHeaderWidth}px";
     private string TotalScrollableHeightPx => $"{_geometry.ContentHeight + SpreadsheetGridConstants.ColumnHeaderHeight}px";
     private readonly record struct CanvasRowFrame(int Index, double Top, double Height, bool Frozen);
     private readonly record struct CanvasColumnFrame(int Index, double Left, double Width, string Label, bool Frozen);
+
+    /// <summary>Represents one cell edit committed by the canvas JavaScript editor.</summary>
+    public sealed class CanvasCellEditCommit
+    {
+        /// <summary>Zero-based row index.</summary>
+        public int Row { get; set; }
+
+        /// <summary>Zero-based column index.</summary>
+        public int Col { get; set; }
+
+        /// <summary>Committed cell value.</summary>
+        public string? Value { get; set; }
+
+        /// <summary>Canvas interaction version associated with the commit.</summary>
+        public long InteractionVersion { get; set; }
+    }
+
+    /// <summary>Represents one command emitted by the canvas JavaScript engine.</summary>
+    public sealed class CanvasCommandLogEntry
+    {
+        /// <summary>Monotonic JavaScript command id.</summary>
+        public long Id { get; set; }
+
+        /// <summary>Command type, for example cellChanged or viewportSettled.</summary>
+        public string? Type { get; set; }
+
+        /// <summary>Alias for <see cref="Type"/> used by some JavaScript payloads.</summary>
+        public string? Event { get; set; }
+
+        /// <summary>Canvas interaction version associated with the command.</summary>
+        public long InteractionVersion { get; set; }
+
+        /// <summary>Viewport scroll left for viewportSettled commands.</summary>
+        public double ScrollLeft { get; set; }
+
+        /// <summary>Viewport scroll top for viewportSettled commands.</summary>
+        public double ScrollTop { get; set; }
+
+        /// <summary>Viewport client width for viewportSettled commands.</summary>
+        public double ClientWidth { get; set; }
+
+        /// <summary>Viewport client height for viewportSettled commands.</summary>
+        public double ClientHeight { get; set; }
+
+        /// <summary>Selection snapshot for selection and viewport commands.</summary>
+        public CanvasSelectionSnapshot? Selection { get; set; }
+
+        /// <summary>Cell edits carried by cellChanged, rangeChanged, or formulaCommitted commands.</summary>
+        public IReadOnlyList<CanvasCellEditCommit>? CellEdits { get; set; }
+    }
+
+    /// <summary>Represents a canvas selection snapshot emitted by JavaScript.</summary>
+    public sealed class CanvasSelectionSnapshot
+    {
+        /// <summary>Active row index.</summary>
+        public int Row { get; set; }
+
+        /// <summary>Active column index.</summary>
+        public int Col { get; set; }
+
+        /// <summary>Selection start row index.</summary>
+        public int StartRow { get; set; }
+
+        /// <summary>Selection start column index.</summary>
+        public int StartCol { get; set; }
+
+        /// <summary>Selection end row index.</summary>
+        public int EndRow { get; set; }
+
+        /// <summary>Selection end column index.</summary>
+        public int EndCol { get; set; }
+    }
 
     protected override void OnParametersSet()
     {
@@ -205,7 +291,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             _selection.ActiveCellRef = Sheet.ActiveCellRef;
             _selection.SelectionStartRef ??= Sheet.ActiveCellRef;
             _selection.SelectionEndRef ??= Sheet.ActiveCellRef;
-            _needsRender = true;
+            var presentationChanged = _lastShowGridLines != Sheet.ShowGridLines
+                || _lastFormatPainterActive != IsFormatPainterActive;
+            if (!UseJsEngine || structureChanged || !_registered || presentationChanged)
+                _needsRender = true;
+            _lastShowGridLines = Sheet.ShowGridLines;
+            _lastFormatPainterActive = IsFormatPainterActive;
         }
     }
 
@@ -338,6 +429,106 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         catch (InvalidOperationException) { }
     }
 
+    internal void RequestFullRender()
+    {
+        _needsRender = true;
+    }
+
+    internal async Task ApplyEngineCellPatchesAsync(IEnumerable<string> cellRefs)
+    {
+        if (!UseJsEngine || Sheet is null)
+            return;
+
+        if (!_registered)
+        {
+            _needsRender = true;
+            return;
+        }
+
+        var refs = cellRefs
+            .Where(static cellRef => !string.IsNullOrWhiteSpace(cellRef))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (refs.Length == 0)
+            return;
+
+        var cells = refs.Select(cellRef => BuildCanvasCellPatch(cellRef)).ToArray();
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.applyCommand", _rootElement, new
+            {
+                Type = "upsertCells",
+                Cells = cells
+            });
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    internal async Task PreviewEngineStylePatchesAsync(IEnumerable<string> cellRefs, Action<SpreadsheetCellStyle> mutate)
+    {
+        if (!UseJsEngine || Sheet is null)
+            return;
+
+        if (!_registered)
+        {
+            _needsRender = true;
+            return;
+        }
+
+        var refs = cellRefs
+            .Where(static cellRef => !string.IsNullOrWhiteSpace(cellRef))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (refs.Length == 0)
+            return;
+
+        var cells = refs.Select(cellRef => BuildCanvasCellPatch(cellRef, mutate)).ToArray();
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.applyCommand", _rootElement, new
+            {
+                Type = "upsertCells",
+                Cells = cells,
+                SuppressRedraw = false
+            });
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
+    private object BuildCanvasCellPatch(string cellRef, Action<SpreadsheetCellStyle>? mutateStyle = null)
+    {
+        var (row, col) = SpreadsheetSelectionState.ParseCellRef(cellRef);
+        SpreadsheetCell? cell = null;
+        var hasCell = Sheet?.Cells.TryGetValue(cellRef, out cell) == true;
+        var active = string.Equals(Sheet?.ActiveCellRef, cellRef, StringComparison.OrdinalIgnoreCase);
+        var selected = IsSelected(row, col, cellRef);
+        SpreadsheetCellStyle? style = null;
+        if (hasCell)
+            style = cell?.Style?.Clone() ?? new SpreadsheetCellStyle();
+        else if (mutateStyle is not null)
+            style = new SpreadsheetCellStyle();
+
+        mutateStyle?.Invoke(style ??= new SpreadsheetCellStyle());
+
+        return new
+        {
+            Row = row,
+            Col = col,
+            Ref = cellRef,
+            Value = hasCell ? GetCellDisplayValue(cellRef, cell) : string.Empty,
+            Formula = hasCell ? cell?.Formula : null,
+            Active = active,
+            Selected = selected,
+            SelectionEnd = IsSelectionEndCell(row, col),
+            FormulaRefColorIndex = hasCell ? GetFormulaRefColorIndex(cellRef) : -1,
+            ImageUrl = hasCell ? cell?.ImageUrl : null,
+            Hyperlink = hasCell ? cell?.Hyperlink : null,
+            Style = style is not null ? BuildCanvasStyle(style, cell) : null
+        };
+    }
+
     [JSInvokable]
     public Task OnCanvasViewportChanged(
         double scrollLeft,
@@ -354,7 +545,86 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     {
         CaptureCanvasInteractionVersion(interactionVersion);
         SyncSelectionFromCanvas(row, col, startRow, startCol, endRow, endCol);
+        return ApplyCanvasViewportAsync(scrollLeft, scrollTop, clientWidth, clientHeight);
+    }
 
+    [JSInvokable]
+    public async Task<long> OnCanvasCommandLogBatch(IReadOnlyList<CanvasCommandLogEntry>? commands)
+    {
+        if (commands is null || commands.Count == 0)
+            return _lastCanvasCommandId;
+
+        var shouldRender = false;
+        foreach (var command in commands.OrderBy(static command => command.Id))
+        {
+            if (command.Id <= _lastCanvasCommandId)
+                continue;
+
+            _lastCanvasCommandId = command.Id;
+            CaptureCanvasInteractionVersion(command.InteractionVersion);
+            var type = command.Type ?? command.Event ?? string.Empty;
+            switch (type)
+            {
+                case "cellChanged":
+                case "rangeChanged":
+                    if (command.CellEdits is not null)
+                    {
+                        if (CellValuesCommittedBatch.HasDelegate)
+                        {
+                            var commits = command.CellEdits
+                                .Select(static edit => new CanvasCellEditCommit
+                                {
+                                    Row = edit.Row,
+                                    Col = edit.Col,
+                                    Value = edit.Value,
+                                    InteractionVersion = edit.InteractionVersion
+                                })
+                                .ToArray();
+                            await CellValuesCommittedBatch.InvokeAsync(commits);
+                            shouldRender = true;
+                        }
+                        else
+                        {
+                            foreach (var edit in command.CellEdits)
+                                shouldRender |= await CommitCanvasCellEditAsync(edit.Row, edit.Col, edit.Value);
+                        }
+                    }
+                    break;
+                case "formulaCommitted":
+                    if (command.CellEdits is not null)
+                    {
+                        foreach (var edit in command.CellEdits)
+                            shouldRender |= await CommitCanvasCellEditAsync(edit.Row, edit.Col, edit.Value);
+                    }
+                    break;
+                case "selectionSettled":
+                    if (command.Selection is not null)
+                    {
+                        SyncSelectionFromCanvas(command.Selection.Row, command.Selection.Col, command.Selection.StartRow, command.Selection.StartCol, command.Selection.EndRow, command.Selection.EndCol);
+                        await ActiveCellChanged.InvokeAsync(Sheet?.ActiveCellRef);
+                    }
+                    break;
+                case "viewportSettled":
+                    if (command.Selection is not null)
+                        SyncSelectionFromCanvas(command.Selection.Row, command.Selection.Col, command.Selection.StartRow, command.Selection.StartCol, command.Selection.EndRow, command.Selection.EndCol);
+                    shouldRender |= ApplyCanvasViewport(command.ScrollLeft, command.ScrollTop, command.ClientWidth, command.ClientHeight);
+                    break;
+            }
+        }
+
+        if (shouldRender)
+            await InvokeAsync(StateHasChanged);
+
+        return _lastCanvasCommandId;
+    }
+
+    private Task ApplyCanvasViewportAsync(double scrollLeft, double scrollTop, double clientWidth, double clientHeight)
+        => ApplyCanvasViewport(scrollLeft, scrollTop, clientWidth, clientHeight)
+            ? InvokeAsync(StateHasChanged)
+            : Task.CompletedTask;
+
+    private bool ApplyCanvasViewport(double scrollLeft, double scrollTop, double clientWidth, double clientHeight)
+    {
         var next = new SpreadsheetViewportState(
             Math.Max(0, scrollLeft),
             Math.Max(0, scrollTop),
@@ -366,12 +636,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             && Math.Abs(_viewport.Width - next.Width) < 0.5
             && Math.Abs(_viewport.Height - next.Height) < 0.5)
         {
-            return Task.CompletedTask;
+            return false;
         }
 
         _viewport = next;
         _needsRender = true;
-        return InvokeAsync(StateHasChanged);
+        return true;
     }
 
     private void CaptureCanvasInteractionVersion(long interactionVersion)
@@ -516,10 +786,34 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     }
 
     [JSInvokable]
-    public Task OnCanvasCellEditCommitted(int row, int col, string? value)
+    public async Task OnCanvasCellEditCommitted(int row, int col, string? value)
+    {
+        var changed = await CommitCanvasCellEditAsync(row, col, value);
+        if (changed)
+            await InvokeAsync(StateHasChanged);
+    }
+
+    [JSInvokable]
+    public async Task OnCanvasCellEditCommittedBatch(IReadOnlyList<CanvasCellEditCommit>? commits)
+    {
+        if (Sheet is null || commits is null)
+            return;
+
+        var shouldRender = false;
+        foreach (var commit in commits)
+        {
+            CaptureCanvasInteractionVersion(commit.InteractionVersion);
+            shouldRender |= await CommitCanvasCellEditAsync(commit.Row, commit.Col, commit.Value);
+        }
+
+        if (shouldRender)
+            await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task<bool> CommitCanvasCellEditAsync(int row, int col, string? value)
     {
         if (Sheet is null)
-            return Task.CompletedTask;
+            return false;
 
         row = Math.Clamp(row, 0, Sheet.RowCount - 1);
         col = Math.Clamp(col, 0, Sheet.ColumnCount - 1);
@@ -529,10 +823,10 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             : string.Empty;
         var changed = !string.Equals(previousValue, value ?? string.Empty, StringComparison.Ordinal);
 
-        _ = CellValueCommitted.InvokeAsync((cellRef, value));
-        _ = OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet, cellRef, false));
+        await CellValueCommitted.InvokeAsync((cellRef, value));
+        await OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet, cellRef, false));
         _needsRender = changed;
-        return Task.CompletedTask;
+        return changed;
     }
 
     [JSInvokable]
@@ -896,6 +1190,14 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             : SpreadsheetNumberFormatter.Format(cell.Value, cell.Style.NumberFormat) ?? string.Empty;
     }
 
+    private (int row, int col) GetActiveCellCoordinates()
+    {
+        if (Sheet?.ActiveCellRef is null)
+            return (0, 0);
+
+        return SpreadsheetSelectionState.ParseCellRef(Sheet.ActiveCellRef);
+    }
+
     private object BuildCanvasFrame()
     {
         var sheet = Sheet!;
@@ -922,6 +1224,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             ActiveCellRef = sheet.ActiveCellRef,
             IsFormulaPointMode = IsInFormulaPointMode,
             IsFormatPainterActive,
+            UseJsEngine,
             InteractionVersion = _canvasInteractionVersion,
             Selection = new { selection.StartRow, selection.StartCol, selection.EndRow, selection.EndCol },
             Rows = rows,
@@ -1009,6 +1312,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
                     Width = rect.Width,
                     Height = rect.Height,
                     Value = GetCellDisplayValue(cellRef, cell),
+                    Formula = cell?.Formula,
                     Active = string.Equals(sheet.ActiveCellRef, cellRef, StringComparison.OrdinalIgnoreCase),
                     Selected = selected,
                     SelectionEnd = IsSelectionEndCell(rowIndex, colIndex),
@@ -1299,7 +1603,15 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         _dotNetRef ??= DotNetObjectReference.Create(this);
         try
         {
-            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.register", _rootElement, _canvasElement, _headerCanvasElement, _selectionCanvasElement, _dotNetRef);
+            if (UseJsEngine && Sheet is not null)
+            {
+                await JS.InvokeVoidAsync("tmSpreadsheetCanvas.initEngine", _rootElement, _canvasElement, _headerCanvasElement, _selectionCanvasElement, _dotNetRef, BuildCanvasFrame());
+                _needsRender = false;
+            }
+            else
+            {
+                await JS.InvokeVoidAsync("tmSpreadsheetCanvas.register", _rootElement, _canvasElement, _headerCanvasElement, _selectionCanvasElement, _dotNetRef);
+            }
             _registered = true;
         }
         catch (JSException) { }

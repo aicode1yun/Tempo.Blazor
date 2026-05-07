@@ -15,8 +15,15 @@ else
          aria-rowcount="@Sheet.RowCount"
          aria-colcount="@Sheet.ColumnCount"
          aria-label="@Loc["TmSpreadsheet_Name"]"
+         aria-describedby="@CanvasAccessibilityDescriptionDomId"
          aria-activedescendant="@ActiveCellDomId"
          tabindex="0"
+         data-a11y-active-cell-id="@ActiveCellDomId"
+         data-a11y-live-region-id="@LiveRegionDomId"
+         data-a11y-description-id="@CanvasAccessibilityDescriptionDomId"
+         data-a11y-active-cell-prefix="@Loc["TmSpreadsheet_ActiveCell"]"
+         data-a11y-cell-editor-label="@Loc["TmSpreadsheet_CellEditorLabel"]"
+         data-a11y-formula-editor-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
          @ref="_rootElement">
         <div class="tm-spreadsheet-canvas-grid__layer" aria-hidden="true">
             <canvas class="tm-spreadsheet-canvas-grid__canvas tm-spreadsheet-canvas-grid__canvas--content"
@@ -32,7 +39,7 @@ else
         @if (IsEditing)
         {
             <input class="tm-spreadsheet-canvas-grid__editor"
-                   id="@ActiveCellDomId"
+                   type="text"
                    value="@_editValue"
                    style="@GetEditorStyle()"
                    @ref="_editInput"
@@ -43,7 +50,14 @@ else
                    @onclick:stopPropagation />
         }
 
-        <div class="tm-sr-only" aria-live="polite">@LiveRegionText</div>
+        <div id="@ActiveCellDomId"
+             class="tm-sr-only"
+             role="gridcell"
+             aria-selected="true"
+             aria-rowindex="@ActiveCellAriaRowIndex"
+             aria-colindex="@ActiveCellAriaColIndex">@ActiveCellAriaText</div>
+        <div id="@LiveRegionDomId" class="tm-sr-only" aria-live="polite" aria-atomic="true">@LiveRegionText</div>
+        <div id="@CanvasAccessibilityDescriptionDomId" class="tm-sr-only">@Loc["TmSpreadsheet_CanvasAccessibilityNote"]</div>
 
         @if (_contextMenuVisible)
         {

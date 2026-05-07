@@ -73,14 +73,16 @@
                              OnValueChanged="@OnFormulaBarValueChanged"
                              OnTabPressed="@OnFormulaBarTabPressed" />
 
-    @if (RenderMode == SpreadsheetRenderMode.Canvas)
+    @if (RenderMode != SpreadsheetRenderMode.Dom)
     {
         <TmSpreadsheetCanvasGrid @ref="_grid"
                                  Sheet="_workbook.ActiveSheet"
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
+                                 UseJsEngine="@UseCanvasJsEngine"
                                  ActiveCellChanged="OnGridActiveCellChanged"
                                  CellValueCommitted="OnGridCellValueCommitted"
+                                 CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"
                                  OnCopyRequested="Copy"
                                  OnPasteRequested="Paste"
                                  OnCutRequested="Cut"

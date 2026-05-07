@@ -3,15 +3,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 (function () {
     const stateKey = "__tmSpreadsheetCanvas";
     const imageCache = new Map();
+    const modelRootMap = new WeakMap();
     const maxTextMeasureCacheSize = 5000;
     const maxStyleCacheSize = 1200;
     const maxDisplayValueCacheSize = 10000;
     const defaultCellFontFamily = "ui-monospace, SFMono-Regular, Menlo, Consolas, monospace";
     const keyboardRepeatPauseMs = 500;
     const keyboardRepeatAccelerationEnabledDefault = true;
+    const defaultLayoutOverscanRows = 4;
+    const defaultLayoutOverscanColumns = 2;
+    const defaultCommandLogDebounceMs = 35;
+    const defaultEditCommitBatchDebounceMs = 120;
+    const defaultLiveRegionDebounceMs = 120;
+    const customClipboardMime = "application/x-tempo-spreadsheet+json";
 
     if (window.tmSpreadsheetCanvas.keyboardRepeatAccelerationEnabled == null) {
         window.tmSpreadsheetCanvas.keyboardRepeatAccelerationEnabled = keyboardRepeatAccelerationEnabledDefault;
+    }
+
+    if (window.tmSpreadsheetCanvas.layoutOverscanRows == null) {
+        window.tmSpreadsheetCanvas.layoutOverscanRows = defaultLayoutOverscanRows;
+    }
+
+    if (window.tmSpreadsheetCanvas.layoutOverscanColumns == null) {
+        window.tmSpreadsheetCanvas.layoutOverscanColumns = defaultLayoutOverscanColumns;
     }
 
     function read(obj, name, fallback) {
@@ -33,6 +48,876 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
     function getState(root) {
         return root ? root[stateKey] : null;
+    }
+
+    function createSheetState(root) {
+        return {
+            id: "default",
+            localRevision: 0,
+            blazorRevision: 0,
+            serverRevision: 0,
+            lastLocalRevisionAt: 0,
+            lastBlazorRevisionAt: 0,
+            activeCell: { row: 0, col: 0, ref: "A1" },
+            selection: { startRow: 0, startCol: 0, endRow: 0, endCol: 0 },
+            scroll: { left: root?.scrollLeft || 0, top: root?.scrollTop || 0 },
+            hover: null,
+            drag: { possible: null, selection: null, autoscrollPointer: null },
+            autoFill: { active: false, pointerId: 0, source: null, preview: null },
+            editor: null,
+            formulaEditor: {
+                active: false,
+                row: 0,
+                col: 0,
+                text: "",
+                caret: 0,
+                tokenStart: -1,
+                tokenEnd: -1,
+                refs: [],
+                dragAnchor: null,
+                dragCurrent: null
+            },
+            formulaMode: false,
+            formatPainterActive: false,
+            accessibility: {
+                activeCellText: "",
+                liveRegionText: "",
+                pendingLiveRegionText: "",
+                liveRegionTimer: 0
+            },
+            cellStore: createCellStore(),
+            layoutState: createLayoutState()
+        };
+    }
+
+    function createCellStore() {
+        return {
+            cells: new Map(),
+            formulaRefs: new Set(),
+            styledOrNonEmpty: new Set(),
+            merged: new Set(),
+            lastVisibleKeys: new Set(),
+            revision: 0,
+            lastFrameCellCount: 0
+        };
+    }
+
+    function createLayoutState() {
+        return {
+            rowCount: 0,
+            columnCount: 0,
+            rowSizes: new Map(),
+            columnSizes: new Map(),
+            columnLabels: new Map(),
+            defaultRowHeight: 20,
+            defaultColumnWidth: 64,
+            rowOffsets: null,
+            columnOffsets: null,
+            rowRevision: 0,
+            columnRevision: 0,
+            revision: 0,
+            freezeRowCount: 0,
+            freezeColumnCount: 0,
+            rowHeaderWidth: 40,
+            columnHeaderHeight: 20
+        };
+    }
+
+    function createRendererState(canvas, headerCanvas, selectionCanvas, root) {
+        return {
+            layers: {
+                content: { canvas, dirty: true },
+                header: { canvas: headerCanvas || null, dirty: true },
+                selection: { canvas: selectionCanvas || null, dirty: true },
+                editor: { element: root || null, dirty: false }
+            },
+            dirty: {
+                content: true,
+                header: true,
+                selection: true,
+                editor: false,
+                full: true
+            },
+            dirtyRects: {
+                content: [],
+                selection: []
+            },
+            cache: {
+                textMetrics: new Map(),
+                fonts: new Map(),
+                paintStyles: new Map(),
+                displayValues: new Map(),
+                cellSnapshots: new Map()
+            }
+        };
+    }
+
+    function createWorkbookState(root) {
+        const sheet = createSheetState(root);
+        return {
+            localRevision: 0,
+            blazorRevision: 0,
+            serverRevision: 0,
+            activeSheetId: sheet.id,
+            sheets: { [sheet.id]: sheet }
+        };
+    }
+
+    function getSheetState(root) {
+        return getState(root)?.sheetState || null;
+    }
+
+    function bumpLocalRevision(root, source) {
+        const s = getState(root);
+        const sheet = s?.sheetState;
+        if (!s || !sheet) return 0;
+
+        const next = Math.max((s.interactionVersion || 0) + 1, (sheet.localRevision || 0) + 1);
+        s.interactionVersion = next;
+        s.lastInteractionSource = source || "local";
+        sheet.localRevision = next;
+        sheet.lastLocalRevisionAt = performance.now();
+        if (s.workbookState) s.workbookState.localRevision = next;
+        return next;
+    }
+
+    function setSheetScroll(root, left, top) {
+        const sheet = getSheetState(root);
+        if (!sheet) return;
+        sheet.scroll.left = Number(left) || 0;
+        sheet.scroll.top = Number(top) || 0;
+    }
+
+    function setSheetSelection(root, row, col, startRow, startCol, endRow, endCol) {
+        const sheet = getSheetState(root);
+        if (!sheet) return;
+        sheet.activeCell = { row, col, ref: toCellRef(row, col) };
+        sheet.selection = { startRow, startCol, endRow, endCol };
+        syncAccessibilityState(root, false);
+    }
+
+    function setSheetHover(root, hover) {
+        const sheet = getSheetState(root);
+        if (sheet) sheet.hover = hover;
+        const s = getState(root);
+        if (s) s.hoverCell = hover;
+    }
+
+    function getSheetHover(root) {
+        const s = getState(root);
+        return s?.sheetState?.hover ?? s?.hoverCell ?? null;
+    }
+
+    function setPossibleDrag(root, drag) {
+        const s = getState(root);
+        if (!s) return;
+        s.possibleDrag = drag;
+        if (s.sheetState) s.sheetState.drag.possible = drag;
+    }
+
+    function getPossibleDrag(root) {
+        const s = getState(root);
+        return s?.sheetState?.drag?.possible ?? s?.possibleDrag ?? null;
+    }
+
+    function setSelectionDrag(root, drag) {
+        const s = getState(root);
+        if (!s) return;
+        s.selectionDrag = drag;
+        if (s.sheetState) s.sheetState.drag.selection = drag;
+    }
+
+    function getSelectionDrag(root) {
+        const s = getState(root);
+        return s?.sheetState?.drag?.selection ?? s?.selectionDrag ?? null;
+    }
+
+    function setAutoFillState(root, autoFill) {
+        const s = getState(root);
+        if (!s) return;
+        s.autoFill = autoFill;
+        if (s.sheetState) s.sheetState.autoFill = autoFill;
+    }
+
+    function getAutoFillState(root) {
+        const s = getState(root);
+        return s?.sheetState?.autoFill ?? s?.autoFill ?? null;
+    }
+
+    function setDragAutoscrollPointer(root, pointer) {
+        const s = getState(root);
+        if (!s) return;
+        s.dragAutoscrollPointer = pointer;
+        if (s.sheetState) s.sheetState.drag.autoscrollPointer = pointer;
+    }
+
+    function setSheetEditor(root, editor) {
+        const s = getState(root);
+        if (!s) return;
+        s.editor = editor;
+        if (!s.sheetState) return;
+        s.sheetState.editor = editor
+            ? {
+                row: editor.row,
+                col: editor.col,
+                value: editor.input?.value ?? "",
+                initialValue: editor.initialValue ?? "",
+                revision: s.sheetState.localRevision || s.interactionVersion || 0
+            }
+            : null;
+        syncEditorAccessibility(root);
+        syncAccessibilityState(root, false);
+    }
+
+    function updateSheetEditorValue(root) {
+        const s = getState(root);
+        const editor = s?.editor;
+        if (!s?.sheetState || !editor) return;
+        s.sheetState.editor = {
+            row: editor.row,
+            col: editor.col,
+            value: editor.input?.value ?? "",
+            initialValue: editor.initialValue ?? "",
+            revision: s.sheetState.localRevision || s.interactionVersion || 0
+        };
+        syncEditorAccessibility(root);
+        syncAccessibilityState(root, false);
+    }
+
+    function getAccessibilityState(root) {
+        const s = getState(root);
+        if (!s?.sheetState) return null;
+        if (!s.sheetState.accessibility) {
+            s.sheetState.accessibility = {
+                activeCellText: "",
+                liveRegionText: "",
+                pendingLiveRegionText: "",
+                liveRegionTimer: 0
+            };
+        }
+        return s.sheetState.accessibility;
+    }
+
+    function getA11yElement(root, datasetKey) {
+        const id = root?.dataset?.[datasetKey];
+        return id ? document.getElementById(id) : null;
+    }
+
+    function getActiveCellState(root) {
+        const sheet = getSheetState(root);
+        if (sheet?.activeCell) {
+            const row = Number(sheet.activeCell.row);
+            const col = Number(sheet.activeCell.col);
+            if (Number.isFinite(row) && Number.isFinite(col)) {
+                return { row, col, ref: sheet.activeCell.ref || toCellRef(row, col) };
+            }
+        }
+
+        const active = parseCellRef(read(getState(root)?.model, "ActiveCellRef", "A1"));
+        return { row: active.row, col: active.col, ref: toCellRef(active.row, active.col) };
+    }
+
+    function getCellAccessibilityValue(root, row, col) {
+        const s = getState(root);
+        const editor = s?.editor;
+        if (editor && editor.row === row && editor.col === col) {
+            return editor.input?.value || "";
+        }
+
+        const storeCell = getCellStore(root)?.cells?.get(cellStoreKey(row, col));
+        const modelCell = storeCell || findCell(s?.model, row, col);
+        if (!modelCell) return "";
+
+        const formula = read(modelCell, "Formula", null);
+        if (typeof formula === "string" && formula.length > 0) return formula;
+
+        const displayValue = read(modelCell, "DisplayValue", null);
+        if (displayValue != null && `${displayValue}`.length > 0) return `${displayValue}`;
+
+        const value = read(modelCell, "Value", "");
+        return value == null ? "" : `${value}`;
+    }
+
+    function buildAccessibilityActiveCellText(root) {
+        const active = getActiveCellState(root);
+        const prefix = root?.dataset?.a11yActiveCellPrefix || "";
+        const value = getCellAccessibilityValue(root, active.row, active.col).trim();
+        return [prefix, active.ref || toCellRef(active.row, active.col), value].filter(part => !!part).join(" ").trim();
+    }
+
+    function syncActiveCellProxy(root) {
+        const activeElement = getA11yElement(root, "a11yActiveCellId");
+        const active = getActiveCellState(root);
+        const text = buildAccessibilityActiveCellText(root) || active.ref || "A1";
+        const accessibility = getAccessibilityState(root);
+        if (accessibility) accessibility.activeCellText = text;
+        if (!activeElement) return text;
+
+        activeElement.textContent = text;
+        activeElement.setAttribute("aria-rowindex", String(active.row + 1));
+        activeElement.setAttribute("aria-colindex", String(active.col + 1));
+        activeElement.setAttribute("aria-selected", "true");
+        if (root?.dataset?.a11yActiveCellId) {
+            root.setAttribute("aria-activedescendant", root.dataset.a11yActiveCellId);
+        }
+
+        return text;
+    }
+
+    function flushLiveRegion(root) {
+        const accessibility = getAccessibilityState(root);
+        const liveRegion = getA11yElement(root, "a11yLiveRegionId");
+        if (!accessibility || !liveRegion) return;
+
+        if (accessibility.liveRegionTimer) {
+            clearTimeout(accessibility.liveRegionTimer);
+            accessibility.liveRegionTimer = 0;
+        }
+
+        const text = accessibility.pendingLiveRegionText || syncActiveCellProxy(root);
+        accessibility.pendingLiveRegionText = text;
+        if (accessibility.liveRegionText === text) {
+            liveRegion.textContent = "";
+            setTimeout(() => {
+                if (!getState(root)) return;
+                liveRegion.textContent = text;
+            }, 0);
+        } else {
+            liveRegion.textContent = text;
+        }
+        accessibility.liveRegionText = text;
+    }
+
+    function scheduleLiveRegionUpdate(root, delay) {
+        const accessibility = getAccessibilityState(root);
+        if (!accessibility) return;
+
+        accessibility.pendingLiveRegionText = syncActiveCellProxy(root);
+        if (accessibility.liveRegionTimer) {
+            clearTimeout(accessibility.liveRegionTimer);
+        }
+
+        accessibility.liveRegionTimer = setTimeout(() => {
+            accessibility.liveRegionTimer = 0;
+            flushLiveRegion(root);
+        }, delay ?? defaultLiveRegionDebounceMs);
+    }
+
+    function syncAccessibilityState(root, announceMode) {
+        syncActiveCellProxy(root);
+        if (announceMode === false) return;
+        if (announceMode === "immediate") {
+            flushLiveRegion(root);
+            return;
+        }
+
+        scheduleLiveRegionUpdate(root, typeof announceMode === "number" ? announceMode : defaultLiveRegionDebounceMs);
+    }
+
+    function syncEditorAccessibility(root) {
+        const editor = getState(root)?.editor;
+        const input = editor?.input;
+        if (!input) return;
+
+        const isFormula = (input.value || "").startsWith("=") || !!getState(root)?.sheetState?.formulaEditor?.active;
+        const baseLabel = isFormula
+            ? (root?.dataset?.a11yFormulaEditorLabel || root?.dataset?.a11yCellEditorLabel || "Formula editor")
+            : (root?.dataset?.a11yCellEditorLabel || "Cell editor");
+        const describedBy = root?.dataset?.a11yDescriptionId || "";
+        const ref = toCellRef(editor.row, editor.col);
+
+        input.type = "text";
+        input.setAttribute("role", "textbox");
+        input.setAttribute("spellcheck", "false");
+        input.setAttribute("autocomplete", "off");
+        input.setAttribute("autocorrect", "off");
+        input.setAttribute("autocapitalize", "off");
+        input.setAttribute("aria-multiline", "false");
+        input.setAttribute("aria-label", `${baseLabel} ${ref}`.trim());
+        if (describedBy) input.setAttribute("aria-describedby", describedBy);
+        else input.removeAttribute("aria-describedby");
+        input.dataset.editorMode = isFormula ? "formula" : "cell";
+    }
+
+    function isJsEngine(root) {
+        const model = getState(root)?.model;
+        return !!read(model, "UseJsEngine", false);
+    }
+
+    function isFormulaPointMode(root) {
+        const s = getState(root);
+        return !!(s?.sheetState?.formulaEditor?.active || s?.sheetState?.formulaMode || read(s?.model, "IsFormulaPointMode", false));
+    }
+
+    function isFormatPainterActive(root) {
+        const s = getState(root);
+        return !!(s?.sheetState?.formatPainterActive || read(s?.model, "IsFormatPainterActive", false));
+    }
+
+    function cellStoreKey(row, col) {
+        return `${Number(row) || 0}:${Number(col) || 0}`;
+    }
+
+    function cellStoreKeyFromCell(cell) {
+        return cellStoreKey(read(cell, "Row", 0), read(cell, "Col", 0));
+    }
+
+    function hasCellStylePayload(style) {
+        if (!style) return false;
+        for (const key of [
+            "FontFamily", "FontSize", "Bold", "Italic", "Underline", "DoubleUnderline", "StrikeThrough",
+            "ForeColor", "BackgroundColor", "HorizontalAlign", "VerticalAlign", "NumberFormat", "TextWrap",
+            "BorderTop", "BorderRight", "BorderBottom", "BorderLeft"
+        ]) {
+            const value = read(style, key, null);
+            if (value !== null && value !== undefined && value !== false && value !== "" && value !== "general") {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function isStyledOrNonEmptyCell(cell) {
+        return !!(
+            read(cell, "Value", "") ||
+            read(cell, "ImageUrl", "") ||
+            read(cell, "Hyperlink", "") ||
+            hasCellStylePayload(read(cell, "Style", null))
+        );
+    }
+
+    function buildFrameSizeMaps(model) {
+        const rows = new Map();
+        const columns = new Map();
+        for (const row of read(model, "Rows", [])) {
+            rows.set(read(row, "Index", -1), read(row, "Height", 0));
+        }
+
+        for (const column of read(model, "Columns", [])) {
+            columns.set(read(column, "Index", -1), read(column, "Width", 0));
+        }
+
+        return { rows, columns };
+    }
+
+    function isMergedStoreCell(cell, frameSizes) {
+        if (read(cell, "Merged", false) || read(cell, "IsMerged", false)) return true;
+        const row = read(cell, "Row", -1);
+        const col = read(cell, "Col", -1);
+        const normalHeight = frameSizes?.rows?.get(row) || 0;
+        const normalWidth = frameSizes?.columns?.get(col) || 0;
+        return (normalHeight > 0 && read(cell, "Height", normalHeight) > normalHeight + 0.5)
+            || (normalWidth > 0 && read(cell, "Width", normalWidth) > normalWidth + 0.5);
+    }
+
+    function indexStoreCell(store, key, cell, frameSizes) {
+        store.formulaRefs.delete(key);
+        store.styledOrNonEmpty.delete(key);
+        store.merged.delete(key);
+
+        if (Number(read(cell, "FormulaRefColorIndex", -1)) >= 0) store.formulaRefs.add(key);
+        if (isStyledOrNonEmptyCell(cell)) store.styledOrNonEmpty.add(key);
+        if (isMergedStoreCell(cell, frameSizes)) store.merged.add(key);
+    }
+
+    function mergeCellPatch(existing, patch) {
+        if (!existing) return patch;
+        for (const [key, value] of Object.entries(patch || {})) {
+            existing[key] = value;
+        }
+        return existing;
+    }
+
+    function syncCellStoreFromModel(root, model, options) {
+        const s = getState(root);
+        const store = s?.sheetState?.cellStore;
+        if (!s || !store || !model) return;
+
+        modelRootMap.set(model, root);
+        const cells = read(model, "Cells", []);
+        const settings = options || {};
+        const allowOverwrite = settings.allowOverwrite !== false;
+        const frameSizes = buildFrameSizeMaps(model);
+        const visibleKeys = new Set();
+        let changed = false;
+
+        for (const cell of cells) {
+            const key = cellStoreKeyFromCell(cell);
+            visibleKeys.add(key);
+            if (allowOverwrite || !store.cells.has(key)) {
+                store.cells.set(key, cell);
+                changed = true;
+            }
+            indexStoreCell(store, key, store.cells.get(key), frameSizes);
+        }
+
+        store.lastVisibleKeys = visibleKeys;
+        store.lastFrameCellCount = cells.length;
+        if (changed || allowOverwrite) store.revision += 1;
+        if (s.metrics) {
+            s.metrics.cellStoreSize = store.cells.size;
+            s.metrics.cellStoreRevision = store.revision;
+            s.metrics.cellStoreFormulaRefCount = store.formulaRefs.size;
+            s.metrics.cellStoreStyledOrNonEmptyCount = store.styledOrNonEmpty.size;
+            s.metrics.cellStoreMergedCount = store.merged.size;
+            s.metrics.cellStoreLastFrameCellCount = cells.length;
+        }
+    }
+
+    function getCellStore(root) {
+        return getState(root)?.sheetState?.cellStore || null;
+    }
+
+    function setStoreCells(root, cells, options) {
+        const s = getState(root);
+        const store = getCellStore(root);
+        if (!s || !store || !Array.isArray(cells) || cells.length === 0) return 0;
+
+        const frameSizes = buildFrameSizeMaps(s.model || {});
+        const modelCells = read(s.model, "Cells", []);
+        let changed = 0;
+        for (const patch of cells) {
+            if (!patch) continue;
+            const row = read(patch, "Row", null);
+            const col = read(patch, "Col", null);
+            const parsed = row == null || col == null ? parseCellRef(read(patch, "Ref", "A1")) : null;
+            const nextRow = row == null ? parsed.row : Number(row) || 0;
+            const nextCol = col == null ? parsed.col : Number(col) || 0;
+            write(patch, "Row", nextRow);
+            write(patch, "Col", nextCol);
+            write(patch, "Ref", read(patch, "Ref", toCellRef(nextRow, nextCol)));
+            const key = cellStoreKey(nextRow, nextCol);
+            const existing = store.cells.get(key) || modelCells.find(cell => read(cell, "Row", -1) === nextRow && read(cell, "Col", -1) === nextCol);
+            const cell = mergeCellPatch(existing, patch);
+            store.cells.set(key, cell);
+            indexStoreCell(store, key, cell, frameSizes);
+            invalidateCellSnapshot(root, nextRow, nextCol);
+            changed += 1;
+        }
+
+        store.revision += 1;
+        bumpLocalRevision(root, "cell-store");
+        if (s.metrics) {
+            s.metrics.cellStoreSetCellCount += changed;
+            s.metrics.cellStoreSize = store.cells.size;
+            s.metrics.cellStoreRevision = store.revision;
+            s.metrics.cellStoreFormulaRefCount = store.formulaRefs.size;
+            s.metrics.cellStoreStyledOrNonEmptyCount = store.styledOrNonEmpty.size;
+            s.metrics.cellStoreMergedCount = store.merged.size;
+        }
+        syncAccessibilityState(root, false);
+        if (!options?.suppressRedraw) {
+            requestCanvasRedraw(root, "cell-store", "content");
+        }
+        if (options?.queueRangeCommand && changed > 0) {
+            const payload = cells.map(patch => ({
+                row: read(patch, "Row", 0),
+                col: read(patch, "Col", 0),
+                value: toCommandCellValue(read(patch, "Formula", null) || read(patch, "Value", "")),
+                interactionVersion: currentInteractionVersion(root)
+            }));
+            queueCommand(root, "rangeChanged", { cellEdits: payload }, { delay: options?.commandDelay ?? defaultCommandLogDebounceMs });
+        }
+        return changed;
+    }
+
+    function clearStoreCells(root, cells, options) {
+        const s = getState(root);
+        const store = getCellStore(root);
+        if (!s || !store || !Array.isArray(cells) || cells.length === 0) return 0;
+
+        const frameSizes = buildFrameSizeMaps(s.model || {});
+        let changed = 0;
+        for (const item of cells) {
+            const parsed = typeof item === "string"
+                ? parseCellRef(item)
+                : {
+                    row: read(item, "Row", parseCellRef(read(item, "Ref", "A1")).row),
+                    col: read(item, "Col", parseCellRef(read(item, "Ref", "A1")).col)
+                };
+            const key = cellStoreKey(parsed.row, parsed.col);
+            const cell = store.cells.get(key);
+            if (cell) {
+                write(cell, "Value", "");
+                write(cell, "ImageUrl", null);
+                write(cell, "Hyperlink", null);
+                write(cell, "Style", null);
+                write(cell, "FormulaRefColorIndex", -1);
+                indexStoreCell(store, key, cell, frameSizes);
+            }
+            invalidateCellSnapshot(root, parsed.row, parsed.col);
+            changed += 1;
+        }
+
+        store.revision += 1;
+        bumpLocalRevision(root, "cell-store");
+        if (s.metrics) {
+            s.metrics.cellStoreClearCellCount += changed;
+            s.metrics.cellStoreRevision = store.revision;
+            s.metrics.cellStoreFormulaRefCount = store.formulaRefs.size;
+            s.metrics.cellStoreStyledOrNonEmptyCount = store.styledOrNonEmpty.size;
+            s.metrics.cellStoreMergedCount = store.merged.size;
+        }
+        syncAccessibilityState(root, false);
+        requestCanvasRedraw(root, "cell-store", "content");
+        if (options?.queueRangeCommand && changed > 0) {
+            const payload = cells.map(item => {
+                const parsed = typeof item === "string"
+                    ? parseCellRef(item)
+                    : {
+                        row: read(item, "Row", parseCellRef(read(item, "Ref", "A1")).row),
+                        col: read(item, "Col", parseCellRef(read(item, "Ref", "A1")).col)
+                    };
+                return {
+                    row: parsed.row,
+                    col: parsed.col,
+                    value: "",
+                    interactionVersion: currentInteractionVersion(root)
+                };
+            });
+            queueCommand(root, "rangeChanged", { cellEdits: payload }, { delay: options?.commandDelay ?? defaultCommandLogDebounceMs });
+        }
+        return changed;
+    }
+
+    function getLayoutState(root) {
+        return getState(root)?.sheetState?.layoutState || null;
+    }
+
+    function layoutOverscanRows() {
+        return Math.max(0, Number(window.tmSpreadsheetCanvas.layoutOverscanRows ?? defaultLayoutOverscanRows) || 0);
+    }
+
+    function layoutOverscanColumns() {
+        return Math.max(0, Number(window.tmSpreadsheetCanvas.layoutOverscanColumns ?? defaultLayoutOverscanColumns) || 0);
+    }
+
+    function updateAxisCache(layout, axis, frames, count, defaultSize, sizeName, indexName, labelName) {
+        const sizeMap = axis === "row" ? layout.rowSizes : layout.columnSizes;
+        const labelMap = layout.columnLabels;
+        let changed = false;
+        let sizeTotal = 0;
+        let sizeCount = 0;
+
+        for (const frame of frames || []) {
+            const index = read(frame, indexName, -1);
+            const size = Number(read(frame, sizeName, 0)) || 0;
+            if (index < 0 || size <= 0) continue;
+            if (sizeMap.get(index) !== size) {
+                sizeMap.set(index, size);
+                changed = true;
+            }
+            sizeTotal += size;
+            sizeCount += 1;
+            if (axis === "column") {
+                const label = read(frame, labelName, "");
+                if (label && labelMap.get(index) !== label) labelMap.set(index, label);
+            }
+        }
+
+        if (sizeCount > 0) {
+            const nextDefault = Math.max(1, sizeTotal / sizeCount);
+            const roundedNext = Math.round(nextDefault * 100) / 100;
+            const current = axis === "row" ? layout.defaultRowHeight : layout.defaultColumnWidth;
+            if (Math.abs(current - roundedNext) > 0.5) {
+                if (axis === "row") layout.defaultRowHeight = roundedNext;
+                else layout.defaultColumnWidth = roundedNext;
+                changed = true;
+            }
+        } else if (defaultSize > 0) {
+            const current = axis === "row" ? layout.defaultRowHeight : layout.defaultColumnWidth;
+            if (Math.abs(current - defaultSize) > 0.5) {
+                if (axis === "row") layout.defaultRowHeight = defaultSize;
+                else layout.defaultColumnWidth = defaultSize;
+                changed = true;
+            }
+        }
+
+        if (axis === "row" && layout.rowCount !== count) {
+            layout.rowCount = count;
+            changed = true;
+        } else if (axis === "column" && layout.columnCount !== count) {
+            layout.columnCount = count;
+            changed = true;
+        }
+
+        if (changed) {
+            if (axis === "row") {
+                layout.rowOffsets = null;
+                layout.rowRevision += 1;
+            } else {
+                layout.columnOffsets = null;
+                layout.columnRevision += 1;
+            }
+            layout.revision += 1;
+        }
+
+        return changed;
+    }
+
+    function syncLayoutStateFromModel(root, model) {
+        const s = getState(root);
+        const layout = getLayoutState(root);
+        if (!s || !layout || !model) return;
+
+        const rows = read(model, "Rows", []);
+        const columns = read(model, "Columns", []);
+        const rowCount = read(model, "RowCount", rows.length);
+        const columnCount = read(model, "ColumnCount", columns.length);
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const freezeRowCount = read(model, "FreezeRowCount", 0);
+        const freezeColumnCount = read(model, "FreezeColumnCount", 0);
+        let changed = false;
+
+        changed = updateAxisCache(layout, "row", rows, rowCount, layout.defaultRowHeight, "Height", "Index") || changed;
+        changed = updateAxisCache(layout, "column", columns, columnCount, layout.defaultColumnWidth, "Width", "Index", "Label") || changed;
+
+        if (layout.rowHeaderWidth !== rowHeaderWidth || layout.columnHeaderHeight !== columnHeaderHeight) {
+            layout.rowHeaderWidth = rowHeaderWidth;
+            layout.columnHeaderHeight = columnHeaderHeight;
+            changed = true;
+        }
+
+        if (layout.freezeRowCount !== freezeRowCount || layout.freezeColumnCount !== freezeColumnCount) {
+            layout.freezeRowCount = freezeRowCount;
+            layout.freezeColumnCount = freezeColumnCount;
+            changed = true;
+            if (s.metrics) s.metrics.visibleLayoutFreezeInvalidationCount += 1;
+        }
+
+        if (changed) invalidateVisibleLayout(root, "layout-state");
+        if (s.metrics) {
+            s.metrics.layoutRowSizeCacheSize = layout.rowSizes.size;
+            s.metrics.layoutColumnSizeCacheSize = layout.columnSizes.size;
+            s.metrics.layoutRevision = layout.revision;
+            s.metrics.layoutOverscanRows = layoutOverscanRows();
+            s.metrics.layoutOverscanColumns = layoutOverscanColumns();
+        }
+    }
+
+    function invalidateVisibleLayout(root, reason) {
+        const s = getState(root);
+        if (!s) return;
+        if (s.visibleLayoutCache && s.metrics) s.metrics.visibleLayoutInvalidationCount += 1;
+        s.visibleLayoutCache = null;
+        s.visibleLayoutInvalidationReason = reason || "";
+    }
+
+    function setLayoutAxisSize(root, axis, index, size) {
+        const layout = getLayoutState(root);
+        const s = getState(root);
+        if (!layout) return false;
+        const next = Math.max(axis === "column" ? 16 : 8, Number(size) || 0);
+        const map = axis === "column" ? layout.columnSizes : layout.rowSizes;
+        if (Math.abs((map.get(index) || 0) - next) <= 0.5) return false;
+        map.set(index, next);
+        if (axis === "column") {
+            layout.columnOffsets = null;
+            layout.columnRevision += 1;
+            invalidateColumnSnapshots(root, index);
+        } else {
+            layout.rowOffsets = null;
+            layout.rowRevision += 1;
+            invalidateRowSnapshots(root, index);
+        }
+        layout.revision += 1;
+        invalidateVisibleLayout(root, "resize");
+        if (s?.metrics) s.metrics.visibleLayoutResizeInvalidationCount += 1;
+        return true;
+    }
+
+    function buildAxisOffsets(count, defaultSize, sizeMap) {
+        const offsets = new Float64Array(Math.max(0, count) + 1);
+        for (let i = 0; i < count; i++) {
+            offsets[i + 1] = offsets[i] + (sizeMap.get(i) || defaultSize);
+        }
+        return offsets;
+    }
+
+    function getRowOffsets(layout) {
+        if (!layout.rowOffsets) {
+            layout.rowOffsets = buildAxisOffsets(layout.rowCount, layout.defaultRowHeight, layout.rowSizes);
+        }
+        return layout.rowOffsets;
+    }
+
+    function getColumnOffsets(layout) {
+        if (!layout.columnOffsets) {
+            layout.columnOffsets = buildAxisOffsets(layout.columnCount, layout.defaultColumnWidth, layout.columnSizes);
+        }
+        return layout.columnOffsets;
+    }
+
+    function binarySearchOffset(offsets, value) {
+        if (!offsets || offsets.length <= 1) return 0;
+        let lo = 0;
+        let hi = offsets.length - 2;
+        const target = Math.max(0, Number(value) || 0);
+        while (lo <= hi) {
+            const mid = (lo + hi) >> 1;
+            if (offsets[mid + 1] <= target) lo = mid + 1;
+            else if (offsets[mid] > target) hi = mid - 1;
+            else return mid;
+        }
+        return Math.max(0, Math.min(offsets.length - 2, lo));
+    }
+
+    function createRowFrame(layout, index, scrollTop, frozen) {
+        const offsets = getRowOffsets(layout);
+        const top = offsets[index] || 0;
+        const height = Math.max(0, offsets[index + 1] - top);
+        return {
+            index,
+            Index: index,
+            top,
+            Top: top,
+            y: layout.columnHeaderHeight + top - (frozen ? 0 : scrollTop),
+            height,
+            Height: height,
+            frozen,
+            Frozen: frozen
+        };
+    }
+
+    function createColumnFrame(layout, index, scrollLeft, frozen) {
+        const offsets = getColumnOffsets(layout);
+        const left = offsets[index] || 0;
+        const width = Math.max(0, offsets[index + 1] - left);
+        const label = layout.columnLabels.get(index) || columnIndexToLetters(index);
+        return {
+            index,
+            Index: index,
+            left,
+            Left: left,
+            x: layout.rowHeaderWidth + left - (frozen ? 0 : scrollLeft),
+            width,
+            Width: width,
+            label,
+            Label: label,
+            frozen,
+            Frozen: frozen
+        };
+    }
+
+    function columnIndexToLetters(index) {
+        let n = Math.max(0, Number(index) || 0) + 1;
+        let letters = "";
+        while (n > 0) {
+            const rem = (n - 1) % 26;
+            letters = String.fromCharCode(65 + rem) + letters;
+            n = Math.floor((n - 1) / 26);
+        }
+        return letters;
+    }
+
+    function columnLettersToIndex(letters) {
+        let col = 0;
+        for (const ch of String(letters || "").toUpperCase()) {
+            col = col * 26 + ch.charCodeAt(0) - 64;
+        }
+        return Math.max(0, col - 1);
     }
 
     function safeSetPointerCapture(root, pointerId) {
@@ -69,12 +954,12 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
     function getLogicalScrollLeft(root) {
         const s = getState(root);
-        return s ? s.logicalScrollLeft || 0 : root?.scrollLeft || 0;
+        return s ? s.sheetState?.scroll?.left ?? s.logicalScrollLeft ?? 0 : root?.scrollLeft || 0;
     }
 
     function getLogicalScrollTop(root) {
         const s = getState(root);
-        return s ? s.logicalScrollTop || 0 : root?.scrollTop || 0;
+        return s ? s.sheetState?.scroll?.top ?? s.logicalScrollTop ?? 0 : root?.scrollTop || 0;
     }
 
     function setLogicalScroll(root, left, top, source) {
@@ -86,11 +971,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             || Math.abs(nextTop - (s.logicalScrollTop || 0)) > 0.5;
         s.logicalScrollLeft = nextLeft;
         s.logicalScrollTop = nextTop;
+        setSheetScroll(root, nextLeft, nextTop);
         if (s.model) {
             write(s.model, "ScrollLeft", nextLeft);
             write(s.model, "ScrollTop", nextTop);
         }
         if (changed) updateLocalEditorPosition(root);
+
+        if (changed) bumpLocalRevision(root, source || "scroll");
 
         if (changed && source === "keyboard") {
             s.lastLogicalKeyboardScrollAt = performance.now();
@@ -160,6 +1048,108 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }, delay ?? 90);
     }
 
+    function markRendererDirty(root, kind, reason) {
+        const renderer = getState(root)?.renderer;
+        if (!renderer) return;
+        const dirty = renderer.dirty;
+        const next = kind || "full";
+        if (next === "selection") {
+            dirty.selection = true;
+            renderer.layers.selection.dirty = true;
+        } else if (next === "headers") {
+            dirty.header = true;
+            dirty.selection = true;
+            renderer.layers.header.dirty = true;
+            renderer.layers.selection.dirty = true;
+        } else if (next === "content") {
+            dirty.content = true;
+            dirty.selection = true;
+            renderer.layers.content.dirty = true;
+            renderer.layers.selection.dirty = true;
+        } else {
+            dirty.full = true;
+            dirty.content = true;
+            dirty.header = true;
+            dirty.selection = true;
+            dirty.editor = true;
+            renderer.layers.content.dirty = true;
+            renderer.layers.header.dirty = true;
+            renderer.layers.selection.dirty = true;
+            renderer.layers.editor.dirty = true;
+        }
+        renderer.lastDirtyReason = reason || "";
+    }
+
+    function consumeRendererDirty(root) {
+        const renderer = getState(root)?.renderer;
+        if (!renderer) {
+            return {
+                content: true,
+                header: true,
+                selection: true,
+                editor: true,
+                full: true,
+                contentRects: [],
+                selectionRects: []
+            };
+        }
+
+        const snapshot = {
+            ...renderer.dirty,
+            contentRects: renderer.dirtyRects.content.splice(0),
+            selectionRects: renderer.dirtyRects.selection.splice(0)
+        };
+        renderer.dirty = { content: false, header: false, selection: false, editor: false, full: false };
+        for (const layer of Object.values(renderer.layers)) {
+            layer.dirty = false;
+        }
+        return snapshot;
+    }
+
+    function addDirtyRect(root, layer, rect) {
+        const s = getState(root);
+        const renderer = s?.renderer;
+        if (!renderer || !rect || rect.width <= 0 || rect.height <= 0) return;
+        const expanded = {
+            x: Math.max(0, Math.floor(rect.x) - 3),
+            y: Math.max(0, Math.floor(rect.y) - 3),
+            width: Math.ceil(rect.width) + 6,
+            height: Math.ceil(rect.height) + 6
+        };
+        renderer.dirtyRects[layer]?.push(expanded);
+        if (s.metrics) {
+            if (layer === "selection") {
+                s.metrics.selectionDirtyRectCount += 1;
+                s.metrics.selectionDirtyRectArea += expanded.width * expanded.height;
+            } else if (layer === "content") {
+                s.metrics.contentDirtyRectCount += 1;
+                s.metrics.contentDirtyRectArea += expanded.width * expanded.height;
+            }
+        }
+    }
+
+    function unionRects(rects, width, height) {
+        if (!Array.isArray(rects) || rects.length === 0) return null;
+        let left = Infinity;
+        let top = Infinity;
+        let right = -Infinity;
+        let bottom = -Infinity;
+        for (const rect of rects) {
+            left = Math.min(left, rect.x);
+            top = Math.min(top, rect.y);
+            right = Math.max(right, rect.x + rect.width);
+            bottom = Math.max(bottom, rect.y + rect.height);
+        }
+        if (!Number.isFinite(left) || !Number.isFinite(top) || right <= left || bottom <= top) return null;
+        left = Math.max(0, left);
+        top = Math.max(0, top);
+        right = Math.min(width, right);
+        bottom = Math.min(height, bottom);
+        return right > left && bottom > top
+            ? { x: left, y: top, width: right - left, height: bottom - top }
+            : null;
+    }
+
     function dirtyRank(kind) {
         return ({ selection: 1, headers: 2, content: 3, full: 4 })[kind] || 4;
     }
@@ -173,6 +1163,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const s = getState(root);
         if (!s || !s.model) return;
         const nextKind = kind || "full";
+        markRendererDirty(root, nextKind, reason);
         const previousKind = s.dirtyKind || "";
         const mergedKind = mergeRedrawKind(previousKind, nextKind);
         const isMergedRequest = !!s.paintRequested;
@@ -206,6 +1197,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.pendingPaintRequestCount = 0;
             s.dirtyReason = "";
             s.dirtyKind = "";
+            const dirty = consumeRendererDirty(root);
             if (s.metrics) {
                 s.metrics.paintFrameCount += 1;
                 s.metrics.maxMergedPaintRequestsPerFrame = Math.max(s.metrics.maxMergedPaintRequestsPerFrame || 0, requestCount);
@@ -214,13 +1206,29 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
             if (redrawKind === "selection") {
                 syncModelViewport(root, s.model);
-                renderSelectionOverlay(root, s.model);
+                renderSelectionOverlay(root, s.model, { dirtyRects: dirty.selectionRects });
                 if (s.metrics) s.metrics.selectionPaintFrameCount += 1;
             } else if (redrawReason === "scroll" && tryBitmapScrollRedraw(root, s.model, oldScrollLeft, oldScrollTop)) {
                 s.paintedScrollLeft = getLogicalScrollLeft(root);
                 s.paintedScrollTop = getLogicalScrollTop(root);
                 if (s.metrics) s.metrics.contentPaintFrameCount += 1;
                 return;
+            } else if (redrawKind === "content" && !dirty.full) {
+                syncModelViewport(root, s.model);
+                const metrics = renderContentLayer(root, s.model, { dirtyRects: dirty.contentRects });
+                if (dirty.selection) renderSelectionOverlay(root, s.model, { dirtyRects: dirty.selectionRects });
+                s.paintedScrollLeft = getLogicalScrollLeft(root);
+                s.paintedScrollTop = getLogicalScrollTop(root);
+                if (s.metrics) {
+                    s.metrics.contentPaintFrameCount += 1;
+                    s.metrics.lastTextDrawMs = metrics.textMs;
+                    s.metrics.lastVisibleCellCount = metrics.cells;
+                    s.metrics.lastTextCount = metrics.texts;
+                }
+            } else if (redrawKind === "headers" && !dirty.full) {
+                syncModelViewport(root, s.model);
+                renderHeaderLayer(root, s.model);
+                if (dirty.selection) renderSelectionOverlay(root, s.model, { dirtyRects: dirty.selectionRects });
             } else {
                 syncModelViewport(root, s.model);
                 renderModel(root, s.canvas, s.model);
@@ -242,18 +1250,147 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function markLocalInteraction(root, source) {
         const s = getState(root);
         if (!s) return 0;
-        s.interactionVersion += 1;
-        s.lastInteractionSource = source || "local";
+        const revision = bumpLocalRevision(root, source || "local");
         if (s.metrics) {
             if (source === "keyboard") s.metrics.keyboardInteractions += 1;
             else if (source === "scroll") s.metrics.scrollInteractions += 1;
             else if (source === "pointer") s.metrics.pointerInteractions += 1;
         }
-        return s.interactionVersion;
+        s.lastLocalInteractionAt = performance.now();
+        return revision;
     }
 
     function currentInteractionVersion(root) {
-        return getState(root)?.interactionVersion || 0;
+        const s = getState(root);
+        return Math.max(s?.interactionVersion || 0, s?.sheetState?.localRevision || 0);
+    }
+
+    function recordDotNetCallback(root, method, hotPath) {
+        const metrics = getState(root)?.metrics;
+        if (!metrics) return;
+        const key = method || "unknown";
+        metrics.dotNetCallbackCount += 1;
+        metrics.lastDotNetCallbackMethod = key;
+        metrics.dotNetCallbacksByMethod[key] = (metrics.dotNetCallbacksByMethod[key] || 0) + 1;
+        if (hotPath) {
+            metrics.hotPathDotNetCallbackCount += 1;
+            metrics.hotPathDotNetCallbacksByMethod[key] = (metrics.hotPathDotNetCallbacksByMethod[key] || 0) + 1;
+        }
+    }
+
+    function invokeDotNet(root, method, args, hotPath) {
+        const s = getState(root);
+        if (!s?.dotNet) return Promise.resolve();
+        const isHotPath = hotPath == null
+            ? performance.now() - (s.lastLocalInteractionAt || 0) < 500
+            : !!hotPath;
+        recordDotNetCallback(root, method, isHotPath);
+        return s.dotNet.invokeMethodAsync(method, ...(args || []));
+    }
+
+    function countCommandType(metrics, type) {
+        if (!metrics) return;
+        if (type === "cellChanged") metrics.cellChangedCommandCount += 1;
+        else if (type === "rangeChanged") metrics.rangeChangedCommandCount += 1;
+        else if (type === "selectionSettled") metrics.selectionSettledCommandCount += 1;
+        else if (type === "viewportSettled") metrics.viewportSettledCommandCount += 1;
+        else if (type === "formulaCommitted") metrics.formulaCommittedCommandCount += 1;
+    }
+
+    function queueCommand(root, type, payload, options) {
+        const s = getState(root);
+        if (!s) return null;
+        const command = {
+            id: ++s.commandLogSeq,
+            type,
+            event: type,
+            interactionVersion: currentInteractionVersion(root),
+            createdAt: performance.now(),
+            attempts: 0,
+            ...(payload || {})
+        };
+
+        if (command.id <= (s.commandLogAckRevision || 0)) {
+            if (s.metrics) s.metrics.commandLogObsoleteDropCount += 1;
+            return null;
+        }
+
+        s.commandLog.push(command);
+        if (s.metrics) {
+            s.metrics.commandLogQueuedCount += 1;
+            countCommandType(s.metrics, type);
+        }
+
+        const delay = options?.delay ?? defaultCommandLogDebounceMs;
+        if (options?.flushNow) {
+            flushCommandLog(root);
+        } else {
+            scheduleCommandLogFlush(root, delay);
+        }
+        return command;
+    }
+
+    function scheduleCommandLogFlush(root, delay) {
+        const s = getState(root);
+        if (!s) return;
+        if (s.commandLogTimer) clearTimeout(s.commandLogTimer);
+        s.commandLogTimer = setTimeout(() => flushCommandLog(root), delay ?? defaultCommandLogDebounceMs);
+    }
+
+    function flushCommandLog(root) {
+        const s = getState(root);
+        if (!s || !s.dotNet) return;
+        if (s.commandLogTimer) {
+            clearTimeout(s.commandLogTimer);
+            s.commandLogTimer = 0;
+        }
+        if (s.commandLogInFlight) {
+            s.commandLogPending = true;
+            return;
+        }
+
+        const ack = s.commandLogAckRevision || 0;
+        const batch = (s.commandLog || []).filter(command => command.id > ack);
+        const obsoleteCount = (s.commandLog || []).length - batch.length;
+        if (obsoleteCount > 0 && s.metrics) s.metrics.commandLogObsoleteDropCount += obsoleteCount;
+        s.commandLog = [];
+        if (batch.length === 0) return;
+
+        s.commandLogInFlight = true;
+        if (s.metrics) {
+            s.metrics.commandLogBatchCallbackCount += 1;
+            s.metrics.commandLogBatchItemCount += batch.length;
+        }
+
+        invokeDotNet(root, "OnCanvasCommandLogBatch", [batch], false)
+            .then(ackRevision => {
+                const nextAck = Number(ackRevision) || Math.max(...batch.map(command => command.id));
+                s.commandLogAckRevision = Math.max(s.commandLogAckRevision || 0, nextAck);
+                if (s.metrics) s.metrics.commandLogAckRevision = s.commandLogAckRevision;
+            })
+            .catch(() => {
+                const retry = [];
+                for (const command of batch) {
+                    command.attempts = (command.attempts || 0) + 1;
+                    if (command.attempts <= 2 && command.id > (s.commandLogAckRevision || 0)) {
+                        retry.push(command);
+                    } else if (s.metrics) {
+                        s.metrics.commandLogObsoleteDropCount += 1;
+                    }
+                }
+                if (retry.length > 0) {
+                    s.commandLog.unshift(...retry);
+                    if (s.metrics) s.metrics.commandLogRetryCount += retry.length;
+                    s.commandLogPending = true;
+                }
+            })
+            .finally(() => {
+                s.commandLogInFlight = false;
+                if (s.commandLogPending || s.commandLog.length > 0) {
+                    s.commandLogPending = false;
+                    scheduleCommandLogFlush(root, 45);
+                }
+            });
     }
 
     function scheduleForcedViewportSync(root) {
@@ -283,16 +1420,6 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             clearTimeout(s.viewportTimer);
             s.viewportTimer = 0;
         }
-
-        if (s.viewportInFlight) {
-            s.viewportPending = true;
-            s.viewportPendingForce = s.viewportPendingForce || !!force;
-            return;
-        }
-
-        s.viewportInFlight = true;
-        s.viewportPending = false;
-        s.viewportPendingForce = false;
         const scrollLeft = getLogicalScrollLeft(root);
         const scrollTop = getLogicalScrollTop(root);
         s.syncedScrollLeft = scrollLeft;
@@ -300,29 +1427,18 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         s.lastViewportSync = performance.now();
         const selection = getSelectionSnapshot(root);
         if (s.metrics) s.metrics.viewportCallbackCount += 1;
+        const delay = force
+            ? 0
+            : getSettledCommandDelay(root, defaultCommandLogDebounceMs);
 
-        s.dotNet.invokeMethodAsync(
-            "OnCanvasViewportChanged",
+        queueCommand(root, "viewportSettled", {
             scrollLeft,
             scrollTop,
-            root.clientWidth || 0,
-            root.clientHeight || 0,
-            selection.row,
-            selection.col,
-            selection.startRow,
-            selection.startCol,
-            selection.endRow,
-            selection.endCol,
-            currentInteractionVersion(root)
-        ).catch(() => {}).finally(() => {
-            s.viewportInFlight = false;
-            if (s.viewportPending) {
-                const pendingForce = !!s.viewportPendingForce;
-                s.viewportPending = false;
-                s.viewportPendingForce = false;
-                sendViewport(root, pendingForce);
-            }
-        });
+            clientWidth: root.clientWidth || 0,
+            clientHeight: root.clientHeight || 0,
+            selection,
+            force: !!force
+        }, { delay, flushNow: !!force });
     }
 
     function notifyViewport(root, force) {
@@ -391,6 +1507,18 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     }
 
     function getSelectionSnapshot(root) {
+        const sheet = getSheetState(root);
+        if (sheet) {
+            return {
+                row: sheet.activeCell.row,
+                col: sheet.activeCell.col,
+                startRow: sheet.selection.startRow,
+                startCol: sheet.selection.startCol,
+                endRow: sheet.selection.endRow,
+                endCol: sheet.selection.endCol
+            };
+        }
+
         const model = getState(root)?.model;
         const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
         const selection = read(model, "Selection", {});
@@ -439,14 +1567,52 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (!s || !s.model || !model) return model;
 
         const frameVersion = Number(read(model, "InteractionVersion", 0)) || 0;
-        if (frameVersion >= s.interactionVersion) return model;
+        const localRevision = Math.max(s.interactionVersion || 0, s.sheetState?.localRevision || 0);
+        if (frameVersion >= localRevision) return model;
 
         if (s.metrics) s.metrics.staleFramesIgnored += 1;
         write(model, "ScrollLeft", getLogicalScrollLeft(root));
         write(model, "ScrollTop", getLogicalScrollTop(root));
         applySelectionSnapshot(model, getSelectionSnapshot(root));
-        write(model, "InteractionVersion", s.interactionVersion);
+        if (s.sheetState) {
+            write(model, "IsFormulaPointMode", s.sheetState.formulaMode);
+            write(model, "IsFormatPainterActive", s.sheetState.formatPainterActive);
+        }
+        write(model, "InteractionVersion", localRevision);
         return model;
+    }
+
+    function syncSheetStateFromModel(root, model, serverRevisionOverride) {
+        const s = getState(root);
+        const sheet = s?.sheetState;
+        if (!s || !sheet || !model) return;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", sheet.activeCell.ref || "A1"));
+        const selection = read(model, "Selection", {});
+        const startRow = Number(read(selection, "StartRow", active.row)) || 0;
+        const startCol = Number(read(selection, "StartCol", active.col)) || 0;
+        const endRow = Number(read(selection, "EndRow", active.row)) || 0;
+        const endCol = Number(read(selection, "EndCol", active.col)) || 0;
+        setSheetSelection(root, active.row, active.col, startRow, startCol, endRow, endCol);
+
+        const scrollLeft = Number(read(model, "ScrollLeft", getLogicalScrollLeft(root))) || 0;
+        const scrollTop = Number(read(model, "ScrollTop", getLogicalScrollTop(root))) || 0;
+        s.logicalScrollLeft = scrollLeft;
+        s.logicalScrollTop = scrollTop;
+        setSheetScroll(root, scrollLeft, scrollTop);
+
+        sheet.formulaMode = !!read(model, "IsFormulaPointMode", sheet.formulaMode);
+        sheet.formatPainterActive = !!read(model, "IsFormatPainterActive", sheet.formatPainterActive);
+
+        const serverRevision = Number(serverRevisionOverride ?? read(model, "InteractionVersion", sheet.serverRevision || 0)) || 0;
+        s.blazorRevisionCounter = Math.max((s.blazorRevisionCounter || 0) + 1, serverRevision);
+        sheet.serverRevision = serverRevision;
+        sheet.blazorRevision = s.blazorRevisionCounter;
+        sheet.lastBlazorRevisionAt = performance.now();
+        if (s.workbookState) {
+            s.workbookState.serverRevision = serverRevision;
+            s.workbookState.blazorRevision = s.blazorRevisionCounter;
+        }
     }
 
     function buildPalette(root) {
@@ -479,6 +1645,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             bitmapShiftCount: 0,
             bitmapShiftFallbackCount: 0,
             dragAutoscrollFrames: 0,
+            dotNetCallbackCount: 0,
+            hotPathDotNetCallbackCount: 0,
+            dotNetCallbacksByMethod: {},
+            hotPathDotNetCallbacksByMethod: {},
+            lastDotNetCallbackMethod: "",
+            blazorFrameCount: 0,
+            hotPathBlazorFrameCount: 0,
+            lastBlazorFrameAgeMs: 0,
+            localRevision: 0,
+            blazorRevision: 0,
+            serverRevision: 0,
+            cellStoreSize: 0,
+            cellStoreRevision: 0,
+            cellStoreLastFrameCellCount: 0,
+            cellStoreFormulaRefCount: 0,
+            cellStoreStyledOrNonEmptyCount: 0,
+            cellStoreMergedCount: 0,
+            cellStoreLookupCount: 0,
+            cellStoreHitCount: 0,
+            cellStoreMissCount: 0,
+            cellStoreFrameScanCount: 0,
+            cellStoreVisibleCellCount: 0,
+            cellStoreSetCellCount: 0,
+            cellStoreClearCellCount: 0,
             viewportCallbackCount: 0,
             selectionCallbackCount: 0,
             keyCommandCallbackCount: 0,
@@ -562,6 +1752,45 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             cellSnapshotStoreCount: 0,
             cellSnapshotInvalidationCount: 0,
             cellSnapshotCacheSize: 0,
+            selectionDirtyRectCount: 0,
+            contentDirtyRectCount: 0,
+            selectionDirtyRectArea: 0,
+            contentDirtyRectArea: 0,
+            contentLayerPaintCount: 0,
+            headerLayerPaintCount: 0,
+            selectionLayerPaintCount: 0,
+            editorLayerUpdateCount: 0,
+            lastContentLayerMs: 0,
+            lastHeaderLayerMs: 0,
+            lastSelectionLayerMs: 0,
+            lastEditorLayerMs: 0,
+            contentFramesOver16: 0,
+            contentFramesOver33: 0,
+            selectionFramesOver16: 0,
+            selectionFramesOver33: 0,
+            commandLogQueuedCount: 0,
+            commandLogBatchCallbackCount: 0,
+            commandLogBatchItemCount: 0,
+            commandLogAckRevision: 0,
+            commandLogRetryCount: 0,
+            commandLogObsoleteDropCount: 0,
+            cellChangedCommandCount: 0,
+            rangeChangedCommandCount: 0,
+            selectionSettledCommandCount: 0,
+            viewportSettledCommandCount: 0,
+            formulaCommittedCommandCount: 0,
+            editorOpenCount: 0,
+            editorCancelCount: 0,
+            editorLocalCommitCount: 0,
+            cellEditCommitQueuedCount: 0,
+            cellEditCommitBatchCallbackCount: 0,
+            cellEditCommitBatchItemCount: 0,
+            formulaEditorActivationCount: 0,
+            formulaEditorReferenceParseCount: 0,
+            formulaEditorReferenceCount: 0,
+            formulaEditorCellClickInsertCount: 0,
+            formulaEditorRangeDragCount: 0,
+            formulaEditorHighlightCount: 0,
             textMeasureCacheSize: 0,
             fontStringCacheSize: 0,
             paintStyleCacheSize: 0,
@@ -569,7 +1798,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             visibleRowCount: 0,
             visibleColumnCount: 0,
             visibleLayoutCacheHits: 0,
-            visibleLayoutCacheMisses: 0
+            visibleLayoutCacheMisses: 0,
+            visibleLayoutInvalidationCount: 0,
+            visibleLayoutResizeInvalidationCount: 0,
+            visibleLayoutFreezeInvalidationCount: 0,
+            visibleLayoutJsComputeCount: 0,
+            visibleLayoutBinarySearchCount: 0,
+            layoutRowSizeCacheSize: 0,
+            layoutColumnSizeCacheSize: 0,
+            layoutRevision: 0,
+            layoutOverscanRows: defaultLayoutOverscanRows,
+            layoutOverscanColumns: defaultLayoutOverscanColumns
         };
     }
 
@@ -607,10 +1846,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const y = ev.clientY - rect.top;
         const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
         const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const layout = getVisibleLayout(root, model, root.clientWidth || read(model, "ViewportWidth", 1), root.clientHeight || read(model, "ViewportHeight", 1));
 
         if (y <= columnHeaderHeight && x >= rowHeaderWidth) {
-            for (const col of read(model, "Columns", [])) {
-                const right = screenX(model, col) + read(col, "Width", 0);
+            for (const col of layout.columns) {
+                const right = read(col, "x", screenX(model, col)) + read(col, "Width", 0);
                 if (Math.abs(x - right) <= 4) {
                     return { kind: "column", index: read(col, "Index", 0), start: ev.clientX, size: read(col, "Width", 64) };
                 }
@@ -618,8 +1858,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         if (x <= rowHeaderWidth && y >= columnHeaderHeight) {
-            for (const row of read(model, "Rows", [])) {
-                const bottom = screenY(model, row) + read(row, "Height", 0);
+            for (const row of layout.rows) {
+                const bottom = read(row, "y", screenY(model, row)) + read(row, "Height", 0);
                 if (Math.abs(y - bottom) <= 4) {
                     return { kind: "row", index: read(row, "Index", 0), start: ev.clientY, size: read(row, "Height", 20) };
                 }
@@ -634,19 +1874,48 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const model = s?.model;
         if (!model || point.x < 0 || point.y < 0) return null;
 
+        const layout = getLayoutState(root);
+        const rowOffsets = layout ? getRowOffsets(layout) : null;
+        const colOffsets = layout ? getColumnOffsets(layout) : null;
+        const rowIndex = rowOffsets ? binarySearchOffset(rowOffsets, point.y) : -1;
+        const colIndex = colOffsets ? binarySearchOffset(colOffsets, point.x) : -1;
+        if (s.metrics && rowOffsets && colOffsets) s.metrics.visibleLayoutBinarySearchCount += 2;
+        if (rowIndex >= 0 && colIndex >= 0) {
+            return {
+                row: rowIndex,
+                col: colIndex,
+                cell: findCell(model, rowIndex, colIndex)
+            };
+        }
+
         const row = findFrameAt(read(model, "Rows", []), point.y, "Top", "Height");
         const col = findFrameAt(read(model, "Columns", []), point.x, "Left", "Width");
         if (!row || !col) return null;
 
-        const rowIndex = read(row, "Index", -1);
-        const colIndex = read(col, "Index", -1);
-        if (rowIndex < 0 || colIndex < 0) return null;
+        const fallbackRowIndex = read(row, "Index", -1);
+        const fallbackColIndex = read(col, "Index", -1);
+        if (fallbackRowIndex < 0 || fallbackColIndex < 0) return null;
 
         return {
-            row: rowIndex,
-            col: colIndex,
-            cell: findCell(model, rowIndex, colIndex)
+            row: fallbackRowIndex,
+            col: fallbackColIndex,
+            cell: findCell(model, fallbackRowIndex, fallbackColIndex)
         };
+    }
+
+    function hitAutoFillHandle(root, ev) {
+        const snapshot = getSelectionSnapshot(root);
+        const bounds = selectionBounds(snapshot);
+        const rect = getCellScreenRect(root, bounds.endRow, bounds.endCol);
+        if (!rect) return false;
+        const rootRect = root.getBoundingClientRect();
+        const handleSize = 10;
+        const left = rootRect.left + rect.x + rect.width - handleSize;
+        const top = rootRect.top + rect.y + rect.height - handleSize;
+        return ev.clientX >= left
+            && ev.clientX <= left + handleSize + 2
+            && ev.clientY >= top
+            && ev.clientY <= top + handleSize + 2;
     }
 
     function sameCell(a, b) {
@@ -665,6 +1934,62 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         return { row: Math.max(0, Number(match[2]) - 1), col: Math.max(0, col - 1) };
+    }
+
+    function normalizeFormulaCellRef(value) {
+        return String(value || "").replace(/\$/g, "").toUpperCase();
+    }
+
+    function parseFormulaReferenceToken(token) {
+        const raw = normalizeFormulaCellRef(token);
+        const parts = raw.split(":");
+        if (parts.length < 1 || parts.length > 2) return null;
+        const first = /^([A-Z]{1,3})(\d{1,7})$/.exec(parts[0]);
+        const second = parts.length === 2 ? /^([A-Z]{1,3})(\d{1,7})$/.exec(parts[1]) : first;
+        if (!first || !second) return null;
+        const start = parseCellRef(parts[0]);
+        const end = parseCellRef(parts[1] || parts[0]);
+        return {
+            raw,
+            startRow: Math.min(start.row, end.row),
+            startCol: Math.min(start.col, end.col),
+            endRow: Math.max(start.row, end.row),
+            endCol: Math.max(start.col, end.col)
+        };
+    }
+
+    function parseFormulaReferences(text) {
+        const refs = [];
+        const value = String(text || "");
+        const regex = /(\$?[A-Za-z]{1,3}\$?\d{1,7})(?::(\$?[A-Za-z]{1,3}\$?\d{1,7}))?/g;
+        let match;
+        while ((match = regex.exec(value)) !== null) {
+            const before = value[match.index - 1] || "";
+            const after = value[match.index + match[0].length] || "";
+            if (/[A-Za-z0-9_$]/.test(before) || /[A-Za-z0-9_$]/.test(after)) continue;
+            const parsed = parseFormulaReferenceToken(match[0]);
+            if (!parsed) continue;
+            refs.push({
+                ...parsed,
+                text: match[0],
+                start: match.index,
+                end: match.index + match[0].length,
+                colorIndex: refs.length % 6
+            });
+        }
+
+        return refs;
+    }
+
+    function getFormulaTokenAtCaret(refs, caret) {
+        const position = Math.max(0, Number(caret) || 0);
+        let previous = null;
+        for (const ref of refs || []) {
+            if (position >= ref.start && position <= ref.end) return ref;
+            if (ref.end <= position) previous = ref;
+        }
+
+        return previous && previous.end === position ? previous : null;
     }
 
     function findFrameAt(frames, offset, startName, sizeName) {
@@ -727,6 +2052,20 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     }
 
     function findCell(model, row, col) {
+        const root = modelRootMap.get(model);
+        const store = getCellStore(root);
+        const metrics = getState(root)?.metrics;
+        if (metrics) metrics.cellStoreLookupCount += 1;
+        if (store) {
+            const cell = store.cells.get(cellStoreKey(row, col));
+            if (cell) {
+                if (metrics) metrics.cellStoreHitCount += 1;
+                return cell;
+            }
+            if (metrics) metrics.cellStoreMissCount += 1;
+        }
+
+        if (metrics) metrics.cellStoreFrameScanCount += 1;
         for (const cell of read(model, "Cells", [])) {
             if (read(cell, "Row", -1) === row && read(cell, "Col", -1) === col) {
                 return cell;
@@ -736,8 +2075,130 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return null;
     }
 
+    function getDrawableCells(root, model, layout) {
+        const store = getCellStore(root);
+        const metrics = getState(root)?.metrics;
+        if (!store) return read(model, "Cells", []);
+
+        const visible = [];
+        for (const rowFrame of layout?.rows || []) {
+            const row = read(rowFrame, "Index", -1);
+            for (const columnFrame of layout?.columns || []) {
+                const col = read(columnFrame, "Index", -1);
+                const key = cellStoreKey(row, col);
+                if (metrics) metrics.cellStoreLookupCount += 1;
+                const cell = store.cells.get(key);
+                if (cell) {
+                    if (metrics) metrics.cellStoreHitCount += 1;
+                    const next = { ...cell };
+                    const width = read(cell, "Width", read(columnFrame, "Width", 0));
+                    const height = read(cell, "Height", read(rowFrame, "Height", 0));
+                    write(next, "Row", row);
+                    write(next, "Col", col);
+                    write(next, "Left", read(columnFrame, "Left", 0));
+                    write(next, "Top", read(rowFrame, "Top", 0));
+                    write(next, "Width", width);
+                    write(next, "Height", height);
+                    visible.push(next);
+                } else if (metrics) {
+                    metrics.cellStoreMissCount += 1;
+                }
+            }
+        }
+
+        if (metrics) metrics.cellStoreVisibleCellCount = visible.length;
+        return visible;
+    }
+
+    function getCellScreenRect(root, row, col) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!s || !model) return null;
+        const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
+        const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
+        const layout = getVisibleLayout(root, model, width, height);
+        const rowFrame = getFrameByIndex(layout.rows, row);
+        const colFrame = getFrameByIndex(layout.columns, col);
+        if (!rowFrame || !colFrame) return null;
+        return {
+            x: read(colFrame, "x", 0),
+            y: read(rowFrame, "y", 0),
+            width: read(colFrame, "Width", 0),
+            height: read(rowFrame, "Height", 0)
+        };
+    }
+
+    function getSelectionScreenRect(root, snapshot) {
+        if (!snapshot) return null;
+        const startRow = Math.min(snapshot.startRow ?? snapshot.row, snapshot.endRow ?? snapshot.row);
+        const endRow = Math.max(snapshot.startRow ?? snapshot.row, snapshot.endRow ?? snapshot.row);
+        const startCol = Math.min(snapshot.startCol ?? snapshot.col, snapshot.endCol ?? snapshot.col);
+        const endCol = Math.max(snapshot.startCol ?? snapshot.col, snapshot.endCol ?? snapshot.col);
+        const topLeft = getCellScreenRect(root, startRow, startCol);
+        const bottomRight = getCellScreenRect(root, endRow, endCol);
+        const active = getCellScreenRect(root, snapshot.row, snapshot.col);
+        const rects = [topLeft, bottomRight, active].filter(Boolean);
+        if (rects.length === 0) return null;
+        let left = Infinity;
+        let top = Infinity;
+        let right = -Infinity;
+        let bottom = -Infinity;
+        for (const rect of rects) {
+            left = Math.min(left, rect.x);
+            top = Math.min(top, rect.y);
+            right = Math.max(right, rect.x + rect.width);
+            bottom = Math.max(bottom, rect.y + rect.height);
+        }
+        return { x: left, y: top, width: right - left, height: bottom - top };
+    }
+
+    function addSelectionDirtyRectForChange(root, before, after) {
+        const beforeRect = getSelectionScreenRect(root, before);
+        const afterRect = getSelectionScreenRect(root, after);
+        for (const rect of [beforeRect, afterRect]) {
+            if (rect) addDirtyRect(root, "selection", rect);
+        }
+    }
+
     function getFormulaReferenceCells(root, model) {
         const s = getState(root);
+        const formulaRefs = s?.sheetState?.formulaEditor?.active ? s.sheetState.formulaEditor.refs || [] : [];
+        if (formulaRefs.length > 0) {
+            const rowCount = read(model, "RowCount", 1000000);
+            const colCount = read(model, "ColumnCount", 1000000);
+            const cells = [];
+            for (const ref of formulaRefs) {
+                const startRow = Math.max(0, Math.min(rowCount - 1, ref.startRow));
+                const endRow = Math.max(0, Math.min(rowCount - 1, ref.endRow));
+                const startCol = Math.max(0, Math.min(colCount - 1, ref.startCol));
+                const endCol = Math.max(0, Math.min(colCount - 1, ref.endCol));
+                let emitted = 0;
+                for (let row = startRow; row <= endRow && emitted < 5000; row++) {
+                    for (let col = startCol; col <= endCol && emitted < 5000; col++) {
+                        cells.push({
+                            Row: row,
+                            Col: col,
+                            Ref: toCellRef(row, col),
+                            FormulaRefColorIndex: ref.colorIndex
+                        });
+                        emitted += 1;
+                    }
+                }
+            }
+            if (s?.metrics) {
+                s.metrics.formulaEditorHighlightCount = cells.length;
+                s.metrics.formulaEditorReferenceCount = formulaRefs.length;
+            }
+            return cells;
+        }
+
+        const store = getCellStore(root);
+        if (store) {
+            return [...store.formulaRefs]
+                .map(key => store.cells.get(key))
+                .filter(Boolean);
+        }
+
         const cells = read(model, "Cells", []);
         if (s
             && s.formulaReferenceSource === cells
@@ -774,12 +2235,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const s = getState(root);
         const model = s?.model;
         if (!model) return;
+        const beforeSelection = getSelectionSnapshot(root);
         markLocalInteraction(root, source || "pointer");
 
         const previousActive = parseCellRef(read(model, "ActiveCellRef", "A1"));
         const selection = read(model, "Selection", {});
         const startRow = extendSelection ? read(selection, "StartRow", row) : row;
         const startCol = extendSelection ? read(selection, "StartCol", col) : col;
+        setSheetSelection(root, row, col, startRow, startCol, row, col);
 
         write(model, "ActiveCellRef", toCellRef(row, col));
         write(selection, "StartRow", startRow);
@@ -791,8 +2254,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             updateCellSelectionFlags(model, previousActive.row, previousActive.col, false, false, false);
         }
         updateCellSelectionFlags(model, row, col, true, true, true);
+        addSelectionDirtyRectForChange(root, beforeSelection, getSelectionSnapshot(root));
 
         requestCanvasRedraw(root, source || "selection", "selection");
+        scheduleLiveRegionUpdate(root, source === "keyboard" ? 90 : defaultLiveRegionDebounceMs);
     }
 
     function getLocalCellFromClientPoint(root, clientX, clientY) {
@@ -809,24 +2274,34 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const localY = Math.max(0, Math.min(bodyHeight - 1, clientY - rect.top - columnHeaderHeight));
         const contentX = getLogicalScrollLeft(root) + localX;
         const contentY = getLogicalScrollTop(root) + localY;
-        const rowCount = read(model, "RowCount", 1);
-        const colCount = read(model, "ColumnCount", 1);
-        const row = findIndexAtContentOffset(read(model, "Rows", []), contentY, "Top", "Height", "Index", 0, Math.max(0, rowCount - 1));
-        const col = findIndexAtContentOffset(read(model, "Columns", []), contentX, "Left", "Width", "Index", 0, Math.max(0, colCount - 1));
+        const layout = getLayoutState(root);
+        let row;
+        let col;
+        if (layout) {
+            row = binarySearchOffset(getRowOffsets(layout), contentY);
+            col = binarySearchOffset(getColumnOffsets(layout), contentX);
+            if (s.metrics) s.metrics.visibleLayoutBinarySearchCount += 2;
+        } else {
+            const rowCount = read(model, "RowCount", 1);
+            const colCount = read(model, "ColumnCount", 1);
+            row = findIndexAtContentOffset(read(model, "Rows", []), contentY, "Top", "Height", "Index", 0, Math.max(0, rowCount - 1));
+            col = findIndexAtContentOffset(read(model, "Columns", []), contentX, "Left", "Width", "Index", 0, Math.max(0, colCount - 1));
+        }
 
         return { row, col, cell: findCell(model, row, col) };
     }
 
     function updateDragSelectionTarget(root, clientX, clientY) {
-        const s = getState(root);
-        if (!s?.selectionDrag) return false;
+        const selectionDrag = getSelectionDrag(root);
+        if (!selectionDrag) return false;
 
         const hit = hitCell(root, toContentPoint(root, { clientX, clientY })) || getLocalCellFromClientPoint(root, clientX, clientY);
         if (!hit) return false;
 
-        if (hit.row !== s.selectionDrag.row || hit.col !== s.selectionDrag.col) {
-            s.selectionDrag.row = hit.row;
-            s.selectionDrag.col = hit.col;
+        if (hit.row !== selectionDrag.row || hit.col !== selectionDrag.col) {
+            selectionDrag.row = hit.row;
+            selectionDrag.col = hit.col;
+            setSelectionDrag(root, selectionDrag);
             updateLocalActiveCell(root, hit.row, hit.col, true, "pointer");
             return true;
         }
@@ -837,7 +2312,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function updateDragAutoscroll(root, clientX, clientY, pointerId) {
         const s = getState(root);
         if (!s) return;
-        s.dragAutoscrollPointer = { clientX, clientY, pointerId };
+        setDragAutoscrollPointer(root, { clientX, clientY, pointerId });
         if (s.dragAutoscrollFrame) return;
         s.dragAutoscrollFrame = requestAnimationFrame(() => runDragAutoscroll(root));
     }
@@ -849,16 +2324,19 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             cancelAnimationFrame(s.dragAutoscrollFrame);
             s.dragAutoscrollFrame = 0;
         }
-        s.dragAutoscrollPointer = null;
+        setDragAutoscrollPointer(root, null);
     }
 
     function runDragAutoscroll(root) {
         const s = getState(root);
         if (!s) return;
         s.dragAutoscrollFrame = 0;
-        if (!s.selectionDrag || !s.dragAutoscrollPointer) return;
+        const selectionDrag = getSelectionDrag(root);
+        const autoFill = getAutoFillState(root);
+        const pointer = s.sheetState?.drag?.autoscrollPointer ?? s.dragAutoscrollPointer;
+        if ((!selectionDrag && !autoFill?.active) || !pointer) return;
 
-        const point = s.dragAutoscrollPointer;
+        const point = pointer;
         const model = s.model;
         const rect = root.getBoundingClientRect();
         const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
@@ -881,7 +2359,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
         if (dx || dy) {
             const scrolled = setLogicalScroll(root, beforeLeft + dx, beforeTop + dy, "pointer");
-            updateDragSelectionTarget(root, point.clientX, point.clientY);
+            if (selectionDrag) updateDragSelectionTarget(root, point.clientX, point.clientY);
+            else if (autoFill?.active) updateAutoFillPreview(root, point.clientX, point.clientY);
             if (scrolled) {
                 requestCanvasRedraw(root, "scroll", "full");
                 scheduleNativeScrollSync(root, 120);
@@ -891,10 +2370,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
             if (s.metrics) s.metrics.dragAutoscrollFrames += 1;
         } else {
-            updateDragSelectionTarget(root, point.clientX, point.clientY);
+            if (selectionDrag) updateDragSelectionTarget(root, point.clientX, point.clientY);
+            else if (autoFill?.active) updateAutoFillPreview(root, point.clientX, point.clientY);
         }
 
-        if (s.selectionDrag) {
+        if (getSelectionDrag(root) || getAutoFillState(root)?.active) {
             s.dragAutoscrollFrame = requestAnimationFrame(() => runDragAutoscroll(root));
         }
     }
@@ -903,32 +2383,25 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const s = getState(root);
         const model = s?.model;
         if (!s || !model) return;
-        if (s.selectionInFlight) {
-            s.selectionPending = true;
-            return;
-        }
 
-        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
-        const selection = read(model, "Selection", {});
-        s.selectionInFlight = true;
-        s.selectionPending = false;
+        const snapshot = getSelectionSnapshot(root);
         if (s.metrics) s.metrics.selectionCallbackCount += 1;
-        s.dotNet.invokeMethodAsync(
-            "OnCanvasSelectionChanged",
-            active.row,
-            active.col,
-            read(selection, "StartRow", active.row),
-            read(selection, "StartCol", active.col),
-            read(selection, "EndRow", active.row),
-            read(selection, "EndCol", active.col),
-            currentInteractionVersion(root)
-        ).catch(() => {}).finally(() => {
-            s.selectionInFlight = false;
-            if (s.selectionPending) {
-                s.selectionPending = false;
-                scheduleSelectionSync(root);
-            }
+        queueCommand(root, "selectionSettled", { selection: snapshot }, {
+            delay: getSettledCommandDelay(root, defaultCommandLogDebounceMs)
         });
+    }
+
+    function getSettledCommandDelay(root, baseDelay) {
+        const s = getState(root);
+        if (!s) return baseDelay ?? defaultCommandLogDebounceMs;
+        const hasPendingCellEditCommit = !!(s.cellEditCommitTimer || (s.pendingCellEditCommits && s.pendingCellEditCommits.length > 0));
+        if (!hasPendingCellEditCommit) return baseDelay ?? defaultCommandLogDebounceMs;
+        return Math.max(baseDelay ?? defaultCommandLogDebounceMs, defaultEditCommitBatchDebounceMs + defaultCommandLogDebounceMs);
+    }
+
+    function flushSelectionSettled(root) {
+        sendSelection(root);
+        flushCommandLog(root);
     }
 
     function scheduleSelectionSync(root) {
@@ -1055,7 +2528,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             && dRow !== 0
             && dCol === 0
             && !ev.shiftKey
-            && !read(s.model, "IsFormulaPointMode", false)
+            && !isFormulaPointMode(root)
             && !s.editor
             && keyboardRepeatAccelerationEnabled(root);
 
@@ -1159,29 +2632,32 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const isTextCommand = key.length === 1 && !ev.altKey && !ev.ctrlKey && !ev.metaKey;
         if (!isShortcutCommand && !isEditCommand && !isTextCommand) return false;
 
+        if (isJsEngine(root) && isShortcut && ["c", "x", "v"].includes(shortcutKey)) {
+            return false;
+        }
+
         ev.preventDefault();
         ev.stopImmediatePropagation();
         if ((key === "Enter" || key === "F2")
-            && !read(s.model, "IsFormulaPointMode", false)
-            && !read(s.model, "IsFormatPainterActive", false)) {
+            && !isFormulaPointMode(root)
+            && !isFormatPainterActive(root)) {
             openLocalEditorAtActive(root);
             return true;
         }
 
-        if (isTextCommand && key !== "=" && !read(s.model, "IsFormulaPointMode", false) && !read(s.model, "IsFormatPainterActive", false)) {
+        if (isTextCommand && !isFormulaPointMode(root) && !isFormatPainterActive(root)) {
             openLocalEditorAtActive(root, key);
             return true;
         }
 
         if (s.metrics) s.metrics.keyCommandCallbackCount += 1;
-        s.dotNet.invokeMethodAsync(
-            "OnCanvasKeyCommand",
+        invokeDotNet(root, "OnCanvasKeyCommand", [
             key,
             !!ev.shiftKey,
             !!ev.ctrlKey,
             !!ev.altKey,
             !!ev.metaKey
-        ).catch(() => {});
+        ], true).catch(() => {});
         return true;
     }
 
@@ -1198,6 +2674,632 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }, initialValue);
     }
 
+    function createEditorCellPatch(root, row, col, value) {
+        const model = getState(root)?.model || {};
+        const existing = findCell(model, row, col) || {};
+        const ref = read(existing, "Ref", toCellRef(row, col));
+        return {
+            ...existing,
+            row,
+            col,
+            Row: row,
+            Col: col,
+            ref,
+            Ref: ref,
+            value,
+            Value: value,
+            formula: String(value || "").startsWith("=") ? value : null,
+            Formula: String(value || "").startsWith("=") ? value : null
+        };
+    }
+
+    function getCellEditorValue(cell) {
+        if (!cell) return "";
+        const formula = read(cell, "Formula", null);
+        if (typeof formula === "string" && formula.length > 0) return formula;
+        return read(cell, "Value", "") || "";
+    }
+
+    function toCommandCellValue(value) {
+        if (value == null) return "";
+        return String(value);
+    }
+
+    function selectionBounds(snapshot) {
+        const rowValue = Number(snapshot?.row ?? 0);
+        const colValue = Number(snapshot?.col ?? 0);
+        const row = Number.isFinite(rowValue) ? rowValue : 0;
+        const col = Number.isFinite(colValue) ? colValue : 0;
+        const startRowValue = Number(snapshot?.startRow ?? row);
+        const startColValue = Number(snapshot?.startCol ?? col);
+        const endRowValue = Number(snapshot?.endRow ?? row);
+        const endColValue = Number(snapshot?.endCol ?? col);
+        const startRow = Number.isFinite(startRowValue) ? startRowValue : row;
+        const startCol = Number.isFinite(startColValue) ? startColValue : col;
+        const endRow = Number.isFinite(endRowValue) ? endRowValue : row;
+        const endCol = Number.isFinite(endColValue) ? endColValue : col;
+        return {
+            row,
+            col,
+            startRow,
+            startCol,
+            endRow,
+            endCol,
+            minRow: Math.min(startRow, endRow),
+            maxRow: Math.max(startRow, endRow),
+            minCol: Math.min(startCol, endCol),
+            maxCol: Math.max(startCol, endCol)
+        };
+    }
+
+    function selectionToClipboardText(root, snapshot) {
+        const bounds = selectionBounds(snapshot || getSelectionSnapshot(root));
+        const lines = [];
+        for (let row = bounds.minRow; row <= bounds.maxRow; row++) {
+            const values = [];
+            for (let col = bounds.minCol; col <= bounds.maxCol; col++) {
+                values.push(getCellEditorValue(findCell(getState(root)?.model, row, col)));
+            }
+            lines.push(values.join("\t"));
+        }
+        return lines.join("\n");
+    }
+
+    function buildClipboardPayload(root, snapshot, isCut) {
+        const bounds = selectionBounds(snapshot || getSelectionSnapshot(root));
+        const cells = [];
+        for (let row = bounds.minRow; row <= bounds.maxRow; row++) {
+            for (let col = bounds.minCol; col <= bounds.maxCol; col++) {
+                const cell = findCell(getState(root)?.model, row, col);
+                cells.push({
+                    row,
+                    col,
+                    ref: toCellRef(row, col),
+                    value: read(cell, "Value", ""),
+                    formula: read(cell, "Formula", null),
+                    style: read(cell, "Style", null),
+                    imageUrl: read(cell, "ImageUrl", null),
+                    hyperlink: read(cell, "Hyperlink", null)
+                });
+            }
+        }
+
+        return {
+            sourceRange: `${toCellRef(bounds.minRow, bounds.minCol)}:${toCellRef(bounds.maxRow, bounds.maxCol)}`,
+            isCut: !!isCut,
+            cells
+        };
+    }
+
+    function parseClipboardText(text) {
+        const normalized = String(text || "").replace(/\r\n/g, "\n").replace(/\r/g, "\n");
+        const trimmed = normalized.endsWith("\n") ? normalized.slice(0, -1) : normalized;
+        if (!trimmed) return [];
+        return trimmed.split("\n").map(line => line.split("\t"));
+    }
+
+    function markRangeDirty(root, startRow, startCol, endRow, endCol, layer) {
+        const rect = getSelectionScreenRect(root, { row: endRow, col: endCol, startRow, startCol, endRow, endCol });
+        if (rect) {
+            addDirtyRect(root, layer || "content", rect);
+            return true;
+        }
+        return false;
+    }
+
+    function adjustFormulaToken(token, dRow, dCol) {
+        const match = /^(\$?)([A-Za-z]+)(\$?)(\d+)$/.exec(String(token || ""));
+        if (!match) return token;
+        const colAbs = match[1] === "$";
+        const colLetters = match[2].toUpperCase();
+        const rowAbs = match[3] === "$";
+        const rowNumber = Number(match[4]) || 1;
+
+        let nextColLetters = colLetters;
+        if (!colAbs) {
+            const nextCol = columnLettersToIndex(colLetters) + dCol;
+            if (nextCol < 0) return "#REF!";
+            nextColLetters = columnIndexToLetters(nextCol);
+        }
+
+        let nextRow = rowNumber;
+        if (!rowAbs) {
+            nextRow += dRow;
+            if (nextRow < 1) return "#REF!";
+        }
+
+        return `${colAbs ? "$" : ""}${nextColLetters}${rowAbs ? "$" : ""}${nextRow}`;
+    }
+
+    function adjustFormulaForCopy(formula, dRow, dCol) {
+        if (!formula || (!dRow && !dCol)) return formula;
+        return String(formula).replace(/(\$?[A-Za-z]{1,3}\$?\d{1,7})(:(\$?[A-Za-z]{1,3}\$?\d{1,7}))?/g, match => {
+            const parts = match.split(":");
+            if (parts.length === 2) {
+                return `${adjustFormulaToken(parts[0], dRow, dCol)}:${adjustFormulaToken(parts[1], dRow, dCol)}`;
+            }
+            return adjustFormulaToken(match, dRow, dCol);
+        });
+    }
+
+    function buildClipboardPayloadPatches(root, payload, anchorRow, anchorCol) {
+        const cells = Array.isArray(payload?.cells) ? payload.cells : [];
+        if (!cells.length) return [];
+        const sourceRange = String(payload.sourceRange || `${toCellRef(anchorRow, anchorCol)}:${toCellRef(anchorRow, anchorCol)}`);
+        const sourceStart = parseCellRef(sourceRange.split(":")[0] || "A1");
+        const dRow = anchorRow - sourceStart.row;
+        const dCol = anchorCol - sourceStart.col;
+        const isCut = !!payload.isCut;
+
+        return cells.map(sourceCell => {
+            const srcRow = Number(sourceCell.row ?? parseCellRef(sourceCell.ref || "A1").row) || 0;
+            const srcCol = Number(sourceCell.col ?? parseCellRef(sourceCell.ref || "A1").col) || 0;
+            const row = srcRow + dRow;
+            const col = srcCol + dCol;
+            const formula = sourceCell.formula && !isCut
+                ? adjustFormulaForCopy(sourceCell.formula, row - srcRow, col - srcCol)
+                : (sourceCell.formula || null);
+            const value = formula ? formula : toCommandCellValue(sourceCell.value);
+            return {
+                Row: row,
+                Col: col,
+                Ref: toCellRef(row, col),
+                Value: value,
+                Formula: formula,
+                Style: sourceCell.style || null,
+                ImageUrl: sourceCell.imageUrl || null,
+                Hyperlink: sourceCell.hyperlink || null
+            };
+        });
+    }
+
+    function buildTextPastePatches(root, rows, anchorRow, anchorCol) {
+        const patches = [];
+        for (let rowOffset = 0; rowOffset < rows.length; rowOffset++) {
+            const values = rows[rowOffset] || [];
+            for (let colOffset = 0; colOffset < values.length; colOffset++) {
+                const raw = values[colOffset] ?? "";
+                const row = anchorRow + rowOffset;
+                const col = anchorCol + colOffset;
+                patches.push({
+                    Row: row,
+                    Col: col,
+                    Ref: toCellRef(row, col),
+                    Value: raw,
+                    Formula: raw.startsWith("=") ? raw : null
+                });
+            }
+        }
+        return patches;
+    }
+
+    function queueCellEditCommit(root, row, col, value) {
+        const s = getState(root);
+        if (!s) return;
+
+        const commit = {
+            row,
+            col,
+            value,
+            interactionVersion: currentInteractionVersion(root)
+        };
+        const queue = s.pendingCellEditCommits || (s.pendingCellEditCommits = []);
+        const existing = queue.find(item => item.row === row && item.col === col);
+        if (existing) {
+            existing.value = value;
+            existing.interactionVersion = commit.interactionVersion;
+        } else {
+            queue.push(commit);
+        }
+
+        if (s.metrics) s.metrics.cellEditCommitQueuedCount += 1;
+        if (s.cellEditCommitTimer) clearTimeout(s.cellEditCommitTimer);
+        s.cellEditCommitTimer = setTimeout(() => flushCellEditCommitQueue(root), defaultEditCommitBatchDebounceMs);
+    }
+
+    function flushCellEditCommitQueue(root) {
+        const s = getState(root);
+        if (!s) return;
+        if (s.cellEditCommitTimer) {
+            clearTimeout(s.cellEditCommitTimer);
+            s.cellEditCommitTimer = 0;
+        }
+
+        const queue = s.pendingCellEditCommits || [];
+        if (queue.length === 0) return;
+        const payload = queue.splice(0, queue.length);
+        if (s.metrics) {
+            s.metrics.cellEditCommitBatchCallbackCount += 1;
+            s.metrics.cellEditCommitBatchItemCount += payload.length;
+        }
+        for (const edit of payload) {
+            const type = String(edit.value || "").startsWith("=")
+                ? "formulaCommitted"
+                : "cellChanged";
+            queueCommand(root, type, { cellEdits: [edit] }, { delay: defaultCommandLogDebounceMs });
+        }
+    }
+
+    function applyPatchesLocally(root, patches, reason) {
+        if (!Array.isArray(patches) || patches.length === 0) return 0;
+        const changed = setStoreCells(root, patches, { suppressRedraw: true, queueRangeCommand: true });
+        if (!changed) return 0;
+
+        let minRow = Infinity;
+        let minCol = Infinity;
+        let maxRow = -Infinity;
+        let maxCol = -Infinity;
+        for (const patch of patches) {
+            minRow = Math.min(minRow, read(patch, "Row", 0));
+            minCol = Math.min(minCol, read(patch, "Col", 0));
+            maxRow = Math.max(maxRow, read(patch, "Row", 0));
+            maxCol = Math.max(maxCol, read(patch, "Col", 0));
+        }
+
+        if (!markRangeDirty(root, minRow, minCol, maxRow, maxCol, "content")) {
+            requestPaint(root, reason || "paste", "full");
+        } else {
+            requestPaint(root, reason || "paste", "content");
+        }
+
+        debounceViewportSyncAfterPaint(root, false, 120);
+        return changed;
+    }
+
+    function applyClipboardText(root, text) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return 0;
+        const rows = parseClipboardText(text);
+        if (!rows.length) return 0;
+
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        markLocalInteraction(root, "paste");
+        const patches = buildTextPastePatches(root, rows, active.row, active.col);
+        return applyPatchesLocally(root, patches, "paste");
+    }
+
+    function applyClipboardPayload(root, payload) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!model) return 0;
+        const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
+        markLocalInteraction(root, "paste");
+        const patches = buildClipboardPayloadPatches(root, payload, active.row, active.col);
+        return applyPatchesLocally(root, patches, "paste");
+    }
+
+    function buildAutoFillPattern(values) {
+        if (!values.length) return { kind: "repeat", value: "" };
+        if (values.length >= 2) {
+            const first = Number(values[0]);
+            const second = Number(values[1]);
+            if (Number.isFinite(first) && Number.isFinite(second) && String(values[0]).trim() !== "" && String(values[1]).trim() !== "") {
+                const step = second - first;
+                return { kind: "number", start: first, step };
+            }
+
+            const match1 = /^(.*?)(\d+)$/.exec(String(values[0] ?? ""));
+            const match2 = /^(.*?)(\d+)$/.exec(String(values[1] ?? ""));
+            if (match1 && match2 && match1[1] === match2[1]) {
+                const n1 = Number(match1[2]);
+                const n2 = Number(match2[2]);
+                if (Number.isFinite(n1) && Number.isFinite(n2)) {
+                    return { kind: "text-number", prefix: match1[1], start: n1, step: n2 - n1 };
+                }
+            }
+        }
+
+        return { kind: "repeat", value: values[0] };
+    }
+
+    function getAutoFillPatternValue(pattern, index) {
+        switch (pattern?.kind) {
+            case "number":
+                return pattern.start + pattern.step * index;
+            case "text-number":
+                return `${pattern.prefix}${pattern.start + pattern.step * index}`;
+            default:
+                return pattern?.value ?? "";
+        }
+    }
+
+    function buildAutoFillPatches(root, source, target) {
+        if (!source || !target) return [];
+        const sourceBounds = selectionBounds(source);
+        const targetBounds = selectionBounds(target);
+        const sourceRowCount = sourceBounds.maxRow - sourceBounds.minRow + 1;
+        const sourceColCount = sourceBounds.maxCol - sourceBounds.minCol + 1;
+        const vertical = targetBounds.maxRow > sourceBounds.maxRow || targetBounds.minRow < sourceBounds.minRow;
+        const horizontal = targetBounds.maxCol > sourceBounds.maxCol || targetBounds.minCol < sourceBounds.minCol;
+        const patches = [];
+
+        if (vertical && !horizontal && sourceColCount === 1) {
+            const values = [];
+            for (let row = sourceBounds.minRow; row <= sourceBounds.maxRow; row++) {
+                values.push(getCellEditorValue(findCell(getState(root)?.model, row, sourceBounds.minCol)));
+            }
+            const sourceCell = findCell(getState(root)?.model, sourceBounds.minRow, sourceBounds.minCol);
+            const sourceFormula = read(sourceCell, "Formula", null);
+            const pattern = buildAutoFillPattern(values);
+            for (let row = targetBounds.minRow; row <= targetBounds.maxRow; row++) {
+                for (let col = sourceBounds.minCol; col <= sourceBounds.maxCol; col++) {
+                    if (row >= sourceBounds.minRow && row <= sourceBounds.maxRow) continue;
+                    const formula = sourceFormula && sourceRowCount === 1
+                        ? adjustFormulaForCopy(sourceFormula, row - sourceBounds.minRow, col - sourceBounds.minCol)
+                        : null;
+                    const value = formula ? formula : getAutoFillPatternValue(pattern, row - targetBounds.minRow);
+                    patches.push({ Row: row, Col: col, Ref: toCellRef(row, col), Value: value, Formula: formula });
+                }
+            }
+            return patches;
+        }
+
+        if (horizontal && !vertical && sourceRowCount === 1) {
+            const values = [];
+            for (let col = sourceBounds.minCol; col <= sourceBounds.maxCol; col++) {
+                values.push(getCellEditorValue(findCell(getState(root)?.model, sourceBounds.minRow, col)));
+            }
+            const sourceCell = findCell(getState(root)?.model, sourceBounds.minRow, sourceBounds.minCol);
+            const sourceFormula = read(sourceCell, "Formula", null);
+            const pattern = buildAutoFillPattern(values);
+            for (let col = targetBounds.minCol; col <= targetBounds.maxCol; col++) {
+                for (let row = sourceBounds.minRow; row <= sourceBounds.maxRow; row++) {
+                    if (col >= sourceBounds.minCol && col <= sourceBounds.maxCol) continue;
+                    const formula = sourceFormula && sourceColCount === 1
+                        ? adjustFormulaForCopy(sourceFormula, row - sourceBounds.minRow, col - sourceBounds.minCol)
+                        : null;
+                    const value = formula ? formula : getAutoFillPatternValue(pattern, col - targetBounds.minCol);
+                    patches.push({ Row: row, Col: col, Ref: toCellRef(row, col), Value: value, Formula: formula });
+                }
+            }
+            return patches;
+        }
+
+        for (let row = targetBounds.minRow; row <= targetBounds.maxRow; row++) {
+            for (let col = targetBounds.minCol; col <= targetBounds.maxCol; col++) {
+                if (row >= sourceBounds.minRow && row <= sourceBounds.maxRow && col >= sourceBounds.minCol && col <= sourceBounds.maxCol) {
+                    continue;
+                }
+
+                const sourceRow = sourceBounds.minRow + ((row - sourceBounds.minRow) % sourceRowCount + sourceRowCount) % sourceRowCount;
+                const sourceCol = sourceBounds.minCol + ((col - sourceBounds.minCol) % sourceColCount + sourceColCount) % sourceColCount;
+                const sourceCell = findCell(getState(root)?.model, sourceRow, sourceCol);
+                const formula = read(sourceCell, "Formula", null)
+                    ? adjustFormulaForCopy(read(sourceCell, "Formula", null), row - sourceRow, col - sourceCol)
+                    : null;
+                const value = formula ? formula : getCellEditorValue(sourceCell);
+                patches.push({
+                    Row: row,
+                    Col: col,
+                    Ref: toCellRef(row, col),
+                    Value: value,
+                    Formula: formula,
+                    Style: read(sourceCell, "Style", null),
+                    ImageUrl: read(sourceCell, "ImageUrl", null),
+                    Hyperlink: read(sourceCell, "Hyperlink", null)
+                });
+            }
+        }
+
+        return patches;
+    }
+
+    function beginAutoFillDrag(root, pointerId) {
+        const snapshot = getSelectionSnapshot(root);
+        setAutoFillState(root, {
+            active: true,
+            pointerId: Number(pointerId) || 0,
+            source: snapshot,
+            preview: null
+        });
+        requestPaint(root, "autofill", "selection");
+    }
+
+    function clearAutoFillDrag(root) {
+        setAutoFillState(root, {
+            active: false,
+            pointerId: 0,
+            source: null,
+            preview: null
+        });
+        requestPaint(root, "autofill", "selection");
+    }
+
+    function computeAutoFillPreview(source, row, col) {
+        const sourceBounds = selectionBounds(source);
+        if (row >= sourceBounds.minRow && row <= sourceBounds.maxRow && col >= sourceBounds.minCol && col <= sourceBounds.maxCol) {
+            return null;
+        }
+
+        const verticalDistance = Math.min(Math.abs(row - sourceBounds.minRow), Math.abs(row - sourceBounds.maxRow));
+        const horizontalDistance = Math.min(Math.abs(col - sourceBounds.minCol), Math.abs(col - sourceBounds.maxCol));
+        if (verticalDistance >= horizontalDistance) {
+            return {
+                row,
+                col: sourceBounds.maxCol,
+                startRow: Math.min(sourceBounds.minRow, row),
+                startCol: sourceBounds.minCol,
+                endRow: Math.max(sourceBounds.maxRow, row),
+                endCol: sourceBounds.maxCol
+            };
+        }
+
+        return {
+            row: sourceBounds.maxRow,
+            col,
+            startRow: sourceBounds.minRow,
+            startCol: Math.min(sourceBounds.minCol, col),
+            endRow: sourceBounds.maxRow,
+            endCol: Math.max(sourceBounds.maxCol, col)
+        };
+    }
+
+    function updateAutoFillPreview(root, clientX, clientY) {
+        const autoFill = getAutoFillState(root);
+        if (!autoFill?.active || !autoFill.source) return false;
+        const hit = hitCell(root, toContentPoint(root, { clientX, clientY })) || getLocalCellFromClientPoint(root, clientX, clientY);
+        if (!hit) return false;
+        const nextPreview = computeAutoFillPreview(autoFill.source, hit.row, hit.col);
+        const previousPreview = autoFill.preview;
+        if (JSON.stringify(previousPreview) === JSON.stringify(nextPreview)) return false;
+        autoFill.preview = nextPreview;
+        setAutoFillState(root, autoFill);
+        requestPaint(root, "autofill", "selection");
+        return true;
+    }
+
+    function commitAutoFill(root) {
+        const autoFill = getAutoFillState(root);
+        if (!autoFill?.active || !autoFill.source || !autoFill.preview) {
+            clearAutoFillDrag(root);
+            return 0;
+        }
+
+        markLocalInteraction(root, "pointer");
+        const patches = buildAutoFillPatches(root, autoFill.source, autoFill.preview);
+        const preview = autoFill.preview;
+        clearAutoFillDrag(root);
+        if (!patches.length) return 0;
+
+        const changed = applyPatchesLocally(root, patches, "autofill");
+        const target = selectionBounds(preview);
+        setSheetSelection(root, target.endRow, target.endCol, target.startRow, target.startCol, target.endRow, target.endCol);
+        const model = getState(root)?.model;
+        write(model, "ActiveCellRef", toCellRef(target.endRow, target.endCol));
+        const selection = read(model, "Selection", {});
+        write(selection, "StartRow", target.startRow);
+        write(selection, "StartCol", target.startCol);
+        write(selection, "EndRow", target.endRow);
+        write(selection, "EndCol", target.endCol);
+        write(model, "Selection", selection);
+        requestPaint(root, "autofill", "selection");
+        debounceSelectionSync(root, 90);
+        return changed;
+    }
+
+    function setFormulaEditorInactive(root) {
+        const formula = getState(root)?.sheetState?.formulaEditor;
+        if (!formula) return;
+        formula.active = false;
+        formula.text = "";
+        formula.caret = 0;
+        formula.tokenStart = -1;
+        formula.tokenEnd = -1;
+        formula.refs = [];
+        formula.dragAnchor = null;
+        formula.dragCurrent = null;
+        const sheet = getState(root)?.sheetState;
+        if (sheet) sheet.formulaMode = false;
+        syncEditorAccessibility(root);
+    }
+
+    function updateFormulaEditorState(root, reason) {
+        const s = getState(root);
+        const editor = s?.editor;
+        const formula = s?.sheetState?.formulaEditor;
+        if (!s || !editor || !formula) return false;
+
+        const text = editor.input?.value || "";
+        const active = text.startsWith("=");
+        const wasActive = !!formula.active;
+        if (!active) {
+            setFormulaEditorInactive(root);
+            if (wasActive) requestCanvasRedraw(root, reason || "formula", "selection");
+            return false;
+        }
+
+        const caret = Number(editor.input?.selectionStart ?? text.length) || 0;
+        const refs = parseFormulaReferences(text);
+        const token = getFormulaTokenAtCaret(refs, caret);
+        formula.active = true;
+        formula.row = editor.row;
+        formula.col = editor.col;
+        formula.text = text;
+        formula.caret = caret;
+        formula.tokenStart = token ? token.start : -1;
+        formula.tokenEnd = token ? token.end : -1;
+        formula.refs = refs;
+        s.sheetState.formulaMode = true;
+        syncEditorAccessibility(root);
+        if (s.metrics) {
+            if (!wasActive) s.metrics.formulaEditorActivationCount += 1;
+            s.metrics.formulaEditorReferenceParseCount += 1;
+            s.metrics.formulaEditorReferenceCount = refs.length;
+        }
+        requestCanvasRedraw(root, reason || "formula", "selection");
+        return true;
+    }
+
+    function replaceFormulaReference(root, refText) {
+        const s = getState(root);
+        const editor = s?.editor;
+        const formula = s?.sheetState?.formulaEditor;
+        if (!s || !editor || !formula?.active) return false;
+
+        const input = editor.input;
+        const text = input.value || "=";
+        const caret = Number(input.selectionStart ?? formula.caret ?? text.length) || 0;
+        const refs = formula.refs || parseFormulaReferences(text);
+        let token = refs.find(ref => ref.start === formula.tokenStart && ref.end === formula.tokenEnd) || getFormulaTokenAtCaret(refs, caret);
+        let start = token ? token.start : caret;
+        let end = token ? token.end : caret;
+        if (start < 1) start = text.length <= 1 ? 1 : Math.max(1, caret);
+        if (end < start) end = start;
+
+        input.value = text.slice(0, start) + refText + text.slice(end);
+        const nextCaret = start + refText.length;
+        input.setSelectionRange(nextCaret, nextCaret);
+        bumpLocalRevision(root, "formula-editor");
+        updateSheetEditorValue(root);
+        updateFormulaEditorState(root, "formula-reference");
+        const nextRefs = s.sheetState.formulaEditor.refs || [];
+        const nextToken = nextRefs.find(ref => ref.start === start && ref.end === nextCaret);
+        if (nextToken) {
+            s.sheetState.formulaEditor.tokenStart = nextToken.start;
+            s.sheetState.formulaEditor.tokenEnd = nextToken.end;
+        }
+        return true;
+    }
+
+    function buildFormulaRangeRef(anchor, current) {
+        const start = toCellRef(anchor.row, anchor.col);
+        const end = toCellRef(current.row, current.col);
+        return start === end ? start : `${start}:${end}`;
+    }
+
+    function beginFormulaReferenceDrag(root, hit) {
+        const s = getState(root);
+        const formula = s?.sheetState?.formulaEditor;
+        if (!s || !formula?.active || !hit) return false;
+        const point = { row: hit.row, col: hit.col };
+        formula.dragAnchor = point;
+        formula.dragCurrent = point;
+        const inserted = replaceFormulaReference(root, toCellRef(hit.row, hit.col));
+        if (inserted && s.metrics) s.metrics.formulaEditorCellClickInsertCount += 1;
+        s.suppressClick = true;
+        return inserted;
+    }
+
+    function updateFormulaReferenceDrag(root, hit) {
+        const s = getState(root);
+        const formula = s?.sheetState?.formulaEditor;
+        if (!s || !formula?.active || !formula.dragAnchor || !hit) return false;
+        if (formula.dragCurrent && formula.dragCurrent.row === hit.row && formula.dragCurrent.col === hit.col) return true;
+        formula.dragCurrent = { row: hit.row, col: hit.col };
+        const refText = buildFormulaRangeRef(formula.dragAnchor, formula.dragCurrent);
+        const updated = replaceFormulaReference(root, refText);
+        if (updated && s.metrics) s.metrics.formulaEditorRangeDragCount += 1;
+        return updated;
+    }
+
+    function endFormulaReferenceDrag(root) {
+        const formula = getState(root)?.sheetState?.formulaEditor;
+        if (!formula) return;
+        formula.dragAnchor = null;
+        formula.dragCurrent = null;
+    }
+
     function isEditableKeyTarget(target) {
         if (!(target instanceof Element)) return false;
         return !!target.closest("input, textarea, select, [contenteditable=''], [contenteditable='true'], .tm-spreadsheet-canvas-grid__editor");
@@ -1208,25 +3310,32 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const editor = s?.editor;
         if (!s || !editor) return;
 
-        s.editor = null;
         if (editor.input.__tmClosing) return;
         editor.input.__tmClosing = true;
+        if (!commit && s.metrics) s.metrics.editorCancelCount += 1;
         if (commit && s.model) {
+            bumpLocalRevision(root, "editor");
+            updateSheetEditorValue(root);
             const value = editor.input.value;
             const cell = findCell(s.model, editor.row, editor.col);
             const previousValue = editor.initialValue ?? (cell ? (read(cell, "Value", "") || "") : "");
             const changed = value !== previousValue;
             if (changed) {
+                const patch = createEditorCellPatch(root, editor.row, editor.col, value);
                 if (cell) write(cell, "Value", value);
+                setStoreCells(root, [patch], { suppressRedraw: true });
                 invalidateCellSnapshot(root, editor.row, editor.col);
+                addDirtyRect(root, "content", getCellScreenRect(root, editor.row, editor.col));
                 requestCanvasRedraw(root, "edit", "content");
-                setTimeout(() => {
-                    s.dotNet.invokeMethodAsync("OnCanvasCellEditCommitted", editor.row, editor.col, value).catch(() => {});
-                }, 0);
+                queueCellEditCommit(root, editor.row, editor.col, value);
+                if (s.metrics) s.metrics.editorLocalCommitCount += 1;
             }
         }
 
+        setSheetEditor(root, null);
+        setFormulaEditorInactive(root);
         editor.input.remove();
+        syncAccessibilityState(root, commit ? "immediate" : false);
         root.focus?.({ preventScroll: true });
     }
 
@@ -1240,12 +3349,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const model = s?.model;
         if (!model || !editor) return null;
 
-        const row = getFrameByIndex(read(model, "Rows", []), editor.row);
-        const col = getFrameByIndex(read(model, "Columns", []), editor.col);
+        const layout = getVisibleLayout(root, model, root.clientWidth || read(model, "ViewportWidth", 1), root.clientHeight || read(model, "ViewportHeight", 1));
+        const row = getFrameByIndex(layout.rows, editor.row);
+        const col = getFrameByIndex(layout.columns, editor.col);
         if (!row || !col) return null;
 
-        const x = screenX(model, col);
-        const y = screenY(model, row);
+        const x = read(col, "x", screenX(model, col));
+        const y = read(row, "y", screenY(model, row));
         const w = read(col, "Width", 64);
         const h = read(row, "Height", 20);
         const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
@@ -1264,23 +3374,36 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const s = getState(root);
         const editor = s?.editor;
         if (!editor) return;
+        const started = performance.now();
 
         const rect = getEditorCellRect(root, editor);
         if (!rect || !rect.visible) {
             editor.suppressBlur = true;
             editor.input.style.visibility = "hidden";
+            if (s.metrics) {
+                s.metrics.editorLayerUpdateCount += 1;
+                s.metrics.lastEditorLayerMs = performance.now() - started;
+            }
+            if (s.sheetState?.formulaEditor?.active) {
+                return;
+            }
             setTimeout(() => {
                 if (editor) editor.suppressBlur = false;
             }, 0);
             return;
         }
 
+        editor.suppressBlur = false;
         editor.input.style.display = "";
         editor.input.style.visibility = "";
         editor.input.style.left = `${(root.scrollLeft || 0) + rect.x}px`;
         editor.input.style.top = `${(root.scrollTop || 0) + rect.y}px`;
         editor.input.style.width = `${Math.max(16, rect.w)}px`;
         editor.input.style.height = `${Math.max(8, rect.h)}px`;
+        if (s.metrics) {
+            s.metrics.editorLayerUpdateCount += 1;
+            s.metrics.lastEditorLayerMs = performance.now() - started;
+        }
     }
 
     function openLocalEditor(root, hit, initialValue) {
@@ -1289,9 +3412,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (!s || !model || !hit) return;
 
         closeLocalEditor(root, false);
+        bumpLocalRevision(root, "editor");
 
         const cell = hit.cell || findCell(model, hit.row, hit.col);
-        const value = initialValue ?? (cell ? read(cell, "Value", "") || "" : "");
+        const originalValue = getCellEditorValue(cell);
+        const value = initialValue ?? originalValue;
 
         const input = document.createElement("input");
         input.className = "tm-spreadsheet-canvas-grid__editor";
@@ -1328,17 +3453,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 ev.stopPropagation();
                 closeLocalEditor(root, false);
             } else {
+                bumpLocalRevision(root, "editor");
                 ev.stopPropagation();
+                setTimeout(() => updateFormulaEditorState(root, "formula-key"), 0);
             }
         });
+        input.addEventListener("input", () => {
+            bumpLocalRevision(root, "editor");
+            updateSheetEditorValue(root);
+            updateFormulaEditorState(root, "formula-input");
+        });
+        input.addEventListener("keyup", () => updateFormulaEditorState(root, "formula-caret"));
+        input.addEventListener("click", () => updateFormulaEditorState(root, "formula-caret"));
         input.addEventListener("blur", () => {
             if (s.editor?.suppressBlur) return;
             closeLocalEditor(root, true);
         });
 
         root.appendChild(input);
-        s.editor = { input, row: hit.row, col: hit.col, initialValue: value };
+        setSheetEditor(root, { input, row: hit.row, col: hit.col, initialValue: originalValue });
+        if (s.metrics) s.metrics.editorOpenCount += 1;
+        updateFormulaEditorState(root, "formula-open");
         updateLocalEditorPosition(root);
+        syncEditorAccessibility(root);
+        syncAccessibilityState(root, false);
         input.focus({ preventScroll: true });
         if (initialValue === undefined || initialValue === null) {
             input.select();
@@ -1372,12 +3510,19 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (!root || !canvas || !dotNet) return;
         window.tmSpreadsheetCanvas.dispose(root);
 
+        const renderer = createRendererState(canvas, headerCanvas, selectionCanvas, root);
+        const workbookState = createWorkbookState(root);
+        const sheetState = workbookState.sheets[workbookState.activeSheetId];
         const s = {
             canvas,
             headerCanvas,
             selectionCanvas,
             dotNet,
+            renderer,
             model: null,
+            workbookState,
+            sheetState,
+            blazorRevisionCounter: 0,
             interactionVersion: 0,
             lastInteractionSource: "",
             paintFrame: 0,
@@ -1411,20 +3556,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             selectionDrag: null,
             dragAutoscrollFrame: 0,
             dragAutoscrollPointer: null,
+            pasteBuffer: [],
+            pasteTimer: 0,
             suppressClick: false,
             selectionSyncFrame: 0,
             selectionInFlight: false,
             selectionPending: false,
+            cellEditCommitTimer: 0,
+            pendingCellEditCommits: [],
+            commandLog: [],
+            commandLogSeq: 0,
+            commandLogAckRevision: 0,
+            commandLogTimer: 0,
+            commandLogInFlight: false,
+            commandLogPending: false,
             lastViewportSync: 0,
             syncedScrollLeft: root.scrollLeft || 0,
             syncedScrollTop: root.scrollTop || 0,
             editor: null,
             palette: buildPalette(root),
-            textMetricsCache: new Map(),
-            fontStringCache: new Map(),
-            paintStyleCache: new Map(),
-            displayValueCache: new Map(),
-            cellSnapshotCache: new Map(),
+            textMetricsCache: renderer.cache.textMetrics,
+            fontStringCache: renderer.cache.fonts,
+            paintStyleCache: renderer.cache.paintStyles,
+            displayValueCache: renderer.cache.displayValues,
+            cellSnapshotCache: renderer.cache.cellSnapshots,
             fontSignature: "",
             visibleLayoutCache: null,
             metrics: createDebugMetrics(),
@@ -1513,32 +3668,47 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
             const hit = hitResize(root, point);
             root.style.cursor = hit ? (hit.kind === "column" ? "col-resize" : "row-resize") : "";
-            if (!hit && s.model && !s.selectionDrag) {
+            if (!hit && s.model && !getSelectionDrag(root)) {
                 const cellHit = hitCell(root, toContentPoint(root, point));
                 const nextHover = cellHit ? { row: cellHit.row, col: cellHit.col } : null;
-                if (!sameCell(nextHover, s.hoverCell)) {
-                    s.hoverCell = nextHover;
+                if (!sameCell(nextHover, getSheetHover(root))) {
+                    setSheetHover(root, nextHover);
                     requestCanvasRedraw(root, "pointer", "selection");
                 }
             }
         };
         const onPointerMove = ev => {
             s.pointerPoint = { clientX: ev.clientX, clientY: ev.clientY };
-            if (s.selectionDrag) {
+            if (s.sheetState?.formulaEditor?.active && s.sheetState.formulaEditor.dragAnchor) {
+                const hit = hitCell(root, toContentPoint(root, ev));
+                if (hit) updateFormulaReferenceDrag(root, hit);
+                ev.preventDefault();
+                return;
+            }
+
+            if (getAutoFillState(root)?.active) {
+                updateAutoFillPreview(root, ev.clientX, ev.clientY);
+                updateDragAutoscroll(root, ev.clientX, ev.clientY, ev.pointerId);
+                ev.preventDefault();
+                return;
+            }
+
+            if (getSelectionDrag(root)) {
                 updateDragSelectionTarget(root, ev.clientX, ev.clientY);
                 updateDragAutoscroll(root, ev.clientX, ev.clientY, ev.pointerId);
                 ev.preventDefault();
                 return;
             }
 
-            if (s.possibleDrag) {
-                const dx = ev.clientX - s.possibleDrag.clientX;
-                const dy = ev.clientY - s.possibleDrag.clientY;
+            const possibleDrag = getPossibleDrag(root);
+            if (possibleDrag) {
+                const dx = ev.clientX - possibleDrag.clientX;
+                const dy = ev.clientY - possibleDrag.clientY;
                 if (Math.abs(dx) + Math.abs(dy) > 4) {
-                    s.selectionDrag = { row: s.possibleDrag.row, col: s.possibleDrag.col };
+                    setSelectionDrag(root, { row: possibleDrag.row, col: possibleDrag.col });
                     s.suppressClick = true;
                     safeSetPointerCapture(root, ev.pointerId);
-                    updateLocalActiveCell(root, s.possibleDrag.row, s.possibleDrag.col, false, "pointer");
+                    updateLocalActiveCell(root, possibleDrag.row, possibleDrag.col, false, "pointer");
                     updateDragSelectionTarget(root, ev.clientX, ev.clientY);
                     updateDragAutoscroll(root, ev.clientX, ev.clientY, ev.pointerId);
                     ev.preventDefault();
@@ -1569,15 +3739,53 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 return;
             }
 
-            if (s.model && !read(s.model, "IsFormulaPointMode", false) && !read(s.model, "IsFormatPainterActive", false)) {
+            if (s.model && isFormulaPointMode(root) && s.editor) {
                 const hit = hitCell(root, toContentPoint(root, ev));
-                s.possibleDrag = hit ? { row: hit.row, col: hit.col, clientX: ev.clientX, clientY: ev.clientY } : null;
+                if (hit) {
+                    beginFormulaReferenceDrag(root, hit);
+                    safeSetPointerCapture(root, ev.pointerId);
+                    ev.preventDefault();
+                    ev.stopPropagation();
+                    return;
+                }
+            }
+
+            if (s.model && !isFormulaPointMode(root) && !isFormatPainterActive(root) && hitAutoFillHandle(root, ev)) {
+                beginAutoFillDrag(root, ev.pointerId);
+                safeSetPointerCapture(root, ev.pointerId);
+                ev.preventDefault();
+                ev.stopPropagation();
+                return;
+            }
+
+            if (s.model && !isFormulaPointMode(root) && !isFormatPainterActive(root)) {
+                const hit = hitCell(root, toContentPoint(root, ev));
+                setPossibleDrag(root, hit ? { row: hit.row, col: hit.col, clientX: ev.clientX, clientY: ev.clientY } : null);
             }
         };
         const onPointerUp = ev => {
-            if (s.selectionDrag) {
-                s.selectionDrag = null;
-                s.possibleDrag = null;
+            if (s.sheetState?.formulaEditor?.active && s.sheetState.formulaEditor.dragAnchor) {
+                const hit = hitCell(root, toContentPoint(root, ev));
+                if (hit) updateFormulaReferenceDrag(root, hit);
+                endFormulaReferenceDrag(root);
+                safeReleasePointerCapture(root, ev.pointerId);
+                s.editor?.input?.focus({ preventScroll: true });
+                ev.preventDefault();
+                return;
+            }
+
+            if (getAutoFillState(root)?.active) {
+                updateAutoFillPreview(root, ev.clientX, ev.clientY);
+                commitAutoFill(root);
+                stopDragAutoscroll(root);
+                safeReleasePointerCapture(root, ev.pointerId);
+                ev.preventDefault();
+                return;
+            }
+
+            if (getSelectionDrag(root)) {
+                setSelectionDrag(root, null);
+                setPossibleDrag(root, null);
                 stopDragAutoscroll(root);
                 safeReleasePointerCapture(root, ev.pointerId);
                 scheduleSelectionSync(root);
@@ -1585,7 +3793,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 return;
             }
 
-            s.possibleDrag = null;
+            setPossibleDrag(root, null);
             if (!s.resize) return;
             const resize = s.resize;
             s.resize = null;
@@ -1593,9 +3801,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const delta = resize.kind === "column" ? ev.clientX - resize.start : ev.clientY - resize.start;
             const next = Math.max(resize.kind === "column" ? 16 : 8, resize.size + delta);
             const method = resize.kind === "column" ? "OnCanvasColumnResize" : "OnCanvasRowResize";
-            if (resize.kind === "column") invalidateColumnSnapshots(root, resize.index);
-            else invalidateRowSnapshots(root, resize.index);
-            dotNet.invokeMethodAsync(method, resize.index, next).catch(() => {});
+            setLayoutAxisSize(root, resize.kind, resize.index, next);
+            invokeDotNet(root, method, [resize.index, next], true).catch(() => {});
             ev.preventDefault();
         };
         const onKeyDown = ev => {
@@ -1614,15 +3821,23 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const p = toContentPoint(root, ev);
             const hit = hitCell(root, p);
             if (hit) {
+                if (isFormulaPointMode(root) && s.editor) {
+                    beginFormulaReferenceDrag(root, hit);
+                    endFormulaReferenceDrag(root);
+                    s.editor.input.focus({ preventScroll: true });
+                    ev.preventDefault();
+                    return;
+                }
+
                 closeLocalEditor(root, true);
-                if (!read(s.model, "IsFormulaPointMode", false)) {
+                if (!isFormulaPointMode(root)) {
                     updateLocalActiveCell(root, hit.row, hit.col, !!ev.shiftKey, "pointer");
                 }
-                dotNet.invokeMethodAsync("OnCanvasCellPointer", hit.row, hit.col, !!ev.shiftKey, !!ev.ctrlKey).catch(() => {});
+                invokeDotNet(root, "OnCanvasCellPointer", [hit.row, hit.col, !!ev.shiftKey, !!ev.ctrlKey], true).catch(() => {});
                 return;
             }
 
-            dotNet.invokeMethodAsync("OnCanvasPointer", p.x, p.y, !!ev.shiftKey, !!ev.ctrlKey).catch(() => {});
+            invokeDotNet(root, "OnCanvasPointer", [p.x, p.y, !!ev.shiftKey, !!ev.ctrlKey], true).catch(() => {});
         };
         const onDblClick = ev => {
             const p = toContentPoint(root, ev);
@@ -1633,16 +3848,56 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 return;
             }
 
-            dotNet.invokeMethodAsync("OnCanvasDoubleClick", p.x, p.y).catch(() => {});
+            invokeDotNet(root, "OnCanvasDoubleClick", [p.x, p.y], true).catch(() => {});
         };
         const onContextMenu = ev => {
             ev.preventDefault();
             const p = toContentPoint(root, ev);
-            dotNet.invokeMethodAsync("OnCanvasContextMenu", p.x, p.y, ev.clientX, ev.clientY).catch(() => {});
+            invokeDotNet(root, "OnCanvasContextMenu", [p.x, p.y, ev.clientX, ev.clientY], true).catch(() => {});
         };
-        const onFocusOut = () => {
-            syncNativeScrollFromLogical(root);
-            requestViewportSync(root, true);
+        const onCopy = ev => {
+            if (!isJsEngine(root)) return;
+            const snapshot = getSelectionSnapshot(root);
+            const text = selectionToClipboardText(root, snapshot);
+            const payload = buildClipboardPayload(root, snapshot, false);
+            ev.preventDefault();
+            ev.clipboardData?.setData("text/plain", text);
+            try { ev.clipboardData?.setData(customClipboardMime, JSON.stringify(payload)); } catch { }
+            invokeDotNet(root, "OnCanvasKeyCommand", ["c", false, true, false, false], true).catch(() => {});
+        };
+        const onCut = ev => {
+            if (!isJsEngine(root)) return;
+            const snapshot = getSelectionSnapshot(root);
+            const text = selectionToClipboardText(root, snapshot);
+            const payload = buildClipboardPayload(root, snapshot, true);
+            ev.preventDefault();
+            ev.clipboardData?.setData("text/plain", text);
+            try { ev.clipboardData?.setData(customClipboardMime, JSON.stringify(payload)); } catch { }
+            invokeDotNet(root, "OnCanvasKeyCommand", ["x", false, true, false, false], true).catch(() => {});
+        };
+        const onPaste = ev => {
+            if (!isJsEngine(root)) return;
+            const custom = ev.clipboardData?.getData(customClipboardMime);
+            const text = ev.clipboardData?.getData("text/plain") || "";
+            ev.preventDefault();
+            if (custom) {
+                try {
+                    if (applyClipboardPayload(root, JSON.parse(custom)) > 0) return;
+                } catch { }
+            }
+            if (applyClipboardText(root, text) > 0) return;
+            invokeDotNet(root, "OnCanvasKeyCommand", ["v", false, true, false, false], true).catch(() => {});
+        };
+        const onFocusOut = ev => {
+            const nextTarget = ev?.relatedTarget;
+            if (nextTarget instanceof Node && root.contains(nextTarget)) return;
+            setTimeout(() => {
+                const active = document.activeElement;
+                if (active === root || (active instanceof Node && root.contains(active))) return;
+                syncNativeScrollFromLogical(root);
+                flushSelectionSettled(root);
+                requestViewportSync(root, true);
+            }, 0);
         };
 
         root.addEventListener("scroll", onScroll, { passive: true });
@@ -1654,6 +3909,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         root.addEventListener("click", onClick);
         root.addEventListener("dblclick", onDblClick);
         root.addEventListener("contextmenu", onContextMenu);
+        root.addEventListener("copy", onCopy);
+        root.addEventListener("cut", onCut);
+        root.addEventListener("paste", onPaste);
         root.addEventListener("focusout", onFocusOut);
         s.listeners.push(
             ["scroll", onScroll],
@@ -1665,6 +3923,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             ["click", onClick],
             ["dblclick", onDblClick],
             ["contextmenu", onContextMenu],
+            ["copy", onCopy],
+            ["cut", onCut],
+            ["paste", onPaste],
             ["focusout", onFocusOut]
         );
 
@@ -1672,6 +3933,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.resizeObserver = new ResizeObserver(() => {
                 s.palette = buildPalette(root);
                 clearCellSnapshots(root, "resize");
+                invalidateVisibleLayout(root, "resize-observer");
                 notifyViewport(root, true);
                 if (s.model) requestCanvasRedraw(root, "resize", "full");
             });
@@ -1679,7 +3941,16 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         root[stateKey] = s;
+        syncAccessibilityState(root, "immediate");
         notifyViewport(root, true);
+    };
+
+    window.tmSpreadsheetCanvas.initEngine = function (root, canvas, headerCanvas, selectionCanvas, dotNet, model) {
+        if (!root || !canvas || !dotNet) return;
+        window.tmSpreadsheetCanvas.register(root, canvas, headerCanvas, selectionCanvas, dotNet);
+        if (model) {
+            window.tmSpreadsheetCanvas.render(root, canvas, model);
+        }
     };
 
     window.tmSpreadsheetCanvas.dispose = function (root) {
@@ -1698,6 +3969,12 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         if (s.viewportTimer) clearTimeout(s.viewportTimer);
         if (s.nativeScrollSyncTimer) clearTimeout(s.nativeScrollSyncTimer);
         if (s.selectionSyncTimer) clearTimeout(s.selectionSyncTimer);
+        const accessibility = getAccessibilityState(root);
+        if (accessibility?.liveRegionTimer) clearTimeout(accessibility.liveRegionTimer);
+        if (s.commandLogTimer) clearTimeout(s.commandLogTimer);
+        if (s.pasteTimer) clearTimeout(s.pasteTimer);
+        flushCellEditCommitQueue(root);
+        flushCommandLog(root);
         closeLocalEditor(root, false);
         root.style.cursor = "";
         delete root[stateKey];
@@ -1717,16 +3994,96 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         updateCacheMetrics(root);
     };
 
+    window.tmSpreadsheetCanvas.setCells = function (root, payload) {
+        const cells = Array.isArray(payload) ? payload : read(payload, "Cells", []);
+        const options = Array.isArray(payload)
+            ? {}
+            : {
+                suppressRedraw: !!read(payload, "SuppressRedraw", false),
+                queueRangeCommand: !!read(payload, "QueueRangeCommand", false),
+                commandDelay: Number(read(payload, "CommandDelay", 35)) || 35
+            };
+        return setStoreCells(root, cells || [], options);
+    };
+
+    window.tmSpreadsheetCanvas.clearCells = function (root, payload) {
+        const cells = Array.isArray(payload)
+            ? payload
+            : read(payload, "Cells", read(payload, "Refs", []));
+        const options = Array.isArray(payload)
+            ? {}
+            : {
+                queueRangeCommand: !!read(payload, "QueueRangeCommand", false),
+                commandDelay: Number(read(payload, "CommandDelay", 35)) || 35
+        };
+        return clearStoreCells(root, cells || [], options);
+    };
+
+    window.tmSpreadsheetCanvas.applyClipboardText = function (root, text) {
+        return applyClipboardText(root, text);
+    };
+
+    window.tmSpreadsheetCanvas.applyAutoFill = function (root, row, col, source) {
+        beginAutoFillDrag(root, 0);
+        const autoFill = getAutoFillState(root);
+        if (!autoFill?.active) return 0;
+        if (source && typeof source === "object") autoFill.source = source;
+        autoFill.preview = computeAutoFillPreview(autoFill.source, Number(row) || 0, Number(col) || 0);
+        setAutoFillState(root, autoFill);
+        return commitAutoFill(root);
+    };
+
+    window.tmSpreadsheetCanvas.applyCommand = function (root, payload) {
+        if (!root || !payload) return null;
+        const type = read(payload, "Type", read(payload, "Command", read(payload, "type", ""))) || "";
+        switch (type) {
+            case "upsertCells":
+                return window.tmSpreadsheetCanvas.setCells(root, {
+                    cells: read(payload, "Cells", []),
+                    suppressRedraw: !!read(payload, "SuppressRedraw", false)
+                });
+            case "clearCells":
+                return window.tmSpreadsheetCanvas.clearCells(root, {
+                    cells: read(payload, "Cells", read(payload, "Refs", []))
+                });
+            case "invalidateSnapshots":
+                return window.tmSpreadsheetCanvas.invalidateCellSnapshots(root, read(payload, "Payload", payload));
+            case "renderModel": {
+                const s = getState(root);
+                const model = read(payload, "Model", null);
+                if (!s?.canvas || !model) return null;
+                window.tmSpreadsheetCanvas.render(root, s.canvas, model);
+                return null;
+            }
+            default:
+                return null;
+        }
+    };
+
     window.tmSpreadsheetCanvas.render = function (root, canvas, model) {
         if (!root || !canvas || !model) return;
         const s = getState(root);
+        const receivedServerRevision = Number(read(model, "InteractionVersion", 0)) || 0;
+        const localRevisionBeforeFrame = Math.max(s?.interactionVersion || 0, s?.sheetState?.localRevision || 0);
+        const staleFrame = !!(s?.model && receivedServerRevision < localRevisionBeforeFrame);
         model = preserveLocalInteraction(root, model);
         syncModelViewport(root, model);
         if (s) {
+            syncSheetStateFromModel(root, model, receivedServerRevision);
+            syncLayoutStateFromModel(root, model);
+            syncCellStoreFromModel(root, model, { allowOverwrite: !staleFrame });
             s.model = model;
             s.palette = buildPalette(root);
             s.modelRevision = (s.modelRevision || 0) + 1;
+            if (s.metrics) {
+                const age = performance.now() - (s.lastLocalInteractionAt || 0);
+                s.metrics.blazorFrameCount += 1;
+                s.metrics.lastBlazorFrameAgeMs = Number.isFinite(age) ? age : 0;
+                if (age >= 0 && age < 500) s.metrics.hotPathBlazorFrameCount += 1;
+            }
             updateLocalEditorPosition(root);
+            syncEditorAccessibility(root);
+            syncAccessibilityState(root, false);
             s.syncedScrollLeft = getLogicalScrollLeft(root);
             s.syncedScrollTop = getLogicalScrollTop(root);
             const frameVersion = Number(read(model, "InteractionVersion", 0)) || 0;
@@ -1745,8 +4102,74 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.metrics.logicalScrollTop = getLogicalScrollTop(root);
             s.metrics.nativeScrollLeft = root.scrollLeft || 0;
             s.metrics.nativeScrollTop = root.scrollTop || 0;
+            s.metrics.localRevision = s.sheetState?.localRevision || 0;
+            s.metrics.blazorRevision = s.sheetState?.blazorRevision || 0;
+            s.metrics.serverRevision = s.sheetState?.serverRevision || 0;
+            const store = s.sheetState?.cellStore;
+            if (store) {
+                s.metrics.cellStoreSize = store.cells.size;
+                s.metrics.cellStoreRevision = store.revision;
+                s.metrics.cellStoreLastFrameCellCount = store.lastFrameCellCount;
+                s.metrics.cellStoreFormulaRefCount = store.formulaRefs.size;
+                s.metrics.cellStoreStyledOrNonEmptyCount = store.styledOrNonEmpty.size;
+                s.metrics.cellStoreMergedCount = store.merged.size;
+            }
         }
-        return s?.metrics ? { ...s.metrics } : null;
+        return s?.metrics
+            ? {
+                ...s.metrics,
+                dotNetCallbacksByMethod: { ...(s.metrics.dotNetCallbacksByMethod || {}) },
+                hotPathDotNetCallbacksByMethod: { ...(s.metrics.hotPathDotNetCallbacksByMethod || {}) },
+                workbookState: s.workbookState
+                    ? {
+                        localRevision: s.workbookState.localRevision || 0,
+                        blazorRevision: s.workbookState.blazorRevision || 0,
+                        serverRevision: s.workbookState.serverRevision || 0,
+                        activeSheetId: s.workbookState.activeSheetId || ""
+                    }
+                    : null,
+                sheetState: s.sheetState
+                    ? {
+                        localRevision: s.sheetState.localRevision || 0,
+                        blazorRevision: s.sheetState.blazorRevision || 0,
+                        serverRevision: s.sheetState.serverRevision || 0,
+                        activeCell: { ...(s.sheetState.activeCell || {}) },
+                        selection: { ...(s.sheetState.selection || {}) },
+                        scroll: { ...(s.sheetState.scroll || {}) },
+                        hover: s.sheetState.hover ? { ...s.sheetState.hover } : null,
+                        drag: {
+                            possible: s.sheetState.drag?.possible ? { ...s.sheetState.drag.possible } : null,
+                            selection: s.sheetState.drag?.selection ? { ...s.sheetState.drag.selection } : null,
+                            autoscrollPointer: s.sheetState.drag?.autoscrollPointer ? { ...s.sheetState.drag.autoscrollPointer } : null
+                        },
+                        cellStore: {
+                            size: s.sheetState.cellStore?.cells?.size || 0,
+                            revision: s.sheetState.cellStore?.revision || 0,
+                            formulaRefCount: s.sheetState.cellStore?.formulaRefs?.size || 0,
+                            styledOrNonEmptyCount: s.sheetState.cellStore?.styledOrNonEmpty?.size || 0,
+                            mergedCount: s.sheetState.cellStore?.merged?.size || 0,
+                            lastFrameCellCount: s.sheetState.cellStore?.lastFrameCellCount || 0
+                        },
+                        editor: s.sheetState.editor ? { ...s.sheetState.editor } : null,
+                        formulaEditor: s.sheetState.formulaEditor
+                            ? {
+                                active: !!s.sheetState.formulaEditor.active,
+                                row: s.sheetState.formulaEditor.row || 0,
+                                col: s.sheetState.formulaEditor.col || 0,
+                                text: s.sheetState.formulaEditor.text || "",
+                                caret: s.sheetState.formulaEditor.caret || 0,
+                                tokenStart: s.sheetState.formulaEditor.tokenStart ?? -1,
+                                tokenEnd: s.sheetState.formulaEditor.tokenEnd ?? -1,
+                                refCount: s.sheetState.formulaEditor.refs?.length || 0,
+                                dragActive: !!s.sheetState.formulaEditor.dragAnchor
+                            }
+                            : null,
+                        formulaMode: !!s.sheetState.formulaMode,
+                        formatPainterActive: !!s.sheetState.formatPainterActive
+                    }
+                    : null
+            }
+            : null;
     };
 
     window.tmSpreadsheetCanvas.ensureCellVisible = function (root, cell, options) {
@@ -2051,10 +4474,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
 
     function getVisibleLayout(root, model, width, height) {
         const s = getState(root);
-        const rows = read(model, "Rows", []);
-        const columns = read(model, "Columns", []);
-        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
-        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const layoutState = getLayoutState(root);
+        const rowHeaderWidth = layoutState?.rowHeaderWidth ?? read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = layoutState?.columnHeaderHeight ?? read(model, "ColumnHeaderHeight", 20);
+        const freezeRows = layoutState?.freezeRowCount ?? read(model, "FreezeRowCount", 0);
+        const freezeColumns = layoutState?.freezeColumnCount ?? read(model, "FreezeColumnCount", 0);
         const key = [
             Math.round(read(model, "ScrollLeft", 0) * 100) / 100,
             Math.round(read(model, "ScrollTop", 0) * 100) / 100,
@@ -2062,10 +4486,12 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             Math.round(height),
             rowHeaderWidth,
             columnHeaderHeight,
-            read(model, "FreezeRowCount", 0),
-            read(model, "FreezeColumnCount", 0),
-            frameSignature(rows, "Index", "Top", "Height"),
-            frameSignature(columns, "Index", "Left", "Width")
+            freezeRows,
+            freezeColumns,
+            layoutState?.rowRevision || 0,
+            layoutState?.columnRevision || 0,
+            layoutOverscanRows(),
+            layoutOverscanColumns()
         ].join(";");
 
         if (s?.visibleLayoutCache?.key === key) {
@@ -2073,7 +4499,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             return s.visibleLayoutCache.layout;
         }
 
-        const layout = {
+        const visible = {
             rows: [],
             columns: [],
             rowHeaderWidth,
@@ -2082,37 +4508,99 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             height
         };
 
-        for (const row of rows) {
-            const y = screenY(model, row);
-            const rowHeight = read(row, "Height", 0);
-            if (rowHeight <= 0 || y + rowHeight < columnHeaderHeight || y > height) continue;
-            layout.rows.push({
-                source: row,
-                index: read(row, "Index", 0),
-                y,
-                height: rowHeight
-            });
-        }
+        if (layoutState) {
+            const rowOffsets = getRowOffsets(layoutState);
+            const columnOffsets = getColumnOffsets(layoutState);
+            const scrollTop = read(model, "ScrollTop", 0);
+            const scrollLeft = read(model, "ScrollLeft", 0);
+            const bodyHeight = Math.max(0, height - columnHeaderHeight);
+            const bodyWidth = Math.max(0, width - rowHeaderWidth);
+            const rowOverscan = layoutOverscanRows();
+            const columnOverscan = layoutOverscanColumns();
+            const seenRows = new Set();
+            const seenColumns = new Set();
 
-        for (const col of columns) {
-            const x = screenX(model, col);
-            const colWidth = read(col, "Width", 0);
-            if (colWidth <= 0 || x + colWidth < rowHeaderWidth || x > width) continue;
-            layout.columns.push({
-                source: col,
-                index: read(col, "Index", 0),
-                label: read(col, "Label", ""),
-                x,
-                width: colWidth
-            });
+            for (let row = 0; row < Math.min(freezeRows, layoutState.rowCount); row++) {
+                visible.rows.push(createRowFrame(layoutState, row, scrollTop, true));
+                seenRows.add(row);
+            }
+
+            let startRow = binarySearchOffset(rowOffsets, scrollTop);
+            let endRow = binarySearchOffset(rowOffsets, scrollTop + bodyHeight);
+            if (s?.metrics) s.metrics.visibleLayoutBinarySearchCount += 2;
+            startRow = Math.max(0, startRow - rowOverscan);
+            endRow = Math.min(layoutState.rowCount - 1, endRow + rowOverscan);
+            for (let row = startRow; row <= endRow; row++) {
+                if (seenRows.has(row)) continue;
+                const frame = createRowFrame(layoutState, row, scrollTop, false);
+                if (frame.height <= 0 || frame.y + frame.height < columnHeaderHeight || frame.y > height) continue;
+                visible.rows.push(frame);
+                seenRows.add(row);
+            }
+
+            for (let col = 0; col < Math.min(freezeColumns, layoutState.columnCount); col++) {
+                visible.columns.push(createColumnFrame(layoutState, col, scrollLeft, true));
+                seenColumns.add(col);
+            }
+
+            let startCol = binarySearchOffset(columnOffsets, scrollLeft);
+            let endCol = binarySearchOffset(columnOffsets, scrollLeft + bodyWidth);
+            if (s?.metrics) s.metrics.visibleLayoutBinarySearchCount += 2;
+            startCol = Math.max(0, startCol - columnOverscan);
+            endCol = Math.min(layoutState.columnCount - 1, endCol + columnOverscan);
+            for (let col = startCol; col <= endCol; col++) {
+                if (seenColumns.has(col)) continue;
+                const frame = createColumnFrame(layoutState, col, scrollLeft, false);
+                if (frame.width <= 0 || frame.x + frame.width < rowHeaderWidth || frame.x > width) continue;
+                visible.columns.push(frame);
+                seenColumns.add(col);
+            }
+
+            if (s?.metrics) s.metrics.visibleLayoutJsComputeCount += 1;
+        } else {
+            const rows = read(model, "Rows", []);
+            const columns = read(model, "Columns", []);
+            for (const row of rows) {
+                const y = screenY(model, row);
+                const rowHeight = read(row, "Height", 0);
+                if (rowHeight <= 0 || y + rowHeight < columnHeaderHeight || y > height) continue;
+                visible.rows.push({
+                    source: row,
+                    index: read(row, "Index", 0),
+                    Index: read(row, "Index", 0),
+                    top: read(row, "Top", 0),
+                    Top: read(row, "Top", 0),
+                    y,
+                    height: rowHeight,
+                    Height: rowHeight
+                });
+            }
+
+            for (const col of columns) {
+                const x = screenX(model, col);
+                const colWidth = read(col, "Width", 0);
+                if (colWidth <= 0 || x + colWidth < rowHeaderWidth || x > width) continue;
+                visible.columns.push({
+                    source: col,
+                    index: read(col, "Index", 0),
+                    Index: read(col, "Index", 0),
+                    left: read(col, "Left", 0),
+                    Left: read(col, "Left", 0),
+                    label: read(col, "Label", ""),
+                    Label: read(col, "Label", ""),
+                    x,
+                    width: colWidth,
+                    Width: colWidth
+                });
+            }
         }
 
         if (s) {
-            s.visibleLayoutCache = { key, layout };
+            s.visibleLayoutCache = { key, layout: visible };
             if (s.metrics) s.metrics.visibleLayoutCacheMisses += 1;
         }
 
-        return layout;
+        return visible;
     }
 
     function frameSignature(items, indexName, offsetName, sizeName) {
@@ -2127,35 +4615,82 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return signature;
     }
 
-    function renderModel(root, canvas, model) {
+    function renderContentLayer(root, model, options) {
         const started = performance.now();
+        const settings = options || {};
         const s = getState(root);
         const metrics = s?.metrics;
+        const canvas = settings.canvas || s?.canvas;
+        if (!canvas || !model) return { cells: 0, texts: 0, textMs: 0 };
+
+        if (settings.resetFrame !== false) resetFrameInstrumentation(metrics);
         prepareRenderCaches(root);
         const dpr = window.devicePixelRatio || 1;
         const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
         const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
         resizeCanvasSurface(root, canvas, width, height, dpr);
-        if (s?.headerCanvas) resizeCanvasSurface(root, s.headerCanvas, width, height, dpr);
-        if (s?.selectionCanvas) resizeCanvasSurface(root, s.selectionCanvas, width, height, dpr);
-        resetFrameInstrumentation(metrics);
 
         const ctx = canvas.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         resetContextState(ctx);
-        ctx.clearRect(0, 0, width, height);
 
         const palette = s?.palette || buildPalette(root);
-
-        setContextFillStyle(ctx, palette.surface, metrics);
-        ctx.fillRect(0, 0, width, height);
+        const dirtyRect = settings.forceFull ? null : unionRects(settings.dirtyRects, width, height);
+        let clipped = false;
+        if (dirtyRect) {
+            contextSave(ctx, metrics);
+            ctx.beginPath();
+            ctx.rect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            contextClip(ctx, metrics);
+            ctx.clearRect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            setContextFillStyle(ctx, palette.surface, metrics);
+            ctx.fillRect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            clipped = true;
+        } else {
+            ctx.clearRect(0, 0, width, height);
+            setContextFillStyle(ctx, palette.surface, metrics);
+            ctx.fillRect(0, 0, width, height);
+        }
 
         const layout = getVisibleLayout(root, model, width, height);
         const cellMetrics = drawCells(ctx, root, model, palette);
+        if (clipped) contextRestore(ctx, metrics);
+
+        if (metrics) {
+            const elapsed = performance.now() - started;
+            metrics.contentLayerPaintCount += 1;
+            metrics.lastContentLayerMs = elapsed;
+            updateCacheMetrics(root, layout);
+            if (elapsed > 33) metrics.contentFramesOver33 += 1;
+            if (elapsed > 16) metrics.contentFramesOver16 += 1;
+        }
+
+        return cellMetrics;
+    }
+
+    function renderModel(root, canvas, model) {
+        const started = performance.now();
+        const s = getState(root);
+        const metrics = s?.metrics;
+        if (s) modelRootMap.set(model, root);
+        const dpr = window.devicePixelRatio || 1;
+        const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
+        const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
+        if (s?.headerCanvas) resizeCanvasSurface(root, s.headerCanvas, width, height, dpr);
+        if (s?.selectionCanvas) resizeCanvasSurface(root, s.selectionCanvas, width, height, dpr);
+        resetFrameInstrumentation(metrics);
+        const layout = getVisibleLayout(root, model, width, height);
+        const cellMetrics = renderContentLayer(root, model, { canvas, forceFull: true, resetFrame: false });
         if (s?.headerCanvas) renderHeaderLayer(root, model);
-        else drawHeaders(ctx, root, model, palette, width, height);
+        else {
+            const ctx = canvas.getContext("2d");
+            drawHeaders(ctx, root, model, s?.palette || buildPalette(root), width, height);
+        }
         if (s?.selectionCanvas) renderSelectionOverlay(root, model);
-        else drawSelection(ctx, root, model, palette, width, height);
+        else {
+            const ctx = canvas.getContext("2d");
+            drawSelection(ctx, root, model, s?.palette || buildPalette(root), width, height);
+        }
         if (metrics) {
             metrics.redrawCount += 1;
             metrics.lastDrawMs = performance.now() - started;
@@ -2302,6 +4837,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const canvas = s?.headerCanvas;
         if (!s || !canvas || !model) return;
 
+        const started = performance.now();
         const dpr = window.devicePixelRatio || 1;
         const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
         const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
@@ -2312,6 +4848,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         resetContextState(ctx);
         ctx.clearRect(0, 0, width, height);
         drawHeaders(ctx, root, model, s.palette || buildPalette(root), width, height);
+        if (s.metrics) {
+            s.metrics.headerLayerPaintCount += 1;
+            s.metrics.lastHeaderLayerMs = performance.now() - started;
+        }
     }
 
     function resizeCanvasSurface(root, canvas, width, height, dpr) {
@@ -2331,12 +4871,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
     }
 
-    function renderSelectionOverlay(root, model) {
+    function renderSelectionOverlay(root, model, options) {
         const s = getState(root);
         const canvas = s?.selectionCanvas;
         if (!s || !canvas || !model) return;
 
         const started = performance.now();
+        const settings = options || {};
         const dpr = window.devicePixelRatio || 1;
         const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
         const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
@@ -2345,13 +4886,30 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const ctx = canvas.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         resetContextState(ctx);
-        ctx.clearRect(0, 0, width, height);
+        const dirtyRect = settings.forceFull ? null : unionRects(settings.dirtyRects, width, height);
+        let clipped = false;
+        if (dirtyRect) {
+            ctx.clearRect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            contextSave(ctx, s.metrics);
+            ctx.beginPath();
+            ctx.rect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            contextClip(ctx, s.metrics);
+            clipped = true;
+        } else {
+            ctx.clearRect(0, 0, width, height);
+        }
 
         const palette = s.palette || buildPalette(root);
         drawSelection(ctx, root, model, palette, width, height);
+        if (clipped) contextRestore(ctx, s.metrics);
         if (s.metrics) {
             s.metrics.selectionRedrawCount += 1;
-            s.metrics.lastSelectionDrawMs = performance.now() - started;
+            const elapsed = performance.now() - started;
+            s.metrics.selectionLayerPaintCount += 1;
+            s.metrics.lastSelectionDrawMs = elapsed;
+            s.metrics.lastSelectionLayerMs = elapsed;
+            if (elapsed > 33) s.metrics.selectionFramesOver33 += 1;
+            if (elapsed > 16) s.metrics.selectionFramesOver16 += 1;
             updateCacheMetrics(root, getVisibleLayout(root, model, width, height));
         }
     }
@@ -2414,9 +4972,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const scrollTop = read(model, "ScrollTop", 0);
         const freezeRows = read(model, "FreezeRowCount", 0);
         const freezeCols = read(model, "FreezeColumnCount", 0);
-        const cells = read(model, "Cells", []);
         const metrics = { cells: 0, texts: 0, textMs: 0 };
         const layout = getVisibleLayout(root, model, width, height);
+        const cells = getDrawableCells(root, model, layout);
 
         for (const cell of cells) {
             const row = read(cell, "Row", 0);
@@ -2519,10 +5077,12 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const scrollTop = read(model, "ScrollTop", 0);
         const freezeRows = read(model, "FreezeRowCount", 0);
         const freezeCols = read(model, "FreezeColumnCount", 0);
-        const hover = getState(root)?.hoverCell;
-        const formulaPoint = read(model, "IsFormulaPointMode", false);
-        const rows = read(model, "Rows", []);
-        const columns = read(model, "Columns", []);
+        const hover = getSheetHover(root);
+        const formulaPoint = isFormulaPointMode(root);
+        const autoFill = getAutoFillState(root);
+        const layout = getVisibleLayout(root, model, width, height);
+        const rows = layout.rows;
+        const columns = layout.columns;
         const active = parseCellRef(read(model, "ActiveCellRef", "A1"));
         const selection = read(model, "Selection", {});
         const startRow = read(selection, "StartRow", active.row);
@@ -2539,8 +5099,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             const col = read(colFrame, "Index", 0);
             const frozenCol = col < freezeCols;
             const frozenRow = row < freezeRows;
-            const x = rowHeaderWidth + read(colFrame, "Left", 0) - (frozenCol ? 0 : scrollLeft);
-            const y = columnHeaderHeight + read(rowFrame, "Top", 0) - (frozenRow ? 0 : scrollTop);
+            const x = read(colFrame, "x", rowHeaderWidth + read(colFrame, "Left", 0) - (frozenCol ? 0 : scrollLeft));
+            const y = read(rowFrame, "y", columnHeaderHeight + read(rowFrame, "Top", 0) - (frozenRow ? 0 : scrollTop));
             const w = read(colFrame, "Width", 0);
             const h = read(rowFrame, "Height", 0);
             if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height || w <= 0 || h <= 0) return;
@@ -2579,8 +5139,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             if (hoverRow && hoverCol && !hoverInSelection) {
                 const frozenCol = hover.col < freezeCols;
                 const frozenRow = hover.row < freezeRows;
-                const x = rowHeaderWidth + read(hoverCol, "Left", 0) - (frozenCol ? 0 : scrollLeft);
-                const y = columnHeaderHeight + read(hoverRow, "Top", 0) - (frozenRow ? 0 : scrollTop);
+                const x = read(hoverCol, "x", rowHeaderWidth + read(hoverCol, "Left", 0) - (frozenCol ? 0 : scrollLeft));
+                const y = read(hoverRow, "y", columnHeaderHeight + read(hoverRow, "Top", 0) - (frozenRow ? 0 : scrollTop));
                 const w = read(hoverCol, "Width", 0);
                 const h = read(hoverRow, "Height", 0);
                 if (x + w >= rowHeaderWidth && y + h >= columnHeaderHeight && x <= width && y <= height && w > 0 && h > 0) {
@@ -2590,18 +5150,41 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
         }
 
+        if (autoFill?.active && autoFill.preview) {
+            const preview = selectionBounds(autoFill.preview);
+            const previewRect = getSelectionScreenRect(root, preview);
+            if (previewRect) {
+                ctx.save();
+                setContextStrokeStyle(ctx, palette.primary, metrics);
+                setContextLineWidth(ctx, 1.5, metrics);
+                ctx.setLineDash([4, 3]);
+                ctx.strokeRect(
+                    Math.floor(previewRect.x) + 1,
+                    Math.floor(previewRect.y) + 1,
+                    Math.max(0, previewRect.width - 2),
+                    Math.max(0, previewRect.height - 2));
+                ctx.restore();
+                resetContextState(ctx);
+            }
+        }
+
         const formulaReferenceCells = getFormulaReferenceCells(root, model);
         if (formulaReferenceCells.length === 0) return;
 
         for (const cell of formulaReferenceCells) {
             const row = read(cell, "Row", 0);
             const col = read(cell, "Col", 0);
+            const rowFrame = getFrameByIndex(rows, row);
+            const colFrame = getFrameByIndex(columns, col);
+            if (!rowFrame || !colFrame) continue;
             const frozenCol = col < freezeCols;
             const frozenRow = row < freezeRows;
-            const x = rowHeaderWidth + read(cell, "Left", 0) - (frozenCol ? 0 : scrollLeft);
-            const y = columnHeaderHeight + read(cell, "Top", 0) - (frozenRow ? 0 : scrollTop);
-            const w = read(cell, "Width", 0);
-            const h = read(cell, "Height", 0);
+            const cellLeft = read(cell, "Left", read(colFrame, "Left", 0));
+            const cellTop = read(cell, "Top", read(rowFrame, "Top", 0));
+            const x = read(colFrame, "x", rowHeaderWidth + cellLeft - (frozenCol ? 0 : scrollLeft));
+            const y = read(rowFrame, "y", columnHeaderHeight + cellTop - (frozenRow ? 0 : scrollTop));
+            const w = read(cell, "Width", read(colFrame, "Width", 0));
+            const h = read(cell, "Height", read(rowFrame, "Height", 0));
             if (x + w < rowHeaderWidth || y + h < columnHeaderHeight || x > width || y > height || w <= 0 || h <= 0) continue;
 
             const formulaColorIndex = Number(read(cell, "FormulaRefColorIndex", -1));

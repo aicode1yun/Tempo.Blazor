@@ -137,7 +137,7 @@
                        RowsCount="1000"
                        ColumnsCount="120"
                        Height="500px"
-                       RenderMode="SpreadsheetRenderMode.Canvas" />
+                       RenderMode="SpreadsheetRenderMode.CanvasJsEngine" />
     </div>
 </section>
 
@@ -154,6 +154,10 @@
         if (firstRender)
         {
             _ = InitializeFormulaSheetAsync();
+            _canvasSpreadsheet.SetCellValue("A1", "Canvas JS engine");
+            _canvasSpreadsheet.SetCellValue("B1", "Public API sync");
+            _canvasSpreadsheet.SetCellValue("A2", "Arrow keys");
+            _canvasSpreadsheet.SetCellValue("B2", "Formula/editor hot path");
         }
     }
 

@@ -83,6 +83,9 @@ public partial class TmSpreadsheet
     /// <summary>Gets the underlying workbook for programmatic access.</summary>
     public SpreadsheetWorkbook Workbook => _workbook;
 
+    private bool UseCanvasJsEngine => RenderMode == SpreadsheetRenderMode.CanvasJsEngine;
+    private TmSpreadsheetCanvasGrid? CanvasJsEngineGrid => UseCanvasJsEngine ? _grid as TmSpreadsheetCanvasGrid : null;
+
     // ── Toolbar state ──
     private bool CanUndo => _commandManager?.CanUndo ?? false;
     private bool CanRedo => _commandManager?.CanRedo ?? false;
@@ -160,6 +163,27 @@ public partial class TmSpreadsheet
     private void ClearRenderedCache()
     {
         _grid?.ClearRenderedCache();
+    }
+
+    private void RequestCanvasJsEngineFullRender()
+    {
+        CanvasJsEngineGrid?.RequestFullRender();
+    }
+
+    private Task SyncCanvasJsEngineCellsAsync(IEnumerable<string> cellRefs)
+    {
+        var grid = CanvasJsEngineGrid;
+        return grid is null
+            ? Task.CompletedTask
+            : grid.ApplyEngineCellPatchesAsync(cellRefs);
+    }
+
+    private Task PreviewCanvasJsEngineStyleAsync(IEnumerable<string> cellRefs, Action<SpreadsheetCellStyle> mutate)
+    {
+        var grid = CanvasJsEngineGrid;
+        return grid is null
+            ? Task.CompletedTask
+            : grid.PreviewEngineStylePatchesAsync(cellRefs, mutate);
     }
 
     private bool ShowGridLines => _workbook.ActiveSheet?.ShowGridLines ?? true;
@@ -269,7 +293,7 @@ public partial class TmSpreadsheet
         StateHasChanged();
     }
 
-    private void OnGridCellValueCommitted((string CellRef, string? Value) args)
+    private async Task OnGridCellValueCommitted((string CellRef, string? Value) args)
     {
         if (_commandManager is null || args.Value is null) return;
 
@@ -298,6 +322,57 @@ public partial class TmSpreadsheet
             previous?.Formula,
             args.Value.StartsWith('=') ? args.Value : null));
         InvalidateRenderedCells(new[] { targetCellRef });
+        if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
+            await SyncCanvasJsEngineCellsAsync(new[] { targetCellRef });
+        _isFormulaBarEditing = false;
+        _formulaBarEditValue = null;
+        StateHasChanged();
+    }
+
+    private async Task OnGridCellValuesCommittedBatch(IReadOnlyList<TmSpreadsheetCanvasGrid.CanvasCellEditCommit> commits)
+    {
+        if (_workbook.ActiveSheet is null || _commandManager is null || commits.Count == 0)
+            return;
+
+        var targetSheet = _workbook.ActiveSheet;
+        var refs = new List<string>(commits.Count);
+        var previousByRef = new Dictionary<string, SpreadsheetCell?>(StringComparer.OrdinalIgnoreCase);
+        var batch = new BatchCommand();
+
+        foreach (var commit in commits)
+        {
+            var row = Math.Clamp(commit.Row, 0, targetSheet.RowCount - 1);
+            var col = Math.Clamp(commit.Col, 0, targetSheet.ColumnCount - 1);
+            var cellRef = SpreadsheetSelectionState.ToCellRef(row, col);
+            refs.Add(cellRef);
+            if (!previousByRef.ContainsKey(cellRef))
+                previousByRef[cellRef] = targetSheet.Cells.GetValueOrDefault(cellRef)?.Clone();
+
+            var value = commit.Value ?? string.Empty;
+            batch.Add(new SetCellValueCommand(
+                targetSheet,
+                cellRef,
+                value.StartsWith('=') ? null : value,
+                value.StartsWith('=') ? value : null));
+        }
+
+        _commandManager.Execute(batch);
+        InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
+
+        foreach (var cellRef in refs.Distinct(StringComparer.OrdinalIgnoreCase))
+        {
+            previousByRef.TryGetValue(cellRef, out var previous);
+            var current = targetSheet.Cells.GetValueOrDefault(cellRef);
+            _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
+                targetSheet,
+                cellRef,
+                previous?.Value,
+                current?.Value,
+                previous?.Formula,
+                current?.Formula));
+        }
+
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
         StateHasChanged();
@@ -318,10 +393,10 @@ public partial class TmSpreadsheet
         StateHasChanged();
     }
 
-    private void OnFormulaBarCommitted(string? value)
+    private async Task OnFormulaBarCommitted(string? value)
     {
         _isFormulaBarEditing = false;
-        ApplyValueToActiveCell(value);
+        await ApplyValueToActiveCellAsync(value);
         _formulaBarEditValue = null;
         StateHasChanged();
     }
@@ -344,7 +419,7 @@ public partial class TmSpreadsheet
             await _grid.FocusAsync();
     }
 
-    private void ApplyValueToActiveCell(string? value)
+    private async Task ApplyValueToActiveCellAsync(string? value)
     {
         var cellRef = _workbook.ActiveSheet?.ActiveCellRef;
         if (cellRef is null || value is null || _commandManager is null) return;
@@ -356,49 +431,51 @@ public partial class TmSpreadsheet
             value.StartsWith('=') ? value : null);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(new[] { cellRef });
+        await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
     }
 
     // ── Toolbar commands ──
-    private void ApplyFontFamily(string? font)
+    private Task ApplyFontFamily(string? font)
     {
-        if (font is null) return;
-        ApplyStyleToSelection(s => s.FontFamily = font);
+        return font is null
+            ? Task.CompletedTask
+            : ApplyStyleToSelectionAsync(s => s.FontFamily = font);
     }
 
-    private void ApplyFontSize(string? size)
+    private Task ApplyFontSize(string? size)
     {
-        if (size is null || !double.TryParse(size, out var value)) return;
-        ApplyStyleToSelection(s => s.FontSize = value);
+        if (size is null || !double.TryParse(size, out var value)) return Task.CompletedTask;
+        return ApplyStyleToSelectionAsync(s => s.FontSize = value);
     }
 
-    private void ToggleBold()
+    private Task ToggleBold()
     {
-        ApplyStyleToSelection(s => s.Bold = !s.Bold);
+        return ApplyStyleToSelectionAsync(s => s.Bold = !s.Bold);
     }
 
-    private void ToggleItalic()
+    private Task ToggleItalic()
     {
-        ApplyStyleToSelection(s => s.Italic = !s.Italic);
+        return ApplyStyleToSelectionAsync(s => s.Italic = !s.Italic);
     }
 
-    private void ToggleUnderline()
+    private Task ToggleUnderline()
     {
-        ApplyStyleToSelection(s => s.Underline = !s.Underline);
+        return ApplyStyleToSelectionAsync(s => s.Underline = !s.Underline);
     }
 
-    private void ToggleStrikeThrough()
+    private Task ToggleStrikeThrough()
     {
-        ApplyStyleToSelection(s => s.StrikeThrough = !s.StrikeThrough);
+        return ApplyStyleToSelectionAsync(s => s.StrikeThrough = !s.StrikeThrough);
     }
 
-    private void IncreaseIndent()
+    private Task IncreaseIndent()
     {
-        ApplyStyleToSelection(s => s.Indent = Math.Clamp(s.Indent + 1, 0, 15));
+        return ApplyStyleToSelectionAsync(s => s.Indent = Math.Clamp(s.Indent + 1, 0, 15));
     }
 
-    private void DecreaseIndent()
+    private Task DecreaseIndent()
     {
-        ApplyStyleToSelection(s => s.Indent = Math.Clamp(s.Indent - 1, 0, 15));
+        return ApplyStyleToSelectionAsync(s => s.Indent = Math.Clamp(s.Indent - 1, 0, 15));
     }
 
     private void ShowFormatCellsDialog()
@@ -407,10 +484,10 @@ public partial class TmSpreadsheet
         _showFormatCellsDialog = true;
     }
 
-    private void OnFormatCellsApply(SpreadsheetCellStyle style)
+    private async Task OnFormatCellsApply(SpreadsheetCellStyle style)
     {
         var captured = style.Clone();
-        ApplyStyleToSelection(s =>
+        await ApplyStyleToSelectionAsync(s =>
         {
             s.FontFamily = captured.FontFamily;
             s.FontSize = captured.FontSize;
@@ -463,6 +540,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var indices = Enumerable.Range(range.Start, range.End - range.Start + 1);
         _commandManager.Execute(new HideRowsCommand(_workbook.ActiveSheet, indices, hidden: true));
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -476,6 +554,7 @@ public partial class TmSpreadsheet
             .ToList();
         if (hiddenRows.Count == 0) return;
         _commandManager.Execute(new HideRowsCommand(_workbook.ActiveSheet, hiddenRows, hidden: false));
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -484,6 +563,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var indices = Enumerable.Range(range.Start, range.End - range.Start + 1);
         _commandManager.Execute(new HideColumnsCommand(_workbook.ActiveSheet, indices, hidden: true));
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -497,6 +577,7 @@ public partial class TmSpreadsheet
             .ToList();
         if (hiddenCols.Count == 0) return;
         _commandManager.Execute(new HideColumnsCommand(_workbook.ActiveSheet, hiddenCols, hidden: false));
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -505,7 +586,7 @@ public partial class TmSpreadsheet
         ActivateFormatPainter(sticky: false);
     }
 
-    private void ClearFormatting()
+    private async Task ClearFormatting()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         if (_grid is null) return;
@@ -535,10 +616,11 @@ public partial class TmSpreadsheet
             s.BorderLeft = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
         }));
         InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
         StateHasChanged();
     }
 
-    private void ClearContent()
+    private async Task ClearContent()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         if (_grid is null) return;
@@ -546,12 +628,13 @@ public partial class TmSpreadsheet
         if (refs.Count == 0) return;
         _commandManager.Execute(new ClearCellContentCommand(_workbook.ActiveSheet, refs));
         InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
         StateHasChanged();
     }
 
-    private void ClearAll()
+    private Task ClearAll()
     {
-        DeleteSelection();
+        return DeleteSelection();
     }
 
     private void OnFormatPainterButtonClick()
@@ -567,11 +650,11 @@ public partial class TmSpreadsheet
         ActivateFormatPainter(sticky: true);
     }
 
-    private void OnFormatPainterApply(string cellRef)
+    private async Task OnFormatPainterApply(string cellRef)
     {
         if (_formatPainterStyle is null) return;
         var captured = _formatPainterStyle.Clone();
-        ApplyStyleToSelection(s =>
+        await ApplyStyleToSelectionAsync(s =>
         {
             s.FontFamily = captured.FontFamily;
             s.FontSize = captured.FontSize;
@@ -598,14 +681,14 @@ public partial class TmSpreadsheet
             DeactivateFormatPainter();
     }
 
-    private void ApplyBorderPreset(BorderPreset preset)
+    private Task ApplyBorderPreset(BorderPreset preset)
     {
         var thin = SpreadsheetBorderStyle.Thin;
         var thick = SpreadsheetBorderStyle.Thick;
         var dbl = SpreadsheetBorderStyle.Double;
         const string black = "#000000";
 
-        ApplyStyleToSelection(s =>
+        return ApplyStyleToSelectionAsync(s =>
         {
             static SpreadsheetBorder B(SpreadsheetBorderStyle st) => new(st, black);
             static SpreadsheetBorder None() => new(SpreadsheetBorderStyle.None, black);
@@ -660,54 +743,56 @@ public partial class TmSpreadsheet
         });
     }
 
-    private void ApplyTextColor(string? color)
+    private Task ApplyTextColor(string? color)
     {
-        ApplyStyleToSelection(s => s.ForeColor = string.IsNullOrEmpty(color) ? "#000000" : color);
+        return ApplyStyleToSelectionAsync(s => s.ForeColor = string.IsNullOrEmpty(color) ? "#000000" : color);
     }
 
-    private void ApplyBackgroundColor(string? color)
+    private Task ApplyBackgroundColor(string? color)
     {
-        ApplyStyleToSelection(s => s.BackgroundColor = string.IsNullOrEmpty(color) ? "transparent" : color);
+        return ApplyStyleToSelectionAsync(s => s.BackgroundColor = string.IsNullOrEmpty(color) ? "transparent" : color);
     }
 
-    private void ApplyAlign(string? align)
+    private Task ApplyAlign(string? align)
     {
         if (Enum.TryParse<SpreadsheetHorizontalAlign>(align, true, out var value))
         {
-            ApplyStyleToSelection(s => s.HorizontalAlign = value);
+            return ApplyStyleToSelectionAsync(s => s.HorizontalAlign = value);
         }
+
+        return Task.CompletedTask;
     }
 
-    private void ApplyNumberFormat(string? format)
+    private Task ApplyNumberFormat(string? format)
     {
-        if (format is null) return;
-        ApplyStyleToSelection(s => s.NumberFormat = format);
+        if (format is null) return Task.CompletedTask;
+        return ApplyStyleToSelectionAsync(s => s.NumberFormat = format);
     }
 
-    private void IncreaseDecimals()
+    private Task IncreaseDecimals()
     {
-        ApplyStyleToSelection(s =>
+        return ApplyStyleToSelectionAsync(s =>
         {
             s.NumberFormat = AddDecimalPlace(s.NumberFormat);
         });
     }
 
-    private void DecreaseDecimals()
+    private Task DecreaseDecimals()
     {
-        ApplyStyleToSelection(s =>
+        return ApplyStyleToSelectionAsync(s =>
         {
             s.NumberFormat = RemoveDecimalPlace(s.NumberFormat);
         });
     }
 
-    private void ApplyPercentageFormat()
+    private Task ApplyPercentageFormat()
     {
-        ApplyStyleToSelection(s => s.NumberFormat = "0%");
+        return ApplyStyleToSelectionAsync(s => s.NumberFormat = "0%");
     }
 
-    private void ApplyThousandsFormat()
+    private Task ApplyThousandsFormat()
     {
-        ApplyStyleToSelection(s => s.NumberFormat = ToggleThousandsSeparator(s.NumberFormat));
+        return ApplyStyleToSelectionAsync(s => s.NumberFormat = ToggleThousandsSeparator(s.NumberFormat));
     }
 
     private static string ToggleThousandsSeparator(string format)
@@ -752,15 +837,18 @@ public partial class TmSpreadsheet
         return format[..^(afterDot.Length - 1)];
     }
 
-    private void ApplyStyleToSelection(Action<SpreadsheetCellStyle> mutate)
+    private async Task ApplyStyleToSelectionAsync(Action<SpreadsheetCellStyle> mutate)
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         if (_grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
+
+        await PreviewCanvasJsEngineStyleAsync(refs, mutate);
         var cmd = new SetCellStyleCommand(_workbook.ActiveSheet, refs, mutate);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
         StateHasChanged();
     }
 
@@ -769,6 +857,7 @@ public partial class TmSpreadsheet
     {
         _commandManager?.Undo();
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -776,6 +865,7 @@ public partial class TmSpreadsheet
     {
         _commandManager?.Redo();
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -795,16 +885,17 @@ public partial class TmSpreadsheet
         cmd.Execute();
     }
 
-    private void Paste()
+    private async Task Paste()
     {
         if (_workbook.ActiveSheet?.ActiveCellRef is null || _commandManager is null) return;
         var cmd = new PasteCommand(_workbook.ActiveSheet, _workbook.ActiveSheet.ActiveCellRef);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(cmd.AffectedCellRefs);
+        await SyncCanvasJsEngineCellsAsync(cmd.AffectedCellRefs);
         StateHasChanged();
     }
 
-    private void Cut()
+    private async Task Cut()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         if (_grid is null) return;
@@ -813,6 +904,7 @@ public partial class TmSpreadsheet
         var cmd = new CutCommand(_workbook.ActiveSheet, refs);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
         StateHasChanged();
     }
 
@@ -822,6 +914,7 @@ public partial class TmSpreadsheet
         var (row, _) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new InsertRowCommand(_workbook.ActiveSheet, row));
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -831,6 +924,7 @@ public partial class TmSpreadsheet
         var (row, _) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new DeleteRowCommand(_workbook.ActiveSheet, row));
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -840,6 +934,7 @@ public partial class TmSpreadsheet
         var (_, col) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new InsertColumnCommand(_workbook.ActiveSheet, col));
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -849,10 +944,11 @@ public partial class TmSpreadsheet
         var (_, col) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new DeleteColumnCommand(_workbook.ActiveSheet, col));
         ClearRenderedCache();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
-    private void DeleteSelection()
+    private async Task DeleteSelection()
     {
         if (_workbook.ActiveSheet is null || _commandManager is null || _grid is null) return;
         var refs = _grid.GetSelectedCellRefs().ToList();
@@ -860,6 +956,7 @@ public partial class TmSpreadsheet
         var cmd = new DeleteCellsCommand(_workbook.ActiveSheet, refs);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(refs);
+        await SyncCanvasJsEngineCellsAsync(refs);
         StateHasChanged();
     }
 
@@ -880,6 +977,7 @@ public partial class TmSpreadsheet
         _commandManager = _workbook.ActiveSheet is not null
             ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
             : null;
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -892,6 +990,7 @@ public partial class TmSpreadsheet
         _commandManager = _workbook.ActiveSheet is not null
             ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
             : null;
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -903,6 +1002,7 @@ public partial class TmSpreadsheet
         _commandManager = _workbook.ActiveSheet is not null
             ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
             : null;
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -912,6 +1012,7 @@ public partial class TmSpreadsheet
         var sheet = _workbook.Sheets[args.Index];
         var cmd = new RenameSheetCommand(sheet, args.NewName);
         cmd.Execute();
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -927,7 +1028,7 @@ public partial class TmSpreadsheet
     private void OnLinkTextInput(ChangeEventArgs e) => _insertLinkText = e.Value?.ToString();
     private void OnImageUrlInput(ChangeEventArgs e) => _insertImageUrl = e.Value?.ToString();
 
-    private void ApplyInsertLink()
+    private async Task ApplyInsertLink()
     {
         if (_workbook.ActiveSheet is null || string.IsNullOrWhiteSpace(_insertLinkUrl)) return;
         var cellRef = _workbook.ActiveSheet.ActiveCellRef ?? "A1";
@@ -936,6 +1037,7 @@ public partial class TmSpreadsheet
         cell.Value = string.IsNullOrWhiteSpace(_insertLinkText) ? _insertLinkUrl.Trim() : _insertLinkText.Trim();
         _workbook.ActiveSheet.Cells[cellRef] = cell;
         InvalidateRenderedCells(new[] { cellRef });
+        await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
         _showInsertLinkDialog = false;
         StateHasChanged();
     }
@@ -946,7 +1048,7 @@ public partial class TmSpreadsheet
         _showInsertImageDialog = true;
     }
 
-    private void ApplyInsertImage()
+    private async Task ApplyInsertImage()
     {
         if (_workbook.ActiveSheet is null || string.IsNullOrWhiteSpace(_insertImageUrl)) return;
         var cellRef = _workbook.ActiveSheet.ActiveCellRef ?? "A1";
@@ -954,6 +1056,7 @@ public partial class TmSpreadsheet
         cell.ImageUrl = _insertImageUrl.Trim();
         _workbook.ActiveSheet.Cells[cellRef] = cell;
         InvalidateRenderedCells(new[] { cellRef });
+        await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
         _showInsertImageDialog = false;
         StateHasChanged();
     }
@@ -976,6 +1079,7 @@ public partial class TmSpreadsheet
         {
             _commandManager.Execute(new MergeCellsCommand(_workbook.ActiveSheet, bounds.StartRow, bounds.StartCol, bounds.EndRow, bounds.EndCol));
         }
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -983,6 +1087,7 @@ public partial class TmSpreadsheet
     {
         if (_workbook.ActiveSheet is null) return;
         _workbook.ActiveSheet.ShowGridLines = !_workbook.ActiveSheet.ShowGridLines;
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -1007,6 +1112,7 @@ public partial class TmSpreadsheet
         _commandManager = _workbook.ActiveSheet is not null ? new SpreadsheetCommandManager(_workbook.ActiveSheet) : null;
 
         await OnOpen.InvokeAsync(new SpreadsheetOpenEventArgs(file.Name, data, _workbook));
+        RequestCanvasJsEngineFullRender();
         StateHasChanged();
     }
 
@@ -1040,6 +1146,7 @@ public partial class TmSpreadsheet
         _commandManager.Execute(cmd);
         _ = OnChange.InvokeAsync(new SpreadsheetChangeEventArgs(
             _workbook.ActiveSheet, cellRef, previous?.Value, value, previous?.Formula, null));
+        _ = SyncCanvasJsEngineCellsAsync(new[] { cellRef });
         _ = InvokeAsync(StateHasChanged);
     }
 
@@ -1064,6 +1171,7 @@ public partial class TmSpreadsheet
         var imported = XlsxImporter.Import(data);
         _workbook = imported;
         _commandManager = _workbook.ActiveSheet is not null ? new SpreadsheetCommandManager(_workbook.ActiveSheet) : null;
+        RequestCanvasJsEngineFullRender();
         _ = InvokeAsync(StateHasChanged);
         return Task.CompletedTask;
     }

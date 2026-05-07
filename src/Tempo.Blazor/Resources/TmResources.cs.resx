@@ -1775,6 +1775,10 @@
   <data name="TmSpreadsheet_NoSheet" xml:space="preserve"><value>Žádný list k dispozici</value></data>
   <data name="TmSpreadsheet_Name" xml:space="preserve"><value>Tabulka</value></data>
   <data name="TmSpreadsheet_CellReference" xml:space="preserve"><value>Odkaz na buňku</value></data>
+  <data name="TmSpreadsheet_ActiveCell" xml:space="preserve"><value>Aktivní buňka</value></data>
+  <data name="TmSpreadsheet_CellEditorLabel" xml:space="preserve"><value>Editor buňky</value></data>
+  <data name="TmSpreadsheet_FormulaEditorLabel" xml:space="preserve"><value>Editor vzorců</value></data>
+  <data name="TmSpreadsheet_CanvasAccessibilityNote" xml:space="preserve"><value>Canvas režim drží fokus na mřížce a pro editaci používá textový vstup. Pokud potřebujete plnou sémantiku jednotlivých buněk pro čtečky obrazovky, použijte DOM renderer.</value></data>
   <data name="TmSpreadsheet_FormulaBarPlaceholder" xml:space="preserve"><value>Zadejte vzorec nebo hodnotu...</value></data>
   <data name="TmSpreadsheet_SheetTab" xml:space="preserve"><value>List</value></data>
   <data name="TmSpreadsheet_AddSheet" xml:space="preserve"><value>Přidat list</value></data>

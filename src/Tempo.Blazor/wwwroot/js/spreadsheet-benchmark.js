@@ -61,11 +61,38 @@ window.tmSpreadsheetBenchmark = (() => {
             return {};
         }
 
-        return window.tmSpreadsheetCanvas.getDebugMetrics(grid) || {};
+        const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(grid) || {};
+        return {
+            ...metrics,
+            dotNetCallbacksByMethod: { ...(metrics.dotNetCallbacksByMethod || {}) },
+            hotPathDotNetCallbacksByMethod: { ...(metrics.hotPathDotNetCallbacksByMethod || {}) }
+        };
+    };
+
+    const diffCounterMap = (before, after) => {
+        const result = {};
+        const keys = new Set([
+            ...Object.keys(before || {}),
+            ...Object.keys(after || {})
+        ]);
+
+        for (const key of keys) {
+            const value = (after?.[key] || 0) - (before?.[key] || 0);
+            if (value) result[key] = value;
+        }
+
+        return result;
     };
 
     const diffDebugMetrics = (before, after) => ({
         nativeScrollEvents: (after.nativeScrollEventCount || 0) - (before.nativeScrollEventCount || 0),
+        dotNetCallbackCount: (after.dotNetCallbackCount || 0) - (before.dotNetCallbackCount || 0),
+        hotPathDotNetCallbackCount: (after.hotPathDotNetCallbackCount || 0) - (before.hotPathDotNetCallbackCount || 0),
+        dotNetCallbacksByMethod: diffCounterMap(before.dotNetCallbacksByMethod, after.dotNetCallbacksByMethod),
+        hotPathDotNetCallbacksByMethod: diffCounterMap(before.hotPathDotNetCallbacksByMethod, after.hotPathDotNetCallbacksByMethod),
+        lastDotNetCallbackMethod: after.lastDotNetCallbackMethod || "",
+        blazorFrameCount: (after.blazorFrameCount || 0) - (before.blazorFrameCount || 0),
+        hotPathBlazorFrameCount: (after.hotPathBlazorFrameCount || 0) - (before.hotPathBlazorFrameCount || 0),
         viewportCallbackCount: (after.viewportCallbackCount || 0) - (before.viewportCallbackCount || 0),
         selectionCallbackCount: (after.selectionCallbackCount || 0) - (before.selectionCallbackCount || 0),
         scrollToCount: (after.scrollToCount || 0) - (before.scrollToCount || 0),
@@ -105,13 +132,20 @@ window.tmSpreadsheetBenchmark = (() => {
         for (let i = 0; i < 20; i++) {
             const state = grid?.__tmSpreadsheetCanvas;
             if (!state) return;
-            const hasPendingTimer = !!state.viewportTimer || !!state.nativeScrollSyncTimer || !!state.selectionSyncTimer;
+            const hasPendingTimer = !!state.viewportTimer
+                || !!state.nativeScrollSyncTimer
+                || !!state.selectionSyncTimer
+                || !!state.commandLogTimer;
             const hasPendingFrame = !!state.paintFrame
                 || !!state.syncFrame
                 || !!state.selectionSyncFrame
                 || !!state.postPaintDebouncedViewportFrame
                 || !!state.dragAutoscrollFrame;
-            const hasInFlight = !!state.viewportInFlight || !!state.selectionInFlight;
+            const hasInFlight = !!state.viewportInFlight
+                || !!state.selectionInFlight
+                || !!state.commandLogInFlight
+                || !!state.commandLogPending
+                || ((state.commandLog || []).length > 0);
             if (!hasPendingTimer && !hasPendingFrame && !hasInFlight) return;
             await frame();
         }
@@ -134,6 +168,16 @@ window.tmSpreadsheetBenchmark = (() => {
             cancelable: true
         }));
         await settleInteraction();
+    };
+
+    const dispatchViewportClickNow = (grid, x, y) => {
+        const rect = grid.getBoundingClientRect();
+        grid.dispatchEvent(new MouseEvent("click", {
+            clientX: Math.max(rect.left + 1, Math.min(rect.right - 1, rect.left + x)),
+            clientY: Math.max(rect.top + 1, Math.min(rect.bottom - 1, rect.top + y)),
+            bubbles: true,
+            cancelable: true
+        }));
     };
 
     const prepareTopLeftCell = grid => dispatchViewportClick(grid, 72, 48);
@@ -350,6 +394,166 @@ window.tmSpreadsheetBenchmark = (() => {
         };
     };
 
+    const buildPasteText = (rows, columns) => {
+        const lines = [];
+        for (let row = 0; row < rows; row++) {
+            const values = [];
+            for (let col = 0; col < columns; col++) {
+                values.push(`Paste ${row + 1}:${col + 1}`);
+            }
+            lines.push(values.join("\t"));
+        }
+        return lines.join("\n");
+    };
+
+    const measureCanvasPaste = async (grid, rows, columns) => {
+        if (!grid || !window.tmSpreadsheetCanvas?.applyClipboardText) {
+            return { durationMs: 0, debug: diffDebugMetrics({}, {}) };
+        }
+
+        await resetGridViewport(grid);
+        await prepareTopLeftCell(grid);
+        await waitForBenchmarkIdle(grid);
+        const before = debugMetrics(grid);
+        const started = performance.now();
+        window.tmSpreadsheetCanvas.applyClipboardText(grid, buildPasteText(rows, columns));
+        await waitForBenchmarkIdle(grid);
+        return {
+            durationMs: performance.now() - started,
+            debug: diffDebugMetrics(before, debugMetrics(grid))
+        };
+    };
+
+    const readModelFlag = (model, name, fallback) => {
+        if (!model) return fallback;
+        const camel = name.charAt(0).toLowerCase() + name.slice(1);
+        return model[camel] ?? model[name] ?? fallback;
+    };
+
+    const writeModelFlag = (model, name, value) => {
+        if (!model) return;
+        const camel = name.charAt(0).toLowerCase() + name.slice(1);
+        if (camel in model || !(name in model)) model[camel] = value;
+        if (name in model) model[name] = value;
+    };
+
+    const measureOneInteraction = async (grid, action) => {
+        await waitForBenchmarkIdle(grid);
+        const before = debugMetrics(grid);
+        const started = performance.now();
+        await action();
+        await frame();
+        const firstFrameMs = performance.now() - started;
+        const firstFrameDebug = diffDebugMetrics(before, debugMetrics(grid));
+        await waitForBenchmarkIdle(grid);
+        const settledMs = performance.now() - started;
+        const settledDebug = diffDebugMetrics(before, debugMetrics(grid));
+        return { firstFrameMs, settledMs, firstFrameDebug, settledDebug };
+    };
+
+    const emptyPhase12Interaction = () => {
+        const emptyDebug = diffDebugMetrics({}, {});
+        return { firstFrameMs: 0, settledMs: 0, firstFrameDebug: emptyDebug, settledDebug: emptyDebug };
+    };
+
+    const measurePhase12Latencies = async grid => {
+        if (!grid) {
+            return {
+                arrowDownViewport: emptyPhase12Interaction(),
+                arrowDownScrollEdge: emptyPhase12Interaction(),
+                normalCellClick: emptyPhase12Interaction(),
+                formulaCellClick: emptyPhase12Interaction(),
+                typingCharacter: emptyPhase12Interaction(),
+                formulaCommit: emptyPhase12Interaction()
+            };
+        }
+
+        await resetGridViewport(grid);
+        await prepareTopLeftCell(grid);
+        const arrowDownViewport = await measureOneInteraction(grid, async () => {
+            dispatchArrow(grid, "ArrowDown");
+        });
+
+        await resetGridViewport(grid);
+        await prepareBottomEdgeCell(grid);
+        const arrowDownScrollEdge = await measureOneInteraction(grid, async () => {
+            dispatchArrow(grid, "ArrowDown");
+        });
+
+        await resetGridViewport(grid);
+        const normalCellClick = await measureOneInteraction(grid, async () => {
+            dispatchViewportClickNow(grid, 128, 72);
+        });
+
+        await resetGridViewport(grid);
+        await prepareTopLeftCell(grid);
+        grid.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "=",
+            code: "Equal",
+            bubbles: true,
+            cancelable: true
+        }));
+        await frame();
+        const formulaCellClick = await measureOneInteraction(grid, async () => {
+            dispatchViewportClickNow(grid, 160, 92);
+        });
+
+        await resetGridViewport(grid);
+        await prepareTopLeftCell(grid);
+        grid.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "x",
+            code: "KeyX",
+            bubbles: true,
+            cancelable: true
+        }));
+        await frame();
+        const typingCharacter = await measureOneInteraction(grid, async () => {
+            const editor = grid.querySelector(".tm-spreadsheet-canvas-grid__editor");
+            if (editor) {
+                editor.value += "y";
+                editor.dispatchEvent(new InputEvent("input", { bubbles: true, data: "y", inputType: "insertText" }));
+            }
+        });
+
+        await resetGridViewport(grid);
+        await prepareTopLeftCell(grid);
+        grid.dispatchEvent(new KeyboardEvent("keydown", {
+            key: "=",
+            code: "Equal",
+            bubbles: true,
+            cancelable: true
+        }));
+        await frame();
+        const formulaCommit = await measureOneInteraction(grid, async () => {
+            const editor = grid.querySelector(".tm-spreadsheet-canvas-grid__editor");
+            if (editor) {
+                editor.value = "=B2";
+                editor.dispatchEvent(new InputEvent("input", { bubbles: true, data: "2", inputType: "insertText" }));
+                editor.dispatchEvent(new KeyboardEvent("keydown", {
+                    key: "Enter",
+                    code: "Enter",
+                    bubbles: true,
+                    cancelable: true
+                }));
+            }
+        });
+
+        return {
+            arrowDownViewport,
+            arrowDownScrollEdge,
+            normalCellClick,
+            formulaCellClick,
+            typingCharacter,
+            formulaCommit
+        };
+    };
+
+    const averageMetric = values => {
+        const numeric = (values || []).filter(value => Number.isFinite(value));
+        if (numeric.length === 0) return 0;
+        return numeric.reduce((sum, value) => sum + value, 0) / numeric.length;
+    };
+
     const getMemory = () => {
         if (performance.memory && typeof performance.memory.usedJSHeapSize === "number") {
             return performance.memory.usedJSHeapSize;
@@ -367,7 +571,34 @@ window.tmSpreadsheetBenchmark = (() => {
             const keyboard = await measureKeyboardScenarios(grid, settings);
             const wheel = await measureWheelScroll(grid, settings.wheelDurationMs || 900);
             const drag = await measureDragAutoscroll(grid, settings.dragAutoscrollDurationMs || 700);
+            const paste = await measureCanvasPaste(grid, settings.pasteRows || 100, settings.pasteColumns || 20);
+            const phase12 = grid?.classList?.contains("tm-spreadsheet-canvas-grid")
+                ? await measurePhase12Latencies(grid)
+                : {
+                    arrowDownViewport: emptyPhase12Interaction(),
+                    arrowDownScrollEdge: emptyPhase12Interaction(),
+                    normalCellClick: emptyPhase12Interaction(),
+                    formulaCellClick: emptyPhase12Interaction(),
+                    typingCharacter: emptyPhase12Interaction(),
+                    formulaCommit: emptyPhase12Interaction()
+                };
             const finalDebug = debugMetrics(grid);
+            const interactionDotNetCallbacksPerInteraction = averageMetric([
+                phase12.arrowDownViewport?.firstFrameDebug?.dotNetCallbackCount || 0,
+                phase12.arrowDownScrollEdge?.firstFrameDebug?.dotNetCallbackCount || 0,
+                phase12.normalCellClick?.firstFrameDebug?.dotNetCallbackCount || 0,
+                phase12.formulaCellClick?.firstFrameDebug?.dotNetCallbackCount || 0,
+                phase12.typingCharacter?.firstFrameDebug?.dotNetCallbackCount || 0,
+                phase12.formulaCommit?.firstFrameDebug?.dotNetCallbackCount || 0
+            ]);
+            const interactionHotPathDotNetCallbacksPerInteraction = averageMetric([
+                phase12.arrowDownViewport?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                phase12.arrowDownScrollEdge?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                phase12.normalCellClick?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                phase12.formulaCellClick?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                phase12.typingCharacter?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                phase12.formulaCommit?.firstFrameDebug?.hotPathDotNetCallbackCount || 0
+            ]);
 
             return {
                 stableFrameMs,
@@ -409,6 +640,37 @@ window.tmSpreadsheetBenchmark = (() => {
                 dragViewportCallbackCount: drag.debug?.viewportCallbackCount || 0,
                 dragSelectionCallbackCount: drag.debug?.selectionCallbackCount || 0,
                 dragScrollToCount: drag.debug?.scrollToCount || 0,
+                dragBlazorFrameCount: drag.debug?.blazorFrameCount || 0,
+                dragHotPathBlazorFrameCount: drag.debug?.hotPathBlazorFrameCount || 0,
+                pasteDurationMs: paste.durationMs || 0,
+                pasteDotNetCallbackCount: paste.debug?.dotNetCallbackCount || 0,
+                pasteHotPathDotNetCallbackCount: paste.debug?.hotPathDotNetCallbackCount || 0,
+                pastePaintFrameCount: paste.debug?.paintFrameCount || 0,
+                pasteContentPaintFrameCount: paste.debug?.contentPaintFrameCount || 0,
+                singleArrowInViewportMs: phase12.arrowDownViewport?.firstFrameMs || 0,
+                singleArrowInViewportSettledMs: phase12.arrowDownViewport?.settledMs || 0,
+                singleArrowInViewportDotNetCallbackCount: phase12.arrowDownViewport?.firstFrameDebug?.dotNetCallbackCount || 0,
+                singleArrowInViewportHotPathDotNetCallbackCount: phase12.arrowDownViewport?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                singleArrowInViewportBlazorFrameCount: phase12.arrowDownViewport?.firstFrameDebug?.blazorFrameCount || 0,
+                singleArrowInViewportSelectionPaintFrameCount: phase12.arrowDownViewport?.firstFrameDebug?.selectionPaintFrameCount || 0,
+                singleArrowInViewportContentPaintFrameCount: phase12.arrowDownViewport?.firstFrameDebug?.contentPaintFrameCount || 0,
+                singleArrowScrollEdgeMs: phase12.arrowDownScrollEdge?.firstFrameMs || 0,
+                singleArrowScrollEdgeSettledMs: phase12.arrowDownScrollEdge?.settledMs || 0,
+                singleArrowScrollEdgeDotNetCallbackCount: phase12.arrowDownScrollEdge?.firstFrameDebug?.dotNetCallbackCount || 0,
+                singleArrowScrollEdgeHotPathDotNetCallbackCount: phase12.arrowDownScrollEdge?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                singleArrowScrollEdgeBlazorFrameCount: phase12.arrowDownScrollEdge?.firstFrameDebug?.blazorFrameCount || 0,
+                formulaCellClickLatencyMs: phase12.formulaCellClick?.firstFrameMs || 0,
+                formulaCellClickDotNetCallbackCount: phase12.formulaCellClick?.firstFrameDebug?.dotNetCallbackCount || 0,
+                formulaCellClickHotPathDotNetCallbackCount: phase12.formulaCellClick?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                formulaCellClickBlazorFrameCount: phase12.formulaCellClick?.firstFrameDebug?.blazorFrameCount || 0,
+                typingLatencyMs: phase12.typingCharacter?.firstFrameMs || 0,
+                typingDotNetCallbackCount: phase12.typingCharacter?.firstFrameDebug?.dotNetCallbackCount || 0,
+                typingHotPathDotNetCallbackCount: phase12.typingCharacter?.firstFrameDebug?.hotPathDotNetCallbackCount || 0,
+                typingBlazorFrameCount: phase12.typingCharacter?.firstFrameDebug?.blazorFrameCount || 0,
+                formulaCommitLatencyMs: phase12.formulaCommit?.firstFrameMs || 0,
+                formulaCommitDotNetCallbackCount: phase12.formulaCommit?.firstFrameDebug?.dotNetCallbackCount || 0,
+                interactionDotNetCallbacksPerInteraction,
+                interactionHotPathDotNetCallbacksPerInteraction,
                 debugNativeScrollEvents: finalDebug.nativeScrollEventCount || 0,
                 debugScrollToCount: finalDebug.scrollToCount || 0,
                 debugKeyboardScrollToCount: finalDebug.keyboardScrollToCount || 0,
@@ -425,8 +687,19 @@ window.tmSpreadsheetBenchmark = (() => {
                 debugClippedTextCount: finalDebug.clippedTextCount || 0,
                 debugContextStateSetCount: finalDebug.contextStateSetCount || 0,
                 debugContextStateSkipCount: finalDebug.contextStateSkipCount || 0,
+                debugDotNetCallbackCount: finalDebug.dotNetCallbackCount || 0,
+                debugHotPathDotNetCallbackCount: finalDebug.hotPathDotNetCallbackCount || 0,
+                debugBlazorFrameCount: finalDebug.blazorFrameCount || 0,
+                debugHotPathBlazorFrameCount: finalDebug.hotPathBlazorFrameCount || 0,
+                wheelBlazorFrameCount: wheel.debug?.blazorFrameCount || 0,
+                wheelHotPathBlazorFrameCount: wheel.debug?.hotPathBlazorFrameCount || 0,
                 usedJsHeapSize: getMemory()
             };
+        },
+
+        runPhase12LatencyProbe: async selector => {
+            const grid = document.querySelector(selector);
+            return measurePhase12Latencies(grid);
         }
     };
 })();

@@ -73,20 +73,20 @@ public class SpreadsheetE2ETests : WasmTestBase
         await WaitForAppReadyAsync(page);
 
         var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
-        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await WaitForCanvasGridReadyAsync(page, grid);
 
-        var canvas = grid.Locator("canvas").First;
         await page.WaitForFunctionAsync(
-            @"canvas => {
+            @"el => {
+                const canvas = el?.querySelector('.tm-spreadsheet-canvas-grid__canvas--content');
                 if (!canvas || canvas.width === 0 || canvas.height === 0) return false;
                 const ctx = canvas.getContext('2d');
-                const data = ctx.getImageData(0, 0, Math.min(canvas.width, 64), Math.min(canvas.height, 64)).data;
+                const data = ctx.getImageData(0, 0, Math.min(canvas.width, 160), Math.min(canvas.height, 96)).data;
                 for (let i = 0; i < data.length; i += 4) {
-                    if (data[i + 3] !== 0 && (data[i] !== 255 || data[i + 1] !== 255 || data[i + 2] !== 255)) return true;
+                    if (data[i + 3] !== 0 && (data[i] < 250 || data[i + 1] < 250 || data[i + 2] < 250)) return true;
                 }
                 return false;
             }",
-            await canvas.ElementHandleAsync());
+            await grid.ElementHandleAsync());
 
         await grid.ClickAsync();
         for (var i = 0; i < 45; i++)
@@ -97,6 +97,31 @@ public class SpreadsheetE2ETests : WasmTestBase
         await page.WaitForFunctionAsync(
             "el => el.scrollLeft > 0",
             await grid.ElementHandleAsync());
+    }
+
+    [TestMethod]
+    public async Task DomRenderer_RemainsFunctionalAsFallback()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-grid").Nth(2);
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        var a1 = grid.Locator("[title='A1']").First;
+        await a1.ClickAsync();
+        await grid.Locator("[title='A1'].tm-spreadsheet-cell--active").WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
+        await page.Keyboard.PressAsync("ArrowRight");
+
+        await grid.Locator("[title='B1'].tm-spreadsheet-cell--active").WaitForAsync(new LocatorWaitForOptions
+        {
+            State = WaitForSelectorState.Visible,
+            Timeout = 10000
+        });
     }
 
     [TestMethod]
@@ -137,7 +162,7 @@ public class SpreadsheetE2ETests : WasmTestBase
         await WaitForAppReadyAsync(page);
 
         var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
-        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await WaitForCanvasGridReadyAsync(page, grid);
         await grid.ClickAsync();
 
         await grid.PressAsync("a");
@@ -147,6 +172,1055 @@ public class SpreadsheetE2ETests : WasmTestBase
 
         var value = await editor.InputValueAsync();
         Assert.AreEqual("abc", value);
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsEditorTypingTwentyCharactersKeepsAllCharacters()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'a',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                requestAnimationFrame(() => {
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    input.value += 'bcdefghijklmnopqrst';
+                    input.dispatchEvent(new Event('input', { bubbles: true }));
+                    requestAnimationFrame(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        resolve({
+                            editorValue: input.value,
+                            editorOpenCount: after.editorOpenCount - before.editorOpenCount,
+                            keyCommandCallbacks: after.keyCommandCallbackCount - before.keyCommandCallbackCount,
+                            editBatchCallbacks: after.cellEditCommitBatchCallbackCount - before.cellEditCommitBatchCallbackCount,
+                            editBatchItems: after.cellEditCommitBatchItemCount - before.cellEditCommitBatchItemCount
+                        });
+                    });
+                });
+            })");
+
+        Assert.AreEqual("abcdefghijklmnopqrst", result.EditorValue);
+        Assert.AreEqual(1, result.EditorOpenCount, "Expected typing the first character to open the JS editor once.");
+        Assert.AreEqual(0, result.KeyCommandCallbacks, "Typing normal text should not go through the Blazor key-command path.");
+        Assert.AreEqual(0, result.EditBatchCallbacks, "Typing without commit should not send a cell-edit batch.");
+        Assert.AreEqual(0, result.EditBatchItems, "Typing without commit should not queue committed items.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsEditorFastEnterCommitKeepsNextActiveCell()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const startRef = state.model.activeCellRef || state.model.ActiveCellRef || '';
+                const start = before.sheetState.activeCell;
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'q',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                requestAnimationFrame(() => {
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    input.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'Enter',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                    setTimeout(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        const endRef = state.model.activeCellRef || state.model.ActiveCellRef || '';
+                        const key = `${start.row}:${start.col}`;
+                        const stored = state.sheetState.cellStore.cells.get(key);
+                        resolve({
+                            startRef,
+                            activeRef: endRef,
+                            committedValue: stored?.value || stored?.Value || '',
+                            editorLocalCommits: after.editorLocalCommitCount - before.editorLocalCommitCount,
+                            editBatchCallbacks: after.cellEditCommitBatchCallbackCount - before.cellEditCommitBatchCallbackCount,
+                            editBatchItems: after.cellEditCommitBatchItemCount - before.cellEditCommitBatchItemCount,
+                            keyCommandCallbacks: after.keyCommandCallbackCount - before.keyCommandCallbackCount,
+                            dotNetCallbackMethodCount: after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0
+                        });
+                    }, 180);
+                });
+            })");
+
+        Assert.AreEqual(ParseRow(result.StartRef) + 1, ParseRow(result.ActiveRef), $"Expected fast Enter commit to keep the locally selected next row. Start: {result.StartRef}, end: {result.ActiveRef}.");
+        Assert.AreEqual(ParseColumn(result.StartRef), ParseColumn(result.ActiveRef), $"Expected fast Enter commit to keep the column. Start: {result.StartRef}, end: {result.ActiveRef}.");
+        Assert.AreEqual("q", result.CommittedValue, "Expected the JS cell store to contain the one-character local commit.");
+        Assert.AreEqual(1, result.EditorLocalCommits, "Expected one local editor commit.");
+        Assert.AreEqual(1, result.EditBatchCallbacks, "Expected one delayed batch callback for the committed cell.");
+        Assert.AreEqual(1, result.EditBatchItems, "Expected one committed cell in the delayed batch.");
+        Assert.AreEqual(0, result.KeyCommandCallbacks, "Typing and Enter inside the JS editor should not use the Blazor key-command path.");
+        Assert.IsTrue(result.DotNetCallbackMethodCount > 0, "Expected the command log batch callback to be used for .NET synchronization.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsFormulaEditorClickInsertsReferenceWithinOneFrame()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFormulaEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                el.focus();
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: '=',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                const dispatchPointer = (type, col, row) => {
+                    const rect = el.getBoundingClientRect();
+                    const x = rect.left + 40 + col * 64 + 32;
+                    const y = rect.top + 20 + row * 20 + 10;
+                    el.dispatchEvent(new PointerEvent(type, {
+                        pointerId: 17,
+                        pointerType: 'mouse',
+                        clientX: x,
+                        clientY: y,
+                        button: 0,
+                        buttons: type === 'pointerup' ? 0 : 1,
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                };
+                dispatchPointer('pointerdown', 1, 1);
+                dispatchPointer('pointerup', 1, 1);
+                requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    resolve({
+                        editorValue: input?.value || '',
+                        formulaActive: !!after.sheetState?.formulaEditor?.active,
+                        formulaRefCount: after.sheetState?.formulaEditor?.refCount || 0,
+                        formulaClickInserts: after.formulaEditorCellClickInsertCount - before.formulaEditorCellClickInsertCount,
+                        keyCommandCallbacks: after.keyCommandCallbackCount - before.keyCommandCallbackCount,
+                        cellPointerCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCellPointer || 0) - (before.dotNetCallbacksByMethod.OnCanvasCellPointer || 0)
+                    });
+                });
+            })");
+
+        Assert.AreEqual("=B2", result.EditorValue);
+        Assert.IsTrue(result.FormulaActive, "Expected the JS formula editor to stay active after cell reference insertion.");
+        Assert.AreEqual(1, result.FormulaRefCount, "Expected the JS formula parser to expose one reference token.");
+        Assert.AreEqual(1, result.FormulaClickInserts, "Expected one local formula cell-click insertion.");
+        Assert.AreEqual(0, result.KeyCommandCallbacks, "Typing '=' should open the JS formula editor without Blazor key command.");
+        Assert.AreEqual(0, result.CellPointerCallbacks, "Formula reference click should not call the Blazor cell pointer path.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsFormulaEditorDragInsertsRangeLocally()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFormulaEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                el.focus();
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: '=',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                const dispatchPointer = (type, col, row) => {
+                    const rect = el.getBoundingClientRect();
+                    const x = rect.left + 40 + col * 64 + 32;
+                    const y = rect.top + 20 + row * 20 + 10;
+                    el.dispatchEvent(new PointerEvent(type, {
+                        pointerId: 19,
+                        pointerType: 'mouse',
+                        clientX: x,
+                        clientY: y,
+                        button: 0,
+                        buttons: type === 'pointerup' ? 0 : 1,
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                };
+                dispatchPointer('pointerdown', 1, 1);
+                dispatchPointer('pointermove', 3, 3);
+                dispatchPointer('pointerup', 3, 3);
+                requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    resolve({
+                        editorValue: input?.value || '',
+                        formulaActive: !!after.sheetState?.formulaEditor?.active,
+                        formulaRefCount: after.sheetState?.formulaEditor?.refCount || 0,
+                        formulaRangeDrags: after.formulaEditorRangeDragCount - before.formulaEditorRangeDragCount,
+                        highlightedCells: after.formulaEditorHighlightCount,
+                        cellPointerCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCellPointer || 0) - (before.dotNetCallbacksByMethod.OnCanvasCellPointer || 0)
+                    });
+                });
+            })");
+
+        Assert.AreEqual("=B2:D4", result.EditorValue);
+        Assert.IsTrue(result.FormulaActive, "Expected the JS formula editor to stay active after range drag.");
+        Assert.AreEqual(1, result.FormulaRefCount, "Expected the range to remain one formula reference token.");
+        Assert.IsTrue(result.FormulaRangeDrags > 0, "Expected range drag to update the formula token locally.");
+        Assert.AreEqual(9, result.HighlightedCells, "Expected a 3x3 range highlight from B2:D4.");
+        Assert.AreEqual(0, result.CellPointerCallbacks, "Formula range drag should not call the Blazor cell pointer path.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsFormulaEditorEnterCommitsFormulaLocally()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFormulaEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                el.focus();
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: '=',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                const editorRow = state.editor?.row ?? before.sheetState.activeCell.row;
+                const editorCol = state.editor?.col ?? before.sheetState.activeCell.col;
+                input.value = '=B2';
+                input.setSelectionRange(input.value.length, input.value.length);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                input.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: 'Enter',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                const storedImmediately = state.sheetState.cellStore.cells.get(`${editorRow}:${editorCol}`);
+                const committedValue = storedImmediately?.value || storedImmediately?.Value || '';
+                const committedFormula = storedImmediately?.formula || storedImmediately?.Formula || '';
+                setTimeout(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        editorValue: input?.value || '',
+                        formulaActive: !!after.sheetState?.formulaEditor?.active,
+                        committedValue,
+                        committedFormula,
+                        editBatchCallbacks: after.cellEditCommitBatchCallbackCount - before.cellEditCommitBatchCallbackCount,
+                        editBatchItems: after.cellEditCommitBatchItemCount - before.cellEditCommitBatchItemCount
+                    });
+                }, 180);
+            })");
+
+        Assert.IsFalse(result.FormulaActive, "Expected formula mode to end after Enter commit.");
+        Assert.AreEqual("=B2", result.CommittedValue, "Expected the JS cell store to contain the committed formula text.");
+        Assert.AreEqual("=B2", result.CommittedFormula, "Expected the JS cell store to mark the committed value as a formula.");
+        Assert.AreEqual(1, result.EditBatchCallbacks, "Expected one delayed batch callback for formula commit.");
+        Assert.AreEqual(1, result.EditBatchItems, "Expected one formula commit item in the delayed batch.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_ExistingFormulaOpensEditorWithFormulaText()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFormulaEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const active = state?.sheetState?.activeCell || { row: 0, col: 0 };
+                window.tmSpreadsheetCanvas.setCells(el, [{
+                    row: active.row,
+                    col: active.col,
+                    value: '2',
+                    Value: '2',
+                    formula: '=1+1',
+                    Formula: '=1+1'
+                }]);
+
+                requestAnimationFrame(() => {
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'F2',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+
+                    requestAnimationFrame(() => {
+                        const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        resolve({
+                            editorValue: input?.value || '',
+                            formulaActive: !!after.sheetState?.formulaEditor?.active,
+                            formulaRefCount: after.sheetState?.formulaEditor?.refCount || 0
+                        });
+                    });
+                });
+            })");
+
+        Assert.AreEqual("=1+1", result.EditorValue, "Expected existing formula edit to open with the formula text, not the evaluated result.");
+        Assert.IsTrue(result.FormulaActive, "Expected formula mode to become active when editing an existing formula.");
+        Assert.AreEqual(0, result.FormulaRefCount, "Expected no cell reference tokens in the simple =1+1 formula.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_PublicApiCellUpdatesReachCanvasStore()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await page.WaitForFunctionAsync(
+            @"el => {
+                const cells = el?.__tmSpreadsheetCanvas?.sheetState?.cellStore?.cells;
+                return cells?.get('0:0')?.value === 'Canvas JS engine'
+                    && cells?.get('0:1')?.value === 'Public API sync'
+                    && cells?.get('1:0')?.value === 'Arrow keys'
+                    && cells?.get('1:1')?.value === 'Formula/editor hot path';
+            }",
+            await grid.ElementHandleAsync(),
+            new PageWaitForFunctionOptions { Timeout = 10000 });
+
+        var result = await grid.EvaluateAsync<CanvasPublicApiProbeResult>(
+            @"el => new Promise(resolve => {
+                const readValue = key => {
+                    const cell = el.__tmSpreadsheetCanvas?.sheetState?.cellStore?.cells?.get(key);
+                    return cell?.value || cell?.Value || '';
+                };
+
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        resolve({
+                            a1: readValue('0:0'),
+                            b1: readValue('0:1'),
+                            a2: readValue('1:0'),
+                            b2: readValue('1:1')
+                        });
+                    });
+                });
+            })");
+
+        Assert.AreEqual("Canvas JS engine", result.A1, "Expected the demo page public API initialization to populate A1 in the canvas JS engine store.");
+        Assert.AreEqual("Public API sync", result.B1, "Expected the demo page public API initialization to populate B1 in the canvas JS engine store.");
+        Assert.AreEqual("Arrow keys", result.A2, "Expected the demo page public API initialization to populate A2 in the canvas JS engine store.");
+        Assert.AreEqual("Formula/editor hot path", result.B2, "Expected the demo page public API initialization to populate B2 in the canvas JS engine store.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_KeyboardNavigationKeepsGridFocusAndUpdatesAccessibilityState()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.FocusAsync();
+        var beforeRef = await GetCanvasActiveRefAsync(grid);
+        var expectedRowIndex = ParseRow(beforeRef) + 1;
+        var expectedColIndex = ParseColumn(beforeRef);
+        await grid.PressAsync("ArrowDown");
+        await page.WaitForTimeoutAsync(250);
+
+        var result = await grid.EvaluateAsync<CanvasAccessibilityProbeResult>(
+            @"el => {
+                const activeId = el.getAttribute('aria-activedescendant') || '';
+                const active = activeId ? document.getElementById(activeId) : null;
+                const live = document.getElementById(el?.dataset?.a11yLiveRegionId || '');
+                return {
+                    rootFocused: document.activeElement === el,
+                    activeDescendant: activeId,
+                    activeText: active?.textContent || '',
+                    activeRowIndex: active?.getAttribute('aria-rowindex') || '',
+                    activeColIndex: active?.getAttribute('aria-colindex') || '',
+                    liveText: live?.textContent || ''
+                };
+            }");
+
+        Assert.IsTrue(result.RootFocused, "Expected the canvas grid root to keep keyboard focus after ArrowDown navigation.");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.ActiveDescendant), "Expected the grid to expose aria-activedescendant.");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.ActiveText), "Expected the active cell accessibility proxy to expose readable text.");
+        Assert.AreEqual(expectedRowIndex.ToString(CultureInfo.InvariantCulture), result.ActiveRowIndex, $"Expected aria-rowindex to move one row down from {beforeRef}. Actual: {result.ActiveRowIndex}");
+        Assert.AreEqual(expectedColIndex.ToString(CultureInfo.InvariantCulture), result.ActiveColIndex, $"Expected aria-colindex to stay on the same column as {beforeRef}. Actual: {result.ActiveColIndex}");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.LiveText), "Expected the canvas grid to expose a non-empty live region after keyboard navigation.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_FormulaEditorExposesTextboxAccessibilityAndCaret()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.ClickAsync();
+        await grid.PressAsync("=");
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var result = await editor.EvaluateAsync<CanvasEditorAccessibilityProbeResult>(
+            @"el => ({
+                focused: document.activeElement === el,
+                role: el.getAttribute('role') || '',
+                ariaLabel: el.getAttribute('aria-label') || '',
+                ariaDescribedBy: el.getAttribute('aria-describedby') || '',
+                editorMode: el.dataset.editorMode || '',
+                selectionStart: el.selectionStart ?? -1,
+                selectionEnd: el.selectionEnd ?? -1,
+                value: el.value || ''
+            })");
+
+        Assert.IsTrue(result.Focused, "Expected formula editor input to keep focus after opening from keyboard typing.");
+        Assert.AreEqual("textbox", result.Role, $"Expected formula editor to expose textbox role. Actual: {result.Role}");
+        Assert.IsTrue(result.AriaLabel.Contains("Formula editor", StringComparison.OrdinalIgnoreCase), $"Expected formula editor aria-label. Actual: {result.AriaLabel}");
+        Assert.IsFalse(string.IsNullOrWhiteSpace(result.AriaDescribedBy), "Expected formula editor to reference the canvas accessibility description.");
+        Assert.AreEqual("formula", result.EditorMode, $"Expected formula editor mode marker. Actual: {result.EditorMode}");
+        Assert.AreEqual("=", result.Value, $"Expected keyboard-opened formula editor to start with '='. Actual: {result.Value}");
+        Assert.AreEqual(1, result.SelectionStart, $"Expected caret to stay after the opening '='. Actual: {result.SelectionStart}");
+        Assert.AreEqual(1, result.SelectionEnd, $"Expected selection end to stay after the opening '='. Actual: {result.SelectionEnd}");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_Paste100x20UsesSingleRangeBatch()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasPasteProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                state.sheetState.activeCell = { row: 0, col: 0, ref: 'A1' };
+                state.sheetState.selection = { startRow: 0, startCol: 0, endRow: 0, endCol: 0 };
+                state.model.ActiveCellRef = 'A1';
+                state.model.activeCellRef = 'A1';
+                state.model.Selection = { startRow: 0, startCol: 0, endRow: 0, endCol: 0 };
+                state.model.selection = { startRow: 0, startCol: 0, endRow: 0, endCol: 0 };
+                const text = Array.from({ length: 100 }, (_, row) =>
+                    Array.from({ length: 20 }, (_, col) => `Paste ${row + 1}:${col + 1}`).join('\t')
+                ).join('\n');
+                const started = performance.now();
+                window.tmSpreadsheetCanvas.applyClipboardText(el, text);
+
+                setTimeout(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const readValue = key => {
+                        const cell = el.__tmSpreadsheetCanvas?.sheetState?.cellStore?.cells?.get(key);
+                        return String(cell?.value ?? cell?.Value ?? '');
+                    };
+
+                    resolve({
+                        elapsedMs: performance.now() - started,
+                        topLeft: readValue('0:0'),
+                        bottomRight: readValue('99:19'),
+                        rangeChangedCommands: after.rangeChangedCommandCount - before.rangeChangedCommandCount,
+                        commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0),
+                        commandLogBatchCallbacks: after.commandLogBatchCallbackCount - before.commandLogBatchCallbackCount,
+                        commandLogBatchItems: after.commandLogBatchItemCount - before.commandLogBatchItemCount,
+                        contentPaintFrames: after.contentPaintFrameCount - before.contentPaintFrameCount
+                    });
+                }, 320);
+            })");
+
+        Assert.AreEqual("Paste 1:1", result.TopLeft, "Expected JS paste to update the top-left pasted cell immediately in the canvas store.");
+        Assert.AreEqual("Paste 100:20", result.BottomRight, "Expected JS paste to update the bottom-right pasted cell immediately in the canvas store.");
+        Assert.AreEqual(1, result.RangeChangedCommands, $"Expected one rangeChanged command for the 100x20 paste. Count: {result.RangeChangedCommands}.");
+        Assert.AreEqual(1, result.CommandLogCallbacks, $"Expected one .NET command-log callback for the paste batch. Count: {result.CommandLogCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogBatchCallbacks, $"Expected one command-log batch callback for the paste batch. Count: {result.CommandLogBatchCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogBatchItems, $"Expected one command payload in the paste batch. Items: {result.CommandLogBatchItems}.");
+        Assert.IsTrue(result.ContentPaintFrames > 0, "Expected the paste hot path to repaint canvas content.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_AutoFillCommitsAsSingleRangeBatch()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasAutoFillProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                window.tmSpreadsheetCanvas.setCells(el, [
+                    { row: 0, col: 0, value: '1', Value: '1' },
+                    { row: 1, col: 0, value: '2', Value: '2' }
+                ]);
+
+                const selection = { startRow: 0, startCol: 0, endRow: 1, endCol: 0 };
+                state.sheetState.activeCell = { row: 1, col: 0, ref: 'A2' };
+                state.sheetState.selection = { ...selection };
+                state.model.ActiveCellRef = 'A2';
+                state.model.activeCellRef = 'A2';
+                state.model.Selection = { ...selection };
+                state.model.selection = { ...selection };
+
+                requestAnimationFrame(() => {
+                    window.tmSpreadsheetCanvas.applyAutoFill(el, 4, 0, {
+                        row: 1,
+                        col: 0,
+                        startRow: 0,
+                        startCol: 0,
+                        endRow: 1,
+                        endCol: 0
+                    });
+
+                    setTimeout(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        const readValue = key => {
+                            const cell = el.__tmSpreadsheetCanvas?.sheetState?.cellStore?.cells?.get(key);
+                            return String(cell?.value ?? cell?.Value ?? '');
+                        };
+                        resolve({
+                            a3: readValue('2:0'),
+                            a4: readValue('3:0'),
+                            a5: readValue('4:0'),
+                            rangeChangedCommands: after.rangeChangedCommandCount - before.rangeChangedCommandCount,
+                            commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0),
+                            commandLogBatchCallbacks: after.commandLogBatchCallbackCount - before.commandLogBatchCallbackCount,
+                            commandLogBatchItems: after.commandLogBatchItemCount - before.commandLogBatchItemCount
+                        });
+                    }, 320);
+                });
+            })");
+
+        Assert.AreEqual("3", result.A3, "Expected autofill to continue the numeric series into A3.");
+        Assert.AreEqual("4", result.A4, "Expected autofill to continue the numeric series into A4.");
+        Assert.AreEqual("5", result.A5, "Expected autofill to continue the numeric series into A5.");
+        Assert.AreEqual(1, result.RangeChangedCommands, $"Expected one rangeChanged command for the autofill batch. Count: {result.RangeChangedCommands}.");
+        Assert.IsTrue(result.CommandLogCallbacks >= 1, $"Expected the autofill batch to reach .NET through the command log. Count: {result.CommandLogCallbacks}.");
+        Assert.IsTrue(result.CommandLogBatchCallbacks >= 1, $"Expected at least one command-log batch callback for the autofill batch. Count: {result.CommandLogBatchCallbacks}.");
+        Assert.IsTrue(result.CommandLogBatchItems >= 1, $"Expected the autofill batch payload to contain at least one command. Items: {result.CommandLogBatchItems}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsFormulaReferenceHighlightsRemainVisibleAfterScroll()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFormulaEditorProbeResult>(
+            @"el => new Promise(resolve => {
+                el.focus();
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: '=',
+                    bubbles: true,
+                    cancelable: true
+                }));
+                const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                input.value = '=B20';
+                input.setSelectionRange(input.value.length, input.value.length);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+                el.scrollTop = 340;
+                el.dispatchEvent(new Event('scroll', { bubbles: true }));
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const canvas = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--selection');
+                    const dpr = window.devicePixelRatio || 1;
+                    const ctx = canvas.getContext('2d');
+                    const sampleX = Math.round((40 + 64 + 2) * dpr);
+                    const sampleY = Math.round((20 + 19 * 20 - 340 + 10) * dpr);
+                    let bluePixels = 0;
+                    const data = ctx.getImageData(sampleX, Math.max(0, sampleY - 8), Math.round(8 * dpr), Math.round(16 * dpr)).data;
+                    for (let i = 0; i < data.length; i += 4) {
+                        if (data[i + 3] > 0 && data[i + 2] > data[i] + 20 && data[i + 2] > data[i + 1]) bluePixels++;
+                    }
+                    resolve({
+                        editorValue: input.value,
+                        formulaActive: !!after.sheetState?.formulaEditor?.active,
+                        formulaRefCount: after.sheetState?.formulaEditor?.refCount || 0,
+                        highlightedCells: after.formulaEditorHighlightCount,
+                        bluePixels,
+                        logicalScrollTop: after.logicalScrollTop
+                    });
+                }));
+            })");
+
+        Assert.AreEqual("=B20", result.EditorValue);
+        Assert.IsTrue(result.FormulaActive, "Expected the JS formula editor to stay active while scrolling.");
+        Assert.AreEqual(1, result.FormulaRefCount, "Expected one parsed reference after editing the formula text.");
+        Assert.AreEqual(1, result.HighlightedCells, "Expected one highlighted formula reference cell.");
+        Assert.IsTrue(result.LogicalScrollTop > 0, $"Expected canvas to scroll while formula editing. ScrollTop: {result.LogicalScrollTop}.");
+        Assert.IsTrue(result.BluePixels > 0, $"Expected formula reference highlight pixels after scroll. Count: {result.BluePixels}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsSheetStateRejectsStaleBlazorSelectionFrame()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        for (var i = 0; i < 8; i++)
+        {
+            await grid.PressAsync("ArrowDown");
+        }
+
+        var beforeRef = await GetCanvasActiveRefAsync(grid);
+        var result = await grid.EvaluateAsync<CanvasJsFirstStateProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const clone = value => JSON.parse(JSON.stringify(value));
+                const stale = clone(state.model);
+                stale.activeCellRef = stale.ActiveCellRef = 'A1';
+                stale.selection = stale.Selection = { startRow: 0, startCol: 0, endRow: 0, endCol: 0, StartRow: 0, StartCol: 0, EndRow: 0, EndCol: 0 };
+                stale.scrollTop = stale.ScrollTop = 0;
+                stale.scrollLeft = stale.ScrollLeft = 0;
+                stale.interactionVersion = stale.InteractionVersion = 0;
+                window.tmSpreadsheetCanvas.render(el, state.canvas, stale);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const model = state.model;
+                    resolve({
+                        activeRef: model?.activeCellRef || model?.ActiveCellRef || '',
+                        sheetActiveRef: after.sheetState?.activeCell?.ref || '',
+                        localRevision: after.localRevision,
+                        serverRevision: after.serverRevision,
+                        staleFramesIgnored: after.staleFramesIgnored - before.staleFramesIgnored
+                    });
+                }));
+            })");
+
+        Assert.AreEqual(beforeRef, result.ActiveRef, "A stale Blazor frame must not move the canvas model selection back.");
+        Assert.AreEqual(beforeRef, result.SheetActiveRef, "A stale Blazor frame must not move the JS sheet state selection back.");
+        Assert.IsTrue(result.LocalRevision > result.ServerRevision, $"Expected JS local revision to remain ahead of stale server revision. Local: {result.LocalRevision}, server: {result.ServerRevision}.");
+        Assert.IsTrue(result.StaleFramesIgnored > 0, $"Expected stale frame counter to increase. Count: {result.StaleFramesIgnored}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_JsEditorStateRejectsStaleBlazorFrame()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        await grid.PressAsync("a");
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.Keyboard.TypeAsync("bcdefghijklmnopqrst");
+        var beforeValue = await editor.InputValueAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsFirstStateProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const clone = value => JSON.parse(JSON.stringify(value));
+                const stale = clone(state.model);
+                stale.activeCellRef = stale.ActiveCellRef = 'A1';
+                stale.selection = stale.Selection = { startRow: 0, startCol: 0, endRow: 0, endCol: 0, StartRow: 0, StartCol: 0, EndRow: 0, EndCol: 0 };
+                stale.interactionVersion = stale.InteractionVersion = 0;
+                const cells = stale.cells || stale.Cells || [];
+                for (const cell of cells) {
+                    if ((cell.active || cell.Active) || (cell.ref || cell.Ref) === (before.sheetState?.activeCell?.ref || 'A1')) {
+                        cell.value = cell.Value = 'OLD';
+                    }
+                }
+                window.tmSpreadsheetCanvas.render(el, state.canvas, stale);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    resolve({
+                        editorValue: input?.value || '',
+                        sheetEditorValue: after.sheetState?.editor?.value || '',
+                        localRevision: after.localRevision,
+                        serverRevision: after.serverRevision,
+                        staleFramesIgnored: after.staleFramesIgnored - before.staleFramesIgnored
+                    });
+                }));
+            })");
+
+        Assert.AreEqual(beforeValue, result.EditorValue, "A stale Blazor frame must not overwrite the visible JS editor text.");
+        Assert.AreEqual(beforeValue, result.SheetEditorValue, "A stale Blazor frame must not overwrite the JS sheet editor state.");
+        Assert.IsTrue(result.LocalRevision > result.ServerRevision, $"Expected editor local revision to remain ahead of stale server revision. Local: {result.LocalRevision}, server: {result.ServerRevision}.");
+        Assert.IsTrue(result.StaleFramesIgnored > 0, $"Expected stale frame counter to increase. Count: {result.StaleFramesIgnored}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_CellStoreBatchUpdateRepaintsVisibleCell()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            "el => window.tmSpreadsheetCanvas?.getDebugMetrics?.(el)?.redrawCount > 0",
+            await grid.ElementHandleAsync());
+
+        var result = await grid.EvaluateAsync<CanvasCellStoreProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const cells = model.cells || model.Cells || [];
+                const source = cells.find(c => (c.row ?? c.Row) === 2 && (c.col ?? c.Col) === 2) || cells[0];
+                const row = source.row ?? source.Row;
+                const col = source.col ?? source.Col;
+                const patch = {
+                    ...source,
+                    row,
+                    col,
+                    Row: row,
+                    Col: col,
+                    value: '',
+                    Value: '',
+                    style: { backgroundColor: '#ff0000', BackgroundColor: '#ff0000' },
+                    Style: { backgroundColor: '#ff0000', BackgroundColor: '#ff0000' }
+                };
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                window.tmSpreadsheetCanvas.setCells(el, [patch]);
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const stored = state.sheetState.cellStore.cells.get(`${row}:${col}`);
+                    const content = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--content');
+                    const dpr = window.devicePixelRatio || 1;
+                    const ctx = content.getContext('2d');
+                    const left = (stored.left ?? stored.Left) - (model.scrollLeft ?? model.ScrollLeft ?? 0) + (model.rowHeaderWidth ?? model.RowHeaderWidth ?? 40);
+                    const top = (stored.top ?? stored.Top) - (model.scrollTop ?? model.ScrollTop ?? 0) + (model.columnHeaderHeight ?? model.ColumnHeaderHeight ?? 20);
+                    const width = stored.width ?? stored.Width;
+                    const height = stored.height ?? stored.Height;
+                    const data = ctx.getImageData(
+                        Math.round((left + width / 2) * dpr),
+                        Math.round((top + height / 2) * dpr),
+                        1,
+                        1).data;
+                    resolve({
+                        red: data[0],
+                        green: data[1],
+                        blue: data[2],
+                        setCellCount: after.cellStoreSetCellCount - before.cellStoreSetCellCount,
+                        storeSize: after.cellStoreSize,
+                        styledOrNonEmptyCount: after.cellStoreStyledOrNonEmptyCount
+                    });
+                }));
+            })");
+
+        Assert.IsTrue(result.Red > 220 && result.Green < 80 && result.Blue < 80, $"Expected patched cell background to be visible on canvas. RGB: {result.Red},{result.Green},{result.Blue}.");
+        Assert.AreEqual(1, result.SetCellCount, $"Expected one JS cell-store set operation. Count: {result.SetCellCount}.");
+        Assert.IsTrue(result.StoreSize > 0, $"Expected JS cell store to contain visible cells. Size: {result.StoreSize}.");
+        Assert.IsTrue(result.StyledOrNonEmptyCount > 0, $"Expected styled/non-empty index to include patched cell. Count: {result.StyledOrNonEmptyCount}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_KeyboardSelectionUsesCellStoreWithoutFrameScans()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasCellStoreProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                for (let i = 0; i < 24; i++) {
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: i % 2 === 0 ? 'ArrowDown' : 'ArrowRight',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const model = el.__tmSpreadsheetCanvas.model;
+                    resolve({
+                        activeRef: model.activeCellRef || model.ActiveCellRef || '',
+                        lookupCount: after.cellStoreLookupCount - before.cellStoreLookupCount,
+                        hitCount: after.cellStoreHitCount - before.cellStoreHitCount,
+                        frameScanCount: after.cellStoreFrameScanCount - before.cellStoreFrameScanCount,
+                        visibleCellCount: after.cellStoreVisibleCellCount,
+                        storeSize: after.cellStoreSize
+                    });
+                }));
+            })");
+
+        Assert.IsTrue(ParseRow(result.ActiveRef) > 1, $"Expected keyboard navigation to move through cells. Ref: {result.ActiveRef}.");
+        Assert.IsTrue(result.LookupCount > 0, $"Expected keyboard selection to query the JS cell store. Lookups: {result.LookupCount}.");
+        Assert.IsTrue(result.HitCount > 0, $"Expected keyboard selection to hit the JS cell store. Hits: {result.HitCount}.");
+        Assert.AreEqual(0, result.FrameScanCount, $"Expected keyboard selection to avoid scanning sampled frame cells. Scans: {result.FrameScanCount}.");
+        Assert.IsTrue(result.VisibleCellCount > 0, $"Expected renderer to use visible cells from JS store. Count: {result.VisibleCellCount}.");
+        Assert.IsTrue(result.StoreSize >= result.VisibleCellCount, $"Expected store size to cover visible cells. Store: {result.StoreSize}, visible: {result.VisibleCellCount}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_WheelScrollUsesJsLayoutWithoutBlazorFrame()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            "el => window.tmSpreadsheetCanvas?.getDebugMetrics?.(el)?.redrawCount > 0",
+            await grid.ElementHandleAsync());
+
+        var result = await grid.EvaluateAsync<CanvasJsLayoutProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                el.dispatchEvent(new WheelEvent('wheel', {
+                    deltaY: 260,
+                    bubbles: true,
+                    cancelable: true
+                }));
+                requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        blazorFrames: after.blazorFrameCount - before.blazorFrameCount,
+                        layoutComputes: after.visibleLayoutJsComputeCount - before.visibleLayoutJsComputeCount,
+                        binarySearches: after.visibleLayoutBinarySearchCount - before.visibleLayoutBinarySearchCount,
+                        logicalScrollTop: after.logicalScrollTop,
+                        rowSizeCacheSize: after.layoutRowSizeCacheSize,
+                        columnSizeCacheSize: after.layoutColumnSizeCacheSize
+                    });
+                });
+            })");
+
+        Assert.AreEqual(0, result.BlazorFrames, $"Wheel visible layout should be computed locally before any Blazor frame. Frames: {result.BlazorFrames}.");
+        Assert.IsTrue(result.LayoutComputes > 0, $"Expected wheel scroll to compute visible layout in JS. Count: {result.LayoutComputes}.");
+        Assert.IsTrue(result.BinarySearches > 0, $"Expected wheel scroll to use binary search for visible layout. Count: {result.BinarySearches}.");
+        Assert.IsTrue(result.LogicalScrollTop > 0, $"Expected wheel scroll to advance logical scroll. Top: {result.LogicalScrollTop}.");
+        Assert.IsTrue(result.RowSizeCacheSize > 0, $"Expected JS row size cache to be populated. Size: {result.RowSizeCacheSize}.");
+        Assert.IsTrue(result.ColumnSizeCacheSize > 0, $"Expected JS column size cache to be populated. Size: {result.ColumnSizeCacheSize}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_KeyboardScrollUsesJsLayoutWithoutBlazorFrame()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasJsLayoutProbeResult>(
+            @"el => new Promise(resolve => {
+                requestAnimationFrame(() => {
+                    requestAnimationFrame(() => {
+                        const state = el.__tmSpreadsheetCanvas;
+                        const model = state.model;
+                        const layout = state.visibleLayoutCache?.layout;
+                        const rows = layout?.rows || [];
+                        const cols = layout?.columns || [];
+                        const bodyRows = rows.filter(row => row.y >= (model.columnHeaderHeight ?? model.ColumnHeaderHeight ?? 20) && row.y + row.height <= el.clientHeight);
+                        const row = bodyRows.length ? bodyRows[bodyRows.length - 1].index : 1;
+                        const col = cols.length ? cols[0].index : 0;
+                        const ref = String.fromCharCode(65 + col) + String(row + 1);
+                        model.activeCellRef = model.ActiveCellRef = ref;
+                        model.selection = model.Selection = {
+                            startRow: row,
+                            StartRow: row,
+                            startCol: col,
+                            StartCol: col,
+                            endRow: row,
+                            EndRow: row,
+                            endCol: col,
+                            EndCol: col
+                        };
+                        state.sheetState.activeCell = { row, col, ref };
+                        state.sheetState.selection = { startRow: row, startCol: col, endRow: row, endCol: col };
+                        state.visibleLayoutCache = null;
+                        const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        el.dispatchEvent(new KeyboardEvent('keydown', {
+                            key: 'ArrowDown',
+                            bubbles: true,
+                            cancelable: true
+                        }));
+                        requestAnimationFrame(() => {
+                            const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                            const model = el.__tmSpreadsheetCanvas.model;
+                            resolve({
+                                activeRef: model.activeCellRef || model.ActiveCellRef || '',
+                                blazorFrames: after.blazorFrameCount - before.blazorFrameCount,
+                                layoutComputes: after.visibleLayoutJsComputeCount - before.visibleLayoutJsComputeCount,
+                                binarySearches: after.visibleLayoutBinarySearchCount - before.visibleLayoutBinarySearchCount,
+                                logicalScrollTop: after.logicalScrollTop,
+                                keyboardLogicalScrolls: after.logicalKeyboardScrollCount - before.logicalKeyboardScrollCount
+                            });
+                        });
+                    });
+                });
+            })");
+
+        Assert.IsTrue(ParseRow(result.ActiveRef) > 1, $"Expected local keyboard navigation to move at the scroll edge. Ref: {result.ActiveRef}.");
+        Assert.AreEqual(0, result.BlazorFrames, $"Keyboard visible layout should be computed locally before any Blazor frame. Frames: {result.BlazorFrames}.");
+        Assert.IsTrue(result.LayoutComputes > 0, $"Expected keyboard scroll to compute visible layout in JS. Count: {result.LayoutComputes}.");
+        Assert.IsTrue(result.BinarySearches > 0, $"Expected keyboard scroll to use binary search for visible layout. Count: {result.BinarySearches}.");
+        Assert.IsTrue(result.LogicalScrollTop > 0, $"Expected keyboard scroll to advance logical scroll. Top: {result.LogicalScrollTop}.");
+        Assert.IsTrue(result.KeyboardLogicalScrolls > 0, $"Expected keyboard path to use logical scroll. Count: {result.KeyboardLogicalScrolls}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_ArrowDownInViewportPaintsOnlySelectionLayer()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasRendererPipelineProbeResult>(
+            @"el => new Promise(resolve => {
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'ArrowDown',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                    requestAnimationFrame(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        resolve({
+                            paintFrames: after.paintFrameCount - before.paintFrameCount,
+                            contentPaintFrames: after.contentPaintFrameCount - before.contentPaintFrameCount,
+                            selectionPaintFrames: after.selectionPaintFrameCount - before.selectionPaintFrameCount,
+                            contentLayerPaints: after.contentLayerPaintCount - before.contentLayerPaintCount,
+                            headerLayerPaints: after.headerLayerPaintCount - before.headerLayerPaintCount,
+                            selectionLayerPaints: after.selectionLayerPaintCount - before.selectionLayerPaintCount,
+                            selectionDirtyRects: after.selectionDirtyRectCount - before.selectionDirtyRectCount,
+                            contentDirtyRects: after.contentDirtyRectCount - before.contentDirtyRectCount
+                        });
+                    });
+                }));
+            })");
+
+        Assert.AreEqual(1, result.PaintFrames, $"Expected one local paint frame. Frames: {result.PaintFrames}.");
+        Assert.AreEqual(0, result.ContentPaintFrames, $"ArrowDown inside viewport should not paint content. Frames: {result.ContentPaintFrames}.");
+        Assert.AreEqual(0, result.ContentLayerPaints, $"ArrowDown inside viewport should not touch the content layer. Paints: {result.ContentLayerPaints}.");
+        Assert.AreEqual(0, result.HeaderLayerPaints, $"ArrowDown inside viewport should not touch the header layer. Paints: {result.HeaderLayerPaints}.");
+        Assert.IsTrue(result.SelectionPaintFrames > 0, $"Expected selection paint frame. Frames: {result.SelectionPaintFrames}.");
+        Assert.IsTrue(result.SelectionLayerPaints > 0, $"Expected selection layer paint. Paints: {result.SelectionLayerPaints}.");
+        Assert.IsTrue(result.SelectionDirtyRects > 0, $"Expected selection dirty rects. Count: {result.SelectionDirtyRects}.");
+        Assert.AreEqual(0, result.ContentDirtyRects, $"Selection movement should not create content dirty rects. Count: {result.ContentDirtyRects}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_ArrowDownAtScrollEdgePaintsContentAtMostOnce()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasRendererPipelineProbeResult>(
+            @"el => new Promise(resolve => {
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const state = el.__tmSpreadsheetCanvas;
+                    const model = state.model;
+                    const layout = state.visibleLayoutCache?.layout;
+                    const rows = layout?.rows || [];
+                    const cols = layout?.columns || [];
+                    const bodyRows = rows.filter(row => row.y >= (model.columnHeaderHeight ?? model.ColumnHeaderHeight ?? 20) && row.y + row.height <= el.clientHeight);
+                    const row = bodyRows.length ? bodyRows[bodyRows.length - 1].index : 1;
+                    const col = cols.length ? cols[0].index : 0;
+                    const ref = String.fromCharCode(65 + col) + String(row + 1);
+                    model.activeCellRef = model.ActiveCellRef = ref;
+                    model.selection = model.Selection = {
+                        startRow: row,
+                        StartRow: row,
+                        startCol: col,
+                        StartCol: col,
+                        endRow: row,
+                        EndRow: row,
+                        endCol: col,
+                        EndCol: col
+                    };
+                    state.sheetState.activeCell = { row, col, ref };
+                    state.sheetState.selection = { startRow: row, startCol: col, endRow: row, endCol: col };
+                    const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'ArrowDown',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                    requestAnimationFrame(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        resolve({
+                            paintFrames: after.paintFrameCount - before.paintFrameCount,
+                            contentPaintFrames: after.contentPaintFrameCount - before.contentPaintFrameCount,
+                            selectionPaintFrames: after.selectionPaintFrameCount - before.selectionPaintFrameCount,
+                            contentLayerPaints: after.contentLayerPaintCount - before.contentLayerPaintCount,
+                            selectionLayerPaints: after.selectionLayerPaintCount - before.selectionLayerPaintCount,
+                            logicalScrollTop: after.logicalScrollTop
+                        });
+                    });
+                }));
+            })");
+
+        Assert.IsTrue(result.PaintFrames <= 1, $"Expected edge ArrowDown to coalesce into at most one scheduler frame. Frames: {result.PaintFrames}.");
+        Assert.IsTrue(result.ContentPaintFrames <= 1, $"Expected edge ArrowDown to paint content at most once. Frames: {result.ContentPaintFrames}.");
+        Assert.IsTrue(result.ContentLayerPaints <= 1, $"Expected content layer to paint at most once. Paints: {result.ContentLayerPaints}.");
+        Assert.IsTrue(result.SelectionLayerPaints <= 1, $"Expected selection layer to paint at most once. Paints: {result.SelectionLayerPaints}.");
+        Assert.IsTrue(result.LogicalScrollTop > 0, $"Expected edge ArrowDown to move logical scroll. Top: {result.LogicalScrollTop}.");
     }
 
     [TestMethod]
@@ -359,6 +1433,149 @@ public class SpreadsheetE2ETests : WasmTestBase
         Assert.IsTrue(result.ScrollToCount <= 1, $"Expected delayed native scroll sync to stay coalesced, not grow with key repeat. Count: {result.ScrollToCount}.");
         Assert.IsTrue(result.LogicalKeyboardScrollCount > 0, $"Expected keyboard navigation to advance logical scroll. Count: {result.LogicalKeyboardScrollCount}.");
         Assert.IsTrue(result.LogicalScrollTop > 0, $"Expected local ArrowDown navigation to move logical scroll. logicalScrollTop: {result.LogicalScrollTop}, native scrollTop: {result.ScrollTop}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_CommandLogBatchesArrowNavigationWithoutLegacyCallbacks()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasCommandLogProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                for (let i = 0; i < 80; i++) {
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'ArrowDown',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                }
+
+                setTimeout(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        commandLogBatchCallbacks: after.commandLogBatchCallbackCount - before.commandLogBatchCallbackCount,
+                        commandLogBatchItems: after.commandLogBatchItemCount - before.commandLogBatchItemCount,
+                        selectionSettledCommands: after.selectionSettledCommandCount - before.selectionSettledCommandCount,
+                        viewportSettledCommands: after.viewportSettledCommandCount - before.viewportSettledCommandCount,
+                        legacySelectionCallbacks: (after.dotNetCallbacksByMethod.OnCanvasSelectionChanged || 0) - (before.dotNetCallbacksByMethod.OnCanvasSelectionChanged || 0),
+                        legacyViewportCallbacks: (after.dotNetCallbacksByMethod.OnCanvasViewportChanged || 0) - (before.dotNetCallbacksByMethod.OnCanvasViewportChanged || 0),
+                        commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0),
+                        ackRevision: after.commandLogAckRevision
+                    });
+                }, 240);
+            })");
+
+        Assert.AreEqual(0, result.LegacySelectionCallbacks, $"Expected ArrowDown hot path to stop using legacy selection callbacks. Count: {result.LegacySelectionCallbacks}.");
+        Assert.AreEqual(0, result.LegacyViewportCallbacks, $"Expected ArrowDown hot path to stop using legacy viewport callbacks. Count: {result.LegacyViewportCallbacks}.");
+        Assert.IsTrue(result.CommandLogCallbacks > 0, "Expected ArrowDown hot path to use the command log batch callback.");
+        Assert.IsTrue(result.CommandLogBatchCallbacks <= 2, $"Expected command log batching to coalesce ArrowDown callbacks. Count: {result.CommandLogBatchCallbacks}.");
+        Assert.IsTrue(result.CommandLogBatchItems > 0, $"Expected the command log batch to contain settled events. Items: {result.CommandLogBatchItems}.");
+        Assert.IsTrue(result.SelectionSettledCommands > 0, $"Expected selectionSettled commands for keyboard navigation. Count: {result.SelectionSettledCommands}.");
+        Assert.IsTrue(result.ViewportSettledCommands > 0, $"Expected viewportSettled commands after scrolling. Count: {result.ViewportSettledCommands}.");
+        Assert.IsTrue(result.AckRevision > 0, $"Expected the command log ack revision to advance. Ack: {result.AckRevision}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_RapidLocalEditsShareOneCommandLogBatch()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+
+        var result = await grid.EvaluateAsync<CanvasCommandLogProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const runEdit = key => {
+                    el.dispatchEvent(new KeyboardEvent('keydown', {
+                        key,
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                    const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                    input.dispatchEvent(new KeyboardEvent('keydown', {
+                        key: 'Enter',
+                        bubbles: true,
+                        cancelable: true
+                    }));
+                };
+
+                runEdit('a');
+                runEdit('b');
+
+                setTimeout(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        commandLogBatchCallbacks: after.commandLogBatchCallbackCount - before.commandLogBatchCallbackCount,
+                        commandLogBatchItems: after.commandLogBatchItemCount - before.commandLogBatchItemCount,
+                        cellChangedCommands: after.cellChangedCommandCount - before.cellChangedCommandCount,
+                        formulaCommittedCommands: after.formulaCommittedCommandCount - before.formulaCommittedCommandCount,
+                        commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0),
+                        legacyEditCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCellEditCommittedBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCellEditCommittedBatch || 0),
+                        ackRevision: after.commandLogAckRevision
+                    });
+                }, 240);
+            })");
+
+        Assert.AreEqual(0, result.LegacyEditCallbacks, $"Expected local edits to stop using the legacy edit callback. Count: {result.LegacyEditCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogCallbacks, $"Expected two quick local edits to share one command-log callback. Count: {result.CommandLogCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogBatchCallbacks, $"Expected one command-log batch callback. Count: {result.CommandLogBatchCallbacks}.");
+        Assert.AreEqual(2, result.CellChangedCommands, $"Expected two cellChanged commands for two local commits. Count: {result.CellChangedCommands}.");
+        Assert.AreEqual(0, result.FormulaCommittedCommands, $"Expected plain text edits not to be tagged as formula commits. Count: {result.FormulaCommittedCommands}.");
+        Assert.IsTrue(result.CommandLogBatchItems >= 2, $"Expected one batch payload carrying both local edits. Items: {result.CommandLogBatchItems}.");
+        Assert.IsTrue(result.AckRevision > 0, $"Expected the command log ack revision to advance. Ack: {result.AckRevision}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasRenderer_RangeChangeBatchUsesSingleCommandLogCallback()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+
+        var result = await grid.EvaluateAsync<CanvasCommandLogProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                window.tmSpreadsheetCanvas.setCells(el, {
+                    queueRangeCommand: true,
+                    cells: [
+                        { row: 0, col: 0, value: 'left', Value: 'left' },
+                        { row: 0, col: 1, value: 'right', Value: 'right' }
+                    ]
+                });
+
+                setTimeout(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        commandLogBatchCallbacks: after.commandLogBatchCallbackCount - before.commandLogBatchCallbackCount,
+                        commandLogBatchItems: after.commandLogBatchItemCount - before.commandLogBatchItemCount,
+                        rangeChangedCommands: after.rangeChangedCommandCount - before.rangeChangedCommandCount,
+                        commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0),
+                        legacyEditCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCellEditCommittedBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCellEditCommittedBatch || 0),
+                        ackRevision: after.commandLogAckRevision
+                    });
+                }, 180);
+            })");
+
+        Assert.AreEqual(0, result.LegacyEditCallbacks, $"Expected range change batching to avoid the legacy edit callback. Count: {result.LegacyEditCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogCallbacks, $"Expected one command-log callback for a two-cell range change. Count: {result.CommandLogCallbacks}.");
+        Assert.AreEqual(1, result.CommandLogBatchCallbacks, $"Expected one command-log batch callback. Count: {result.CommandLogBatchCallbacks}.");
+        Assert.AreEqual(1, result.RangeChangedCommands, $"Expected one rangeChanged command for the two-cell batch. Count: {result.RangeChangedCommands}.");
+        Assert.AreEqual(1, result.CommandLogBatchItems, $"Expected one command payload in the batch. Items: {result.CommandLogBatchItems}.");
+        Assert.IsTrue(result.AckRevision > 0, $"Expected the command log ack revision to advance. Ack: {result.AckRevision}.");
     }
 
     [TestMethod]
@@ -1387,6 +2604,31 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task BenchmarkPage_ExposesPasteLatencyForCanvasAndCanvasJsEngine()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        await page.GetByTestId("spreadsheet-benchmark-run-both").ClickAsync();
+        await page.WaitForFunctionAsync(
+            "document.querySelectorAll('[data-testid=\"spreadsheet-benchmark-result-row\"]').length >= 3",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 90000 });
+
+        var canvas = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"Canvas\"]").First;
+        var canvasJsEngine = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"CanvasJsEngine\"]").First;
+        await canvas.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await canvasJsEngine.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+
+        var canvasPasteMs = await GetBenchmarkMetricAsync(canvas, "data-paste-ms");
+        var canvasJsEnginePasteMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-paste-ms");
+
+        Assert.IsTrue(canvasPasteMs > 0, $"Expected canvas benchmark to expose paste latency. Current: {canvasPasteMs:N1} ms.");
+        Assert.IsTrue(canvasJsEnginePasteMs > 0, $"Expected canvas JS engine benchmark to expose paste latency. Current: {canvasJsEnginePasteMs:N1} ms.");
+    }
+
+    [TestMethod]
     public async Task BenchmarkPage_Phase11ReadinessMetricsPass()
     {
         var page = await CreatePageAsync();
@@ -1455,18 +2697,18 @@ public class SpreadsheetE2ETests : WasmTestBase
         await page.Locator("#benchmark-dataset").SelectOptionAsync("10000x100");
         await page.GetByTestId("spreadsheet-benchmark-run-canvas").ClickAsync();
 
-        var canvas = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"Canvas\"]").First;
-        await canvas.WaitForAsync(new LocatorWaitForOptions
+        var canvasJsEngine = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"CanvasJsEngine\"]").First;
+        await canvasJsEngine.WaitForAsync(new LocatorWaitForOptions
         {
             State = WaitForSelectorState.Visible,
             Timeout = 60000
         });
 
-        var canvasDown = await GetBenchmarkMetricAsync(canvas, "data-keyboard-scroll-down-ms");
-        var canvasUp = await GetBenchmarkMetricAsync(canvas, "data-keyboard-scroll-up-ms");
-        var canvasRight = await GetBenchmarkMetricAsync(canvas, "data-keyboard-scroll-right-ms");
-        var canvasLogicalKeyboard = await GetBenchmarkMetricAsync(canvas, "data-keyboard-logical-scroll-count");
-        var canvasKeyboardScrollTo = await GetBenchmarkMetricAsync(canvas, "data-keyboard-scroll-to-count");
+        var canvasDown = await GetBenchmarkMetricAsync(canvasJsEngine, "data-keyboard-scroll-down-ms");
+        var canvasUp = await GetBenchmarkMetricAsync(canvasJsEngine, "data-keyboard-scroll-up-ms");
+        var canvasRight = await GetBenchmarkMetricAsync(canvasJsEngine, "data-keyboard-scroll-right-ms");
+        var canvasLogicalKeyboard = await GetBenchmarkMetricAsync(canvasJsEngine, "data-keyboard-logical-scroll-count");
+        var canvasKeyboardScrollTo = await GetBenchmarkMetricAsync(canvasJsEngine, "data-keyboard-scroll-to-count");
 
         const double phase10KeyboardEdgeBaselineMs = 612.2;
 
@@ -1477,10 +2719,124 @@ public class SpreadsheetE2ETests : WasmTestBase
         Assert.AreEqual(0d, canvasKeyboardScrollTo, $"Large dataset keyboard hot path should not call root.scrollTo per key. Count: {canvasKeyboardScrollTo:N0}.");
     }
 
+    [TestMethod]
+    public async Task BenchmarkPage_Phase12LatencyProbeMatchesHotPathCriteria()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator("[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            "selector => !!window.tmSpreadsheetBenchmark?.runPhase12LatencyProbe && !!document.querySelector(selector)?.__tmSpreadsheetCanvas?.model",
+            "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid",
+            new PageWaitForFunctionOptions { Timeout = 30000 });
+
+        var probe = await page.EvaluateAsync<CanvasPhase12LatencyProbeResult>(
+            "selector => window.tmSpreadsheetBenchmark.runPhase12LatencyProbe(selector)",
+            "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid");
+
+        AssertPhase12Probe("ArrowDown viewport", probe.ArrowDownViewport);
+        AssertPhase12Probe("ArrowDown scroll edge", probe.ArrowDownScrollEdge);
+        AssertPhase12Probe("normal click", probe.NormalCellClick);
+        AssertPhase12Probe("formula click", probe.FormulaCellClick);
+        AssertPhase12Probe("typing character", probe.TypingCharacter);
+        AssertPhase12Probe("formula commit", probe.FormulaCommit);
+
+        Assert.AreEqual(0, probe.ArrowDownViewport.FirstFrameDebug.DotNetCallbackCount, "ArrowDown inside viewport should stay JS-only on the first frame.");
+        Assert.AreEqual(0, probe.ArrowDownViewport.FirstFrameDebug.ContentPaintFrameCount, "ArrowDown inside viewport should not repaint content on the first frame.");
+        Assert.IsTrue(probe.ArrowDownViewport.FirstFrameDebug.SelectionPaintFrameCount > 0, "ArrowDown inside viewport should repaint the selection layer.");
+        Assert.AreEqual(0, probe.FormulaCellClick.FirstFrameDebug.DotNetCallbackCount, "Formula point click should stay JS-only before commit.");
+        Assert.AreEqual(0, probe.TypingCharacter.FirstFrameDebug.DotNetCallbackCount, "Typing should stay JS-only on the hot path.");
+        Assert.AreEqual(0, probe.TypingCharacter.FirstFrameDebug.BlazorFrameCount, "Typing should not trigger a Blazor frame per key.");
+        Assert.IsTrue(probe.FormulaCommit.SettledDebug.DotNetCallbackCount > 0, "Formula commit should still synchronize back to .NET after the local hot path.");
+    }
+
+    [TestMethod]
+    public async Task BenchmarkPage_Phase12BenchmarkRowExposesReadinessMetrics()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        await page.GetByTestId("spreadsheet-benchmark-run-both").ClickAsync();
+        await page.WaitForFunctionAsync(
+            "document.querySelectorAll('[data-testid=\"spreadsheet-benchmark-result-row\"]').length >= 3",
+            null,
+            new PageWaitForFunctionOptions { Timeout = 90000 });
+
+        var canvas = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"Canvas\"]").First;
+        var canvasJsEngine = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"CanvasJsEngine\"]").First;
+        await canvas.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+        await canvasJsEngine.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 30000 });
+
+        var legacyViewportArrowMs = await GetBenchmarkMetricAsync(canvas, "data-single-arrow-in-viewport-ms");
+        var viewportArrowMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-single-arrow-in-viewport-ms");
+        var viewportArrowDotNet = await GetBenchmarkMetricAsync(canvasJsEngine, "data-single-arrow-in-viewport-dotnet-callbacks");
+        var viewportArrowContentFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-single-arrow-in-viewport-content-paint-frames");
+        var viewportArrowSelectionFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-single-arrow-in-viewport-selection-paint-frames");
+        var scrollEdgeMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-single-arrow-scroll-edge-ms");
+        var formulaClickMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-formula-cell-click-latency-ms");
+        var formulaClickDotNet = await GetBenchmarkMetricAsync(canvasJsEngine, "data-formula-cell-click-dotnet-callbacks");
+        var typingMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-typing-latency-ms");
+        var typingDotNet = await GetBenchmarkMetricAsync(canvasJsEngine, "data-typing-dotnet-callbacks");
+        var typingBlazorFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-typing-blazor-frame-count");
+        var callbacksPerInteraction = await GetBenchmarkMetricAsync(canvasJsEngine, "data-dotnet-callbacks-per-interaction");
+        var wheelEvents = await GetBenchmarkMetricAsync(canvasJsEngine, "data-wheel-events");
+        var wheelBlazorFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-wheel-blazor-frame-count");
+        var dragFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-drag-frames");
+        var dragBlazorFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-drag-blazor-frame-count");
+
+        Assert.IsTrue(viewportArrowMs > 0, $"Expected benchmark row to expose viewport ArrowDown latency. Current: {viewportArrowMs:N1} ms.");
+        Assert.AreEqual(0d, viewportArrowDotNet, $"Viewport ArrowDown should stay JS-only on the first frame. .NET callbacks: {viewportArrowDotNet:N0}.");
+        Assert.AreEqual(0d, viewportArrowContentFrames, $"Viewport ArrowDown should not repaint content on the first frame. Content frames: {viewportArrowContentFrames:N0}.");
+        Assert.IsTrue(viewportArrowSelectionFrames > 0, $"Viewport ArrowDown should repaint the selection layer. Selection frames: {viewportArrowSelectionFrames:N0}.");
+        Assert.IsTrue(scrollEdgeMs > 0, $"Expected benchmark row to expose scroll-edge ArrowDown latency. Current: {scrollEdgeMs:N1} ms.");
+        Assert.IsTrue(formulaClickMs > 0, $"Expected benchmark row to expose formula click latency. Current: {formulaClickMs:N1} ms.");
+        Assert.AreEqual(0d, formulaClickDotNet, $"Formula click should stay JS-only before commit. .NET callbacks: {formulaClickDotNet:N0}.");
+        Assert.IsTrue(typingMs > 0, $"Expected benchmark row to expose typing latency. Current: {typingMs:N1} ms.");
+        Assert.AreEqual(0d, typingDotNet, $"Typing should stay JS-only on the first frame. .NET callbacks: {typingDotNet:N0}.");
+        Assert.AreEqual(0d, typingBlazorFrames, $"Typing should not trigger a Blazor frame per key. Frames: {typingBlazorFrames:N0}.");
+        Assert.IsTrue(wheelEvents > 0, "Expected benchmark row to expose wheel activity.");
+        Assert.IsTrue(wheelBlazorFrames < wheelEvents, $"Wheel scroll should not trigger a Blazor frame per event. Frames: {wheelBlazorFrames:N0}, events: {wheelEvents:N0}.");
+        Assert.IsTrue(dragFrames > 0, "Expected benchmark row to expose drag autoscroll frames.");
+        Assert.IsTrue(dragBlazorFrames < dragFrames, $"Drag selection should not trigger a Blazor frame per move. Frames: {dragBlazorFrames:N0}, drag frames: {dragFrames:N0}.");
+        Assert.IsTrue(callbacksPerInteraction <= 0.5, $"Expected average .NET callbacks per interaction to stay low. Current: {callbacksPerInteraction:N2}.");
+        Assert.IsTrue(viewportArrowMs <= legacyViewportArrowMs * 1.1, $"Expected CanvasJsEngine viewport ArrowDown to stay comparable with legacy Canvas. JS engine: {viewportArrowMs:N1} ms, Canvas: {legacyViewportArrowMs:N1} ms.");
+    }
+
     private static int ParseRow(string cellRef)
     {
         var digits = new string(cellRef.Where(char.IsDigit).ToArray());
         return int.TryParse(digits, out var row) ? row : 0;
+    }
+
+    private static async Task WaitForCanvasGridReadyAsync(IPage page, ILocator grid)
+    {
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await page.WaitForFunctionAsync(
+            @"el => !!window.tmSpreadsheetCanvas
+                && typeof window.tmSpreadsheetCanvas.setCells === 'function'
+                && !!el
+                && !!el.__tmSpreadsheetCanvas
+                && !!el.__tmSpreadsheetCanvas.model
+                && !!el.__tmSpreadsheetCanvas.sheetState?.activeCell
+                && !!el.querySelector('.tm-spreadsheet-canvas-grid__canvas--content')
+                && el.querySelector('.tm-spreadsheet-canvas-grid__canvas--content').width > 0
+                && el.querySelector('.tm-spreadsheet-canvas-grid__canvas--content').height > 0",
+            await grid.ElementHandleAsync(),
+            new PageWaitForFunctionOptions { Timeout = 30000 });
+    }
+
+    private static void AssertPhase12Probe(string name, CanvasPhase12InteractionProbe probe)
+    {
+        Assert.IsTrue(probe.FirstFrameMs > 0, $"{name} should report first-frame latency.");
+        Assert.IsTrue(probe.SettledMs >= probe.FirstFrameMs, $"{name} settled latency should include first-frame latency.");
+        Assert.IsNotNull(probe.FirstFrameDebug, $"{name} should expose first-frame debug counters.");
+        Assert.IsNotNull(probe.SettledDebug, $"{name} should expose settled debug counters.");
+        Assert.IsNotNull(probe.FirstFrameDebug.DotNetCallbacksByMethod, $"{name} should expose first-frame .NET callback methods.");
+        Assert.IsNotNull(probe.SettledDebug.DotNetCallbacksByMethod, $"{name} should expose settled .NET callback methods.");
     }
 
     private static async Task<double> GetBenchmarkMetricAsync(ILocator row, string attributeName)
@@ -1514,6 +2870,142 @@ public class SpreadsheetE2ETests : WasmTestBase
         public string FontCache { get; set; } = string.Empty;
     }
 
+    private sealed class CanvasJsFirstStateProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public string SheetActiveRef { get; set; } = string.Empty;
+        public string EditorValue { get; set; } = string.Empty;
+        public string SheetEditorValue { get; set; } = string.Empty;
+        public int LocalRevision { get; set; }
+        public int ServerRevision { get; set; }
+        public int StaleFramesIgnored { get; set; }
+    }
+
+    private sealed class CanvasJsEditorProbeResult
+    {
+        public string StartRef { get; set; } = string.Empty;
+        public string ActiveRef { get; set; } = string.Empty;
+        public string EditorValue { get; set; } = string.Empty;
+        public string CommittedValue { get; set; } = string.Empty;
+        public int EditorOpenCount { get; set; }
+        public int EditorLocalCommits { get; set; }
+        public int KeyCommandCallbacks { get; set; }
+        public int EditBatchCallbacks { get; set; }
+        public int EditBatchItems { get; set; }
+        public int DotNetCallbackMethodCount { get; set; }
+    }
+
+    private sealed class CanvasJsFormulaEditorProbeResult
+    {
+        public string EditorValue { get; set; } = string.Empty;
+        public bool FormulaActive { get; set; }
+        public int FormulaRefCount { get; set; }
+        public int FormulaClickInserts { get; set; }
+        public int FormulaRangeDrags { get; set; }
+        public int HighlightedCells { get; set; }
+        public int KeyCommandCallbacks { get; set; }
+        public int CellPointerCallbacks { get; set; }
+        public string CommittedValue { get; set; } = string.Empty;
+        public string CommittedFormula { get; set; } = string.Empty;
+        public int EditBatchCallbacks { get; set; }
+        public int EditBatchItems { get; set; }
+        public int BluePixels { get; set; }
+        public double LogicalScrollTop { get; set; }
+    }
+
+    private sealed class CanvasPublicApiProbeResult
+    {
+        public string A1 { get; set; } = string.Empty;
+        public string B1 { get; set; } = string.Empty;
+        public string A2 { get; set; } = string.Empty;
+        public string B2 { get; set; } = string.Empty;
+    }
+
+    private sealed class CanvasAccessibilityProbeResult
+    {
+        public bool RootFocused { get; set; }
+        public string ActiveDescendant { get; set; } = string.Empty;
+        public string ActiveText { get; set; } = string.Empty;
+        public string ActiveRowIndex { get; set; } = string.Empty;
+        public string ActiveColIndex { get; set; } = string.Empty;
+        public string LiveText { get; set; } = string.Empty;
+    }
+
+    private sealed class CanvasEditorAccessibilityProbeResult
+    {
+        public bool Focused { get; set; }
+        public string Role { get; set; } = string.Empty;
+        public string AriaLabel { get; set; } = string.Empty;
+        public string AriaDescribedBy { get; set; } = string.Empty;
+        public string EditorMode { get; set; } = string.Empty;
+        public int SelectionStart { get; set; }
+        public int SelectionEnd { get; set; }
+        public string Value { get; set; } = string.Empty;
+    }
+
+    private sealed class CanvasPasteProbeResult
+    {
+        public double ElapsedMs { get; set; }
+        public string TopLeft { get; set; } = string.Empty;
+        public string BottomRight { get; set; } = string.Empty;
+        public int RangeChangedCommands { get; set; }
+        public int CommandLogCallbacks { get; set; }
+        public int CommandLogBatchCallbacks { get; set; }
+        public int CommandLogBatchItems { get; set; }
+        public int ContentPaintFrames { get; set; }
+    }
+
+    private sealed class CanvasAutoFillProbeResult
+    {
+        public string A3 { get; set; } = string.Empty;
+        public string A4 { get; set; } = string.Empty;
+        public string A5 { get; set; } = string.Empty;
+        public int RangeChangedCommands { get; set; }
+        public int CommandLogCallbacks { get; set; }
+        public int CommandLogBatchCallbacks { get; set; }
+        public int CommandLogBatchItems { get; set; }
+    }
+
+    private sealed class CanvasCellStoreProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public int Red { get; set; }
+        public int Green { get; set; }
+        public int Blue { get; set; }
+        public int SetCellCount { get; set; }
+        public int StoreSize { get; set; }
+        public int StyledOrNonEmptyCount { get; set; }
+        public int LookupCount { get; set; }
+        public int HitCount { get; set; }
+        public int FrameScanCount { get; set; }
+        public int VisibleCellCount { get; set; }
+    }
+
+    private sealed class CanvasJsLayoutProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public int BlazorFrames { get; set; }
+        public int LayoutComputes { get; set; }
+        public int BinarySearches { get; set; }
+        public int RowSizeCacheSize { get; set; }
+        public int ColumnSizeCacheSize { get; set; }
+        public int KeyboardLogicalScrolls { get; set; }
+        public double LogicalScrollTop { get; set; }
+    }
+
+    private sealed class CanvasRendererPipelineProbeResult
+    {
+        public int PaintFrames { get; set; }
+        public int ContentPaintFrames { get; set; }
+        public int SelectionPaintFrames { get; set; }
+        public int ContentLayerPaints { get; set; }
+        public int HeaderLayerPaints { get; set; }
+        public int SelectionLayerPaints { get; set; }
+        public int SelectionDirtyRects { get; set; }
+        public int ContentDirtyRects { get; set; }
+        public double LogicalScrollTop { get; set; }
+    }
+
     private sealed class CanvasArrowHotPathProbeResult
     {
         public string ActiveRef { get; set; } = string.Empty;
@@ -1535,6 +3027,22 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int LogicalKeyboardScrollCount { get; set; }
         public double LogicalScrollTop { get; set; }
         public double ScrollTop { get; set; }
+    }
+
+    private sealed class CanvasCommandLogProbeResult
+    {
+        public int CommandLogBatchCallbacks { get; set; }
+        public int CommandLogBatchItems { get; set; }
+        public int SelectionSettledCommands { get; set; }
+        public int ViewportSettledCommands { get; set; }
+        public int CellChangedCommands { get; set; }
+        public int RangeChangedCommands { get; set; }
+        public int FormulaCommittedCommands { get; set; }
+        public int LegacySelectionCallbacks { get; set; }
+        public int LegacyViewportCallbacks { get; set; }
+        public int LegacyEditCallbacks { get; set; }
+        public int CommandLogCallbacks { get; set; }
+        public int AckRevision { get; set; }
     }
 
     private sealed class CanvasScrollbarSyncProbeResult
@@ -1570,6 +3078,40 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int PaintFrames { get; set; }
         public int ContentPaintFrames { get; set; }
         public int MaxMergedPaintRequestsPerFrame { get; set; }
+    }
+
+    private sealed class CanvasPhase12LatencyProbeResult
+    {
+        public CanvasPhase12InteractionProbe ArrowDownViewport { get; set; } = new();
+        public CanvasPhase12InteractionProbe ArrowDownScrollEdge { get; set; } = new();
+        public CanvasPhase12InteractionProbe NormalCellClick { get; set; } = new();
+        public CanvasPhase12InteractionProbe FormulaCellClick { get; set; } = new();
+        public CanvasPhase12InteractionProbe TypingCharacter { get; set; } = new();
+        public CanvasPhase12InteractionProbe FormulaCommit { get; set; } = new();
+    }
+
+    private sealed class CanvasPhase12InteractionProbe
+    {
+        public double FirstFrameMs { get; set; }
+        public double SettledMs { get; set; }
+        public CanvasPhase12DebugDelta FirstFrameDebug { get; set; } = new();
+        public CanvasPhase12DebugDelta SettledDebug { get; set; } = new();
+    }
+
+    private sealed class CanvasPhase12DebugDelta
+    {
+        public int DotNetCallbackCount { get; set; }
+        public int HotPathDotNetCallbackCount { get; set; }
+        public Dictionary<string, int> DotNetCallbacksByMethod { get; set; } = new();
+        public Dictionary<string, int> HotPathDotNetCallbacksByMethod { get; set; } = new();
+        public string LastDotNetCallbackMethod { get; set; } = string.Empty;
+        public int BlazorFrameCount { get; set; }
+        public int HotPathBlazorFrameCount { get; set; }
+        public int ViewportCallbackCount { get; set; }
+        public int SelectionCallbackCount { get; set; }
+        public int PaintFrameCount { get; set; }
+        public int ContentPaintFrameCount { get; set; }
+        public int SelectionPaintFrameCount { get; set; }
     }
 
     private sealed class CanvasKeyboardRepeatProbeResult

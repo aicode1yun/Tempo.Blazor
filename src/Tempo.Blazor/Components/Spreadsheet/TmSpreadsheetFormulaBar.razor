@@ -10,17 +10,23 @@
         @if (IsEditing)
         {
             <input class="tm-spreadsheet-formula-bar__input"
+                   type="text"
                    value="@_editValue"
                    @ref="_inputRef"
                    @oninput="OnInput"
                    @onkeydown="HandleKeyDown"
                    @onblur="Commit"
                    @onkeydown:stopPropagation="true"
+                   aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
                    placeholder="@Loc["TmSpreadsheet_FormulaBarPlaceholder"]" />
         }
         else
         {
             <div class="tm-spreadsheet-formula-bar__display"
+                 role="button"
+                 tabindex="0"
+                 aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
+                 @onkeydown="HandleDisplayKeyDown"
                  @onclick="StartEdit">
                 @(DisplayValue ?? Loc["TmSpreadsheet_FormulaBarPlaceholder"])
             </div>

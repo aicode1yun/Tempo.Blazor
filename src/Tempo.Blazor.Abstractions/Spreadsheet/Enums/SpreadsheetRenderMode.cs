@@ -9,5 +9,8 @@ public enum SpreadsheetRenderMode
     Dom = 0,
 
     /// <summary>Use the hybrid canvas renderer for larger sheets while keeping HTML for editing and controls.</summary>
-    Canvas = 1
+    Canvas = 1,
+
+    /// <summary>Use the JavaScript-driven canvas engine with Blazor acting primarily as the workbook shell.</summary>
+    CanvasJsEngine = 2
 }

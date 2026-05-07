@@ -78,6 +78,14 @@ public partial class TmSpreadsheetFormulaBar
         }
     }
 
+    private void HandleDisplayKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            StartEdit();
+        }
+    }
+
     private void Commit()
     {
         if (!IsEditing) return;

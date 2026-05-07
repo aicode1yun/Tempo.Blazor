@@ -30,6 +30,17 @@ public class TmSpreadsheetTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_CanvasJsEngineMode_RendersCanvasGrid()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.CanvasJsEngine));
+
+        cut.Find(".tm-spreadsheet-canvas-grid").Should().NotBeNull();
+        cut.Find("canvas.tm-spreadsheet-canvas-grid__canvas").Should().NotBeNull();
+        cut.FindComponents<TmSpreadsheetGrid>().Should().BeEmpty();
+    }
+
+    [Fact]
     public void Render_CustomHeight_AppliesStyle()
     {
         var cut = RenderComponent<TmSpreadsheet>(parameters => parameters

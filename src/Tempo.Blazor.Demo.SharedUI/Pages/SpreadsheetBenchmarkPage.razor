@@ -130,6 +130,29 @@
                             data-keyboard-scroll-down-ms="@FormatMetric(result.KeyboardScrollDownMs)"
                             data-keyboard-scroll-up-ms="@FormatMetric(result.KeyboardScrollUpMs)"
                             data-keyboard-scroll-right-ms="@FormatMetric(result.KeyboardScrollRightMs)"
+                            data-single-arrow-in-viewport-ms="@FormatMetric(result.SingleArrowInViewportMs)"
+                            data-single-arrow-in-viewport-dotnet-callbacks="@FormatMetric(result.SingleArrowInViewportDotNetCallbackCount)"
+                            data-single-arrow-in-viewport-hotpath-dotnet-callbacks="@FormatMetric(result.SingleArrowInViewportHotPathDotNetCallbackCount)"
+                            data-single-arrow-in-viewport-blazor-frame-count="@FormatMetric(result.SingleArrowInViewportBlazorFrameCount)"
+                            data-single-arrow-in-viewport-selection-paint-frames="@FormatMetric(result.SingleArrowInViewportSelectionPaintFrameCount)"
+                            data-single-arrow-in-viewport-content-paint-frames="@FormatMetric(result.SingleArrowInViewportContentPaintFrameCount)"
+                            data-single-arrow-scroll-edge-ms="@FormatMetric(result.SingleArrowScrollEdgeMs)"
+                            data-single-arrow-scroll-edge-dotnet-callbacks="@FormatMetric(result.SingleArrowScrollEdgeDotNetCallbackCount)"
+                            data-single-arrow-scroll-edge-hotpath-dotnet-callbacks="@FormatMetric(result.SingleArrowScrollEdgeHotPathDotNetCallbackCount)"
+                            data-single-arrow-scroll-edge-blazor-frame-count="@FormatMetric(result.SingleArrowScrollEdgeBlazorFrameCount)"
+                            data-formula-cell-click-latency-ms="@FormatMetric(result.FormulaCellClickLatencyMs)"
+                            data-formula-cell-click-dotnet-callbacks="@FormatMetric(result.FormulaCellClickDotNetCallbackCount)"
+                            data-formula-cell-click-hotpath-dotnet-callbacks="@FormatMetric(result.FormulaCellClickHotPathDotNetCallbackCount)"
+                            data-formula-cell-click-blazor-frame-count="@FormatMetric(result.FormulaCellClickBlazorFrameCount)"
+                            data-typing-latency-ms="@FormatMetric(result.TypingLatencyMs)"
+                            data-typing-dotnet-callbacks="@FormatMetric(result.TypingDotNetCallbackCount)"
+                            data-typing-hotpath-dotnet-callbacks="@FormatMetric(result.TypingHotPathDotNetCallbackCount)"
+                            data-typing-blazor-frame-count="@FormatMetric(result.TypingBlazorFrameCount)"
+                            data-formula-commit-latency-ms="@FormatMetric(result.FormulaCommitLatencyMs)"
+                            data-formula-commit-dotnet-callbacks="@FormatMetric(result.FormulaCommitDotNetCallbackCount)"
+                            data-dotnet-callbacks-per-interaction="@FormatMetric(result.DotNetCallbacksPerInteraction)"
+                            data-hotpath-dotnet-callbacks-per-interaction="@FormatMetric(result.HotPathDotNetCallbacksPerInteraction)"
+                            data-paste-ms="@FormatMetric(result.PasteSimulationMs)"
                             data-keyboard-logical-scroll-count="@FormatMetric(result.KeyboardLogicalScrollCount)"
                             data-keyboard-scroll-to-count="@FormatMetric(result.KeyboardScrollToCount)"
                             data-wheel-fps="@FormatMetric(result.WheelScrollFps)"
@@ -138,13 +161,17 @@
                             data-wheel-logical-scroll-count="@FormatMetric(result.WheelLogicalScrollCount)"
                             data-wheel-viewport-callback-count="@FormatMetric(result.WheelViewportCallbackCount)"
                             data-wheel-scroll-to-count="@FormatMetric(result.WheelScrollToCount)"
+                            data-wheel-blazor-frame-count="@FormatMetric(result.WheelBlazorFrameCount)"
+                            data-wheel-hotpath-blazor-frame-count="@FormatMetric(result.WheelHotPathBlazorFrameCount)"
                             data-wheel-paint-frame-count="@FormatMetric(result.WheelPaintFrameCount)"
                             data-wheel-content-paint-frame-count="@FormatMetric(result.WheelContentPaintFrameCount)"
                             data-drag-frames="@FormatMetric(result.DragAutoscrollFrames)"
                             data-drag-logical-scroll-count="@FormatMetric(result.DragLogicalScrollCount)"
                             data-drag-viewport-callback-count="@FormatMetric(result.DragViewportCallbackCount)"
                             data-drag-selection-callback-count="@FormatMetric(result.DragSelectionCallbackCount)"
-                            data-drag-scroll-to-count="@FormatMetric(result.DragScrollToCount)">
+                            data-drag-scroll-to-count="@FormatMetric(result.DragScrollToCount)"
+                            data-drag-blazor-frame-count="@FormatMetric(result.DragBlazorFrameCount)"
+                            data-drag-hotpath-blazor-frame-count="@FormatMetric(result.DragHotPathBlazorFrameCount)">
                             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">@result.Renderer</td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-400">@result.DatasetLabel</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.FirstRenderMs:N1} ms")</td>
@@ -217,7 +244,7 @@
     private readonly Queue<SpreadsheetRenderMode> _benchmarkQueue = new();
     private readonly List<BenchmarkResult> _results = new();
     private TmSpreadsheet? _benchmarkSpreadsheet;
-    private SpreadsheetRenderMode _activeRenderMode = SpreadsheetRenderMode.Canvas;
+    private SpreadsheetRenderMode _activeRenderMode = SpreadsheetRenderMode.CanvasJsEngine;
     private string _selectedDatasetId = Datasets[0].Id;
     private string _status = "Ready";
     private bool _showGrid = true;
@@ -252,7 +279,7 @@
     {
         _benchmarkQueue.Clear();
         _isRunning = false;
-        _activeRenderMode = SpreadsheetRenderMode.Canvas;
+        _activeRenderMode = SpreadsheetRenderMode.CanvasJsEngine;
         _status = $"Loaded {CurrentDataset.Label}";
         QueueGridRender(shouldMeasure: false);
         return Task.CompletedTask;
@@ -260,9 +287,9 @@
 
     private Task RunDomBenchmarkAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Dom);
 
-    private Task RunCanvasBenchmarkAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Canvas);
+    private Task RunCanvasBenchmarkAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.CanvasJsEngine);
 
-    private Task RunBothBenchmarksAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Dom, SpreadsheetRenderMode.Canvas);
+    private Task RunBothBenchmarksAsync() => RunBenchmarksAsync(SpreadsheetRenderMode.Dom, SpreadsheetRenderMode.Canvas, SpreadsheetRenderMode.CanvasJsEngine);
 
     private async Task RunBenchmarksAsync(params SpreadsheetRenderMode[] modes)
     {
@@ -308,7 +335,7 @@
         _renderStopwatch?.Stop();
         var firstRenderMs = _renderStopwatch?.Elapsed.TotalMilliseconds ?? 0;
 
-        var selector = _activeRenderMode == SpreadsheetRenderMode.Canvas
+        var selector = _activeRenderMode != SpreadsheetRenderMode.Dom
             ? "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid"
             : "[data-spreadsheet-benchmark-surface] .tm-spreadsheet-grid";
 
@@ -333,7 +360,9 @@
             metrics = new BrowserBenchmarkMetrics();
         }
 
-        var pasteSimulationMs = MeasurePasteSimulation(sheet);
+        var pasteSimulationMs = _activeRenderMode == SpreadsheetRenderMode.CanvasJsEngine
+            ? metrics.PasteDurationMs
+            : MeasurePasteSimulation(sheet);
         _results.Insert(0, new BenchmarkResult(
             _activeRenderMode.ToString(),
             CurrentDataset.Label,
@@ -343,6 +372,28 @@
             metrics.KeyboardScrollDownMs,
             metrics.KeyboardScrollUpMs,
             metrics.KeyboardScrollRightMs,
+            metrics.SingleArrowInViewportMs,
+            metrics.SingleArrowInViewportDotNetCallbackCount,
+            metrics.SingleArrowInViewportHotPathDotNetCallbackCount,
+            metrics.SingleArrowInViewportBlazorFrameCount,
+            metrics.SingleArrowInViewportSelectionPaintFrameCount,
+            metrics.SingleArrowInViewportContentPaintFrameCount,
+            metrics.SingleArrowScrollEdgeMs,
+            metrics.SingleArrowScrollEdgeDotNetCallbackCount,
+            metrics.SingleArrowScrollEdgeHotPathDotNetCallbackCount,
+            metrics.SingleArrowScrollEdgeBlazorFrameCount,
+            metrics.FormulaCellClickLatencyMs,
+            metrics.FormulaCellClickDotNetCallbackCount,
+            metrics.FormulaCellClickHotPathDotNetCallbackCount,
+            metrics.FormulaCellClickBlazorFrameCount,
+            metrics.TypingLatencyMs,
+            metrics.TypingDotNetCallbackCount,
+            metrics.TypingHotPathDotNetCallbackCount,
+            metrics.TypingBlazorFrameCount,
+            metrics.FormulaCommitLatencyMs,
+            metrics.FormulaCommitDotNetCallbackCount,
+            metrics.DotNetCallbacksPerInteraction,
+            metrics.HotPathDotNetCallbacksPerInteraction,
             metrics.WheelScrollFps,
             metrics.DragAutoscrollFrames,
             metrics.KeyboardNativeScrollEvents,
@@ -359,12 +410,16 @@
             metrics.WheelLogicalScrollCount,
             metrics.WheelViewportCallbackCount,
             metrics.WheelScrollToCount,
+            metrics.WheelBlazorFrameCount,
+            metrics.WheelHotPathBlazorFrameCount,
             metrics.WheelPaintFrameCount,
             metrics.WheelContentPaintFrameCount,
             metrics.DragLogicalScrollCount,
             metrics.DragViewportCallbackCount,
             metrics.DragSelectionCallbackCount,
             metrics.DragScrollToCount,
+            metrics.DragBlazorFrameCount,
+            metrics.DragHotPathBlazorFrameCount,
             pasteSimulationMs,
             metrics.UsedJsHeapSize));
 
@@ -463,6 +518,28 @@
         double KeyboardScrollDownMs,
         double KeyboardScrollUpMs,
         double KeyboardScrollRightMs,
+        double SingleArrowInViewportMs,
+        double SingleArrowInViewportDotNetCallbackCount,
+        double SingleArrowInViewportHotPathDotNetCallbackCount,
+        double SingleArrowInViewportBlazorFrameCount,
+        double SingleArrowInViewportSelectionPaintFrameCount,
+        double SingleArrowInViewportContentPaintFrameCount,
+        double SingleArrowScrollEdgeMs,
+        double SingleArrowScrollEdgeDotNetCallbackCount,
+        double SingleArrowScrollEdgeHotPathDotNetCallbackCount,
+        double SingleArrowScrollEdgeBlazorFrameCount,
+        double FormulaCellClickLatencyMs,
+        double FormulaCellClickDotNetCallbackCount,
+        double FormulaCellClickHotPathDotNetCallbackCount,
+        double FormulaCellClickBlazorFrameCount,
+        double TypingLatencyMs,
+        double TypingDotNetCallbackCount,
+        double TypingHotPathDotNetCallbackCount,
+        double TypingBlazorFrameCount,
+        double FormulaCommitLatencyMs,
+        double FormulaCommitDotNetCallbackCount,
+        double DotNetCallbacksPerInteraction,
+        double HotPathDotNetCallbacksPerInteraction,
         double WheelScrollFps,
         double DragAutoscrollFrames,
         double KeyboardNativeScrollEvents,
@@ -479,12 +556,16 @@
         double WheelLogicalScrollCount,
         double WheelViewportCallbackCount,
         double WheelScrollToCount,
+        double WheelBlazorFrameCount,
+        double WheelHotPathBlazorFrameCount,
         double WheelPaintFrameCount,
         double WheelContentPaintFrameCount,
         double DragLogicalScrollCount,
         double DragViewportCallbackCount,
         double DragSelectionCallbackCount,
         double DragScrollToCount,
+        double DragBlazorFrameCount,
+        double DragHotPathBlazorFrameCount,
         double PasteSimulationMs,
         double? UsedJsHeapSize);
 
@@ -496,6 +577,30 @@
         public double KeyboardScrollDownMs { get; set; }
         public double KeyboardScrollUpMs { get; set; }
         public double KeyboardScrollRightMs { get; set; }
+        public double SingleArrowInViewportMs { get; set; }
+        public double SingleArrowInViewportSettledMs { get; set; }
+        public double SingleArrowInViewportDotNetCallbackCount { get; set; }
+        public double SingleArrowInViewportHotPathDotNetCallbackCount { get; set; }
+        public double SingleArrowInViewportBlazorFrameCount { get; set; }
+        public double SingleArrowInViewportSelectionPaintFrameCount { get; set; }
+        public double SingleArrowInViewportContentPaintFrameCount { get; set; }
+        public double SingleArrowScrollEdgeMs { get; set; }
+        public double SingleArrowScrollEdgeSettledMs { get; set; }
+        public double SingleArrowScrollEdgeDotNetCallbackCount { get; set; }
+        public double SingleArrowScrollEdgeHotPathDotNetCallbackCount { get; set; }
+        public double SingleArrowScrollEdgeBlazorFrameCount { get; set; }
+        public double FormulaCellClickLatencyMs { get; set; }
+        public double FormulaCellClickDotNetCallbackCount { get; set; }
+        public double FormulaCellClickHotPathDotNetCallbackCount { get; set; }
+        public double FormulaCellClickBlazorFrameCount { get; set; }
+        public double TypingLatencyMs { get; set; }
+        public double TypingDotNetCallbackCount { get; set; }
+        public double TypingHotPathDotNetCallbackCount { get; set; }
+        public double TypingBlazorFrameCount { get; set; }
+        public double FormulaCommitLatencyMs { get; set; }
+        public double FormulaCommitDotNetCallbackCount { get; set; }
+        public double DotNetCallbacksPerInteraction { get; set; }
+        public double HotPathDotNetCallbacksPerInteraction { get; set; }
         public double WheelScrollFps { get; set; }
         public double DragAutoscrollFrames { get; set; }
         public double KeyboardNativeScrollEvents { get; set; }
@@ -512,12 +617,21 @@
         public double WheelLogicalScrollCount { get; set; }
         public double WheelViewportCallbackCount { get; set; }
         public double WheelScrollToCount { get; set; }
+        public double WheelBlazorFrameCount { get; set; }
+        public double WheelHotPathBlazorFrameCount { get; set; }
         public double WheelPaintFrameCount { get; set; }
         public double WheelContentPaintFrameCount { get; set; }
         public double DragLogicalScrollCount { get; set; }
         public double DragViewportCallbackCount { get; set; }
         public double DragSelectionCallbackCount { get; set; }
         public double DragScrollToCount { get; set; }
+        public double DragBlazorFrameCount { get; set; }
+        public double DragHotPathBlazorFrameCount { get; set; }
+        public double PasteDurationMs { get; set; }
+        public double PasteDotNetCallbackCount { get; set; }
+        public double PasteHotPathDotNetCallbackCount { get; set; }
+        public double PastePaintFrameCount { get; set; }
+        public double PasteContentPaintFrameCount { get; set; }
         public double? UsedJsHeapSize { get; set; }
     }
 }
