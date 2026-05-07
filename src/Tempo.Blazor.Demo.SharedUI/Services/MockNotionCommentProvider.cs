@@ -136,6 +136,25 @@ public class MockNotionCommentProvider : INotionCommentProvider
         return Task.CompletedTask;
     }
 
+    public Task DeleteCommentEntryAsync(string entryId)
+    {
+        var eid = Parse(entryId);
+        foreach (var c in _byId.Values)
+        {
+            var thread = c.Thread as List<INotionCommentEntry>;
+            if (thread is null) continue;
+            for (int i = 0; i < thread.Count; i++)
+            {
+                if (thread[i].Id == eid)
+                {
+                    thread.RemoveAt(i);
+                    return Task.CompletedTask;
+                }
+            }
+        }
+        return Task.CompletedTask;
+    }
+
     public Task<IBlockComment> ResolveCommentAsync(string commentId)
     {
         var c = Require(commentId);

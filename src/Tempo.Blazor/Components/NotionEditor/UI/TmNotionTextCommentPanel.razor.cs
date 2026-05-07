@@ -61,10 +61,14 @@ public partial class TmNotionTextCommentPanel : ComponentBase
             _editingEntryId   = null;
             _activeCommentId  = CommentId;
             await LoadAsync();
+            await SetHighlightActiveAsync(true);
         }
 
         if (!Visible && _wasVisible)
+        {
+            await SetHighlightActiveAsync(false);
             _comment = null;
+        }
 
         _wasVisible = Visible;
     }
@@ -223,12 +227,25 @@ public partial class TmNotionTextCommentPanel : ComponentBase
         }
 
         _error = string.Empty;
+        var threadId = _comment.Id.ToString();
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(_comment.Id.ToString());
-            _comment = null;
-            _activeCommentId = string.Empty;
-            await OnCountChanged.InvokeAsync(0);
+            var isOnlyEntry = _comment.Thread.Count <= 1;
+            if (isOnlyEntry)
+            {
+                await Context.CommentProvider.DeleteCommentAsync(threadId);
+                try { await JS.InvokeVoidAsync("tmNotionEditor.unwrapCommentHighlight", threadId); } catch { /* best-effort */ }
+                _comment = null;
+                _activeCommentId = string.Empty;
+                await OnCountChanged.InvokeAsync(0);
+                StateHasChanged();
+            }
+            else
+            {
+                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteEntry.Id.ToString()!);
+                await LoadAsync();
+                await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+            }
         }
         catch
         {
@@ -237,6 +254,19 @@ public partial class TmNotionTextCommentPanel : ComponentBase
         finally
         {
             _pendingDeleteEntry = null;
+            StateHasChanged();
+        }
+    }
+
+    private async Task SetHighlightActiveAsync(bool active)
+    {
+        if (!string.IsNullOrEmpty(_activeCommentId))
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.setCommentHighlightActive", _activeCommentId, active);
+            }
+            catch { /* best-effort */ }
         }
     }
 

@@ -212,7 +212,15 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(_comment.Id.ToString());
+            var isOnlyEntry = _comment.Thread.Count <= 1;
+            if (isOnlyEntry)
+            {
+                await Context.CommentProvider.DeleteCommentAsync(_comment.Id.ToString());
+            }
+            else
+            {
+                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteEntry.Id.ToString()!);
+            }
             await LoadAsync();
             var count = _comment?.Thread.Count ?? 0;
             await OnCountChanged.InvokeAsync(count);

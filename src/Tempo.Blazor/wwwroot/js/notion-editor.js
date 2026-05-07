@@ -243,6 +243,27 @@ window.tmNotionEditor = (function () {
         }
     }
 
+    function unwrapCommentHighlight(commentId) {
+        const marks = document.querySelectorAll(`mark.tm-notion-comment-highlight[data-comment-id="${commentId}"]`);
+        marks.forEach(mark => {
+            const parent = mark.parentNode;
+            if (!parent) return;
+            while (mark.firstChild) {
+                parent.insertBefore(mark.firstChild, mark);
+            }
+            parent.removeChild(mark);
+            // Normalize adjacent text nodes
+            parent.normalize();
+        });
+    }
+
+    function setCommentHighlightActive(commentId, isActive) {
+        const marks = document.querySelectorAll(`mark.tm-notion-comment-highlight[data-comment-id="${commentId}"]`);
+        marks.forEach(mark => {
+            mark.classList.toggle('tm-notion-comment-highlight--active', isActive);
+        });
+    }
+
     // ═══════════════════════════════════════════════════════════════════════════
     // 26.3 — Drag & drop
     // ═══════════════════════════════════════════════════════════════════════════

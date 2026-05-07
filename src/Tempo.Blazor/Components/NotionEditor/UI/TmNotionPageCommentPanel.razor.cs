@@ -279,7 +279,15 @@ public partial class TmNotionPageCommentPanel : ComponentBase
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(_pendingDeleteComment.Id.ToString());
+            var isOnlyEntry = _pendingDeleteComment.Thread.Count <= 1;
+            if (isOnlyEntry)
+            {
+                await Context.CommentProvider.DeleteCommentAsync(_pendingDeleteComment.Id.ToString());
+            }
+            else
+            {
+                await Context.CommentProvider.DeleteCommentEntryAsync(_pendingDeleteEntry?.Id.ToString()!);
+            }
             await LoadAsync();
         }
         catch

@@ -9,6 +9,7 @@ public interface INotionCommentProvider
     Task<INotionCommentEntry> ReplyToCommentAsync(string commentId, string htmlContent);
     Task<INotionCommentEntry> EditCommentAsync(string commentId, string htmlContent);
     Task DeleteCommentAsync(string commentId);
+    Task DeleteCommentEntryAsync(string entryId);
     Task<IBlockComment> ResolveCommentAsync(string commentId);
     Task<IBlockComment> UnresolveCommentAsync(string commentId);
 
