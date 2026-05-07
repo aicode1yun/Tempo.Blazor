@@ -174,8 +174,19 @@ public class MockNotionCommentProvider : INotionCommentProvider
     }
 
     public Task<IBlockComment> AddTextAnchorCommentAsync(
-        string blockId, int _startOffset, int _endOffset, string _highlightedText, string htmlContent)
-        => AddBlockCommentAsync(blockId, htmlContent);
+        string blockId, int _startOffset, int _endOffset, string _highlightedText, string htmlContent, string commentId)
+    {
+        var ownerId = Parse(blockId);
+        var cid     = Parse(commentId);
+        var c = new BlockComment
+        {
+            Id      = cid,
+            BlockId = ownerId,
+            Thread  = new List<INotionCommentEntry> { DemoEntry(htmlContent) }
+        };
+        Register(ownerId, c);
+        return Task.FromResult<IBlockComment>(c);
+    }
 
     public Task<IEnumerable<IBlockComment>> GetPageCommentsAsync(string pageId)
         => GetBlockCommentsAsync(pageId);

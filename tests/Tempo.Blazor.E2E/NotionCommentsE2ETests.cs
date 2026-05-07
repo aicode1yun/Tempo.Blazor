@@ -347,11 +347,35 @@ public class NotionCommentsE2ETests : WasmTestBase
     public async Task TextComment_Delete()
     {
         var page = await OpenNotionEditorAsync();
+
+        // Inject a spy to detect if unwrapCommentHighlight is called
+        await page.EvaluateAsync("""
+            window.__unwrapCalled = false;
+            window.__unwrapId = null;
+            const orig = tmNotionEditor.unwrapCommentHighlight;
+            tmNotionEditor.unwrapCommentHighlight = function(id) {
+                window.__unwrapCalled = true;
+                window.__unwrapId = id;
+                return orig(id);
+            };
+            """);
         await OpenTextCommentPanelAsync(page);
         await AddTextCommentAsync(page, "Text comment to delete");
 
         var entryBefore = page.Locator(".tm-ntcp__entry-text").Filter(new() { HasText = "Text comment to delete" }).First;
         Assert.IsTrue(await entryBefore.IsVisibleAsync());
+
+        // Verify the yellow highlight mark exists in DOM before delete
+        var markBefore = page.Locator("mark.tm-notion-comment-highlight");
+        Assert.IsTrue(await markBefore.CountAsync() > 0, "Highlight mark should exist before delete");
+
+        // Verify unwrapCommentHighlight is exported
+        var hasUnwrap = await page.EvaluateAsync<bool>("() => typeof tmNotionEditor !== 'undefined' && typeof tmNotionEditor.unwrapCommentHighlight === 'function'");
+        Assert.IsTrue(hasUnwrap, "tmNotionEditor.unwrapCommentHighlight should be exported");
+
+        // Remember the commentId from the mark
+        var commentId = await markBefore.First.EvaluateAsync<string>("el => el.dataset.commentId");
+        Assert.IsFalse(string.IsNullOrEmpty(commentId), "Mark should have data-comment-id");
 
         var deleteBtn = page.Locator(".tm-ntcp__entry-action--danger").First;
         await deleteBtn.ClickAsync();
@@ -363,6 +387,17 @@ public class NotionCommentsE2ETests : WasmTestBase
 
         var entryAfter = page.Locator(".tm-ntcp__entry-text").Filter(new() { HasText = "Text comment to delete" });
         Assert.IsTrue(await entryAfter.CountAsync() == 0, "Deleted text comment should disappear");
+
+        // Verify unwrapCommentHighlight was actually called by Blazor with correct ID
+        var unwrapCalled = await page.EvaluateAsync<bool>("() => window.__unwrapCalled === true");
+        var unwrapId = await page.EvaluateAsync<string>("() => window.__unwrapId ?? ''");
+        Assert.IsTrue(unwrapCalled, "unwrapCommentHighlight should be called by Blazor");
+        Assert.AreEqual(commentId, unwrapId, "Blazor should call unwrap with same ID as DOM mark");
+
+        // Verify the yellow highlight mark was removed from DOM
+        var markAfter = page.Locator("mark.tm-notion-comment-highlight");
+        Assert.IsTrue(await markAfter.CountAsync() == 0, "Highlight mark should be removed from DOM after delete");
+
         await TakeScreenshotAsync(page, "text_comment_delete");
     }
 

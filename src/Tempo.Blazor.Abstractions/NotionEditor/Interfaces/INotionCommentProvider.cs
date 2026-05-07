@@ -13,7 +13,7 @@ public interface INotionCommentProvider
     Task<IBlockComment> ResolveCommentAsync(string commentId);
     Task<IBlockComment> UnresolveCommentAsync(string commentId);
 
-    Task<IBlockComment> AddTextAnchorCommentAsync(string blockId, int startOffset, int endOffset, string highlightedText, string htmlContent);
+    Task<IBlockComment> AddTextAnchorCommentAsync(string blockId, int startOffset, int endOffset, string highlightedText, string htmlContent, string commentId);
 
     Task<IEnumerable<IBlockComment>> GetPageCommentsAsync(string pageId);
     Task<IBlockComment> AddPageCommentAsync(string pageId, string htmlContent);

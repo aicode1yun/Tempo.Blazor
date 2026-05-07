@@ -1557,6 +1557,7 @@ window.tmNotionEditor = (function () {
         // 26.2
         getSelectionRange, getSelectionRect, applyFormat,
         queryFormatState, insertHtml, insertLink, wrapSelectionWithComment,
+        unwrapCommentHighlight, setCommentHighlightActive,
         getBlockBoundingRect,
         // 26.3
         initDragDrop, destroyDragDrop,

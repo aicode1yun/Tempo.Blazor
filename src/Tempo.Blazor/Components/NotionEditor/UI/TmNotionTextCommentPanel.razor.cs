@@ -118,7 +118,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
             if (_comment is null)
             {
                 _comment = await Context.CommentProvider.AddTextAnchorCommentAsync(
-                    BlockId, StartOffset, EndOffset, HighlightedText, _replyText.Trim());
+                    BlockId, StartOffset, EndOffset, HighlightedText, _replyText.Trim(), CommentId);
                 _activeCommentId = _comment.Id.ToString();
             }
             else
@@ -234,7 +234,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
             if (isOnlyEntry)
             {
                 await Context.CommentProvider.DeleteCommentAsync(threadId);
-                try { await JS.InvokeVoidAsync("tmNotionEditor.unwrapCommentHighlight", threadId); } catch { /* best-effort */ }
+                try { await JS.InvokeVoidAsync("tmNotionEditor.unwrapCommentHighlight", CommentId); } catch { /* best-effort */ }
                 _comment = null;
                 _activeCommentId = string.Empty;
                 await OnCountChanged.InvokeAsync(0);
@@ -260,11 +260,11 @@ public partial class TmNotionTextCommentPanel : ComponentBase
 
     private async Task SetHighlightActiveAsync(bool active)
     {
-        if (!string.IsNullOrEmpty(_activeCommentId))
+        if (!string.IsNullOrEmpty(CommentId))
         {
             try
             {
-                await JS.InvokeVoidAsync("tmNotionEditor.setCommentHighlightActive", _activeCommentId, active);
+                await JS.InvokeVoidAsync("tmNotionEditor.setCommentHighlightActive", CommentId, active);
             }
             catch { /* best-effort */ }
         }

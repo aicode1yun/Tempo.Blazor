@@ -150,19 +150,19 @@
                        DotNetRef="@_toolbarDotNetRef" />
 
 @* ── Block comment panel (portal — position:fixed) *@
-<TmNotionBlockCommentPanel Visible="_blockCommentVisible"
-                           BlockId="_blockCommentBlockId"
-                           Top="_blockCommentTop"
-                           Left="_blockCommentLeft"
+<TmNotionBlockCommentPanel Visible="@_blockCommentVisible"
+                           BlockId="@_blockCommentBlockId"
+                           Top="@_blockCommentTop"
+                           Left="@_blockCommentLeft"
                            OnClosed="HandleBlockCommentClosedAsync"
                            OnCountChanged="_ => StateHasChanged()" />
 
 @* ── Text comment panel (portal — position:fixed) *@
-<TmNotionTextCommentPanel Visible="_textCommentVisible"
-                          CommentId="_textCommentId"
-                          BlockId="_textCommentBlockId"
-                          Top="_textCommentTop"
-                          Left="_textCommentLeft"
+<TmNotionTextCommentPanel Visible="@_textCommentVisible"
+                          CommentId="@_textCommentId"
+                          BlockId="@_textCommentBlockId"
+                          Top="@_textCommentTop"
+                          Left="@_textCommentLeft"
                           OnClosed="HandleTextCommentClosedAsync"
                           OnResolved="HandleTextCommentResolvedAsync"
                           OnCountChanged="_ => StateHasChanged()" />
