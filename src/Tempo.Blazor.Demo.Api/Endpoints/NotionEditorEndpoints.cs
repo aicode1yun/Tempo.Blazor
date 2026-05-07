@@ -1,4 +1,5 @@
 using Tempo.Blazor.Demo.Api.Data;
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -158,6 +159,19 @@ public static class NotionEditorEndpoints
                 return Results.NotFound();
             }
         });
+
+        blockGroup.MapPost("/{blockId}/convert", (string blockId, ConvertBlockRequest request, MockNotionBlockStore store) =>
+        {
+            try
+            {
+                var converted = store.ConvertBlockTypeAsync(blockId, request.NewType).Result;
+                return Results.Ok(converted);
+            }
+            catch (KeyNotFoundException)
+            {
+                return Results.NotFound();
+            }
+        });
     }
 }
 
@@ -167,3 +181,4 @@ public record UpdatePageRequest(string? Title, string? Description, string? Icon
 public record MovePageRequest(string? NewParentId);
 public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);
+public record ConvertBlockRequest(BlockType NewType);

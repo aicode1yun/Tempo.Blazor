@@ -6,7 +6,7 @@ using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Synced;
 
-public partial class TmNotionSyncedBlockRef : ComponentBase
+public partial class TmNotionSyncedBlockRef : ComponentBase, IDisposable
 {
     // ── Cascaded context ─────────────────────────────────────────────────────
 
@@ -40,6 +40,11 @@ public partial class TmNotionSyncedBlockRef : ComponentBase
     private ISyncedBlockRefContent? _lastContent;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnInitialized()
+    {
+        Context.BlockConverted += OnBlockConverted;
+    }
 
     protected override async Task OnParametersSetAsync()
     {
@@ -192,6 +197,18 @@ public partial class TmNotionSyncedBlockRef : ComponentBase
 
     // ── Child convert ─────────────────────────────────────────────────────────
 
+    private void OnBlockConverted(IPageBlock converted)
+    {
+        var idx = _children.FindIndex(b => b.Id == converted.Id);
+        if (idx >= 0)
+        {
+            _children[idx] = converted;
+            if (_activeChildId == converted.Id)
+                _activeChildId = converted.Id;
+            StateHasChanged();
+        }
+    }
+
     private async Task HandleChildConvertAsync((string childId, BlockType newType) args)
     {
         var child = _children.FirstOrDefault(b => b.Id.ToString() == args.childId);
@@ -265,6 +282,11 @@ public partial class TmNotionSyncedBlockRef : ComponentBase
             await PushChildrenAsync();
         }
         catch { }
+    }
+
+    public void Dispose()
+    {
+        Context.BlockConverted -= OnBlockConverted;
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────

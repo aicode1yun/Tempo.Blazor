@@ -95,6 +95,11 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
+    protected override void OnInitialized()
+    {
+        Context.BlockConverted += OnBlockConverted;
+    }
+
     protected override void OnParametersSet()
     {
         if (ReferenceEquals(Content, _lastContent)) return;
@@ -293,6 +298,18 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
         catch { }
     }
 
+    private void OnBlockConverted(IPageBlock converted)
+    {
+        var idx = _children.FindIndex(b => b.Id == converted.Id);
+        if (idx >= 0)
+        {
+            _children[idx] = converted;
+            if (_activeChildId == converted.Id)
+                _activeChildId = converted.Id;
+            StateHasChanged();
+        }
+    }
+
     private async Task HandleChildConvertAsync((string childId, BlockType newType) args)
     {
         var child = _children.FirstOrDefault(b => b.Id.ToString() == args.childId);
@@ -365,6 +382,8 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     public async ValueTask DisposeAsync()
     {
+        Context.BlockConverted -= OnBlockConverted;
+
         if (_kbInitialized)
         {
             try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlock", _editableRef); }

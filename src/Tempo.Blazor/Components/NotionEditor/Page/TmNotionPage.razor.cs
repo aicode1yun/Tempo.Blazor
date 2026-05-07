@@ -322,26 +322,14 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private async Task HandleConvertBlockAsync((string blockId, BlockType newType) args)
     {
-        var block = _blocks.FirstOrDefault(b => b.Id.ToString() == args.blockId);
-        if (block is null || ReadOnly) return;
-
-        var converted = new PageBlock
-        {
-            Id            = block.Id,
-            PageId        = block.PageId,
-            ParentBlockId = block.ParentBlockId,
-            Type          = args.newType,
-            Order         = block.Order,
-            Content       = CreateDefaultContent(args.newType),
-            CreatedAt     = block.CreatedAt,
-            LastEditedAt  = DateTime.UtcNow
-        };
+        if (ReadOnly) return;
 
         try
         {
-            await Context.BlockProvider.UpdateBlockAsync(converted);
-            var idx = _blocks.FindIndex(b => b.Id == block.Id);
+            var converted = await Context.BlockProvider.ConvertBlockTypeAsync(args.blockId, args.newType);
+            var idx = _blocks.FindIndex(b => b.Id == converted.Id);
             if (idx >= 0) _blocks[idx] = converted;
+            Context.RaiseBlockConverted(converted);
             _activeBlockId = converted.Id;
             StateHasChanged();
         }

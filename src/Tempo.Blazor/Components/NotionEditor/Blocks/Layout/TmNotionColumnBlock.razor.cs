@@ -7,7 +7,7 @@ using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Layout;
 
-public partial class TmNotionColumnBlock : ComponentBase
+public partial class TmNotionColumnBlock : ComponentBase, IDisposable
 {
     // ── Cascaded context ─────────────────────────────────────────────────────
 
@@ -44,6 +44,11 @@ public partial class TmNotionColumnBlock : ComponentBase
     // ── Computed ─────────────────────────────────────────────────────────────
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
+
+    protected override void OnInitialized()
+    {
+        Context.BlockConverted += OnBlockConverted;
+    }
 
     protected override void OnParametersSet()
     {
@@ -239,12 +244,29 @@ public partial class TmNotionColumnBlock : ComponentBase
         catch { }
     }
 
+    private void OnBlockConverted(IPageBlock converted)
+    {
+        var idx = _children.FindIndex(b => b.Id == converted.Id);
+        if (idx >= 0)
+        {
+            _children[idx] = converted;
+            if (_activeChildId == converted.Id)
+                _activeChildId = converted.Id; // keep focus reference fresh
+            StateHasChanged();
+        }
+    }
+
     private Task HandleChildSlashAsync((string BlockId, double Top, double Left) args) =>
         OnSlashMenu.InvokeAsync(args);
     private Task HandleChildMentionAsync((string BlockId, double Top, double Left) args) =>
         OnMentionMenu.InvokeAsync(args);
     private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
         OnPageLinkMenu.InvokeAsync(args);
+
+    public void Dispose()
+    {
+        Context.BlockConverted -= OnBlockConverted;
+    }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

@@ -32,4 +32,14 @@ public sealed class NotionEditorContext
     /// child page / linked page / breadcrumb blocks to trigger in-editor navigation.
     /// </summary>
     public Func<string, Task>?            NavigateTo               { get; init; }
+
+    /// <summary>
+    /// Raised when a block type is converted (e.g. via slash menu or toolbar).
+    /// Nested components such as column blocks subscribe to keep their local
+    /// child cache in sync with the remote store.
+    /// </summary>
+    public Action<IPageBlock>? BlockConverted;
+
+    /// <summary>Invokes <see cref="BlockConverted"/> if any subscriber is attached.</summary>
+    public void RaiseBlockConverted(IPageBlock block) => BlockConverted?.Invoke(block);
 }
