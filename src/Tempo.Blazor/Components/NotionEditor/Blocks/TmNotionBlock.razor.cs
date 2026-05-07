@@ -150,13 +150,13 @@ public partial class TmNotionBlock : ComponentBase
 
     // ── Toggle (TmNotionToggleBlock) callbacks ────────────────────────────────
 
-    private async Task HandleToggleOpenChangedAsync(bool isOpen)
+    private async Task HandleToggleOpenChangedAsync((bool IsOpen, string? Html) args)
     {
         if (Block.Content is not IToggleBlockContent toggle) return;
         var updated = BuildBlockWithContent(Block, new ToggleBlockContent
         {
-            IsOpen          = isOpen,
-            Html            = toggle.Html,
+            IsOpen          = args.IsOpen,
+            Html            = args.Html ?? toggle.Html,
             BackgroundColor = toggle.BackgroundColor,
             TextColor       = toggle.TextColor,
             Alignment       = toggle.Alignment

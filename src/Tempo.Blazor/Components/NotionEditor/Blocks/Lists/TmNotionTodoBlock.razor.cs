@@ -112,7 +112,7 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
             }
             catch { }
         }
-        else if (html != _lastHtml)
+        else if (!_dirty && html != _lastHtml)
         {
             _lastHtml = html;
             try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -133,14 +133,16 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();

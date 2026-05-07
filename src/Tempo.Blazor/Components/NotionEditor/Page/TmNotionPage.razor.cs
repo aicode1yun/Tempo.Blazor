@@ -317,6 +317,7 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         if (idx < 0) return Task.CompletedTask;
         _blocks[idx] = updated;
         _blocks = [.._blocks]; // new reference — CascadingValue consumers (ToC) detect the change
+        StateHasChanged();
         return Task.CompletedTask;
     }
 

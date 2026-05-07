@@ -152,6 +152,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
     {
         var idx = _children.FindIndex(b => b.Id == updated.Id);
         if (idx >= 0) _children[idx] = updated;
+        StateHasChanged();
         return Task.CompletedTask;
     }
 

@@ -54,7 +54,7 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback                            OnFocused         { get; set; }
 
     /// <summary>Fired when the open/closed state changes. Arg = new IsOpen value.</summary>
-    [Parameter] public EventCallback<bool>                      OnOpenChanged     { get; set; }
+    [Parameter] public EventCallback<(bool IsOpen, string? Html)> OnOpenChanged     { get; set; }
 
     /// <summary>Fired when '/' is typed. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu       { get; set; }
@@ -131,7 +131,7 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
                 }
                 catch { }
             }
-            else if (html != _lastHtml)
+            else if (!_dirty && html != _lastHtml)
             {
                 _lastHtml = html;
                 try { await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html); }
@@ -147,8 +147,22 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     private async Task HandleArrowClickAsync()
     {
+        string? html = null;
+        if (_dirty && !ReadOnly)
+        {
+            try
+            {
+                html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
+                await OnContentSaved.InvokeAsync(html);
+            }
+            catch { }
+            finally
+            {
+                _dirty = false;
+            }
+        }
         _isOpen = !_isOpen;
-        await OnOpenChanged.InvokeAsync(_isOpen);
+        await OnOpenChanged.InvokeAsync((_isOpen, html));
     }
 
     // ── Children loading ──────────────────────────────────────────────────────
@@ -176,14 +190,16 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     private async Task OnBlurAsync()
     {
         if (!_dirty || ReadOnly) return;
-        _dirty = false;
         try
         {
-            var html  = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
-            _lastHtml = html;
+            var html = await JS.InvokeAsync<string>("tmNotionEditor.getHtml", _editableRef);
             await OnContentSaved.InvokeAsync(html);
         }
         catch { }
+        finally
+        {
+            _dirty = false;
+        }
     }
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
@@ -282,6 +298,7 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     {
         var idx = _children.FindIndex(b => b.Id == updated.Id);
         if (idx >= 0) _children[idx] = updated;
+        StateHasChanged();
         return Task.CompletedTask;
     }
 
