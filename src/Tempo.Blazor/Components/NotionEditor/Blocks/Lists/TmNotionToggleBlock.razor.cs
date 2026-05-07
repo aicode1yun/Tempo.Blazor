@@ -56,14 +56,14 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when the open/closed state changes. Arg = new IsOpen value.</summary>
     [Parameter] public EventCallback<(bool IsOpen, string? Html)> OnOpenChanged     { get; set; }
 
-    /// <summary>Fired when '/' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnSlashMenu       { get; set; }
+    /// <summary>Fired when '/' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu       { get; set; }
 
-    /// <summary>Fired when '@' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnMentionMenu     { get; set; }
+    /// <summary>Fired when '@' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu     { get; set; }
 
-    /// <summary>Fired when '[[' is typed. Args = (top, left) caret coords.</summary>
-    [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
+    /// <summary>Fired when '[[' is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu    { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -118,13 +118,17 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
             if (!_kbInitialized)
             {
-                _kbInitialized = true;
-                _lastHtml      = html;
+                _lastHtml = html;
                 _dotNetRef?.Dispose();
                 _dotNetRef = DotNetObjectReference.Create(this);
                 try
                 {
                     await JS.InvokeVoidAsync("tmNotionEditor.initKeyboardHandler", _editableRef, _dotNetRef);
+                    _kbInitialized = true;
+                }
+                catch { }
+                try
+                {
                     await JS.InvokeVoidAsync("tmNotionEditor.setHtml", _editableRef, html);
                     if (IsFocused)
                         await JS.InvokeVoidAsync("tmNotionEditor.focusAtStart", _editableRef);
@@ -239,15 +243,15 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     [JSInvokable]
     public async Task OnSlashTriggered(double top, double left) =>
-        await OnSlashMenu.InvokeAsync((top, left));
+        await OnSlashMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     [JSInvokable]
     public async Task OnMentionTriggered(double top, double left) =>
-        await OnMentionMenu.InvokeAsync((top, left));
+        await OnMentionMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
-        await OnPageLinkMenu.InvokeAsync((top, left));
+        await OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
     // ── Child block handlers ──────────────────────────────────────────────────
 
@@ -394,6 +398,15 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
         }
         catch { }
     }
+
+    private Task HandleChildSlashAsync((string BlockId, double Top, double Left) args) =>
+        OnSlashMenu.InvokeAsync(args);
+
+    private Task HandleChildMentionAsync((string BlockId, double Top, double Left) args) =>
+        OnMentionMenu.InvokeAsync(args);
+
+    private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
+        OnPageLinkMenu.InvokeAsync(args);
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

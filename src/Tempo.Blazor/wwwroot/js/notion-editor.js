@@ -387,10 +387,12 @@ window.tmNotionEditor = (function () {
     // ═══════════════════════════════════════════════════════════════════════════
 
     function initKeyboardHandler(element, dotNetRef) {
-        if (!element) return;
+        if (!element) { console.warn('initKeyboardHandler: element is null'); return; }
         if (!_blocks.has(element)) _blocks.set(element, { dotNetRef, listeners: [] });
         const state = _blocks.get(element);
         state.dotNetRef = dotNetRef;
+        _offAll(state.listeners);
+        console.log('initKeyboardHandler attached to', element);
 
         function _htmlAroundCaret() {
             const r = _range();
@@ -439,6 +441,7 @@ window.tmNotionEditor = (function () {
 
         const onInput = () => {
             const text = element.textContent || '';
+            console.log('onInput text:', text);
 
             const shortcut = _detectMarkdownShortcut(text);
             if (shortcut) {

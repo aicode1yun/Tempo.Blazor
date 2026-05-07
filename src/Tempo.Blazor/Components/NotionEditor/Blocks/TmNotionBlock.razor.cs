@@ -203,13 +203,6 @@ public partial class TmNotionBlock : ComponentBase
             await OnConvertTo.InvokeAsync(newType);
     }
 
-    private Task HandleToggleSlashAsync((double Top, double Left) coords) =>
-        OnSlashMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
-    private Task HandleToggleMentionAsync((double Top, double Left) coords) =>
-        OnMentionMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
-    private Task HandleTogglePageLinkAsync((double Top, double Left) coords) =>
-        OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), coords.Top, coords.Left));
-
     // ── Code (TmNotionCodeBlock) callbacks ───────────────────────────────────
 
     private async Task HandleCodeSavedAsync(string code)
