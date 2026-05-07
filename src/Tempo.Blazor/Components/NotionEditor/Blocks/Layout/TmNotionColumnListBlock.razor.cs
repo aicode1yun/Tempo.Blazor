@@ -28,6 +28,9 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
 
     [Parameter] public EventCallback<IPageBlock> OnUpdated { get; set; }
     [Parameter] public EventCallback             OnFocused { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu { get; set; }
 
     // ── Constants ────────────────────────────────────────────────────────────
 

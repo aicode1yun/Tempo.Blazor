@@ -27,6 +27,9 @@ public partial class TmNotionColumnBlock : ComponentBase
     [Parameter] public bool   ReadOnly     { get; set; }
 
     [Parameter] public EventCallback OnFocused { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -235,6 +238,13 @@ public partial class TmNotionColumnBlock : ComponentBase
         }
         catch { }
     }
+
+    private Task HandleChildSlashAsync((string BlockId, double Top, double Left) args) =>
+        OnSlashMenu.InvokeAsync(args);
+    private Task HandleChildMentionAsync((string BlockId, double Top, double Left) args) =>
+        OnMentionMenu.InvokeAsync(args);
+    private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
+        OnPageLinkMenu.InvokeAsync(args);
 
     // ── Helpers ───────────────────────────────────────────────────────────────
 

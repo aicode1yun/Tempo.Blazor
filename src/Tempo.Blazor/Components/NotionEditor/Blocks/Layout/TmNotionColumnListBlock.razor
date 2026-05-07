@@ -23,7 +23,10 @@
                                  ColumnIndex="colIdx"
                                  WidthPercent="widthPct"
                                  ReadOnly="ReadOnly"
-                                 OnFocused="OnFocusedAsync" />
+                                 OnFocused="OnFocusedAsync"
+                                 OnSlashMenu="OnSlashMenu"
+                                 OnMentionMenu="OnMentionMenu"
+                                 OnPageLinkMenu="OnPageLinkMenu" />
 
             @if (!ReadOnly && i < _columns.Count - 1)
             {
