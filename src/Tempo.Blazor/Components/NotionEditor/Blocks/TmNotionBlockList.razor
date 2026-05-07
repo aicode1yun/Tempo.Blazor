@@ -26,7 +26,8 @@
                        OnInsertTemplateBlocks="blocks => OnInsertTemplateBlocksAfter.InvokeAsync((block.Id.ToString(), blocks))"
                        OnSlashMenu="OnSlashMenu"
                        OnMentionMenu="OnMentionMenu"
-                       OnPageLinkMenu="OnPageLinkMenu" />
+                       OnPageLinkMenu="OnPageLinkMenu"
+                       OnComment="() => OnComment.InvokeAsync(block.Id.ToString())" />
     }
 
     @if (!ReadOnly)

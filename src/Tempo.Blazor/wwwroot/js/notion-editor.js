@@ -204,7 +204,14 @@ window.tmNotionEditor = (function () {
             `<a href="${href}" target="_blank" rel="noopener noreferrer">${label}</a>`);
     }
 
-    function wrapSelectionWithComment(commentId) {
+    function getBlockBoundingRect(blockId) {
+        const el = document.querySelector(`[data-block-id="${blockId}"]`);
+        if (!el) return null;
+        const rect = el.getBoundingClientRect();
+        return { top: rect.top, left: rect.left, width: rect.width, height: rect.height };
+    }
+
+    function wrapSelectionWithComment(commentId, blockId, dotNetRef, callbackName) {
         const sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed) return;
         const r = sel.getRangeAt(0);
@@ -219,6 +226,21 @@ window.tmNotionEditor = (function () {
             r.insertNode(mark);
         }
         sel.removeAllRanges();
+
+        if (dotNetRef && callbackName) {
+            const blockEl = r.commonAncestorContainer.nodeType === Node.TEXT_NODE
+                ? r.commonAncestorContainer.parentElement?.closest('[data-notion-block]')
+                : r.commonAncestorContainer.closest?.('[data-notion-block]');
+            const actualBlockId = blockId || blockEl?.dataset?.notionBlock || '';
+            const text = mark.textContent || '';
+            const start = r.startOffset;
+            const end = r.endOffset;
+            const rect = mark.getBoundingClientRect();
+            const top = rect.top + window.scrollY;
+            const left = rect.left + window.scrollX;
+            dotNetRef.invokeMethodAsync(callbackName, actualBlockId, commentId, text, start, end, top, left)
+                .catch(() => {});
+        }
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1514,6 +1536,7 @@ window.tmNotionEditor = (function () {
         // 26.2
         getSelectionRange, getSelectionRect, applyFormat,
         queryFormatState, insertHtml, insertLink, wrapSelectionWithComment,
+        getBlockBoundingRect,
         // 26.3
         initDragDrop, destroyDragDrop,
         // 26.4

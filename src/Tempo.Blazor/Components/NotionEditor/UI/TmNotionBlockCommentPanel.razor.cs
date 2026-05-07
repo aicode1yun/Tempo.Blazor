@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -7,6 +8,10 @@ namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 public partial class TmNotionBlockCommentPanel : ComponentBase
 {
+    // ── DI ───────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     // ── Cascaded ─────────────────────────────────────────────────────────────
 
     [CascadingParameter] private NotionEditorContext Context { get; set; } = default!;
@@ -81,6 +86,7 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
         finally
         {
             _loading = false;
+            StateHasChanged();
         }
     }
 
@@ -186,11 +192,14 @@ public partial class TmNotionBlockCommentPanel : ComponentBase
 
     private async Task DeleteEntryAsync(INotionCommentEntry entry)
     {
-        if (Context.CommentProvider is null) return;
+        if (Context.CommentProvider is null || _comment is null) return;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc["TmNotionBlockComment_DeleteConfirm"]);
+        if (!confirmed) return;
+
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(entry.Id.ToString());
+            await Context.CommentProvider.DeleteCommentAsync(_comment.Id.ToString());
             await LoadAsync();
             var count = _comment?.Thread.Count ?? 0;
             await OnCountChanged.InvokeAsync(count);

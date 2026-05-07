@@ -65,6 +65,9 @@ public partial class TmNotionBlock : ComponentBase
     /// <summary>Raised when a TemplateButton block requests insertion of its template blocks after itself.</summary>
     [Parameter] public EventCallback<IReadOnlyList<IPageBlock>> OnInsertTemplateBlocks { get; set; }
 
+    /// <summary>Raised when the user clicks the Comment button in the block handle menu.</summary>
+    [Parameter] public EventCallback OnComment { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private IPageBlock?       _lastBlock;
@@ -954,7 +957,7 @@ public partial class TmNotionBlock : ComponentBase
         catch { }
     }
 
-    private Task HandleCommentAsync() => Task.CompletedTask;
+    private async Task HandleCommentAsync() => await OnComment.InvokeAsync();
 
     private async Task HandleTextColorChangeAsync(string? color)
     {

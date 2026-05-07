@@ -142,7 +142,7 @@
                             }
                             else
                             {
-                                <div class="tm-nbcp__entry-text" @((MarkupString)entry.HtmlContent)></div>
+                                <div class="tm-nbcp__entry-text">@((MarkupString)entry.HtmlContent)</div>
                                 @if (entry.CreatedAt != entry.UpdatedAt)
                                 {
                                     <span class="tm-nbcp__entry-edited">@Loc["TmNotionBlockComment_Edited"]</span>
@@ -193,7 +193,7 @@
             <div class="tm-nbcp__reply">
                 <textarea class="tm-nbcp__reply-input"
                           rows="2"
-                          placeholder="@Loc["TmNotionBlockComment_ReplyPlaceholder"]"
+                          placeholder="@Loc[_comment is null ? "TmNotionBlockComment_NewPlaceholder" : "TmNotionBlockComment_ReplyPlaceholder"]"
                           @bind="_replyText"
                           @bind:event="oninput"
                           @onkeydown="HandleReplyKeyDownAsync"

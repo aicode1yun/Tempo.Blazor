@@ -1994,6 +1994,8 @@
   <data name="TmNotionBlockComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter pro odeslání</value></data>
   <data name="TmNotionBlockComment_Reply"            xml:space="preserve"><value>Odpovědět</value></data>
   <data name="TmNotionBlockComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionBlockComment_NewPlaceholder"   xml:space="preserve"><value>Napište komentář…</value></data>
+  <data name="TmNotionBlockComment_DeleteConfirm"    xml:space="preserve"><value>Smazat tento komentář?</value></data>
   <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
   <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
   <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>
@@ -2018,6 +2020,8 @@
   <data name="TmNotionTextComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter pro odeslání</value></data>
   <data name="TmNotionTextComment_Reply"            xml:space="preserve"><value>Odpovědět</value></data>
   <data name="TmNotionTextComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionTextComment_NewPlaceholder"   xml:space="preserve"><value>Napište komentář…</value></data>
+  <data name="TmNotionTextComment_DeleteConfirm"    xml:space="preserve"><value>Smazat tento komentář?</value></data>
   <data name="TmNotionTextComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
   <data name="TmNotionTextComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
   <data name="TmNotionTextComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>
@@ -2046,6 +2050,7 @@
   <data name="TmNotionPageComment_NewPlaceholder"   xml:space="preserve"><value>Přidejte komentář k této stránce…</value></data>
   <data name="TmNotionPageComment_NewLabel"         xml:space="preserve"><value>Nový komentář</value></data>
   <data name="TmNotionPageComment_Comment"          xml:space="preserve"><value>Komentovat</value></data>
+  <data name="TmNotionPageComment_DeleteConfirm"    xml:space="preserve"><value>Smazat tento komentář?</value></data>
   <data name="TmNotionPageComment_LoadError"        xml:space="preserve"><value>Komentáře se nepodařilo načíst.</value></data>
   <data name="TmNotionPageComment_SendError"        xml:space="preserve"><value>Komentář se nepodařilo odeslat.</value></data>
   <data name="TmNotionPageComment_ActionError"      xml:space="preserve"><value>Akce se nezdařila. Zkuste to znovu.</value></data>

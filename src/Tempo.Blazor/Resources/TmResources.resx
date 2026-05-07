@@ -2155,6 +2155,8 @@
   <data name="TmNotionBlockComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter to send</value></data>
   <data name="TmNotionBlockComment_Reply"            xml:space="preserve"><value>Reply</value></data>
   <data name="TmNotionBlockComment_Comment"          xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionBlockComment_NewPlaceholder"   xml:space="preserve"><value>Write a comment…</value></data>
+  <data name="TmNotionBlockComment_DeleteConfirm"    xml:space="preserve"><value>Delete this comment?</value></data>
   <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Could not load comments.</value></data>
   <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Could not send comment.</value></data>
   <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>Action failed. Please try again.</value></data>
@@ -2179,6 +2181,8 @@
   <data name="TmNotionTextComment_ReplyHint"        xml:space="preserve"><value>Ctrl+Enter to send</value></data>
   <data name="TmNotionTextComment_Reply"            xml:space="preserve"><value>Reply</value></data>
   <data name="TmNotionTextComment_Comment"          xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionTextComment_NewPlaceholder"   xml:space="preserve"><value>Write a comment…</value></data>
+  <data name="TmNotionTextComment_DeleteConfirm"    xml:space="preserve"><value>Delete this comment?</value></data>
   <data name="TmNotionTextComment_LoadError"        xml:space="preserve"><value>Could not load comments.</value></data>
   <data name="TmNotionTextComment_SendError"        xml:space="preserve"><value>Could not send comment.</value></data>
   <data name="TmNotionTextComment_ActionError"      xml:space="preserve"><value>Action failed. Please try again.</value></data>
@@ -2207,6 +2211,7 @@
   <data name="TmNotionPageComment_NewPlaceholder"   xml:space="preserve"><value>Add a comment to this page…</value></data>
   <data name="TmNotionPageComment_NewLabel"         xml:space="preserve"><value>New comment</value></data>
   <data name="TmNotionPageComment_Comment"          xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionPageComment_DeleteConfirm"    xml:space="preserve"><value>Delete this comment?</value></data>
   <data name="TmNotionPageComment_LoadError"        xml:space="preserve"><value>Could not load comments.</value></data>
   <data name="TmNotionPageComment_SendError"        xml:space="preserve"><value>Could not send comment.</value></data>
   <data name="TmNotionPageComment_ActionError"      xml:space="preserve"><value>Action failed. Please try again.</value></data>

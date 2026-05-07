@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -7,6 +8,10 @@ namespace Tempo.Blazor.Components.NotionEditor.UI;
 
 public partial class TmNotionTextCommentPanel : ComponentBase
 {
+    // ── DI ───────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     // ── Cascaded ─────────────────────────────────────────────────────────────
 
     [CascadingParameter] private NotionEditorContext Context { get; set; } = default!;
@@ -36,6 +41,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     private double         _top;
     private double         _left;
     private bool           _wasVisible;
+    private string         _activeCommentId = string.Empty;
 
     private Guid?          _editingEntryId;
     private string         _editText = string.Empty;
@@ -46,11 +52,12 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     {
         if (Visible && !_wasVisible)
         {
-            _top       = Top;
-            _left      = Left;
-            _replyText = string.Empty;
-            _error     = string.Empty;
-            _editingEntryId = null;
+            _top              = Top;
+            _left             = Left;
+            _replyText        = string.Empty;
+            _error            = string.Empty;
+            _editingEntryId   = null;
+            _activeCommentId  = CommentId;
             await LoadAsync();
         }
 
@@ -72,10 +79,10 @@ public partial class TmNotionTextCommentPanel : ComponentBase
 
         try
         {
-            if (!string.IsNullOrEmpty(CommentId))
+            if (!string.IsNullOrEmpty(_activeCommentId))
             {
                 var list = await Context.CommentProvider.GetBlockCommentsAsync(BlockId);
-                _comment = list.FirstOrDefault(c => c.Id.ToString() == CommentId);
+                _comment = list.FirstOrDefault(c => c.Id.ToString() == _activeCommentId);
             }
         }
         catch
@@ -85,6 +92,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
         finally
         {
             _loading = false;
+            StateHasChanged();
         }
     }
 
@@ -105,6 +113,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
             {
                 _comment = await Context.CommentProvider.AddTextAnchorCommentAsync(
                     BlockId, StartOffset, EndOffset, HighlightedText, _replyText.Trim());
+                _activeCommentId = _comment.Id.ToString();
             }
             else
             {
@@ -196,13 +205,17 @@ public partial class TmNotionTextCommentPanel : ComponentBase
 
     private async Task DeleteEntryAsync(INotionCommentEntry entry)
     {
-        if (Context.CommentProvider is null) return;
+        if (Context.CommentProvider is null || _comment is null) return;
+        var confirmed = await JS.InvokeAsync<bool>("confirm", Loc["TmNotionTextComment_DeleteConfirm"]);
+        if (!confirmed) return;
+
         _error = string.Empty;
         try
         {
-            await Context.CommentProvider.DeleteCommentAsync(entry.Id.ToString());
-            await LoadAsync();
-            await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+            await Context.CommentProvider.DeleteCommentAsync(_comment.Id.ToString());
+            _comment = null;
+            _activeCommentId = string.Empty;
+            await OnCountChanged.InvokeAsync(0);
         }
         catch
         {

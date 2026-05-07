@@ -26,6 +26,9 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     [Parameter] public EventCallback<BlockType>     OnTurnInto    { get; set; }
     [Parameter] public EventCallback<TextAlignment> OnAlignChange { get; set; }
+    [Parameter] public EventCallback<string>        OnComment     { get; set; }
+    [Parameter] public string?                      BlockId       { get; set; }
+    [Parameter] public object?                      DotNetRef     { get; set; }
 
     // ── Static data ───────────────────────────────────────────────────────────
 
@@ -236,8 +239,16 @@ public partial class TmNotionInlineToolbar : ComponentBase
 
     private async Task HandleCommentAsync()
     {
-        try { await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", Guid.NewGuid().ToString()); }
+        var commentId = Guid.NewGuid().ToString();
+        try
+        {
+            if (DotNetRef is not null && !string.IsNullOrEmpty(BlockId))
+                await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", commentId, BlockId, DotNetRef, "OnTextCommentCreated");
+            else
+                await JS.InvokeVoidAsync("tmNotionEditor.wrapSelectionWithComment", commentId);
+        }
         catch { }
+        await OnComment.InvokeAsync(commentId);
     }
 
     private async Task HandleMathAsync()

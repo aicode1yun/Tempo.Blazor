@@ -131,7 +131,7 @@
                                         }
                                         else
                                         {
-                                            <div class="tm-npcp__entry-text" @((MarkupString)entry.HtmlContent)></div>
+                                            <div class="tm-npcp__entry-text">@((MarkupString)entry.HtmlContent)</div>
                                             @if (entry.CreatedAt != entry.UpdatedAt)
                                             {
                                                 <span class="tm-npcp__entry-edited">@Loc["TmNotionPageComment_Edited"]</span>

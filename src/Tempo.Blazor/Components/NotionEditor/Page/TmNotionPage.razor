@@ -89,18 +89,21 @@
                                        OnAddBlockAtEnd="HandleAddBlockAtEndAsync"
                                        OnSlashMenu="HandleSlashMenuOpenedAsync"
                                        OnMentionMenu="HandleMentionMenuOpenedAsync"
-                                       OnPageLinkMenu="HandlePageLinkMenuOpenedAsync" />
+                                       OnPageLinkMenu="HandlePageLinkMenuOpenedAsync"
+                                       OnComment="HandleBlockCommentAsync" />
                 </CascadingValue>
             }
 
         </div>
 
-        @* ── Comments area ────────────────────────────────────────────────── *@
+        @* ── Page comments panel ──────────────────────────────────────────── *@
         @if (Context.CommentProvider is not null)
         {
             <section class="tm-notion-page__comments"
                      aria-label="@Loc["TmNotionPage_CommentsLabel"]">
-                @* TmNotionComments (future phase) renders here *@
+                <TmNotionPageCommentPanel PageId="@Page.Id.ToString()"
+                                          Expanded="_pageCommentExpanded"
+                                          OnExpandedChanged="HandlePageCommentExpandedChangedAsync" />
             </section>
         }
 
@@ -141,4 +144,25 @@
                        CurrentHref="_toolbarCurrentHref"
                        CurrentAlign="_toolbarCurrentAlign"
                        OnTurnInto="HandleToolbarTurnIntoAsync"
-                       OnAlignChange="HandleToolbarAlignAsync" />
+                       OnAlignChange="HandleToolbarAlignAsync"
+                       OnComment="HandleTextCommentAsync"
+                       BlockId="@_toolbarBlockId"
+                       DotNetRef="@_toolbarDotNetRef" />
+
+@* ── Block comment panel (portal — position:fixed) *@
+<TmNotionBlockCommentPanel Visible="_blockCommentVisible"
+                           BlockId="_blockCommentBlockId"
+                           Top="_blockCommentTop"
+                           Left="_blockCommentLeft"
+                           OnClosed="HandleBlockCommentClosedAsync"
+                           OnCountChanged="_ => StateHasChanged()" />
+
+@* ── Text comment panel (portal — position:fixed) *@
+<TmNotionTextCommentPanel Visible="_textCommentVisible"
+                          CommentId="_textCommentId"
+                          BlockId="_textCommentBlockId"
+                          Top="_textCommentTop"
+                          Left="_textCommentLeft"
+                          OnClosed="HandleTextCommentClosedAsync"
+                          OnResolved="HandleTextCommentResolvedAsync"
+                          OnCountChanged="_ => StateHasChanged()" />

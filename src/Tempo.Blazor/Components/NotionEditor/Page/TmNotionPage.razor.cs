@@ -8,6 +8,15 @@ using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Page;
 
+/// <summary>Simple DOMRect wrapper for JS interop.</summary>
+internal sealed class DomRect
+{
+    public double Top    { get; set; }
+    public double Left   { get; set; }
+    public double Width  { get; set; }
+    public double Height { get; set; }
+}
+
 /// <summary>
 /// Renders a single Notion page: header (via TmNotionPageHeader), block list and comments area.
 /// Loads blocks via <see cref="NotionEditorContext.BlockProvider"/> and manages block state.
@@ -52,6 +61,25 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private ElementReference _pageRef;
     private bool             _historyVisible;
     private bool             _collabSubscribed;
+
+    // ── Block comment panel state ─────────────────────────────────────────────
+
+    private bool   _blockCommentVisible;
+    private string _blockCommentBlockId = string.Empty;
+    private double _blockCommentTop;
+    private double _blockCommentLeft;
+
+    // ── Text comment panel state ──────────────────────────────────────────────
+
+    private bool   _textCommentVisible;
+    private string _textCommentId       = string.Empty;
+    private string _textCommentBlockId  = string.Empty;
+    private double _textCommentTop;
+    private double _textCommentLeft;
+
+    // ── Page comment panel state ──────────────────────────────────────────────
+
+    private bool _pageCommentExpanded;
 
     // ── Slash menu state ─────────────────────────────────────────────────────
 
@@ -383,6 +411,75 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private async Task HandleBlockDuplicatedAsync(IPageBlock source) =>
         await DuplicateBlockAsync(source);
 
+    // ── Comment handlers ──────────────────────────────────────────────────────
+
+    private async Task HandleBlockCommentAsync(string blockId)
+    {
+        _blockCommentBlockId = blockId;
+        _blockCommentTop     = 150;
+        _blockCommentLeft    = 300;
+        _blockCommentVisible = true;
+        StateHasChanged();
+
+        // Try to position near the block
+        try
+        {
+            var rect = await JS.InvokeAsync<DomRect>("tmNotionEditor.getBlockBoundingRect", blockId);
+            if (rect is not null)
+            {
+                _blockCommentTop  = rect.Top;
+                _blockCommentLeft = rect.Left + rect.Width + 8;
+                StateHasChanged();
+            }
+        }
+        catch { }
+    }
+
+    private Task HandleBlockCommentClosedAsync()
+    {
+        _blockCommentVisible = false;
+        _blockCommentBlockId = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleTextCommentAsync(string commentId)
+    {
+        _textCommentId       = commentId;
+        _textCommentBlockId  = _toolbarBlockId;
+        _textCommentTop      = _toolbarTop;
+        _textCommentLeft     = _toolbarLeft + 40;
+        _textCommentVisible  = true;
+        _toolbarVisible      = false; // hide toolbar when comment panel opens
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleTextCommentClosedAsync()
+    {
+        _textCommentVisible = false;
+        _textCommentId      = string.Empty;
+        _textCommentBlockId = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandleTextCommentResolvedAsync()
+    {
+        _textCommentVisible = false;
+        _textCommentId      = string.Empty;
+        _textCommentBlockId = string.Empty;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private Task HandlePageCommentExpandedChangedAsync(bool expanded)
+    {
+        _pageCommentExpanded = expanded;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     /// <summary>Creates an identical copy of <paramref name="source"/> and inserts it after it.</summary>
@@ -575,6 +672,19 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     {
         if (!_toolbarVisible) return Task.CompletedTask;
         _toolbarVisible = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnTextCommentCreated(string blockId, string commentId, string highlightedText, int startOffset, int endOffset, double top, double left)
+    {
+        _textCommentId       = commentId;
+        _textCommentBlockId  = blockId;
+        _textCommentTop      = top;
+        _textCommentLeft     = left + 40;
+        _textCommentVisible  = true;
+        _toolbarVisible      = false;
         StateHasChanged();
         return Task.CompletedTask;
     }
