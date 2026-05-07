@@ -16,6 +16,7 @@ namespace Tempo.Blazor.Components.Spreadsheet;
 public partial class TmSpreadsheet
 {
     private ISpreadsheetGridController? _grid;
+    private TmSpreadsheetFormulaBar? _formulaBar;
     private SpreadsheetWorkbook _workbook = new();
     private SpreadsheetCommandManager? _commandManager;
     private bool _isFormulaBarEditing;
@@ -34,6 +35,8 @@ public partial class TmSpreadsheet
     private System.Threading.CancellationTokenSource? _onChangeDebounceCts;
     private int _formulaOriginSheetIndex = -1;
     private string? _formulaOriginCellRef;
+    private bool IsFormulaBarSessionActive => _isFormulaBarEditing || _formulaBarEditValue is not null;
+    private bool HostFormulaPointMode => (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true;
 
     /// <summary>XLSX file data to load into the spreadsheet.</summary>
     [Parameter] public byte[]? Data { get; set; }
@@ -232,6 +235,11 @@ public partial class TmSpreadsheet
     // ── Grid events ──
     private void OnGridActiveCellChanged(string? cellRef)
     {
+        if (IsFormulaBarSessionActive)
+        {
+            StateHasChanged();
+            return;
+        }
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
         if (_workbook.ActiveSheet is not null && cellRef is not null)
@@ -283,7 +291,7 @@ public partial class TmSpreadsheet
         StateHasChanged();
     }
 
-    private void OnGridCellReferenceRequested(string cellRef)
+    private async Task OnGridCellReferenceRequested(string cellRef)
     {
         var fullRef = cellRef;
         if (_formulaOriginSheetIndex >= 0 && _workbook.ActiveSheetIndex != _formulaOriginSheetIndex)
@@ -292,9 +300,25 @@ public partial class TmSpreadsheet
             var quotedName = sheetName.Contains(' ') ? $"'{sheetName}'" : sheetName;
             fullRef = $"{quotedName}!{cellRef}";
         }
+
+        if (IsFormulaBarSessionActive && _formulaBar is not null)
+        {
+            await InsertFormulaBarReferenceAsync(fullRef);
+            return;
+        }
+
         _grid?.InsertCellRefIntoFormula(fullRef);
-        if (_isFormulaBarEditing)
-            _formulaBarEditValue = _grid?.CurrentEditValue;
+        _formulaBarEditValue = _grid?.CurrentEditValue;
+        StateHasChanged();
+    }
+
+    private async Task InsertFormulaBarReferenceAsync(string fullRef)
+    {
+        if (_formulaBar is null)
+            return;
+
+        await _formulaBar.ReplaceReferenceAsync(fullRef);
+        _formulaBarEditValue = _formulaBar.CurrentEditValue;
         StateHasChanged();
     }
 
@@ -400,6 +424,8 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = true;
         _formulaBarEditValue = GetActiveCellEditValue();
+        _formulaOriginSheetIndex = -1;
+        _formulaOriginCellRef = null;
         // Also start editing in the grid so the cell shows input
         if (_workbook.ActiveSheet?.ActiveCellRef is { } cellRef)
         {
@@ -414,6 +440,9 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = false;
         await ApplyValueToActiveCellAsync(value);
+        var navigation = _formulaBar?.ConsumePendingCommitNavigation();
+        if (navigation is { } move && _grid is not null)
+            await _grid.MoveActiveCellByAsync(move.RowDelta, move.ColDelta);
         _formulaBarEditValue = null;
         StateHasChanged();
     }
@@ -422,12 +451,15 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
+        _formulaOriginSheetIndex = -1;
+        _formulaOriginCellRef = null;
         StateHasChanged();
     }
 
     private void OnFormulaBarValueChanged(string? value)
     {
         _formulaBarEditValue = value;
+        StateHasChanged();
     }
 
     private async Task OnFormulaBarTabPressed()
@@ -438,17 +470,31 @@ public partial class TmSpreadsheet
 
     private async Task ApplyValueToActiveCellAsync(string? value)
     {
-        var cellRef = _workbook.ActiveSheet?.ActiveCellRef;
-        if (cellRef is null || value is null || _commandManager is null) return;
+        if (value is null || _commandManager is null) return;
+
+        var targetSheet = (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null
+            && _formulaOriginSheetIndex < _workbook.Sheets.Count)
+            ? _workbook.Sheets[_formulaOriginSheetIndex]
+            : _workbook.ActiveSheet;
+        var cellRef = (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null)
+            ? _formulaOriginCellRef
+            : _workbook.ActiveSheet?.ActiveCellRef;
+        if (targetSheet is null || cellRef is null) return;
 
         var cmd = new SetCellValueCommand(
-            _workbook.ActiveSheet!,
+            targetSheet,
             cellRef,
             value.StartsWith('=') ? null : value,
             value.StartsWith('=') ? value : null);
         _commandManager.Execute(cmd);
         InvalidateRenderedCells(new[] { cellRef });
-        await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
+        if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
+            await SyncCanvasJsEngineCellsAsync(new[] { cellRef });
+        if (_formulaOriginSheetIndex >= 0)
+        {
+            _formulaOriginSheetIndex = -1;
+            _formulaOriginCellRef = null;
+        }
     }
 
     // ── Toolbar commands ──

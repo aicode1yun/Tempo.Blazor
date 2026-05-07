@@ -4,6 +4,7 @@
 
 <div class="tm-spreadsheet @Class"
      style="width: @(Width ?? "100%"); height: @(Height ?? "600px");"
+     data-formula-point-mode="@(HostFormulaPointMode ? "true" : null)"
      @attributes="AdditionalAttributes">
     <TmSpreadsheetToolbar CanUndo="CanUndo"
                           CanRedo="CanRedo"
@@ -64,9 +65,10 @@
                style="display:none"
                accept=".xlsx" />
 
-    <TmSpreadsheetFormulaBar ActiveCellRef="@(_workbook.ActiveSheet?.ActiveCellRef)"
+    <TmSpreadsheetFormulaBar @ref="_formulaBar"
+                             ActiveCellRef="@(_workbook.ActiveSheet?.ActiveCellRef)"
                              DisplayValue="@(GetActiveCellEditValue())"
-                             IsEditing="@_isFormulaBarEditing"
+                             IsEditing="@IsFormulaBarSessionActive"
                              OnEditStarted="@OnFormulaBarEditStarted"
                              OnValueCommitted="@OnFormulaBarCommitted"
                              OnEditCancelled="@OnFormulaBarCancelled"
@@ -80,6 +82,7 @@
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
                                  UseJsEngine="@UseCanvasJsEngine"
+                                 ExternalFormulaEditValue="@(IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null)"
                                  ActiveCellChanged="OnGridActiveCellChanged"
                                  CellValueCommitted="OnGridCellValueCommitted"
                                  CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"
@@ -121,6 +124,7 @@
                            Sheet="_workbook.ActiveSheet"
                            RowHeight="RowHeight"
                            ColumnWidth="ColumnWidth"
+                           ExternalFormulaEditValue="@(IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null)"
                            ActiveCellChanged="OnGridActiveCellChanged"
                            CellValueCommitted="OnGridCellValueCommitted"
                            OnCopyRequested="Copy"

@@ -1780,6 +1780,7 @@
   <data name="TmSpreadsheet_FormulaEditorLabel" xml:space="preserve"><value>Editor vzorců</value></data>
   <data name="TmSpreadsheet_CanvasAccessibilityNote" xml:space="preserve"><value>Canvas režim drží fokus na mřížce a pro editaci používá textový vstup. Pokud potřebujete plnou sémantiku jednotlivých buněk pro čtečky obrazovky, použijte DOM renderer.</value></data>
   <data name="TmSpreadsheet_FormulaBarPlaceholder" xml:space="preserve"><value>Zadejte vzorec nebo hodnotu...</value></data>
+  <data name="TmSpreadsheet_FormulaFunctionSuggestionsLabel" xml:space="preserve"><value>Návrhy funkcí</value></data>
   <data name="TmSpreadsheet_SheetTab" xml:space="preserve"><value>List</value></data>
   <data name="TmSpreadsheet_AddSheet" xml:space="preserve"><value>Přidat list</value></data>
   <data name="TmSpreadsheet_RenameSheet" xml:space="preserve"><value>Přejmenovat list</value></data>

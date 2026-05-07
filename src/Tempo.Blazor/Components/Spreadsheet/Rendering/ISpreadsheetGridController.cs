@@ -20,6 +20,9 @@ public interface ISpreadsheetGridController
     /// <summary>Focuses the grid root.</summary>
     Task FocusAsync();
 
+    /// <summary>Moves the active cell by the supplied row/column deltas and focuses the grid.</summary>
+    Task MoveActiveCellByAsync(int dRow, int dCol, bool extendSelection = false);
+
     /// <summary>Selects the whole sheet.</summary>
     void SelectAllCells();
 

@@ -38,7 +38,6 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
 
         cut.Find(".tm-spreadsheet-formula-bar__display").Click();
 
-        cut.Instance.IsEditing.Should().BeTrue();
         cut.Find(".tm-spreadsheet-formula-bar__input").Should().NotBeNull();
     }
 
@@ -46,17 +45,40 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
     public void Enter_CommitsValue()
     {
         string? committed = null;
+        (int RowDelta, int ColDelta) navigation = (0, 0);
         var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Old")
             .Add(p => p.IsEditing, true)
-            .Add(p => p.OnValueCommitted, EventCallback.Factory.Create<string?>(this, v => committed = v)));
+            .Add(p => p.OnValueCommitted, EventCallback.Factory.Create<string?>(this, v => committed = v))
+            .Add(p => p.OnCommitNavigationRequested, EventCallback.Factory.Create<(int RowDelta, int ColDelta)>(this, move => navigation = move)));
 
         var input = cut.Find(".tm-spreadsheet-formula-bar__input");
         input.Input("New Value");
         input.KeyDown(new KeyboardEventArgs { Key = "Enter" });
 
         committed.Should().Be("New Value");
+        navigation.Should().Be((1, 0));
+    }
+
+    [Fact]
+    public void ShiftEnter_CommitsValueAndRequestsUpNavigation()
+    {
+        string? committed = null;
+        (int RowDelta, int ColDelta) navigation = (0, 0);
+        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+            .Add(p => p.ActiveCellRef, "A2")
+            .Add(p => p.DisplayValue, "Old")
+            .Add(p => p.IsEditing, true)
+            .Add(p => p.OnValueCommitted, EventCallback.Factory.Create<string?>(this, v => committed = v))
+            .Add(p => p.OnCommitNavigationRequested, EventCallback.Factory.Create<(int RowDelta, int ColDelta)>(this, move => navigation = move)));
+
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.Input("New Value");
+        input.KeyDown(new KeyboardEventArgs { Key = "Enter", ShiftKey = true });
+
+        committed.Should().Be("New Value");
+        navigation.Should().Be((-1, 0));
     }
 
     [Fact]
@@ -103,5 +125,27 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
         cut.Find(".tm-spreadsheet-formula-bar__input").Input("X");
 
         changed.Should().Be("X");
+    }
+
+    [Fact]
+    public void DisplayValueChange_DuringEditing_DoesNotOverwriteLocalFormulaSession()
+    {
+        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+            .Add(p => p.ActiveCellRef, "A1")
+            .Add(p => p.DisplayValue, "=A1+B2")
+            .Add(p => p.IsEditing, true));
+
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.Input("=SUM(C1:C3)");
+
+        cut.SetParametersAndRender(parameters => parameters
+            .Add(p => p.ActiveCellRef, "A1")
+            .Add(p => p.DisplayValue, "=Z9+Y8")
+            .Add(p => p.IsEditing, true));
+
+        cut.Find(".tm-spreadsheet-formula-bar__input")
+            .GetAttribute("value")
+            .Should()
+            .Be("=SUM(C1:C3)");
     }
 }

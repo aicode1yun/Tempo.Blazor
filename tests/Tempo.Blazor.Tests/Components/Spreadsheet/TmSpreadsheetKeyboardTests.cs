@@ -357,12 +357,14 @@ public class TmSpreadsheetKeyboardTests : LocalizationTestBase
     {
         bool tabPressed = false;
         string? committedValue = null;
+        (int RowDelta, int ColDelta) navigation = (0, 0);
 
         var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
             .Add(p => p.ActiveCellRef, "A1")
             .Add(p => p.DisplayValue, "Initial")
             .Add(p => p.IsEditing, true)
             .Add(p => p.OnValueCommitted, EventCallback.Factory.Create<string?>(this, v => committedValue = v))
+            .Add(p => p.OnCommitNavigationRequested, EventCallback.Factory.Create<(int RowDelta, int ColDelta)>(this, move => navigation = move))
             .Add(p => p.OnTabPressed, EventCallback.Factory.Create(this, () => tabPressed = true)));
 
         var input = cut.Find(".tm-spreadsheet-formula-bar__input");
@@ -370,7 +372,58 @@ public class TmSpreadsheetKeyboardTests : LocalizationTestBase
         input.KeyDown(new KeyboardEventArgs { Key = "Tab" });
 
         committedValue.Should().Be("NewValue");
+        navigation.Should().Be((0, 1));
         tabPressed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Spreadsheet_FormulaBarEnter_CommitsValueAndMovesActiveCellDown()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.Dom));
+        var sheet = cut.Instance.Workbook.ActiveSheet!;
+
+        cut.Find(".tm-spreadsheet-formula-bar__display").Click();
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.Input("42");
+        input.KeyDown(new KeyboardEventArgs { Key = "Enter" });
+
+        sheet.ActiveCellRef.Should().Be("A2");
+    }
+
+    [Fact]
+    public void Spreadsheet_FormulaBarShiftTab_CommitsValueAndMovesActiveCellLeft()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.Dom));
+        var sheet = cut.Instance.Workbook.ActiveSheet!;
+        sheet.ActiveCellRef = "B1";
+
+        cut.Render();
+        cut.Find(".tm-spreadsheet-formula-bar__display").Click();
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.Input("left");
+        input.KeyDown(new KeyboardEventArgs { Key = "Tab", ShiftKey = true });
+
+        sheet.ActiveCellRef.Should().Be("A1");
+    }
+
+    [Fact]
+    public void Spreadsheet_FormulaBarEscapeCancelsEditAndKeepsActiveCell()
+    {
+        var cut = RenderComponent<TmSpreadsheet>(parameters => parameters
+            .Add(p => p.RenderMode, SpreadsheetRenderMode.Dom));
+        var sheet = cut.Instance.Workbook.ActiveSheet!;
+        sheet.ActiveCellRef = "B2";
+
+        cut.Render();
+        cut.Find(".tm-spreadsheet-formula-bar__display").Click();
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.Input("=A1+B1");
+        input.KeyDown(new KeyboardEventArgs { Key = "Escape" });
+
+        sheet.ActiveCellRef.Should().Be("B2");
+        cut.Find(".tm-spreadsheet-formula-bar__display").Should().NotBeNull();
     }
 
     [Fact]

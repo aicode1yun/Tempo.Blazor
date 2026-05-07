@@ -1941,6 +1941,7 @@
   <data name="TmSpreadsheet_FormulaEditorLabel" xml:space="preserve"><value>Formula editor</value></data>
   <data name="TmSpreadsheet_CanvasAccessibilityNote" xml:space="preserve"><value>Canvas spreadsheet keeps keyboard focus on the grid and uses a text input editor for editing. Use the DOM renderer when you need full per-cell screen reader semantics.</value></data>
   <data name="TmSpreadsheet_FormulaBarPlaceholder" xml:space="preserve"><value>Enter formula or value...</value></data>
+  <data name="TmSpreadsheet_FormulaFunctionSuggestionsLabel" xml:space="preserve"><value>Formula function suggestions</value></data>
   <data name="TmSpreadsheet_SheetTab" xml:space="preserve"><value>Sheet</value></data>
   <data name="TmSpreadsheet_AddSheet" xml:space="preserve"><value>Add sheet</value></data>
   <data name="TmSpreadsheet_RenameSheet" xml:space="preserve"><value>Rename sheet</value></data>

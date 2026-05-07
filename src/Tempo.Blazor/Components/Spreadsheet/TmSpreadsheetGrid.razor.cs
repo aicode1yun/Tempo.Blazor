@@ -104,6 +104,9 @@ public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridContr
     /// <summary>Called when the active cell changes.</summary>
     [Parameter] public EventCallback<string?> ActiveCellChanged { get; set; }
 
+    /// <summary>The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing.</summary>
+    [Parameter] public string? ExternalFormulaEditValue { get; set; }
+
     /// <summary>Called when a cell value is committed after editing.</summary>
     [Parameter] public EventCallback<(string CellRef, string? Value)> CellValueCommitted { get; set; }
 
@@ -204,10 +207,11 @@ public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridContr
     public bool IsEditing { get; private set; }
 
     /// <summary>True while editing a formula (value starts with '=').</summary>
-    public bool IsInFormulaPointMode => IsEditing && _editValue?.StartsWith("=") == true;
+    public bool IsInFormulaPointMode => (IsEditing && _editValue?.StartsWith("=") == true)
+        || ExternalFormulaEditValue?.StartsWith("=") == true;
 
     /// <summary>Gets the current live edit value (not yet committed to the cell).</summary>
-    public string? CurrentEditValue => _editValue;
+    public string? CurrentEditValue => IsEditing ? _editValue : ExternalFormulaEditValue;
 
     /// <summary>Whether row virtualization is active (no freeze rows).</summary>
     private bool UseVirtualization => Sheet?.FreezeRowCount == 0;
@@ -221,6 +225,13 @@ public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridContr
     public async Task FocusAsync()
     {
         try { await _gridElement.FocusAsync(); } catch { /* ElementReference may not be bound yet */ }
+    }
+
+    /// <inheritdoc />
+    public async Task MoveActiveCellByAsync(int dRow, int dCol, bool extendSelection = false)
+    {
+        MoveActiveCell(dRow, dCol, extendSelection);
+        await FocusAsync();
     }
 
     /// <summary>Computes the average row height for virtualization item sizing.</summary>
