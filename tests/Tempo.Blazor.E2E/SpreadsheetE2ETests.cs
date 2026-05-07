@@ -2256,6 +2256,618 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_ColumnResizeDragStaysJsOnlyUntilCommitAndSyncsModel()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasResizeDragProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const columns = model.Columns || model.columns || [];
+                const column = columns[1] || columns[0];
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const left = column.Left ?? column.left ?? 0;
+                const initialSize = column.Width ?? column.width ?? 64;
+                const rect = el.getBoundingClientRect();
+                const startX = rect.left + rowHeaderWidth + left + initialSize - 1;
+                const startY = rect.top + Math.max(6, columnHeaderHeight / 2);
+                const endX = startX + 48;
+                const pointerId = 71;
+                const dispatch = (type, x, y, buttons) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                dispatch('pointerdown', startX, startY, 1);
+                let move = 0;
+                const moveCount = 8;
+                const step = () => {
+                    move += 1;
+                    dispatch('pointermove', startX + (endX - startX) * move / moveCount, startY, 1);
+                    if (move < moveCount) {
+                        requestAnimationFrame(step);
+                        return;
+                    }
+
+                    const mid = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const preview = mid.sheetState?.resize;
+                    dispatch('pointerup', endX, startY, 0);
+
+                    setTimeout(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        const syncedColumns = state.model.Columns || state.model.columns || [];
+                        const synced = syncedColumns[1] || syncedColumns[0];
+                        resolve({
+                            initialSize,
+                            previewSize: preview?.currentSize ?? 0,
+                            finalSize: synced?.Width ?? synced?.width ?? 0,
+                            pointerMoves: (mid.resizePointerMoveCount || 0) - (before.resizePointerMoveCount || 0),
+                            paintFramesBeforeCommit: (mid.resizePaintFrameCount || 0) - (before.resizePaintFrameCount || 0),
+                            contentPaintFramesBeforeCommit: (mid.contentPaintFrameCount || 0) - (before.contentPaintFrameCount || 0),
+                            dotNetBeforeCommit: (mid.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+                            blazorBeforeCommit: (mid.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0),
+                            dotNetAfterCommit: (after.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+                            blazorAfterCommit: (after.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0),
+                            commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0)
+                        });
+                    }, 420);
+                };
+
+                requestAnimationFrame(step);
+            })");
+
+        Assert.IsTrue(result.PointerMoves >= 6, $"Expected column resize drag to process multiple pointer moves. Count: {result.PointerMoves:N0}.");
+        Assert.IsTrue(result.PreviewSize > result.InitialSize, $"Expected local JS preview width to grow during drag. Initial: {result.InitialSize:N1}, preview: {result.PreviewSize:N1}.");
+        Assert.IsTrue(result.PaintFramesBeforeCommit > 0, "Expected column resize preview to repaint during drag.");
+        Assert.AreEqual(0, result.ContentPaintFramesBeforeCommit, $"Column resize preview should not repaint content per move. Content frames before commit: {result.ContentPaintFramesBeforeCommit:N0}.");
+        Assert.AreEqual(0, result.DotNetBeforeCommit, $"Column resize should stay JS-only until commit. .NET callbacks before commit: {result.DotNetBeforeCommit:N0}.");
+        Assert.AreEqual(0, result.BlazorBeforeCommit, $"Column resize should not trigger Blazor frames during drag. Frames before commit: {result.BlazorBeforeCommit:N0}.");
+        Assert.IsTrue(result.DotNetAfterCommit <= 1, $"Expected at most one .NET resize callback after commit. Count: {result.DotNetAfterCommit:N0}.");
+        Assert.IsTrue(result.BlazorAfterCommit <= 2, $"Expected resize commit to stay bounded to a tiny number of Blazor frames. Count: {result.BlazorAfterCommit:N0}.");
+        Assert.IsTrue(result.CommandLogCallbacks >= 1, "Expected column resize commit to reach .NET through the command log.");
+        Assert.IsTrue(result.FinalSize >= result.PreviewSize - 1, $"Expected synced model width to keep the committed size. Final: {result.FinalSize:N1}, preview: {result.PreviewSize:N1}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_RowResizeDragStaysJsOnlyUntilCommitAndSyncsModel()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasResizeDragProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rows = model.Rows || model.rows || [];
+                const row = rows[2] || rows[1] || rows[0];
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const top = row.Top ?? row.top ?? 0;
+                const initialSize = row.Height ?? row.height ?? 20;
+                const rect = el.getBoundingClientRect();
+                const startX = rect.left + Math.max(8, rowHeaderWidth / 2);
+                const startY = rect.top + columnHeaderHeight + top + initialSize - 1;
+                const endY = startY + 20;
+                const pointerId = 72;
+                const dispatch = (type, x, y, buttons) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                dispatch('pointerdown', startX, startY, 1);
+                let move = 0;
+                const moveCount = 8;
+                const step = () => {
+                    move += 1;
+                    dispatch('pointermove', startX, startY + (endY - startY) * move / moveCount, 1);
+                    if (move < moveCount) {
+                        requestAnimationFrame(step);
+                        return;
+                    }
+
+                    const mid = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const preview = mid.sheetState?.resize;
+                    dispatch('pointerup', startX, endY, 0);
+
+                    setTimeout(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        const syncedRows = state.model.Rows || state.model.rows || [];
+                        const synced = syncedRows[2] || syncedRows[1] || syncedRows[0];
+                        resolve({
+                            initialSize,
+                            previewSize: preview?.currentSize ?? 0,
+                            finalSize: synced?.Height ?? synced?.height ?? 0,
+                            pointerMoves: (mid.resizePointerMoveCount || 0) - (before.resizePointerMoveCount || 0),
+                            paintFramesBeforeCommit: (mid.resizePaintFrameCount || 0) - (before.resizePaintFrameCount || 0),
+                            contentPaintFramesBeforeCommit: (mid.contentPaintFrameCount || 0) - (before.contentPaintFrameCount || 0),
+                            dotNetBeforeCommit: (mid.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+                            blazorBeforeCommit: (mid.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0),
+                            dotNetAfterCommit: (after.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+                            blazorAfterCommit: (after.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0),
+                            commandLogCallbacks: (after.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0) - (before.dotNetCallbacksByMethod.OnCanvasCommandLogBatch || 0)
+                        });
+                    }, 420);
+                };
+
+                requestAnimationFrame(step);
+            })");
+
+        Assert.IsTrue(result.PointerMoves >= 6, $"Expected row resize drag to process multiple pointer moves. Count: {result.PointerMoves:N0}.");
+        Assert.IsTrue(result.PreviewSize > result.InitialSize, $"Expected local JS preview height to grow during drag. Initial: {result.InitialSize:N1}, preview: {result.PreviewSize:N1}.");
+        Assert.IsTrue(result.PaintFramesBeforeCommit > 0, "Expected row resize preview to repaint during drag.");
+        Assert.AreEqual(0, result.ContentPaintFramesBeforeCommit, $"Row resize preview should not repaint content per move. Content frames before commit: {result.ContentPaintFramesBeforeCommit:N0}.");
+        Assert.AreEqual(0, result.DotNetBeforeCommit, $"Row resize should stay JS-only until commit. .NET callbacks before commit: {result.DotNetBeforeCommit:N0}.");
+        Assert.AreEqual(0, result.BlazorBeforeCommit, $"Row resize should not trigger Blazor frames during drag. Frames before commit: {result.BlazorBeforeCommit:N0}.");
+        Assert.IsTrue(result.DotNetAfterCommit <= 1, $"Expected at most one .NET resize callback after commit. Count: {result.DotNetAfterCommit:N0}.");
+        Assert.IsTrue(result.BlazorAfterCommit <= 2, $"Expected row resize commit to stay bounded to a tiny number of Blazor frames. Count: {result.BlazorAfterCommit:N0}.");
+        Assert.IsTrue(result.CommandLogCallbacks >= 1, "Expected row resize commit to reach .NET through the command log.");
+        Assert.IsTrue(result.FinalSize >= result.PreviewSize - 1, $"Expected synced model height to keep the committed size. Final: {result.FinalSize:N1}, preview: {result.PreviewSize:N1}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_RowResizeSecondDragStartsFromCommittedHeight()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasResizeTwiceProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const rect = el.getBoundingClientRect();
+                const startX = rect.left + Math.max(8, rowHeaderWidth / 2);
+                const pointerId = 73;
+
+                const dispatch = (type, x, y, buttons) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const getRow = () => {
+                    const rows = state.model.Rows || state.model.rows || [];
+                    return rows[2] || rows[1] || rows[0];
+                };
+
+                const dragRow = delta => new Promise(done => {
+                    const row = getRow();
+                    const top = row.Top ?? row.top ?? 0;
+                    const size = row.Height ?? row.height ?? 20;
+                    const startY = rect.top + columnHeaderHeight + top + size - 1;
+                    const endY = startY + delta;
+                    let move = 0;
+                    const moveCount = 8;
+
+                    dispatch('pointerdown', startX, startY, 1);
+
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX, startY + (endY - startY) * move / moveCount, 1);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        const preview = window.tmSpreadsheetCanvas.getDebugMetrics(el).sheetState?.resize?.currentSize ?? 0;
+                        dispatch('pointerup', startX, endY, 0);
+                        setTimeout(() => {
+                            const synced = getRow();
+                            done({
+                                startSize: size,
+                                previewSize: preview,
+                                finalSize: synced?.Height ?? synced?.height ?? 0
+                            });
+                        }, 260);
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                (async () => {
+                    const first = await dragRow(18);
+                    const second = await dragRow(16);
+                    const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        firstStartSize: first.startSize,
+                        firstPreviewSize: first.previewSize,
+                        firstFinalSize: first.finalSize,
+                        secondStartSize: second.startSize,
+                        secondPreviewSize: second.previewSize,
+                        secondFinalSize: second.finalSize,
+                        commandLogCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCommandLogBatch || 0
+                    });
+                })();
+            })");
+
+        Assert.IsTrue(result.FirstPreviewSize > result.FirstStartSize, $"Expected first row resize preview to grow. Start: {result.FirstStartSize:N1}, preview: {result.FirstPreviewSize:N1}.");
+        Assert.IsTrue(result.FirstFinalSize >= result.FirstPreviewSize - 1, $"Expected first committed row height to match preview. Final: {result.FirstFinalSize:N1}, preview: {result.FirstPreviewSize:N1}.");
+        Assert.IsTrue(result.SecondStartSize >= result.FirstFinalSize - 1, $"Expected second resize to start from committed height, not original. First final: {result.FirstFinalSize:N1}, second start: {result.SecondStartSize:N1}.");
+        Assert.IsTrue(result.SecondPreviewSize > result.SecondStartSize, $"Expected second row resize preview to grow from the already committed height. Start: {result.SecondStartSize:N1}, preview: {result.SecondPreviewSize:N1}.");
+        Assert.IsTrue(result.SecondFinalSize >= result.SecondPreviewSize - 1, $"Expected second committed row height to match preview. Final: {result.SecondFinalSize:N1}, preview: {result.SecondPreviewSize:N1}.");
+        Assert.IsTrue(result.CommandLogCallbacks >= 2, $"Expected both row resize commits to reach .NET through the command log. Callback count: {result.CommandLogCallbacks:N0}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_ColumnResizeSecondDragStartsFromCommittedWidth()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasResizeTwiceProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const rect = el.getBoundingClientRect();
+                const startY = rect.top + Math.max(6, columnHeaderHeight / 2);
+                const pointerId = 74;
+
+                const dispatch = (type, x, y, buttons) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const getColumn = () => {
+                    const columns = state.model.Columns || state.model.columns || [];
+                    return columns[1] || columns[0];
+                };
+
+                const dragColumn = delta => new Promise(done => {
+                    const column = getColumn();
+                    const left = column.Left ?? column.left ?? 0;
+                    const size = column.Width ?? column.width ?? 64;
+                    const startX = rect.left + rowHeaderWidth + left + size - 1;
+                    const endX = startX + delta;
+                    let move = 0;
+                    const moveCount = 8;
+
+                    dispatch('pointerdown', startX, startY, 1);
+
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX + (endX - startX) * move / moveCount, startY, 1);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        const preview = window.tmSpreadsheetCanvas.getDebugMetrics(el).sheetState?.resize?.currentSize ?? 0;
+                        dispatch('pointerup', endX, startY, 0);
+                        setTimeout(() => {
+                            const synced = getColumn();
+                            done({
+                                startSize: size,
+                                previewSize: preview,
+                                finalSize: synced?.Width ?? synced?.width ?? 0
+                            });
+                        }, 260);
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                (async () => {
+                    const first = await dragColumn(36);
+                    const second = await dragColumn(28);
+                    const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        firstStartSize: first.startSize,
+                        firstPreviewSize: first.previewSize,
+                        firstFinalSize: first.finalSize,
+                        secondStartSize: second.startSize,
+                        secondPreviewSize: second.previewSize,
+                        secondFinalSize: second.finalSize,
+                        commandLogCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCommandLogBatch || 0
+                    });
+                })();
+            })");
+
+        Assert.IsTrue(result.FirstPreviewSize > result.FirstStartSize, $"Expected first column resize preview to grow. Start: {result.FirstStartSize:N1}, preview: {result.FirstPreviewSize:N1}.");
+        Assert.IsTrue(result.FirstFinalSize >= result.FirstPreviewSize - 1, $"Expected first committed column width to match preview. Final: {result.FirstFinalSize:N1}, preview: {result.FirstPreviewSize:N1}.");
+        Assert.IsTrue(result.SecondStartSize >= result.FirstFinalSize - 1, $"Expected second resize to start from committed width, not original. First final: {result.FirstFinalSize:N1}, second start: {result.SecondStartSize:N1}.");
+        Assert.IsTrue(result.SecondPreviewSize > result.SecondStartSize, $"Expected second column resize preview to grow from the already committed width. Start: {result.SecondStartSize:N1}, preview: {result.SecondPreviewSize:N1}.");
+        Assert.IsTrue(result.SecondFinalSize >= result.SecondPreviewSize - 1, $"Expected second committed column width to match preview. Final: {result.SecondFinalSize:N1}, preview: {result.SecondPreviewSize:N1}.");
+        Assert.IsTrue(result.CommandLogCallbacks >= 2, $"Expected both column resize commits to reach .NET through the command log. Callback count: {result.CommandLogCallbacks:N0}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_ResizeCommitKeepsEditorSelectionAndFormulaHighlightAligned()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasResizeAlignmentProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const rows = model.Rows || model.rows || [];
+                const columns = model.Columns || model.columns || [];
+                const row = rows[0];
+                const column = columns[0];
+
+                el.focus();
+                el.dispatchEvent(new KeyboardEvent('keydown', {
+                    key: '=',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const input = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                input.value = '=B2';
+                input.setSelectionRange(input.value.length, input.value.length);
+                input.dispatchEvent(new Event('input', { bubbles: true }));
+
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const beforeRect = input.getBoundingClientRect();
+                const oldHeight = row.Height ?? row.height ?? 20;
+                const oldWidth = column.Width ?? column.width ?? 64;
+                const newHeight = oldHeight + 14;
+                const newWidth = oldWidth + 26;
+                const totalHeight = (model.TotalHeight ?? model.totalHeight ?? 0) + (newHeight - oldHeight);
+                const totalWidth = (model.TotalWidth ?? model.totalWidth ?? 0) + (newWidth - oldWidth);
+
+                window.tmSpreadsheetCanvas.applyCommand(el, {
+                    Type: 'syncLayoutAxes',
+                    RowCount: model.RowCount ?? model.rowCount ?? rows.length,
+                    ColumnCount: model.ColumnCount ?? model.columnCount ?? columns.length,
+                    TotalWidth: totalWidth,
+                    TotalHeight: totalHeight,
+                    FreezeRowCount: model.FreezeRowCount ?? model.freezeRowCount ?? 0,
+                    FreezeColumnCount: model.FreezeColumnCount ?? model.freezeColumnCount ?? 0,
+                    Rows: [{
+                        Index: 0,
+                        Top: 0,
+                        Height: newHeight,
+                        Frozen: false
+                    }],
+                    Columns: [{
+                        Index: 0,
+                        Left: 0,
+                        Width: newWidth,
+                        Label: 'A',
+                        Frozen: false
+                    }]
+                });
+
+                requestAnimationFrame(() => requestAnimationFrame(() => {
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    const afterRect = input.getBoundingClientRect();
+                    const afterStyleWidth = parseFloat(input.style.width || '0');
+                    const afterStyleHeight = parseFloat(input.style.height || '0');
+                    const selectionCanvas = el.querySelector('.tm-spreadsheet-canvas-grid__canvas--selection');
+                    const dpr = window.devicePixelRatio || 1;
+                    const ctx = selectionCanvas.getContext('2d');
+                    const countBluePixels = (x, y, w, h) => {
+                        const data = ctx.getImageData(Math.max(0, Math.round(x * dpr)), Math.max(0, Math.round(y * dpr)), Math.max(1, Math.round(w * dpr)), Math.max(1, Math.round(h * dpr))).data;
+                        let count = 0;
+                        for (let i = 0; i < data.length; i += 4) {
+                            if (data[i + 3] > 0 && data[i + 2] > data[i] + 20 && data[i + 2] > data[i + 1] - 10) count++;
+                        }
+                        return count;
+                    };
+
+                    const selectionBluePixels = countBluePixels(
+                        rowHeaderWidth + newWidth - 4,
+                        columnHeaderHeight + 2,
+                        8,
+                        Math.max(8, newHeight - 4));
+
+                    const formulaBluePixels = countBluePixels(
+                        rowHeaderWidth + newWidth + 2,
+                        columnHeaderHeight + newHeight + 2,
+                        14,
+                        14);
+
+                    resolve({
+                        beforeEditorWidth: beforeRect.width,
+                        afterEditorWidth: afterRect.width,
+                        beforeEditorHeight: beforeRect.height,
+                        afterEditorHeight: afterRect.height,
+                        afterEditorStyleWidth: afterStyleWidth,
+                        afterEditorStyleHeight: afterStyleHeight,
+                        editorRow: state.editor?.row ?? -1,
+                        editorCol: state.editor?.col ?? -1,
+                        layoutColumnWidth: state.sheetState?.layoutState?.columnSizes?.get(0) ?? 0,
+                        layoutRowHeight: state.sheetState?.layoutState?.rowSizes?.get(0) ?? 0,
+                        modelColumnWidth: (state.model.Columns || state.model.columns || [])[0]?.Width ?? (state.model.Columns || state.model.columns || [])[0]?.width ?? 0,
+                        formulaActive: !!after.sheetState?.formulaEditor?.active,
+                        formulaRefCount: after.sheetState?.formulaEditor?.refCount || 0,
+                        selectionPaintDelta: (after.selectionLayerPaintCount || 0) - (before.selectionLayerPaintCount || 0),
+                        selectionBluePixels,
+                        formulaBluePixels
+                    });
+                }));
+            })");
+
+        Assert.IsTrue(result.FormulaActive, "Expected formula editor to stay active after resize commit patch.");
+        Assert.AreEqual(1, result.FormulaRefCount, "Expected one parsed formula reference after resize commit patch.");
+        Assert.IsTrue(result.AfterEditorStyleWidth > result.BeforeEditorWidth, $"Expected editor width to follow resized column. Before: {result.BeforeEditorWidth:N1}, styled after: {result.AfterEditorStyleWidth:N1}, rect after: {result.AfterEditorWidth:N1}, editor cell: {result.EditorRow}:{result.EditorCol}, layout width: {result.LayoutColumnWidth:N1}, model width: {result.ModelColumnWidth:N1}.");
+        Assert.IsTrue(result.AfterEditorStyleHeight > result.BeforeEditorHeight, $"Expected editor height to follow resized row. Before: {result.BeforeEditorHeight:N1}, styled after: {result.AfterEditorStyleHeight:N1}, rect after: {result.AfterEditorHeight:N1}, editor cell: {result.EditorRow}:{result.EditorCol}, layout height: {result.LayoutRowHeight:N1}.");
+        Assert.IsTrue(result.SelectionPaintDelta > 0, $"Expected selection overlay to repaint after resize commit patch. Delta: {result.SelectionPaintDelta:N0}.");
+        Assert.IsTrue(result.SelectionBluePixels > 0, $"Expected active-cell selection pixels after resize commit patch. Count: {result.SelectionBluePixels:N0}.");
+        Assert.IsTrue(result.FormulaBluePixels > 0, $"Expected formula reference highlight pixels after resize commit patch. Count: {result.FormulaBluePixels:N0}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_ResizeHotPathWorksWithFrozenAxes()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasFrozenResizeProbeResult>(
+            @"el => new Promise(resolve => {
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rows = model.Rows || model.rows || [];
+                const columns = model.Columns || model.columns || [];
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const rect = el.getBoundingClientRect();
+                const originalInvoke = state.dotNet.invokeMethodAsync.bind(state.dotNet);
+                state.dotNet.invokeMethodAsync = () => Promise.resolve(0);
+
+                window.tmSpreadsheetCanvas.applyCommand(el, {
+                    Type: 'syncLayoutAxes',
+                    RowCount: model.RowCount ?? model.rowCount ?? rows.length,
+                    ColumnCount: model.ColumnCount ?? model.columnCount ?? columns.length,
+                    TotalWidth: model.TotalWidth ?? model.totalWidth ?? 0,
+                    TotalHeight: model.TotalHeight ?? model.totalHeight ?? 0,
+                    FreezeRowCount: 1,
+                    FreezeColumnCount: 1,
+                    Rows: [{ Index: 0, Top: 0, Height: (rows[0]?.Height ?? rows[0]?.height ?? 20), Frozen: true }],
+                    Columns: [{ Index: 0, Left: 0, Width: (columns[0]?.Width ?? columns[0]?.width ?? 64), Label: 'A', Frozen: true }]
+                });
+                window.tmSpreadsheetCanvas.render(el, state.canvas, state.model);
+
+                const dispatch = (type, x, y, buttons, pointerId) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const dragColumn = delta => new Promise(done => {
+                    const column = (state.model.Columns || state.model.columns || [])[0];
+                    const size = column.Width ?? column.width ?? 64;
+                    const startX = rect.left + rowHeaderWidth + size - 1;
+                    const startY = rect.top + Math.max(6, columnHeaderHeight / 2);
+                    const endX = startX + delta;
+                    let move = 0;
+                    const moveCount = 6;
+                    const pointerId = 75;
+                    dispatch('pointerdown', startX, startY, 1, pointerId);
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX + (endX - startX) * move / moveCount, startY, 1, pointerId);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        dispatch('pointerup', endX, startY, 0, pointerId);
+                        requestAnimationFrame(() => {
+                            const synced = (state.model.Columns || state.model.columns || [])[0];
+                            done(synced?.Width ?? synced?.width ?? 0);
+                        });
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                const dragRow = delta => new Promise(done => {
+                    const row = (state.model.Rows || state.model.rows || [])[0];
+                    const size = row.Height ?? row.height ?? 20;
+                    const startX = rect.left + Math.max(8, rowHeaderWidth / 2);
+                    const startY = rect.top + columnHeaderHeight + size - 1;
+                    const endY = startY + delta;
+                    let move = 0;
+                    const moveCount = 6;
+                    const pointerId = 76;
+                    dispatch('pointerdown', startX, startY, 1, pointerId);
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX, startY + (endY - startY) * move / moveCount, 1, pointerId);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        dispatch('pointerup', startX, endY, 0, pointerId);
+                        requestAnimationFrame(() => {
+                            const synced = (state.model.Rows || state.model.rows || [])[0];
+                            done(synced?.Height ?? synced?.height ?? 0);
+                        });
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                (async () => {
+                    const initialColumn = columns[0]?.Width ?? columns[0]?.width ?? 64;
+                    const initialRow = rows[0]?.Height ?? rows[0]?.height ?? 20;
+                    const finalColumn = await dragColumn(24);
+                    const finalRow = await dragRow(12);
+                    const layout = state.sheetState?.layoutState;
+                    state.dotNet.invokeMethodAsync = originalInvoke;
+                    resolve({
+                        freezeRowCount: state.model.FreezeRowCount ?? state.model.freezeRowCount ?? 0,
+                        freezeColumnCount: state.model.FreezeColumnCount ?? state.model.freezeColumnCount ?? 0,
+                        initialColumnSize: initialColumn,
+                        finalColumnSize: layout?.columnSizes?.get(0) ?? finalColumn,
+                        initialRowSize: initialRow,
+                        finalRowSize: layout?.rowSizes?.get(0) ?? finalRow
+                    });
+                })();
+            })");
+
+        Assert.AreEqual(1, result.FreezeRowCount, $"Expected one frozen row during resize verification. Count: {result.FreezeRowCount:N0}.");
+        Assert.AreEqual(1, result.FreezeColumnCount, $"Expected one frozen column during resize verification. Count: {result.FreezeColumnCount:N0}.");
+        Assert.IsTrue(result.FinalColumnSize > result.InitialColumnSize, $"Expected frozen column resize to grow. Initial: {result.InitialColumnSize:N1}, final: {result.FinalColumnSize:N1}.");
+        Assert.IsTrue(result.FinalRowSize > result.InitialRowSize, $"Expected frozen row resize to grow. Initial: {result.InitialRowSize:N1}, final: {result.FinalRowSize:N1}.");
+    }
+
+    [TestMethod]
     public async Task CanvasRenderer_SelectedCellKeepsTextAndDrawsFormatting()
     {
         var page = await CreatePageAsync();
@@ -2720,6 +3332,123 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task BenchmarkPage_CanvasResizeUsableOnLargeDataset()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        await page.Locator("#benchmark-dataset").SelectOptionAsync("10000x100");
+        await page.GetByTestId("spreadsheet-benchmark-load").ClickAsync();
+
+        var grid = page.Locator("[data-spreadsheet-benchmark-surface] .tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var result = await grid.EvaluateAsync<CanvasLargeDatasetResizeProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const rows = model.Rows || model.rows || [];
+                const columns = model.Columns || model.columns || [];
+                const row = rows[2] || rows[1] || rows[0];
+                const column = columns[1] || columns[0];
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const rect = el.getBoundingClientRect();
+
+                const dispatch = (type, x, y, buttons, pointerId) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                const dragColumn = () => new Promise(done => {
+                    const left = column.Left ?? column.left ?? 0;
+                    const size = column.Width ?? column.width ?? 64;
+                    const startX = rect.left + rowHeaderWidth + left + size - 1;
+                    const startY = rect.top + Math.max(6, columnHeaderHeight / 2);
+                    const endX = startX + 42;
+                    const pointerId = 77;
+                    let move = 0;
+                    const moveCount = 8;
+                    dispatch('pointerdown', startX, startY, 1, pointerId);
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX + (endX - startX) * move / moveCount, startY, 1, pointerId);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        dispatch('pointerup', endX, startY, 0, pointerId);
+                        setTimeout(() => {
+                            const synced = (state.model.Columns || state.model.columns || [])[1] || (state.model.Columns || state.model.columns || [])[0];
+                            done(synced?.Width ?? synced?.width ?? 0);
+                        }, 260);
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                const dragRow = () => new Promise(done => {
+                    const top = row.Top ?? row.top ?? 0;
+                    const size = row.Height ?? row.height ?? 20;
+                    const startX = rect.left + Math.max(8, rowHeaderWidth / 2);
+                    const startY = rect.top + columnHeaderHeight + top + size - 1;
+                    const endY = startY + 18;
+                    const pointerId = 78;
+                    let move = 0;
+                    const moveCount = 8;
+                    dispatch('pointerdown', startX, startY, 1, pointerId);
+                    const step = () => {
+                        move += 1;
+                        dispatch('pointermove', startX, startY + (endY - startY) * move / moveCount, 1, pointerId);
+                        if (move < moveCount) {
+                            requestAnimationFrame(step);
+                            return;
+                        }
+
+                        dispatch('pointerup', startX, endY, 0, pointerId);
+                        setTimeout(() => {
+                            const synced = (state.model.Rows || state.model.rows || [])[2] || (state.model.Rows || state.model.rows || [])[1] || (state.model.Rows || state.model.rows || [])[0];
+                            done(synced?.Height ?? synced?.height ?? 0);
+                        }, 260);
+                    };
+
+                    requestAnimationFrame(step);
+                });
+
+                (async () => {
+                    const initialColumnSize = column.Width ?? column.width ?? 64;
+                    const initialRowSize = row.Height ?? row.height ?? 20;
+                    const finalColumnSize = await dragColumn();
+                    const finalRowSize = await dragRow();
+                    const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                    resolve({
+                        initialColumnSize,
+                        finalColumnSize,
+                        initialRowSize,
+                        finalRowSize,
+                        dotNetBeforeCommit: (before.resizeDotNetCallbackCount || 0),
+                        dotNetAfterCommit: (after.resizeDotNetCallbackCount || 0),
+                        contentPaintFrames: (after.contentPaintFrameCount || 0) - (before.contentPaintFrameCount || 0)
+                    });
+                })();
+            })");
+
+        Assert.IsTrue(result.FinalColumnSize > result.InitialColumnSize, $"Expected 10,000 x 100 column resize to stay usable. Initial: {result.InitialColumnSize:N1}, final: {result.FinalColumnSize:N1}.");
+        Assert.IsTrue(result.FinalRowSize > result.InitialRowSize, $"Expected 10,000 x 100 row resize to stay usable. Initial: {result.InitialRowSize:N1}, final: {result.FinalRowSize:N1}.");
+        Assert.IsTrue(result.DotNetAfterCommit - result.DotNetBeforeCommit <= 2, $"Expected resize on 10,000 x 100 to avoid .NET callback spam. Delta: {result.DotNetAfterCommit - result.DotNetBeforeCommit:N0}.");
+        Assert.IsTrue(result.ContentPaintFrames > 0, "Expected large-dataset resize commit to repaint the content layer at least once.");
+    }
+
+    [TestMethod]
     public async Task BenchmarkPage_Phase12LatencyProbeMatchesHotPathCriteria()
     {
         var page = await CreatePageAsync();
@@ -2804,6 +3533,41 @@ public class SpreadsheetE2ETests : WasmTestBase
         Assert.IsTrue(dragBlazorFrames < dragFrames, $"Drag selection should not trigger a Blazor frame per move. Frames: {dragBlazorFrames:N0}, drag frames: {dragFrames:N0}.");
         Assert.IsTrue(callbacksPerInteraction <= 0.5, $"Expected average .NET callbacks per interaction to stay low. Current: {callbacksPerInteraction:N2}.");
         Assert.IsTrue(viewportArrowMs <= legacyViewportArrowMs * 1.1, $"Expected CanvasJsEngine viewport ArrowDown to stay comparable with legacy Canvas. JS engine: {viewportArrowMs:N1} ms, Canvas: {legacyViewportArrowMs:N1} ms.");
+    }
+
+    [TestMethod]
+    public async Task BenchmarkPage_ResizeReadinessMetricsPass()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet-benchmark");
+        await WaitForAppReadyAsync(page);
+
+        await page.GetByTestId("spreadsheet-benchmark-run-canvas").ClickAsync();
+
+        var canvasJsEngine = page.Locator("[data-testid=\"spreadsheet-benchmark-result-row\"][data-renderer=\"CanvasJsEngine\"]").First;
+        await canvasJsEngine.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 90000 });
+
+        var columnResizeMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-column-resize-drag-ms");
+        var columnResizeMoves = await GetBenchmarkMetricAsync(canvasJsEngine, "data-column-resize-pointer-moves");
+        var columnResizeDotNet = await GetBenchmarkMetricAsync(canvasJsEngine, "data-column-resize-dotnet-callbacks");
+        var columnResizeBlazorFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-column-resize-blazor-frame-count");
+        var columnResizePaintFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-column-resize-paint-frame-count");
+        var rowResizeMs = await GetBenchmarkMetricAsync(canvasJsEngine, "data-row-resize-drag-ms");
+        var rowResizeMoves = await GetBenchmarkMetricAsync(canvasJsEngine, "data-row-resize-pointer-moves");
+        var rowResizeDotNet = await GetBenchmarkMetricAsync(canvasJsEngine, "data-row-resize-dotnet-callbacks");
+        var rowResizeBlazorFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-row-resize-blazor-frame-count");
+        var rowResizePaintFrames = await GetBenchmarkMetricAsync(canvasJsEngine, "data-row-resize-paint-frame-count");
+
+        Assert.IsTrue(columnResizeMs > 0, $"Expected benchmark row to expose column resize latency. Current: {columnResizeMs:N1} ms.");
+        Assert.IsTrue(columnResizeMoves >= 6, $"Expected benchmark row to record several column resize pointer moves. Count: {columnResizeMoves:N0}.");
+        Assert.IsTrue(columnResizeDotNet < columnResizeMoves, $"Column resize should not call .NET per move. Callbacks: {columnResizeDotNet:N0}, moves: {columnResizeMoves:N0}.");
+        Assert.IsTrue(columnResizeBlazorFrames < columnResizeMoves, $"Column resize should not trigger a Blazor frame per move. Frames: {columnResizeBlazorFrames:N0}, moves: {columnResizeMoves:N0}.");
+        Assert.IsTrue(rowResizeMs > 0, $"Expected benchmark row to expose row resize latency. Current: {rowResizeMs:N1} ms.");
+        Assert.IsTrue(rowResizeMoves >= 6, $"Expected benchmark row to record several row resize pointer moves. Count: {rowResizeMoves:N0}.");
+        Assert.IsTrue(rowResizeDotNet < rowResizeMoves, $"Row resize should not call .NET per move. Callbacks: {rowResizeDotNet:N0}, moves: {rowResizeMoves:N0}.");
+        Assert.IsTrue(rowResizeBlazorFrames < rowResizeMoves, $"Row resize should not trigger a Blazor frame per move. Frames: {rowResizeBlazorFrames:N0}, moves: {rowResizeMoves:N0}.");
+        Assert.IsTrue(columnResizePaintFrames >= 0, "Expected benchmark row to expose column resize paint frame metric.");
+        Assert.IsTrue(rowResizePaintFrames >= 0, "Expected benchmark row to expose row resize paint frame metric.");
     }
 
     private static int ParseRow(string cellRef)
@@ -3112,6 +3876,73 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int PaintFrameCount { get; set; }
         public int ContentPaintFrameCount { get; set; }
         public int SelectionPaintFrameCount { get; set; }
+    }
+
+    private sealed class CanvasResizeDragProbeResult
+    {
+        public double InitialSize { get; set; }
+        public double PreviewSize { get; set; }
+        public double FinalSize { get; set; }
+        public int PointerMoves { get; set; }
+        public int PaintFramesBeforeCommit { get; set; }
+        public int ContentPaintFramesBeforeCommit { get; set; }
+        public int DotNetBeforeCommit { get; set; }
+        public int BlazorBeforeCommit { get; set; }
+        public int DotNetAfterCommit { get; set; }
+        public int BlazorAfterCommit { get; set; }
+        public int CommandLogCallbacks { get; set; }
+    }
+
+    private sealed class CanvasResizeTwiceProbeResult
+    {
+        public double FirstStartSize { get; set; }
+        public double FirstPreviewSize { get; set; }
+        public double FirstFinalSize { get; set; }
+        public double SecondStartSize { get; set; }
+        public double SecondPreviewSize { get; set; }
+        public double SecondFinalSize { get; set; }
+        public int CommandLogCallbacks { get; set; }
+    }
+
+    private sealed class CanvasResizeAlignmentProbeResult
+    {
+        public double BeforeEditorWidth { get; set; }
+        public double AfterEditorWidth { get; set; }
+        public double BeforeEditorHeight { get; set; }
+        public double AfterEditorHeight { get; set; }
+        public double AfterEditorStyleWidth { get; set; }
+        public double AfterEditorStyleHeight { get; set; }
+        public int EditorRow { get; set; }
+        public int EditorCol { get; set; }
+        public double LayoutColumnWidth { get; set; }
+        public double LayoutRowHeight { get; set; }
+        public double ModelColumnWidth { get; set; }
+        public bool FormulaActive { get; set; }
+        public int FormulaRefCount { get; set; }
+        public int SelectionPaintDelta { get; set; }
+        public int SelectionBluePixels { get; set; }
+        public int FormulaBluePixels { get; set; }
+    }
+
+    private sealed class CanvasFrozenResizeProbeResult
+    {
+        public int FreezeRowCount { get; set; }
+        public int FreezeColumnCount { get; set; }
+        public double InitialColumnSize { get; set; }
+        public double FinalColumnSize { get; set; }
+        public double InitialRowSize { get; set; }
+        public double FinalRowSize { get; set; }
+    }
+
+    private sealed class CanvasLargeDatasetResizeProbeResult
+    {
+        public double InitialColumnSize { get; set; }
+        public double FinalColumnSize { get; set; }
+        public double InitialRowSize { get; set; }
+        public double FinalRowSize { get; set; }
+        public int DotNetBeforeCommit { get; set; }
+        public int DotNetAfterCommit { get; set; }
+        public int ContentPaintFrames { get; set; }
     }
 
     private sealed class CanvasKeyboardRepeatProbeResult

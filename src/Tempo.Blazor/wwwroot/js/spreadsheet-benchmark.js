@@ -103,6 +103,11 @@ window.tmSpreadsheetBenchmark = (() => {
         wheelEventCount: (after.wheelEventCount || 0) - (before.wheelEventCount || 0),
         wheelPreventedCount: (after.wheelPreventedCount || 0) - (before.wheelPreventedCount || 0),
         dragAutoscrollFrames: (after.dragAutoscrollFrames || 0) - (before.dragAutoscrollFrames || 0),
+        resizePointerMoveCount: (after.resizePointerMoveCount || 0) - (before.resizePointerMoveCount || 0),
+        resizePreviewFrameCount: (after.resizePreviewFrameCount || 0) - (before.resizePreviewFrameCount || 0),
+        resizePaintFrameCount: (after.resizePaintFrameCount || 0) - (before.resizePaintFrameCount || 0),
+        resizeDotNetCallbackCount: (after.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+        resizeBlazorFrameCount: (after.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0),
         paintFrameCount: (after.paintFrameCount || 0) - (before.paintFrameCount || 0),
         contentPaintFrameCount: (after.contentPaintFrameCount || 0) - (before.contentPaintFrameCount || 0),
         selectionPaintFrameCount: (after.selectionPaintFrameCount || 0) - (before.selectionPaintFrameCount || 0),
@@ -424,6 +429,96 @@ window.tmSpreadsheetBenchmark = (() => {
         };
     };
 
+    const getResizeHandlePoint = (grid, kind) => {
+        const state = grid?.__tmSpreadsheetCanvas;
+        const model = state?.model;
+        if (!state || !model) return null;
+        const rect = grid.getBoundingClientRect();
+        const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+        const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+
+        if (kind === "column") {
+            const columns = model.Columns || model.columns || [];
+            const column = columns[1] || columns[0];
+            if (!column) return null;
+            const left = column.Left ?? column.left ?? 0;
+            const width = column.Width ?? column.width ?? 64;
+            const x = rect.left + rowHeaderWidth + left + width - 1;
+            const y = rect.top + Math.max(6, columnHeaderHeight / 2);
+            return { startX: x, startY: y, endX: x + 52, endY: y, index: column.Index ?? column.index ?? 0 };
+        }
+
+        const rows = model.Rows || model.rows || [];
+        const row = rows[2] || rows[1] || rows[0];
+        if (!row) return null;
+        const top = row.Top ?? row.top ?? 0;
+        const height = row.Height ?? row.height ?? 20;
+        const x = rect.left + Math.max(8, rowHeaderWidth / 2);
+        const y = rect.top + columnHeaderHeight + top + height - 1;
+        return { startX: x, startY: y, endX: x, endY: y + 24, index: row.Index ?? row.index ?? 0 };
+    };
+
+    const measureResizeDrag = async (grid, kind) => {
+        if (!grid) {
+            return { durationMs: 0, pointerMoves: 0, debug: diffDebugMetrics({}, {}) };
+        }
+
+        await resetGridViewport(grid);
+        await waitForBenchmarkIdle(grid);
+        const handle = getResizeHandlePoint(grid, kind);
+        if (!handle) {
+            return { durationMs: 0, pointerMoves: 0, debug: diffDebugMetrics({}, {}) };
+        }
+
+        const before = debugMetrics(grid);
+        const pointerId = kind === "column" ? 61 : 62;
+        const moveCount = 8;
+        const started = performance.now();
+
+        grid.dispatchEvent(new PointerEvent("pointerdown", {
+            clientX: handle.startX,
+            clientY: handle.startY,
+            button: 0,
+            buttons: 1,
+            pointerId,
+            pointerType: "mouse",
+            bubbles: true,
+            cancelable: true
+        }));
+
+        for (let i = 1; i <= moveCount; i++) {
+            grid.dispatchEvent(new PointerEvent("pointermove", {
+                clientX: handle.startX + (handle.endX - handle.startX) * i / moveCount,
+                clientY: handle.startY + (handle.endY - handle.startY) * i / moveCount,
+                button: 0,
+                buttons: 1,
+                pointerId,
+                pointerType: "mouse",
+                bubbles: true,
+                cancelable: true
+            }));
+            await frame();
+        }
+
+        grid.dispatchEvent(new PointerEvent("pointerup", {
+            clientX: handle.endX,
+            clientY: handle.endY,
+            button: 0,
+            buttons: 0,
+            pointerId,
+            pointerType: "mouse",
+            bubbles: true,
+            cancelable: true
+        }));
+
+        await waitForBenchmarkIdle(grid);
+        return {
+            durationMs: performance.now() - started,
+            pointerMoves: moveCount,
+            debug: diffDebugMetrics(before, debugMetrics(grid))
+        };
+    };
+
     const readModelFlag = (model, name, fallback) => {
         if (!model) return fallback;
         const camel = name.charAt(0).toLowerCase() + name.slice(1);
@@ -571,6 +666,8 @@ window.tmSpreadsheetBenchmark = (() => {
             const keyboard = await measureKeyboardScenarios(grid, settings);
             const wheel = await measureWheelScroll(grid, settings.wheelDurationMs || 900);
             const drag = await measureDragAutoscroll(grid, settings.dragAutoscrollDurationMs || 700);
+            const columnResize = await measureResizeDrag(grid, "column");
+            const rowResize = await measureResizeDrag(grid, "row");
             const paste = await measureCanvasPaste(grid, settings.pasteRows || 100, settings.pasteColumns || 20);
             const phase12 = grid?.classList?.contains("tm-spreadsheet-canvas-grid")
                 ? await measurePhase12Latencies(grid)
@@ -642,6 +739,16 @@ window.tmSpreadsheetBenchmark = (() => {
                 dragScrollToCount: drag.debug?.scrollToCount || 0,
                 dragBlazorFrameCount: drag.debug?.blazorFrameCount || 0,
                 dragHotPathBlazorFrameCount: drag.debug?.hotPathBlazorFrameCount || 0,
+                columnResizeDragMs: columnResize.durationMs,
+                columnResizePointerMoveCount: columnResize.pointerMoves || 0,
+                columnResizeDotNetCallbackCount: columnResize.debug?.resizeDotNetCallbackCount || 0,
+                columnResizeBlazorFrameCount: columnResize.debug?.resizeBlazorFrameCount || 0,
+                columnResizePaintFrameCount: columnResize.debug?.resizePaintFrameCount || 0,
+                rowResizeDragMs: rowResize.durationMs,
+                rowResizePointerMoveCount: rowResize.pointerMoves || 0,
+                rowResizeDotNetCallbackCount: rowResize.debug?.resizeDotNetCallbackCount || 0,
+                rowResizeBlazorFrameCount: rowResize.debug?.resizeBlazorFrameCount || 0,
+                rowResizePaintFrameCount: rowResize.debug?.resizePaintFrameCount || 0,
                 pasteDurationMs: paste.durationMs || 0,
                 pasteDotNetCallbackCount: paste.debug?.dotNetCallbackCount || 0,
                 pasteHotPathDotNetCallbackCount: paste.debug?.hotPathDotNetCallbackCount || 0,

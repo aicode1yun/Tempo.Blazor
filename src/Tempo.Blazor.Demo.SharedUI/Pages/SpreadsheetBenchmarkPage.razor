@@ -171,7 +171,17 @@
                             data-drag-selection-callback-count="@FormatMetric(result.DragSelectionCallbackCount)"
                             data-drag-scroll-to-count="@FormatMetric(result.DragScrollToCount)"
                             data-drag-blazor-frame-count="@FormatMetric(result.DragBlazorFrameCount)"
-                            data-drag-hotpath-blazor-frame-count="@FormatMetric(result.DragHotPathBlazorFrameCount)">
+                            data-drag-hotpath-blazor-frame-count="@FormatMetric(result.DragHotPathBlazorFrameCount)"
+                            data-column-resize-drag-ms="@FormatMetric(result.ColumnResizeDragMs)"
+                            data-column-resize-pointer-moves="@FormatMetric(result.ColumnResizePointerMoveCount)"
+                            data-column-resize-dotnet-callbacks="@FormatMetric(result.ColumnResizeDotNetCallbackCount)"
+                            data-column-resize-blazor-frame-count="@FormatMetric(result.ColumnResizeBlazorFrameCount)"
+                            data-column-resize-paint-frame-count="@FormatMetric(result.ColumnResizePaintFrameCount)"
+                            data-row-resize-drag-ms="@FormatMetric(result.RowResizeDragMs)"
+                            data-row-resize-pointer-moves="@FormatMetric(result.RowResizePointerMoveCount)"
+                            data-row-resize-dotnet-callbacks="@FormatMetric(result.RowResizeDotNetCallbackCount)"
+                            data-row-resize-blazor-frame-count="@FormatMetric(result.RowResizeBlazorFrameCount)"
+                            data-row-resize-paint-frame-count="@FormatMetric(result.RowResizePaintFrameCount)">
                             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">@result.Renderer</td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-400">@result.DatasetLabel</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.FirstRenderMs:N1} ms")</td>
@@ -420,6 +430,16 @@
             metrics.DragScrollToCount,
             metrics.DragBlazorFrameCount,
             metrics.DragHotPathBlazorFrameCount,
+            metrics.ColumnResizeDragMs,
+            metrics.ColumnResizePointerMoveCount,
+            metrics.ColumnResizeDotNetCallbackCount,
+            metrics.ColumnResizeBlazorFrameCount,
+            metrics.ColumnResizePaintFrameCount,
+            metrics.RowResizeDragMs,
+            metrics.RowResizePointerMoveCount,
+            metrics.RowResizeDotNetCallbackCount,
+            metrics.RowResizeBlazorFrameCount,
+            metrics.RowResizePaintFrameCount,
             pasteSimulationMs,
             metrics.UsedJsHeapSize));
 
@@ -566,6 +586,16 @@
         double DragScrollToCount,
         double DragBlazorFrameCount,
         double DragHotPathBlazorFrameCount,
+        double ColumnResizeDragMs,
+        double ColumnResizePointerMoveCount,
+        double ColumnResizeDotNetCallbackCount,
+        double ColumnResizeBlazorFrameCount,
+        double ColumnResizePaintFrameCount,
+        double RowResizeDragMs,
+        double RowResizePointerMoveCount,
+        double RowResizeDotNetCallbackCount,
+        double RowResizeBlazorFrameCount,
+        double RowResizePaintFrameCount,
         double PasteSimulationMs,
         double? UsedJsHeapSize);
 
@@ -627,6 +657,16 @@
         public double DragScrollToCount { get; set; }
         public double DragBlazorFrameCount { get; set; }
         public double DragHotPathBlazorFrameCount { get; set; }
+        public double ColumnResizeDragMs { get; set; }
+        public double ColumnResizePointerMoveCount { get; set; }
+        public double ColumnResizeDotNetCallbackCount { get; set; }
+        public double ColumnResizeBlazorFrameCount { get; set; }
+        public double ColumnResizePaintFrameCount { get; set; }
+        public double RowResizeDragMs { get; set; }
+        public double RowResizePointerMoveCount { get; set; }
+        public double RowResizeDotNetCallbackCount { get; set; }
+        public double RowResizeBlazorFrameCount { get; set; }
+        public double RowResizePaintFrameCount { get; set; }
         public double PasteDurationMs { get; set; }
         public double PasteDotNetCallbackCount { get; set; }
         public double PasteHotPathDotNetCallbackCount { get; set; }

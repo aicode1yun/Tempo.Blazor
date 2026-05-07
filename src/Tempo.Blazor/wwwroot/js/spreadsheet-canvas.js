@@ -140,6 +140,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             },
             dirtyRects: {
                 content: [],
+                header: [],
                 selection: []
             },
             cache: {
@@ -524,9 +525,26 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function mergeCellPatch(existing, patch) {
         if (!existing) return patch;
         for (const [key, value] of Object.entries(patch || {})) {
-            existing[key] = value;
+            write(existing, key, value);
         }
         return existing;
+    }
+
+    function mergeAxisFrames(existingFrames, patchFrames) {
+        const existing = Array.isArray(existingFrames) ? existingFrames.slice() : [];
+        const byIndex = new Map();
+        for (const frame of existing) {
+            byIndex.set(read(frame, "Index", -1), frame);
+        }
+
+        for (const patch of patchFrames || []) {
+            const index = read(patch, "Index", -1);
+            if (index < 0) continue;
+            const current = byIndex.get(index);
+            byIndex.set(index, current ? mergeCellPatch(current, { ...patch }) : { ...patch });
+        }
+
+        return [...byIndex.values()].sort((left, right) => read(left, "Index", 0) - read(right, "Index", 0));
     }
 
     function syncCellStoreFromModel(root, model, options) {
@@ -1088,15 +1106,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 header: true,
                 selection: true,
                 editor: true,
-                full: true,
-                contentRects: [],
-                selectionRects: []
-            };
+            full: true,
+            contentRects: [],
+            headerRects: [],
+            selectionRects: []
+        };
         }
 
         const snapshot = {
             ...renderer.dirty,
             contentRects: renderer.dirtyRects.content.splice(0),
+            headerRects: renderer.dirtyRects.header.splice(0),
             selectionRects: renderer.dirtyRects.selection.splice(0)
         };
         renderer.dirty = { content: false, header: false, selection: false, editor: false, full: false };
@@ -1148,6 +1168,39 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return right > left && bottom > top
             ? { x: left, y: top, width: right - left, height: bottom - top }
             : null;
+    }
+
+    function addResizeCommitDirtyRects(root, kind, index) {
+        const s = getState(root);
+        const model = s?.model;
+        if (!s || !model) return;
+
+        syncModelViewport(root, model);
+        const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
+        const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
+        const rowHeaderWidth = read(model, "RowHeaderWidth", 40);
+        const columnHeaderHeight = read(model, "ColumnHeaderHeight", 20);
+        const layout = getVisibleLayout(root, model, width, height);
+
+        if (kind === "column") {
+            const colFrame = getFrameByIndex(layout.columns, index);
+            const x = colFrame
+                ? Math.max(rowHeaderWidth, Math.floor(read(colFrame, "x", rowHeaderWidth)))
+                : rowHeaderWidth;
+            const stripWidth = Math.max(1, width - x);
+            addDirtyRect(root, "content", { x, y: columnHeaderHeight, width: stripWidth, height: Math.max(1, height - columnHeaderHeight) });
+            addDirtyRect(root, "header", { x, y: 0, width: stripWidth, height: columnHeaderHeight });
+        } else {
+            const rowFrame = getFrameByIndex(layout.rows, index);
+            const y = rowFrame
+                ? Math.max(columnHeaderHeight, Math.floor(read(rowFrame, "y", columnHeaderHeight)))
+                : columnHeaderHeight;
+            const stripHeight = Math.max(1, height - y);
+            addDirtyRect(root, "content", { x: rowHeaderWidth, y, width: Math.max(1, width - rowHeaderWidth), height: stripHeight });
+            addDirtyRect(root, "header", { x: 0, y, width: rowHeaderWidth, height: stripHeight });
+        }
+
+        addDirtyRect(root, "selection", { x: 0, y: 0, width, height });
     }
 
     function dirtyRank(kind) {
@@ -1216,6 +1269,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             } else if (redrawKind === "content" && !dirty.full) {
                 syncModelViewport(root, s.model);
                 const metrics = renderContentLayer(root, s.model, { dirtyRects: dirty.contentRects });
+                if (dirty.header || dirty.headerRects.length > 0) renderHeaderLayer(root, s.model, { dirtyRects: dirty.headerRects });
                 if (dirty.selection) renderSelectionOverlay(root, s.model, { dirtyRects: dirty.selectionRects });
                 s.paintedScrollLeft = getLogicalScrollLeft(root);
                 s.paintedScrollTop = getLogicalScrollTop(root);
@@ -1227,7 +1281,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 }
             } else if (redrawKind === "headers" && !dirty.full) {
                 syncModelViewport(root, s.model);
-                renderHeaderLayer(root, s.model);
+                renderHeaderLayer(root, s.model, { dirtyRects: dirty.headerRects });
                 if (dirty.selection) renderSelectionOverlay(root, s.model, { dirtyRects: dirty.selectionRects });
             } else {
                 syncModelViewport(root, s.model);
@@ -1266,12 +1320,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     }
 
     function recordDotNetCallback(root, method, hotPath) {
-        const metrics = getState(root)?.metrics;
+        const s = getState(root);
+        const metrics = s?.metrics;
         if (!metrics) return;
         const key = method || "unknown";
         metrics.dotNetCallbackCount += 1;
         metrics.lastDotNetCallbackMethod = key;
         metrics.dotNetCallbacksByMethod[key] = (metrics.dotNetCallbacksByMethod[key] || 0) + 1;
+        const age = performance.now() - (s?.lastLocalInteractionAt || 0);
+        if (s?.lastInteractionSource === "resize" && age >= 0 && age < 1000) {
+            metrics.resizeDotNetCallbackCount += 1;
+        }
         if (hotPath) {
             metrics.hotPathDotNetCallbackCount += 1;
             metrics.hotPathDotNetCallbacksByMethod[key] = (metrics.hotPathDotNetCallbacksByMethod[key] || 0) + 1;
@@ -1295,6 +1354,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         else if (type === "selectionSettled") metrics.selectionSettledCommandCount += 1;
         else if (type === "viewportSettled") metrics.viewportSettledCommandCount += 1;
         else if (type === "formulaCommitted") metrics.formulaCommittedCommandCount += 1;
+        else if (type === "columnResized") metrics.columnResizeCommandCount += 1;
+        else if (type === "rowResized") metrics.rowResizeCommandCount += 1;
     }
 
     function queueCommand(root, type, payload, options) {
@@ -1645,6 +1706,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             bitmapShiftCount: 0,
             bitmapShiftFallbackCount: 0,
             dragAutoscrollFrames: 0,
+            resizePointerMoveCount: 0,
+            resizePreviewFrameCount: 0,
+            resizePaintFrameCount: 0,
+            resizeDotNetCallbackCount: 0,
+            resizeBlazorFrameCount: 0,
             dotNetCallbackCount: 0,
             hotPathDotNetCallbackCount: 0,
             dotNetCallbacksByMethod: {},
@@ -1779,6 +1845,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             selectionSettledCommandCount: 0,
             viewportSettledCommandCount: 0,
             formulaCommittedCommandCount: 0,
+            columnResizeCommandCount: 0,
+            rowResizeCommandCount: 0,
             editorOpenCount: 0,
             editorCancelCount: 0,
             editorLocalCommitCount: 0,
@@ -1867,6 +1935,71 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
 
         return null;
+    }
+
+    function getResizePreviewState(root) {
+        return getState(root)?.resize || null;
+    }
+
+    function beginResizeSession(root, hit, ev) {
+        const s = getState(root);
+        if (!s || !hit) return;
+        const client = hit.kind === "column" ? ev.clientX : ev.clientY;
+        s.resize = {
+            kind: hit.kind,
+            index: hit.index,
+            start: hit.start,
+            size: hit.size,
+            currentSize: hit.size,
+            pointerId: ev.pointerId,
+            previewClient: client,
+            previewFrame: 0
+        };
+        markLocalInteraction(root, "resize");
+        requestCanvasRedraw(root, "resize-preview-start", "selection");
+    }
+
+    function scheduleResizePreview(root) {
+        const s = getState(root);
+        const resize = s?.resize;
+        if (!s || !resize || resize.previewFrame) return;
+        resize.previewFrame = requestAnimationFrame(() => {
+            const current = getResizePreviewState(root);
+            if (!current) return;
+            current.previewFrame = 0;
+            if (s.metrics) {
+                s.metrics.resizePreviewFrameCount += 1;
+                s.metrics.resizePaintFrameCount += 1;
+            }
+            requestCanvasRedraw(root, "resize-preview", "selection");
+        });
+    }
+
+    function updateResizeSession(root, ev) {
+        const s = getState(root);
+        const resize = s?.resize;
+        if (!s || !resize) return false;
+        const client = resize.kind === "column" ? ev.clientX : ev.clientY;
+        const delta = client - resize.start;
+        const next = Math.max(resize.kind === "column" ? 16 : 8, resize.size + delta);
+        resize.previewClient = client;
+        if (Math.abs((resize.currentSize || 0) - next) <= 0.25) return false;
+        resize.currentSize = next;
+        if (s.metrics) s.metrics.resizePointerMoveCount += 1;
+        scheduleResizePreview(root);
+        return true;
+    }
+
+    function clearResizePreview(root) {
+        const s = getState(root);
+        const resize = s?.resize;
+        if (!s || !resize) return;
+        if (resize.previewFrame) {
+            cancelAnimationFrame(resize.previewFrame);
+            resize.previewFrame = 0;
+        }
+        s.resize = null;
+        requestCanvasRedraw(root, "resize-preview-clear", "selection");
     }
 
     function hitCell(root, point) {
@@ -3679,6 +3812,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onPointerMove = ev => {
             s.pointerPoint = { clientX: ev.clientX, clientY: ev.clientY };
+            if (s.resize) {
+                updateResizeSession(root, ev);
+                ev.preventDefault();
+                return;
+            }
             if (s.sheetState?.formulaEditor?.active && s.sheetState.formulaEditor.dragAnchor) {
                 const hit = hitCell(root, toContentPoint(root, ev));
                 if (hit) updateFormulaReferenceDrag(root, hit);
@@ -3723,7 +3861,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const onPointerDown = ev => {
             const hit = hitResize(root, ev);
             if (!hit) return;
-            s.resize = hit;
+            beginResizeSession(root, hit, ev);
             safeSetPointerCapture(root, ev.pointerId);
             ev.preventDefault();
         };
@@ -3796,13 +3934,23 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             setPossibleDrag(root, null);
             if (!s.resize) return;
             const resize = s.resize;
-            s.resize = null;
             safeReleasePointerCapture(root, ev.pointerId);
-            const delta = resize.kind === "column" ? ev.clientX - resize.start : ev.clientY - resize.start;
-            const next = Math.max(resize.kind === "column" ? 16 : 8, resize.size + delta);
-            const method = resize.kind === "column" ? "OnCanvasColumnResize" : "OnCanvasRowResize";
-            setLayoutAxisSize(root, resize.kind, resize.index, next);
-            invokeDotNet(root, method, [resize.index, next], true).catch(() => {});
+            updateResizeSession(root, ev);
+            clearResizePreview(root);
+            const next = Math.max(resize.kind === "column" ? 16 : 8, resize.currentSize || resize.size);
+            if (Math.abs(next - resize.size) > 0.25) {
+                markLocalInteraction(root, "resize");
+                setLayoutAxisSize(root, resize.kind, resize.index, next);
+                addResizeCommitDirtyRects(root, resize.kind, resize.index);
+                queueCommand(root, resize.kind === "column" ? "columnResized" : "rowResized", {
+                    axis: resize.kind,
+                    index: resize.index,
+                    size: next
+                }, {
+                    flushNow: true
+                });
+                requestCanvasRedraw(root, "resize-commit", "content");
+            }
             ev.preventDefault();
         };
         const onKeyDown = ev => {
@@ -4048,6 +4196,33 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 });
             case "invalidateSnapshots":
                 return window.tmSpreadsheetCanvas.invalidateCellSnapshots(root, read(payload, "Payload", payload));
+            case "syncLayoutAxes": {
+                const s = getState(root);
+                const model = s?.model;
+                if (!s || !model) return null;
+                const rows = read(payload, "Rows", null);
+                const columns = read(payload, "Columns", null);
+                if (Array.isArray(rows) && rows.length > 0) {
+                    write(model, "Rows", mergeAxisFrames(read(model, "Rows", []), rows));
+                    write(model, "rows", read(model, "Rows", []));
+                }
+                if (Array.isArray(columns) && columns.length > 0) {
+                    write(model, "Columns", mergeAxisFrames(read(model, "Columns", []), columns));
+                    write(model, "columns", read(model, "Columns", []));
+                }
+                write(model, "RowCount", read(payload, "RowCount", read(model, "RowCount", 0)));
+                write(model, "ColumnCount", read(payload, "ColumnCount", read(model, "ColumnCount", 0)));
+                write(model, "TotalWidth", read(payload, "TotalWidth", read(model, "TotalWidth", 0)));
+                write(model, "TotalHeight", read(payload, "TotalHeight", read(model, "TotalHeight", 0)));
+                write(model, "FreezeRowCount", read(payload, "FreezeRowCount", read(model, "FreezeRowCount", 0)));
+                write(model, "FreezeColumnCount", read(payload, "FreezeColumnCount", read(model, "FreezeColumnCount", 0)));
+                syncLayoutStateFromModel(root, model);
+                updateLocalEditorPosition(root);
+                syncEditorAccessibility(root);
+                syncAccessibilityState(root, false);
+                requestCanvasRedraw(root, "sync-layout-axes", "full");
+                return null;
+            }
             case "renderModel": {
                 const s = getState(root);
                 const model = read(payload, "Model", null);
@@ -4080,6 +4255,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 s.metrics.blazorFrameCount += 1;
                 s.metrics.lastBlazorFrameAgeMs = Number.isFinite(age) ? age : 0;
                 if (age >= 0 && age < 500) s.metrics.hotPathBlazorFrameCount += 1;
+                if (s.lastInteractionSource === "resize" && age >= 0 && age < 1000) {
+                    s.metrics.resizeBlazorFrameCount += 1;
+                }
             }
             updateLocalEditorPosition(root);
             syncEditorAccessibility(root);
@@ -4142,6 +4320,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                             selection: s.sheetState.drag?.selection ? { ...s.sheetState.drag.selection } : null,
                             autoscrollPointer: s.sheetState.drag?.autoscrollPointer ? { ...s.sheetState.drag.autoscrollPointer } : null
                         },
+                        resize: s.resize
+                            ? {
+                                kind: s.resize.kind || "",
+                                index: s.resize.index || 0,
+                                size: s.resize.size || 0,
+                                currentSize: s.resize.currentSize || 0
+                            }
+                            : null,
                         cellStore: {
                             size: s.sheetState.cellStore?.cells?.size || 0,
                             revision: s.sheetState.cellStore?.revision || 0,
@@ -4701,6 +4887,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             if (metrics.lastDrawMs > 33) metrics.slowFramesOver33 += 1;
             if (metrics.lastDrawMs > 16) metrics.slowFramesOver16 += 1;
         }
+        updateLocalEditorPosition(root);
+        syncEditorAccessibility(root);
+        syncAccessibilityState(root, false);
     }
 
     function tryBitmapScrollRedraw(root, model, oldScrollLeft, oldScrollTop) {
@@ -4832,12 +5021,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
     }
 
-    function renderHeaderLayer(root, model) {
+    function renderHeaderLayer(root, model, options) {
         const s = getState(root);
         const canvas = s?.headerCanvas;
         if (!s || !canvas || !model) return;
 
         const started = performance.now();
+        const settings = options || {};
         const dpr = window.devicePixelRatio || 1;
         const width = Math.max(1, root.clientWidth || read(model, "ViewportWidth", 1));
         const height = Math.max(1, root.clientHeight || read(model, "ViewportHeight", 1));
@@ -4846,8 +5036,19 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const ctx = canvas.getContext("2d");
         ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
         resetContextState(ctx);
-        ctx.clearRect(0, 0, width, height);
-        drawHeaders(ctx, root, model, s.palette || buildPalette(root), width, height);
+        const dirtyRect = settings.forceFull ? null : unionRects(settings.dirtyRects, width, height);
+        if (dirtyRect) {
+            ctx.clearRect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            contextSave(ctx, s.metrics);
+            ctx.beginPath();
+            ctx.rect(dirtyRect.x, dirtyRect.y, dirtyRect.width, dirtyRect.height);
+            contextClip(ctx, s.metrics);
+            drawHeaders(ctx, root, model, s.palette || buildPalette(root), width, height);
+            contextRestore(ctx, s.metrics);
+        } else {
+            ctx.clearRect(0, 0, width, height);
+            drawHeaders(ctx, root, model, s.palette || buildPalette(root), width, height);
+        }
         if (s.metrics) {
             s.metrics.headerLayerPaintCount += 1;
             s.metrics.lastHeaderLayerMs = performance.now() - started;
@@ -5165,6 +5366,58 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                     Math.max(0, previewRect.height - 2));
                 ctx.restore();
                 resetContextState(ctx);
+            }
+        }
+
+        const resize = getResizePreviewState(root);
+        if (resize) {
+            const rect = root.getBoundingClientRect();
+            const minSize = resize.kind === "column" ? 16 : 8;
+            const label = `${resize.kind === "column" ? "W" : "H"} ${Math.max(minSize, Math.round(resize.currentSize || resize.size))}`;
+            if (resize.kind === "column") {
+                const x = Math.max(rowHeaderWidth, Math.min(width - 1, resize.previewClient - rect.left));
+                ctx.save();
+                setContextStrokeStyle(ctx, palette.primary, metrics);
+                setContextLineWidth(ctx, 2, metrics);
+                ctx.setLineDash([5, 3]);
+                ctx.beginPath();
+                ctx.moveTo(Math.floor(x) + 0.5, 0);
+                ctx.lineTo(Math.floor(x) + 0.5, height);
+                ctx.stroke();
+                ctx.restore();
+                resetContextState(ctx);
+
+                setContextFont(ctx, "600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", metrics);
+                setContextTextAlign(ctx, "center", metrics);
+                setContextTextBaseline(ctx, "middle", metrics);
+                const labelWidth = Math.max(48, label.length * 7 + 12);
+                const labelX = Math.max(rowHeaderWidth + labelWidth / 2, Math.min(width - labelWidth / 2 - 4, x));
+                setContextFillStyle(ctx, palette.primary, metrics);
+                ctx.fillRect(Math.round(labelX - labelWidth / 2), 4, labelWidth, 20);
+                setContextFillStyle(ctx, palette.surface, metrics);
+                ctx.fillText(label, labelX, 14);
+            } else {
+                const y = Math.max(columnHeaderHeight, Math.min(height - 1, resize.previewClient - rect.top));
+                ctx.save();
+                setContextStrokeStyle(ctx, palette.primary, metrics);
+                setContextLineWidth(ctx, 2, metrics);
+                ctx.setLineDash([5, 3]);
+                ctx.beginPath();
+                ctx.moveTo(0, Math.floor(y) + 0.5);
+                ctx.lineTo(width, Math.floor(y) + 0.5);
+                ctx.stroke();
+                ctx.restore();
+                resetContextState(ctx);
+
+                setContextFont(ctx, "600 11px ui-monospace, SFMono-Regular, Menlo, Consolas, monospace", metrics);
+                setContextTextAlign(ctx, "center", metrics);
+                setContextTextBaseline(ctx, "middle", metrics);
+                const labelWidth = Math.max(48, label.length * 7 + 12);
+                const labelY = Math.max(columnHeaderHeight + 12, Math.min(height - 12, y));
+                setContextFillStyle(ctx, palette.primary, metrics);
+                ctx.fillRect(4, Math.round(labelY - 10), labelWidth, 20);
+                setContextFillStyle(ctx, palette.surface, metrics);
+                ctx.fillText(label, 4 + labelWidth / 2, labelY);
             }
         }
 

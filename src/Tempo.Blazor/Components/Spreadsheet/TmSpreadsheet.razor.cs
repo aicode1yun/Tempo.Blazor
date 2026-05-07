@@ -250,19 +250,23 @@ public partial class TmSpreadsheet
         _ = OnCellEdit.InvokeAsync(args);
     }
 
-    private void OnColumnResizeRequested((int ColIndex, double Width) args)
+    private async Task OnColumnResizeRequested((int ColIndex, double Width) args)
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         _commandManager.Execute(new ResizeColumnCommand(_workbook.ActiveSheet, args.ColIndex, args.Width));
         InvalidateRenderedColumns(new[] { args.ColIndex });
+        if (CanvasJsEngineGrid is not null)
+            await CanvasJsEngineGrid.ApplyEngineLayoutPatchesAsync(columnIndices: new[] { args.ColIndex });
         StateHasChanged();
     }
 
-    private void OnRowResizeRequested((int RowIndex, double Height) args)
+    private async Task OnRowResizeRequested((int RowIndex, double Height) args)
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         _commandManager.Execute(new ResizeRowCommand(_workbook.ActiveSheet, args.RowIndex, args.Height));
         InvalidateRenderedRows(new[] { args.RowIndex });
+        if (CanvasJsEngineGrid is not null)
+            await CanvasJsEngineGrid.ApplyEngineLayoutPatchesAsync(rowIndices: new[] { args.RowIndex });
         StateHasChanged();
     }
 

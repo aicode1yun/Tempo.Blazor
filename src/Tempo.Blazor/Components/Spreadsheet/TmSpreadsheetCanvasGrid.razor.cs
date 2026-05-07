@@ -250,6 +250,15 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
 
         /// <summary>Cell edits carried by cellChanged, rangeChanged, or formulaCommitted commands.</summary>
         public IReadOnlyList<CanvasCellEditCommit>? CellEdits { get; set; }
+
+        /// <summary>Resize axis for resize commands.</summary>
+        public string? Axis { get; set; }
+
+        /// <summary>Zero-based row or column index for resize commands.</summary>
+        public int Index { get; set; }
+
+        /// <summary>Committed size for resize commands.</summary>
+        public double Size { get; set; }
     }
 
     /// <summary>Represents a canvas selection snapshot emitted by JavaScript.</summary>
@@ -465,6 +474,52 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         catch (InvalidOperationException) { }
     }
 
+    internal async Task ApplyEngineLayoutPatchesAsync(IEnumerable<int>? rowIndices = null, IEnumerable<int>? columnIndices = null)
+    {
+        if (!UseJsEngine || Sheet is null)
+            return;
+
+        if (!_registered)
+        {
+            _needsRender = true;
+            return;
+        }
+
+        _geometry.Update(Sheet, RowHeight, ColumnWidth);
+
+        var rows = rowIndices?
+            .Where(static row => row >= 0)
+            .Distinct()
+            .Select(row => BuildRow(row, frozen: IsFrozenRow(row)))
+            .ToArray();
+        var columns = columnIndices?
+            .Where(static col => col >= 0)
+            .Distinct()
+            .Select(col => BuildColumn(col, frozen: IsFrozenCol(col)))
+            .ToArray();
+
+        if ((rows is null || rows.Length == 0) && (columns is null || columns.Length == 0))
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.applyCommand", _rootElement, new
+            {
+                Type = "syncLayoutAxes",
+                RowCount = Sheet.RowCount,
+                ColumnCount = Sheet.ColumnCount,
+                TotalWidth = _geometry.ContentWidth + SpreadsheetGridConstants.RowHeaderWidth,
+                TotalHeight = _geometry.ContentHeight + SpreadsheetGridConstants.ColumnHeaderHeight,
+                FreezeRowCount = Math.Clamp(Sheet.FreezeRowCount, 0, Sheet.RowCount),
+                FreezeColumnCount = Math.Clamp(Sheet.FreezeColumnCount, 0, Sheet.ColumnCount),
+                Rows = rows,
+                Columns = columns
+            });
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
     internal async Task PreviewEngineStylePatchesAsync(IEnumerable<string> cellRefs, Action<SpreadsheetCellStyle> mutate)
     {
         if (!UseJsEngine || Sheet is null)
@@ -608,6 +663,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
                     if (command.Selection is not null)
                         SyncSelectionFromCanvas(command.Selection.Row, command.Selection.Col, command.Selection.StartRow, command.Selection.StartCol, command.Selection.EndRow, command.Selection.EndCol);
                     shouldRender |= ApplyCanvasViewport(command.ScrollLeft, command.ScrollTop, command.ClientWidth, command.ClientHeight);
+                    break;
+                case "columnResized":
+                    shouldRender |= await ApplyCanvasColumnResizeAsync(command.Index, command.Size);
+                    break;
+                case "rowResized":
+                    shouldRender |= await ApplyCanvasRowResizeAsync(command.Index, command.Size);
                     break;
             }
         }
@@ -851,25 +912,37 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     [JSInvokable]
     public Task OnCanvasColumnResize(int colIndex, double width)
     {
-        if (Sheet is null)
-            return Task.CompletedTask;
-
-        _geometry.Clear();
-        _ = OnColumnResizeRequested.InvokeAsync((Math.Clamp(colIndex, 0, Sheet.ColumnCount - 1), Math.Max(16, width)));
-        _needsRender = true;
-        return InvokeAsync(StateHasChanged);
+        return ApplyCanvasColumnResizeAsync(colIndex, width);
     }
 
     [JSInvokable]
     public Task OnCanvasRowResize(int rowIndex, double height)
     {
+        return ApplyCanvasRowResizeAsync(rowIndex, height);
+    }
+
+    private async Task<bool> ApplyCanvasColumnResizeAsync(int colIndex, double width)
+    {
         if (Sheet is null)
-            return Task.CompletedTask;
+            return false;
 
         _geometry.Clear();
-        _ = OnRowResizeRequested.InvokeAsync((Math.Clamp(rowIndex, 0, Sheet.RowCount - 1), Math.Max(8, height)));
+        if (OnColumnResizeRequested.HasDelegate)
+            await OnColumnResizeRequested.InvokeAsync((Math.Clamp(colIndex, 0, Sheet.ColumnCount - 1), Math.Max(16, width)));
         _needsRender = true;
-        return InvokeAsync(StateHasChanged);
+        return true;
+    }
+
+    private async Task<bool> ApplyCanvasRowResizeAsync(int rowIndex, double height)
+    {
+        if (Sheet is null)
+            return false;
+
+        _geometry.Clear();
+        if (OnRowResizeRequested.HasDelegate)
+            await OnRowResizeRequested.InvokeAsync((Math.Clamp(rowIndex, 0, Sheet.RowCount - 1), Math.Max(8, height)));
+        _needsRender = true;
+        return true;
     }
 
     /// <summary>Handles non-navigation keyboard commands forwarded by the canvas hot path.</summary>
