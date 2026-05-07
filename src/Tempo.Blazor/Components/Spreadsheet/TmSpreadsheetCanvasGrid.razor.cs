@@ -284,6 +284,60 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         StateHasChanged();
     }
 
+    /// <inheritdoc />
+    public void InvalidateRenderedCells(IEnumerable<string> cellRefs)
+    {
+        var refs = cellRefs
+            .Where(static cellRef => !string.IsNullOrWhiteSpace(cellRef))
+            .Distinct(StringComparer.OrdinalIgnoreCase)
+            .ToArray();
+        if (refs.Length == 0)
+            return;
+
+        InvalidateCanvasSnapshots(new { cells = refs });
+    }
+
+    /// <inheritdoc />
+    public void InvalidateRenderedRows(IEnumerable<int> rowIndices)
+    {
+        var rows = rowIndices.Where(static row => row >= 0).Distinct().ToArray();
+        if (rows.Length == 0)
+            return;
+
+        InvalidateCanvasSnapshots(new { rows });
+    }
+
+    /// <inheritdoc />
+    public void InvalidateRenderedColumns(IEnumerable<int> columnIndices)
+    {
+        var columns = columnIndices.Where(static col => col >= 0).Distinct().ToArray();
+        if (columns.Length == 0)
+            return;
+
+        InvalidateCanvasSnapshots(new { columns });
+    }
+
+    /// <inheritdoc />
+    public void ClearRenderedCache()
+    {
+        InvalidateCanvasSnapshots(new { clear = true });
+    }
+
+    private void InvalidateCanvasSnapshots(object payload)
+    {
+        if (!_registered)
+            return;
+
+        _ = InvalidateCanvasSnapshotsAsync(payload);
+    }
+
+    private async Task InvalidateCanvasSnapshotsAsync(object payload)
+    {
+        try { await JS.InvokeVoidAsync("tmSpreadsheetCanvas.invalidateCellSnapshots", _rootElement, payload); }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
     [JSInvokable]
     public Task OnCanvasViewportChanged(
         double scrollLeft,
@@ -475,7 +529,6 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             : string.Empty;
         var changed = !string.Equals(previousValue, value ?? string.Empty, StringComparison.Ordinal);
 
-        SetActiveCell(row, col, extendSelection: false, render: false);
         _ = CellValueCommitted.InvokeAsync((cellRef, value));
         _ = OnCellEdit.InvokeAsync(new SpreadsheetCellEditEventArgs(Sheet, cellRef, false));
         _needsRender = changed;

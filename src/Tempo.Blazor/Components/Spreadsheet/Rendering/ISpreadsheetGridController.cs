@@ -31,4 +31,16 @@ public interface ISpreadsheetGridController
 
     /// <summary>Inserts or replaces a formula reference in the live edit value.</summary>
     void InsertCellRefIntoFormula(string cellRef);
+
+    /// <summary>Invalidates renderer-side cached output for the supplied cells.</summary>
+    void InvalidateRenderedCells(IEnumerable<string> cellRefs);
+
+    /// <summary>Invalidates renderer-side cached output for the supplied rows.</summary>
+    void InvalidateRenderedRows(IEnumerable<int> rowIndices);
+
+    /// <summary>Invalidates renderer-side cached output for the supplied columns.</summary>
+    void InvalidateRenderedColumns(IEnumerable<int> columnIndices);
+
+    /// <summary>Clears all renderer-side cached output.</summary>
+    void ClearRenderedCache();
 }

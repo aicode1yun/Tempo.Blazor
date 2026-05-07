@@ -1,6 +1,7 @@
 @page "/spreadsheet-benchmark"
 @inject IJSRuntime JS
 @using System.Diagnostics
+@using System.Globalization
 @using Tempo.Blazor.Components.Spreadsheet
 @using Tempo.Blazor.Components.Spreadsheet.Enums
 @using Tempo.Blazor.Components.Spreadsheet.Models
@@ -94,7 +95,20 @@
                     <th class="px-4 py-3 text-left font-semibold text-slate-700 dark:text-slate-300">Dataset</th>
                     <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">First render</th>
                     <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Scroll FPS</th>
-                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow move avg</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow no scroll</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow down edge</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow up edge</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Arrow right edge</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Wheel FPS</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Drag frames</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Key scroll events</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Key scrollTo</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Key ensure</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Draw cells</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Draw content</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Clip ops</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Fast cells</th>
+                    <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Slow cells</th>
                     <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">Paste sim.</th>
                     <th class="px-4 py-3 text-right font-semibold text-slate-700 dark:text-slate-300">JS heap</th>
                 </tr>
@@ -103,19 +117,52 @@
                 @if (_results.Count == 0)
                 {
                     <tr>
-                        <td colspan="7" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No benchmark results yet.</td>
+                        <td colspan="20" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No benchmark results yet.</td>
                     </tr>
                 }
                 else
                 {
                     @foreach (var result in _results)
                     {
-                        <tr data-testid="spreadsheet-benchmark-result-row">
+                        <tr data-testid="spreadsheet-benchmark-result-row"
+                            data-renderer="@result.Renderer"
+                            data-dataset="@result.DatasetLabel"
+                            data-keyboard-scroll-down-ms="@FormatMetric(result.KeyboardScrollDownMs)"
+                            data-keyboard-scroll-up-ms="@FormatMetric(result.KeyboardScrollUpMs)"
+                            data-keyboard-scroll-right-ms="@FormatMetric(result.KeyboardScrollRightMs)"
+                            data-keyboard-logical-scroll-count="@FormatMetric(result.KeyboardLogicalScrollCount)"
+                            data-keyboard-scroll-to-count="@FormatMetric(result.KeyboardScrollToCount)"
+                            data-wheel-fps="@FormatMetric(result.WheelScrollFps)"
+                            data-wheel-events="@FormatMetric(result.WheelEventCount)"
+                            data-wheel-prevented="@FormatMetric(result.WheelPreventedCount)"
+                            data-wheel-logical-scroll-count="@FormatMetric(result.WheelLogicalScrollCount)"
+                            data-wheel-viewport-callback-count="@FormatMetric(result.WheelViewportCallbackCount)"
+                            data-wheel-scroll-to-count="@FormatMetric(result.WheelScrollToCount)"
+                            data-wheel-paint-frame-count="@FormatMetric(result.WheelPaintFrameCount)"
+                            data-wheel-content-paint-frame-count="@FormatMetric(result.WheelContentPaintFrameCount)"
+                            data-drag-frames="@FormatMetric(result.DragAutoscrollFrames)"
+                            data-drag-logical-scroll-count="@FormatMetric(result.DragLogicalScrollCount)"
+                            data-drag-viewport-callback-count="@FormatMetric(result.DragViewportCallbackCount)"
+                            data-drag-selection-callback-count="@FormatMetric(result.DragSelectionCallbackCount)"
+                            data-drag-scroll-to-count="@FormatMetric(result.DragScrollToCount)">
                             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">@result.Renderer</td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-400">@result.DatasetLabel</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.FirstRenderMs:N1} ms")</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.ScrollFps:N1}")</td>
-                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyNavigationMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyboardNoScrollMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyboardScrollDownMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyboardScrollUpMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyboardScrollRightMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.WheelScrollFps:N1}")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.DragAutoscrollFrames.ToString("N0")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.KeyboardNativeScrollEvents.ToString("N0")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.KeyboardScrollToCount.ToString("N0")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.KeyboardEnsureCellVisibleMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.DebugDrawCellsMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.DebugDrawCellContentMs:N1} ms")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.DebugContextSaveClipRestoreCount.ToString("N0")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.DebugFastCellPathCount.ToString("N0")</td>
+                            <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@result.DebugSlowCellPathCount.ToString("N0")</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@($"{result.PasteSimulationMs:N1} ms")</td>
                             <td class="px-4 py-3 text-right tabular-nums text-slate-700 dark:text-slate-300">@FormatBytes(result.UsedJsHeapSize)</td>
                         </tr>
@@ -271,7 +318,15 @@
             metrics = await JS.InvokeAsync<BrowserBenchmarkMetrics>(
                 "tmSpreadsheetBenchmark.run",
                 selector,
-                new { scrollDurationMs = 1_200, keyNavigationCount = 20 });
+                new
+                {
+                    scrollDurationMs = 500,
+                    keyboardNoScrollCount = 12,
+                    keyboardEdgeCount = 24,
+                    keyboardRightEdgeCount = 24,
+                    wheelDurationMs = 350,
+                    dragAutoscrollDurationMs = 250
+                });
         }
         catch (JSException)
         {
@@ -284,7 +339,32 @@
             CurrentDataset.Label,
             firstRenderMs,
             metrics.ScrollFps,
-            metrics.KeyNavigationMs,
+            metrics.KeyboardNoScrollMs,
+            metrics.KeyboardScrollDownMs,
+            metrics.KeyboardScrollUpMs,
+            metrics.KeyboardScrollRightMs,
+            metrics.WheelScrollFps,
+            metrics.DragAutoscrollFrames,
+            metrics.KeyboardNativeScrollEvents,
+            metrics.KeyboardScrollToCount,
+            metrics.KeyboardLogicalScrollCount,
+            metrics.KeyboardEnsureCellVisibleMs,
+            metrics.DebugDrawCellsMs,
+            metrics.DebugDrawCellContentMs,
+            metrics.DebugContextSaveClipRestoreCount,
+            metrics.DebugFastCellPathCount,
+            metrics.DebugSlowCellPathCount,
+            metrics.WheelEventCount,
+            metrics.WheelPreventedCount,
+            metrics.WheelLogicalScrollCount,
+            metrics.WheelViewportCallbackCount,
+            metrics.WheelScrollToCount,
+            metrics.WheelPaintFrameCount,
+            metrics.WheelContentPaintFrameCount,
+            metrics.DragLogicalScrollCount,
+            metrics.DragViewportCallbackCount,
+            metrics.DragSelectionCallbackCount,
+            metrics.DragScrollToCount,
             pasteSimulationMs,
             metrics.UsedJsHeapSize));
 
@@ -364,6 +444,9 @@
         return $"{megabytes:N1} MB";
     }
 
+    private static string FormatMetric(double value) =>
+        value.ToString("R", CultureInfo.InvariantCulture);
+
     private void ClearResults()
     {
         _results.Clear();
@@ -376,7 +459,32 @@
         string DatasetLabel,
         double FirstRenderMs,
         double ScrollFps,
-        double KeyNavigationMs,
+        double KeyboardNoScrollMs,
+        double KeyboardScrollDownMs,
+        double KeyboardScrollUpMs,
+        double KeyboardScrollRightMs,
+        double WheelScrollFps,
+        double DragAutoscrollFrames,
+        double KeyboardNativeScrollEvents,
+        double KeyboardScrollToCount,
+        double KeyboardLogicalScrollCount,
+        double KeyboardEnsureCellVisibleMs,
+        double DebugDrawCellsMs,
+        double DebugDrawCellContentMs,
+        double DebugContextSaveClipRestoreCount,
+        double DebugFastCellPathCount,
+        double DebugSlowCellPathCount,
+        double WheelEventCount,
+        double WheelPreventedCount,
+        double WheelLogicalScrollCount,
+        double WheelViewportCallbackCount,
+        double WheelScrollToCount,
+        double WheelPaintFrameCount,
+        double WheelContentPaintFrameCount,
+        double DragLogicalScrollCount,
+        double DragViewportCallbackCount,
+        double DragSelectionCallbackCount,
+        double DragScrollToCount,
         double PasteSimulationMs,
         double? UsedJsHeapSize);
 
@@ -384,6 +492,32 @@
     {
         public double ScrollFps { get; set; }
         public double KeyNavigationMs { get; set; }
+        public double KeyboardNoScrollMs { get; set; }
+        public double KeyboardScrollDownMs { get; set; }
+        public double KeyboardScrollUpMs { get; set; }
+        public double KeyboardScrollRightMs { get; set; }
+        public double WheelScrollFps { get; set; }
+        public double DragAutoscrollFrames { get; set; }
+        public double KeyboardNativeScrollEvents { get; set; }
+        public double KeyboardScrollToCount { get; set; }
+        public double KeyboardLogicalScrollCount { get; set; }
+        public double KeyboardEnsureCellVisibleMs { get; set; }
+        public double DebugDrawCellsMs { get; set; }
+        public double DebugDrawCellContentMs { get; set; }
+        public double DebugContextSaveClipRestoreCount { get; set; }
+        public double DebugFastCellPathCount { get; set; }
+        public double DebugSlowCellPathCount { get; set; }
+        public double WheelEventCount { get; set; }
+        public double WheelPreventedCount { get; set; }
+        public double WheelLogicalScrollCount { get; set; }
+        public double WheelViewportCallbackCount { get; set; }
+        public double WheelScrollToCount { get; set; }
+        public double WheelPaintFrameCount { get; set; }
+        public double WheelContentPaintFrameCount { get; set; }
+        public double DragLogicalScrollCount { get; set; }
+        public double DragViewportCallbackCount { get; set; }
+        public double DragSelectionCallbackCount { get; set; }
+        public double DragScrollToCount { get; set; }
         public double? UsedJsHeapSize { get; set; }
     }
 }

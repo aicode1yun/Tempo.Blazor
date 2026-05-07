@@ -141,6 +141,27 @@ public partial class TmSpreadsheet
             Math.Max(start.Col, end.Col)
         );
     }
+
+    private void InvalidateRenderedCells(IEnumerable<string> cellRefs)
+    {
+        _grid?.InvalidateRenderedCells(cellRefs);
+    }
+
+    private void InvalidateRenderedRows(IEnumerable<int> rowIndices)
+    {
+        _grid?.InvalidateRenderedRows(rowIndices);
+    }
+
+    private void InvalidateRenderedColumns(IEnumerable<int> columnIndices)
+    {
+        _grid?.InvalidateRenderedColumns(columnIndices);
+    }
+
+    private void ClearRenderedCache()
+    {
+        _grid?.ClearRenderedCache();
+    }
+
     private bool ShowGridLines => _workbook.ActiveSheet?.ShowGridLines ?? true;
 
     private SpreadsheetCellStyle? GetActiveCellStyle()
@@ -209,6 +230,7 @@ public partial class TmSpreadsheet
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         _commandManager.Execute(new ResizeColumnCommand(_workbook.ActiveSheet, args.ColIndex, args.Width));
+        InvalidateRenderedColumns(new[] { args.ColIndex });
         StateHasChanged();
     }
 
@@ -216,6 +238,7 @@ public partial class TmSpreadsheet
     {
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         _commandManager.Execute(new ResizeRowCommand(_workbook.ActiveSheet, args.RowIndex, args.Height));
+        InvalidateRenderedRows(new[] { args.RowIndex });
         StateHasChanged();
     }
 
@@ -274,6 +297,7 @@ public partial class TmSpreadsheet
             args.Value.StartsWith('=') ? null : args.Value,
             previous?.Formula,
             args.Value.StartsWith('=') ? args.Value : null));
+        InvalidateRenderedCells(new[] { targetCellRef });
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
         StateHasChanged();
@@ -331,6 +355,7 @@ public partial class TmSpreadsheet
             value.StartsWith('=') ? null : value,
             value.StartsWith('=') ? value : null);
         _commandManager.Execute(cmd);
+        InvalidateRenderedCells(new[] { cellRef });
     }
 
     // ── Toolbar commands ──
@@ -509,6 +534,7 @@ public partial class TmSpreadsheet
             s.BorderBottom = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
             s.BorderLeft = new SpreadsheetBorder(SpreadsheetBorderStyle.None, null);
         }));
+        InvalidateRenderedCells(refs);
         StateHasChanged();
     }
 
@@ -519,6 +545,7 @@ public partial class TmSpreadsheet
         var refs = _grid.GetSelectedCellRefs().ToList();
         if (refs.Count == 0) return;
         _commandManager.Execute(new ClearCellContentCommand(_workbook.ActiveSheet, refs));
+        InvalidateRenderedCells(refs);
         StateHasChanged();
     }
 
@@ -733,6 +760,7 @@ public partial class TmSpreadsheet
         if (refs.Count == 0) return;
         var cmd = new SetCellStyleCommand(_workbook.ActiveSheet, refs, mutate);
         _commandManager.Execute(cmd);
+        InvalidateRenderedCells(refs);
         StateHasChanged();
     }
 
@@ -740,12 +768,14 @@ public partial class TmSpreadsheet
     private void Undo()
     {
         _commandManager?.Undo();
+        ClearRenderedCache();
         StateHasChanged();
     }
 
     private void Redo()
     {
         _commandManager?.Redo();
+        ClearRenderedCache();
         StateHasChanged();
     }
 
@@ -770,6 +800,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet?.ActiveCellRef is null || _commandManager is null) return;
         var cmd = new PasteCommand(_workbook.ActiveSheet, _workbook.ActiveSheet.ActiveCellRef);
         _commandManager.Execute(cmd);
+        InvalidateRenderedCells(cmd.AffectedCellRefs);
         StateHasChanged();
     }
 
@@ -781,6 +812,7 @@ public partial class TmSpreadsheet
         if (refs.Count == 0) return;
         var cmd = new CutCommand(_workbook.ActiveSheet, refs);
         _commandManager.Execute(cmd);
+        InvalidateRenderedCells(refs);
         StateHasChanged();
     }
 
@@ -789,6 +821,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var (row, _) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new InsertRowCommand(_workbook.ActiveSheet, row));
+        ClearRenderedCache();
         StateHasChanged();
     }
 
@@ -797,6 +830,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var (row, _) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new DeleteRowCommand(_workbook.ActiveSheet, row));
+        ClearRenderedCache();
         StateHasChanged();
     }
 
@@ -805,6 +839,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var (_, col) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new InsertColumnCommand(_workbook.ActiveSheet, col));
+        ClearRenderedCache();
         StateHasChanged();
     }
 
@@ -813,6 +848,7 @@ public partial class TmSpreadsheet
         if (_workbook.ActiveSheet is null || _commandManager is null) return;
         var (_, col) = ParseCellRef(_workbook.ActiveSheet.ActiveCellRef ?? "A1");
         _commandManager.Execute(new DeleteColumnCommand(_workbook.ActiveSheet, col));
+        ClearRenderedCache();
         StateHasChanged();
     }
 
@@ -823,6 +859,7 @@ public partial class TmSpreadsheet
         if (refs.Count == 0) return;
         var cmd = new DeleteCellsCommand(_workbook.ActiveSheet, refs);
         _commandManager.Execute(cmd);
+        InvalidateRenderedCells(refs);
         StateHasChanged();
     }
 
@@ -898,6 +935,7 @@ public partial class TmSpreadsheet
         cell.Hyperlink = _insertLinkUrl.Trim();
         cell.Value = string.IsNullOrWhiteSpace(_insertLinkText) ? _insertLinkUrl.Trim() : _insertLinkText.Trim();
         _workbook.ActiveSheet.Cells[cellRef] = cell;
+        InvalidateRenderedCells(new[] { cellRef });
         _showInsertLinkDialog = false;
         StateHasChanged();
     }
@@ -915,6 +953,7 @@ public partial class TmSpreadsheet
         var cell = _workbook.ActiveSheet.Cells.GetValueOrDefault(cellRef) ?? new SpreadsheetCell();
         cell.ImageUrl = _insertImageUrl.Trim();
         _workbook.ActiveSheet.Cells[cellRef] = cell;
+        InvalidateRenderedCells(new[] { cellRef });
         _showInsertImageDialog = false;
         StateHasChanged();
     }

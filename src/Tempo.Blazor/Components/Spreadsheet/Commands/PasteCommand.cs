@@ -9,6 +9,10 @@ public sealed class PasteCommand : ISpreadsheetCommand
     private readonly SpreadsheetSheet _sheet;
     private readonly string _targetCellRef;
     private readonly Dictionary<string, SpreadsheetCell?> _previousCells;
+    private readonly List<string> _affectedCellRefs = [];
+
+    /// <summary>Cell references changed by the latest paste execution.</summary>
+    public IReadOnlyList<string> AffectedCellRefs => _affectedCellRefs;
 
     public PasteCommand(SpreadsheetSheet sheet, string targetCellRef)
     {
@@ -19,6 +23,7 @@ public sealed class PasteCommand : ISpreadsheetCommand
 
     public void Execute()
     {
+        _affectedCellRefs.Clear();
         if (SpreadsheetClipboard.Cells is null || SpreadsheetClipboard.Cells.Count == 0) return;
 
         var sourceRefs = SpreadsheetClipboard.Cells.Keys.ToList();
@@ -49,6 +54,7 @@ public sealed class PasteCommand : ISpreadsheetCommand
 
             _sheet.Cells[destRef] = clonedCell;
             destRefs.Add(destRef);
+            _affectedCellRefs.Add(destRef);
         }
 
         // Update dependency graph and evaluate adjusted formulas

@@ -1574,6 +1574,26 @@ public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridContr
         StateHasChanged();
     }
 
+    /// <inheritdoc />
+    public void InvalidateRenderedCells(IEnumerable<string> cellRefs)
+    {
+    }
+
+    /// <inheritdoc />
+    public void InvalidateRenderedRows(IEnumerable<int> rowIndices)
+    {
+    }
+
+    /// <inheritdoc />
+    public void InvalidateRenderedColumns(IEnumerable<int> columnIndices)
+    {
+    }
+
+    /// <inheritdoc />
+    public void ClearRenderedCache()
+    {
+    }
+
     private void OnEditInput(ChangeEventArgs e)
     {
         _editValue = e.Value?.ToString();
