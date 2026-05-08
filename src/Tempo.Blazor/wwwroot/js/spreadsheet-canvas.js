@@ -150,6 +150,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 lastRefText: ""
             },
             externalFormulaOrigin: null,
+            externalFormulaPointActive: false,
             formulaMode: false,
             formatPainterActive: false,
             accessibility: {
@@ -522,6 +523,31 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return !!getFormulaRuntime()?.isHostFormulaPointMode?.(root);
     }
 
+    function hasLiveFormulaBarFormulaSession(root) {
+        const host = root?.closest?.(".tm-spreadsheet");
+        const input = host?.querySelector?.(".tm-spreadsheet-formula-bar__input");
+        return !!(input instanceof HTMLInputElement
+            && input.offsetParent !== null
+            && String(input.value || "").startsWith("="));
+    }
+
+    function hasRecentFormulaBarFormulaSession(root) {
+        const host = root?.closest?.(".tm-spreadsheet");
+        return performance.now() < Number(host?.__tmSpreadsheetFormulaRecentUntil || 0);
+    }
+
+    function hasDurableFormulaGuard(root) {
+        const host = root?.closest?.(".tm-spreadsheet");
+        return host?.dataset?.formulaGuardActive === "true";
+    }
+
+    function shouldGuardFormulaGesture(root) {
+        return isFormulaPointMode(root)
+            || hasDurableFormulaGuard(root)
+            || hasLiveFormulaBarFormulaSession(root)
+            || hasRecentFormulaBarFormulaSession(root);
+    }
+
     function getExternalFormulaSession(root) {
         const session = getHostFormulaSession(root);
         if (!session || !session.isFormula) return null;
@@ -536,8 +562,14 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return !!(
             s?.sheetState?.formulaEditor?.active
             || s?.sheetState?.formulaMode
+            || hasDurableFormulaGuard(root)
+            || root?.dataset?.externalFormulaSessionActive === "true"
+            || !!root?.dataset?.externalFormulaOriginRef
+            || read(s?.model, "ExternalFormulaSessionActive", false)
+            || !!read(s?.model, "ExternalFormulaOriginCellRef", "")
             || read(s?.model, "IsFormulaPointMode", false)
-            || isHostFormulaPointMode(root));
+            || isHostFormulaPointMode(root)
+            || hasLiveFormulaBarFormulaSession(root));
     }
 
     function isFormatPainterActive(root) {
@@ -3995,6 +4027,24 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         }
     }
 
+    function preserveFormulaBarFocus(root) {
+        const host = root?.closest?.(".tm-spreadsheet");
+        const input = host?.querySelector?.(".tm-spreadsheet-formula-bar__input");
+        if (!(input instanceof HTMLInputElement)) return false;
+        setTimeout(() => {
+            try {
+                const value = String(input.value || "");
+                const start = Math.max(0, Math.min(value.length, Number(input.selectionStart ?? value.length) || 0));
+                const end = Math.max(start, Math.min(value.length, Number(input.selectionEnd ?? start) || start));
+                input.focus({ preventScroll: true });
+                input.setSelectionRange(start, end);
+            } catch {
+                // Best effort only.
+            }
+        }, 0);
+        return true;
+    }
+
     function beginFormulaReferenceDrag(root, hit) {
         const s = getState(root);
         const formula = s?.sheetState?.formulaEditor;
@@ -4588,6 +4638,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             pasteTimer: 0,
             suppressClick: false,
             blockNextClick: false,
+            forceFormulaGestureUntil: 0,
+            recentFormulaSessionUntil: 0,
             lastPointerButton: 0,
             nonPrimaryGestureUntil: 0,
             selectionSyncFrame: 0,
@@ -4772,11 +4824,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onMouseDown = ev => {
             s.lastPointerButton = Number(ev.button || 0);
+            if (ev.button !== 0) {
+                s.blockNextClick = true;
+                if (shouldGuardFormulaGesture(root)) {
+                    s.forceFormulaGestureUntil = performance.now() + 1000;
+                }
+            }
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
-                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
                 scheduleExternalFormulaOriginRestore(root);
+                preserveFormulaBarFocus(root);
             }
             if (ev.button === 0) return;
             if (!isFormulaPointMode(root)) return;
@@ -4788,11 +4846,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onAuxClick = ev => {
             s.lastPointerButton = Number(ev.button || 0);
+            if (ev.button !== 0) {
+                s.blockNextClick = true;
+                if (shouldGuardFormulaGesture(root)) {
+                    s.forceFormulaGestureUntil = performance.now() + 1000;
+                }
+            }
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
-                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
                 scheduleExternalFormulaOriginRestore(root);
+                preserveFormulaBarFocus(root);
             }
             if (ev.button === 0) return;
             if (isFormulaPointMode(root) && s.editor) {
@@ -4804,11 +4868,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onPointerDownWrapper = ev => {
             s.lastPointerButton = Number(ev.button || 0);
+            if (ev.button !== 0) {
+                s.blockNextClick = true;
+                if (shouldGuardFormulaGesture(root)) {
+                    s.forceFormulaGestureUntil = performance.now() + 1000;
+                }
+            }
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
-                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
                 scheduleExternalFormulaOriginRestore(root);
+                preserveFormulaBarFocus(root);
             }
             if (isSpreadsheetOverlayTarget(ev.target)) {
                 setPossibleDrag(root, null);
@@ -4816,6 +4886,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
 
             if (ev.button !== 0 && s.model && isFormulaPointMode(root)) {
+                preserveFormulaBarFocus(root);
                 if (s.editor) preserveFormulaEditorFocus(root);
                 setPossibleDrag(root, null);
                 s.suppressClick = true;
@@ -4910,6 +4981,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 if (s.sheetState?.formulaEditor?.active && s.editor?.input) {
                     s.editor.input.focus({ preventScroll: true });
                 }
+                preserveFormulaBarFocus(root);
                 restoreExternalFormulaOrigin(root);
                 setPossibleDrag(root, null);
                 safeReleasePointerCapture(root, ev.pointerId);
@@ -5098,11 +5170,28 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         };
         const onContextMenu = ev => {
             ev.preventDefault();
+            if (performance.now() < Number(s.recentFormulaSessionUntil || 0) || hasRecentFormulaBarFormulaSession(root)) {
+                preserveFormulaBarFocus(root);
+                restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
+                s.suppressClick = true;
+                ev.stopPropagation();
+                return;
+            }
+            if (performance.now() < Number(s.forceFormulaGestureUntil || 0)) {
+                preserveFormulaBarFocus(root);
+                restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
+                s.suppressClick = true;
+                ev.stopPropagation();
+                return;
+            }
             if (performance.now() < Number(s.nonPrimaryGestureUntil || 0)) {
                 ev.stopPropagation();
                 return;
             }
             if (s.suppressClick && Number(s.lastPointerButton || 0) !== 0) {
+                preserveFormulaBarFocus(root);
                 restoreExternalFormulaOrigin(root);
                 scheduleExternalFormulaOriginRestore(root);
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
@@ -5118,6 +5207,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 if (s.sheetState?.formulaEditor?.active && s.editor?.input) {
                     s.editor.input.focus({ preventScroll: true });
                 }
+                preserveFormulaBarFocus(root);
                 restoreExternalFormulaOrigin(root);
                 scheduleExternalFormulaOriginRestore(root);
                 s.suppressClick = true;
@@ -5432,10 +5522,16 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     window.tmSpreadsheetCanvas.setExternalFormulaPointMode = function (root, active) {
         const s = getState(root);
         if (!s?.sheetState) return;
+        const wasActive = !!s.sheetState.externalFormulaPointActive;
+        s.sheetState.externalFormulaPointActive = !!active;
         if (active) {
-            captureExternalFormulaOrigin(root);
+            if (!wasActive) {
+                captureExternalFormulaOrigin(root);
+            }
+            s.recentFormulaSessionUntil = performance.now() + 1500;
         } else {
             s.sheetState.externalFormulaOrigin = null;
+            s.sheetState.externalFormulaPointActive = false;
             clearExternalFormulaPicker(root);
             s.formulaReferenceSource = null;
             s.formulaReferenceRevision = 0;

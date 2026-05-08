@@ -36,9 +36,12 @@ public partial class TmSpreadsheet
     private System.Threading.CancellationTokenSource? _onChangeDebounceCts;
     private int _formulaOriginSheetIndex = -1;
     private string? _formulaOriginCellRef;
+    private bool _formulaReferencePickingGuardActive;
     private bool IsFormulaBarSessionActive => _isFormulaBarEditing || _formulaBarEditValue is not null;
-    private bool HostFormulaPointMode => IsFormulaBarSessionActive
-        && (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true;
+    private bool IsFormulaBarPointSessionActive => _formulaReferencePickingGuardActive
+        || (IsFormulaBarSessionActive
+            && (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true);
+    private bool HostFormulaPointMode => IsFormulaBarPointSessionActive;
     private string FormulaCultureName => CultureInfo.CurrentCulture.Name;
     private string FormulaDecimalSeparator => CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == "," ? "," : ".";
     private string FormulaArgumentSeparator => FormulaDecimalSeparator == "," ? ";" : ",";
@@ -238,10 +241,34 @@ public partial class TmSpreadsheet
     }
 
     // ── Grid events ──
-    private void OnGridActiveCellChanged(string? cellRef)
+    private async Task OnGridActiveCellChanged(string? cellRef)
     {
-        if (IsFormulaBarSessionActive)
+        var hasFormulaOriginGuard = _formulaReferencePickingGuardActive
+            || (_formulaOriginSheetIndex >= 0
+            && _formulaOriginSheetIndex < _workbook.Sheets.Count
+            && !string.IsNullOrWhiteSpace(_formulaOriginCellRef));
+
+        if (IsFormulaBarSessionActive || hasFormulaOriginGuard)
         {
+            if (hasFormulaOriginGuard)
+            {
+                if (_workbook.ActiveSheetIndex != _formulaOriginSheetIndex)
+                {
+                    _workbook.ActiveSheetIndex = _formulaOriginSheetIndex;
+                    _commandManager = _workbook.ActiveSheet is not null
+                        ? new SpreadsheetCommandManager(_workbook.ActiveSheet)
+                        : null;
+                }
+
+                if (_workbook.ActiveSheet is not null)
+                {
+                    _workbook.ActiveSheet.ActiveCellRef = _formulaOriginCellRef;
+                }
+
+                if (CanvasJsEngineGrid is not null)
+                    await CanvasJsEngineGrid.ApplyEngineSelectionPatchAsync();
+            }
+
             StateHasChanged();
             return;
         }
@@ -260,7 +287,7 @@ public partial class TmSpreadsheet
 
     private void OnGridCellEdit(SpreadsheetCellEditEventArgs args)
     {
-        if (!args.IsEditing && _formulaOriginSheetIndex >= 0)
+        if (!args.IsEditing && _formulaOriginSheetIndex >= 0 && !IsFormulaBarSessionActive && !_formulaReferencePickingGuardActive)
         {
             var originIdx = _formulaOriginSheetIndex;
             _formulaOriginSheetIndex = -1;
@@ -433,8 +460,9 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = true;
         _formulaBarEditValue = GetActiveCellEditValue();
-        _formulaOriginSheetIndex = -1;
-        _formulaOriginCellRef = null;
+        _formulaReferencePickingGuardActive = (_formulaBarEditValue ?? string.Empty).StartsWith("=", StringComparison.Ordinal);
+        _formulaOriginSheetIndex = _workbook.ActiveSheetIndex;
+        _formulaOriginCellRef = _workbook.ActiveSheet?.ActiveCellRef;
         // Also start editing in the grid so the cell shows input
         if (_workbook.ActiveSheet?.ActiveCellRef is { } cellRef)
         {
@@ -442,12 +470,15 @@ public partial class TmSpreadsheet
             // but we can simulate the effect by setting the cell value
             // when committed. For visual sync the formula bar handles its own input.
         }
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(_formulaReferencePickingGuardActive, _formulaOriginCellRef);
         StateHasChanged();
     }
 
     private async Task OnFormulaBarCommitted(string? value)
     {
         _isFormulaBarEditing = false;
+        _formulaReferencePickingGuardActive = false;
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(false, null);
         await ApplyValueToActiveCellAsync(value);
         if (CanvasJsEngineGrid is not null)
             await CanvasJsEngineGrid.ClearEngineFormulaHighlightsAsync();
@@ -462,6 +493,8 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
+        _formulaReferencePickingGuardActive = false;
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(false, null);
         _formulaOriginSheetIndex = -1;
         _formulaOriginCellRef = null;
         if (CanvasJsEngineGrid is not null)
@@ -471,6 +504,13 @@ public partial class TmSpreadsheet
 
     private void OnFormulaBarValueChanged(string? value)
     {
+        if (_formulaOriginCellRef is null && value?.StartsWith("=", StringComparison.Ordinal) == true)
+        {
+            _formulaOriginSheetIndex = _workbook.ActiveSheetIndex;
+            _formulaOriginCellRef = _workbook.ActiveSheet?.ActiveCellRef;
+        }
+        _formulaReferencePickingGuardActive = value?.StartsWith("=", StringComparison.Ordinal) == true;
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(_formulaReferencePickingGuardActive, _formulaOriginCellRef);
         _formulaBarEditValue = value;
         StateHasChanged();
     }
@@ -491,6 +531,8 @@ public partial class TmSpreadsheet
         await _grid.BeginInlineEditAsync();
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
+        _formulaReferencePickingGuardActive = false;
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(false, null);
         StateHasChanged();
     }
 
@@ -521,6 +563,8 @@ public partial class TmSpreadsheet
             _formulaOriginSheetIndex = -1;
             _formulaOriginCellRef = null;
         }
+        _formulaReferencePickingGuardActive = false;
+        CanvasJsEngineGrid?.SetExternalFormulaSessionGuard(false, null);
     }
 
     // ── Toolbar commands ──

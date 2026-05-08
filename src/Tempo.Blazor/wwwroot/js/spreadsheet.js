@@ -913,12 +913,182 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         };
     }
 
+    function markRecentFormulaSession(host, isFormula) {
+        if (!host || !isFormula) {
+            return;
+        }
+
+        host.__tmSpreadsheetFormulaRecentUntil = performance.now() + 1500;
+    }
+
+    function ensureHostFormulaGridGuard(host) {
+        if (!host || host.__tmSpreadsheetFormulaGridGuardInstalled) {
+            return;
+        }
+
+        const preserveInputFocus = () => {
+            const input = host.querySelector?.(".tm-spreadsheet-formula-bar__input");
+            if (!(input instanceof HTMLInputElement)) {
+                return;
+            }
+
+            const value = String(input.value || "");
+            const start = clampPosition(input.selectionStart, value);
+            const end = clampPosition(input.selectionEnd, value);
+            setTimeout(() => {
+                try {
+                    input.focus({ preventScroll: true });
+                    input.setSelectionRange(start, end);
+                } catch {
+                    // Best effort only.
+                }
+            }, 0);
+        };
+
+        const hasFormulaSession = () => {
+            if (performance.now() < Number(host.__tmSpreadsheetFormulaRecentUntil || 0)) {
+                return true;
+            }
+
+            if (performance.now() < Number(host.__tmSpreadsheetFormulaNonPrimaryUntil || 0)) {
+                return true;
+            }
+
+            if (host.dataset?.formulaGuardActive === "true" || host.dataset?.formulaPointMode === "true") {
+                return true;
+            }
+
+            const live = readLiveFormulaBarSession(host);
+            if (live?.isFormula) {
+                markRecentFormulaSession(host, true);
+                setHostFormulaSession(host, live);
+                return true;
+            }
+
+            const session = host.__tmSpreadsheetFormulaSession;
+            return !!(session?.isFormula || String(session?.text || "").startsWith("="));
+        };
+
+        const guard = ev => {
+            const target = ev.target;
+            if (!(target instanceof Element)) {
+                return;
+            }
+
+            if (target.closest(".tm-spreadsheet") !== host || !target.closest(".tm-spreadsheet-canvas-grid")) {
+                return;
+            }
+
+            const button = Number(ev.button || 0);
+            if (button === 0 && ev.type !== "contextmenu") {
+                return;
+            }
+
+            if (!hasFormulaSession()) {
+                return;
+            }
+
+            host.__tmSpreadsheetFormulaNonPrimaryUntil = performance.now() + 1500;
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation?.();
+            preserveInputFocus();
+        };
+
+        document.addEventListener("pointerdown", guard, true);
+        document.addEventListener("mousedown", guard, true);
+        document.addEventListener("contextmenu", guard, true);
+        document.addEventListener("auxclick", guard, true);
+        host.__tmSpreadsheetFormulaGridGuardInstalled = true;
+    }
+
+    function installGlobalFormulaGridGuard() {
+        if (window.__tmSpreadsheetGlobalFormulaGridGuardInstalled) {
+            return;
+        }
+
+        const shouldGuard = ev => {
+            const target = ev.target;
+            if (!(target instanceof Element)) {
+                return null;
+            }
+
+            if (!target.closest(".tm-spreadsheet-canvas-grid")) {
+                return null;
+            }
+
+            const host = target.closest(".tm-spreadsheet");
+            if (!host) {
+                return null;
+            }
+
+            const button = Number(ev.button || 0);
+            if (button === 0 && ev.type !== "contextmenu") {
+                return null;
+            }
+
+            if (performance.now() < Number(host.__tmSpreadsheetFormulaRecentUntil || 0)
+                || performance.now() < Number(host.__tmSpreadsheetFormulaNonPrimaryUntil || 0)
+                || host.dataset?.formulaGuardActive === "true"
+                || host.dataset?.formulaPointMode === "true") {
+                return host;
+            }
+
+            const live = readLiveFormulaBarSession(host);
+            if (live?.isFormula) {
+                markRecentFormulaSession(host, true);
+                setHostFormulaSession(host, live);
+                return host;
+            }
+
+            const session = host.__tmSpreadsheetFormulaSession;
+            return session?.isFormula || String(session?.text || "").startsWith("=")
+                ? host
+                : null;
+        };
+
+        const guard = ev => {
+            const host = shouldGuard(ev);
+            if (!host) {
+                return;
+            }
+
+            host.__tmSpreadsheetFormulaNonPrimaryUntil = performance.now() + 1500;
+            ev.preventDefault();
+            ev.stopPropagation();
+            ev.stopImmediatePropagation?.();
+
+            const input = host.querySelector?.(".tm-spreadsheet-formula-bar__input");
+            if (input instanceof HTMLInputElement) {
+                const value = String(input.value || "");
+                const start = clampPosition(input.selectionStart, value);
+                const end = clampPosition(input.selectionEnd, value);
+                setTimeout(() => {
+                    try {
+                        input.focus({ preventScroll: true });
+                        input.setSelectionRange(start, end);
+                    } catch {
+                        // Best effort only.
+                    }
+                }, 0);
+            }
+        };
+
+        document.addEventListener("pointerdown", guard, true);
+        document.addEventListener("mousedown", guard, true);
+        document.addEventListener("contextmenu", guard, true);
+        document.addEventListener("auxclick", guard, true);
+        window.__tmSpreadsheetGlobalFormulaGridGuardInstalled = true;
+    }
+
     function setHostFormulaPointMode(scope, active, value) {
         const host = scope?.closest?.(".tm-spreadsheet");
         if (!host) return;
         const formulaActive = !!active && String(value || "").startsWith("=");
         if (formulaActive) {
             host.dataset.formulaPointMode = "true";
+            markRecentFormulaSession(host, true);
+            ensureHostFormulaGridGuard(host);
         } else {
             delete host.dataset.formulaPointMode;
             clearHostFormulaSession(scope, "formulaBar");
@@ -929,9 +1099,12 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         }
     }
 
+    installGlobalFormulaGridGuard();
+
     function syncHostFormulaRuntimeState(scope, input) {
         const session = buildLiveFormulaBarSession(scope, input);
         if (session) {
+            markRecentFormulaSession(getSpreadsheetHost(scope || input), session.isFormula);
             setHostFormulaSession(scope, session);
             setHostFormulaPointMode(scope, true, session.text);
             return session;
@@ -956,7 +1129,73 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
             input.__tmSpreadsheetFormulaHostSyncCleanup();
         }
 
+        const host = getSpreadsheetHost(scope) || scope;
         const sync = () => syncHostFormulaRuntimeState(scope, input);
+        const preserveInputFocus = () => {
+            try {
+                const value = String(input.value || "");
+                const start = clampPosition(input.selectionStart, value);
+                const end = clampPosition(input.selectionEnd, value);
+                input.focus({ preventScroll: true });
+                input.setSelectionRange(start, end);
+            } catch {
+                // Best effort only.
+            }
+        };
+        const shouldProtectGridGesture = ev => {
+            const target = ev.target;
+            if (!(target instanceof Element)) {
+                return false;
+            }
+
+            if (target.closest(".tm-spreadsheet") !== host) {
+                return false;
+            }
+
+            if (!target.closest(".tm-spreadsheet-canvas-grid")) {
+                return false;
+            }
+
+            if (performance.now() < Number(host.__tmSpreadsheetFormulaRecentUntil || 0)) {
+                return true;
+            }
+
+            if (host.dataset?.formulaGuardActive === "true") {
+                return true;
+            }
+
+            if (host.dataset?.formulaPointMode === "true") {
+                return true;
+            }
+
+            const currentInput = host.querySelector?.(".tm-spreadsheet-formula-bar__input");
+            const currentSession = host.__tmSpreadsheetFormulaSession;
+            const value = String(
+                currentSession?.text
+                || (currentInput instanceof HTMLInputElement ? currentInput.value : "")
+                || input.value
+                || "");
+            if (!value.startsWith("=")) {
+                return false;
+            }
+
+            return true;
+        };
+        const nonPrimaryGridGuard = ev => {
+            if (!shouldProtectGridGesture(ev)) {
+                return;
+            }
+
+            const button = Number(ev.button || 0);
+            if (button === 0 && ev.type !== "contextmenu") {
+                return;
+            }
+
+            ev.preventDefault();
+            ev.stopPropagation();
+            preserveInputFocus();
+            sync();
+        };
         const keyGuard = ev => {
             const value = String(input.value || "");
             if (!value.startsWith("=")) {
@@ -981,10 +1220,18 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         input.addEventListener("input", sync);
         input.addEventListener("change", sync);
         input.addEventListener("keydown", keyGuard, true);
+        document.addEventListener("pointerdown", nonPrimaryGridGuard, true);
+        document.addEventListener("mousedown", nonPrimaryGridGuard, true);
+        document.addEventListener("contextmenu", nonPrimaryGridGuard, true);
+        document.addEventListener("auxclick", nonPrimaryGridGuard, true);
         input.__tmSpreadsheetFormulaHostSyncCleanup = () => {
             input.removeEventListener("input", sync);
             input.removeEventListener("change", sync);
             input.removeEventListener("keydown", keyGuard, true);
+            document.removeEventListener("pointerdown", nonPrimaryGridGuard, true);
+            document.removeEventListener("mousedown", nonPrimaryGridGuard, true);
+            document.removeEventListener("contextmenu", nonPrimaryGridGuard, true);
+            document.removeEventListener("auxclick", nonPrimaryGridGuard, true);
             delete input.__tmSpreadsheetFormulaHostSyncCleanup;
         };
         sync();

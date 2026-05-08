@@ -1079,8 +1079,8 @@ public class SpreadsheetE2ETests : WasmTestBase
         await page.GotoAsync($"{BaseUrl}/spreadsheet");
         await WaitForAppReadyAsync(page);
 
-        var spreadsheet = page.Locator(".tm-spreadsheet").First;
-        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
         await WaitForCanvasGridReadyAsync(page, grid);
 
         var activeTarget = await GetCanvasCellCenterAsync(grid, "J8");
@@ -1112,8 +1112,8 @@ public class SpreadsheetE2ETests : WasmTestBase
         await page.GotoAsync($"{BaseUrl}/spreadsheet");
         await WaitForAppReadyAsync(page);
 
-        var spreadsheet = page.Locator(".tm-spreadsheet").First;
-        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
         await WaitForCanvasGridReadyAsync(page, grid);
 
         var activeTarget = await GetCanvasCellCenterAsync(grid, "J8");

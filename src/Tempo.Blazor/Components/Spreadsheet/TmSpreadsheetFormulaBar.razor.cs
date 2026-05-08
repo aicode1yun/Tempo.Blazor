@@ -111,8 +111,13 @@ public partial class TmSpreadsheetFormulaBar
         if (!IsEditing)
         {
             _suppressExternalEditing = false;
-            _localIsEditing = false;
-            _editValue = DisplayValue;
+            var preserveLocalFormulaSession = _localIsEditing
+                && ((_editValue?.StartsWith("=") ?? false) || CurrentSession.IsFormula);
+            if (!preserveLocalFormulaSession)
+            {
+                _localIsEditing = false;
+                _editValue = DisplayValue;
+            }
         }
     }
 
@@ -277,16 +282,18 @@ public partial class TmSpreadsheetFormulaBar
         if (!EditorIsEditing)
             return;
 
+        var shouldRetainFocus = true;
         try
         {
-            var shouldRetainFocus = await JS.InvokeAsync<bool>("tmSpreadsheetFormulaBar.shouldRetainFocusAfterBlur", _rootRef);
-            if (!shouldRetainFocus)
-                return;
+            shouldRetainFocus = await JS.InvokeAsync<bool>("tmSpreadsheetFormulaBar.shouldRetainFocusAfterBlur", _rootRef);
         }
         catch
         {
             // JS can be unavailable during prerender/tests.
         }
+
+        if (!shouldRetainFocus && !CurrentSession.IsFormula)
+            return;
 
         _shouldFocusAfterRender = true;
         await InvokeAsync(StateHasChanged);
@@ -326,6 +333,18 @@ public partial class TmSpreadsheetFormulaBar
             // JS can be unavailable during prerender/tests.
         }
 
+        if (EditorIsEditing)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.bindHostFormulaPointMode", _rootRef, _inputRef);
+            }
+            catch
+            {
+                // ElementReference may not be bound yet.
+            }
+        }
+
         if (_shouldFocusAfterRender)
         {
             _shouldFocusAfterRender = false;
@@ -347,7 +366,6 @@ public partial class TmSpreadsheetFormulaBar
                 _renderedSelectionStart = Math.Clamp(_renderedSelectionStart, 0, valueLength);
                 _renderedSelectionEnd = Math.Clamp(_renderedSelectionEnd, 0, valueLength);
                 await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.setValueAndSelection", _inputRef, _editValue ?? string.Empty, _renderedSelectionStart, _renderedSelectionEnd);
-                await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.bindHostFormulaPointMode", _rootRef, _inputRef);
                 await RefreshSessionAsync();
             }
             catch
