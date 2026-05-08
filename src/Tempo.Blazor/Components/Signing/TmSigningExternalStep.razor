@@ -1,0 +1,60 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@Error"
+                    AppearsOn="@AppearsOn"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    @if (IsLoading)
+    {
+        <div class="tm-signing-external-step__loading">
+            <TmSpinner Size="SpinnerSize.Sm" />
+            <span>@Loc["TmSigningStep_LoadingExternal"]</span>
+        </div>
+    }
+    else if (Field.Type == SigningFieldType.Kba && Questions.Count > 0)
+    {
+        <div class="tm-signing-external-step__questions">
+            @foreach (var question in Questions)
+            {
+                <label class="tm-signing-external-step__question">
+                    <span>@question</span>
+                    <input class="tm-signing-external-step__answer"
+                           value="@GetAnswer(question)"
+                           disabled="@Disabled"
+                           @onchange="args => HandleAnswerChangedAsync(question, args)" />
+                </label>
+            }
+        </div>
+    }
+    else if (Field.Type == SigningFieldType.Payment)
+    {
+        <div class="tm-signing-external-step__summary">
+            <span class="tm-signing-external-step__amount">@PaymentAmount</span>
+            <button type="button"
+                    class="tm-signing-external-step__checkout"
+                    disabled="@Disabled"
+                    @onclick="CheckoutAsync">
+                @Loc["TmSigningStep_Checkout"]
+            </button>
+        </div>
+    }
+    else
+    {
+        <div class="tm-signing-external-step__start">
+            @if (!string.IsNullOrWhiteSpace(ExternalUrl))
+            {
+                <a class="tm-signing-external-step__link" href="@ExternalUrl" target="_blank" rel="noopener noreferrer">
+                    @Loc["TmSigningStep_OpenExternal"]
+                </a>
+            }
+            <button type="button"
+                    class="tm-signing-external-step__start-button"
+                    disabled="@Disabled"
+                    @onclick="StartAsync">
+                @(Field.Type == SigningFieldType.Kba ? Loc["TmSigningStep_StartKba"] : Loc["TmSigningStep_StartVerification"])
+            </button>
+        </div>
+    }
+</TmSigningStepShell>

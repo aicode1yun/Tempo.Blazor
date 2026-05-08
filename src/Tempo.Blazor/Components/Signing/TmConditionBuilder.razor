@@ -1,0 +1,135 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     aria-invalid="@BoolText(HasValidationErrors)"
+     data-valid="@BoolText(!HasValidationErrors)">
+    <div class="tm-condition-builder__rows">
+        @for (var index = 0; index < _conditions.Count; index++)
+        {
+            var rowIndex = index;
+            var condition = _conditions[rowIndex];
+            var sourceField = GetField(condition.FieldUuid);
+            var valueRequired = ActionRequiresValue(condition.Action);
+
+            <div class="tm-condition-builder__row" data-index="@rowIndex">
+                @if (rowIndex > 0)
+                {
+                    <label class="tm-condition-builder__field-group tm-condition-builder__field-group--operation">
+                        <span class="tm-condition-builder__label">@Loc["TmConditionBuilder_Operation"]</span>
+                        <select class="tm-condition-builder__operation"
+                                aria-label="@Loc["TmConditionBuilder_Operation"]"
+                                value="@condition.Operation"
+                                disabled="@Disabled"
+                                @onchange="args => HandleOperationChangedAsync(rowIndex, args)">
+                            @foreach (var operation in Operations)
+                            {
+                                <option value="@operation">@GetOperationLabel(operation)</option>
+                            }
+                        </select>
+                    </label>
+                }
+                else
+                {
+                    <span class="tm-condition-builder__operation-spacer" aria-hidden="true"></span>
+                }
+
+                <label class="tm-condition-builder__field-group">
+                    <span class="tm-condition-builder__label">@Loc["TmConditionBuilder_Field"]</span>
+                    <select class="tm-condition-builder__field"
+                            aria-label="@Loc["TmConditionBuilder_Field"]"
+                            value="@condition.FieldUuid"
+                            disabled="@Disabled"
+                            @onchange="args => HandleFieldChangedAsync(rowIndex, args)">
+                        <option value="">@Loc["TmConditionBuilder_SelectField"]</option>
+                        @foreach (var field in ConditionSourceFields)
+                        {
+                            <option value="@field.Uuid">@GetFieldLabel(field)</option>
+                        }
+                    </select>
+                </label>
+
+                <label class="tm-condition-builder__field-group">
+                    <span class="tm-condition-builder__label">@Loc["TmConditionBuilder_Action"]</span>
+                    <select class="tm-condition-builder__action"
+                            aria-label="@Loc["TmConditionBuilder_Action"]"
+                            value="@condition.Action"
+                            disabled="@(Disabled || sourceField is null)"
+                            @onchange="args => HandleActionChangedAsync(rowIndex, args)">
+                        @foreach (var action in GetActionsFor(sourceField?.Type))
+                        {
+                            <option value="@action">@GetActionLabel(action)</option>
+                        }
+                    </select>
+                </label>
+
+                <label class="tm-condition-builder__field-group tm-condition-builder__field-group--value">
+                    <span class="tm-condition-builder__label">@Loc["TmConditionBuilder_Value"]</span>
+                    @if (!valueRequired)
+                    {
+                        <span class="tm-condition-builder__value-placeholder">-</span>
+                    }
+                    else if (IsChoiceField(sourceField))
+                    {
+                        <select class="tm-condition-builder__value-select"
+                                aria-label="@Loc["TmConditionBuilder_Value"]"
+                                value="@condition.Value"
+                                aria-invalid="@BoolText(IsValueMissing(condition))"
+                                disabled="@Disabled"
+                                @onchange="args => HandleValueChangedAsync(rowIndex, args)">
+                            <option value="">@Loc["TmConditionBuilder_SelectValue"]</option>
+                            @foreach (var option in sourceField!.Options)
+                            {
+                                <option value="@option.Uuid">@option.Value</option>
+                            }
+                        </select>
+                    }
+                    else if (sourceField?.Type is SigningFieldType.Number)
+                    {
+                        <input class="tm-condition-builder__value-input"
+                               type="number"
+                               aria-label="@Loc["TmConditionBuilder_Value"]"
+                               aria-invalid="@BoolText(IsValueMissing(condition))"
+                               value="@condition.Value"
+                               disabled="@Disabled"
+                               @onchange="args => HandleValueChangedAsync(rowIndex, args)" />
+                    }
+                    else
+                    {
+                        <input class="tm-condition-builder__value-input"
+                               type="text"
+                               aria-label="@Loc["TmConditionBuilder_Value"]"
+                               aria-invalid="@BoolText(IsValueMissing(condition))"
+                               value="@condition.Value"
+                               disabled="@Disabled"
+                               @onchange="args => HandleValueChangedAsync(rowIndex, args)" />
+                    }
+                </label>
+
+                <button type="button"
+                        class="tm-condition-builder__remove"
+                        aria-label="@Loc["TmConditionBuilder_RemoveCondition"]"
+                        disabled="@Disabled"
+                        @onclick="() => RemoveConditionAsync(rowIndex)">
+                    <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                </button>
+
+                @foreach (var message in GetValidationMessages(condition))
+                {
+                    <div class="tm-condition-builder__validation" role="alert">@message</div>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="tm-condition-builder__actions">
+        <button type="button"
+                class="tm-condition-builder__add"
+                disabled="@Disabled"
+                @onclick="AddConditionAsync">
+            <TmIcon Name="plus" Size="IconSize.Xs" />
+            @Loc["TmConditionBuilder_AddCondition"]
+        </button>
+    </div>
+</div>

@@ -1,0 +1,47 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@_validationMessage"
+                    AppearsOn="@AppearsOn"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    <div class="tm-signing-phone-step__row">
+        <select class="tm-signing-phone-step__country"
+                value="@CountryCode"
+                disabled="@Disabled"
+                @onchange="HandleCountryChangedAsync">
+            @foreach (var option in CountryOptions)
+            {
+                <option value="@option.Code">@option.Label</option>
+            }
+        </select>
+        <input class="tm-signing-phone-step__input"
+               type="tel"
+               @bind:get="PhoneNumber"
+               @bind:set="HandlePhoneInputAsync"
+               @bind:event="oninput"
+               disabled="@Disabled"
+               placeholder="@Loc["TmSigningStep_PhonePlaceholder"]" />
+        <button type="button"
+                class="tm-signing-phone-step__send"
+                disabled="@Disabled"
+                @onclick="SendCodeAsync">
+            @Loc["TmSigningStep_SendCode"]
+        </button>
+    </div>
+
+    @if (_codeSent || CodeSent)
+    {
+        <div class="tm-signing-phone-step__otp-row">
+            <input class="tm-signing-phone-step__otp"
+                   @bind:get="OtpCode"
+                   @bind:set="HandleOtpInputAsync"
+                   @bind:event="oninput"
+                   inputmode="numeric"
+                   disabled="@Disabled"
+                   placeholder="@Loc["TmSigningStep_OtpPlaceholder"]" />
+            <span class="tm-signing-phone-step__resend">@Loc["TmSigningStep_ResendIn", ResendSeconds]</span>
+        </div>
+    }
+</TmSigningStepShell>

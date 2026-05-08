@@ -1,0 +1,1528 @@
+@page "/signing-components"
+
+<PageTitle>Signing Components - Tempo.Blazor</PageTitle>
+
+<div class="mb-8">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Signing Components</h1>
+    <p class="text-slate-600 dark:text-slate-400">
+        Document page rendering and overlay primitives for signing workflows.
+    </p>
+</div>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Document Page Viewer</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Template page with normalized signing fields.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 1</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="max-w-3xl mx-auto">
+            <TmDocumentPageViewer Page="_demoPage"
+                                  Id="demo-signing-page-1"
+                                  Class="signing-components-page__viewer"
+                                  data-testid="signing-document-viewer"
+                                  OnPageClick="HandlePageClick"
+                                  OnPageContextMenu="HandlePageContextMenu">
+                <TmSigningFieldOverlay Field="_dateField"
+                                       Area="_dateArea"
+                                       Value="_dateValue"
+                                       Completed="true"
+                                       OnClick="HandleFieldClick"
+                                       OnContextMenu="HandleFieldContextMenu" />
+                <TmSigningFieldOverlay Field="_signatureField"
+                                       Area="_signatureArea"
+                                       Selected="@(_selectedFieldUuid == _signatureField.Uuid)"
+                                       Draggable="true"
+                                       Editable="true"
+                                       OnClick="HandleFieldClick"
+                                       OnContextMenu="HandleFieldContextMenu"
+                                       data-testid="signature-overlay" />
+            </TmDocumentPageViewer>
+        </div>
+
+        <div class="mt-4 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-page-event">
+            @_lastInteraction
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Field Overlay</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">All signing field types rendered through the overlay component.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-sky-100 dark:bg-sky-900/30 text-sky-700 dark:text-sky-300 rounded-full">Phase 2</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4" data-testid="signing-field-overlay-gallery">
+            @foreach (var sample in _fieldSamples)
+            {
+                <div class="relative h-24 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 overflow-hidden">
+                    <TmSigningFieldOverlay Field="sample.Field"
+                                           Area="sample.Area"
+                                           Value="sample.Value"
+                                           Completed="sample.Completed"
+                                           Invalid="sample.Invalid"
+                                           Class="signing-components-page__sample-field" />
+                </div>
+            }
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Signature Capture</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Draw, typed, upload, reason, reuse, and mobile signing flows.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 rounded-full">Phase 3</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Draw</h3>
+                <TmSignatureCapture Value="_drawSignatureValue"
+                                    ValueChanged="HandleDrawSignatureChanged"
+                                    ExportFormat="TmSignatureCaptureExportFormat.Svg"
+                                    data-testid="signature-draw-capture" />
+                <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-draw-value">
+                    @_drawSignatureStatus
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Typed</h3>
+                <TmSignatureCapture Mode="TmSignatureCaptureMode.Typed"
+                                    Modes="_typedSignatureModes"
+                                    Value="_typedSignatureValue"
+                                    ValueChanged="HandleTypedSignatureChanged"
+                                    TypedFont="serif"
+                                    data-testid="signature-typed-capture" />
+                <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-typed-value">
+                    @_typedSignatureStatus
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Upload</h3>
+                <TmSignatureCapture Mode="TmSignatureCaptureMode.Upload"
+                                    Modes="_uploadSignatureModes"
+                                    Value="_uploadSignatureValue"
+                                    OnUploadRequested="HandleUploadRequested"
+                                    data-testid="signature-upload-capture" />
+                <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-upload-value">
+                    @_uploadSignatureStatus
+                </div>
+            </div>
+
+            <div>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Reason and QR</h3>
+                <TmSignatureCapture Value="_advancedSignatureValue"
+                                    ValueChanged="value => _advancedSignatureValue = value"
+                                    Changed="HandleAdvancedSignatureChanged"
+                                    RequireReason="true"
+                                    ShowRememberSignature="true"
+                                    ShowQrSigningButton="true"
+                                    PreviousValue="SignatureImage"
+                                    OnQrSigningRequested="HandleQrSigningRequested"
+                                    data-testid="signature-advanced-capture" />
+                <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-advanced-value">
+                    @_advancedSignatureStatus
+                </div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Condition Builder</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Field-dependent visibility rules with value validation and cycle protection.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded-full">Phase 4</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmConditionBuilder Fields="_conditionFields"
+                            CurrentFieldUuid="conditional-signature"
+                            Conditions="_conditionRules"
+                            ConditionsChanged="HandleConditionRulesChanged"
+                            data-testid="condition-builder" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="condition-builder-status">
+            @_conditionStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Formula Builder</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Computed signing fields with numeric tokens, operators, and cycle validation.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full">Phase 5</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmFormulaBuilder Field="_formulaTotalField"
+                          Fields="_formulaFields"
+                          Value="@_formulaValue"
+                          ValueChanged="value => _formulaValue = value"
+                          Saved="HandleFormulaSaved"
+                          data-testid="formula-builder" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="formula-builder-status">
+            @_formulaStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Template Roles</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Role names, colors, signing order, and invite rules for reusable templates.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Phase 6</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmRecipientRoleEditor Roles="_templateRoles"
+                               RolesChanged="HandleTemplateRolesChanged"
+                               Fields="_recipientInviteFields"
+                               data-testid="recipient-role-editor-template" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="recipient-role-editor-template-status">
+            @_templateRoleStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Submission Recipients</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Recipient contact details with required email validation.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-rose-100 dark:bg-rose-900/30 text-rose-700 dark:text-rose-300 rounded-full">Phase 6</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmRecipientRoleEditor Roles="_submissionRecipients"
+                               RolesChanged="HandleSubmissionRecipientsChanged"
+                               Fields="_recipientInviteFields"
+                               Mode="TmRecipientRoleEditorMode.SubmissionRecipients"
+                               data-testid="recipient-role-editor-submission" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="recipient-role-editor-submission-status">
+            @_submissionRecipientStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Field Editor Panel</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Edit field metadata, role assignment, options, validation, preferences, and conditional rules.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 rounded-full">Phase 7</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 xl:grid-cols-[minmax(0,1fr)_minmax(22rem,28rem)] gap-6">
+            <div>
+                <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Live preview</h3>
+                <div class="relative h-36 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-950 overflow-hidden"
+                     data-testid="field-editor-preview">
+                    <TmSigningFieldOverlay Field="_editorField"
+                                           Area="_editorArea"
+                                           Value="_editorPreviewValue"
+                                           Completed="_editorField.Required"
+                                           Class="signing-components-page__sample-field" />
+                </div>
+                <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="field-editor-status">
+                    @_fieldEditorStatus
+                </div>
+            </div>
+
+            <TmSigningFieldEditorPanel Field="_editorField"
+                                       FieldChanged="HandleEditorFieldChanged"
+                                       Fields="_editorFields"
+                                       SubmitterRoles="_templateRoles"
+                                       CopyToAllPagesRequested="HandleCopyToAllPagesRequested"
+                                       OptionAreaMappingRequested="HandleOptionAreaMappingRequested"
+                                       data-testid="field-editor-panel" />
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">PDF Template Designer</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Two-page template design with drawing, selection, resizing, context actions, and field settings.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">Phase 8</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmPdfTemplateDesigner Documents="_designerPages"
+                               Fields="_designerFields"
+                               FieldsChanged="HandleDesignerFieldsChanged"
+                               SubmitterRoles="_templateRoles"
+                               SelectedSubmitterUuid="template-signer"
+                               OnDetectFields="DetectDesignerFieldsAsync"
+                               data-testid="pdf-template-designer" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="pdf-template-designer-status">
+            @_designerStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Signing Steps</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Linear signer inputs for text, choices, uploads, phone verification, and external provider steps.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-fuchsia-100 dark:bg-fuchsia-900/30 text-fuchsia-700 dark:text-fuchsia-300 rounded-full">Phase 9</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4" data-testid="signing-steps-demo">
+            <TmSigningTextStep Field="@_stepTextField"
+                               Value="@_stepTextValue"
+                               ValueChanged="value => _stepTextValue = value"
+                               data-testid="signing-step-text" />
+            <TmSigningNumberStep Field="@_stepNumberField"
+                                 Value="@_stepNumberValue"
+                                 ValueChanged="value => _stepNumberValue = value"
+                                 data-testid="signing-step-number" />
+            <TmSigningDateStep Field="@_stepDateField"
+                               Value="@_stepDateValue"
+                               ValueChanged="value => _stepDateValue = value"
+                               data-testid="signing-step-date" />
+            <TmSigningChoiceStep Field="@_stepSelectField"
+                                 Value="@_stepSelectValue"
+                                 ValueChanged="HandleStepSelectChanged"
+                                 data-testid="signing-step-select" />
+            <TmSigningChoiceStep Field="@_stepRadioField"
+                                 Value="@_stepRadioValue"
+                                 ValueChanged="HandleStepRadioChanged"
+                                 data-testid="signing-step-radio" />
+            <TmSigningChoiceStep Field="@_stepMultipleField"
+                                 Value="@_stepMultipleValue"
+                                 ValueChanged="HandleStepMultipleChanged"
+                                 data-testid="signing-step-multiple" />
+            <TmSigningAttachmentStep Field="@_stepImageField"
+                                     Attachments="@_stepImageAttachments"
+                                     AttachmentsChanged="HandleStepImageAttachmentsChanged"
+                                     data-testid="signing-step-image" />
+            <TmSigningPhoneStep Field="@_stepPhoneField"
+                                CountryCode="+420"
+                                PhoneNumber="@_stepPhoneNumber"
+                                PhoneNumberChanged="value => _stepPhoneNumber = value"
+                                ValueChanged="value => _stepPhoneValue = value"
+                                OnSendCode="HandleStepPhoneCodeSent"
+                                data-testid="signing-step-phone" />
+            <TmSigningExternalStep Field="@_stepPaymentField"
+                                   OnCheckout="HandleStepCheckout"
+                                   data-testid="signing-step-payment" />
+        </div>
+
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-steps-status">
+            @_stepStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Signing Form Runner</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Full signing ceremony with ordered steps, overlays, autosave, conditional fields, formulas, and mobile controls.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-lime-100 dark:bg-lime-900/30 text-lime-700 dark:text-lime-300 rounded-full">Phase 10</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmSigningFormRunner Pages="@_runnerPages"
+                             Fields="@_runnerFields"
+                             Values="@_runnerValues"
+                             ValuesChanged="HandleRunnerValuesChanged"
+                             OnAutoSave="HandleRunnerAutoSave"
+                             OnComplete="HandleRunnerComplete"
+                             AutoSaveDelay="@TimeSpan.FromMilliseconds(80)"
+                             data-testid="signing-runner-demo" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-runner-status">
+            @_runnerStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Completion Panel</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Final signer confirmation with document download, copy sending, and custom next action.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 11</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <TmSigningCompletionPanel DownloadUrl="/sample-signed.pdf"
+                                      CustomActionText="Back to documents"
+                                      CustomActionIcon="folder-open"
+                                      OnSendCopy="HandleCompletionSendCopy"
+                                      OnCustomAction="HandleCompletionCustomAction"
+                                      data-testid="signing-completion-panel" />
+            <TmSigningCompletionPanel IsWaitingForOthers="true"
+                                      DownloadUrl="/sample-draft.pdf"
+                                      data-testid="signing-completion-waiting" />
+        </div>
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-completion-status">
+            @_completionStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Submission Status Timeline</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Recipient lifecycle events including email delivery, verification, and KBA signals.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 11</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmSubmissionStatusTimeline Events="@_submissionStatusEvents"
+                                    data-testid="submission-status-timeline" />
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Share Link Panel</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Public signing link with copy actions, QR code, embed code, expiration, and enable toggle.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 11</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmShareLinkPanel Link="https://sign.example.test/s/demo-token"
+                          EmbedCode="@DemoEmbedCode"
+                          Enabled="@_shareLinkEnabled"
+                          EnabledChanged="HandleShareLinkEnabledChanged"
+                          ExpiresAt="@_shareLinkExpiresAt"
+                          data-testid="share-link-panel" />
+        <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="share-link-status">
+            @_shareLinkStatus
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">PDF Signature Verification</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Provider-agnostic verification states for signed PDFs and extracted signatures.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 11</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-4">
+            <TmPdfSignatureVerification Result="@_pdfVerificationResult"
+                                        OnVerifyRequested="HandlePdfVerifyRequested"
+                                        data-testid="pdf-signature-verification" />
+            <TmPdfSignatureVerification Result="@_pdfVerificationMissing"
+                                        data-testid="pdf-signature-verification-missing" />
+        </div>
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Audit Trail Viewer</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Document checksums, signer identity, network evidence, verification method, and audit PDF link.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 rounded-full">Phase 11</span>
+    </div>
+
+    <div class="showcase-card">
+        <TmAuditTrailViewer Trail="@_auditTrail"
+                            data-testid="audit-trail-viewer" />
+    </div>
+</section>
+
+@code {
+    private const string DemoEmbedCode = "<iframe src=\"https://sign.example.test/s/demo-token\"></iframe>";
+
+    private static readonly string DemoPageImage = "data:image/svg+xml," + Uri.EscapeDataString("""
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612 792">
+          <rect width="612" height="792" fill="white"/>
+          <rect x="48" y="52" width="516" height="688" fill="none" stroke="#d1d5db" stroke-width="2"/>
+          <text x="72" y="104" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">Mutual NDA</text>
+          <text x="72" y="148" font-family="Arial, sans-serif" font-size="13" fill="#374151">
+            <tspan x="72" dy="0">This sample page demonstrates placement of signing fields</tspan>
+            <tspan x="72" dy="18">over a rendered document image.</tspan>
+          </text>
+          <line x1="72" y1="194" x2="540" y2="194" stroke="#d1d5db" stroke-width="2"/>
+          <text x="72" y="238" font-family="Arial, sans-serif" font-size="15" fill="#111827">Recipient</text>
+          <rect x="72" y="254" width="468" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="88" y="281" font-family="Arial, sans-serif" font-size="14" fill="#6b7280">Alex Johnson</text>
+          <text x="72" y="348" font-family="Arial, sans-serif" font-size="13" fill="#374151">
+            <tspan x="72" dy="0">The recipient agrees to keep confidential information private</tspan>
+            <tspan x="72" dy="18">and use it only for the intended evaluation.</tspan>
+          </text>
+          <text x="72" y="398" font-family="Arial, sans-serif" font-size="13" fill="#374151">
+            <tspan x="72" dy="0">This demo document is intentionally short so overlay</tspan>
+            <tspan x="72" dy="18">positioning remains easy to inspect.</tspan>
+          </text>
+          <line x1="72" y1="566" x2="220" y2="566" stroke="#9ca3af" stroke-width="2"/>
+          <line x1="318" y1="566" x2="528" y2="566" stroke="#9ca3af" stroke-width="2"/>
+          <text x="72" y="592" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Date</text>
+          <text x="318" y="592" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Signature</text>
+        </svg>
+        """);
+
+    private readonly SigningDocumentPage _demoPage = new()
+    {
+        AttachmentUuid = "demo-nda",
+        PageIndex = 0,
+        ImageUrl = DemoPageImage,
+        Width = 612,
+        Height = 792,
+        Label = "NDA page 1"
+    };
+
+    private readonly IReadOnlyList<SigningDocumentPage> _designerPages =
+    [
+        new SigningDocumentPage
+        {
+            AttachmentUuid = "designer-nda",
+            PageIndex = 0,
+            ImageUrl = DemoPageImage,
+            Width = 612,
+            Height = 792,
+            Label = "Designer NDA page 1"
+        },
+        new SigningDocumentPage
+        {
+            AttachmentUuid = "designer-nda",
+            PageIndex = 1,
+            ImageUrl = DemoPageImage,
+            Width = 612,
+            Height = 792,
+            Label = "Designer NDA page 2"
+        }
+    ];
+
+    private readonly DateOnly _dateValue = new(2026, 5, 8);
+    private string? _selectedFieldUuid;
+    private string _lastInteraction = "No page interaction yet";
+    private string? _drawSignatureValue;
+    private string? _typedSignatureValue;
+    private string? _uploadSignatureValue;
+    private string? _advancedSignatureValue;
+    private string _drawSignatureStatus = "No value";
+    private string _typedSignatureStatus = "No value";
+    private string _uploadSignatureStatus = "Upload not requested";
+    private string _advancedSignatureStatus = "No advanced signature";
+    private IReadOnlyList<SigningFieldCondition> _conditionRules = [];
+    private string _conditionStatus = "No conditions";
+    private string? _formulaValue;
+    private string _formulaStatus = "No formula saved";
+    private IReadOnlyList<SigningSubmitterRole> _templateRoles =
+    [
+        new SigningSubmitterRole
+        {
+            Uuid = "template-signer",
+            Name = "Signer",
+            Color = "#2563eb",
+            Order = 0
+        },
+        new SigningSubmitterRole
+        {
+            Uuid = "template-approver",
+            Name = "Approver",
+            Color = "#16a34a",
+            Order = 1,
+            InviteByRoleUuid = "template-signer"
+        }
+    ];
+    private IReadOnlyList<SigningSubmitterRole> _submissionRecipients =
+    [
+        new SigningSubmitterRole
+        {
+            Uuid = "recipient-signer",
+            Name = "Signer",
+            FullName = "Alex Johnson",
+            Email = "alex@example.test",
+            Phone = "+420555010101",
+            Color = "#2563eb",
+            Order = 0
+        },
+        new SigningSubmitterRole
+        {
+            Uuid = "recipient-approver",
+            Name = "Approver",
+            FullName = "Nora Lee",
+            Email = "nora@example.test",
+            Phone = "+420555010102",
+            Color = "#16a34a",
+            Order = 1,
+            IsOptional = true,
+            OptionalInviteByRoleUuid = "recipient-signer"
+        }
+    ];
+    private string _templateRoleStatus = "2 roles";
+    private string _submissionRecipientStatus = "2 recipients";
+    private SigningField _editorField = new()
+    {
+        Uuid = "editor-country",
+        SubmitterUuid = "template-signer",
+        Name = "Country",
+        Title = "Country of residence",
+        Description = "Choose where the signer is located.",
+        Type = SigningFieldType.Select,
+        Preferences = new SigningFieldPreferences
+        {
+            Color = "#2563eb",
+            Align = "left",
+            FontFamily = "sans",
+            FontSize = 14
+        },
+        Options =
+        [
+            new SigningFieldOption { Uuid = "editor-country-cz", Value = "Czech Republic" },
+            new SigningFieldOption { Uuid = "editor-country-us", Value = "United States" }
+        ]
+    };
+    private string _fieldEditorStatus = "Country: Select, required: False, options: 2, conditions: 0";
+    private IReadOnlyList<SigningField> _designerFields =
+    [
+        new SigningField
+        {
+            Uuid = "designer-name",
+            SubmitterUuid = "template-signer",
+            Name = "Full name",
+            Type = SigningFieldType.Text,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "designer-name-area",
+                    AttachmentUuid = "designer-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.32,
+                    Width = 0.36,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "designer-delivery",
+            SubmitterUuid = "template-signer",
+            Name = "Delivery",
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "designer-delivery-email", Value = "Email" },
+                new SigningFieldOption { Uuid = "designer-delivery-paper", Value = "Paper" }
+            ],
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "designer-delivery-area",
+                    AttachmentUuid = "designer-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.42,
+                    Width = 0.36,
+                    Height = 0.06
+                }
+            ]
+        }
+    ];
+    private string _designerStatus = "2 designer fields";
+    private string? _stepTextValue;
+    private decimal? _stepNumberValue;
+    private string? _stepDateValue;
+    private string? _stepSelectValue;
+    private string? _stepRadioValue;
+    private string[] _stepMultipleValue = [];
+    private string? _stepPhoneNumber;
+    private string? _stepPhoneValue;
+    private string _stepStatus = "No signing step interaction";
+    private IReadOnlyList<TmSigningStepAttachment> _stepImageAttachments =
+    [
+        new TmSigningStepAttachment
+        {
+            Uuid = "demo-image",
+            Name = "photo.png",
+            Url = SignatureImage,
+            ContentType = "image/png",
+            Size = 512
+        }
+    ];
+    private IReadOnlyDictionary<string, object?> _runnerValues = new Dictionary<string, object?>(StringComparer.Ordinal);
+    private string _runnerStatus = "Signing runner ready";
+    private string _completionStatus = "No completion action";
+    private bool _shareLinkEnabled = true;
+    private string _shareLinkStatus = "Share link enabled";
+    private readonly DateTimeOffset _shareLinkExpiresAt = new(2026, 5, 15, 12, 0, 0, TimeSpan.Zero);
+    private SigningPdfVerificationResult _pdfVerificationResult = new();
+    private readonly SigningPdfVerificationResult _pdfVerificationMissing = new()
+    {
+        Status = SigningPdfVerificationStatus.ChecksumNotFound,
+        FileName = "unknown.pdf",
+        Checksum = "sha256-missing"
+    };
+
+    private IReadOnlyList<SigningSubmissionStatusEvent> _submissionStatusEvents =>
+    [
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.Sent,
+            RecipientName = "Alex Johnson",
+            RecipientEmail = "alex@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-45),
+            Metadata = new Dictionary<string, string> { ["Provider"] = "SMTP" }
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.Opened,
+            RecipientName = "Alex Johnson",
+            RecipientEmail = "alex@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-35)
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.VerificationCompleted,
+            RecipientName = "Alex Johnson",
+            RecipientEmail = "alex@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-30),
+            Metadata = new Dictionary<string, string> { ["Method"] = "SMS" }
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.KbaCompleted,
+            RecipientName = "Alex Johnson",
+            RecipientEmail = "alex@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-24)
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.Completed,
+            RecipientName = "Alex Johnson",
+            RecipientEmail = "alex@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-20)
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.Declined,
+            RecipientName = "Nora Lee",
+            RecipientEmail = "nora@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-15),
+            Metadata = new Dictionary<string, string> { ["Reason"] = "Needs legal review" }
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.EmailBounced,
+            RecipientName = "Nora Lee",
+            RecipientEmail = "nora@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-10),
+            Metadata = new Dictionary<string, string> { ["SMTP"] = "550 mailbox unavailable" }
+        },
+        new SigningSubmissionStatusEvent
+        {
+            Type = SigningSubmissionStatusEventType.EmailComplaint,
+            RecipientName = "Nora Lee",
+            RecipientEmail = "nora@example.test",
+            CreatedAt = DateTimeOffset.Now.AddMinutes(-5)
+        }
+    ];
+
+    private SigningAuditTrail _auditTrail => new()
+    {
+        AuditPdfUrl = "/audit-demo.pdf",
+        Documents =
+        [
+            new SigningAuditTrailDocument
+            {
+                FileName = "mutual-nda.pdf",
+                Checksum = "sha256-7f2c-demo"
+            }
+        ],
+        Signers =
+        [
+            new SigningAuditTrailSigner
+            {
+                FullName = "Alex Johnson",
+                Email = "alex@example.test",
+                IpAddress = "203.0.113.10",
+                UserAgent = "Mozilla/5.0 Tempo Demo",
+                TimeZone = "Europe/Prague",
+                VerificationMethod = "SMS"
+            }
+        ],
+        Events =
+        [
+            new SigningAuditTrailEvent
+            {
+                Label = "Document opened",
+                Actor = "Alex Johnson",
+                OccurredAt = DateTimeOffset.Now.AddMinutes(-35),
+                IpAddress = "203.0.113.10",
+                UserAgent = "Mozilla/5.0 Tempo Demo",
+                TimeZone = "Europe/Prague"
+            },
+            new SigningAuditTrailEvent
+            {
+                Label = "Signature completed",
+                Actor = "Alex Johnson",
+                OccurredAt = DateTimeOffset.Now.AddMinutes(-20),
+                IpAddress = "203.0.113.10",
+                UserAgent = "Mozilla/5.0 Tempo Demo",
+                TimeZone = "Europe/Prague",
+                VerificationMethod = "SMS"
+            }
+        ]
+    };
+
+    private IReadOnlyList<SigningDocumentPage> _runnerPages =>
+    [
+        _demoPage
+    ];
+
+    private IReadOnlyList<SigningField> _runnerFields =>
+    [
+        new SigningField
+        {
+            Uuid = "runner-name",
+            SubmitterUuid = "template-signer",
+            Name = "Full name",
+            Type = SigningFieldType.Text,
+            Required = true,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-name-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.32,
+                    Width = 0.42,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-amount",
+            SubmitterUuid = "template-signer",
+            Name = "Amount",
+            Type = SigningFieldType.Number,
+            Required = true,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-amount-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.41,
+                    Width = 0.24,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-total",
+            SubmitterUuid = "template-signer",
+            Name = "Total with tax",
+            Type = SigningFieldType.Number,
+            ReadOnly = true,
+            Preferences = new SigningFieldPreferences
+            {
+                Formula = "{{runner-amount}} * 1.21"
+            },
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-total-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.42,
+                    Y = 0.41,
+                    Width = 0.24,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-extra-toggle",
+            SubmitterUuid = "template-signer",
+            Name = "Add internal note",
+            Type = SigningFieldType.Checkbox,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-extra-toggle-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.51,
+                    Width = 0.36,
+                    Height = 0.05
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-extra-note",
+            SubmitterUuid = "template-signer",
+            Name = "Internal note",
+            Type = SigningFieldType.Text,
+            Conditions =
+            [
+                new SigningFieldCondition
+                {
+                    FieldUuid = "runner-extra-toggle",
+                    Action = SigningConditionAction.Checked
+                }
+            ],
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-extra-note-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.58,
+                    Width = 0.52,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-date",
+            SubmitterUuid = "template-signer",
+            Name = "Signing date",
+            Type = SigningFieldType.Date,
+            Required = true,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-date-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.14,
+                    Y = 0.67,
+                    Width = 0.24,
+                    Height = 0.06
+                }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "runner-signature",
+            SubmitterUuid = "template-signer",
+            Name = "Signature",
+            Type = SigningFieldType.Signature,
+            Required = true,
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-signature-area",
+                    AttachmentUuid = "demo-nda",
+                    Page = 0,
+                    X = 0.52,
+                    Y = 0.73,
+                    Width = 0.34,
+                    Height = 0.06
+                }
+            ]
+        }
+    ];
+
+    private readonly SigningField _stepTextField = new()
+    {
+        Uuid = "step-full-name",
+        Name = "Full name",
+        Type = SigningFieldType.Text,
+        Required = true,
+        Validation = new SigningFieldValidation { Pattern = "^[A-Za-z ]+$", Message = "Letters only" }
+    };
+
+    private readonly SigningField _stepNumberField = new()
+    {
+        Uuid = "step-amount",
+        Name = "Amount",
+        Type = SigningFieldType.Number,
+        Required = true,
+        Validation = new SigningFieldValidation { Min = "1", Max = "1000", Step = "0.5" }
+    };
+
+    private readonly SigningField _stepDateField = new()
+    {
+        Uuid = "step-date",
+        Name = "Signing date",
+        Type = SigningFieldType.Date,
+        Required = true,
+        Validation = new SigningFieldValidation { Min = "{{date}}" }
+    };
+
+    private readonly SigningField _stepSelectField = CreateChoiceField(SigningFieldType.Select, "Country");
+    private readonly SigningField _stepRadioField = CreateChoiceField(SigningFieldType.Radio, "Delivery");
+    private readonly SigningField _stepMultipleField = CreateChoiceField(SigningFieldType.Multiple, "Approvals");
+    private readonly SigningField _stepImageField = new()
+    {
+        Uuid = "step-image",
+        Name = "Photo",
+        Type = SigningFieldType.Image
+    };
+    private readonly SigningField _stepPhoneField = new()
+    {
+        Uuid = "step-phone",
+        Name = "Phone",
+        Type = SigningFieldType.Phone,
+        Required = true
+    };
+    private readonly SigningField _stepPaymentField = new()
+    {
+        Uuid = "step-payment",
+        Name = "Payment",
+        Type = SigningFieldType.Payment,
+        Preferences = new SigningFieldPreferences { Currency = "EUR", Price = 19.5m }
+    };
+
+    private readonly IReadOnlyList<TmSignatureCaptureMode> _typedSignatureModes = [TmSignatureCaptureMode.Typed];
+    private readonly IReadOnlyList<TmSignatureCaptureMode> _uploadSignatureModes = [TmSignatureCaptureMode.Upload];
+    private readonly IReadOnlyList<SigningField> _conditionFields =
+    [
+        new SigningField
+        {
+            Uuid = "conditional-signature",
+            Name = "Conditional signature",
+            Type = SigningFieldType.Signature
+        },
+        new SigningField
+        {
+            Uuid = "condition-country",
+            Name = "Country",
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "country-cz", Value = "Czech Republic" },
+                new SigningFieldOption { Uuid = "country-us", Value = "United States" }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "condition-consent",
+            Name = "Consent",
+            Type = SigningFieldType.Checkbox
+        },
+        new SigningField
+        {
+            Uuid = "condition-amount",
+            Name = "Amount",
+            Type = SigningFieldType.Number
+        },
+        new SigningField
+        {
+            Uuid = "condition-delivery",
+            Name = "Delivery",
+            Type = SigningFieldType.Radio,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "delivery-email", Value = "Email" },
+                new SigningFieldOption { Uuid = "delivery-paper", Value = "Paper" }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "condition-heading",
+            Name = "Internal heading",
+            Type = SigningFieldType.Heading
+        }
+    ];
+
+    private readonly SigningField _formulaTotalField = new()
+    {
+        Uuid = "formula-total",
+        Name = "Total",
+        Type = SigningFieldType.Number
+    };
+
+    private IReadOnlyList<SigningField> _formulaFields =>
+    [
+        _formulaTotalField,
+        new SigningField
+        {
+            Uuid = "formula-subtotal",
+            Name = "Subtotal",
+            Type = SigningFieldType.Number
+        },
+        new SigningField
+        {
+            Uuid = "formula-tax",
+            Name = "Tax",
+            Type = SigningFieldType.Number
+        },
+        new SigningField
+        {
+            Uuid = "formula-plan",
+            Name = "Plan price",
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "formula-plan-basic", Value = "10" },
+                new SigningFieldOption { Uuid = "formula-plan-pro", Value = "20" }
+            ]
+        },
+        new SigningField
+        {
+            Uuid = "formula-region",
+            Name = "Region",
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "formula-region-eu", Value = "EU" },
+                new SigningFieldOption { Uuid = "formula-region-us", Value = "US" }
+            ]
+        }
+    ];
+
+    private IReadOnlyList<SigningField> _recipientInviteFields =>
+    [
+        new SigningField
+        {
+            Uuid = "recipient-manager-email",
+            Name = "Manager email",
+            Type = SigningFieldType.Text
+        },
+        new SigningField
+        {
+            Uuid = "recipient-assistant-phone",
+            Name = "Assistant phone",
+            Type = SigningFieldType.Phone
+        }
+    ];
+
+    private IReadOnlyList<SigningField> _editorFields =>
+    [
+        _editorField,
+        new SigningField
+        {
+            Uuid = "editor-consent",
+            Name = "Consent",
+            Type = SigningFieldType.Checkbox
+        },
+        new SigningField
+        {
+            Uuid = "editor-amount",
+            Name = "Amount",
+            Type = SigningFieldType.Number
+        },
+        new SigningField
+        {
+            Uuid = "editor-plan",
+            Name = "Plan",
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "editor-plan-basic", Value = "Basic" },
+                new SigningFieldOption { Uuid = "editor-plan-pro", Value = "Pro" }
+            ]
+        }
+    ];
+
+    private static readonly SigningField _dateField = new()
+    {
+        Uuid = "date-field",
+        Name = "Date",
+        Type = SigningFieldType.Date,
+        Required = true
+    };
+
+    private static readonly SigningField _signatureField = new()
+    {
+        Uuid = "signature-field",
+        Name = "Signature",
+        Type = SigningFieldType.Signature,
+        Required = true
+    };
+
+    private static readonly SigningFieldArea _dateArea = new()
+    {
+        Uuid = "date-area",
+        AttachmentUuid = "demo-nda",
+        Page = 0,
+        X = 0.14,
+        Y = 0.67,
+        Width = 0.24,
+        Height = 0.06
+    };
+
+    private static readonly SigningFieldArea _signatureArea = new()
+    {
+        Uuid = "signature-area",
+        AttachmentUuid = "demo-nda",
+        Page = 0,
+        X = 0.52,
+        Y = 0.67,
+        Width = 0.34,
+        Height = 0.06
+    };
+
+    private static readonly SigningFieldArea _editorArea = new()
+    {
+        Uuid = "editor-area",
+        AttachmentUuid = "demo-nda",
+        Page = 0,
+        X = 0.08,
+        Y = 0.22,
+        Width = 0.84,
+        Height = 0.5
+    };
+
+    private object? _editorPreviewValue => _editorField.DefaultValue ?? _editorField.Options.FirstOrDefault()?.Uuid;
+
+    private readonly List<FieldOverlaySample> _fieldSamples =
+    [
+        new(CreateField(SigningFieldType.Heading, "Section heading", title: "Contract parties"), CreateSampleArea(), null, true, false),
+        new(CreateField(SigningFieldType.Text, "Full name"), CreateSampleArea(), "Alex Johnson", true, false),
+        new(CreateField(SigningFieldType.Signature, "Signature", required: true), CreateSampleArea(), null, false, false),
+        new(CreateField(SigningFieldType.Initials, "Initials"), CreateSampleArea(), SignatureImage, true, false),
+        new(CreateField(SigningFieldType.Date, "Signed on"), CreateSampleArea(), new DateOnly(2026, 5, 8), true, false),
+        new(CreateField(SigningFieldType.DateNow, "Completed on"), CreateSampleArea(), new DateOnly(2026, 5, 8), true, false),
+        new(CreateField(SigningFieldType.Number, "Amount"), CreateSampleArea(), 1250, true, false),
+        new(CreateField(SigningFieldType.Image, "Photo"), CreateSampleArea(), SignatureImage, true, false),
+        new(CreateField(SigningFieldType.File, "Attachment"), CreateSampleArea(), "nda.pdf", true, false),
+        new(CreateChoiceField(SigningFieldType.Select, "Country"), CreateSampleArea(), "option-2", true, false),
+        new(CreateField(SigningFieldType.Checkbox, "Consent"), CreateSampleArea(), true, true, false),
+        new(CreateChoiceField(SigningFieldType.Multiple, "Approvals"), CreateSampleArea(), new[] { "option-1", "option-3" }, true, false),
+        new(CreateChoiceField(SigningFieldType.Radio, "Delivery"), CreateSampleArea("option-2"), null, true, false),
+        new(CreateField(SigningFieldType.Cells, "Code"), CreateSampleArea(), "A1B2", true, false),
+        new(CreateField(SigningFieldType.Stamp, "Digital stamp"), CreateSampleArea(), null, false, false),
+        new(CreateField(SigningFieldType.Payment, "Payment"), CreateSampleArea(), "Card required", false, true),
+        new(CreateField(SigningFieldType.Phone, "Phone"), CreateSampleArea(), "+420 555 010 010", true, false),
+        new(CreateField(SigningFieldType.Verification, "ID check"), CreateSampleArea(), "Verified", true, false),
+        new(CreateField(SigningFieldType.Kba, "KBA"), CreateSampleArea(), "Passed", true, false),
+        new(CreateField(SigningFieldType.Strikethrough, "Remove clause"), CreateSampleArea(), null, false, false)
+    ];
+
+    private static readonly string SignatureImage = "data:image/svg+xml," + Uri.EscapeDataString("""
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 220 60">
+          <path d="M14 38 C42 6, 52 54, 82 24 S134 48, 162 18 S198 18, 210 34" fill="none" stroke="#1d4ed8" stroke-width="5" stroke-linecap="round"/>
+        </svg>
+        """);
+
+    private void HandlePageClick(TmDocumentPageViewerPointerEventArgs args)
+    {
+        _lastInteraction = $"Clicked page {args.Page.PageIndex + 1}";
+    }
+
+    private void HandlePageContextMenu(TmDocumentPageViewerPointerEventArgs args)
+    {
+        _lastInteraction = $"Context menu on page {args.Page.PageIndex + 1}";
+    }
+
+    private void HandleFieldClick(TmSigningFieldOverlayPointerEventArgs args)
+    {
+        _selectedFieldUuid = args.Field.Uuid;
+        _lastInteraction = $"Clicked {args.Field.Name}";
+    }
+
+    private void HandleFieldContextMenu(TmSigningFieldOverlayPointerEventArgs args)
+    {
+        _selectedFieldUuid = args.Field.Uuid;
+        _lastInteraction = $"Context menu {args.Field.Name}";
+    }
+
+    private void HandleDrawSignatureChanged(string? value)
+    {
+        _drawSignatureValue = value;
+        _drawSignatureStatus = string.IsNullOrWhiteSpace(value) ? "No value" : "Value captured";
+    }
+
+    private void HandleTypedSignatureChanged(string? value)
+    {
+        _typedSignatureValue = value;
+        _typedSignatureStatus = string.IsNullOrWhiteSpace(value) ? "No value" : "Typed value captured";
+    }
+
+    private void HandleUploadRequested()
+    {
+        _uploadSignatureValue = SignatureImage;
+        _uploadSignatureStatus = "Upload requested";
+    }
+
+    private void HandleQrSigningRequested()
+    {
+        _advancedSignatureStatus = "QR signing requested";
+    }
+
+    private void HandleAdvancedSignatureChanged(TmSignatureCaptureChangedEventArgs args)
+    {
+        _advancedSignatureStatus = $"Reason: {args.Reason ?? "none"}, remember: {args.RememberSignature}";
+    }
+
+    private void HandleConditionRulesChanged(IReadOnlyList<SigningFieldCondition> conditions)
+    {
+        _conditionRules = conditions;
+        _conditionStatus = conditions.Count == 0
+            ? "No conditions"
+            : $"{conditions.Count} condition{(conditions.Count == 1 ? string.Empty : "s")} configured";
+    }
+
+    private void HandleFormulaSaved(string formula)
+    {
+        _formulaStatus = $"Saved: {formula}; readonly: {_formulaTotalField.ReadOnly}";
+    }
+
+    private void HandleTemplateRolesChanged(IReadOnlyList<SigningSubmitterRole> roles)
+    {
+        _templateRoles = roles;
+        _templateRoleStatus = roles.Count == 0
+            ? "No roles"
+            : $"{roles.Count} role{(roles.Count == 1 ? string.Empty : "s")}: {string.Join(", ", roles.Select(role => $"{role.Order + 1}. {role.Name}"))}";
+    }
+
+    private void HandleSubmissionRecipientsChanged(IReadOnlyList<SigningSubmitterRole> roles)
+    {
+        _submissionRecipients = roles;
+        var missingEmailCount = roles.Count(role => !role.IsOptional && string.IsNullOrWhiteSpace(role.Email));
+        _submissionRecipientStatus = missingEmailCount == 0
+            ? $"{roles.Count} recipients ready"
+            : $"{missingEmailCount} recipient email missing";
+    }
+
+    private void HandleEditorFieldChanged(SigningField field)
+    {
+        _editorField = field;
+        _fieldEditorStatus = $"{field.Name}: {field.Type}, required: {field.Required}, options: {field.Options.Count}, conditions: {field.Conditions.Count}";
+    }
+
+    private void HandleCopyToAllPagesRequested(SigningField field)
+    {
+        _fieldEditorStatus = $"Copy requested: {field.Name}";
+    }
+
+    private void HandleOptionAreaMappingRequested(TmSigningFieldOptionAreaMappingEventArgs args)
+    {
+        _fieldEditorStatus = $"Map option: {args.Option.Value}";
+    }
+
+    private void HandleDesignerFieldsChanged(IReadOnlyList<SigningField> fields)
+    {
+        _designerFields = fields;
+        _designerStatus = $"{fields.Count} designer field{(fields.Count == 1 ? string.Empty : "s")}";
+    }
+
+    private Task<IReadOnlyList<SigningField>> DetectDesignerFieldsAsync()
+    {
+        IReadOnlyList<SigningField> detected =
+        [
+            new SigningField
+            {
+                Uuid = $"detected-{Guid.NewGuid():N}",
+                SubmitterUuid = "template-signer",
+                Name = "Detected date",
+                Type = SigningFieldType.Date,
+                Areas =
+                [
+                    new SigningFieldArea
+                    {
+                        Uuid = $"detected-area-{Guid.NewGuid():N}",
+                        AttachmentUuid = "designer-nda",
+                        Page = 1,
+                        X = 0.14,
+                        Y = 0.67,
+                        Width = 0.24,
+                        Height = 0.06
+                    }
+                ]
+            }
+        ];
+
+        return Task.FromResult(detected);
+    }
+
+    private void HandleStepSelectChanged(object? value)
+    {
+        _stepSelectValue = value?.ToString();
+        _stepStatus = $"Select: {_stepSelectValue}";
+    }
+
+    private void HandleStepRadioChanged(object? value)
+    {
+        _stepRadioValue = value?.ToString();
+        _stepStatus = $"Radio: {_stepRadioValue}";
+    }
+
+    private void HandleStepMultipleChanged(object? value)
+    {
+        _stepMultipleValue = value is string[] values ? values : [];
+        _stepStatus = $"Multiple: {_stepMultipleValue.Length}";
+    }
+
+    private void HandleStepImageAttachmentsChanged(IReadOnlyList<TmSigningStepAttachment> attachments)
+    {
+        _stepImageAttachments = attachments;
+        _stepStatus = $"Attachments: {attachments.Count}";
+    }
+
+    private void HandleStepPhoneCodeSent(string phone)
+    {
+        _stepStatus = $"Phone code sent: {phone}";
+    }
+
+    private void HandleStepCheckout(SigningField field)
+    {
+        _stepStatus = $"Checkout: {field.Name}";
+    }
+
+    private void HandleRunnerValuesChanged(IReadOnlyDictionary<string, object?> values)
+    {
+        _runnerValues = new Dictionary<string, object?>(values, StringComparer.Ordinal);
+        _runnerStatus = $"Values: {_runnerValues.Count}; total: {GetRunnerValue("runner-total") ?? "pending"}";
+    }
+
+    private void HandleRunnerAutoSave(IReadOnlyDictionary<string, object?> values)
+    {
+        _runnerStatus = $"Autosaved {values.Count} values; total: {GetRunnerValue("runner-total") ?? "pending"}";
+    }
+
+    private void HandleRunnerComplete(IReadOnlyDictionary<string, object?> values)
+    {
+        _runnerValues = new Dictionary<string, object?>(values, StringComparer.Ordinal);
+        _runnerStatus = $"Completed with {values.Count} values";
+    }
+
+    private void HandleCompletionSendCopy()
+    {
+        _completionStatus = "Copy requested";
+    }
+
+    private void HandleCompletionCustomAction()
+    {
+        _completionStatus = "Custom action requested";
+    }
+
+    private void HandleShareLinkEnabledChanged(bool enabled)
+    {
+        _shareLinkEnabled = enabled;
+        _shareLinkStatus = enabled ? "Share link enabled" : "Share link disabled";
+    }
+
+    private void HandlePdfVerifyRequested()
+    {
+        _pdfVerificationResult = new SigningPdfVerificationResult
+        {
+            Status = SigningPdfVerificationStatus.Verified,
+            FileName = "mutual-nda-signed.pdf",
+            Checksum = "sha256-7f2c-demo",
+            Signatures =
+            [
+                new SigningPdfSignatureInfo
+                {
+                    SignerName = "Alex Johnson",
+                    SignerEmail = "alex@example.test",
+                    SignedAt = DateTimeOffset.Now.AddMinutes(-20),
+                    VerificationMethod = "SMS",
+                    CertificateSubject = "CN=Alex Johnson"
+                }
+            ]
+        };
+    }
+
+    private string? GetRunnerValue(string fieldUuid)
+    {
+        if (fieldUuid == "runner-total"
+            && _runnerValues.TryGetValue("runner-amount", out var amountValue)
+            && decimal.TryParse(amountValue?.ToString(), out var amount))
+        {
+            return (amount * 1.21m).ToString("0.##");
+        }
+
+        return _runnerValues.TryGetValue(fieldUuid, out var value)
+            ? value?.ToString()
+            : null;
+    }
+
+    private static SigningField CreateField(
+        SigningFieldType type,
+        string name,
+        string? title = null,
+        bool required = false)
+    {
+        return new SigningField
+        {
+            Uuid = $"{type}-{name}".Replace(' ', '-').ToLowerInvariant(),
+            Name = name,
+            Title = title,
+            Type = type,
+            Required = required
+        };
+    }
+
+    private static SigningField CreateChoiceField(SigningFieldType type, string name)
+    {
+        var field = CreateField(type, name);
+        field.Options =
+        [
+            new SigningFieldOption { Uuid = "option-1", Value = "One" },
+            new SigningFieldOption { Uuid = "option-2", Value = "Two" },
+            new SigningFieldOption { Uuid = "option-3", Value = "Three" }
+        ];
+
+        return field;
+    }
+
+    private static SigningFieldArea CreateSampleArea(string? optionUuid = null)
+    {
+        return new SigningFieldArea
+        {
+            Uuid = Guid.NewGuid().ToString("N"),
+            X = 0.08,
+            Y = 0.25,
+            Width = 0.84,
+            Height = 0.48,
+            OptionUuid = optionUuid
+        };
+    }
+
+    private sealed record FieldOverlaySample(
+        SigningField Field,
+        SigningFieldArea Area,
+        object? Value,
+        bool Completed,
+        bool Invalid);
+}

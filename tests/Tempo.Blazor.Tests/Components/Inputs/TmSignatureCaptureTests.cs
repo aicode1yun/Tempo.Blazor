@@ -1,0 +1,278 @@
+using Bunit;
+using FluentAssertions;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.Inputs;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Components.Inputs;
+
+public class TmSignatureCaptureTests : LocalizationTestBase
+{
+    [Fact]
+    public void Render_Default_RendersRootDrawModeCanvasAndClearButton()
+    {
+        var cut = RenderComponent<TmSignatureCapture>();
+
+        var root = cut.Find(".tm-signature-capture");
+        root.GetAttribute("data-mode").Should().Be("Draw");
+        cut.Find("svg.tm-signature-capture__canvas").Should().NotBeNull();
+        cut.Find(".tm-signature-capture__clear").TextContent.Should().Contain("Clear");
+    }
+
+    [Fact]
+    public void Render_ClassAndAdditionalAttributes_AreApplied()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Class, "custom-signature")
+                      .AddUnmatched("data-testid", "signature"));
+
+        var root = cut.Find("[data-testid='signature']");
+        root.ClassList.Should().Contain("tm-signature-capture");
+        root.ClassList.Should().Contain("custom-signature");
+    }
+
+    [Fact]
+    public void Render_WithValue_ShowsPreview()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Value, "data:image/png;base64,abc"));
+
+        cut.Find(".tm-signature-capture__preview").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Render_Disabled_AppliesStateAndDisablesControls()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Disabled, true));
+
+        var root = cut.Find(".tm-signature-capture");
+        root.ClassList.Should().Contain("tm-signature-capture--disabled");
+        root.GetAttribute("aria-disabled").Should().Be("true");
+        cut.Find(".tm-signature-capture__clear").HasAttribute("disabled").Should().BeTrue();
+    }
+
+    [Fact]
+    public void Draw_PointerEvents_RenderStroke()
+    {
+        var cut = RenderComponent<TmSignatureCapture>();
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        cut.Find("polyline").GetAttribute("points").Should().Contain("10.0,10.0 20.0,20.0");
+    }
+
+    [Fact]
+    public void Draw_PointerUp_InvokesValueChanged()
+    {
+        string? captured = null;
+        TmSignatureCaptureChangedEventArgs? changed = null;
+
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value))
+                      .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        captured.Should().Contain("<svg");
+        changed.Should().NotBeNull();
+        changed!.Mode.Should().Be(TmSignatureCaptureMode.Draw);
+        cut.Instance.IsEmpty.Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task ClearAsync_ClearsValueAndStrokes()
+    {
+        string? captured = "initial";
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        await cut.InvokeAsync(() => cut.Instance.ClearAsync());
+
+        captured.Should().BeNull();
+        cut.FindAll("polyline").Should().BeEmpty();
+        cut.Instance.IsEmpty.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Render_RequiredEmpty_IsInvalid()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Required, true));
+
+        var root = cut.Find(".tm-signature-capture");
+        root.ClassList.Should().Contain("tm-signature-capture--invalid");
+        root.GetAttribute("aria-invalid").Should().Be("true");
+    }
+
+    [Fact]
+    public void Draw_PngExport_InvokesJsInterop()
+    {
+        JSInterop.Setup<string>("tmSignatureCapture.exportPng", _ => true).SetResult("data:image/png;base64,abc");
+        string? captured = null;
+
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ExportFormat, TmSignatureCaptureExportFormat.PngDataUrl)
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        cut.WaitForAssertion(() => captured.Should().Be("data:image/png;base64,abc"));
+        JSInterop.VerifyInvoke("tmSignatureCapture.exportPng");
+    }
+
+    [Fact]
+    public void Draw_PngExportFallsBackToSvg_WhenJsIsUnavailable()
+    {
+        string? captured = null;
+
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ExportFormat, TmSignatureCaptureExportFormat.PngDataUrl)
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        cut.WaitForAssertion(() => captured.Should().Contain("<svg"));
+    }
+
+    [Fact]
+    public void TypedMode_InputGeneratesTypedSignatureValue()
+    {
+        string? captured = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        cut.Find("input.tm-signature-capture__typed-input").Change("Alex Johnson");
+
+        captured.Should().Contain("Alex Johnson");
+        cut.Find(".tm-signature-capture__typed-preview").TextContent.Should().Contain("Alex Johnson");
+    }
+
+    [Fact]
+    public void TypedMode_Initials_UsesShorterLabel()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.Initials, true));
+
+        cut.Find("input.tm-signature-capture__typed-input")
+            .GetAttribute("aria-label")
+            .Should()
+            .Contain("Initials");
+    }
+
+    [Fact]
+    public void TypedMode_FontSelection_ChangesPreviewClass()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.TypedFont, "serif"));
+
+        cut.Find(".tm-signature-capture__typed-preview")
+            .ClassList
+            .Should()
+            .Contain("tm-signature-capture__typed-preview--serif");
+    }
+
+    [Fact]
+    public void UploadMode_RendersImageInputAndUploadCallback()
+    {
+        var requested = false;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Upload)
+                      .Add(p => p.OnUploadRequested, EventCallback.Factory.Create(this, () => requested = true)));
+
+        cut.Find("input[type='file']").GetAttribute("accept").Should().Be("image/*");
+        cut.Find(".tm-signature-capture__upload-button").Click();
+
+        requested.Should().BeTrue();
+    }
+
+    [Fact]
+    public void UploadMode_WithValue_RendersReuploadButton()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Upload)
+                      .Add(p => p.Value, "data:image/png;base64,abc"));
+
+        cut.Find(".tm-signature-capture__reupload").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Advanced_RequireReason_RendersReasonAndIncludesItInChangedPayload()
+    {
+        TmSignatureCaptureChangedEventArgs? changed = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.RequireReason, true)
+                      .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
+
+        cut.Find(".tm-signature-capture__reason").Change("Approved remotely");
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        changed.Should().NotBeNull();
+        changed!.Reason.Should().Be("Approved remotely");
+    }
+
+    [Fact]
+    public void Advanced_RememberSignature_RendersCheckboxAndIncludesItInChangedPayload()
+    {
+        TmSignatureCaptureChangedEventArgs? changed = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ShowRememberSignature, true)
+                      .Add(p => p.Changed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => changed = args)));
+
+        cut.Find("input.tm-signature-capture__remember").Change(true);
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        changed.Should().NotBeNull();
+        changed!.RememberSignature.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Advanced_ShowQrSigningButton_InvokesCallback()
+    {
+        var invoked = false;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ShowQrSigningButton, true)
+                      .Add(p => p.OnQrSigningRequested, EventCallback.Factory.Create(this, () => invoked = true)));
+
+        cut.Find(".tm-signature-capture__qr").Click();
+
+        invoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Advanced_PreviousValue_RendersReusePreview()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.PreviousValue, "data:image/png;base64,previous"));
+
+        cut.Find(".tm-signature-capture__previous").Should().NotBeNull();
+    }
+}

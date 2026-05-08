@@ -1,0 +1,173 @@
+@namespace Tempo.Blazor.Components.Inputs
+@using Microsoft.AspNetCore.Components.Forms
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     data-mode="@Mode"
+     aria-invalid="@BoolText(IsInvalid)"
+     aria-disabled="@BoolText(Disabled)">
+    <div class="tm-signature-capture__tabs" role="tablist" aria-label="@Loc["TmSignatureCapture_ModeTabs"]">
+        @foreach (var mode in AvailableModes)
+        {
+            <button type="button"
+                    class="@GetModeButtonClass(mode)"
+                    role="tab"
+                    aria-selected="@BoolText(Mode == mode)"
+                    disabled="@Disabled"
+                    @onclick="() => SetModeAsync(mode)">
+                @GetModeLabel(mode)
+            </button>
+        }
+    </div>
+
+    <div class="tm-signature-capture__surface">
+        @if (Mode == TmSignatureCaptureMode.Draw)
+        {
+            <svg @ref="_canvasRef"
+                 class="tm-signature-capture__canvas"
+                 viewBox="@CanvasViewBox"
+                 role="img"
+                 aria-label="@Loc["TmSignatureCapture_DrawPad"]"
+                 @onpointerdown="HandlePointerDown"
+                 @onpointermove="HandlePointerMove"
+                 @onpointerup="HandlePointerUpAsync"
+                 @onpointerleave="HandlePointerUpAsync"
+                 @onpointercancel="HandlePointerUpAsync">
+                @if (!string.IsNullOrWhiteSpace(BackgroundColor))
+                {
+                    <rect width="100%" height="100%" fill="@BackgroundColor" />
+                }
+                @foreach (var stroke in _strokes)
+                {
+                    <polyline points="@stroke.Points"
+                              fill="none"
+                              stroke="@stroke.Color"
+                              stroke-width="@stroke.Width.ToString("0.0", System.Globalization.CultureInfo.InvariantCulture)"
+                              stroke-linecap="round"
+                              stroke-linejoin="round" />
+                }
+            </svg>
+        }
+        else if (Mode == TmSignatureCaptureMode.Typed)
+        {
+            <div class="tm-signature-capture__typed">
+                <input class="tm-signature-capture__typed-input"
+                       value="@_typedText"
+                       placeholder="@TypedPlaceholder"
+                       aria-label="@TypedAriaLabel"
+                       disabled="@Disabled"
+                       @onchange="HandleTypedInputAsync" />
+                <select class="tm-signature-capture__font"
+                        value="@TypedFont"
+                        aria-label="@Loc["TmSignatureCapture_Font"]"
+                        disabled="@Disabled"
+                        @onchange="HandleFontChangedAsync">
+                    <option value="script">@Loc["TmSignatureCapture_FontScript"]</option>
+                    <option value="serif">@Loc["TmSignatureCapture_FontSerif"]</option>
+                    <option value="sans">@Loc["TmSignatureCapture_FontSans"]</option>
+                </select>
+                <div class="@TypedPreviewClass">@TypedPreviewText</div>
+            </div>
+        }
+        else if (Mode == TmSignatureCaptureMode.Upload)
+        {
+            <div class="tm-signature-capture__upload">
+                <div class="tm-signature-capture__drop-zone">
+                    <TmIcon Name="upload" Size="IconSize.Md" />
+                    <span>@Loc["TmSignatureCapture_UploadHint"]</span>
+                    <InputFile OnChange="HandleUploadChangedAsync"
+                               accept="image/*"
+                               disabled="@Disabled"
+                               class="tm-signature-capture__file-input" />
+                </div>
+                <button type="button"
+                        class="tm-signature-capture__upload-button"
+                        disabled="@Disabled"
+                        @onclick="HandleUploadRequestedAsync">
+                    @Loc["TmSignatureCapture_UploadButton"]
+                </button>
+                @if (!string.IsNullOrWhiteSpace(Value))
+                {
+                    <button type="button"
+                            class="tm-signature-capture__reupload"
+                            disabled="@Disabled"
+                            @onclick="HandleUploadRequestedAsync">
+                        @Loc["TmSignatureCapture_Reupload"]
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(Value))
+    {
+        <div class="tm-signature-capture__preview" aria-label="@Loc["TmSignatureCapture_CurrentPreview"]">
+            @RenderPreview(Value)
+        </div>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(PreviousValue))
+    {
+        <div class="tm-signature-capture__previous">
+            <span class="tm-signature-capture__previous-label">@Loc["TmSignatureCapture_PreviousSignature"]</span>
+            <div class="tm-signature-capture__previous-preview">
+                @RenderPreview(PreviousValue)
+            </div>
+            <button type="button"
+                    class="tm-signature-capture__reuse"
+                    disabled="@Disabled"
+                    @onclick="ReusePreviousAsync">
+                @Loc["TmSignatureCapture_ReusePrevious"]
+            </button>
+        </div>
+    }
+
+    @if (RequireReason)
+    {
+        <label class="tm-signature-capture__reason-field">
+            <span>@Loc["TmSignatureCapture_Reason"]</span>
+            <input class="tm-signature-capture__reason"
+                   value="@_reason"
+                   disabled="@Disabled"
+                   @onchange="HandleReasonChanged" />
+        </label>
+    }
+
+    @if (ShowRememberSignature)
+    {
+        <label class="tm-signature-capture__remember-field">
+            <input type="checkbox"
+                   class="tm-signature-capture__remember"
+                   checked="@_rememberSignature"
+                   disabled="@Disabled"
+                   @onchange="HandleRememberChanged" />
+            <span>@Loc["TmSignatureCapture_RememberSignature"]</span>
+        </label>
+    }
+
+    <div class="tm-signature-capture__actions">
+        @if (ShowQrSigningButton)
+        {
+            <button type="button"
+                    class="tm-signature-capture__qr"
+                    disabled="@Disabled"
+                    @onclick="HandleQrSigningRequestedAsync">
+                <TmIcon Name="smartphone" Size="IconSize.Xs" />
+                <span>@Loc["TmSignatureCapture_QrSigning"]</span>
+            </button>
+        }
+        <button type="button"
+                class="tm-signature-capture__clear"
+                disabled="@Disabled"
+                @onclick="ClearAsync">
+            @Loc["TmSigning_Clear"]
+        </button>
+    </div>
+
+    @if (IsInvalid)
+    {
+        <div class="tm-signature-capture__validation" role="alert">
+            @Loc["TmSignatureCapture_Required"]
+        </div>
+    }
+</div>

@@ -1,0 +1,28 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@CurrentValidationMessage"
+                    AppearsOn="@AppearsOn"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    @if (IsMultiline)
+    {
+        <textarea class="tm-signing-text-step__input tm-signing-text-step__textarea"
+                  value="@Value"
+                  disabled="@Disabled"
+                  maxlength="@MaxLength"
+                  placeholder="@Loc["TmSigningStep_TextPlaceholder"]"
+                  @onchange="HandleValueChangedAsync"></textarea>
+    }
+    else
+    {
+        <input class="tm-signing-text-step__input"
+               type="text"
+               value="@Value"
+               disabled="@Disabled"
+               maxlength="@MaxLength"
+               placeholder="@Loc["TmSigningStep_TextPlaceholder"]"
+               @onchange="HandleValueChangedAsync" />
+    }
+</TmSigningStepShell>

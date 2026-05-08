@@ -1,0 +1,66 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     aria-busy="@IsLoading.ToString().ToLowerInvariant()">
+    @if (IsLoading)
+    {
+        <div class="tm-document-page-viewer__loading" role="status" aria-label="@Loc["TmDocumentPageViewer_Loading"]">
+            <TmSkeleton Variant="SkeletonVariant.Rect" Class="tm-document-page-viewer__skeleton" />
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(Error))
+    {
+        <TmAlert Severity="AlertSeverity.Error"
+                 Title="@Loc["TmDocumentPageViewer_ErrorTitle"]"
+                 Class="tm-document-page-viewer__alert">
+            @Error
+        </TmAlert>
+    }
+    else if (Page is null)
+    {
+        <TmEmptyState Icon="file-text"
+                      Title="@Loc["TmDocumentPageViewer_EmptyTitle"]"
+                      Description="@Loc["TmDocumentPageViewer_EmptyDescription"]" />
+    }
+    else
+    {
+        <div id="@PageElementId"
+             class="tm-document-page-viewer__page"
+             style="@PageStyle"
+             data-page-index="@Page.PageIndex"
+             role="img"
+             aria-label="@PageAriaLabel"
+             @onclick="HandlePageClickAsync"
+             @oncontextmenu="HandlePageContextMenuAsync"
+             @oncontextmenu:preventDefault="PreventDefaultContextMenu">
+            @if (PageTemplate is not null)
+            {
+                @PageTemplate(Page)
+            }
+            else if (!string.IsNullOrWhiteSpace(Page.ImageUrl))
+            {
+                <img class="tm-document-page-viewer__image"
+                     src="@Page.ImageUrl"
+                     alt="@ImageAlt"
+                     draggable="false" />
+            }
+            else
+            {
+                <div class="tm-document-page-viewer__missing-image">
+                    <TmIcon Name="file-text" Size="IconSize.Lg" />
+                    <span>@Loc["TmDocumentPageViewer_MissingImage"]</span>
+                </div>
+            }
+
+            <div class="@OverlayClass">
+                @ChildContent
+                @if (OverlayTemplate is not null)
+                {
+                    @OverlayTemplate(Page)
+                }
+            </div>
+        </div>
+    }
+</div>

@@ -1,0 +1,85 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@_validationMessage"
+                    AppearsOn="@AppearsOn"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    @if (IsCheckboxGroup)
+    {
+        <div class="tm-signing-choice-step__hint">@Loc["TmSigningStep_CheckboxGroupHint"]</div>
+        <div class="tm-signing-choice-step__options">
+            @foreach (var checkboxField in CheckboxFields)
+            {
+                <label class="tm-signing-choice-step__option">
+                    <input type="checkbox"
+                           class="tm-signing-choice-step__checkbox"
+                           checked="@IsGroupCheckboxChecked(checkboxField)"
+                           disabled="@Disabled"
+                           @onchange="args => HandleGroupCheckboxChangedAsync(checkboxField, args)" />
+                    <span>@GetFieldLabel(checkboxField)</span>
+                </label>
+            }
+        </div>
+    }
+    else if (Field.Type == SigningFieldType.Select)
+    {
+        <select class="tm-signing-choice-step__select"
+                value="@SingleValue"
+                disabled="@Disabled"
+                @onchange="HandleSingleValueChangedAsync">
+            <option value="">@Loc["TmSigningStep_SelectPlaceholder"]</option>
+            @foreach (var option in Field.Options)
+            {
+                <option value="@option.Uuid">@option.Value</option>
+            }
+        </select>
+    }
+    else if (Field.Type == SigningFieldType.Radio)
+    {
+        <div class="tm-signing-choice-step__options" role="radiogroup">
+            @foreach (var option in Field.Options)
+            {
+                <label class="tm-signing-choice-step__option">
+                    <input type="radio"
+                           name="@Field.Uuid"
+                           class="tm-signing-choice-step__radio"
+                           value="@option.Uuid"
+                           checked="@string.Equals(SingleValue, option.Uuid, StringComparison.Ordinal)"
+                           disabled="@Disabled"
+                           @onchange="args => HandleSingleValueChangedAsync(args)" />
+                    <span>@option.Value</span>
+                </label>
+            }
+        </div>
+    }
+    else if (Field.Type == SigningFieldType.Multiple)
+    {
+        <div class="tm-signing-choice-step__options">
+            @foreach (var option in Field.Options)
+            {
+                <label class="tm-signing-choice-step__option">
+                    <input type="checkbox"
+                           class="tm-signing-choice-step__checkbox"
+                           value="@option.Uuid"
+                           checked="@SelectedValues.Contains(option.Uuid)"
+                           disabled="@Disabled"
+                           @onchange="args => HandleMultipleValueChangedAsync(option.Uuid, args)" />
+                    <span>@option.Value</span>
+                </label>
+            }
+        </div>
+    }
+    else
+    {
+        <label class="tm-signing-choice-step__option tm-signing-choice-step__option--single">
+            <input type="checkbox"
+                   class="tm-signing-choice-step__checkbox"
+                   checked="@BoolValue"
+                   disabled="@Disabled"
+                   @onchange="HandleCheckboxChangedAsync" />
+            <span>@(AnonymousCheckbox ? Loc["TmSigningStep_CheckboxInstruction"] : GetFieldLabel(Field))</span>
+        </label>
+    }
+</TmSigningStepShell>

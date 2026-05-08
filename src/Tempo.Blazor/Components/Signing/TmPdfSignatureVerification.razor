@@ -1,0 +1,127 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<section @attributes="AdditionalAttributes"
+         class="@RootClass"
+         data-status="@Result.Status">
+    <div class="tm-pdf-signature-verification__status">
+        @if (Result.Status == SigningPdfVerificationStatus.Loading)
+        {
+            <TmSpinner Size="SpinnerSize.Sm" />
+        }
+        else
+        {
+            <TmIcon Name="@StatusIcon" Size="IconSize.Sm" />
+        }
+        <div>
+            <h2 class="tm-pdf-signature-verification__title">@StatusTitle</h2>
+            <p class="tm-pdf-signature-verification__message">@StatusMessage</p>
+        </div>
+    </div>
+
+    @if (Result.Status == SigningPdfVerificationStatus.Empty)
+    {
+        <TmButton Icon="upload"
+                  OnClick="OnVerifyRequested"
+                  Class="tm-pdf-signature-verification__verify">
+            @Loc["TmPdfSignatureVerification_Verify"]
+        </TmButton>
+    }
+
+    @if (!string.IsNullOrWhiteSpace(Result.Checksum) || !string.IsNullOrWhiteSpace(Result.FileName))
+    {
+        <dl class="tm-pdf-signature-verification__details">
+            @if (!string.IsNullOrWhiteSpace(Result.FileName))
+            {
+                <div>
+                    <dt>@Loc["TmPdfSignatureVerification_FileName"]</dt>
+                    <dd>@Result.FileName</dd>
+                </div>
+            }
+            @if (!string.IsNullOrWhiteSpace(Result.Checksum))
+            {
+                <div>
+                    <dt>@Loc["TmPdfSignatureVerification_Checksum"]</dt>
+                    <dd>@Result.Checksum</dd>
+                </div>
+            }
+        </dl>
+    }
+
+    @if (Result.Signatures.Count > 0)
+    {
+        <div class="tm-pdf-signature-verification__signatures">
+            <h3>@Loc["TmPdfSignatureVerification_Signatures"]</h3>
+            @foreach (var signature in Result.Signatures)
+            {
+                <article class="tm-pdf-signature-verification__signature">
+                    <strong>@(signature.SignerName ?? signature.SignerEmail ?? Loc["TmPdfSignatureVerification_UnknownSigner"])</strong>
+                    @if (!string.IsNullOrWhiteSpace(signature.SignerEmail))
+                    {
+                        <span>@signature.SignerEmail</span>
+                    }
+                    @if (signature.SignedAt is not null)
+                    {
+                        <time>@signature.SignedAt.Value.ToLocalTime().ToString("g")</time>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(signature.VerificationMethod))
+                    {
+                        <span>@signature.VerificationMethod</span>
+                    }
+                    @if (!string.IsNullOrWhiteSpace(signature.CertificateSubject))
+                    {
+                        <span>@signature.CertificateSubject</span>
+                    }
+                </article>
+            }
+        </div>
+    }
+</section>
+
+@code {
+    /// <summary>Verification result to render.</summary>
+    [Parameter] public SigningPdfVerificationResult Result { get; set; } = new();
+
+    /// <summary>Callback invoked when the user requests verification.</summary>
+    [Parameter] public EventCallback OnVerifyRequested { get; set; }
+
+    /// <summary>Additional CSS classes for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string RootClass => string.IsNullOrWhiteSpace(Class)
+        ? "tm-pdf-signature-verification"
+        : $"tm-pdf-signature-verification {Class}";
+
+    private string StatusIcon => Result.Status switch
+    {
+        SigningPdfVerificationStatus.Verified => "check-circle",
+        SigningPdfVerificationStatus.ChecksumNotFound => "search-x",
+        SigningPdfVerificationStatus.MalformedPdf or SigningPdfVerificationStatus.Error => "alert-triangle",
+        _ => "file-check"
+    };
+
+    private string StatusTitle => Result.Status switch
+    {
+        SigningPdfVerificationStatus.Loading => Loc["TmPdfSignatureVerification_LoadingTitle"],
+        SigningPdfVerificationStatus.Verified => Loc["TmPdfSignatureVerification_VerifiedTitle"],
+        SigningPdfVerificationStatus.ChecksumNotFound => Loc["TmPdfSignatureVerification_ChecksumNotFoundTitle"],
+        SigningPdfVerificationStatus.MalformedPdf => Loc["TmPdfSignatureVerification_MalformedTitle"],
+        SigningPdfVerificationStatus.Error => Loc["TmPdfSignatureVerification_ErrorTitle"],
+        _ => Loc["TmPdfSignatureVerification_EmptyTitle"]
+    };
+
+    private string StatusMessage => !string.IsNullOrWhiteSpace(Result.Message)
+        ? Result.Message
+        : Result.Status switch
+        {
+            SigningPdfVerificationStatus.Loading => Loc["TmPdfSignatureVerification_LoadingMessage"],
+            SigningPdfVerificationStatus.Verified => Loc["TmPdfSignatureVerification_VerifiedMessage"],
+            SigningPdfVerificationStatus.ChecksumNotFound => Loc["TmPdfSignatureVerification_ChecksumNotFoundMessage"],
+            SigningPdfVerificationStatus.MalformedPdf => Loc["TmPdfSignatureVerification_MalformedMessage"],
+            SigningPdfVerificationStatus.Error => Loc["TmPdfSignatureVerification_ErrorMessage"],
+            _ => Loc["TmPdfSignatureVerification_EmptyMessage"]
+        };
+}

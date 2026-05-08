@@ -1,0 +1,137 @@
+using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Abstractions.Models;
+
+namespace Tempo.Blazor.Components.Signing;
+
+/// <summary>Renders a phone verification signing step with country code, phone input, and OTP state.</summary>
+public partial class TmSigningPhoneStep
+{
+    private static readonly PhoneCountryOption[] DefaultCountryOptions =
+    [
+        new("+1", "US +1"),
+        new("+420", "CZ +420"),
+        new("+421", "SK +421"),
+        new("+44", "UK +44")
+    ];
+
+    private bool _codeSent;
+    private string? _validationMessage;
+
+    /// <summary>Signing field represented by this step.</summary>
+    [Parameter] public SigningField Field { get; set; } = new() { Type = SigningFieldType.Phone };
+
+    /// <summary>Selected country calling code.</summary>
+    [Parameter] public string CountryCode { get; set; } = "+1";
+
+    /// <summary>Callback invoked when country code changes.</summary>
+    [Parameter] public EventCallback<string> CountryCodeChanged { get; set; }
+
+    /// <summary>Local phone number.</summary>
+    [Parameter] public string? PhoneNumber { get; set; }
+
+    /// <summary>Callback invoked when phone number changes.</summary>
+    [Parameter] public EventCallback<string?> PhoneNumberChanged { get; set; }
+
+    /// <summary>Normalized full phone number.</summary>
+    [Parameter] public string? Value { get; set; }
+
+    /// <summary>Callback invoked when the normalized phone value changes.</summary>
+    [Parameter] public EventCallback<string?> ValueChanged { get; set; }
+
+    /// <summary>Current OTP code.</summary>
+    [Parameter] public string? OtpCode { get; set; }
+
+    /// <summary>Callback invoked when OTP code changes.</summary>
+    [Parameter] public EventCallback<string?> OtpCodeChanged { get; set; }
+
+    /// <summary>Whether the OTP input is already visible.</summary>
+    [Parameter] public bool CodeSent { get; set; }
+
+    /// <summary>Seconds shown in the resend countdown state.</summary>
+    [Parameter] public int ResendSeconds { get; set; } = 30;
+
+    /// <summary>Available country code options.</summary>
+    [Parameter] public IReadOnlyList<PhoneCountryOption> CountryOptions { get; set; } = DefaultCountryOptions;
+
+    /// <summary>Callback invoked when a verification code should be sent.</summary>
+    [Parameter] public EventCallback<string> OnSendCode { get; set; }
+
+    /// <summary>Short text describing where the field appears in the document.</summary>
+    [Parameter] public string? AppearsOn { get; set; }
+
+    /// <summary>Whether the controls are disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Additional CSS classes for the shell element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the shell element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)]
+    public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string ShellClass => string.Join(" ", new[] { "tm-signing-phone-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
+
+    private async Task HandleCountryChangedAsync(ChangeEventArgs args)
+    {
+        CountryCode = args.Value?.ToString() ?? CountryCode;
+        await CountryCodeChanged.InvokeAsync(CountryCode);
+        await NotifyNormalizedPhoneAsync();
+    }
+
+    private async Task HandlePhoneChangedAsync(ChangeEventArgs args)
+    {
+        await HandlePhoneInputAsync(args.Value?.ToString());
+    }
+
+    private async Task HandlePhoneInputAsync(string? value)
+    {
+        PhoneNumber = value;
+        await PhoneNumberChanged.InvokeAsync(PhoneNumber);
+        await NotifyNormalizedPhoneAsync();
+    }
+
+    private Task HandleOtpChangedAsync(ChangeEventArgs args)
+    {
+        return HandleOtpInputAsync(args.Value?.ToString());
+    }
+
+    private Task HandleOtpInputAsync(string? value)
+    {
+        OtpCode = value;
+        return OtpCodeChanged.InvokeAsync(OtpCode);
+    }
+
+    private async Task SendCodeAsync()
+    {
+        var normalized = NormalizePhone(CountryCode, PhoneNumber);
+        if (Field.Required && string.IsNullOrWhiteSpace(normalized))
+        {
+            _validationMessage = Loc["TmSigningStep_Required"];
+            return;
+        }
+
+        _validationMessage = null;
+        _codeSent = true;
+        await ValueChanged.InvokeAsync(normalized);
+        await OnSendCode.InvokeAsync(normalized ?? string.Empty);
+    }
+
+    private Task NotifyNormalizedPhoneAsync()
+    {
+        return ValueChanged.InvokeAsync(NormalizePhone(CountryCode, PhoneNumber));
+    }
+
+    private static string? NormalizePhone(string countryCode, string? phoneNumber)
+    {
+        var digits = new string((phoneNumber ?? string.Empty).Where(char.IsDigit).ToArray());
+        if (string.IsNullOrWhiteSpace(digits))
+        {
+            return null;
+        }
+
+        return $"{countryCode}{digits}";
+    }
+
+    /// <summary>Country calling code option for phone signing steps.</summary>
+    public sealed record PhoneCountryOption(string Code, string Label);
+}

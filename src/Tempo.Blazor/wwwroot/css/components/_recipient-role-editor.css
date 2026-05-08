@@ -1,0 +1,178 @@
+.tm-recipient-role-editor {
+    display: grid;
+    gap: var(--tm-space-3);
+    color: var(--tm-text-primary);
+}
+
+.tm-recipient-role-editor--disabled {
+    color: var(--tm-text-disabled);
+}
+
+.tm-recipient-role-editor__list {
+    display: grid;
+    gap: var(--tm-space-3);
+}
+
+.tm-recipient-role-editor__row {
+    display: grid;
+    grid-template-columns: auto auto minmax(var(--tm-space-16), 1fr) repeat(3, minmax(var(--tm-space-16), 1fr)) auto;
+    gap: var(--tm-space-2);
+    align-items: end;
+    padding: var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+}
+
+.tm-recipient-role-editor__order {
+    display: grid;
+    grid-template-columns: var(--tm-input-height-sm) auto;
+    gap: var(--tm-space-1);
+    align-items: end;
+}
+
+.tm-recipient-role-editor__order-input {
+    width: var(--tm-input-height-sm);
+    min-height: var(--tm-input-height-sm);
+    padding: 0;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface-secondary);
+    color: var(--tm-text-secondary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+    text-align: center;
+}
+
+.tm-recipient-role-editor__move-buttons {
+    display: grid;
+    gap: var(--tm-space-1);
+}
+
+.tm-recipient-role-editor__field {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+}
+
+.tm-recipient-role-editor__field--color {
+    width: var(--tm-space-12);
+}
+
+.tm-recipient-role-editor__label {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+.tm-recipient-role-editor__name,
+.tm-recipient-role-editor__email,
+.tm-recipient-role-editor__full-name,
+.tm-recipient-role-editor__phone,
+.tm-recipient-role-editor__invite-by-role,
+.tm-recipient-role-editor__optional-invite-by-role,
+.tm-recipient-role-editor__invite-via-field {
+    width: 100%;
+    min-height: var(--tm-input-height-sm);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-recipient-role-editor__color {
+    width: var(--tm-input-height-sm);
+    height: var(--tm-input-height-sm);
+    padding: 0;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+}
+
+.tm-recipient-role-editor__email[aria-invalid="true"] {
+    border-color: var(--tm-color-danger);
+    box-shadow: var(--tm-shadow-focus-danger);
+}
+
+.tm-recipient-role-editor__move-up,
+.tm-recipient-role-editor__move-down,
+.tm-recipient-role-editor__remove,
+.tm-recipient-role-editor__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tm-space-1);
+    min-height: var(--tm-input-height-sm);
+    padding: var(--tm-space-1) var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+    cursor: pointer;
+}
+
+.tm-recipient-role-editor__move-up,
+.tm-recipient-role-editor__move-down,
+.tm-recipient-role-editor__remove {
+    width: var(--tm-input-height-sm);
+    padding: 0;
+}
+
+.tm-recipient-role-editor__add {
+    background: var(--tm-color-primary);
+    border-color: var(--tm-color-primary);
+    color: var(--tm-text-inverse);
+}
+
+.tm-recipient-role-editor__move-up:disabled,
+.tm-recipient-role-editor__move-down:disabled,
+.tm-recipient-role-editor__remove:disabled,
+.tm-recipient-role-editor__add:disabled,
+.tm-recipient-role-editor__name:disabled,
+.tm-recipient-role-editor__email:disabled,
+.tm-recipient-role-editor__full-name:disabled,
+.tm-recipient-role-editor__phone:disabled,
+.tm-recipient-role-editor__invite-by-role:disabled,
+.tm-recipient-role-editor__optional-invite-by-role:disabled,
+.tm-recipient-role-editor__invite-via-field:disabled,
+.tm-recipient-role-editor__color:disabled {
+    color: var(--tm-text-disabled);
+    cursor: not-allowed;
+}
+
+.tm-recipient-role-editor__validation {
+    grid-column: 1 / -1;
+    color: var(--tm-color-danger-text);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-recipient-role-editor__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+@media (max-width: 64rem) {
+    .tm-recipient-role-editor__row {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .tm-recipient-role-editor__remove {
+        justify-self: end;
+    }
+}
+
+@media (max-width: 40rem) {
+    .tm-recipient-role-editor__row {
+        grid-template-columns: 1fr;
+    }
+
+    .tm-recipient-role-editor__field--color {
+        width: 100%;
+    }
+}
