@@ -88,6 +88,7 @@
                  tabindex="0"
                  aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
                  @onkeydown="HandleDisplayKeyDown"
+                 @onmousedown="StartEdit"
                  @onclick="StartEdit">
                 @(DisplayValue ?? Loc["TmSpreadsheet_FormulaBarPlaceholder"])
             </div>

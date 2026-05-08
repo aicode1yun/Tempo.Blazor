@@ -57,8 +57,11 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
         input.Input("New Value");
         input.KeyDown(new KeyboardEventArgs { Key = "Enter" });
 
-        committed.Should().Be("New Value");
-        navigation.Should().Be((1, 0));
+        cut.WaitForAssertion(() =>
+        {
+            committed.Should().Be("New Value");
+            navigation.Should().Be((1, 0));
+        });
     }
 
     [Fact]
@@ -77,8 +80,11 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
         input.Input("New Value");
         input.KeyDown(new KeyboardEventArgs { Key = "Enter", ShiftKey = true });
 
-        committed.Should().Be("New Value");
-        navigation.Should().Be((-1, 0));
+        cut.WaitForAssertion(() =>
+        {
+            committed.Should().Be("New Value");
+            navigation.Should().Be((-1, 0));
+        });
     }
 
     [Fact]
@@ -95,7 +101,23 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
         input.Input("Changed");
         input.KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
-        cancelled.Should().BeTrue();
+        cut.WaitForAssertion(() => cancelled.Should().BeTrue());
+    }
+
+    [Fact]
+    public void F2_RequestsTransferToInlineEditor()
+    {
+        var transferRequested = false;
+        var cut = RenderComponent<TmSpreadsheetFormulaBar>(parameters => parameters
+            .Add(p => p.ActiveCellRef, "A1")
+            .Add(p => p.DisplayValue, "=SUM(A1:B2)")
+            .Add(p => p.IsEditing, true)
+            .Add(p => p.OnTransferToInlineEditorRequested, EventCallback.Factory.Create(this, () => transferRequested = true)));
+
+        var input = cut.Find(".tm-spreadsheet-formula-bar__input");
+        input.KeyDown(new KeyboardEventArgs { Key = "F2" });
+
+        cut.WaitForAssertion(() => transferRequested.Should().BeTrue());
     }
 
     [Fact]
@@ -124,7 +146,7 @@ public class TmSpreadsheetFormulaBarTests : LocalizationTestBase
 
         cut.Find(".tm-spreadsheet-formula-bar__input").Input("X");
 
-        changed.Should().Be("X");
+        cut.WaitForAssertion(() => changed.Should().Be("X"));
     }
 
     [Fact]

@@ -5,6 +5,9 @@
 <div class="tm-spreadsheet @Class"
      style="width: @(Width ?? "100%"); height: @(Height ?? "600px");"
      data-formula-point-mode="@(HostFormulaPointMode ? "true" : null)"
+     data-formula-argument-separator="@FormulaArgumentSeparator"
+     data-formula-decimal-separator="@FormulaDecimalSeparator"
+     data-formula-culture="@FormulaCultureName"
      @attributes="AdditionalAttributes">
     <TmSpreadsheetToolbar CanUndo="CanUndo"
                           CanRedo="CanRedo"
@@ -73,7 +76,8 @@
                              OnValueCommitted="@OnFormulaBarCommitted"
                              OnEditCancelled="@OnFormulaBarCancelled"
                              OnValueChanged="@OnFormulaBarValueChanged"
-                             OnTabPressed="@OnFormulaBarTabPressed" />
+                             OnTabPressed="@OnFormulaBarTabPressed"
+                             OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested" />
 
     @if (RenderMode != SpreadsheetRenderMode.Dom)
     {
@@ -82,7 +86,8 @@
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
                                  UseJsEngine="@UseCanvasJsEngine"
-                                 ExternalFormulaEditValue="@(IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null)"
+                                 ExternalFormulaSessionActive="@IsFormulaBarSessionActive"
+                                 ExternalFormulaEditValue="@(UseCanvasJsEngine ? null : (IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null))"
                                  ActiveCellChanged="OnGridActiveCellChanged"
                                  CellValueCommitted="OnGridCellValueCommitted"
                                  CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"

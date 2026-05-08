@@ -105,6 +105,8 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
 (function () {
     const cellRefPattern = /^\$?[A-Za-z]{1,3}\$?\d{1,7}$/;
     const functionBoundaryPattern = /[=+\-*/^&(,;<>:\s]/;
+    const defaultFormulaArgumentSeparator = ",";
+    const defaultFormulaDecimalSeparator = ".";
 
     function clampPosition(value, text) {
         const length = String(text || "").length;
@@ -115,6 +117,97 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
 
     function normalizeCellRef(token) {
         return String(token || "").replace(/\$/g, "").toUpperCase();
+    }
+
+    function normalizeFormulaLocaleOptions(scopeOrOptions) {
+        let source = scopeOrOptions;
+        if (source instanceof Element) {
+            const host = getSpreadsheetHost(source);
+            source = host?.dataset || null;
+        }
+
+        const argumentSeparator = source?.argumentSeparator
+            || source?.formulaArgumentSeparator
+            || source?.formulaSeparator
+            || defaultFormulaArgumentSeparator;
+        const decimalSeparator = source?.decimalSeparator
+            || source?.formulaDecimalSeparator
+            || defaultFormulaDecimalSeparator;
+
+        const normalizedArgumentSeparator = argumentSeparator === ";" ? ";" : defaultFormulaArgumentSeparator;
+        const normalizedDecimalSeparator = decimalSeparator === "," ? "," : defaultFormulaDecimalSeparator;
+        return {
+            argumentSeparator: normalizedArgumentSeparator,
+            decimalSeparator: normalizedDecimalSeparator
+        };
+    }
+
+    function getAlternateArgumentSeparator(localeOptions) {
+        return localeOptions.argumentSeparator === ";" ? "," : ";";
+    }
+
+    function isDigit(ch) {
+        return /\d/.test(ch || "");
+    }
+
+    function isDecimalSeparatorAt(value, index, localeOptions) {
+        const ch = value[index] || "";
+        if (ch !== localeOptions.decimalSeparator) {
+            return false;
+        }
+
+        const previous = value[index - 1] || "";
+        const next = value[index + 1] || "";
+        return isDigit(previous) || isDigit(next);
+    }
+
+    function isArgumentSeparatorAt(value, index, localeOptions) {
+        const ch = value[index] || "";
+        if (ch === localeOptions.argumentSeparator) {
+            return !isDecimalSeparatorAt(value, index, localeOptions);
+        }
+
+        const alternate = getAlternateArgumentSeparator(localeOptions);
+        if (ch === alternate) {
+            return !isDecimalSeparatorAt(value, index, localeOptions);
+        }
+
+        return false;
+    }
+
+    function readFormulaNumberToken(value, start, localeOptions) {
+        let index = start;
+        let sawDigits = false;
+        let sawDecimal = false;
+
+        if (value[index] === localeOptions.decimalSeparator && isDigit(value[index + 1])) {
+            sawDecimal = true;
+            index += 1;
+        }
+
+        while (index < value.length) {
+            const ch = value[index];
+            if (isDigit(ch)) {
+                sawDigits = true;
+                index += 1;
+                continue;
+            }
+
+            if (!sawDecimal
+                && ch === localeOptions.decimalSeparator
+                && sawDigits
+                && isDigit(value[index + 1])) {
+                sawDecimal = true;
+                index += 1;
+                continue;
+            }
+
+            break;
+        }
+
+        return sawDigits
+            ? { type: "number", text: value.slice(start, index), start, end: index }
+            : null;
     }
 
     function columnLettersToIndex(letters) {
@@ -209,8 +302,9 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         return { type, text, start, end };
     }
 
-    function tokenizeFormula(text) {
+    function tokenizeFormula(text, scopeOrOptions) {
         const value = String(text || "");
+        const localeOptions = normalizeFormulaLocaleOptions(scopeOrOptions);
         const tokens = [];
         let index = 0;
 
@@ -243,7 +337,7 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
                 continue;
             }
 
-            if (ch === "," || ch === ";") {
+            if (isArgumentSeparatorAt(value, index, localeOptions)) {
                 tokens.push({ type: "separator", text: ch, start: index, end: index + 1 });
                 index += 1;
                 continue;
@@ -273,11 +367,12 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
                 continue;
             }
 
-            if (/\d/.test(ch) || (ch === "." && /\d/.test(value[index + 1] || ""))) {
-                const start = index;
-                index += 1;
-                while (index < value.length && /[\d.]/.test(value[index])) index += 1;
-                tokens.push({ type: "number", text: value.slice(start, index), start, end: index });
+            const numberToken = (isDigit(ch) || (ch === localeOptions.decimalSeparator && isDigit(value[index + 1] || "")))
+                ? readFormulaNumberToken(value, index, localeOptions)
+                : null;
+            if (numberToken) {
+                tokens.push(numberToken);
+                index = numberToken.end;
                 continue;
             }
 
@@ -313,9 +408,9 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         return tokens;
     }
 
-    function parseFormulaReferences(text) {
+    function parseFormulaReferences(text, scopeOrOptions) {
         const refs = [];
-        for (const token of tokenizeFormula(text)) {
+        for (const token of tokenizeFormula(text, scopeOrOptions)) {
             if (token.type !== "reference" && token.type !== "range") continue;
             const parsed = parseReferenceToken(token.text);
             if (!parsed) continue;
@@ -417,8 +512,9 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         return { prefix, start, end: position };
     }
 
-    function findActiveFunctionContext(text, caret) {
+    function findActiveFunctionContext(text, caret, scopeOrOptions) {
         const value = String(text || "");
+        const localeOptions = normalizeFormulaLocaleOptions(scopeOrOptions);
         const limit = clampPosition(caret, value);
         const stack = [];
         let index = 0;
@@ -461,7 +557,7 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
                 continue;
             }
 
-            if ((ch === "," || ch === ";") && stack.length > 0) {
+            if (stack.length > 0 && isArgumentSeparatorAt(value, index, localeOptions)) {
                 stack[stack.length - 1].argIndex += 1;
                 index += 1;
                 continue;
@@ -479,6 +575,316 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         return stack.length > 0 ? stack[stack.length - 1] : null;
     }
 
+    const functionCatalog = [
+        { name: "ABS", signature: "ABS(number)", summary: "Returns the absolute value.", arguments: ["number"] },
+        { name: "ADDRESS", signature: "ADDRESS(row, column, [abs], [a1], [sheet])", summary: "Builds a cell address from row and column numbers.", arguments: ["row", "column", "abs", "a1", "sheet"] },
+        { name: "AND", signature: "AND(logical1, [logical2], ...)", summary: "Returns TRUE when all conditions are TRUE.", arguments: ["logical1", "logical2"] },
+        { name: "AREAS", signature: "AREAS(reference)", summary: "Returns the number of referenced areas.", arguments: ["reference"] },
+        { name: "AVERAGE", signature: "AVERAGE(number1, [number2], ...)", summary: "Returns the arithmetic mean.", arguments: ["number1", "number2"] },
+        { name: "CHOOSE", signature: "CHOOSE(index, value1, [value2], ...)", summary: "Returns the value at the chosen index.", arguments: ["index", "value1", "value2"] },
+        { name: "COLUMN", signature: "COLUMN([reference])", summary: "Returns the column number for a reference.", arguments: ["reference"] },
+        { name: "COLUMNS", signature: "COLUMNS(array)", summary: "Returns the number of columns in an array or range.", arguments: ["array"] },
+        { name: "CONCATENATE", signature: "CONCATENATE(text1, [text2], ...)", summary: "Joins multiple text values together.", arguments: ["text1", "text2"] },
+        { name: "COUNT", signature: "COUNT(value1, [value2], ...)", summary: "Counts numeric values.", arguments: ["value1", "value2"] },
+        { name: "DATE", signature: "DATE(year, month, day)", summary: "Builds a serial date from year, month, and day.", arguments: ["year", "month", "day"] },
+        { name: "DATEDIF", signature: "DATEDIF(start_date, end_date, unit)", summary: "Returns the difference between two dates.", arguments: ["start_date", "end_date", "unit"] },
+        { name: "DATEVALUE", signature: "DATEVALUE(text)", summary: "Parses text into a date serial value.", arguments: ["text"] },
+        { name: "DAYS", signature: "DAYS(end_date, start_date)", summary: "Returns the number of days between two dates.", arguments: ["end_date", "start_date"] },
+        { name: "EDATE", signature: "EDATE(start_date, months)", summary: "Shifts a date by a number of months.", arguments: ["start_date", "months"] },
+        { name: "EOMONTH", signature: "EOMONTH(start_date, months)", summary: "Returns the last day of a month offset.", arguments: ["start_date", "months"] },
+        { name: "FALSE", signature: "FALSE()", summary: "Returns the logical value FALSE.", arguments: [] },
+        { name: "FIND", signature: "FIND(find_text, within_text, [start])", summary: "Finds text using a case-sensitive search.", arguments: ["find_text", "within_text", "start"] },
+        { name: "HLOOKUP", signature: "HLOOKUP(value, table, row_index, [exact])", summary: "Looks up a value across the first row of a table.", arguments: ["value", "table", "row_index", "exact"] },
+        { name: "HOUR", signature: "HOUR(serial)", summary: "Returns the hour component of a time.", arguments: ["serial"] },
+        { name: "IF", signature: "IF(test, value_if_true, value_if_false)", summary: "Returns one value when a condition is TRUE and another when FALSE.", arguments: ["test", "value_if_true", "value_if_false"] },
+        { name: "IFERROR", signature: "IFERROR(value, fallback)", summary: "Returns a fallback when the value is an error.", arguments: ["value", "fallback"] },
+        { name: "INDEX", signature: "INDEX(array, row, [column])", summary: "Returns a value from a row and column within an array.", arguments: ["array", "row", "column"] },
+        { name: "INDIRECT", signature: "INDIRECT(reference_text)", summary: "Resolves a text address into a reference.", arguments: ["reference_text"] },
+        { name: "ISEVEN", signature: "ISEVEN(number)", summary: "Returns TRUE when the number is even.", arguments: ["number"] },
+        { name: "ISBLANK", signature: "ISBLANK(value)", summary: "Returns TRUE when the value is blank.", arguments: ["value"] },
+        { name: "ISERROR", signature: "ISERROR(value)", summary: "Returns TRUE when the value is an error.", arguments: ["value"] },
+        { name: "ISLOGICAL", signature: "ISLOGICAL(value)", summary: "Returns TRUE when the value is TRUE or FALSE.", arguments: ["value"] },
+        { name: "ISNUMBER", signature: "ISNUMBER(value)", summary: "Returns TRUE when the value is numeric.", arguments: ["value"] },
+        { name: "ISODD", signature: "ISODD(number)", summary: "Returns TRUE when the number is odd.", arguments: ["number"] },
+        { name: "ISTEXT", signature: "ISTEXT(value)", summary: "Returns TRUE when the value is text.", arguments: ["value"] },
+        { name: "LEFT", signature: "LEFT(text, [count])", summary: "Returns the leftmost characters from text.", arguments: ["text", "count"] },
+        { name: "LEN", signature: "LEN(text)", summary: "Returns the text length.", arguments: ["text"] },
+        { name: "LOWER", signature: "LOWER(text)", summary: "Converts text to lowercase.", arguments: ["text"] },
+        { name: "MATCH", signature: "MATCH(value, lookup_array, [match_type])", summary: "Returns the relative position of a lookup value.", arguments: ["value", "lookup_array", "match_type"] },
+        { name: "MAX", signature: "MAX(number1, [number2], ...)", summary: "Returns the maximum numeric value.", arguments: ["number1", "number2"] },
+        { name: "MID", signature: "MID(text, start, count)", summary: "Returns characters from the middle of text.", arguments: ["text", "start", "count"] },
+        { name: "MIN", signature: "MIN(number1, [number2], ...)", summary: "Returns the minimum numeric value.", arguments: ["number1", "number2"] },
+        { name: "MINUTE", signature: "MINUTE(serial)", summary: "Returns the minute component of a time.", arguments: ["serial"] },
+        { name: "MOD", signature: "MOD(number, divisor)", summary: "Returns the remainder after division.", arguments: ["number", "divisor"] },
+        { name: "MONTH", signature: "MONTH(serial)", summary: "Returns the month number from a date.", arguments: ["serial"] },
+        { name: "NOT", signature: "NOT(logical)", summary: "Reverses a logical value.", arguments: ["logical"] },
+        { name: "NOW", signature: "NOW()", summary: "Returns the current date and time.", arguments: [] },
+        { name: "OFFSET", signature: "OFFSET(reference, rows, cols, [height], [width])", summary: "Returns a reference offset from another reference.", arguments: ["reference", "rows", "cols", "height", "width"] },
+        { name: "OR", signature: "OR(logical1, [logical2], ...)", summary: "Returns TRUE when any condition is TRUE.", arguments: ["logical1", "logical2"] },
+        { name: "PI", signature: "PI()", summary: "Returns the value of pi.", arguments: [] },
+        { name: "POWER", signature: "POWER(number, exponent)", summary: "Raises a number to a power.", arguments: ["number", "exponent"] },
+        { name: "PROPER", signature: "PROPER(text)", summary: "Capitalizes each word in text.", arguments: ["text"] },
+        { name: "RAND", signature: "RAND()", summary: "Returns a random number between 0 and 1.", arguments: [] },
+        { name: "RANDBETWEEN", signature: "RANDBETWEEN(bottom, top)", summary: "Returns a random integer within a range.", arguments: ["bottom", "top"] },
+        { name: "REPT", signature: "REPT(text, number_times)", summary: "Repeats text a number of times.", arguments: ["text", "number_times"] },
+        { name: "RIGHT", signature: "RIGHT(text, [count])", summary: "Returns the rightmost characters from text.", arguments: ["text", "count"] },
+        { name: "ROUND", signature: "ROUND(number, digits)", summary: "Rounds a number to a number of digits.", arguments: ["number", "digits"] },
+        { name: "ROUNDDOWN", signature: "ROUNDDOWN(number, digits)", summary: "Rounds a number down toward zero.", arguments: ["number", "digits"] },
+        { name: "ROUNDUP", signature: "ROUNDUP(number, digits)", summary: "Rounds a number up away from zero.", arguments: ["number", "digits"] },
+        { name: "ROW", signature: "ROW([reference])", summary: "Returns the row number for a reference.", arguments: ["reference"] },
+        { name: "ROWS", signature: "ROWS(array)", summary: "Returns the number of rows in an array or range.", arguments: ["array"] },
+        { name: "SEARCH", signature: "SEARCH(find_text, within_text, [start])", summary: "Finds text using a case-insensitive search.", arguments: ["find_text", "within_text", "start"] },
+        { name: "SECOND", signature: "SECOND(serial)", summary: "Returns the second component of a time.", arguments: ["serial"] },
+        { name: "SQRT", signature: "SQRT(number)", summary: "Returns the square root.", arguments: ["number"] },
+        { name: "SUBSTITUTE", signature: "SUBSTITUTE(text, old_text, new_text, [instance])", summary: "Replaces existing text with new text.", arguments: ["text", "old_text", "new_text", "instance"] },
+        { name: "SUM", signature: "SUM(number1, [number2], ...)", summary: "Adds numeric values together.", arguments: ["number1", "number2"] },
+        { name: "TEXT", signature: "TEXT(value, format)", summary: "Formats a value using a number format string.", arguments: ["value", "format"] },
+        { name: "TIME", signature: "TIME(hour, minute, second)", summary: "Builds a serial time value.", arguments: ["hour", "minute", "second"] },
+        { name: "TIMEVALUE", signature: "TIMEVALUE(text)", summary: "Parses text into a time serial value.", arguments: ["text"] },
+        { name: "TODAY", signature: "TODAY()", summary: "Returns the current date.", arguments: [] },
+        { name: "TRIM", signature: "TRIM(text)", summary: "Removes extra spaces from text.", arguments: ["text"] },
+        { name: "TRUE", signature: "TRUE()", summary: "Returns the logical value TRUE.", arguments: [] },
+        { name: "UPPER", signature: "UPPER(text)", summary: "Converts text to uppercase.", arguments: ["text"] },
+        { name: "VALUE", signature: "VALUE(text)", summary: "Converts text into a numeric value.", arguments: ["text"] },
+        { name: "VLOOKUP", signature: "VLOOKUP(value, table, column_index, [exact])", summary: "Looks up a value down the first column of a table.", arguments: ["value", "table", "column_index", "exact"] },
+        { name: "WEEKDAY", signature: "WEEKDAY(serial, [return_type])", summary: "Returns the day of week number.", arguments: ["serial", "return_type"] },
+        { name: "WEEKNUM", signature: "WEEKNUM(serial, [return_type])", summary: "Returns the week number for a date.", arguments: ["serial", "return_type"] },
+        { name: "YEAR", signature: "YEAR(serial)", summary: "Returns the year from a date serial.", arguments: ["serial"] }
+    ];
+
+    function buildFunctionSuggestions(prefix) {
+        if (!prefix) return [];
+        const normalized = String(prefix || "").trim().toUpperCase();
+        if (!normalized) return [];
+        return functionCatalog
+            .filter(fn => fn.name.startsWith(normalized))
+            .sort((a, b) => a.name.length - b.name.length || a.name.localeCompare(b.name))
+            .slice(0, 8)
+            .map(fn => ({ ...fn, arguments: [...(fn.arguments || [])] }));
+    }
+
+    function buildFunctionHint(name, activeArgumentIndex) {
+        if (!name) return null;
+        const fn = functionCatalog.find(candidate => candidate.name === String(name).toUpperCase());
+        if (!fn) return null;
+        return {
+            function: { ...fn, arguments: [...(fn.arguments || [])] },
+            activeArgumentIndex: Math.max(0, Number(activeArgumentIndex) || 0)
+        };
+    }
+
+    function analyzeFormulaSession(text, selectionStart, selectionEnd, scopeOrOptions) {
+        const value = String(text || "");
+        const refs = value.startsWith("=") ? parseFormulaReferences(value, scopeOrOptions) : [];
+        const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
+        const prefix = value.startsWith("=") && !selection.activeToken
+            ? findFunctionPrefix(value, selection.selectionStart)
+            : null;
+        const activeFunction = value.startsWith("=")
+            ? findActiveFunctionContext(value, selection.selectionStart, scopeOrOptions)
+            : null;
+        return {
+            text: value,
+            selectionStart: selection.selectionStart,
+            selectionEnd: selection.selectionEnd,
+            isFormula: value.startsWith("="),
+            isReferencePickingMode: value.startsWith("="),
+            activeReferenceToken: selection.activeToken || null,
+            activeReferenceTokenIndex: selection.activeTokenIndex,
+            referenceTokens: refs,
+            functionPrefix: prefix ? prefix.prefix : null,
+            functionPrefixStart: prefix ? prefix.start : -1,
+            functionPrefixEnd: prefix ? prefix.end : -1,
+            suggestions: prefix ? buildFunctionSuggestions(prefix.prefix) : [],
+            activeFunctionHint: activeFunction ? buildFunctionHint(activeFunction.name, activeFunction.argIndex) : null
+        };
+    }
+
+    function getSpreadsheetHost(scope) {
+        return scope?.closest?.(".tm-spreadsheet") || null;
+    }
+
+    function readLiveFormulaBarSession(host) {
+        const input = host?.querySelector?.(".tm-spreadsheet-formula-bar__input");
+        if (!(input instanceof HTMLInputElement) || input.offsetParent === null) {
+            return null;
+        }
+
+        const cellRef = host?.querySelector?.(".tm-spreadsheet-formula-bar__ref")?.textContent?.trim?.() || "";
+        const text = String(input.value || "");
+        return {
+            owner: "formulaBar",
+            cellRef,
+            text,
+            selectionStart: clampPosition(input.selectionStart, text),
+            selectionEnd: clampPosition(input.selectionEnd, text),
+            isFormula: text.startsWith("="),
+            updatedAt: Date.now()
+        };
+    }
+
+    function readLiveInlineSession(host) {
+        const grid = host?.querySelector?.(".tm-spreadsheet-canvas-grid");
+        const input = grid?.querySelector?.(".tm-spreadsheet-canvas-grid__editor");
+        const state = grid?.__tmSpreadsheetCanvas;
+        const editor = state?.editor;
+        if (!(input instanceof HTMLInputElement) || input.offsetParent === null || !editor) {
+            return null;
+        }
+
+        const text = String(input.value || "");
+        const cellRef = String(state?.sheetState?.activeCell?.ref || "");
+        return {
+            owner: "inline",
+            cellRef,
+            text,
+            selectionStart: clampPosition(input.selectionStart, text),
+            selectionEnd: clampPosition(input.selectionEnd, text),
+            isFormula: text.startsWith("="),
+            updatedAt: Date.now()
+        };
+    }
+
+    function setHostFormulaSession(scope, session) {
+        const host = getSpreadsheetHost(scope);
+        if (!host) return null;
+        if (!session) {
+            delete host.__tmSpreadsheetFormulaSession;
+            return null;
+        }
+        const next = {
+            owner: String(session.owner || ""),
+            cellRef: String(session.cellRef || ""),
+            text: String(session.text || ""),
+            selectionStart: clampPosition(session.selectionStart, session.text || ""),
+            selectionEnd: clampPosition(session.selectionEnd, session.text || ""),
+            isFormula: !!session.isFormula,
+            updatedAt: Date.now()
+        };
+        host.__tmSpreadsheetFormulaSession = next;
+        return next;
+    }
+
+    function getHostFormulaSession(scope) {
+        const host = getSpreadsheetHost(scope);
+        if (!host) {
+            return null;
+        }
+
+        return host.__tmSpreadsheetFormulaSession
+            || readLiveFormulaBarSession(host)
+            || readLiveInlineSession(host)
+            || null;
+    }
+
+    function isHostFormulaPointMode(scope) {
+        const host = getSpreadsheetHost(scope);
+        if (!host) {
+            return false;
+        }
+
+        const session = getHostFormulaSession(host);
+        if (session?.isFormula) {
+            return true;
+        }
+
+        if (host.dataset?.formulaPointMode === "true") {
+            return true;
+        }
+
+        return false;
+    }
+
+    function clearHostFormulaSession(scope, owner) {
+        const host = getSpreadsheetHost(scope);
+        if (!host?.__tmSpreadsheetFormulaSession) return;
+        const current = host.__tmSpreadsheetFormulaSession;
+        if (owner && current.owner && current.owner !== owner) return;
+        delete host.__tmSpreadsheetFormulaSession;
+    }
+
+    window.tmSpreadsheetFormulaRuntime = {
+        functionCatalog,
+        parseFormulaReferences,
+        tokenizeFormula,
+        getReferenceSelection,
+        analyzeSession: analyzeFormulaSession,
+        replaceReferenceAtSelection(text, selectionStart, selectionEnd, refText) {
+            const value = String(text || "=");
+            const refs = parseFormulaReferences(value);
+            const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
+            let start = selection.activeToken ? selection.activeToken.start : selection.selectionStart;
+            let end = selection.activeToken ? selection.activeToken.end : selection.selectionEnd;
+            if (start < 1) {
+                start = value.length <= 1 ? 1 : Math.max(1, selection.selectionStart);
+            }
+            if (end < start) {
+                end = start;
+            }
+            const replacement = String(refText || "");
+            const nextValue = value.slice(0, start) + replacement + value.slice(end);
+            const nextCaret = start + replacement.length;
+            return {
+                value: nextValue,
+                selectionStart: nextCaret,
+                selectionEnd: nextCaret
+            };
+        },
+        cycleReferenceAtSelection(text, selectionStart, selectionEnd) {
+            const value = String(text || "");
+            if (!value.startsWith("=")) {
+                return {
+                    value,
+                    selectionStart: clampPosition(selectionStart, value),
+                    selectionEnd: clampPosition(selectionEnd, value),
+                    changed: false
+                };
+            }
+
+            const refs = parseFormulaReferences(value);
+            const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
+            const token = selection.activeToken;
+            if (!token) {
+                return {
+                    value,
+                    selectionStart: selection.selectionStart,
+                    selectionEnd: selection.selectionEnd,
+                    changed: false
+                };
+            }
+
+            const replacement = cycleAbsoluteReferenceToken(token.text);
+            const nextValue = value.slice(0, token.start) + replacement + value.slice(token.end);
+            const offsetWithinToken = Math.max(0, Math.min(token.text.length, selection.selectionStart - token.start));
+            const nextCaret = token.start + Math.min(replacement.length, offsetWithinToken);
+            return {
+                value: nextValue,
+                selectionStart: nextCaret,
+                selectionEnd: nextCaret,
+                changed: true
+            };
+        },
+        acceptFunctionSuggestion(text, selectionStart, selectionEnd, functionName) {
+            const value = String(text || "=");
+            const replacement = `${String(functionName || "").toUpperCase()}(`;
+            const prefix = findFunctionPrefix(value, selectionStart);
+            const start = prefix ? prefix.start : clampPosition(selectionStart, value);
+            const end = prefix ? prefix.end : clampPosition(selectionEnd, value);
+            const nextValue = value.slice(0, start) + replacement + value.slice(end);
+            const nextCaret = start + replacement.length;
+            return {
+                value: nextValue,
+                selectionStart: nextCaret,
+                selectionEnd: nextCaret
+            };
+        },
+        setHostFormulaPointMode,
+        setHostFormulaSession,
+        getHostFormulaSession,
+        clearHostFormulaSession,
+        isHostFormulaPointMode
+    };
+
     window.tmSpreadsheetFormulaBar.getSelection = function (input) {
         if (!input) {
             return { selectionStart: 0, selectionEnd: 0 };
@@ -488,6 +894,24 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
             selectionEnd: Number(input.selectionEnd || 0)
         };
     };
+
+    function buildLiveFormulaBarSession(scope, input) {
+        const host = getSpreadsheetHost(scope || input);
+        if (!host || !(input instanceof HTMLInputElement)) {
+            return null;
+        }
+
+        const cellRef = host.querySelector?.(".tm-spreadsheet-formula-bar__ref")?.textContent?.trim?.() || "";
+        const text = String(input.value || "");
+        return {
+            owner: "formulaBar",
+            cellRef,
+            text,
+            selectionStart: clampPosition(input.selectionStart, text),
+            selectionEnd: clampPosition(input.selectionEnd, text),
+            isFormula: text.startsWith("=")
+        };
+    }
 
     function setHostFormulaPointMode(scope, active, value) {
         const host = scope?.closest?.(".tm-spreadsheet");
@@ -504,13 +928,25 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         }
     }
 
+    function syncHostFormulaRuntimeState(scope, input) {
+        const session = buildLiveFormulaBarSession(scope, input);
+        if (session) {
+            setHostFormulaSession(scope, session);
+            setHostFormulaPointMode(scope, true, session.text);
+            return session;
+        }
+
+        setHostFormulaPointMode(scope || input, true, input?.value || "");
+        return null;
+    }
+
     window.tmSpreadsheetFormulaBar.setHostFormulaPointMode = function (scope, active, value) {
         setHostFormulaPointMode(scope, !!active, value);
     };
 
     window.tmSpreadsheetFormulaBar.syncHostFormulaPointModeFromInput = function (input) {
         if (!input) return;
-        setHostFormulaPointMode(input, true, input.value || "");
+        syncHostFormulaRuntimeState(input, input);
     };
 
     window.tmSpreadsheetFormulaBar.bindHostFormulaPointMode = function (scope, input) {
@@ -519,15 +955,49 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
             input.__tmSpreadsheetFormulaHostSyncCleanup();
         }
 
-        const sync = () => setHostFormulaPointMode(scope, true, input.value || "");
+        const sync = () => syncHostFormulaRuntimeState(scope, input);
+        const keyGuard = ev => {
+            const value = String(input.value || "");
+            if (!value.startsWith("=")) {
+                return;
+            }
+
+            const suggestions = scope.querySelector?.("[data-testid='tm-spreadsheet-formula-bar-suggestions']");
+            const suggestionsVisible = !!(suggestions && suggestions.offsetParent !== null);
+
+            if (ev.key === "ArrowUp" || ev.key === "ArrowDown") {
+                ev.preventDefault();
+                if (!suggestionsVisible) {
+                    ev.stopPropagation();
+                }
+                return;
+            }
+
+            if (ev.key === "PageUp" || ev.key === "PageDown") {
+                ev.preventDefault();
+            }
+        };
         input.addEventListener("input", sync);
         input.addEventListener("change", sync);
+        input.addEventListener("keydown", keyGuard, true);
         input.__tmSpreadsheetFormulaHostSyncCleanup = () => {
             input.removeEventListener("input", sync);
             input.removeEventListener("change", sync);
+            input.removeEventListener("keydown", keyGuard, true);
             delete input.__tmSpreadsheetFormulaHostSyncCleanup;
         };
         sync();
+    };
+
+    window.tmSpreadsheetFormulaBar.shouldRetainFocusAfterBlur = function (scope) {
+        const host = getSpreadsheetHost(scope);
+        if (!host) return true;
+        const session = host.__tmSpreadsheetFormulaSession;
+        const active = document.activeElement;
+        if (session?.owner === "inline") return false;
+        if (active instanceof Element && active.closest(".tm-spreadsheet-canvas-grid")) return false;
+        if (active instanceof Element && active.closest(".tm-spreadsheet-canvas-grid__editor")) return false;
+        return true;
     };
 
     window.tmSpreadsheetFormulaBar.setValueAndSelection = function (input, value, selectionStart, selectionEnd) {
@@ -539,100 +1009,42 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
         input.focus({ preventScroll: true });
     };
 
-    window.tmSpreadsheetFormulaBar.analyzeSession = function (text, selectionStart, selectionEnd) {
-        const value = String(text || "");
-        const refs = value.startsWith("=") ? parseFormulaReferences(value) : [];
-        const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
-        const prefix = value.startsWith("=") && !selection.activeToken
-            ? findFunctionPrefix(value, selection.selectionStart)
-            : null;
-        const activeFunction = value.startsWith("=") ? findActiveFunctionContext(value, selection.selectionStart) : null;
-        return {
-            text: value,
-            selectionStart: selection.selectionStart,
-            selectionEnd: selection.selectionEnd,
-            isFormula: value.startsWith("="),
-            isReferencePickingMode: value.startsWith("="),
-            activeReferenceToken: selection.activeToken || null,
-            activeReferenceTokenIndex: selection.activeTokenIndex,
-            referenceTokens: refs,
-            functionPrefix: prefix ? prefix.prefix : null,
-            functionPrefixStart: prefix ? prefix.start : -1,
-            functionPrefixEnd: prefix ? prefix.end : -1,
-            activeFunctionName: activeFunction ? activeFunction.name : null,
-            activeFunctionArgumentIndex: activeFunction ? activeFunction.argIndex : -1
-        };
+    window.tmSpreadsheetFormulaBar.analyzeSession = function (scopeOrText, textOrSelectionStart, selectionStartOrSelectionEnd, selectionEnd) {
+        if (scopeOrText instanceof Element) {
+            return window.tmSpreadsheetFormulaRuntime.analyzeSession(
+                textOrSelectionStart,
+                selectionStartOrSelectionEnd,
+                selectionEnd,
+                scopeOrText);
+        }
+
+        return window.tmSpreadsheetFormulaRuntime.analyzeSession(
+            scopeOrText,
+            textOrSelectionStart,
+            selectionStartOrSelectionEnd);
     };
 
     window.tmSpreadsheetFormulaBar.replaceReferenceAtSelection = function (text, selectionStart, selectionEnd, refText) {
-        const value = String(text || "=");
-        const refs = parseFormulaReferences(value);
-        const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
-        let start = selection.activeToken ? selection.activeToken.start : selection.selectionStart;
-        let end = selection.activeToken ? selection.activeToken.end : selection.selectionEnd;
-        if (start < 1) {
-            start = value.length <= 1 ? 1 : Math.max(1, selection.selectionStart);
-        }
-        if (end < start) {
-            end = start;
-        }
-        const replacement = String(refText || "");
-        const nextValue = value.slice(0, start) + replacement + value.slice(end);
-        const nextCaret = start + replacement.length;
-        return {
-            value: nextValue,
-            selectionStart: nextCaret,
-            selectionEnd: nextCaret
-        };
+        return window.tmSpreadsheetFormulaRuntime.replaceReferenceAtSelection(text, selectionStart, selectionEnd, refText);
     };
 
     window.tmSpreadsheetFormulaBar.cycleReferenceAtSelection = function (text, selectionStart, selectionEnd) {
-        const value = String(text || "");
-        if (!value.startsWith("=")) {
-            return {
-                value,
-                selectionStart: clampPosition(selectionStart, value),
-                selectionEnd: clampPosition(selectionEnd, value),
-                changed: false
-            };
-        }
-
-        const refs = parseFormulaReferences(value);
-        const selection = getReferenceSelection(refs, selectionStart, selectionEnd, value);
-        const token = selection.activeToken;
-        if (!token) {
-            return {
-                value,
-                selectionStart: selection.selectionStart,
-                selectionEnd: selection.selectionEnd,
-                changed: false
-            };
-        }
-
-        const replacement = cycleAbsoluteReferenceToken(token.text);
-        const nextValue = value.slice(0, token.start) + replacement + value.slice(token.end);
-        const offsetWithinToken = Math.max(0, Math.min(token.text.length, selection.selectionStart - token.start));
-        const nextCaret = token.start + Math.min(replacement.length, offsetWithinToken);
-        return {
-            value: nextValue,
-            selectionStart: nextCaret,
-            selectionEnd: nextCaret,
-            changed: true
-        };
+        return window.tmSpreadsheetFormulaRuntime.cycleReferenceAtSelection(text, selectionStart, selectionEnd);
     };
 
     window.tmSpreadsheetFormulaBar.acceptFunctionSuggestion = function (text, selectionStart, selectionEnd, functionName) {
-        const value = String(text || "=");
-        const replacement = `${String(functionName || "").toUpperCase()}(`;
-        const prefix = findFunctionPrefix(value, selectionStart);
-        const start = prefix ? prefix.start : clampPosition(selectionStart, value);
-        const end = prefix ? prefix.end : clampPosition(selectionEnd, value);
-        const nextValue = value.slice(0, start) + replacement + value.slice(end);
-        const nextCaret = start + replacement.length;
-        return {
-            value: nextValue,
-            selectionStart: nextCaret,
-            selectionEnd: nextCaret
-        };
+        return window.tmSpreadsheetFormulaRuntime.acceptFunctionSuggestion(text, selectionStart, selectionEnd, functionName);
+    };
+
+    window.tmSpreadsheetFormulaBar.setHostFormulaSession = function (scope, session) {
+        return window.tmSpreadsheetFormulaRuntime.setHostFormulaSession(scope, session);
+    };
+
+    window.tmSpreadsheetFormulaBar.getHostFormulaSession = function (scope) {
+        return window.tmSpreadsheetFormulaRuntime.getHostFormulaSession(scope);
+    };
+
+    window.tmSpreadsheetFormulaBar.clearHostFormulaSession = function (scope, owner) {
+        window.tmSpreadsheetFormulaRuntime.clearHostFormulaSession(scope, owner);
     };
 })();

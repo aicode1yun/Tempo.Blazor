@@ -77,6 +77,9 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     /// <summary>The external formula editor value when reference-picking is driven by the formula bar instead of inline cell editing.</summary>
     [Parameter] public string? ExternalFormulaEditValue { get; set; }
 
+    /// <summary>Whether a formula-bar editing session is currently active even before the latest live value is mirrored into the grid.</summary>
+    [Parameter] public bool ExternalFormulaSessionActive { get; set; }
+
     /// <summary>Called when the active cell changes.</summary>
     [Parameter] public EventCallback<string?> ActiveCellChanged { get; set; }
 
@@ -190,10 +193,15 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
 
     /// <inheritdoc />
     public bool IsInFormulaPointMode => (IsEditing && _editValue?.StartsWith("=") == true)
-        || ExternalFormulaEditValue?.StartsWith("=") == true;
+        || (!UseJsEngine && ExternalFormulaEditValue?.StartsWith("=") == true);
 
     /// <inheritdoc />
-    public string? CurrentEditValue => IsEditing ? _editValue : ExternalFormulaEditValue;
+    public string? CurrentEditValue => IsEditing
+        ? _editValue
+        : (UseJsEngine ? null : ExternalFormulaEditValue);
+
+    private bool HasExternalFormulaSessionGuard => ExternalFormulaSessionActive
+        || (!UseJsEngine && ExternalFormulaEditValue?.StartsWith("=") == true);
 
     private string ActiveCellDomId => $"tm-spreadsheet-canvas-active-{GetHashCode():x}";
     private string LiveRegionDomId => $"tm-spreadsheet-canvas-live-{GetHashCode():x}";
@@ -307,7 +315,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             _selection.SelectionEndRef ??= Sheet.ActiveCellRef;
             var presentationChanged = _lastShowGridLines != Sheet.ShowGridLines
                 || _lastFormatPainterActive != IsFormatPainterActive
-                || !string.Equals(_lastExternalFormulaEditValue, ExternalFormulaEditValue, StringComparison.Ordinal);
+                || (!UseJsEngine && !string.Equals(_lastExternalFormulaEditValue, ExternalFormulaEditValue, StringComparison.Ordinal));
             if (!UseJsEngine || structureChanged || !_registered || presentationChanged)
                 _needsRender = true;
             _lastShowGridLines = Sheet.ShowGridLines;
@@ -353,6 +361,26 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     public async Task FocusAsync()
     {
         try { await _rootElement.FocusAsync(); } catch { }
+    }
+
+    /// <inheritdoc />
+    public async Task BeginInlineEditAsync()
+    {
+        if (Sheet is null)
+            return;
+
+        if (UseJsEngine)
+        {
+            try
+            {
+                await JS.InvokeVoidAsync("tmSpreadsheetCanvas.openEditorAtActive", _rootElement);
+                return;
+            }
+            catch (JSException) { }
+            catch (InvalidOperationException) { }
+        }
+
+        StartEdit(Sheet.ActiveCellRef ?? "A1");
     }
 
     /// <inheritdoc />
@@ -814,7 +842,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return Task.CompletedTask;
         }
 
-        if (IsInFormulaPointMode)
+        if (IsInFormulaPointMode || HasExternalFormulaSessionGuard)
         {
             if (!string.Equals(cellRef, Sheet.ActiveCellRef, StringComparison.OrdinalIgnoreCase))
             {
@@ -847,7 +875,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             return Task.CompletedTask;
         }
 
-        if (IsInFormulaPointMode)
+        if (IsInFormulaPointMode || HasExternalFormulaSessionGuard)
         {
             if (!string.Equals(cellRef, Sheet.ActiveCellRef, StringComparison.OrdinalIgnoreCase))
             {
@@ -960,7 +988,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     [JSInvokable]
     public Task OnCanvasContextMenu(double contentX, double contentY, double clientX, double clientY)
     {
-        if (Sheet is null || IsInFormulaPointMode)
+        if (Sheet is null || IsInFormulaPointMode || HasExternalFormulaSessionGuard)
             return Task.CompletedTask;
 
         var (row, col) = _geometry.HitTest(contentX, contentY);

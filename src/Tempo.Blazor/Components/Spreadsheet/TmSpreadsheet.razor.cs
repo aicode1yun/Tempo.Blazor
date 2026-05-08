@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.JSInterop;
+using System.Globalization;
 using Tempo.Blazor.Components.Spreadsheet.Commands;
 using Tempo.Blazor.Components.Spreadsheet.Enums;
 using Tempo.Blazor.Components.Spreadsheet.Models;
@@ -37,6 +38,9 @@ public partial class TmSpreadsheet
     private string? _formulaOriginCellRef;
     private bool IsFormulaBarSessionActive => _isFormulaBarEditing || _formulaBarEditValue is not null;
     private bool HostFormulaPointMode => (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true;
+    private string FormulaCultureName => CultureInfo.CurrentCulture.Name;
+    private string FormulaDecimalSeparator => CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == "," ? "," : ".";
+    private string FormulaArgumentSeparator => FormulaDecimalSeparator == "," ? ";" : ",";
 
     /// <summary>XLSX file data to load into the spreadsheet.</summary>
     [Parameter] public byte[]? Data { get; set; }
@@ -365,8 +369,10 @@ public partial class TmSpreadsheet
         InvalidateRenderedCells(new[] { targetCellRef });
         if (ReferenceEquals(targetSheet, _workbook.ActiveSheet))
             await SyncCanvasJsEngineCellsAsync(new[] { targetCellRef });
-        _isFormulaBarEditing = false;
-        _formulaBarEditValue = null;
+        if (!_isFormulaBarEditing)
+        {
+            _formulaBarEditValue = null;
+        }
         StateHasChanged();
     }
 
@@ -414,8 +420,10 @@ public partial class TmSpreadsheet
                 current?.Formula));
         }
 
-        _isFormulaBarEditing = false;
-        _formulaBarEditValue = null;
+        if (!_isFormulaBarEditing)
+        {
+            _formulaBarEditValue = null;
+        }
         StateHasChanged();
     }
 
@@ -466,6 +474,17 @@ public partial class TmSpreadsheet
     {
         if (_grid is not null)
             await _grid.FocusAsync();
+    }
+
+    private async Task OnFormulaBarTransferToInlineEditorRequested()
+    {
+        if (_grid is null)
+            return;
+
+        await _grid.BeginInlineEditAsync();
+        _isFormulaBarEditing = false;
+        _formulaBarEditValue = null;
+        StateHasChanged();
     }
 
     private async Task ApplyValueToActiveCellAsync(string? value)

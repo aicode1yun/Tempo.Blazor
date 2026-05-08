@@ -1472,6 +1472,217 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_FormulaBarSessionKeepsCaretAndActiveCellDuringResizeCommit()
+    {
+        const string formula = "=SUM(A1:B5)+C7";
+
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FillAsync(formula);
+        var caret = formula.IndexOf("C7", StringComparison.Ordinal) + 1;
+        await SetFormulaBarSelectionAsync(input, caret, caret);
+        var before = await ReadTextInputSelectionAsync(input);
+        var startRef = await GetCanvasActiveRefAsync(grid);
+
+        var result = await grid.EvaluateAsync<CanvasFormulaResizeSessionProbeResult>(
+            @"el => new Promise(resolve => {
+                const before = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const state = el.__tmSpreadsheetCanvas;
+                const model = state.model;
+                const columns = model.Columns || model.columns || [];
+                const column = columns[1] || columns[0];
+                const rowHeaderWidth = model.RowHeaderWidth ?? model.rowHeaderWidth ?? 40;
+                const columnHeaderHeight = model.ColumnHeaderHeight ?? model.columnHeaderHeight ?? 20;
+                const left = column.Left ?? column.left ?? 0;
+                const initialSize = column.Width ?? column.width ?? 64;
+                const rect = el.getBoundingClientRect();
+                const startX = rect.left + rowHeaderWidth + left + initialSize - 1;
+                const startY = rect.top + Math.max(6, columnHeaderHeight / 2);
+                const endX = startX + 36;
+                const pointerId = 175;
+                const dispatch = (type, x, y, buttons) => el.dispatchEvent(new PointerEvent(type, {
+                    clientX: x,
+                    clientY: y,
+                    button: 0,
+                    buttons,
+                    pointerId,
+                    pointerType: 'mouse',
+                    bubbles: true,
+                    cancelable: true
+                }));
+
+                dispatch('pointerdown', startX, startY, 1);
+                let move = 0;
+                const moveCount = 6;
+                const step = () => {
+                    move += 1;
+                    dispatch('pointermove', startX + (endX - startX) * move / moveCount, startY, 1);
+                    if (move < moveCount) {
+                        requestAnimationFrame(step);
+                        return;
+                    }
+
+                    dispatch('pointerup', endX, startY, 0);
+                    setTimeout(() => {
+                        const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                        const host = window.tmSpreadsheetFormulaRuntime?.getHostFormulaSession?.(el.closest('.tm-spreadsheet')) || null;
+                        const syncedColumns = state.model.Columns || state.model.columns || [];
+                        const synced = syncedColumns[1] || syncedColumns[0];
+                        resolve({
+                            activeRef: state.model.activeCellRef || state.model.ActiveCellRef || '',
+                            hostText: host?.text || host?.Text || '',
+                            hostSelectionStart: host?.selectionStart ?? host?.SelectionStart ?? -1,
+                            hostSelectionEnd: host?.selectionEnd ?? host?.SelectionEnd ?? -1,
+                            finalSize: synced?.Width ?? synced?.width ?? 0,
+                            dotNetCallbacks: (after.resizeDotNetCallbackCount || 0) - (before.resizeDotNetCallbackCount || 0),
+                            blazorFrames: (after.resizeBlazorFrameCount || 0) - (before.resizeBlazorFrameCount || 0)
+                        });
+                    }, 420);
+                };
+
+                requestAnimationFrame(step);
+            })");
+
+        var after = await ReadTextInputSelectionAsync(input);
+
+        Assert.AreEqual(formula, await input.InputValueAsync(), "Expected resize commit during formula-bar editing to keep the live formula text intact.");
+        Assert.AreEqual(before.SelectionStart, after.SelectionStart, "Expected resize commit during formula-bar editing to preserve caret start.");
+        Assert.AreEqual(before.SelectionEnd, after.SelectionEnd, "Expected resize commit during formula-bar editing to preserve caret end.");
+        Assert.AreEqual(startRef, await GetCanvasActiveRefAsync(grid), "Expected resize commit during formula-bar editing not to move the active cell.");
+        Assert.AreEqual(startRef, result.ActiveRef, "Expected canvas model active cell to stay at the formula edit origin after resize commit.");
+        Assert.AreEqual(formula, result.HostText, "Expected host formula session to stay authoritative through resize commit.");
+        Assert.AreEqual(before.SelectionStart, result.HostSelectionStart, "Expected host formula session caret start to survive resize commit.");
+        Assert.AreEqual(before.SelectionEnd, result.HostSelectionEnd, "Expected host formula session caret end to survive resize commit.");
+        Assert.IsTrue(result.FinalSize > 64, $"Expected resize commit to actually update the synced column width. Width: {result.FinalSize:N1}.");
+        Assert.IsTrue(result.DotNetCallbacks <= 1, $"Expected resize commit to remain a bounded single callback path. Count: {result.DotNetCallbacks:N0}.");
+        Assert.IsTrue(result.BlazorFrames <= 2, $"Expected resize commit to keep Blazor frames bounded while the formula session survives. Frames: {result.BlazorFrames:N0}.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_F2TransfersFormulaSessionFromFormulaBarToInlineEditorWithoutLosingCaret()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FillAsync("=SUM(A1, B1)");
+        await SetFormulaBarSelectionAsync(input, 9, 11);
+
+        await input.PressAsync("F2");
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        var selection = await ReadTextInputSelectionAsync(editor);
+
+        Assert.AreEqual("=SUM(A1, B1)", await editor.InputValueAsync(), "Expected formula-bar session text to transfer into inline editor.");
+        Assert.AreEqual(9, selection.SelectionStart, "Expected transferred inline editor caret start to match formula bar.");
+        Assert.AreEqual(11, selection.SelectionEnd, "Expected transferred inline editor caret end to match formula bar.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_FormulaSessionTransfersFromInlineEditorToFormulaBarWithoutLosingCaret()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeCell = await GetCanvasCellCenterAsync(grid, "A1");
+        await grid.DblClickAsync(new LocatorDblClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeCell.X, Y = activeCell.Y }
+        });
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await editor.FillAsync("=SUM(A1, B1)");
+        await SetFormulaEditorSelectionAsync(editor, 6, 8);
+
+        await spreadsheet.Locator(".tm-spreadsheet-formula-bar__display").ClickAsync();
+
+        var input = page.Locator("[data-testid='tm-spreadsheet-formula-bar-input']").First;
+        await input.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        var selection = await ReadTextInputSelectionAsync(input);
+
+        Assert.AreEqual("=SUM(A1, B1)", await input.InputValueAsync(), "Expected inline editor session text to transfer into formula bar.");
+        Assert.AreEqual(6, selection.SelectionStart, "Expected transferred formula-bar caret start to match inline editor.");
+        Assert.AreEqual(8, selection.SelectionEnd, "Expected transferred formula-bar caret end to match inline editor.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaEditorAutocompleteAcceptsFunctionFromKeyboard()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeCell = await GetCanvasCellCenterAsync(grid, "A1");
+        await grid.DblClickAsync(new LocatorDblClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeCell.X, Y = activeCell.Y }
+        });
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await editor.FillAsync("=SU");
+
+        var suggestions = grid.Locator(".tm-spreadsheet-canvas-grid__formula-suggestions");
+        await suggestions.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await editor.PressAsync("Enter");
+
+        Assert.AreEqual("=SUM(", await editor.InputValueAsync(), "Expected inline editor Enter to accept shared autocomplete suggestion before commit.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaEditorShowsSharedFunctionHint()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeCell = await GetCanvasCellCenterAsync(grid, "A1");
+        await grid.DblClickAsync(new LocatorDblClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeCell.X, Y = activeCell.Y }
+        });
+
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await editor.FillAsync("=SUM(A1,");
+
+        var hint = grid.Locator(".tm-spreadsheet-canvas-grid__formula-hint");
+        await hint.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        StringAssert.Contains(await hint.InnerTextAsync(), "SUM");
+        Assert.AreEqual(1, await hint.Locator(".tm-spreadsheet-canvas-grid__formula-hint-arg--active").CountAsync(), "Expected inline shared hint to highlight exactly one active argument.");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_FormulaBarArrowUpDownKeepSessionAndDoNotChangeActiveCell()
     {
         var page = await CreatePageAsync();
@@ -1501,6 +1712,34 @@ public class SpreadsheetE2ETests : WasmTestBase
         Assert.AreEqual("=SUM(A1:B5)+C7", afterArrows.EditorValue, "Expected ArrowUp/ArrowDown in the formula bar to keep the current formula text untouched.");
         Assert.AreEqual("J8", await GetCanvasActiveRefAsync(grid), "Expected ArrowUp/ArrowDown during formula-bar editing not to trigger grid navigation.");
         Assert.IsTrue(await input.IsVisibleAsync(), "Expected the formula-bar session to stay open after ArrowUp/ArrowDown.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaEditorArrowUpDownKeepSessionAndDoNotChangeActiveCell()
+    {
+        const string formula = "=SUM(A1:B5)+C7";
+
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.ClickAsync();
+
+        var editor = await OpenCanvasFormulaEditorAsync(page, grid, formula);
+        var startRef = await GetCanvasActiveRefAsync(grid);
+        await SetFormulaEditorSelectionAsync(editor, 7, 7);
+
+        await page.Keyboard.PressAsync("ArrowDown");
+        await page.Keyboard.PressAsync("ArrowUp");
+        var afterArrows = await ReadTextInputSelectionAsync(editor);
+
+        Assert.AreEqual(formula, afterArrows.EditorValue, "Expected ArrowUp/ArrowDown in the inline formula editor to keep the current formula text untouched.");
+        Assert.AreEqual(7, afterArrows.SelectionStart, "Expected ArrowUp/ArrowDown in the inline formula editor to keep the caret collapsed at the same position.");
+        Assert.AreEqual(7, afterArrows.SelectionEnd, "Expected ArrowUp/ArrowDown in the inline formula editor not to extend the selection.");
+        Assert.AreEqual(startRef, await GetCanvasActiveRefAsync(grid), "Expected ArrowUp/ArrowDown during inline formula editing not to trigger grid navigation.");
+        Assert.IsTrue(await editor.IsVisibleAsync(), "Expected the inline formula session to stay open after ArrowUp/ArrowDown.");
     }
 
     [TestMethod]
@@ -1588,6 +1827,46 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_FormulaBarExtendedRangeShortcutsKeepSessionAndDoNotChangeActiveCell()
+    {
+        const string formula = "=SUM(A1:B5)+C7";
+
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeTarget = await GetCanvasCellCenterAsync(grid, "J8");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeTarget.X, Y = activeTarget.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "J8");
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FillAsync(formula);
+        await SetFormulaBarSelectionAsync(input, formula.Length, formula.Length);
+
+        await page.Keyboard.PressAsync("Control+Shift+ArrowLeft");
+        var afterCtrlShiftLeft = await ReadTextInputSelectionAsync(input);
+        await page.Keyboard.PressAsync("Shift+ArrowUp");
+        await page.Keyboard.PressAsync("Shift+ArrowDown");
+        await page.Keyboard.PressAsync("PageUp");
+        await page.Keyboard.PressAsync("PageDown");
+        var afterExtended = await ReadTextInputSelectionAsync(input);
+
+        Assert.IsTrue(afterCtrlShiftLeft.SelectionStart < afterCtrlShiftLeft.SelectionEnd, $"Expected Ctrl+Shift+ArrowLeft in formula bar to extend the selection. Start: {afterCtrlShiftLeft.SelectionStart}, end: {afterCtrlShiftLeft.SelectionEnd}.");
+        Assert.AreEqual(formula.Length, afterCtrlShiftLeft.SelectionEnd, "Expected Ctrl+Shift+ArrowLeft to keep the original end-of-formula anchor.");
+        Assert.AreEqual(formula, afterExtended.EditorValue, "Expected extended range shortcuts in the formula bar to keep the live formula text intact.");
+        Assert.AreEqual("J8", await GetCanvasActiveRefAsync(grid), "Expected Shift+ArrowUp/Down, Ctrl+Shift+Arrow and PageUp/PageDown in the formula bar not to change the active cell.");
+        Assert.IsTrue(await input.IsVisibleAsync(), "Expected the formula-bar session to stay open after extended range shortcuts.");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_FormulaBarDeleteAndCtrlBackspaceEditTextWithoutChangingActiveCell()
     {
         const string formula = "=SUM(A1:B5)+C7";
@@ -1658,6 +1937,38 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaEditorExtendedRangeShortcutsKeepSessionAndDoNotChangeActiveCell()
+    {
+        const string formula = "=SUM(A1:B5)+C7";
+
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await WaitForCanvasGridReadyAsync(page, grid);
+        await grid.ClickAsync();
+
+        var editor = await OpenCanvasFormulaEditorAsync(page, grid, formula);
+        var startRef = await GetCanvasActiveRefAsync(grid);
+        await SetFormulaEditorSelectionAsync(editor, formula.Length, formula.Length);
+
+        await page.Keyboard.PressAsync("Control+Shift+ArrowLeft");
+        var afterCtrlShiftLeft = await ReadTextInputSelectionAsync(editor);
+        await page.Keyboard.PressAsync("Shift+ArrowUp");
+        await page.Keyboard.PressAsync("Shift+ArrowDown");
+        await page.Keyboard.PressAsync("PageUp");
+        await page.Keyboard.PressAsync("PageDown");
+        var afterExtended = await ReadTextInputSelectionAsync(editor);
+
+        Assert.IsTrue(afterCtrlShiftLeft.SelectionStart < afterCtrlShiftLeft.SelectionEnd, $"Expected Ctrl+Shift+ArrowLeft in inline formula editor to extend the selection. Start: {afterCtrlShiftLeft.SelectionStart}, end: {afterCtrlShiftLeft.SelectionEnd}.");
+        Assert.AreEqual(formula.Length, afterCtrlShiftLeft.SelectionEnd, "Expected Ctrl+Shift+ArrowLeft to keep the original end-of-formula anchor.");
+        Assert.AreEqual(formula, afterExtended.EditorValue, "Expected extended range shortcuts in the inline formula editor to keep the live formula text intact.");
+        Assert.AreEqual(startRef, await GetCanvasActiveRefAsync(grid), "Expected Shift+ArrowUp/Down, Ctrl+Shift+Arrow and PageUp/PageDown in the inline formula editor not to change the active cell.");
+        Assert.IsTrue(await editor.IsVisibleAsync(), "Expected the inline formula session to stay open after extended range shortcuts.");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_InlineFormulaEditorDeleteAndCtrlBackspaceEditTextWithoutChangingActiveCell()
     {
         const string formula = "=SUM(A1:B5)+C7";
@@ -1686,6 +1997,67 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_FormulaBarLongSessionCombinesAutocompleteReferencePickingScrollAndCommit()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeTarget = await GetCanvasCellCenterAsync(grid, "J8");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeTarget.X, Y = activeTarget.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "J8");
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FocusAsync();
+        await page.Keyboard.PressAsync("Control+A");
+        await page.Keyboard.TypeAsync("=SU");
+
+        var suggestions = spreadsheet.Locator("[data-testid='tm-spreadsheet-formula-bar-suggestions']");
+        await suggestions.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.Keyboard.PressAsync("Enter");
+        Assert.AreEqual("=SUM(", await input.InputValueAsync(), "Expected long formula-bar session to accept SUM from autocomplete.");
+
+        var firstArg = await GetCanvasCellCenterAsync(grid, "E6");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = firstArg.X, Y = firstArg.Y }
+        });
+        Assert.AreEqual("=SUM(E6", await input.InputValueAsync(), "Expected first reference click to insert the first SUM argument.");
+
+        await page.Keyboard.TypeAsync(",");
+        await grid.EvaluateAsync(
+            @"el => {
+                el.scrollTop += 260;
+                el.dispatchEvent(new Event('scroll', { bubbles: true }));
+            }");
+        await page.WaitForTimeoutAsync(180);
+
+        await DragCanvasBetweenCellsAsync(grid, "J20", "L22");
+        Assert.AreEqual("=SUM(E6,J20:L22", await input.InputValueAsync(), "Expected drag range after viewport scroll to replace the active argument token.");
+
+        await page.Keyboard.TypeAsync(")");
+        await page.Keyboard.PressAsync("Enter");
+
+        await WaitForCanvasActiveRefAsync(grid, "J9");
+        var committed = await WaitForCanvasCellSnapshotAsync(
+            grid,
+            "J8",
+            snapshot => string.Equals(snapshot.Formula, "=SUM(E6,J20:L22)", StringComparison.Ordinal),
+            "Expected long shared formula session to commit the final SUM formula into the original active cell.");
+
+        Assert.AreEqual("=SUM(E6,J20:L22)", committed.Formula, "Expected committed formula to keep autocomplete, click reference and drag range edits in one shared session.");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_FormulaBarShowsActiveFunctionArgumentHint()
     {
         var page = await CreatePageAsync();
@@ -1703,6 +2075,56 @@ public class SpreadsheetE2ETests : WasmTestBase
 
         StringAssert.Contains((await hint.TextContentAsync()) ?? string.Empty, "SUM", "Expected function hint to describe the active SUM call.");
         Assert.AreEqual("number2", (await activeArg.TextContentAsync())?.Trim(), "Expected the active argument hint to advance after typing the first separator.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_FormulaBarCzechDecimalCommaDoesNotAdvanceArgumentHintPrematurely()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await page.EvaluateAsync("() => localStorage.setItem('tm-demo-culture', 'cs')");
+        await page.ReloadAsync();
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        Assert.AreEqual(";", await spreadsheet.GetAttributeAsync("data-formula-argument-separator"), "Expected Czech culture to advertise semicolon as the formula argument separator.");
+        Assert.AreEqual(",", await spreadsheet.GetAttributeAsync("data-formula-decimal-separator"), "Expected Czech culture to advertise comma as the formula decimal separator.");
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FillAsync("=SUM(1,2;");
+        await SetFormulaBarSelectionAsync(input, 9, 9);
+
+        var hint = page.Locator("[data-testid='tm-spreadsheet-formula-bar-hint']");
+        await hint.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var activeArg = hint.Locator(".tm-spreadsheet-formula-bar__hint-arg--active");
+
+        Assert.AreEqual("number2", (await activeArg.TextContentAsync())?.Trim(), "Expected decimal comma in Czech formula input to stay inside the first SUM argument until the semicolon separator is typed.");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaEditorCzechDecimalCommaDoesNotAdvanceArgumentHintPrematurely()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await page.EvaluateAsync("() => localStorage.setItem('tm-demo-culture', 'cs')");
+        await page.ReloadAsync();
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+        Assert.AreEqual(";", await spreadsheet.GetAttributeAsync("data-formula-argument-separator"), "Expected Czech culture to advertise semicolon as the formula argument separator.");
+        Assert.AreEqual(",", await spreadsheet.GetAttributeAsync("data-formula-decimal-separator"), "Expected Czech culture to advertise comma as the formula decimal separator.");
+
+        var editor = await OpenCanvasFormulaEditorAsync(page, grid, "=SUM(1,2;");
+        await SetFormulaEditorSelectionAsync(editor, 9, 9);
+
+        var hint = grid.Locator(".tm-spreadsheet-canvas-grid__formula-hint");
+        await hint.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var activeArg = hint.Locator(".tm-spreadsheet-canvas-grid__formula-hint-arg--active");
+
+        Assert.AreEqual(1, await activeArg.CountAsync(), "Expected inline formula hint to highlight exactly one active argument in Czech decimal-comma mode.");
+        Assert.AreEqual("number2", (await activeArg.TextContentAsync())?.Trim(), "Expected decimal comma in Czech inline formula input to stay inside the first SUM argument until the semicolon separator is typed.");
     }
 
     [TestMethod]
@@ -5139,6 +5561,17 @@ public class SpreadsheetE2ETests : WasmTestBase
         public int ContentPaintFrames { get; set; }
         public int CaretMoveCount { get; set; }
         public bool FormulaActive { get; set; }
+    }
+
+    private sealed class CanvasFormulaResizeSessionProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public string HostText { get; set; } = string.Empty;
+        public int HostSelectionStart { get; set; }
+        public int HostSelectionEnd { get; set; }
+        public double FinalSize { get; set; }
+        public int DotNetCallbacks { get; set; }
+        public int BlazorFrames { get; set; }
     }
 
     private sealed class CanvasJsFirstStateProbeResult

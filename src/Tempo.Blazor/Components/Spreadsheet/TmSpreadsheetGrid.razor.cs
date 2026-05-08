@@ -228,6 +228,13 @@ public partial class TmSpreadsheetGrid : IAsyncDisposable, ISpreadsheetGridContr
     }
 
     /// <inheritdoc />
+    public Task BeginInlineEditAsync()
+    {
+        StartEdit(Sheet?.ActiveCellRef ?? "A1");
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
     public async Task MoveActiveCellByAsync(int dRow, int dCol, bool extendSelection = false)
     {
         MoveActiveCell(dRow, dCol, extendSelection);

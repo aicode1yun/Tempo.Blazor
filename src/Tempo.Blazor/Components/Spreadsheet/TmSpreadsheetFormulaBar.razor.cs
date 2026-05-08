@@ -39,8 +39,18 @@ public partial class TmSpreadsheetFormulaBar
         public string? FunctionPrefix { get; set; }
         public int FunctionPrefixStart { get; set; } = -1;
         public int FunctionPrefixEnd { get; set; } = -1;
-        public string? ActiveFunctionName { get; set; }
-        public int ActiveFunctionArgumentIndex { get; set; } = -1;
+        public IReadOnlyList<SpreadsheetFormulaFunctionMetadata>? Suggestions { get; set; }
+        public SpreadsheetFormulaFunctionHint? ActiveFunctionHint { get; set; }
+    }
+
+    private sealed class JsHostFormulaSession
+    {
+        public string? Owner { get; set; }
+        public string? CellRef { get; set; }
+        public string? Text { get; set; }
+        public int SelectionStart { get; set; }
+        public int SelectionEnd { get; set; }
+        public bool IsFormula { get; set; }
     }
 
     /// <summary>The current formula editing session used for shared formula UX.</summary>
@@ -87,6 +97,9 @@ public partial class TmSpreadsheetFormulaBar
     /// <summary>Called after a commit when spreadsheet-like navigation should move the active cell.</summary>
     [Parameter] public EventCallback<(int RowDelta, int ColDelta)> OnCommitNavigationRequested { get; set; }
 
+    /// <summary>Called when the current formula session should move into the inline grid editor.</summary>
+    [Parameter] public EventCallback OnTransferToInlineEditorRequested { get; set; }
+
     protected override void OnParametersSet()
     {
         if (IsEditing)
@@ -106,9 +119,31 @@ public partial class TmSpreadsheetFormulaBar
         if (EditorIsEditing) return;
         _localIsEditing = true;
         _editValue = DisplayValue;
+        _renderedSelectionStart = (_editValue ?? string.Empty).Length;
+        _renderedSelectionEnd = _renderedSelectionStart;
+
+        try
+        {
+            var hostSession = await JS.InvokeAsync<JsHostFormulaSession?>("tmSpreadsheetFormulaBar.getHostFormulaSession", _rootRef);
+            if (hostSession is not null
+                && string.Equals(hostSession.CellRef, ActiveCellRef, StringComparison.OrdinalIgnoreCase)
+                && !string.IsNullOrEmpty(hostSession.Text))
+            {
+                _editValue = hostSession.Text;
+                _renderedSelectionStart = Math.Clamp(hostSession.SelectionStart, 0, _editValue.Length);
+                _renderedSelectionEnd = Math.Clamp(hostSession.SelectionEnd, 0, _editValue.Length);
+            }
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
+
         CurrentSession = new SpreadsheetFormulaEditSession
         {
             Text = _editValue ?? string.Empty,
+            SelectionStart = _renderedSelectionStart,
+            SelectionEnd = _renderedSelectionEnd,
             IsFormula = (_editValue ?? string.Empty).StartsWith("=")
         };
         _shouldFocusAfterRender = true;
@@ -155,6 +190,12 @@ public partial class TmSpreadsheetFormulaBar
     {
         if (EditorIsEditing)
         {
+            if (e.Key == "F2")
+            {
+                await OnTransferToInlineEditorRequested.InvokeAsync();
+                return;
+            }
+
             if (e.Key == "F4" && CurrentSession.IsFormula)
             {
                 await CycleReferenceAsync();
@@ -207,6 +248,14 @@ public partial class TmSpreadsheetFormulaBar
     {
         if (!EditorIsEditing) return;
         _localIsEditing = false;
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.clearHostFormulaSession", _rootRef, "formulaBar");
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
         await OnValueCommitted.InvokeAsync(_editValue);
     }
 
@@ -214,6 +263,17 @@ public partial class TmSpreadsheetFormulaBar
     {
         if (!EditorIsEditing)
             return;
+
+        try
+        {
+            var shouldRetainFocus = await JS.InvokeAsync<bool>("tmSpreadsheetFormulaBar.shouldRetainFocusAfterBlur", _rootRef);
+            if (!shouldRetainFocus)
+                return;
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
 
         _shouldFocusAfterRender = true;
         await InvokeAsync(StateHasChanged);
@@ -225,6 +285,7 @@ public partial class TmSpreadsheetFormulaBar
         _pendingCommitNavigation = null;
         _localIsEditing = false;
         _editValue = DisplayValue;
+        _ = ClearHostSessionAsync();
         OnEditCancelled.InvokeAsync();
     }
 
@@ -248,9 +309,21 @@ public partial class TmSpreadsheetFormulaBar
             _shouldFocusAfterRender = false;
             try
             {
+                var hostSession = await JS.InvokeAsync<JsHostFormulaSession?>("tmSpreadsheetFormulaBar.getHostFormulaSession", _rootRef);
+                if (hostSession is not null
+                    && string.Equals(hostSession.CellRef, ActiveCellRef, StringComparison.OrdinalIgnoreCase)
+                    && !string.IsNullOrEmpty(hostSession.Text)
+                    && string.IsNullOrEmpty(_editValue))
+                {
+                    _editValue = hostSession.Text;
+                    _renderedSelectionStart = Math.Clamp(hostSession.SelectionStart, 0, _editValue.Length);
+                    _renderedSelectionEnd = Math.Clamp(hostSession.SelectionEnd, 0, _editValue.Length);
+                }
+
                 await _inputRef.FocusAsync();
-                _renderedSelectionStart = (_editValue ?? string.Empty).Length;
-                _renderedSelectionEnd = _renderedSelectionStart;
+                var valueLength = (_editValue ?? string.Empty).Length;
+                _renderedSelectionStart = Math.Clamp(_renderedSelectionStart, 0, valueLength);
+                _renderedSelectionEnd = Math.Clamp(_renderedSelectionEnd, 0, valueLength);
                 await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.setValueAndSelection", _inputRef, _editValue ?? string.Empty, _renderedSelectionStart, _renderedSelectionEnd);
                 await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.bindHostFormulaPointMode", _rootRef, _inputRef);
                 await RefreshSessionAsync();
@@ -314,7 +387,7 @@ public partial class TmSpreadsheetFormulaBar
         JsFormulaSessionAnalysis analysis;
         try
         {
-            analysis = await JS.InvokeAsync<JsFormulaSessionAnalysis>("tmSpreadsheetFormulaBar.analyzeSession", value, start, end)
+            analysis = await JS.InvokeAsync<JsFormulaSessionAnalysis>("tmSpreadsheetFormulaBar.analyzeSession", _rootRef, value, start, end)
                 ?? new JsFormulaSessionAnalysis();
         }
         catch
@@ -359,10 +432,12 @@ public partial class TmSpreadsheetFormulaBar
             FunctionPrefix = analysis.FunctionPrefix,
             FunctionPrefixStart = analysis.FunctionPrefixStart,
             FunctionPrefixEnd = analysis.FunctionPrefixEnd,
-            Suggestions = suggestions,
+            Suggestions = analysis.Suggestions ?? suggestions,
             SelectedSuggestionIndex = selectedSuggestionIndex,
-            ActiveFunctionHint = BuildFunctionHint(analysis.ActiveFunctionName, analysis.ActiveFunctionArgumentIndex)
+            ActiveFunctionHint = analysis.ActiveFunctionHint
         };
+
+        await SyncHostSessionAsync();
 
         if (notifyValueChanged)
             await OnValueChanged.InvokeAsync(_editValue);
@@ -381,23 +456,6 @@ public partial class TmSpreadsheetFormulaBar
             .ThenBy(function => function.Name, StringComparer.OrdinalIgnoreCase)
             .Take(8)
             .ToArray();
-    }
-
-    private static SpreadsheetFormulaFunctionHint? BuildFunctionHint(string? functionName, int activeArgumentIndex)
-    {
-        if (string.IsNullOrWhiteSpace(functionName))
-            return null;
-
-        var function = SpreadsheetFormulaFunctionCatalog.All
-            .FirstOrDefault(candidate => string.Equals(candidate.Name, functionName, StringComparison.OrdinalIgnoreCase));
-        if (function is null)
-            return null;
-
-        return new SpreadsheetFormulaFunctionHint
-        {
-            Function = function,
-            ActiveArgumentIndex = Math.Max(0, activeArgumentIndex)
-        };
     }
 
     private void MoveSuggestionSelection(int delta)
@@ -470,6 +528,44 @@ public partial class TmSpreadsheetFormulaBar
         _renderedSelectionEnd = replacement.SelectionEnd;
         await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.setValueAndSelection", _inputRef, _editValue, _renderedSelectionStart, _renderedSelectionEnd);
         await RefreshSessionAsync(_renderedSelectionStart, _renderedSelectionEnd, notifyValueChanged: true);
+    }
+
+    private async Task SyncHostSessionAsync()
+    {
+        if (!EditorIsEditing)
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync(
+                "tmSpreadsheetFormulaBar.setHostFormulaSession",
+                _rootRef,
+                new
+                {
+                    owner = "formulaBar",
+                    cellRef = ActiveCellRef,
+                    text = CurrentSession.Text,
+                    selectionStart = CurrentSession.SelectionStart,
+                    selectionEnd = CurrentSession.SelectionEnd,
+                    isFormula = CurrentSession.IsFormula
+                });
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
+    }
+
+    private async Task ClearHostSessionAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.clearHostFormulaSession", _rootRef, "formulaBar");
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
     }
 
     private sealed class SelectionReplacement
