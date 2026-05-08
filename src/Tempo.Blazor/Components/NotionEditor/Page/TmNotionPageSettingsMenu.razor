@@ -208,6 +208,18 @@
             @* ════════════════════ Section 3 — Actions ═══════════════════════════ *@
             <div class="tm-npsm__section">
 
+                @if (Context.CommentProvider is not null)
+                {
+                    <button class="tm-npsm__item" type="button" role="menuitem" @onclick="MarkAllCommentsAsReadAsync">
+                        <span class="tm-npsm__item-icon" aria-hidden="true">
+                            <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
+                                <path d="M2 7.5l3.5 3.5 6.5-6.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                            </svg>
+                        </span>
+                        <span class="tm-npsm__item-label">@Loc["TmNotionPageSettingsMenu_MarkAllAsRead"]</span>
+                    </button>
+                }
+
                 @if (Context.HistoryProvider is not null)
                 {
                     <button class="tm-npsm__item" type="button" role="menuitem" @onclick="OpenHistoryAsync">

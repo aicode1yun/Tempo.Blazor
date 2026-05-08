@@ -38,6 +38,24 @@ public partial class TmNotionBlock : ComponentBase
 
     [Parameter] public bool IsSelected { get; set; }
 
+    /// <summary>Number of unresolved block comment threads for this block.</summary>
+    [Parameter] public int BlockUnresolvedCount { get; set; }
+
+    /// <summary>Number of resolved-but-unread block comment threads for this block.</summary>
+    [Parameter] public int BlockResolvedUnreadCount { get; set; }
+
+    /// <summary>True when any thread on this block has unread activity (new entry, reaction, resolve).</summary>
+    [Parameter] public bool BlockHasUnreadActivity { get; set; }
+
+    /// <summary>Total number of comment threads on this block.</summary>
+    [Parameter] public int BlockThreadCount { get; set; }
+
+    // ── Tooltip data (latest comment entry across all threads) ───────────────
+    [Parameter] public string? BlockLastAuthorName   { get; set; }
+    [Parameter] public string? BlockLastAuthorAvatar { get; set; }
+    [Parameter] public string? BlockLastEntryText    { get; set; }
+    [Parameter] public DateTime? BlockLastEntryTime  { get; set; }
+
     /// <summary>1-based ordinal for NumberedList blocks, pre-computed by TmNotionBlockList.</summary>
     [Parameter] public int NumberedListNumber { get; set; }
 
@@ -68,11 +86,62 @@ public partial class TmNotionBlock : ComponentBase
     /// <summary>Raised when the user clicks the Comment button in the block handle menu.</summary>
     [Parameter] public EventCallback OnComment { get; set; }
 
+    /// <summary>Raised when the user clicks the New Thread button in the block handle menu.</summary>
+    [Parameter] public EventCallback OnNewThread { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private IPageBlock?       _lastBlock;
 
     private ElementReference  _blockRef;
+
+    // ── Tooltip state ────────────────────────────────────────────────────────
+    private bool   _tooltipVisible;
+    private System.Timers.Timer? _tooltipTimer;
+
+    private void ShowTooltipDelayed()
+    {
+        _tooltipTimer?.Stop();
+        _tooltipTimer?.Dispose();
+        _tooltipTimer = new System.Timers.Timer(300) { AutoReset = false };
+        _tooltipTimer.Elapsed += (_, _) =>
+        {
+            _tooltipTimer?.Dispose();
+            _tooltipTimer = null;
+            InvokeAsync(() =>
+            {
+                if (BlockUnresolvedCount > 0 || BlockResolvedUnreadCount > 0)
+                {
+                    _tooltipVisible = true;
+                    StateHasChanged();
+                }
+            });
+        };
+        _tooltipTimer.Start();
+    }
+
+    private void HideTooltip()
+    {
+        _tooltipTimer?.Stop();
+        _tooltipTimer?.Dispose();
+        _tooltipTimer = null;
+        if (_tooltipVisible)
+        {
+            _tooltipVisible = false;
+            StateHasChanged();
+        }
+    }
+
+    private string FormatRelativeTime(DateTime? dt)
+    {
+        if (dt is null) return string.Empty;
+        var diff = DateTime.UtcNow - dt.Value.ToUniversalTime();
+        if (diff.TotalMinutes < 1) return "just now";
+        if (diff.TotalHours < 1) return $"{(int)diff.TotalMinutes}m ago";
+        if (diff.TotalDays < 1) return $"{(int)diff.TotalHours}h ago";
+        if (diff.TotalDays < 7) return $"{(int)diff.TotalDays}d ago";
+        return dt.Value.ToString("MMM d");
+    }
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -958,6 +1027,10 @@ public partial class TmNotionBlock : ComponentBase
     }
 
     private async Task HandleCommentAsync() => await OnComment.InvokeAsync();
+
+    private async Task HandleNewThreadAsync() => await OnNewThread.InvokeAsync();
+
+    private Task HandleCommentThreadClickedAsync() => OnComment.InvokeAsync();
 
     private async Task HandleTextColorChangeAsync(string? color)
     {

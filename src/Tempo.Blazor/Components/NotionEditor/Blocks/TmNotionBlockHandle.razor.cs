@@ -22,6 +22,7 @@ public partial class TmNotionBlockHandle : ComponentBase
     [Parameter] public EventCallback          OnMoveTo             { get; set; }
     [Parameter] public EventCallback          OnCopyLink           { get; set; }
     [Parameter] public EventCallback          OnComment            { get; set; }
+    [Parameter] public EventCallback          OnNewThread          { get; set; }
     [Parameter] public EventCallback<string?> OnTextColorChange    { get; set; }
     [Parameter] public EventCallback<string?> OnBackgroundChange   { get; set; }
 

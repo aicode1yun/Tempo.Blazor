@@ -22,6 +22,7 @@ public partial class TmNotionBlockContextMenu : ComponentBase
     [Parameter] public EventCallback          OnMoveTo             { get; set; }
     [Parameter] public EventCallback          OnCopyLink           { get; set; }
     [Parameter] public EventCallback          OnComment            { get; set; }
+    [Parameter] public EventCallback          OnNewThread          { get; set; }
     [Parameter] public EventCallback<string?> OnTextColorChange    { get; set; }
     [Parameter] public EventCallback<string?> OnBackgroundChange   { get; set; }
 
@@ -80,6 +81,12 @@ public partial class TmNotionBlockContextMenu : ComponentBase
     {
         await OnClose.InvokeAsync();
         await OnComment.InvokeAsync();
+    }
+
+    private async Task HandleNewThreadAsync()
+    {
+        await OnClose.InvokeAsync();
+        await OnNewThread.InvokeAsync();
     }
 
     private async Task HandleTextColorAsync(string? color)

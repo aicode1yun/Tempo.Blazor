@@ -193,6 +193,8 @@
   <data name="TmNotificationBell_NewCount" xml:space="preserve"><value>{0} new notifications</value></data>
   <data name="TmNotificationBell_NoNotifications" xml:space="preserve"><value>No notifications</value></data>
   <data name="TmNotificationBell_MarkAllRead" xml:space="preserve"><value>Mark all as read</value></data>
+  <data name="TmNotificationBell_ShowOnlyUnread" xml:space="preserve"><value>Show only unread</value></data>
+  <data name="TmNotificationBell_ShowAll" xml:space="preserve"><value>Show all</value></data>
 
   <!-- ═══════════════ TmEmptyState ═══════════════ -->
   <data name="TmEmptyState_DefaultTitle" xml:space="preserve"><value>No data available</value></data>
@@ -1094,6 +1096,7 @@
   <data name="TmNotionPageHeader_EmojiPickerTitle"           xml:space="preserve"><value>Choose icon</value></data>
   <data name="TmNotionPageHeader_EmojiSearch"                xml:space="preserve"><value>Search emoji…</value></data>
   <data name="TmNotionPageHeader_RemoveIcon"                 xml:space="preserve"><value>Remove icon</value></data>
+  <data name="TmNotionPageHeader_UnresolvedComments"         xml:space="preserve"><value>{0} unresolved comments</value></data>
   <data name="TmNotionBlock_AddBlock"                        xml:space="preserve"><value>Add block below</value></data>
   <data name="TmNotionBlock_DragHandle"                      xml:space="preserve"><value>Drag to reorder</value></data>
   <data name="TmNotionBlock_ParagraphPlaceholder"            xml:space="preserve"><value>Type '/' for commands…</value></data>
@@ -1278,6 +1281,7 @@
   <data name="TmNotionBlockContextMenu_MoveTo"               xml:space="preserve"><value>Move to</value></data>
   <data name="TmNotionBlockContextMenu_CopyLink"             xml:space="preserve"><value>Copy link to block</value></data>
   <data name="TmNotionBlockContextMenu_Comment"              xml:space="preserve"><value>Comment</value></data>
+  <data name="TmNotionBlockContextMenu_NewThread"            xml:space="preserve"><value>New thread</value></data>
   <data name="TmNotionBlockContextMenu_Color"                xml:space="preserve"><value>Color</value></data>
   <data name="TmNotionBlockContextMenu_TextColor"            xml:space="preserve"><value>Color</value></data>
   <data name="TmNotionBlockContextMenu_Background"           xml:space="preserve"><value>Background</value></data>
@@ -2164,6 +2168,12 @@
   <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Could not load comments.</value></data>
   <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Could not send comment.</value></data>
   <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>Action failed. Please try again.</value></data>
+  <data name="TmNotionBlockComment_MarkAsRead"       xml:space="preserve"><value>Mark as read</value></data>
+  <data name="TmNotionBlockComment_Watch"            xml:space="preserve"><value>Watch thread</value></data>
+  <data name="TmNotionBlockComment_Unwatch"          xml:space="preserve"><value>Unwatch</value></data>
+  <data name="TmNotionBlock_Comments"                xml:space="preserve"><value>Comments</value></data>
+  <data name="TmNotionBlock_ResolvedComments"        xml:space="preserve"><value>Resolved comments</value></data>
+  <data name="TmNotionBlock_ThreadTooltipLabel"      xml:space="preserve"><value>Latest comment</value></data>
 
   <!-- ═══════════════ TmNotionTextCommentPanel ═══════════════ -->
   <data name="TmNotionTextComment_PanelLabel"       xml:space="preserve"><value>Text comment</value></data>
@@ -2219,6 +2229,7 @@
   <data name="TmNotionPageComment_LoadError"        xml:space="preserve"><value>Could not load comments.</value></data>
   <data name="TmNotionPageComment_SendError"        xml:space="preserve"><value>Could not send comment.</value></data>
   <data name="TmNotionPageComment_ActionError"      xml:space="preserve"><value>Action failed. Please try again.</value></data>
+  <data name="TmNotionPageComment_MarkAllAsRead"    xml:space="preserve"><value>Mark all as read</value></data>
 
   <!-- ═══════════════ TmNotionPageHistory ═══════════════ -->
   <data name="TmNotionPageHistory_PanelLabel"          xml:space="preserve"><value>Page history</value></data>
@@ -2321,6 +2332,9 @@
   <data name="TmNotionPageSettingsMenu_Delete"                    xml:space="preserve"><value>Move to trash</value></data>
   <data name="TmNotionPageSettingsMenu_DeleteConfirmText"         xml:space="preserve"><value>This page will be moved to trash. You can restore it later.</value></data>
   <data name="TmNotionPageSettingsMenu_DeleteConfirm"             xml:space="preserve"><value>Move to trash</value></data>
+  <data name="TmNotionPageSettingsMenu_MarkAllAsRead"             xml:space="preserve"><value>Mark all comments as read</value></data>
+  <data name="TmNotionPageSettingsMenu_MarkAllAsReadSuccess"      xml:space="preserve"><value>All comments marked as read</value></data>
+  <data name="TmNotionPageSettingsMenu_MarkAllAsReadError"        xml:space="preserve"><value>Could not mark comments as read</value></data>
   <data name="TmNotionPageSettingsMenu_LinkCopied"                xml:space="preserve"><value>Link copied to clipboard</value></data>
   <data name="TmNotionPageSettingsMenu_Untitled"                  xml:space="preserve"><value>Untitled</value></data>
   <data name="TmNotionPageSettingsMenu_ErrorUpdate"               xml:space="preserve"><value>Could not update page settings.</value></data>
@@ -2343,5 +2357,29 @@
   <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
   <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Add Attachment</value></data>
   <data name="TmFileManager_Attachments"               xml:space="preserve"><value>Attachments</value></data>
+
+  <!-- Nested comment reply -->
+  <data name="TmNotionBlockComment_ThreadDetail"       xml:space="preserve"><value>Thread</value></data>
+  <data name="TmNotionBlockComment_NewThread"          xml:space="preserve"><value>New thread</value></data>
+  <data name="TmNotionBlockComment_ThreadList"         xml:space="preserve"><value>Comment threads</value></data>
+  <data name="TmNotionBlockComment_RepliesCount"       xml:space="preserve"><value>{0} replies</value></data>
+  <data name="Tm_Back"                                 xml:space="preserve"><value>Back</value></data>
+
+  <!-- Nested comment reply -->
+  <data name="TmNotionBlockComment_ReplyToThis"        xml:space="preserve"><value>Reply to this</value></data>
+  <data name="TmNotionPageComment_ReplyToThis"         xml:space="preserve"><value>Reply to this</value></data>
+  <data name="TmNotionTextComment_ReplyToThis"         xml:space="preserve"><value>Reply to this</value></data>
+
+  <!-- Watch / Unwatch -->
+  <data name="TmNotionPageComment_Watch"               xml:space="preserve"><value>Watch thread</value></data>
+  <data name="TmNotionPageComment_Unwatch"             xml:space="preserve"><value>Unwatch</value></data>
+  <data name="TmNotionTextComment_Watch"               xml:space="preserve"><value>Watch thread</value></data>
+  <data name="TmNotionTextComment_Unwatch"             xml:space="preserve"><value>Unwatch</value></data>
+
+  <!-- Comment reactions -->
+  <data name="TmCommentReactions_Label"                xml:space="preserve"><value>Reactions</value></data>
+  <data name="TmCommentReactions_Add"                  xml:space="preserve"><value>Add reaction</value></data>
+  <data name="TmCommentReactions_You"                  xml:space="preserve"><value>You</value></data>
+  <data name="TmCommentReactions_More"                 xml:space="preserve"><value>+{0} more</value></data>
 
 </root>

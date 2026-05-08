@@ -23,8 +23,10 @@
     @* ── Page header (cover + icon + title + description) ──────────────────── *@
     <TmNotionPageHeader Page="Page"
                         ReadOnly="ReadOnly"
+                        UnresolvedCommentCount="_pageUnresolvedCommentCount"
                         OnPageUpdated="OnPageUpdated"
-                        OnTitleEnterPressed="HandleTitleEnterPressedAsync" />
+                        OnTitleEnterPressed="HandleTitleEnterPressedAsync"
+                        OnCommentBadgeClicked="HandleCommentBadgeClickedAsync" />
 
     @* ── Content wrapper ────────────────────────────────────────────────────── *@
     <div class="tm-notion-page__content">
@@ -78,6 +80,7 @@
                     <TmNotionBlockList Blocks="_blocks"
                                        ReadOnly="ReadOnly"
                                        ActiveBlockId="_activeBlockId"
+                                       BlockCommentCounts="_blockCommentCounts"
                                        OnReorder="HandleBlockReorderAsync"
                                        OnBlockFocused="HandleBlockFocusedAsync"
                                        OnBlockDeleted="HandleBlockDeletedAsync"
@@ -90,7 +93,8 @@
                                        OnSlashMenu="HandleSlashMenuOpenedAsync"
                                        OnMentionMenu="HandleMentionMenuOpenedAsync"
                                        OnPageLinkMenu="HandlePageLinkMenuOpenedAsync"
-                                       OnComment="HandleBlockCommentAsync" />
+                                       OnComment="HandleBlockCommentAsync"
+                                       OnNewThread="HandleBlockNewThreadAsync" />
                 </CascadingValue>
             }
 
@@ -103,7 +107,8 @@
                      aria-label="@Loc["TmNotionPage_CommentsLabel"]">
                 <TmNotionPageCommentPanel PageId="@Page.Id.ToString()"
                                           Expanded="_pageCommentExpanded"
-                                          OnExpandedChanged="HandlePageCommentExpandedChangedAsync" />
+                                          OnExpandedChanged="HandlePageCommentExpandedChangedAsync"
+                                          OnCountChanged="LoadPageUnresolvedCommentCountAsync" />
             </section>
         }
 
@@ -154,8 +159,9 @@
                            BlockId="@_blockCommentBlockId"
                            Top="@_blockCommentTop"
                            Left="@_blockCommentLeft"
+                           StartInNewThreadMode="@_blockCommentStartInNewThreadMode"
                            OnClosed="HandleBlockCommentClosedAsync"
-                           OnCountChanged="_ => StateHasChanged()" />
+                           OnCountChanged="async _ => await HandleBlockCommentCountChangedAsync(_blockCommentBlockId)" />
 
 @* ── Text comment panel (portal — position:fixed) *@
 <TmNotionTextCommentPanel Visible="@_textCommentVisible"

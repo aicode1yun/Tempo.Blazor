@@ -40,6 +40,7 @@
     padding: 10px 14px;
     border-bottom: 1px solid var(--tm-border, rgba(55,53,47,0.09));
     flex-shrink: 0;
+    gap: 8px;
 }
 
 .tm-nbcp__header-title {
@@ -47,12 +48,93 @@
     font-weight: 600;
     color: var(--tm-text-primary, rgb(55,53,47));
     letter-spacing: 0.01em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    min-width: 0;
+    flex: 1;
 }
 
 .tm-nbcp__header-actions {
     display: flex;
     align-items: center;
     gap: 4px;
+    flex-shrink: 0;
+}
+
+/* ── Back button ───────────────────────────────────────────────────────────── */
+
+.tm-nbcp__back-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.45));
+    cursor: pointer;
+    transition: background 80ms, color 80ms;
+    flex-shrink: 0;
+}
+
+.tm-nbcp__back-btn:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+    color: var(--tm-text-primary, rgb(55,53,47));
+}
+
+/* ── New thread button ─────────────────────────────────────────────────────── */
+
+.tm-nbcp__new-thread-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 5px;
+    background: transparent;
+    font-size: 12px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    cursor: pointer;
+    transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.tm-nbcp__new-thread-btn:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+    color: var(--tm-text-primary, rgb(55,53,47));
+    border-color: var(--tm-border-strong, rgba(55,53,47,0.30));
+}
+
+/* ── Watch button ──────────────────────────────────────────────────────────── */
+
+.tm-nbcp__watch-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 5px;
+    background: transparent;
+    font-size: 12px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    cursor: pointer;
+    transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.tm-nbcp__watch-btn:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+    color: var(--tm-text-primary, rgb(55,53,47));
+    border-color: var(--tm-border-strong, rgba(55,53,47,0.30));
+}
+
+.tm-nbcp__watch-btn--watching {
+    color: var(--tm-accent, #2383e2);
+    border-color: rgba(35,131,226,0.35);
+}
+
+.tm-nbcp__watch-btn--watching:hover {
+    background: rgba(35,131,226,0.08);
 }
 
 /* ── Resolve button ────────────────────────────────────────────────────────── */
@@ -85,6 +167,27 @@
 .tm-nbcp__resolve-btn--unresolve:hover {
     background: rgba(45,154,94,0.08);
     color: var(--tm-green, #2d9a5e);
+}
+
+/* ── Read / Mark-as-read button ────────────────────────────────────────────── */
+
+.tm-nbcp__read-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--tm-accent, #2383e2);
+    border-radius: 5px;
+    background: transparent;
+    font-size: 12px;
+    color: var(--tm-accent, #2383e2);
+    cursor: pointer;
+    transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.tm-nbcp__read-btn:hover {
+    background: var(--tm-accent, #2383e2);
+    color: #fff;
 }
 
 /* ── Close button ──────────────────────────────────────────────────────────── */
@@ -121,6 +224,136 @@
     font-weight: 500;
     border-bottom: 1px solid rgba(45,154,94,0.15);
     flex-shrink: 0;
+}
+
+/* ── Thread list ───────────────────────────────────────────────────────────── */
+
+.tm-nbcp__thread-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    min-height: 0;
+}
+
+.tm-nbcp__thread-list::-webkit-scrollbar {
+    width: 4px;
+}
+
+.tm-nbcp__thread-list::-webkit-scrollbar-thumb {
+    background: var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 2px;
+}
+
+/* ── Thread card ───────────────────────────────────────────────────────────── */
+
+.tm-nbcp__thread-card {
+    display: flex;
+    gap: 10px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 80ms;
+    border: 1px solid transparent;
+}
+
+.tm-nbcp__thread-card:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+}
+
+.tm-nbcp__thread-card--resolved {
+    opacity: 0.7;
+}
+
+.tm-nbcp__thread-card--resolved:hover {
+    opacity: 0.9;
+}
+
+.tm-nbcp__thread-card__avatar {
+    flex-shrink: 0;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    overflow: hidden;
+    background: var(--tm-accent, #2383e2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tm-nbcp__thread-card__avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.tm-nbcp__thread-card__avatar-fallback {
+    font-size: 12px;
+    font-weight: 600;
+    color: #fff;
+    line-height: 1;
+}
+
+.tm-nbcp__thread-card__body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 3px;
+}
+
+.tm-nbcp__thread-card__meta {
+    display: flex;
+    align-items: baseline;
+    gap: 6px;
+}
+
+.tm-nbcp__thread-card__author {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--tm-text-primary, rgb(55,53,47));
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.tm-nbcp__thread-card__time {
+    font-size: 11px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.45));
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+.tm-nbcp__thread-card__preview {
+    font-size: 12.5px;
+    line-height: 1.45;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    word-break: break-word;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tm-nbcp__thread-card__stats {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 11px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.45));
+}
+
+.tm-nbcp__thread-card__resolved-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 6px;
+    background: rgba(45,154,94,0.10);
+    color: var(--tm-green, #2d9a5e);
+    border-radius: 4px;
+    font-weight: 500;
 }
 
 /* ── Thread ────────────────────────────────────────────────────────────────── */
@@ -181,8 +414,31 @@
 
 .tm-nbcp__entry {
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.tm-nbcp__entry-indent {
+    flex-shrink: 0;
+    width: 0;
+    border-left: 2px solid var(--tm-border, rgba(55,53,47,0.10));
+    margin-right: 10px;
+    align-self: stretch;
+    min-height: 20px;
+}
+
+.tm-nbcp__entry--level-1 .tm-nbcp__entry-indent { width: 12px; }
+.tm-nbcp__entry--level-2 .tm-nbcp__entry-indent { width: 24px; }
+.tm-nbcp__entry--level-3 .tm-nbcp__entry-indent { width: 36px; }
+.tm-nbcp__entry--level-4 .tm-nbcp__entry-indent { width: 48px; }
+.tm-nbcp__entry--level-5 .tm-nbcp__entry-indent { width: 60px; }
+
+.tm-nbcp__entry-content {
+    flex: 1;
+    display: flex;
     gap: 10px;
     align-items: flex-start;
+    min-width: 0;
 }
 
 /* ── Avatar ────────────────────────────────────────────────────────────────── */
@@ -355,6 +611,39 @@
     background: var(--tm-bg-hover, rgba(55,53,47,0.06));
 }
 
+/* ── Inline reply ──────────────────────────────────────────────────────────── */
+
+.tm-nbcp__inline-reply {
+    margin-top: 6px;
+    padding: 8px;
+    background: var(--tm-bg-subtle, rgba(55,53,47,0.02));
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.10));
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tm-nbcp__reply-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-nbcp__reply-cancel {
+    padding: 4px 10px;
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 5px;
+    background: transparent;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 80ms;
+}
+
+.tm-nbcp__reply-cancel:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+}
+
 /* ── Reply area ────────────────────────────────────────────────────────────── */
 
 .tm-nbcp__reply {
@@ -423,6 +712,39 @@
 .tm-nbcp__reply-send:disabled {
     opacity: 0.45;
     cursor: not-allowed;
+}
+
+/* ── Mention highlight ─────────────────────────────────────────────────────── */
+
+.tm-mention {
+    color: var(--tm-accent, #2383e2);
+    font-weight: 500;
+    cursor: default;
+}
+
+/* ── Quote blockquote ──────────────────────────────────────────────────────── */
+
+.tm-comment-quote {
+    margin: 4px 0;
+    padding: 6px 10px;
+    border-left: 3px solid var(--tm-accent, #2383e2);
+    background: var(--tm-bg-subtle, rgba(55,53,47,0.03));
+    border-radius: 0 5px 5px 0;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.75));
+    font-size: 13px;
+    line-height: 1.5;
+}
+
+/* ── Active reply branch highlight ─────────────────────────────────────────── */
+
+.tm-nbcp__entry--replying .tm-nbcp__entry-indent {
+    border-left-color: var(--tm-accent, #2383e2);
+    border-left-width: 3px;
+}
+
+.tm-nbcp__entry--replying .tm-nbcp__entry-content {
+    background: var(--tm-bg-hover, rgba(35,131,226,0.06));
+    border-radius: 6px;
 }
 
 /* ── Error ─────────────────────────────────────────────────────────────────── */

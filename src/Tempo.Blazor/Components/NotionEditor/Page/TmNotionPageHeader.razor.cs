@@ -34,6 +34,12 @@ public partial class TmNotionPageHeader : ComponentBase, IDisposable
     /// <summary>Fired when Enter is pressed in the title, signalling to add a new block.</summary>
     [Parameter] public EventCallback OnTitleEnterPressed { get; set; }
 
+    /// <summary>Total unresolved comment count for the page (header badge).</summary>
+    [Parameter] public int UnresolvedCommentCount { get; set; }
+
+    /// <summary>Fired when the comment badge in the header is clicked.</summary>
+    [Parameter] public EventCallback OnCommentBadgeClicked { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private string       _titleInput       = string.Empty;

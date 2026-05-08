@@ -37,6 +37,7 @@ builder.Services.AddScoped<MockNotionSearchProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddInMemoryNotifications();
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();

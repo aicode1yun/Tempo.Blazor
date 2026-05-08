@@ -2185,6 +2185,11 @@
   <data name="TmNotionBlockComment_LoadError"        xml:space="preserve"><value>Impossible de charger les commentaires.</value></data>
   <data name="TmNotionBlockComment_SendError"        xml:space="preserve"><value>Impossible d'envoyer le commentaire.</value></data>
   <data name="TmNotionBlockComment_ActionError"      xml:space="preserve"><value>L'action a échoué. Veuillez réessayer.</value></data>
+  <data name="TmNotionBlockComment_ThreadDetail"     xml:space="preserve"><value>Fil</value></data>
+  <data name="TmNotionBlockComment_NewThread"        xml:space="preserve"><value>Nouveau fil</value></data>
+  <data name="TmNotionBlockComment_ThreadList"       xml:space="preserve"><value>Fils de commentaires</value></data>
+  <data name="TmNotionBlockComment_RepliesCount"     xml:space="preserve"><value>{0} réponses</value></data>
+  <data name="Tm_Back"                               xml:space="preserve"><value>Retour</value></data>
 
   <!-- ═══════════════ TmNotionTextCommentPanel ═══════════════ -->
   <data name="TmNotionTextComment_PanelLabel"       xml:space="preserve"><value>Commentaire sur le texte</value></data>
@@ -2291,5 +2296,11 @@
   <data name="TmNotionPageHistory_ErrorLoadPreview"    xml:space="preserve"><value>Impossible de charger le contenu de cette version.</value></data>
   <data name="TmNotionPageHistory_ErrorLoadDiff"       xml:space="preserve"><value>La comparaison des versions a échoué.</value></data>
   <data name="TmNotionPageHistory_ErrorRestore"        xml:space="preserve"><value>La restauration a échoué. Veuillez réessayer.</value></data>
+
+  <!-- Watch / Unwatch -->
+  <data name="TmNotionPageComment_Watch"               xml:space="preserve"><value>Surveiller le fil</value></data>
+  <data name="TmNotionPageComment_Unwatch"             xml:space="preserve"><value>Ne plus surveiller</value></data>
+  <data name="TmNotionTextComment_Watch"               xml:space="preserve"><value>Surveiller le fil</value></data>
+  <data name="TmNotionTextComment_Unwatch"             xml:space="preserve"><value>Ne plus surveiller</value></data>
 
 </root>

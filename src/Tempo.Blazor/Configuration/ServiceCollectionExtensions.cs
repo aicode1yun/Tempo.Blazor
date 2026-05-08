@@ -5,6 +5,8 @@ using Tempo.Blazor.Components.Diagram.Stencils;
 using Tempo.Blazor.Components.Diagram.Templates;
 using Tempo.Blazor.Components.Wireframe;
 using Tempo.Blazor.Localization;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Helpers;
 using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Configuration;
@@ -63,6 +65,11 @@ public static class ServiceCollectionExtensions
 
         // DragDropService — Scoped (carries dragged IDs between sibling components)
         services.TryAddScoped<DragDropService>();
+
+        // ── Notification system ───────────────────────────────────────────────
+        services.TryAddSingleton<INotificationBadgeState, NotificationBadgeState>();
+        services.TryAddSingleton<INotificationService, NoOpNotificationService>();
+        services.TryAddScoped<CommentNotificationOrchestrator>();
 
         // ── Wireframe editor ──────────────────────────────────────────────────
         // WireframeCommandStack is NOT registered here – it is created by
@@ -165,6 +172,23 @@ public static class ServiceCollectionExtensions
     {
         services.TryAddSingleton<T>();
         services.AddSingleton<IDiagramStencilProvider>(sp => sp.GetRequiredService<T>());
+        return services;
+    }
+
+    /// <summary>
+    /// Replaces the default <see cref="NoOpNotificationService"/> with
+    /// <see cref="InMemoryNotificationStore"/> so notifications are kept in memory.
+    /// Also replaces <see cref="INotificationBadgeState"/> with the same store
+    /// so the badge count is live.
+    ///
+    /// Use this in demo / test applications where you want to see notifications
+    /// without a real backend.
+    /// </summary>
+    public static IServiceCollection AddInMemoryNotifications(this IServiceCollection services)
+    {
+        services.AddSingleton<InMemoryNotificationStore>();
+        services.AddSingleton<INotificationService>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
+        services.AddSingleton<INotificationBadgeState>(sp => sp.GetRequiredService<InMemoryNotificationStore>());
         return services;
     }
 }

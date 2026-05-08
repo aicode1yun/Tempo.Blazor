@@ -1,0 +1,80 @@
+@namespace Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.NotionEditor.Interfaces
+@using Tempo.Blazor.NotionEditor.Models
+
+@if (Reactions is null) return;
+
+<div class="tm-comment-reactions" role="group" aria-label="@Loc["TmCommentReactions_Label"]">
+    @foreach (var reaction in Reactions)
+    {
+        var isActive = reaction.UserIds.Contains(CurrentUserId);
+        <button class="tm-comment-reaction @(isActive ? "tm-comment-reaction--active" : "")"
+                type="button"
+                title="@TooltipFor(reaction)"
+                @onclick="() => ToggleAsync(reaction)">
+            <span class="tm-comment-reaction__emoji">@reaction.Emoji</span>
+            <span class="tm-comment-reaction__count">@reaction.UserIds.Count</span>
+        </button>
+    }
+
+    <div class="tm-comment-reaction-picker">
+        <button class="tm-comment-reaction tm-comment-reaction--add"
+                type="button"
+                title="@Loc["TmCommentReactions_Add" ]"
+                @onclick="() => _showPicker = !_showPicker">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                <path d="M6 2v8M2 6h8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/>
+            </svg>
+        </button>
+        @if (_showPicker)
+        {
+            <div class="tm-comment-reaction-picker__popover">
+                @foreach (var emoji in DefaultEmojis)
+                {
+                    <button class="tm-comment-reaction-picker__item"
+                            type="button"
+                            @onclick="() => AddAsync(emoji)">
+                        @emoji
+                    </button>
+                }
+            </div>
+        }
+    </div>
+</div>
+
+@code {
+    private static readonly string[] DefaultEmojis = { "👍", "🔥", "❤️", "👀", "🎉" };
+    private bool _showPicker;
+
+    [Parameter] public IReadOnlyList<ICommentReaction> Reactions { get; set; } = Array.Empty<ICommentReaction>();
+    [Parameter] public string EntryId { get; set; } = string.Empty;
+    [Parameter] public string CurrentUserId { get; set; } = string.Empty;
+    [Parameter] public INotionCommentProvider Provider { get; set; } = default!;
+    [Parameter] public EventCallback OnChanged { get; set; }
+
+    private string TooltipFor(ICommentReaction r)
+    {
+        var names = r.UserIds.Select(id => id == CurrentUserId ? Loc["TmCommentReactions_You"] : id).ToList();
+        if (names.Count <= 3)
+            return string.Join(", ", names);
+        return string.Join(", ", names.Take(3)) + " " + string.Format(Loc["TmCommentReactions_More"], names.Count - 3);
+    }
+
+    private async Task ToggleAsync(ICommentReaction reaction)
+    {
+        if (reaction.UserIds.Contains(CurrentUserId))
+            await Provider.RemoveReactionAsync(EntryId, reaction.Emoji, CurrentUserId);
+        else
+            await Provider.AddReactionAsync(EntryId, reaction.Emoji, CurrentUserId);
+
+        _showPicker = false;
+        await OnChanged.InvokeAsync();
+    }
+
+    private async Task AddAsync(string emoji)
+    {
+        await Provider.AddReactionAsync(EntryId, emoji, CurrentUserId);
+        _showPicker = false;
+        await OnChanged.InvokeAsync();
+    }
+}

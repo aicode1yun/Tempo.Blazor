@@ -5,6 +5,7 @@ using Microsoft.JSInterop;
 using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.SharedUI;
+using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.Demo.Validators;
 using Tempo.Blazor.FluentValidation;
 using Tempo.Blazor.Interfaces;
@@ -34,6 +35,7 @@ builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)
 builder.Services.AddTempoBlazor();
+builder.Services.AddInMemoryNotifications();
 
 // Register Dashboard services
 builder.Services.AddSingleton<IWidgetRegistry, InMemoryWidgetRegistry>();
@@ -43,6 +45,9 @@ builder.Services.AddScoped<IDashboardProvider, InMemoryDashboardProvider>();
 builder.Services.AddTempoFluentValidation(typeof(PersonFormValidator).Assembly);
 
 var host = builder.Build();
+
+// Initialize E2E test helper
+DemoJsInterop.Initialize(host.Services.GetRequiredService<INotificationService>());
 
 // Apply persisted culture preference from localStorage before rendering
 try

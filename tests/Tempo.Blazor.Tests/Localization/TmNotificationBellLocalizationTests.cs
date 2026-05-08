@@ -1,7 +1,11 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Notifications;
-using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Services;
 
 namespace Tempo.Blazor.Tests.Localization;
 
@@ -11,30 +15,32 @@ namespace Tempo.Blazor.Tests.Localization;
 /// </summary>
 public class TmNotificationBellLocalizationTests : LocalizationTestBase
 {
-    private static List<INotificationItem> UnreadItems(int count) =>
-        Enumerable.Range(0, count)
-            .Select(i => (INotificationItem)new TestNotif($"u{i}", $"Notif {i}", false))
-            .ToList();
+    private readonly InMemoryNotificationStore _store = new();
+
+    public TmNotificationBellLocalizationTests()
+    {
+        Services.AddSingleton<INotificationService>(_store);
+        Services.AddSingleton<INotificationBadgeState>(_store);
+        Services.AddSingleton<NavigationManager>(new FakeNavManager());
+    }
 
     [Fact]
     public void TmNotificationBell_AriaLabel_UsesLocalizer()
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(0)));
+        var cut = RenderComponent<TmNotificationBell>();
 
-        cut.Find(".tm-notification-bell-button").GetAttribute("aria-label")
+        cut.Find(".tm-notification-bell__button").GetAttribute("aria-label")
             .Should().Be("Oznámení");
     }
 
     [Fact]
     public void TmNotificationBell_AriaLabel_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(0)));
+        var cut = RenderComponent<TmNotificationBell>();
 
-        cut.Find(".tm-notification-bell-button").GetAttribute("aria-label")
+        cut.Find(".tm-notification-bell__button").GetAttribute("aria-label")
             .Should().Be("Notifications");
     }
 
@@ -42,13 +48,12 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     public void TmNotificationBell_Title_UsesLocalizer()
     {
         UseCzechLocalization();
+        _store.NotifyAsync(MakeEvent("Test")).Wait();
 
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(1)));
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
 
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-title").TextContent
+        cut.Find(".tm-notification-bell__title").TextContent
             .Should().Be("Oznámení");
     }
 
@@ -56,13 +61,12 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     public void TmNotificationBell_MarkAllRead_UsesLocalizer()
     {
         UseCzechLocalization();
+        _store.NotifyAsync(MakeEvent("Test")).Wait();
 
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(2)));
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
 
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-mark-all-read").TextContent.Trim()
+        cut.Find(".tm-notification-bell__mark-all").TextContent.Trim()
             .Should().Be("Označit vše jako přečtené");
     }
 
@@ -71,36 +75,43 @@ public class TmNotificationBellLocalizationTests : LocalizationTestBase
     {
         UseCzechLocalization();
 
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(0)));
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
 
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-empty").TextContent
+        cut.Find(".tm-notification-bell__empty").TextContent
             .Should().Be("Žádná oznámení");
     }
 
     [Fact]
     public void TmNotificationBell_NoNotifications_English_ShowsEnglishText()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, UnreadItems(0)));
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
 
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-empty").TextContent
+        cut.Find(".tm-notification-bell__empty").TextContent
             .Should().Be("No notifications");
     }
 
-    private record TestNotif(
-        string Id,
-        string Title,
-        bool IsRead) : INotificationItem
+    private static NotificationEvent MakeEvent(string message) => new()
     {
-        public string?               Body      => null;
-        public DateTimeOffset        CreatedAt => DateTimeOffset.Now;
-        public string?               IconName  => null;
-        public NotificationSeverity  Severity  => NotificationSeverity.Info;
-        public string?               ActionUrl => null;
+        Type = NotificationType.Mention,
+        RecipientUserId = "demo",
+        SenderUserId = "alice",
+        SenderName = "Alice",
+        Message = message,
+        CreatedAt = DateTime.UtcNow
+    };
+
+    private sealed class FakeNavManager : NavigationManager
+    {
+        public FakeNavManager()
+        {
+            Initialize("https://localhost/", "https://localhost/");
+        }
+
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            Uri = ToAbsoluteUri(uri).ToString();
+        }
     }
 }

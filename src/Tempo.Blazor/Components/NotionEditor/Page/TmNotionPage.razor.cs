@@ -68,6 +68,19 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private string _blockCommentBlockId = string.Empty;
     private double _blockCommentTop;
     private double _blockCommentLeft;
+    private bool   _blockCommentStartInNewThreadMode;
+    /// <summary>Per-block comment summary for margin-thread indicators and hover tooltip.</summary>
+    public sealed record BlockCommentInfo(
+        int Unresolved,
+        int ResolvedUnread,
+        bool HasUnreadActivity,
+        string? LastAuthorName,
+        string? LastAuthorAvatar,
+        string? LastEntryText,
+        DateTime? LastEntryTime,
+        int ThreadCount);
+
+    private readonly Dictionary<string, BlockCommentInfo> _blockCommentCounts = new();
 
     // ── Text comment panel state ──────────────────────────────────────────────
 
@@ -80,6 +93,10 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     // ── Page comment panel state ──────────────────────────────────────────────
 
     private bool _pageCommentExpanded;
+
+    // ── Page-level unresolved comment count (header badge) ────────────────────
+
+    private int _pageUnresolvedCommentCount;
 
     // ── Slash menu state ─────────────────────────────────────────────────────
 
@@ -155,6 +172,11 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
                 _toolbarWatcherReady = true;
             }
             catch { /* SSR / test */ }
+            try
+            {
+                await JS.InvokeVoidAsync("tmNotionEditor.registerPageDotNetRef", _toolbarDotNetRef);
+            }
+            catch { /* SSR / test */ }
         }
     }
 
@@ -181,7 +203,22 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         finally
         {
             _isLoadingBlocks = false;
+            await LoadPageUnresolvedCommentCountAsync();
             StateHasChanged();
+        }
+    }
+
+    /// <summary>Loads the total unresolved comment count for the current page (header badge).</summary>
+    private async Task LoadPageUnresolvedCommentCountAsync()
+    {
+        if (Context.CommentProvider is null) return;
+        try
+        {
+            _pageUnresolvedCommentCount = await Context.CommentProvider.GetUnresolvedCommentsCountAsync(Page.Id.ToString());
+        }
+        catch
+        {
+            _pageUnresolvedCommentCount = 0;
         }
     }
 
@@ -418,8 +455,22 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _blockCommentBlockId = blockId;
         _blockCommentTop     = 150;
         _blockCommentLeft    = 300;
+        _blockCommentStartInNewThreadMode = false;
         _blockCommentVisible = true;
         StateHasChanged();
+
+        // Mark threads as read for current user
+        if (Context.CommentProvider is not null)
+        {
+            try
+            {
+                var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
+                foreach (var c in comments)
+                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id.ToString(), "demo");
+                await HandleBlockCommentCountChangedAsync(blockId);
+            }
+            catch { }
+        }
 
         // Try to position near the block
         try
@@ -433,14 +484,131 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
             }
         }
         catch { }
+
+        // Pre-load comment counts for margin thread indicator (resolved = resolved-but-unread)
+        if (Context.CommentProvider is not null)
+        {
+            try
+            {
+                var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
+                _blockCommentCounts[blockId] = ComputeBlockCommentInfo(comments);
+                StateHasChanged();
+            }
+            catch { }
+        }
     }
 
     private Task HandleBlockCommentClosedAsync()
     {
         _blockCommentVisible = false;
         _blockCommentBlockId = string.Empty;
+        _blockCommentStartInNewThreadMode = false;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    private async Task HandleBlockCommentCountChangedAsync(string blockId)
+    {
+        if (Context.CommentProvider is null || string.IsNullOrEmpty(blockId)) return;
+        try
+        {
+            var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
+            var info = ComputeBlockCommentInfo(comments);
+            if (info.Unresolved > 0 || info.ResolvedUnread > 0)
+                _blockCommentCounts[blockId] = info;
+            else
+                _blockCommentCounts.Remove(blockId);
+            await LoadPageUnresolvedCommentCountAsync();
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private static BlockCommentInfo ComputeBlockCommentInfo(IEnumerable<IBlockComment> comments)
+    {
+        var list = comments.ToList();
+        var unresolved   = list.Count(c => !c.IsResolved);
+        var resolvedUnread = list.Count(c => c.IsResolved && !c.ReadByUserIds.Contains("demo"));
+
+        // Find the latest entry across all threads for tooltip data
+        INotionCommentEntry? latest = null;
+        foreach (var c in list)
+        {
+            foreach (var e in c.Thread)
+            {
+                if (latest is null || e.CreatedAt > latest.CreatedAt)
+                    latest = e;
+            }
+        }
+
+        var text = latest?.HtmlContent;
+        if (!string.IsNullOrEmpty(text))
+        {
+            // Strip HTML tags for tooltip preview
+            text = System.Text.RegularExpressions.Regex.Replace(text, "<.*?>", string.Empty);
+            if (text.Length > 120)
+                text = text[..120] + "…";
+        }
+
+        var hasUnread = list.Any(c => c.LastActivityAt.HasValue && !c.ReadByUserIds.Contains("demo"));
+
+        return new BlockCommentInfo(
+            unresolved,
+            resolvedUnread,
+            hasUnread,
+            latest?.AuthorDisplayName,
+            latest?.AuthorAvatarUrl,
+            text,
+            latest?.CreatedAt,
+            list.Count);
+    }
+
+    private async Task HandleBlockNewThreadAsync(string blockId)
+    {
+        _blockCommentBlockId = blockId;
+        _blockCommentTop     = 150;
+        _blockCommentLeft    = 300;
+        _blockCommentStartInNewThreadMode = true;
+        _blockCommentVisible = true;
+        StateHasChanged();
+
+        // Mark existing threads as read for current user
+        if (Context.CommentProvider is not null)
+        {
+            try
+            {
+                var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
+                foreach (var c in comments)
+                    await Context.CommentProvider.MarkThreadAsReadAsync(c.Id.ToString(), "demo");
+                await HandleBlockCommentCountChangedAsync(blockId);
+            }
+            catch { }
+        }
+
+        // Try to position near the block
+        try
+        {
+            var rect = await JS.InvokeAsync<DomRect>("tmNotionEditor.getBlockBoundingRect", blockId);
+            if (rect is not null)
+            {
+                _blockCommentTop  = rect.Top;
+                _blockCommentLeft = rect.Left + rect.Width + 8;
+                StateHasChanged();
+            }
+        }
+        catch { }
+
+        // Pre-load comment counts
+        if (Context.CommentProvider is not null)
+        {
+            try
+            {
+                var comments = await Context.CommentProvider.GetBlockCommentsAsync(blockId);
+                _blockCommentCounts[blockId] = ComputeBlockCommentInfo(comments);
+                StateHasChanged();
+            }
+            catch { }
+        }
     }
 
     private Task HandleTextCommentAsync(string commentId)
@@ -464,13 +632,13 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         return Task.CompletedTask;
     }
 
-    private Task HandleTextCommentResolvedAsync()
+    private async Task HandleTextCommentResolvedAsync()
     {
         _textCommentVisible = false;
         _textCommentId      = string.Empty;
         _textCommentBlockId = string.Empty;
+        await LoadPageUnresolvedCommentCountAsync();
         StateHasChanged();
-        return Task.CompletedTask;
     }
 
     private Task HandlePageCommentExpandedChangedAsync(bool expanded)
@@ -478,6 +646,16 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _pageCommentExpanded = expanded;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    /// <summary>Scrolls the page to the first block with an unresolved comment (header badge click).</summary>
+    private async Task HandleCommentBadgeClickedAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.scrollToFirstUnresolvedComment");
+        }
+        catch { /* SSR / test */ }
     }
 
     // ── Helpers ───────────────────────────────────────────────────────────────
@@ -685,6 +863,19 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _textCommentLeft     = left + 40;
         _textCommentVisible  = true;
         _toolbarVisible      = false;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnTextCommentMarkClicked(string commentId, string blockId, double top, double left)
+    {
+        _textCommentId      = commentId;
+        _textCommentBlockId = blockId;
+        _textCommentTop     = top;
+        _textCommentLeft    = left + 40;
+        _textCommentVisible = true;
+        _toolbarVisible     = false;
         StateHasChanged();
         return Task.CompletedTask;
     }

@@ -8,4 +8,16 @@ public class BlockComment : IBlockComment
     public bool IsResolved { get; set; }
     public DateTime? ResolvedAt { get; set; }
     public string? ResolvedByUserId { get; set; }
+
+    /// <summary>User IDs who have marked this thread as read/dismissed.</summary>
+    public List<string> ReadByUserIds { get; set; } = new();
+
+    /// <summary>Timestamp of the most recent activity (new entry, reaction, resolve).</summary>
+    public DateTime? LastActivityAt { get; set; }
+
+    /// <summary>User IDs subscribed to this thread (receive notifications).</summary>
+    public List<string> SubscribedUserIds { get; set; } = new();
+
+    IReadOnlyList<string> IBlockComment.ReadByUserIds => ReadByUserIds;
+    IReadOnlyList<string> IBlockComment.SubscribedUserIds => SubscribedUserIds;
 }

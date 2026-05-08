@@ -22,6 +22,7 @@ window.tmNotionEditor = (function () {
     const _resizeHandles   = new WeakMap();
     const _scrollSpies     = new WeakMap();
     const _columnResizers  = new WeakMap();
+    let   _pageDotNetRef     = null; // TmNotionPage DotNet ref for comment mark clicks
 
     // ── Slash menu state ───────────────────────────────────────────────────────
     let _slashElement    = null; // contenteditable that triggered the slash menu
@@ -218,6 +219,7 @@ window.tmNotionEditor = (function () {
         const mark = document.createElement('mark');
         mark.className = 'tm-notion-comment-highlight';
         mark.dataset.commentId = String(commentId);
+        mark.dataset.blockId    = String(blockId || '');
         try {
             r.surroundContents(mark);
         } catch {
@@ -263,6 +265,30 @@ window.tmNotionEditor = (function () {
             mark.classList.toggle('tm-notion-comment-highlight--active', isActive);
         });
     }
+
+    function registerPageDotNetRef(ref) {
+        _pageDotNetRef = ref;
+    }
+
+    // Click on a comment-highlight mark → reopen the text-comment panel
+    (function _initCommentMarkClick() {
+        document.addEventListener('click', (e) => {
+            const mark = e.target.closest('mark.tm-notion-comment-highlight');
+            if (!mark || !_pageDotNetRef) return;
+            // Don't trigger if the user is selecting text (mouse down + drag)
+            const sel = window.getSelection();
+            if (sel && !sel.isCollapsed) return;
+            e.preventDefault();
+            e.stopPropagation();
+            const rect = mark.getBoundingClientRect();
+            const commentId = mark.dataset.commentId || '';
+            const blockId   = mark.dataset.blockId || '';
+            const top       = rect.top + window.scrollY;
+            const left      = rect.left + window.scrollX;
+            _pageDotNetRef.invokeMethodAsync('OnTextCommentMarkClicked', commentId, blockId, top, left)
+                .catch(() => {});
+        });
+    })();
 
     // ═══════════════════════════════════════════════════════════════════════════
     // 26.3 — Drag & drop
@@ -1036,6 +1062,46 @@ window.tmNotionEditor = (function () {
         _mentionTriggerLen = 1;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.11 — Mention click handler (delegated)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    const _mentionClickHandlers = new WeakMap();
+
+    function initMentionClickHandler(containerElement, dotNetRef) {
+        if (!containerElement) return;
+        destroyMentionClickHandler(containerElement);
+        const handler = (e) => {
+            const mention = e.target.closest('.tm-mention');
+            if (!mention) return;
+            const userId = mention.getAttribute('data-user-id');
+            if (!userId) return;
+            e.stopPropagation();
+            dotNetRef.invokeMethodAsync('OnMentionClicked', userId).catch(() => {});
+        };
+        containerElement.addEventListener('click', handler);
+        _mentionClickHandlers.set(containerElement, handler);
+    }
+
+    function destroyMentionClickHandler(containerElement) {
+        if (!containerElement) return;
+        const handler = _mentionClickHandlers.get(containerElement);
+        if (handler) {
+            containerElement.removeEventListener('click', handler);
+            _mentionClickHandlers.delete(containerElement);
+        }
+    }
+
+    function getMentionDropdownPosition(element) {
+        if (!element) return { top: 0, left: 0, width: 0 };
+        const rect = element.getBoundingClientRect();
+        return {
+            top: rect.bottom,
+            left: rect.left,
+            width: rect.width
+        };
+    }
+
     function adjustSlashMenuPosition(menuEl) {
         if (!menuEl) return;
         const rect   = menuEl.getBoundingClientRect();
@@ -1549,6 +1615,21 @@ window.tmNotionEditor = (function () {
         return window.location.origin + window.location.pathname + '#' + pageId;
     }
 
+    // ═══════════════════════════════════════════════════════════════════════════
+    // 26.10 — Scroll to first unresolved comment (header badge click)
+    // ═══════════════════════════════════════════════════════════════════════════
+
+    function scrollToFirstUnresolvedComment() {
+        const first = document.querySelector('.tm-notion-block__comment-thread');
+        if (!first) return;
+        const block = first.closest('[data-notion-block]');
+        if (!block) return;
+        block.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        // Add a brief highlight flash
+        block.classList.add('tm-notion-block--highlight-flash');
+        setTimeout(() => block.classList.remove('tm-notion-block--highlight-flash'), 1200);
+    }
+
     // ── Public API ─────────────────────────────────────────────────────────────
     return {
         // 26.1
@@ -1557,7 +1638,7 @@ window.tmNotionEditor = (function () {
         // 26.2
         getSelectionRange, getSelectionRect, applyFormat,
         queryFormatState, insertHtml, insertLink, wrapSelectionWithComment,
-        unwrapCommentHighlight, setCommentHighlightActive,
+        unwrapCommentHighlight, setCommentHighlightActive, registerPageDotNetRef,
         getBlockBoundingRect,
         // 26.3
         initDragDrop, destroyDragDrop,
@@ -1577,6 +1658,7 @@ window.tmNotionEditor = (function () {
         initColumnResize, destroyColumnResize,
         // 26.9
         scrollToBlock, initSmoothScrollSpy, destroyScrollSpy,
+        scrollToFirstUnresolvedComment,
         // 91.1
         updateCollabCursors, clearCollabCursors,
         // 30.1
@@ -1610,7 +1692,10 @@ window.tmNotionEditor = (function () {
         // 87.1
         registerPageSearch, destroyPageSearch,
         // 88.1
-        downloadFileStream, copyToClipboard, getPageUrl
+        downloadFileStream, copyToClipboard, getPageUrl,
+        // 26.11
+        initMentionClickHandler, destroyMentionClickHandler,
+        getMentionDropdownPosition
     };
 })();
 

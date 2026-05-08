@@ -21,6 +21,77 @@
      data-block-type="@Block.Type"
      @ref="_blockRef">
 
+    @* ── Comment margin thread (visible when block has comments) ──────────── *@
+    @if (BlockUnresolvedCount > 0 || BlockResolvedUnreadCount > 0)
+    {
+        <div class="tm-notion-block__thread-wrap"
+             @onmouseenter="ShowTooltipDelayed"
+             @onmouseleave="HideTooltip">
+            <button class="tm-notion-block__comment-thread @(BlockUnresolvedCount > 0 ? "" : "tm-notion-block__comment-thread--resolved") @(BlockHasUnreadActivity ? "tm-notion-block__comment-thread--unread" : "")"
+                    type="button"
+                    title="@Loc["TmNotionBlock_Comments"]"
+                    @onclick="HandleCommentThreadClickedAsync"
+                    @onclick:stopPropagation="true">
+                @if (BlockHasUnreadActivity)
+                {
+                    <span class="tm-notion-block__comment-thread-dot" aria-hidden="true"></span>
+                }
+                else if (BlockThreadCount > 1)
+                {
+                    <span class="tm-notion-block__comment-thread-count">@BlockUnresolvedCount</span>
+                    @if (BlockResolvedUnreadCount > 0)
+                    {
+                        <span class="tm-notion-block__comment-thread-resolved-count">@BlockResolvedUnreadCount</span>
+                    }
+                }
+                else if (BlockUnresolvedCount > 0)
+                {
+                    <span class="tm-notion-block__comment-thread-count">@BlockUnresolvedCount</span>
+                }
+                else if (BlockResolvedUnreadCount > 0)
+                {
+                    <span class="tm-notion-block__comment-thread-resolved">@BlockResolvedUnreadCount</span>
+                }
+                else
+                {
+                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                        <circle cx="6" cy="6" r="4.5" stroke="currentColor" stroke-width="1.2"/>
+                        <path d="M3.5 6l1.5 1.5 2.5-2.5" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                }
+            </button>
+
+            @* Hover tooltip ───────────────────────────────────────────────── *@
+            @if (_tooltipVisible && !string.IsNullOrEmpty(BlockLastAuthorName))
+            {
+                <div class="tm-notion-block__thread-tooltip"
+                     role="tooltip"
+                     aria-label="@Loc["TmNotionBlock_ThreadTooltipLabel"]">
+                    <div class="tm-notion-block__thread-tooltip__avatar">
+                        @if (!string.IsNullOrEmpty(BlockLastAuthorAvatar))
+                        {
+                            <img src="@BlockLastAuthorAvatar" alt="" />
+                        }
+                        else
+                        {
+                            <span>@BlockLastAuthorName[..1]</span>
+                        }
+                    </div>
+                    <div class="tm-notion-block__thread-tooltip__body">
+                        <div class="tm-notion-block__thread-tooltip__meta">
+                            <span class="tm-notion-block__thread-tooltip__author">@BlockLastAuthorName</span>
+                            <span class="tm-notion-block__thread-tooltip__time">@FormatRelativeTime(BlockLastEntryTime)</span>
+                        </div>
+                        @if (!string.IsNullOrEmpty(BlockLastEntryText))
+                        {
+                            <p class="tm-notion-block__thread-tooltip__text">@BlockLastEntryText</p>
+                        }
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
     @* ── Block handle (add + drag + options menu) ──────────────────────────── *@
     @if (!ReadOnly)
     {
@@ -32,6 +103,7 @@
                              OnMoveTo="HandleMoveToAsync"
                              OnCopyLink="HandleCopyLinkAsync"
                              OnComment="HandleCommentAsync"
+                             OnNewThread="HandleNewThreadAsync"
                              OnTextColorChange="HandleTextColorChangeAsync"
                              OnBackgroundChange="HandleBackgroundColorChangeAsync" />
     }

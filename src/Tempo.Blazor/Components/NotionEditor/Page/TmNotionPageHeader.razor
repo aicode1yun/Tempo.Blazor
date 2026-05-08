@@ -143,18 +143,32 @@
         </div>
     }
 
-    @* Title *@
-    <h1 class="tm-notion-header-title tm-notion-editable tm-notion-h1
-               @(ReadOnly ? "" : "tm-notion-header-title--editable")"
-        contenteditable="@(!ReadOnly ? "true" : "false")"
-        data-placeholder="@Loc["TmNotionPage_TitlePlaceholder"]"
-        spellcheck="true"
-        aria-label="@Loc["TmNotionPage_TitlePlaceholder"]"
-        @ref="_titleRef"
-        @oninput="OnTitleInput"
-        @onblur="OnTitleBlurAsync"
-        @onkeydown="OnTitleKeyDownAsync">
-    </h1>
+    @* Title + comment badge *@
+    <div class="tm-notion-header-title-row">
+        <h1 class="tm-notion-header-title tm-notion-editable tm-notion-h1
+                   @(ReadOnly ? "" : "tm-notion-header-title--editable")"
+            contenteditable="@(!ReadOnly ? "true" : "false")"
+            data-placeholder="@Loc["TmNotionPage_TitlePlaceholder"]"
+            spellcheck="true"
+            aria-label="@Loc["TmNotionPage_TitlePlaceholder"]"
+            @ref="_titleRef"
+            @oninput="OnTitleInput"
+            @onblur="OnTitleBlurAsync"
+            @onkeydown="OnTitleKeyDownAsync">
+        </h1>
+
+        @if (UnresolvedCommentCount > 0)
+        {
+            <button class="tm-notion-header-comment-badge"
+                    type="button"
+                    title="@string.Format(Loc["TmNotionPageHeader_UnresolvedComments"], UnresolvedCommentCount)"
+                    aria-label="@string.Format(Loc["TmNotionPageHeader_UnresolvedComments"], UnresolvedCommentCount)"
+                    @onclick="OnCommentBadgeClicked"
+                    @onclick:stopPropagation="true">
+                @UnresolvedCommentCount
+            </button>
+        }
+    </div>
 
     @* Description *@
     @if (_showDescription || !string.IsNullOrEmpty(Page.Description))

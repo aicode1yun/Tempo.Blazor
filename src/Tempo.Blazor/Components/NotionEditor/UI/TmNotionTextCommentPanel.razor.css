@@ -207,8 +207,31 @@
 
 .tm-ntcp__entry {
     display: flex;
+    flex-direction: row;
+    align-items: flex-start;
+}
+
+.tm-ntcp__entry-indent {
+    flex-shrink: 0;
+    width: 0;
+    border-left: 2px solid var(--tm-border, rgba(55,53,47,0.10));
+    margin-right: 9px;
+    align-self: stretch;
+    min-height: 20px;
+}
+
+.tm-ntcp__entry--level-1 .tm-ntcp__entry-indent { width: 12px; }
+.tm-ntcp__entry--level-2 .tm-ntcp__entry-indent { width: 24px; }
+.tm-ntcp__entry--level-3 .tm-ntcp__entry-indent { width: 36px; }
+.tm-ntcp__entry--level-4 .tm-ntcp__entry-indent { width: 48px; }
+.tm-ntcp__entry--level-5 .tm-ntcp__entry-indent { width: 60px; }
+
+.tm-ntcp__entry-content {
+    flex: 1;
+    display: flex;
     gap: 9px;
     align-items: flex-start;
+    min-width: 0;
 }
 
 .tm-ntcp__avatar {
@@ -354,6 +377,39 @@
 
 .tm-ntcp__edit-cancel:hover { background: var(--tm-bg-hover, rgba(55,53,47,0.06)); }
 
+/* ── Inline reply ──────────────────────────────────────────────────────────── */
+
+.tm-ntcp__inline-reply {
+    margin-top: 5px;
+    padding: 8px;
+    background: var(--tm-bg-subtle, rgba(55,53,47,0.02));
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.10));
+    border-radius: 6px;
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+}
+
+.tm-ntcp__reply-btns {
+    display: flex;
+    gap: 6px;
+}
+
+.tm-ntcp__reply-cancel {
+    padding: 4px 10px;
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 5px;
+    background: transparent;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    font-size: 12px;
+    cursor: pointer;
+    transition: background 80ms;
+}
+
+.tm-ntcp__reply-cancel:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+}
+
 /* ── Reply ─────────────────────────────────────────────────────────────────── */
 
 .tm-ntcp__reply {
@@ -427,6 +483,31 @@
     font-size: 12px;
 }
 
+/* ── Quote blockquote ──────────────────────────────────────────────────────── */
+
+.tm-comment-quote {
+    margin: 3px 0;
+    padding: 5px 8px;
+    border-left: 3px solid var(--tm-accent, #2383e2);
+    background: var(--tm-bg-subtle, rgba(55,53,47,0.03));
+    border-radius: 0 4px 4px 0;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.75));
+    font-size: 12.5px;
+    line-height: 1.5;
+}
+
+/* ── Active reply branch highlight ─────────────────────────────────────────── */
+
+.tm-ntcp__entry--replying .tm-ntcp__entry-indent {
+    border-left-color: var(--tm-accent, #2383e2);
+    border-left-width: 3px;
+}
+
+.tm-ntcp__entry--replying .tm-ntcp__entry-content {
+    background: var(--tm-bg-hover, rgba(35,131,226,0.06));
+    border-radius: 6px;
+}
+
 /* ── Text highlight class (used on inline spans in blocks) ─────────────────── */
 
 ::deep .tm-text-comment-highlight {
@@ -443,4 +524,35 @@
 ::deep .tm-text-comment-highlight--resolved {
     background: transparent;
     text-decoration: none;
+}
+
+/* ── Watch button ──────────────────────────────────────────────────────────── */
+
+.tm-ntcp__watch-btn {
+    display: flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 8px;
+    border: 1px solid var(--tm-border, rgba(55,53,47,0.16));
+    border-radius: 5px;
+    background: transparent;
+    font-size: 12px;
+    color: var(--tm-text-secondary, rgba(55,53,47,0.65));
+    cursor: pointer;
+    transition: background 80ms, color 80ms, border-color 80ms;
+}
+
+.tm-ntcp__watch-btn:hover {
+    background: var(--tm-bg-hover, rgba(55,53,47,0.06));
+    color: var(--tm-text-primary, rgb(55,53,47));
+    border-color: var(--tm-border-strong, rgba(55,53,47,0.30));
+}
+
+.tm-ntcp__watch-btn--watching {
+    color: var(--tm-accent, #2383e2);
+    border-color: rgba(35,131,226,0.35);
+}
+
+.tm-ntcp__watch-btn--watching:hover {
+    background: rgba(35,131,226,0.08);
 }

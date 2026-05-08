@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Page;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -24,6 +25,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     [Parameter] public bool ReadOnly { get; set; }
 
     [Parameter] public Guid? ActiveBlockId { get; set; }
+
+    /// <summary>Per-block comment summary for margin-thread indicators and hover tooltip.</summary>
+    [Parameter] public IReadOnlyDictionary<string, TmNotionPage.BlockCommentInfo> BlockCommentCounts { get; set; } = new Dictionary<string, TmNotionPage.BlockCommentInfo>();
 
     /// <summary>Fired when blocks are reordered via drag-and-drop (sourceIndex, targetIndex).</summary>
     [Parameter] public EventCallback<(int, int)> OnReorder { get; set; }
@@ -64,6 +68,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     /// <summary>Fired when a block's comment button is clicked. Arg is the block ID string.</summary>
     [Parameter] public EventCallback<string> OnComment { get; set; }
 
+    /// <summary>Fired when a block's new-thread button is clicked. Arg is the block ID string.</summary>
+    [Parameter] public EventCallback<string> OnNewThread { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                             _listRef;
@@ -91,6 +98,11 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnBlockReordered(int sourceIndex, int targetIndex) =>
         await OnReorder.InvokeAsync((sourceIndex, targetIndex));
+
+    // ── Comment info helper ──────────────────────────────────────────────────
+
+    internal TmNotionPage.BlockCommentInfo GetBlockCommentInfo(string blockId)
+        => BlockCommentCounts.TryGetValue(blockId, out var info) ? info : new TmNotionPage.BlockCommentInfo(0, 0, false, null, null, null, null, 0);
 
     // ── Numbering helper ─────────────────────────────────────────────────────
 

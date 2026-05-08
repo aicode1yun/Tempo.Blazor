@@ -1,13 +1,16 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-public partial class TmNotionTextCommentPanel : ComponentBase
+public partial class TmNotionTextCommentPanel : ComponentBase, IDisposable
 {
+    private const string CurrentUserId = "demo";
+
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
@@ -30,6 +33,7 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     [Parameter] public EventCallback          OnClosed        { get; set; }
     [Parameter] public EventCallback          OnResolved      { get; set; }
     [Parameter] public EventCallback<int>     OnCountChanged  { get; set; }
+    [Parameter] public EventCallback<string>  OnMentionClicked { get; set; }
 
     // ── State ─────────────────────────────────────────────────────────────────
 
@@ -42,11 +46,16 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     private double         _left;
     private bool           _wasVisible;
     private string         _activeCommentId = string.Empty;
+    private ElementReference _panelRef;
+    private DotNetObjectReference<TmNotionTextCommentPanel>? _dotNetRef;
 
     private Guid?          _editingEntryId;
     private string         _editText = string.Empty;
     private bool           _showDeleteConfirm;
     private INotionCommentEntry? _pendingDeleteEntry;
+
+    private Guid?          _replyingToEntryId;
+    private string         _inlineReplyText = string.Empty;
 
     // ── Lifecycle ─────────────────────────────────────────────────────────────
 
@@ -59,6 +68,8 @@ public partial class TmNotionTextCommentPanel : ComponentBase
             _replyText        = string.Empty;
             _error            = string.Empty;
             _editingEntryId   = null;
+            _replyingToEntryId = null;
+            _inlineReplyText  = string.Empty;
             _activeCommentId  = CommentId;
             await LoadAsync();
             await SetHighlightActiveAsync(true);
@@ -71,6 +82,27 @@ public partial class TmNotionTextCommentPanel : ComponentBase
         }
 
         _wasVisible = Visible;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            try { await JS.InvokeVoidAsync("tmNotionEditor.initMentionClickHandler", _panelRef, _dotNetRef); } catch { /* best-effort */ }
+        }
+    }
+
+    [JSInvokable("OnMentionClicked")]
+    public void HandleMentionClicked(string userId)
+    {
+        _ = OnMentionClicked.InvokeAsync(userId);
+    }
+
+    public void Dispose()
+    {
+        _dotNetRef?.Dispose();
+        try { JS.InvokeVoidAsync("tmNotionEditor.destroyMentionClickHandler", _panelRef); } catch { }
     }
 
     // ── Data ──────────────────────────────────────────────────────────────────
@@ -144,6 +176,77 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     {
         if (e.Key == "Enter" && (e.CtrlKey || e.MetaKey))
             await SendReplyAsync();
+        else if (e.Key == "Escape")
+            CancelInlineReply();
+    }
+
+    private async Task SendInlineReplyAsync()
+    {
+        if (Context.CommentProvider is null || _replyingToEntryId is null ||
+            string.IsNullOrWhiteSpace(_inlineReplyText) || _submitting || _comment is null)
+            return;
+
+        _submitting = true;
+        _error      = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await Context.CommentProvider.ReplyToCommentAsync(
+                _comment.Id.ToString(),
+                _inlineReplyText.Trim(),
+                _replyingToEntryId.ToString());
+
+            _replyingToEntryId = null;
+            _inlineReplyText   = string.Empty;
+            await LoadAsync();
+            await OnCountChanged.InvokeAsync(_comment?.Thread.Count ?? 0);
+        }
+        catch
+        {
+            _error = Loc["TmNotionTextComment_SendError"];
+        }
+        finally
+        {
+            _submitting = false;
+        }
+    }
+
+    private async Task HandleInlineReplyKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter" && (e.CtrlKey || e.MetaKey))
+            await SendInlineReplyAsync();
+        else if (e.Key == "Escape")
+            CancelInlineReply();
+    }
+
+    private void HandleEntryKeyDownAsync(KeyboardEventArgs e, INotionCommentEntry entry)
+    {
+        if (e.Key == "Enter" && _replyingToEntryId != entry.Id)
+        {
+            StartReplyToEntry(entry);
+        }
+        else if (e.Key == "Escape" && _replyingToEntryId == entry.Id)
+        {
+            CancelInlineReply();
+        }
+        else if (e.Key == "Escape" && _editingEntryId == entry.Id)
+        {
+            CancelEdit();
+        }
+    }
+
+    private void StartReplyToEntry(INotionCommentEntry entry)
+    {
+        _replyingToEntryId = entry.Id;
+        _inlineReplyText   = QuoteReply(entry);
+        StateHasChanged();
+    }
+
+    private void CancelInlineReply()
+    {
+        _replyingToEntryId = null;
+        _inlineReplyText   = string.Empty;
     }
 
     private async Task ResolveAsync()
@@ -272,6 +375,54 @@ public partial class TmNotionTextCommentPanel : ComponentBase
 
     private async Task CloseAsync() => await OnClosed.InvokeAsync();
 
+    private bool IsSubscribed => _comment?.SubscribedUserIds.Contains(CurrentUserId) ?? false;
+
+    private async Task SubscribeAsync()
+    {
+        if (Context.CommentProvider is null || _comment is null) return;
+        _error = string.Empty;
+        try
+        {
+            await Context.CommentProvider.SubscribeToThreadAsync(_comment.Id.ToString(), CurrentUserId);
+            if (_comment is BlockComment bc && !bc.SubscribedUserIds.Contains(CurrentUserId))
+                bc.SubscribedUserIds.Add(CurrentUserId);
+            else if (_comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2 && !bc2.SubscribedUserIds.Contains(CurrentUserId))
+                bc2.SubscribedUserIds.Add(CurrentUserId);
+        }
+        catch
+        {
+            _error = Loc["TmNotionTextComment_ActionError"];
+        }
+    }
+
+    private async Task UnsubscribeAsync()
+    {
+        if (Context.CommentProvider is null || _comment is null) return;
+        _error = string.Empty;
+        try
+        {
+            await Context.CommentProvider.UnsubscribeFromThreadAsync(_comment.Id.ToString(), CurrentUserId);
+            if (_comment is BlockComment bc)
+                bc.SubscribedUserIds.Remove(CurrentUserId);
+            else if (_comment is Tempo.Blazor.NotionEditor.Models.BlockComment bc2)
+                bc2.SubscribedUserIds.Remove(CurrentUserId);
+        }
+        catch
+        {
+            _error = Loc["TmNotionTextComment_ActionError"];
+        }
+    }
+
+    private static IEnumerable<CommentThreadNode> FlattenTree(List<CommentThreadNode> nodes)
+    {
+        foreach (var node in nodes)
+        {
+            yield return node;
+            foreach (var child in FlattenTree(node.Children))
+                yield return child;
+        }
+    }
+
     // ── Helpers ───────────────────────────────────────────────────────────────
 
     private static string AvatarInitial(string name)
@@ -294,5 +445,12 @@ public partial class TmNotionTextCommentPanel : ComponentBase
     {
         if (string.IsNullOrEmpty(html)) return string.Empty;
         return System.Text.RegularExpressions.Regex.Replace(html, "<[^>]*>", string.Empty);
+    }
+
+    private static string QuoteReply(INotionCommentEntry entry)
+    {
+        var text = StripHtml(entry.HtmlContent).Trim();
+        if (text.Length > 120) text = text[..120] + "…";
+        return $"> {entry.AuthorDisplayName}: \"{text}\"\n\n";
     }
 }

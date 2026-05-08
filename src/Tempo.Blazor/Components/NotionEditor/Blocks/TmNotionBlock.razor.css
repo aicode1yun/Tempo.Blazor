@@ -19,10 +19,186 @@
     background: var(--tm-notion-bg-block-hover);
 }
 
+/* ── Highlight flash (scroll-to-comment) ──────────────────────── */
+
+@keyframes blockHighlightFlash {
+    0%   { background: transparent; }
+    20%  { background: var(--tm-notion-bg-block-hover); }
+    100% { background: transparent; }
+}
+
+.tm-notion-block--highlight-flash {
+    animation: blockHighlightFlash 1.2s ease-out;
+}
+
 /* ── Dragging ghost ───────────────────────────────────────────── */
 
 .tm-notion-block.tm-notion-dragging {
     opacity: 0.4;
+}
+
+/* ── Comment margin thread ────────────────────────────────────── */
+
+.tm-notion-block__comment-thread {
+    position:        absolute;
+    left:            -36px;
+    top:             4px;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    min-width:       22px;
+    height:          22px;
+    padding:         0 5px;
+    border-radius:   11px;
+    background:      var(--tm-color-primary);
+    color:           var(--tm-color-primary-contrast);
+    font-size:       10px;
+    font-weight:     var(--tm-font-weight-semibold);
+    line-height:     1;
+    border:          none;
+    cursor:          pointer;
+    opacity:         0.85;
+    transition:      opacity 150ms ease, transform 150ms ease;
+    z-index:         10;
+}
+
+.tm-notion-block__comment-thread:hover {
+    opacity:   1;
+    transform: scale(1.05);
+}
+
+.tm-notion-block__comment-thread--resolved {
+    background: var(--tm-text-tertiary);
+    color:      var(--tm-bg-primary);
+    opacity:    0.6;
+}
+
+.tm-notion-block__comment-thread--resolved:hover {
+    opacity: 0.85;
+}
+
+.tm-notion-block__comment-thread--unread {
+    background: var(--tm-color-primary);
+    opacity: 1;
+}
+
+.tm-notion-block__comment-thread-dot {
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--tm-color-primary-contrast);
+}
+
+.tm-notion-block__comment-thread-count {
+    font-size: 10px;
+    font-weight: var(--tm-font-weight-semibold);
+    line-height: 1;
+}
+
+.tm-notion-block__comment-thread-resolved {
+    font-size: 9px;
+    font-weight: var(--tm-font-weight-medium);
+    line-height: 1;
+    opacity: 0.7;
+    margin-left: 3px;
+    padding-left: 3px;
+    border-left: 1px solid rgba(255,255,255,0.4);
+}
+
+.tm-notion-block__comment-thread-resolved-count {
+    margin-left: 2px;
+    font-size: 9px;
+    opacity: 0.7;
+    background: rgba(255,255,255,0.2);
+    border-radius: 8px;
+    padding: 0 3px;
+}
+
+/* ── Thread wrap + tooltip ────────────────────────────────────── */
+
+.tm-notion-block__thread-wrap {
+    position: absolute;
+    left:     -36px;
+    top:      4px;
+    z-index:  20;
+}
+
+.tm-notion-block__thread-tooltip {
+    position:         absolute;
+    left:             calc(100% + 8px);
+    top:              0;
+    display:          flex;
+    align-items:      flex-start;
+    gap:              8px;
+    width:            max-content;
+    max-width:        240px;
+    padding:          8px 10px;
+    background:       var(--tm-bg-primary);
+    border:           1px solid var(--tm-border-default);
+    border-radius:    var(--tm-radius-md);
+    box-shadow:       0 4px 12px rgba(0,0,0,0.12);
+    pointer-events:   none;
+    animation:        tooltipFadeIn 150ms ease-out;
+}
+
+@keyframes tooltipFadeIn {
+    from { opacity: 0; transform: translateX(-4px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+
+.tm-notion-block__thread-tooltip__avatar {
+    width:         24px;
+    height:        24px;
+    border-radius: 50%;
+    overflow:      hidden;
+    flex-shrink:   0;
+    background:    var(--tm-bg-tertiary);
+    display:       flex;
+    align-items:   center;
+    justify-content: center;
+    font-size:     10px;
+    font-weight:   var(--tm-font-weight-semibold);
+    color:         var(--tm-text-secondary);
+}
+
+.tm-notion-block__thread-tooltip__avatar img {
+    width:      100%;
+    height:     100%;
+    object-fit: cover;
+}
+
+.tm-notion-block__thread-tooltip__body {
+    display:        flex;
+    flex-direction: column;
+    gap:            2px;
+    min-width:      0;
+}
+
+.tm-notion-block__thread-tooltip__meta {
+    display:     flex;
+    align-items: center;
+    gap:         6px;
+    font-size:   11px;
+    line-height: 1.3;
+}
+
+.tm-notion-block__thread-tooltip__author {
+    font-weight: var(--tm-font-weight-semibold);
+    color:       var(--tm-text-primary);
+}
+
+.tm-notion-block__thread-tooltip__time {
+    color: var(--tm-text-tertiary);
+}
+
+.tm-notion-block__thread-tooltip__text {
+    margin:      0;
+    font-size:   11px;
+    line-height: 1.35;
+    color:       var(--tm-text-secondary);
+    white-space: nowrap;
+    overflow:    hidden;
+    text-overflow: ellipsis;
 }
 
 /* ── Handle visibility — pierce into TmNotionBlockHandle ──────── */

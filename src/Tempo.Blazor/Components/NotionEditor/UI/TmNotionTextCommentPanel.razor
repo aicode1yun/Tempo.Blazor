@@ -1,6 +1,7 @@
 @namespace Tempo.Blazor.Components.NotionEditor.UI
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Models
+@using Tempo.Blazor.Components.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.Services
 @using Tempo.Blazor.Components.Feedback
 
@@ -15,7 +16,8 @@
          aria-label="@Loc["TmNotionTextComment_PanelLabel"]"
          aria-modal="true"
          style="top:@(_top)px;left:@(_left)px"
-         @onkeydown:stopPropagation="true">
+         @onkeydown:stopPropagation="true"
+         @ref="_panelRef">
 
         @* ── Header ──────────────────────────────────────────────────────── *@
         <div class="tm-ntcp__header">
@@ -32,6 +34,26 @@
             <div class="tm-ntcp__header-actions">
                 @if (_comment is not null)
                 {
+                    @if (IsSubscribed)
+                    {
+                        <button class="tm-ntcp__watch-btn tm-ntcp__watch-btn--watching"
+                                type="button"
+                                title="@Loc["TmNotionTextComment_Unwatch"]"
+                                @onclick="UnsubscribeAsync">
+                            <TmIcon Name="@IconNames.BellOff" Size="IconSize.Xs" />
+                            @Loc["TmNotionTextComment_Unwatch"]
+                        </button>
+                    }
+                    else
+                    {
+                        <button class="tm-ntcp__watch-btn"
+                                type="button"
+                                title="@Loc["TmNotionTextComment_Watch"]"
+                                @onclick="SubscribeAsync">
+                            <TmIcon Name="@IconNames.Bell" Size="IconSize.Xs" />
+                            @Loc["TmNotionTextComment_Watch"]
+                        </button>
+                    }
                     @if (_comment.IsResolved)
                     {
                         <button class="tm-ntcp__resolve-btn tm-ntcp__resolve-btn--unresolve"
@@ -98,90 +120,142 @@
             }
             else
             {
-                @foreach (var entry in _comment.Thread)
+                var threadTree = CommentThreadHelper.BuildTree(_comment.Thread);
+                foreach (var node in FlattenTree(threadTree))
                 {
-                    <div class="tm-ntcp__entry" role="listitem">
-                        <div class="tm-ntcp__avatar" aria-hidden="true">
-                            @if (!string.IsNullOrEmpty(entry.AuthorAvatarUrl))
-                            {
-                                <img class="tm-ntcp__avatar-img" src="@entry.AuthorAvatarUrl" alt="" />
-                            }
-                            else
-                            {
-                                <span class="tm-ntcp__avatar-fallback">@AvatarInitial(entry.AuthorDisplayName)</span>
-                            }
-                        </div>
-                        <div class="tm-ntcp__entry-body">
-                            <div class="tm-ntcp__entry-meta">
-                                <span class="tm-ntcp__entry-author">@entry.AuthorDisplayName</span>
-                                <time class="tm-ntcp__entry-time" datetime="@entry.CreatedAt.ToString("O")">
-                                    @FormatTime(entry.CreatedAt)
-                                </time>
+                    <div class="tm-ntcp__entry tm-ntcp__entry--level-@node.Level @(_replyingToEntryId == node.Entry.Id ? "tm-ntcp__entry--replying" : "")"
+                         role="listitem"
+                         tabindex="0"
+                         @onkeydown="e => HandleEntryKeyDownAsync(e, node.Entry)">
+                            <div class="tm-ntcp__entry-indent"></div>
+                            <div class="tm-ntcp__entry-content">
+                                <div class="tm-ntcp__avatar" aria-hidden="true">
+                                    @if (!string.IsNullOrEmpty(node.Entry.AuthorAvatarUrl))
+                                    {
+                                        <img class="tm-ntcp__avatar-img" src="@node.Entry.AuthorAvatarUrl" alt="" />
+                                    }
+                                    else
+                                    {
+                                        <span class="tm-ntcp__avatar-fallback">@AvatarInitial(node.Entry.AuthorDisplayName)</span>
+                                    }
+                                </div>
+                                <div class="tm-ntcp__entry-body">
+                                    <div class="tm-ntcp__entry-meta">
+                                        <span class="tm-ntcp__entry-author">@node.Entry.AuthorDisplayName</span>
+                                        <time class="tm-ntcp__entry-time" datetime="@node.Entry.CreatedAt.ToString("O")">
+                                            @FormatTime(node.Entry.CreatedAt)
+                                        </time>
+                                    </div>
+
+                                    @if (_editingEntryId == node.Entry.Id)
+                                    {
+                                        <div class="tm-ntcp__edit-wrap">
+                                            <textarea class="tm-ntcp__edit-input"
+                                                      rows="3"
+                                                      @bind="_editText"
+                                                      @bind:event="oninput"
+                                                      aria-label="@Loc["TmNotionTextComment_EditLabel"]"></textarea>
+                                            <div class="tm-ntcp__edit-actions">
+                                                <button class="tm-ntcp__edit-save" type="button"
+                                                        disabled="@string.IsNullOrWhiteSpace(_editText)"
+                                                        @onclick="SaveEditAsync">@Loc["TmNotionTextComment_Save"]</button>
+                                                <button class="tm-ntcp__edit-cancel" type="button"
+                                                        @onclick="CancelEdit">@Loc["TmNotionTextComment_Cancel"]</button>
+                                            </div>
+                                        </div>
+                                    }
+                                    else
+                                    {
+                                        <div class="tm-ntcp__entry-text">@((MarkupString)CommentHtmlFormatter.Format(node.Entry.HtmlContent))</div>
+                                        @if (node.Entry.CreatedAt != node.Entry.UpdatedAt)
+                                        {
+                                            <span class="tm-ntcp__entry-edited">@Loc["TmNotionTextComment_Edited"]</span>
+                                        }
+                                        <TmCommentReactions Reactions="node.Entry.Reactions"
+                                                            EntryId="@node.Entry.Id.ToString()"
+                                                            CurrentUserId="@CurrentUserId"
+                                                            Provider="Context.CommentProvider!"
+                                                            OnChanged="StateHasChanged" />
+                                    }
+
+                                    @if (_editingEntryId != node.Entry.Id)
+                                    {
+                                        <div class="tm-ntcp__entry-actions" role="group">
+                                            <button class="tm-ntcp__entry-action"
+                                                    type="button"
+                                                    title="@Loc["TmNotionTextComment_ReplyToThis"]"
+                                                    @onclick="() => StartReplyToEntry(node.Entry)">
+                                                <svg width="11" height="11" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                    <path d="M6 2v5M6 7l-2-2M6 7l2-2" stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                </svg>
+                                                @Loc["TmNotionTextComment_ReplyToThis"]
+                                            </button>
+                                            @if (node.Entry.CanEdit)
+                                            {
+                                                <button class="tm-ntcp__entry-action" type="button"
+                                                        title="@Loc["TmNotionTextComment_Edit"]"
+                                                        @onclick="() => StartEdit(node.Entry)">
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                        <path d="M2 9l1.5.5 5.5-5.5-2-2L2 9zm7-7l1 1-1.5 1.5-1-1L9 2z"
+                                                              stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                    </svg>
+                                                    @Loc["TmNotionTextComment_Edit"]
+                                                </button>
+                                            }
+                                            @if (node.Entry.CanDelete)
+                                            {
+                                                <button class="tm-ntcp__entry-action tm-ntcp__entry-action--danger" type="button"
+                                                        title="@Loc["TmNotionTextComment_Delete"]"
+                                                        @onclick="() => DeleteEntryAsync(node.Entry)">
+                                                    <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
+                                                        <path d="M2 3.5h8M4.5 3.5V2h3v1.5M5 5.5v3.5M7 5.5v3.5M2.5 3.5l.5 6.5h6l.5-6.5"
+                                                              stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
+                                                    </svg>
+                                                    @Loc["TmNotionTextComment_Delete"]
+                                                </button>
+                                            }
+                                        </div>
+                                    }
+
+                                    @* Inline reply *@
+                                    @if (_replyingToEntryId == node.Entry.Id)
+                                    {
+                                        <div class="tm-ntcp__inline-reply">
+                                            <textarea class="tm-ntcp__reply-input"
+                                                      rows="2"
+                                                      placeholder="@Loc["TmNotionTextComment_ReplyPlaceholder"]"
+                                                      @bind="_inlineReplyText"
+                                                      @bind:event="oninput"
+                                                      @onkeydown="HandleInlineReplyKeyDownAsync"
+                                                      aria-label="@Loc["TmNotionTextComment_ReplyLabel"]"></textarea>
+                                            <div class="tm-ntcp__reply-actions">
+                                                <span class="tm-ntcp__reply-hint">@Loc["TmNotionTextComment_ReplyHint"]</span>
+                                                <div class="tm-ntcp__reply-btns">
+                                                    <button class="tm-ntcp__reply-cancel" type="button"
+                                                            @onclick="CancelInlineReply">@Loc["TmNotionTextComment_Cancel"]</button>
+                                                    <button class="tm-ntcp__reply-send" type="button"
+                                                            disabled="@(string.IsNullOrWhiteSpace(_inlineReplyText) || _submitting)"
+                                                            @onclick="SendInlineReplyAsync">
+                                                        @if (_submitting)
+                                                        {
+                                                            <span class="tm-ntcp__spinner tm-ntcp__spinner--sm" aria-hidden="true"></span>
+                                                        }
+                                                        @Loc["TmNotionTextComment_Reply"]
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
                             </div>
 
-                            @if (_editingEntryId == entry.Id)
-                            {
-                                <div class="tm-ntcp__edit-wrap">
-                                    <textarea class="tm-ntcp__edit-input"
-                                              rows="3"
-                                              @bind="_editText"
-                                              @bind:event="oninput"
-                                              aria-label="@Loc["TmNotionTextComment_EditLabel"]"></textarea>
-                                    <div class="tm-ntcp__edit-actions">
-                                        <button class="tm-ntcp__edit-save" type="button"
-                                                disabled="@string.IsNullOrWhiteSpace(_editText)"
-                                                @onclick="SaveEditAsync">@Loc["TmNotionTextComment_Save"]</button>
-                                        <button class="tm-ntcp__edit-cancel" type="button"
-                                                @onclick="CancelEdit">@Loc["TmNotionTextComment_Cancel"]</button>
-                                    </div>
-                                </div>
-                            }
-                            else
-                            {
-                                <div class="tm-ntcp__entry-text">@((MarkupString)entry.HtmlContent)</div>
-                                @if (entry.CreatedAt != entry.UpdatedAt)
-                                {
-                                    <span class="tm-ntcp__entry-edited">@Loc["TmNotionTextComment_Edited"]</span>
-                                }
-                            }
-
-                            @if (_editingEntryId != entry.Id && (entry.CanEdit || entry.CanDelete))
-                            {
-                                <div class="tm-ntcp__entry-actions" role="group">
-                                    @if (entry.CanEdit)
-                                    {
-                                        <button class="tm-ntcp__entry-action" type="button"
-                                                title="@Loc["TmNotionTextComment_Edit"]"
-                                                @onclick="() => StartEdit(entry)">
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                                <path d="M2 9l1.5.5 5.5-5.5-2-2L2 9zm7-7l1 1-1.5 1.5-1-1L9 2z"
-                                                      stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-                                            </svg>
-                                            @Loc["TmNotionTextComment_Edit"]
-                                        </button>
-                                    }
-                                    @if (entry.CanDelete)
-                                    {
-                                        <button class="tm-ntcp__entry-action tm-ntcp__entry-action--danger" type="button"
-                                                title="@Loc["TmNotionTextComment_Delete"]"
-                                                @onclick="() => DeleteEntryAsync(entry)">
-                                            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true">
-                                                <path d="M2 3.5h8M4.5 3.5V2h3v1.5M5 5.5v3.5M7 5.5v3.5M2.5 3.5l.5 6.5h6l.5-6.5"
-                                                      stroke="currentColor" stroke-width="1.2" stroke-linecap="round" stroke-linejoin="round"/>
-                                            </svg>
-                                            @Loc["TmNotionTextComment_Delete"]
-                                        </button>
-                                    }
-                                </div>
-                            }
-                        </div>
                     </div>
                 }
             }
         </div>
 
         @* ── Reply input ─────────────────────────────────────────────────── *@
-        @if (_comment is null || !_comment.IsResolved)
+        @if ((_comment is null || !_comment.IsResolved) && _replyingToEntryId is null)
         {
             <div class="tm-ntcp__reply">
                 <textarea class="tm-ntcp__reply-input"

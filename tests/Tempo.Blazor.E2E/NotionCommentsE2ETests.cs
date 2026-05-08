@@ -14,12 +14,18 @@ public class NotionCommentsE2ETests : WasmTestBase
     //  Setup
     // ══════════════════════════════════════════════════════════════════════════
 
+    private async Task ClearNotificationsAsync(IPage page)
+    {
+        await page.EvaluateAsync("async () => { if (typeof DotNet !== 'undefined') await DotNet.invokeMethodAsync('Tempo.Blazor.Demo', 'ClearDemoNotificationsAsync'); }");
+        await page.WaitForTimeoutAsync(200);
+    }
+
     private async Task<IPage> OpenNotionEditorAsync()
     {
         var context = await CreateContextAsync();
         var page = await context.NewPageAsync();
         await page.GotoAsync($"{BaseUrl}/notion-editor");
-        await page.WaitForLoadStateAsync(LoadState.NetworkIdle);
+        await WaitForAppReadyAsync(page);
         await page.WaitForSelectorAsync(".tm-notion-editor", new PageWaitForSelectorOptions { Timeout = 30000 });
         await page.WaitForTimeoutAsync(2000);
         return page;
@@ -159,6 +165,140 @@ public class NotionCommentsE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "block_comment_close");
     }
 
+    [TestMethod]
+    [Description("Margin thread badge appears after adding a block comment")]
+    public async Task BlockComment_MarginThread_Visible()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+        await firstBlock.HoverAsync();
+        var menuBtn = firstBlock.Locator(".tm-notion-handle__btn").Last;
+        await menuBtn.ClickAsync();
+        var commentBtn = page.Locator(".tm-notion-ctx__item:has-text('Comment')").First;
+        await commentBtn.ClickAsync();
+
+        await AddBlockCommentAsync(page, "Margin thread test");
+
+        // Close panel
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify margin thread badge is visible on the block.
+        // New unread comments render a dot indicator instead of a number.
+        var badge = firstBlock.Locator(".tm-notion-block__comment-thread").First;
+        await badge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var className = await badge.EvaluateAsync<string>("el => el.className");
+        Assert.IsTrue(className.Contains("tm-notion-block__comment-thread--unread"), "Badge should have unread class for new comment");
+        await TakeScreenshotAsync(page, "block_comment_margin_thread_visible");
+    }
+
+    [TestMethod]
+    [Description("Resolved block comment shows gray checkmark badge")]
+    public async Task BlockComment_ResolvedBadge_ShowsCheckmark()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Comment to resolve");
+
+        // Resolve
+        var resolveBtn = page.Locator(".tm-nbcp__resolve-btn").Filter(new() { HasText = "Resolve" }).First;
+        await resolveBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Close panel
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify resolved checkmark badge
+        var resolvedBadge = firstBlock.Locator(".tm-notion-block__comment-thread--resolved").First;
+        await resolvedBadge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await resolvedBadge.IsVisibleAsync(), "Resolved checkmark badge should be visible");
+        await TakeScreenshotAsync(page, "block_comment_resolved_badge");
+    }
+
+    [TestMethod]
+    [Description("Mark as read hides the resolved badge")]
+    public async Task BlockComment_MarkAsRead_HidesBadge()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Comment to mark as read");
+
+        // Resolve
+        var resolveBtn = page.Locator(".tm-nbcp__resolve-btn").Filter(new() { HasText = "Resolve" }).First;
+        await resolveBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Close panel
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify resolved badge exists (resolved but still unread)
+        var resolvedBadge = firstBlock.Locator(".tm-notion-block__comment-thread--resolved").First;
+        await resolvedBadge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        // Click resolved badge to reopen panel — panel auto-marks threads as read on open
+        await resolvedBadge.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.WaitForTimeoutAsync(500);
+
+        // Close panel again
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify badge is gone (auto-mark-as-read cleared the resolved-unread count)
+        var badgeAfter = firstBlock.Locator(".tm-notion-block__comment-thread");
+        Assert.IsTrue(await badgeAfter.CountAsync() == 0, "Resolved badge should disappear after auto-mark-as-read on panel open");
+        await TakeScreenshotAsync(page, "block_comment_mark_as_read");
+    }
+
+    [TestMethod]
+    [Description("Hovering margin thread badge shows tooltip with author and preview")]
+    public async Task BlockComment_HoverTooltip_ShowsAuthorAndPreview()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Tooltip preview test comment");
+
+        // Close panel
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Hover badge and wait for debounce + animation
+        var badge = firstBlock.Locator(".tm-notion-block__comment-thread").First;
+        await badge.HoverAsync();
+        await page.WaitForTimeoutAsync(450);
+
+        // Verify tooltip is visible
+        var tooltip = firstBlock.Locator(".tm-notion-block__thread-tooltip").First;
+        await tooltip.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await tooltip.IsVisibleAsync(), "Tooltip should appear on hover");
+
+        // Verify author name
+        var author = tooltip.Locator(".tm-notion-block__thread-tooltip__author").First;
+        var authorText = await author.TextContentAsync();
+        Assert.IsFalse(string.IsNullOrEmpty(authorText), "Tooltip should show author name");
+
+        // Verify preview text
+        var preview = tooltip.Locator(".tm-notion-block__thread-tooltip__text").First;
+        var previewText = await preview.TextContentAsync();
+        StringAssert.Contains(previewText, "Tooltip preview test comment");
+
+        await TakeScreenshotAsync(page, "block_comment_hover_tooltip");
+
+        // Move mouse away — tooltip should disappear
+        await page.Mouse.MoveAsync(0, 0);
+        await page.WaitForTimeoutAsync(200);
+        Assert.IsFalse(await tooltip.IsVisibleAsync(), "Tooltip should hide on mouse leave");
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  Page Comments
     // ══════════════════════════════════════════════════════════════════════════
@@ -294,6 +434,96 @@ public class NotionCommentsE2ETests : WasmTestBase
         await TakeScreenshotAsync(page, "page_comment_delete");
     }
 
+    [TestMethod]
+    [Description("Mark all page comments as read via panel toolbar")]
+    public async Task PageComment_MarkAllAsRead()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ExpandPageCommentPanelAsync(page);
+
+        // Click "Mark all as read" button in panel toolbar
+        var markAllBtn = page.Locator(".tm-npcp__mark-all-read").First;
+        await markAllBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await markAllBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify no error is shown
+        var error = page.Locator(".tm-npcp__error").First;
+        Assert.IsFalse(await error.IsVisibleAsync(), "Mark all as read should not produce an error");
+        await TakeScreenshotAsync(page, "page_comment_mark_all_as_read");
+    }
+
+    [TestMethod]
+    [Description("Mark all comments as read via page settings menu")]
+    public async Task PageComment_MarkAllAsRead_SettingsMenu()
+    {
+        var page = await OpenNotionEditorAsync();
+
+        // Open page settings menu (three dots)
+        var settingsBtn = page.Locator(".tm-npsm-trigger").First;
+        await settingsBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await settingsBtn.ClickAsync();
+
+        // Click "Mark all comments as read"
+        var markAllBtn = page.Locator(".tm-npsm__item").Filter(new() { HasText = "Mark all comments as read" }).First;
+        await markAllBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await markAllBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(800);
+
+        // Verify success toast appears
+        var toast = page.Locator(".tm-npsm__toast").First;
+        await toast.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var toastText = await toast.TextContentAsync();
+        StringAssert.Contains(toastText, "All comments marked as read");
+        await TakeScreenshotAsync(page, "page_comment_mark_all_as_read_settings");
+    }
+
+    [TestMethod]
+    [Description("Header badge shows unresolved comment count next to page title")]
+    public async Task PageComment_HeaderBadge_ShowsCount()
+    {
+        var page = await OpenNotionEditorAsync();
+
+        // The demo page is pre-seeded with page comments; badge should be visible.
+        var headerBadge = page.Locator(".tm-notion-header-comment-badge").First;
+        await headerBadge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var countText = await headerBadge.TextContentAsync();
+        Assert.IsFalse(string.IsNullOrEmpty(countText), "Header badge should show a count");
+        Assert.IsTrue(int.TryParse(countText, out var count) && count > 0,
+            "Header badge should show a positive unresolved count");
+        await TakeScreenshotAsync(page, "page_comment_header_badge");
+    }
+
+    [TestMethod]
+    [Description("Clicking header badge scrolls to first unresolved comment block")]
+    public async Task PageComment_HeaderBadge_ClickScrollsToFirstUnresolved()
+    {
+        var page = await OpenNotionEditorAsync();
+
+        // First add a block comment so we have an unresolved block to scroll to
+        var firstBlock = page.Locator("[data-notion-block]").First;
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Scroll target comment");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Scroll to top first
+        await page.EvaluateAsync("() => window.scrollTo(0, 0)");
+        await page.WaitForTimeoutAsync(300);
+
+        // Click header badge
+        var headerBadge = page.Locator(".tm-notion-header-comment-badge").First;
+        await headerBadge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await headerBadge.ClickAsync();
+        await page.WaitForTimeoutAsync(800);
+
+        // Verify first unresolved block is visible in viewport
+        var firstUnresolved = page.Locator(".tm-notion-block__comment-thread").First;
+        Assert.IsTrue(await firstUnresolved.IsVisibleAsync(), "First unresolved comment block should be visible after scroll");
+        await TakeScreenshotAsync(page, "page_comment_header_badge_scroll");
+    }
+
     // ══════════════════════════════════════════════════════════════════════════
     //  Text / Inline Comments
     // ══════════════════════════════════════════════════════════════════════════
@@ -418,17 +648,153 @@ public class NotionCommentsE2ETests : WasmTestBase
     }
 
     // ══════════════════════════════════════════════════════════════════════════
+    //  Nested Replies
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Reply to a specific block comment entry (nested reply)")]
+    public async Task BlockComment_NestedReply()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Parent comment");
+
+        var replyBtn = page.Locator(".tm-nbcp__entry-action").Filter(new() { HasText = "Reply to this" }).First;
+        await replyBtn.ClickAsync();
+
+        var inlineReply = page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-input").First;
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        await inlineReply.FillAsync("Nested reply text");
+        var sendBtn = page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var nestedEntry = page.Locator(".tm-nbcp__entry--level-1").Filter(new() { HasText = "Nested reply text" }).First;
+        await nestedEntry.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await nestedEntry.IsVisibleAsync(), "Nested reply should appear with indent");
+        await TakeScreenshotAsync(page, "block_comment_nested_reply");
+    }
+
+    [TestMethod]
+    [Description("Quote reply auto-inserts citation of parent entry")]
+    public async Task BlockComment_QuoteReply()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Parent comment for quote");
+
+        var replyBtn = page.Locator(".tm-nbcp__entry-action").Filter(new() { HasText = "Reply to this" }).First;
+        await replyBtn.ClickAsync();
+
+        var inlineReply = page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-input").First;
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var quoteText = await inlineReply.InputValueAsync();
+        StringAssert.Contains(quoteText, ">", "Quote reply should contain > blockquote marker");
+        StringAssert.Contains(quoteText, "Parent comment for quote", "Quote reply should cite parent text");
+        await TakeScreenshotAsync(page, "block_comment_quote_reply");
+    }
+
+    [TestMethod]
+    [Description("Cancel inline reply hides the textarea")]
+    public async Task BlockComment_NestedReply_Cancel()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Parent comment");
+
+        var replyBtn = page.Locator(".tm-nbcp__entry-action").Filter(new() { HasText = "Reply to this" }).First;
+        await replyBtn.ClickAsync();
+
+        var inlineReply = page.Locator(".tm-nbcp__inline-reply").First;
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var cancelBtn = page.Locator(".tm-nbcp__inline-reply .tm-nbcp__reply-cancel").First;
+        await cancelBtn.ClickAsync();
+
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+        Assert.IsFalse(await inlineReply.IsVisibleAsync(), "Inline reply should be hidden after cancel");
+        await TakeScreenshotAsync(page, "block_comment_nested_reply_cancel");
+    }
+
+    [TestMethod]
+    [Description("Reply to a specific page comment entry (nested reply)")]
+    public async Task PageComment_NestedReply()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ExpandPageCommentPanelAsync(page);
+        await AddPageCommentAsync(page, "Parent page comment");
+
+        var replyBtn = page.Locator(".tm-npcp__entry-action").Filter(new() { HasText = "Reply to this" }).First;
+        await replyBtn.ClickAsync();
+
+        var inlineReply = page.Locator(".tm-npcp__inline-reply .tm-npcp__reply-input").First;
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        await inlineReply.FillAsync("Nested page reply");
+        var sendBtn = page.Locator(".tm-npcp__inline-reply .tm-npcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var nestedEntry = page.Locator(".tm-npcp__entry--level-1").Filter(new() { HasText = "Nested page reply" }).First;
+        await nestedEntry.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await nestedEntry.IsVisibleAsync(), "Nested page reply should appear with indent");
+        await TakeScreenshotAsync(page, "page_comment_nested_reply");
+    }
+
+    [TestMethod]
+    [Description("Reply to a specific text comment entry (nested reply)")]
+    public async Task TextComment_NestedReply()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenTextCommentPanelAsync(page);
+        await AddTextCommentAsync(page, "Parent text comment");
+
+        var replyBtn = page.Locator(".tm-ntcp__entry-action").Filter(new() { HasText = "Reply to this" }).First;
+        await replyBtn.ClickAsync();
+
+        var inlineReply = page.Locator(".tm-ntcp__inline-reply .tm-ntcp__reply-input").First;
+        await inlineReply.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        await inlineReply.FillAsync("Nested text reply");
+        var sendBtn = page.Locator(".tm-ntcp__inline-reply .tm-ntcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var nestedEntry = page.Locator(".tm-ntcp__entry--level-1").Filter(new() { HasText = "Nested text reply" }).First;
+        await nestedEntry.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await nestedEntry.IsVisibleAsync(), "Nested text reply should appear with indent");
+        await TakeScreenshotAsync(page, "text_comment_nested_reply");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
     //  Helpers
     // ══════════════════════════════════════════════════════════════════════════
 
     private async Task OpenBlockCommentPanelAsync(IPage page)
     {
         var firstBlock = page.Locator("[data-notion-block]").First;
-        await firstBlock.HoverAsync();
-        var menuBtn = firstBlock.Locator(".tm-notion-handle__btn").Last;
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+    }
+
+    private async Task OpenBlockCommentPanelOnBlockAsync(IPage page, ILocator block)
+    {
+        await block.HoverAsync();
+        var menuBtn = block.Locator(".tm-notion-handle__btn").Last;
         await menuBtn.ClickAsync();
         var commentBtn = page.Locator(".tm-notion-ctx__item:has-text('Comment')").First;
         await commentBtn.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+    }
+
+    private async Task OpenNewThreadPanelOnBlockAsync(IPage page, ILocator block)
+    {
+        await block.HoverAsync();
+        var menuBtn = block.Locator(".tm-notion-handle__btn").Last;
+        await menuBtn.ClickAsync();
+        var newThreadBtn = page.Locator(".tm-notion-ctx__item:has-text('New thread')").First;
+        await newThreadBtn.ClickAsync();
         await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
     }
 
@@ -476,5 +842,640 @@ public class NotionCommentsE2ETests : WasmTestBase
         var sendBtn = page.Locator(".tm-ntcp__reply-send").First;
         await sendBtn.ClickAsync();
         await page.WaitForTimeoutAsync(500);
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Reactions
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Toggle reaction on block comment entry")]
+    public async Task BlockComment_ToggleReaction()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Reaction test comment");
+
+        var firstEntry = page.Locator(".tm-nbcp__entry").First;
+        var addBtn = firstEntry.Locator(".tm-comment-reaction--add").First;
+        await addBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        // Add 👍 via picker first
+        await addBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(200);
+        var picker = page.Locator(".tm-comment-reaction-picker__popover").First;
+        await picker.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var thumbsUpBtn = picker.Locator(".tm-comment-reaction-picker__item").First;
+        await thumbsUpBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        // Verify reaction is visible and active
+        var thumbsUp = firstEntry.Locator(".tm-comment-reaction").First;
+        await thumbsUp.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 10000 });
+        Assert.IsTrue(await thumbsUp.EvaluateAsync<bool>("el => el.classList.contains('tm-comment-reaction--active')"), "Reaction should be active after adding via picker");
+
+        // Click to toggle off
+        await thumbsUp.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        // Verify the same element is now inactive (or removed)
+        var reactionsAfterToggle = firstEntry.Locator(".tm-comment-reaction");
+        var countAfter = await reactionsAfterToggle.CountAsync();
+        if (countAfter > 0)
+        {
+            var firstReaction = reactionsAfterToggle.First;
+            var isActive = await firstReaction.EvaluateAsync<bool>("el => el.classList.contains('tm-comment-reaction--active')");
+            Assert.IsFalse(isActive, "Reaction should be inactive after toggle off");
+        }
+
+        // Re-add via picker to verify full cycle
+        var addBtn2 = firstEntry.Locator(".tm-comment-reaction--add").First;
+        await addBtn2.ClickAsync();
+        await page.WaitForTimeoutAsync(200);
+        var picker2 = page.Locator(".tm-comment-reaction-picker__popover").First;
+        await picker2.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await picker2.Locator(".tm-comment-reaction-picker__item").First.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        var thumbsUp2 = firstEntry.Locator(".tm-comment-reaction").First;
+        await thumbsUp2.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await thumbsUp2.EvaluateAsync<bool>("el => el.classList.contains('tm-comment-reaction--active')"), "Reaction should be active after re-adding via picker");
+        await TakeScreenshotAsync(page, "block_comment_toggle_reaction");
+    }
+
+    [TestMethod]
+    [Description("Add a new reaction via picker on block comment entry")]
+    public async Task BlockComment_AddReactionViaPicker()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Picker test comment");
+
+        var firstEntry = page.Locator(".tm-nbcp__entry").First;
+        var addBtn = firstEntry.Locator(".tm-comment-reaction--add").First;
+        await addBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        await addBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(200);
+
+        var picker = page.Locator(".tm-comment-reaction-picker__popover").First;
+        await picker.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var party = picker.Locator(".tm-comment-reaction-picker__item").Filter(new() { HasText = "🎉" }).First;
+        await party.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var newReaction = firstEntry.Locator(".tm-comment-reaction").Filter(new() { HasText = "🎉" }).First;
+        await newReaction.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await newReaction.IsVisibleAsync(), "New reaction should appear after picker selection");
+        await TakeScreenshotAsync(page, "block_comment_add_reaction_picker");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Mentions
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Mention autocomplete dropdown appears and inserts a mention")]
+    public async Task BlockComment_MentionAutocomplete()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+
+        var textarea = page.Locator(".tm-nbcp__reply-input").First;
+        await textarea.FillAsync("Hi @ali");
+        await page.WaitForTimeoutAsync(400);
+
+        var dropdown = page.Locator(".tm-comment-mention-dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await dropdown.IsVisibleAsync(), "Mention dropdown should appear");
+
+        // Use keyboard to select the first user
+        await textarea.PressAsync("ArrowDown");
+        await textarea.PressAsync("Enter");
+        await page.WaitForTimeoutAsync(400);
+
+        // Verify the textarea contains the inserted mention
+        var textareaValue = await textarea.InputValueAsync();
+        StringAssert.Contains(textareaValue, "@Alice");
+
+        // Submit comment
+        var sendBtn = page.Locator(".tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        var mention = page.Locator(".tm-nbcp__entry-text .tm-mention").First;
+        await mention.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await mention.IsVisibleAsync(), "Mention should be rendered in comment HTML");
+        await TakeScreenshotAsync(page, "block_comment_mention_autocomplete");
+    }
+
+    [TestMethod]
+    [Description("Mention is highlighted as a styled span in rendered comment HTML")]
+    public async Task BlockComment_MentionHighlight()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+
+        // Type a simple mention directly and submit
+        var textarea = page.Locator(".tm-nbcp__reply-input").First;
+        await textarea.FillAsync("Hello @alice");
+        await textarea.PressAsync("Escape"); // close dropdown if open
+        await page.WaitForTimeoutAsync(200);
+        var sendBtn = page.Locator(".tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(800);
+
+        var mention = page.Locator(".tm-nbcp__entry-text .tm-mention").First;
+        await mention.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var dataUserId = await mention.GetAttributeAsync("data-user-id");
+        Assert.IsFalse(string.IsNullOrEmpty(dataUserId), "Mention span should have data-user-id attribute");
+        await TakeScreenshotAsync(page, "block_comment_mention_highlight");
+    }
+
+    [TestMethod]
+    [Description("Mention in block comment generates a notification")]
+    public async Task BlockComment_Mention_Notification()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+        await OpenBlockCommentPanelAsync(page);
+
+        // Add a mention comment
+        var textarea = page.Locator(".tm-nbcp__reply-input").First;
+        await textarea.FillAsync("Hey @alice check this out");
+        await textarea.PressAsync("Escape");
+        await page.WaitForTimeoutAsync(200);
+        var sendBtn = page.Locator(".tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        // Close panel so backdrop doesn't intercept bell click
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Verify bell badge shows 1 unread notification
+        var badge = page.Locator(".tm-notification-bell__badge").First;
+        await badge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var count = await badge.InnerTextAsync();
+        Assert.AreEqual("1", count, "Bell badge should show 1 unread mention notification");
+
+        // Open notification dropdown
+        var bellBtn = page.Locator(".tm-notification-bell__button").First;
+        await bellBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var dropdown = page.Locator(".tm-notification-bell__dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        // Notification is stored for user "alice" (the mentioned user), not "demo"
+        // so the dropdown may be empty for current user, but the badge count proves
+        // the mention notification was generated.
+        await TakeScreenshotAsync(page, "block_comment_mention_notification");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Notifications
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Notification bell shows unread count after mention")]
+    public async Task Notification_Bell_ShowsCount()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+        await OpenBlockCommentPanelAsync(page);
+
+        // Add a mention comment to generate a notification
+        var textarea = page.Locator(".tm-nbcp__reply-input").First;
+        await textarea.FillAsync("Hey @alice check this out");
+        await textarea.PressAsync("Escape");
+        await page.WaitForTimeoutAsync(200);
+        var sendBtn = page.Locator(".tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        var badge = page.Locator(".tm-notification-bell__badge").First;
+        await badge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var count = await badge.InnerTextAsync();
+        Assert.AreEqual("1", count, "Bell badge should show 1 unread notification");
+        await TakeScreenshotAsync(page, "notification_bell_shows_count");
+    }
+
+    [TestMethod]
+    [Description("Clicking notification bell opens dropdown panel")]
+    public async Task Notification_Bell_ClickOpensPanel()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+        await OpenBlockCommentPanelAsync(page);
+
+        // Generate a notification via mention
+        var textarea = page.Locator(".tm-nbcp__reply-input").First;
+        await textarea.FillAsync("Hey @alice");
+        await textarea.PressAsync("Escape");
+        await page.WaitForTimeoutAsync(200);
+        var sendBtn = page.Locator(".tm-nbcp__reply-send").First;
+        await sendBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        // Close panel so backdrop doesn't intercept bell click
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Click the bell
+        var bellBtn = page.Locator(".tm-notification-bell__button").First;
+        await bellBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var dropdown = page.Locator(".tm-notification-bell__dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await dropdown.IsVisibleAsync(), "Notification dropdown should be visible");
+        await TakeScreenshotAsync(page, "notification_bell_click_opens");
+    }
+
+    [TestMethod]
+    [Description("Mark all as read clears notification bell badge")]
+    public async Task Notification_Panel_MarkAllAsRead()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+
+        // Inject a notification for the current user (demo)
+        await page.EvaluateAsync("async () => { if (typeof DotNet !== 'undefined') await DotNet.invokeMethodAsync('Tempo.Blazor.Demo', 'NotifyDemoAsync', 'Mark all read test', '/notion-editor'); }");
+        await page.WaitForTimeoutAsync(500);
+
+        // Open bell dropdown
+        var bellBtn = page.Locator(".tm-notification-bell__button").First;
+        await bellBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Click Mark all as read
+        var markAllBtn = page.Locator(".tm-notification-bell__mark-all").First;
+        await markAllBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await markAllBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Badge should disappear
+        var badge = page.Locator(".tm-notification-bell__badge").First;
+        Assert.AreEqual(0, await badge.CountAsync(), "Badge should disappear after mark all as read");
+        await TakeScreenshotAsync(page, "notification_panel_mark_all_read");
+    }
+
+    [TestMethod]
+    [Description("Watch/Unwatch thread button toggles subscription")]
+    public async Task BlockComment_SubscribeUnsubscribe()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenBlockCommentPanelAsync(page);
+        await AddBlockCommentAsync(page, "Subscribe test comment");
+
+        // Should show "Unwatch" because author is auto-subscribed
+        var unwatchBtn = page.Locator(".tm-nbcp__watch-btn--watching").First;
+        await unwatchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn.IsVisibleAsync(), "Unwatch button should be visible for auto-subscribed author");
+
+        // Click Unwatch
+        await unwatchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Should now show "Watch"
+        var watchBtn = page.Locator(".tm-nbcp__watch-btn").First;
+        await watchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await watchBtn.IsVisibleAsync(), "Watch button should appear after unsubscribing");
+
+        // Click Watch again
+        await watchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var unwatchBtn2 = page.Locator(".tm-nbcp__watch-btn--watching").First;
+        await unwatchBtn2.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn2.IsVisibleAsync(), "Unwatch button should reappear after subscribing");
+        await TakeScreenshotAsync(page, "block_comment_subscribe_unsubscribe");
+    }
+
+    [TestMethod]
+    [Description("Watch/Unwatch thread button toggles subscription in page comment panel")]
+    public async Task PageComment_SubscribeUnsubscribe()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ExpandPageCommentPanelAsync(page);
+        await AddPageCommentAsync(page, "Page subscribe test");
+
+        // Should show "Unwatch" because author is auto-subscribed
+        var unwatchBtn = page.Locator(".tm-npcp__watch-btn--watching").First;
+        await unwatchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn.IsVisibleAsync(), "Unwatch button should be visible for auto-subscribed author");
+
+        // Click Unwatch
+        await unwatchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Should now show "Watch"
+        var watchBtn = page.Locator(".tm-npcp__watch-btn").First;
+        await watchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await watchBtn.IsVisibleAsync(), "Watch button should appear after unsubscribing");
+
+        // Click Watch again
+        await watchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var unwatchBtn2 = page.Locator(".tm-npcp__watch-btn--watching").First;
+        await unwatchBtn2.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn2.IsVisibleAsync(), "Unwatch button should reappear after subscribing");
+        await TakeScreenshotAsync(page, "page_comment_subscribe_unsubscribe");
+    }
+
+    [TestMethod]
+    [Description("Watch/Unwatch thread button toggles subscription in text comment panel")]
+    public async Task TextComment_SubscribeUnsubscribe()
+    {
+        var page = await OpenNotionEditorAsync();
+        await OpenTextCommentPanelAsync(page);
+        await AddTextCommentAsync(page, "Text subscribe test");
+
+        // Should show "Unwatch" because author is auto-subscribed
+        var unwatchBtn = page.Locator(".tm-ntcp__watch-btn--watching").First;
+        await unwatchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn.IsVisibleAsync(), "Unwatch button should be visible for auto-subscribed author");
+
+        // Click Unwatch
+        await unwatchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        // Should now show "Watch"
+        var watchBtn = page.Locator(".tm-ntcp__watch-btn").First;
+        await watchBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await watchBtn.IsVisibleAsync(), "Watch button should appear after unsubscribing");
+
+        // Click Watch again
+        await watchBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var unwatchBtn2 = page.Locator(".tm-ntcp__watch-btn--watching").First;
+        await unwatchBtn2.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await unwatchBtn2.IsVisibleAsync(), "Unwatch button should reappear after subscribing");
+        await TakeScreenshotAsync(page, "text_comment_subscribe_unsubscribe");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Notification Navigation (2D.6)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Clicking a notification item navigates to its DeepLink")]
+    public async Task Notification_Panel_ClickNavigates()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+
+        // Inject a demo notification via JS interop
+        await page.EvaluateAsync("async () => { if (typeof DotNet !== 'undefined') await DotNet.invokeMethodAsync('Tempo.Blazor.Demo', 'NotifyDemoAsync', 'Navigate test', '/notion-editor#nav-test'); }");
+        await page.WaitForTimeoutAsync(500);
+
+        // Open bell dropdown
+        var bellBtn = page.Locator(".tm-notification-bell__button").First;
+        await bellBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(300);
+
+        var dropdown = page.Locator(".tm-notification-bell__dropdown").First;
+        await dropdown.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        // Click the notification item
+        var item = page.Locator(".tm-notification-bell__item").First;
+        await item.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await item.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify URL changed to include the hash
+        var url = page.Url;
+        StringAssert.Contains(url, "#nav-test", "Clicking notification should navigate to its DeepLink");
+        await TakeScreenshotAsync(page, "notification_panel_click_navigates");
+    }
+
+    [TestMethod]
+    [Description("New notification shows a toast when panel is closed")]
+    public async Task Notification_Toast_Appears()
+    {
+        var page = await OpenNotionEditorAsync();
+        await ClearNotificationsAsync(page);
+
+        // Ensure panel is closed — no-op, fresh page
+        // Inject a demo notification
+        await page.EvaluateAsync("async () => { if (typeof DotNet !== 'undefined') await DotNet.invokeMethodAsync('Tempo.Blazor.Demo', 'NotifyDemoAsync', 'Toast test', '/notion-editor'); }");
+        await page.WaitForTimeoutAsync(600);
+
+        // Verify toast appears
+        var toast = page.Locator(".tm-notification-toast").First;
+        await toast.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await toast.IsVisibleAsync(), "Toast should appear for new notification");
+
+        // Verify toast message
+        var msg = toast.Locator(".tm-notification-toast__message").First;
+        var text = await msg.TextContentAsync();
+        StringAssert.Contains(text, "Toast test");
+
+        await TakeScreenshotAsync(page, "notification_toast_appears");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Unread Indicators (2D.4)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("New block comment shows unread dot on margin thread badge")]
+    public async Task BlockComment_UnreadIndicator()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // Open block comment panel via context menu (block has no comments yet)
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+
+        // Add a comment — panel stays open, no read-mark happens because
+        // GetBlockCommentsAsync returned empty before the comment was created.
+        await AddBlockCommentAsync(page, "Unread dot test");
+
+        // Close panel
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // Verify unread dot is visible on the block badge
+        var dot = firstBlock.Locator(".tm-notion-block__comment-thread-dot").First;
+        await dot.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await dot.IsVisibleAsync(), "Unread dot should appear after adding a comment and closing panel");
+        await TakeScreenshotAsync(page, "block_comment_unread_indicator");
+    }
+
+    [TestMethod]
+    [Description("Opening block comment panel clears the unread dot")]
+    public async Task BlockComment_MarkAsRead_ClearsIndicator()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // 1. Open panel, add comment, close panel → dot visible
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Mark as read test");
+        var closeBtn = page.Locator(".tm-nbcp__close-btn").First;
+        await closeBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var dotBefore = firstBlock.Locator(".tm-notion-block__comment-thread-dot").First;
+        await dotBefore.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await dotBefore.IsVisibleAsync(), "Dot should be visible before re-opening panel");
+
+        // 2. Re-open panel → auto-mark-read clears the dot
+        await firstBlock.Locator(".tm-notion-block__comment-thread").First.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.WaitForTimeoutAsync(300);
+
+        // 3. Close panel
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 4. Verify dot is gone
+        var dotAfter = firstBlock.Locator(".tm-notion-block__comment-thread-dot");
+        Assert.AreEqual(0, await dotAfter.CountAsync(), "Unread dot should disappear after opening panel (auto-mark-read)");
+        await TakeScreenshotAsync(page, "block_comment_mark_as_read_clears");
+    }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Multiple Threads per Block (Phase 3)
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Create a second thread on the same block via New thread menu")]
+    public async Task BlockComment_MultipleThreads_Create()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // 1. Create first thread
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "First thread");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 2. Create second thread via New thread menu
+        await OpenNewThreadPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Second thread");
+        await page.WaitForTimeoutAsync(500);
+
+        // Panel shows detail of the newly created thread; click back to see list
+        var backBtn = page.Locator(".tm-nbcp__back-btn").First;
+        await backBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await backBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 3. Thread list should show both threads
+        var threadCards = page.Locator(".tm-nbcp__thread-card");
+        await threadCards.First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var cardCount = await threadCards.CountAsync();
+        Assert.AreEqual(2, cardCount, "Thread list should show 2 threads");
+
+        // 4. Verify previews
+        var preview1 = threadCards.Filter(new() { HasText = "First thread" }).First;
+        var preview2 = threadCards.Filter(new() { HasText = "Second thread" }).First;
+        Assert.IsTrue(await preview1.IsVisibleAsync(), "First thread preview should be visible");
+        Assert.IsTrue(await preview2.IsVisibleAsync(), "Second thread preview should be visible");
+
+        await TakeScreenshotAsync(page, "block_comment_multiple_threads_create");
+    }
+
+    [TestMethod]
+    [Description("Switch between threads in the panel list and detail views")]
+    public async Task BlockComment_MultipleThreads_Switch()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // 1. Create two threads
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Thread A");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        await OpenNewThreadPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Thread B");
+        await page.WaitForTimeoutAsync(500);
+
+        // Go back to thread list
+        var backBtn = page.Locator(".tm-nbcp__back-btn").First;
+        await backBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await backBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var threadCards = page.Locator(".tm-nbcp__thread-card");
+        await threadCards.First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        // 2. Click first thread card → detail view
+        var cardA = threadCards.Filter(new() { HasText = "Thread A" }).First;
+        await cardA.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var entryA = page.Locator(".tm-nbcp__entry-text").Filter(new() { HasText = "Thread A" }).First;
+        await entryA.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await entryA.IsVisibleAsync(), "Thread A detail should be visible");
+
+        // 3. Click back → list view
+        var backBtn2 = page.Locator(".tm-nbcp__back-btn").First;
+        await backBtn2.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var listAfterBack = page.Locator(".tm-nbcp__thread-list").First;
+        Assert.IsTrue(await listAfterBack.IsVisibleAsync(), "Thread list should reappear after back");
+
+        // 4. Click second thread card → detail view
+        var cardB = threadCards.Filter(new() { HasText = "Thread B" }).First;
+        await cardB.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        var entryB = page.Locator(".tm-nbcp__entry-text").Filter(new() { HasText = "Thread B" }).First;
+        await entryB.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await entryB.IsVisibleAsync(), "Thread B detail should be visible");
+
+        await TakeScreenshotAsync(page, "block_comment_multiple_threads_switch");
+    }
+
+    [TestMethod]
+    [Description("Margin badge shows correct thread count when multiple threads exist")]
+    public async Task BlockComment_MultipleThreads_BadgeCount()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // 1. Create first thread
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Badge thread 1");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 2. Create second thread
+        await OpenNewThreadPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Badge thread 2");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 3. Open panel via badge to mark threads as read (clears unread dot)
+        var badge = firstBlock.Locator(".tm-notion-block__comment-thread").First;
+        await badge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await badge.ClickAsync();
+        await page.Locator(".tm-nbcp").First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await page.WaitForTimeoutAsync(300);
+
+        // 4. Close panel — badge should now show count instead of dot
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 5. Verify badge shows "2" (unresolved count)
+        var countSpan = badge.Locator(".tm-notion-block__comment-thread-count").First;
+        await countSpan.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        var countText = await countSpan.TextContentAsync();
+        Assert.AreEqual("2", countText, "Badge should show unresolved count 2 when 2 threads exist");
+
+        await TakeScreenshotAsync(page, "block_comment_multiple_threads_badge");
     }
 }

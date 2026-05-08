@@ -1,148 +1,112 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
+using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Notifications;
-using Tempo.Blazor.Interfaces;
+using Tempo.Blazor.NotionEditor.Enums;
+using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
+using Tempo.Blazor.Services;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Notifications;
 
 public class TmNotificationBellTests : LocalizationTestBase
 {
-    private static TestNotification Unread(string id = "1", string title = "Test") =>
-        new(id, title, false, NotificationSeverity.Info);
+    private readonly InMemoryNotificationStore _store = new();
+    private readonly NotificationBadgeState _badge = new();
 
-    private static TestNotification Read(string id = "2", string title = "Read") =>
-        new(id, title, true, NotificationSeverity.Info);
-
-    private record TestNotification(
-        string Id,
-        string Title,
-        bool IsRead,
-        NotificationSeverity Severity,
-        string? Body             = null,
-        string? IconName         = null,
-        string? ActionUrl        = null) : INotificationItem
+    public TmNotificationBellTests()
     {
-        public DateTimeOffset CreatedAt { get; } = DateTimeOffset.Now.AddMinutes(-5);
+        Services.AddSingleton<INotificationService>(_store);
+        Services.AddSingleton<INotificationBadgeState>(_badge);
+        Services.AddSingleton<NavigationManager>(new FakeNavManager());
     }
 
     [Fact]
     public void Bell_ShowsBadge_WhenUnreadNotifications()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { Unread() }));
-
-        cut.FindAll(".tm-notification-badge").Should().HaveCount(1);
+        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.FindAll(".tm-notification-bell__badge").Should().HaveCount(1);
     }
 
     [Fact]
-    public void Bell_HidesBadge_WhenAllRead()
+    public void Bell_HidesBadge_WhenNoUnread()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { Read() }));
-
-        cut.FindAll(".tm-notification-badge").Should().BeEmpty();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.FindAll(".tm-notification-bell__badge").Should().BeEmpty();
     }
 
     [Fact]
     public void Bell_Click_OpensPanel()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { Unread() }));
-
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.FindAll(".tm-notification-dropdown").Should().HaveCount(1);
+        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
+        cut.FindAll(".tm-notification-bell__dropdown").Should().HaveCount(1);
     }
 
     [Fact]
-    public void Bell_MarkAsRead_CallsCallback()
+    public void Bell_MarkAllRead_ClearsBadge()
     {
-        string? markedId = null;
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications,  new[] { Unread("42") })
-            .Add(c => c.OnMarkAsRead,   (string id) => markedId = id));
-
-        cut.Find(".tm-notification-bell-button").Click();
-        cut.Find(".tm-notification-mark-read").Click();
-
-        markedId.Should().Be("42");
+        _store.NotifyAsync(MakeEvent("alice", "Test")).Wait();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
+        cut.Find(".tm-notification-bell__mark-all").Click();
+        cut.FindAll(".tm-notification-bell__badge").Should().BeEmpty();
     }
 
     [Fact]
-    public void Bell_MarkAllRead_CallsCallback()
+    public void Bell_NotificationItem_RendersMessage()
     {
-        var called = false;
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications,  new[] { Unread() })
-            .Add(c => c.OnMarkAllRead,  () => called = true));
-
-        cut.Find(".tm-notification-bell-button").Click();
-        cut.Find(".tm-notification-mark-all-read").Click();
-
-        called.Should().BeTrue();
-    }
-
-    [Fact]
-    public void Bell_NotificationItem_RendersTitle()
-    {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { Unread(title: "Deploy complete") }));
-
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-item-title").TextContent.Should().Contain("Deploy complete");
-    }
-
-    [Fact]
-    public void Bell_NotificationItem_SeverityIcon_Rendered()
-    {
-        var warning = new TestNotification("1", "Disk almost full", false, NotificationSeverity.Warning);
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { warning }));
-
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.FindAll(".tm-notification-severity").Should().NotBeEmpty();
+        _store.NotifyAsync(MakeEvent("alice", "Deploy complete")).Wait();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
+        cut.Find(".tm-notification-bell__message").TextContent.Should().Contain("Deploy complete");
     }
 
     [Fact]
     public void Bell_Empty_RendersEmptyState()
     {
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, Array.Empty<INotificationItem>()));
-
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.Find(".tm-notification-empty").Should().NotBeNull();
+        var cut = RenderComponent<TmNotificationBell>();
+        cut.Find(".tm-notification-bell__button").Click();
+        cut.Find(".tm-notification-bell__empty").Should().NotBeNull();
     }
 
     [Fact]
-    public void Bell_MaxVisible_LimitsItems()
+    public void Bell_Filter_ShowsOnlyUnread()
     {
-        var items = Enumerable.Range(1, 10)
-            .Select(i => Unread(i.ToString(), $"Notif {i}"))
-            .ToArray();
-
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, items)
-            .Add(c => c.MaxVisible,    3));
-
-        cut.Find(".tm-notification-bell-button").Click();
-
-        cut.FindAll(".tm-notification-item").Should().HaveCount(3);
+        _store.NotifyAsync(MakeEvent("alice", "Unread 1")).Wait();
+        _store.MarkAllAsReadAsync("demo").Wait();
+        _store.NotifyAsync(MakeEvent("bob", "Unread 2")).Wait();
+        var cut = RenderComponent<TmNotificationBell>(p => p.Add(c => c.CurrentUserId, "demo"));
+        cut.Find(".tm-notification-bell__button").Click();
+        cut.Find(".tm-notification-bell__filter").Click(); // switch to only unread
+        cut.FindAll(".tm-notification-bell__item").Should().HaveCount(1);
+        cut.Find(".tm-notification-bell__message").TextContent.Should().Contain("Unread 2");
     }
 
-    [Fact]
-    public void Bell_RelativeTime_UsesLocalizer()
+    private static NotificationEvent MakeEvent(string sender, string message) => new()
     {
-        var item = new TestNotification("1", "Test", false, NotificationSeverity.Info)
-            { };
-        var cut = RenderComponent<TmNotificationBell>(p => p
-            .Add(c => c.Notifications, new[] { item }));
+        Type = NotificationType.Mention,
+        RecipientUserId = "demo",
+        SenderUserId = sender,
+        SenderName = sender,
+        Message = message,
+        CreatedAt = DateTime.UtcNow
+    };
 
-        cut.Find(".tm-notification-bell-button").Click();
+    private sealed class FakeNavManager : NavigationManager
+    {
+        public FakeNavManager()
+        {
+            Initialize("https://localhost/", "https://localhost/");
+        }
 
-        cut.Find(".tm-notification-item-time").TextContent.Should().NotBeEmpty();
+        protected override void NavigateToCore(string uri, bool forceLoad)
+        {
+            Uri = ToAbsoluteUri(uri).ToString();
+        }
     }
 }

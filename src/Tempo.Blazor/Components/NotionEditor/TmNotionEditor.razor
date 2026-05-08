@@ -5,6 +5,7 @@
 @using Tempo.Blazor.Components.NotionEditor.Page
 @using Tempo.Blazor.Components.NotionEditor.Sidebar
 @using Tempo.Blazor.Components.NotionEditor.UI
+@using Tempo.Blazor.Components.Notifications
 
 <div class="tm-notion-editor @_editorModifiers @Class"
      data-notion-scroll-root
@@ -85,6 +86,10 @@
                     <TmNotionCollaborationCursors />
                 }
 
+                @* ── Notification bell ─────────────────────────────────── *@
+                <TmNotificationBell @ref="_notificationBell"
+                                    OnDropdownOpenChanged="OnNotificationDropdownOpenChanged" />
+
                 @if (ReadOnly)
                 {
                     <span class="tm-notion-locked-badge" role="status" aria-label="@Loc["TmNotionEditor_Locked"]">
@@ -141,6 +146,9 @@
 
         @* ── Page Search (Ctrl+P / Cmd+P) ──────────────────────────────────── *@
         <TmNotionPageSearch />
+
+        @* ── Notification toasts ─────────────────────────────────────────────── *@
+        <TmNotificationToastContainer IsPanelOpen="_notificationPanelOpen" />
 
     </CascadingValue>
 

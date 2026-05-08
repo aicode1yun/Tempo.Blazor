@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.Components.Notifications;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -77,6 +78,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private ElementReference           _mainRef;
     private IJSObjectReference?        _jsScrollListener;
     private NotionCollaborationSync?   _collabSync;
+    private TmNotificationBell?        _notificationBell;
+    private bool                       _notificationPanelOpen;
 
     // ── Computed ─────────────────────────────────────────────────────────────
 
@@ -172,6 +175,12 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     private void ToggleSidebar()
     {
         _sidebarVisible = !_sidebarVisible;
+        StateHasChanged();
+    }
+
+    private void OnNotificationDropdownOpenChanged(bool isOpen)
+    {
+        _notificationPanelOpen = isOpen;
         StateHasChanged();
     }
 

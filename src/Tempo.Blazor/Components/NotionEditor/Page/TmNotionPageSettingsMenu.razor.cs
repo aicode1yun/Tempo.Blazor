@@ -355,6 +355,20 @@ public partial class TmNotionPageSettingsMenu : ComponentBase, IAsyncDisposable
         finally { _moveLoading = false; StateHasChanged(); }
     }
 
+    // ── Mark all comments as read ─────────────────────────────────────────────
+
+    private async Task MarkAllCommentsAsReadAsync()
+    {
+        if (Context.CommentProvider is null) return;
+        try
+        {
+            await Context.CommentProvider.MarkAllThreadsAsReadAsync(Page.Id.ToString("D"), "demo");
+            await ShowToastSuccessAsync(Loc["TmNotionPageSettingsMenu_MarkAllAsReadSuccess"]);
+            CloseMenu();
+        }
+        catch { await ShowToastErrorAsync(Loc["TmNotionPageSettingsMenu_MarkAllAsReadError"]); }
+    }
+
     // ── Page history ──────────────────────────────────────────────────────────
 
     private async Task OpenHistoryAsync()

@@ -105,6 +105,7 @@
 @import "components/_timeline.css";
 @import "components/_stepper.css";
 @import "components/_notification-bell.css";
+@import "components/_notification-toast.css";
 @import "components/_notifications.css";
 @import "components/_toast.css";
 @import "components/_alert.css";

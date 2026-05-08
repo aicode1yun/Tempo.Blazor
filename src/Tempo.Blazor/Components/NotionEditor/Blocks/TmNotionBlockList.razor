@@ -11,12 +11,21 @@
         var idx   = i;
         var block = Blocks[i];
         var num   = GetNumberedListNumber(idx);
+        var bci   = GetBlockCommentInfo(block.Id.ToString());
         <TmNotionBlock Block="block"
-                       ReadOnly="ReadOnly"
-                       BlockIndex="idx"
-                       NumberedListNumber="num"
+                       ReadOnly="@ReadOnly"
+                       BlockIndex="@idx"
+                       NumberedListNumber="@num"
                        IsFocused="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
                        IsSelected="ActiveBlockId.HasValue && ActiveBlockId.Value == block.Id"
+                       BlockUnresolvedCount="@bci.Unresolved"
+                       BlockResolvedUnreadCount="@bci.ResolvedUnread"
+                       BlockHasUnreadActivity="@bci.HasUnreadActivity"
+                       BlockLastAuthorName="@bci.LastAuthorName"
+                       BlockLastAuthorAvatar="@bci.LastAuthorAvatar"
+                       BlockLastEntryText="@bci.LastEntryText"
+                       BlockLastEntryTime="@bci.LastEntryTime"
+                       BlockThreadCount="@bci.ThreadCount"
                        OnFocused="() => OnBlockFocused.InvokeAsync(block.Id.ToString())"
                        OnDeleted="() => OnBlockDeleted.InvokeAsync(block.Id.ToString())"
                        OnUpdated="OnBlockUpdated"
@@ -27,7 +36,8 @@
                        OnSlashMenu="OnSlashMenu"
                        OnMentionMenu="OnMentionMenu"
                        OnPageLinkMenu="OnPageLinkMenu"
-                       OnComment="() => OnComment.InvokeAsync(block.Id.ToString())" />
+                       OnComment="() => OnComment.InvokeAsync(block.Id.ToString())"
+                       OnNewThread="() => OnNewThread.InvokeAsync(block.Id.ToString())" />
     }
 
     @if (!ReadOnly)

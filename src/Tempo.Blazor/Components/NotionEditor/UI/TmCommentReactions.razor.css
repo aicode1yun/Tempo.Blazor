@@ -1,0 +1,97 @@
+.tm-comment-reactions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px;
+    margin-top: 6px;
+}
+
+.tm-comment-reaction {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    padding: 2px 6px;
+    border: 1px solid var(--tm-border-color);
+    border-radius: 12px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 12px;
+    line-height: 1;
+    transition: background 0.15s, border-color 0.15s;
+}
+
+.tm-comment-reaction:hover {
+    background: var(--tm-surface-200);
+    border-color: var(--tm-border-hover);
+}
+
+.tm-comment-reaction--active {
+    background: var(--tm-color-primary-light);
+    border-color: var(--tm-color-primary);
+}
+
+.tm-comment-reaction--active:hover {
+    background: var(--tm-color-primary-lighter);
+}
+
+.tm-comment-reaction__emoji {
+    font-size: 13px;
+}
+
+.tm-comment-reaction__count {
+    font-size: 11px;
+    color: var(--tm-text-secondary);
+    font-weight: 500;
+}
+
+.tm-comment-reaction--active .tm-comment-reaction__count {
+    color: var(--tm-color-primary);
+}
+
+.tm-comment-reaction--add {
+    padding: 2px 5px;
+    color: var(--tm-text-tertiary);
+    border-style: dashed;
+}
+
+.tm-comment-reaction--add:hover {
+    color: var(--tm-text-primary);
+    border-style: solid;
+}
+
+.tm-comment-reaction-picker {
+    position: relative;
+}
+
+.tm-comment-reaction-picker__popover {
+    position: absolute;
+    bottom: calc(100% + 4px);
+    left: 0;
+    display: flex;
+    gap: 4px;
+    padding: 4px 6px;
+    background: var(--tm-surface-100);
+    border: 1px solid var(--tm-border-color);
+    border-radius: 8px;
+    box-shadow: var(--tm-shadow-md);
+    z-index: 10;
+}
+
+.tm-comment-reaction-picker__item {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 16px;
+    transition: background 0.15s;
+}
+
+.tm-comment-reaction-picker__item:hover {
+    background: var(--tm-surface-200);
+}

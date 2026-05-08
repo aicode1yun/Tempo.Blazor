@@ -306,6 +306,13 @@
 
 /* ── Title ────────────────────────────────────────────────────── */
 
+.tm-notion-header-title-row {
+    display:     flex;
+    align-items: center;
+    gap:         var(--tm-space-3);
+    flex-wrap:   wrap;
+}
+
 .tm-notion-header-title {
     font-family: var(--tm-notion-font-sans);
     font-size:   var(--tm-notion-h1-size, 1.875rem);
@@ -317,6 +324,8 @@
     word-break:  break-word;
     outline:     none;
     caret-color: var(--tm-text-primary);
+    flex:        1 1 auto;
+    min-width:   0;
 }
 
 .tm-notion-header-title--editable {
@@ -328,6 +337,32 @@
     color:          var(--tm-text-tertiary);
     pointer-events: none;
     user-select:    none;
+}
+
+/* ── Comment badge (header) ───────────────────────────────────── */
+
+.tm-notion-header-comment-badge {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    min-width:       22px;
+    height:          22px;
+    padding:         0 6px;
+    border-radius:   11px;
+    background:      var(--tm-color-primary);
+    color:           var(--tm-color-primary-contrast);
+    font-size:       11px;
+    font-weight:     var(--tm-font-weight-semibold);
+    line-height:     1;
+    border:          none;
+    cursor:          pointer;
+    flex-shrink:     0;
+    transition:      transform 150ms ease, opacity 150ms ease;
+}
+
+.tm-notion-header-comment-badge:hover {
+    transform: scale(1.08);
+    opacity:   0.9;
 }
 
 /* ── Description ──────────────────────────────────────────────── */
