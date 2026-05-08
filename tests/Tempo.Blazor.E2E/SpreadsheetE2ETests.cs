@@ -1139,8 +1139,21 @@ public class SpreadsheetE2ETests : WasmTestBase
 
         await page.WaitForTimeoutAsync(250);
 
+        var debug = await grid.EvaluateAsync<CanvasClickSyncProbeResult>(
+            @"el => {
+                const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const host = el.closest('.tm-spreadsheet');
+                const ref = host?.querySelector('.tm-spreadsheet-formula-bar__ref');
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    formulaBarRef: (ref?.textContent || '').trim(),
+                    commandLogCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCommandLogBatch || 0,
+                    cellPointerCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCellPointer || 0
+                };
+            }");
+
         Assert.AreEqual("=A1+B2", await input.InputValueAsync(), "Expected a context-menu gesture during formula-bar reference picking to keep the current formula text untouched.");
-        Assert.AreEqual("J8", await GetCanvasActiveRefAsync(grid), "Expected a context-menu gesture during formula-bar reference picking not to move the active cell.");
+        Assert.AreEqual("J8", await GetCanvasActiveRefAsync(grid), $"Expected a context-menu gesture during formula-bar reference picking not to move the active cell. activeRef={debug.ActiveRef}, formulaBarRef={debug.FormulaBarRef}, commandLogCallbacks={debug.CommandLogCallbacks}, cellPointerCallbacks={debug.CellPointerCallbacks}.");
         Assert.IsTrue(await input.IsVisibleAsync(), "Expected the formula-bar session to stay open after a context-menu gesture.");
         Assert.AreEqual(0, await spreadsheet.Locator(".tm-spreadsheet-context-menu").CountAsync(), "Expected the grid context menu to stay closed during formula-bar reference picking.");
     }

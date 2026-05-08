@@ -3966,6 +3966,16 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return true;
     }
 
+    function scheduleExternalFormulaOriginRestore(root) {
+        const delays = [0, 40, 120];
+        for (const delay of delays) {
+            setTimeout(() => {
+                if (!isFormulaPointMode(root)) return;
+                restoreExternalFormulaOrigin(root);
+            }, delay);
+        }
+    }
+
     function isFormulaEditorSelfHit(root, hit) {
         const editor = getState(root)?.editor;
         return !!(editor && hit && editor.row === hit.row && editor.col === hit.col);
@@ -4577,6 +4587,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             pasteBuffer: [],
             pasteTimer: 0,
             suppressClick: false,
+            blockNextClick: false,
             lastPointerButton: 0,
             nonPrimaryGestureUntil: 0,
             selectionSyncFrame: 0,
@@ -4763,11 +4774,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.lastPointerButton = Number(ev.button || 0);
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
+                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
             }
             if (ev.button === 0) return;
-            s.suppressClick = true;
             if (!isFormulaPointMode(root)) return;
+            s.suppressClick = true;
             if (s.editor) preserveFormulaEditorFocus(root);
             setPossibleDrag(root, null);
             ev.preventDefault();
@@ -4777,21 +4790,25 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             s.lastPointerButton = Number(ev.button || 0);
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
+                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
             }
             if (ev.button === 0) return;
-            s.suppressClick = true;
             if (isFormulaPointMode(root) && s.editor) {
+                s.suppressClick = true;
                 preserveFormulaEditorFocus(root);
+                ev.preventDefault();
+                ev.stopPropagation();
             }
-            ev.preventDefault();
-            ev.stopPropagation();
         };
         const onPointerDownWrapper = ev => {
             s.lastPointerButton = Number(ev.button || 0);
             if (ev.button !== 0 && isFormulaPointMode(root)) {
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
+                s.blockNextClick = true;
                 restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
             }
             if (isSpreadsheetOverlayTarget(ev.target)) {
                 setPossibleDrag(root, null);
@@ -4865,7 +4882,6 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
 
             if (ev.button !== 0) {
-                s.suppressClick = true;
                 onPointerDown(ev);
                 return;
             }
@@ -4979,6 +4995,11 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             handleCommandKey(root, ev);
         };
         const onClick = ev => {
+            if (s.blockNextClick) {
+                s.blockNextClick = false;
+                ev.preventDefault();
+                return;
+            }
             if (performance.now() < Number(s.nonPrimaryGestureUntil || 0)) {
                 ev.preventDefault();
                 return;
@@ -5083,9 +5104,8 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
             if (s.suppressClick && Number(s.lastPointerButton || 0) !== 0) {
                 restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
                 s.nonPrimaryGestureUntil = performance.now() + nonPrimaryGestureBlockMs;
-                s.suppressClick = false;
-                s.lastPointerButton = 0;
                 ev.stopPropagation();
                 return;
             }
@@ -5099,10 +5119,13 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                     s.editor.input.focus({ preventScroll: true });
                 }
                 restoreExternalFormulaOrigin(root);
+                scheduleExternalFormulaOriginRestore(root);
                 s.suppressClick = true;
                 ev.stopPropagation();
                 return;
             }
+            s.suppressClick = false;
+            s.lastPointerButton = 0;
             const p = toContentPoint(root, ev);
             invokeDotNet(root, "OnCanvasContextMenu", [p.x, p.y, ev.clientX, ev.clientY], true).catch(() => {});
         };
