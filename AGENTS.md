@@ -2,7 +2,7 @@
 
 ## Project Overview
 
-**Tempo.Blazor** is a comprehensive Blazor component library with 125+ reusable Razor components designed for AI-assisted development. The library provides a complete UI toolkit for building modern Blazor applications with support for multiple render modes (WebAssembly, Server, InteractiveAuto), localization, theming (light/dark), FluentValidation integration, and a CSS design system based on custom properties.
+**Tempo.Blazor** is a comprehensive Blazor component library with 126+ reusable Razor components designed for AI-assisted development. The library provides a complete UI toolkit for building modern Blazor applications with support for multiple render modes (WebAssembly, Server, InteractiveAuto), localization, theming (light/dark), FluentValidation integration, and a CSS design system based on custom properties.
 
 ### Key Features
 - **125+ reusable Razor components** organized into 28 categories (inputs, data tables, pickers, layout, feedback, charts, dashboards, workflow designer, etc.)
@@ -124,27 +124,30 @@ dotnet run
 
 ## Code Organization
 
-### Component Categories (28 folders in `src/Tempo.Blazor/Components/`)
+### Component Categories (29 folders in `src/Tempo.Blazor/Components/`)
 
 | Category | Components |
 |----------|------------|
 | Activity | `TmActivityLog`, `TmActivityComments`, `TmActivityAttachments`, `TmActivityTimeline`, `TmRichEditorFull`, `TmRichEditorSimple` |
+| AITools | `TmAIPrompt` |
+| Chat | `TmChat` |
 | Avatars | `TmAvatar`, `TmAvatarGroup` |
 | Buttons | `TmButton`, `TmSplitButton`, `TmCopyButton` |
-| Charts | `TmChart` (Bar, Line, Pie, Donut, HorizontalBar — pure SVG) |
+| Charts | `TmChart` (Bar, Line, Pie, Donut, HorizontalBar — pure SVG), `TmStockChart` (Candlestick, OHLC, Line), `TmSparkline` (Line, Bar, Area, Pie), `TmGauge` (Arc, Circular, Linear) |
 | Dashboard | `TmDashboard`, `TmWidgetSelector` (drag & resize grid, JS interop) |
 | DataDisplay | `TmBadge`, `TmCard`, `TmEmptyState`, `TmMultiViewList`, `TmStatCard`, `TmAccordion`, `TmAccordionItem`, `TmChip`, `TmChipGroup`, `TmKanbanBoard`, `TmChangeDiff` |
 | DataTable | `TmDataTable`, `TmDataTableColumn`, `TmColumnFilter`, `TmColumnPicker`, `TmPagination`, `TmViewManager`, `TmBulkActionBar` |
+| Spreadsheet | `TmSpreadsheet`, `TmSpreadsheetGrid`, `TmSpreadsheetToolbar`, `TmSpreadsheetFormulaBar`, `TmSpreadsheetSheetTabs` (Excel-like with formulas, styling, XLSX import/export, freeze panes, merge cells) |
 | Dropdowns | `TmDropdown`, `TmDropdownItem`, `TmFilterableDropdown` |
 | Feedback | `TmNotificationBell`, `TmSkeleton`, `TmSpinner`, `TmAlert`, `TmDialog`, `TmModal`, `TmProgressBar`, `TmToastContainer`, `TmTooltip`, `TmPopover` |
-| Files | `TmAttachmentManager`, `TmFileDropZone` |
+| Files | `TmAttachmentManager`, `TmFileDropZone`, `TmPdfViewer` (PDF.js v5 powered viewer with thumbnails, search, text layer, rotation, continuous scroll) |
 | Filters | `TmFilterBuilder`, `TmFilterChip` |
 | Forms | `TmFormField`, `TmFormRow`, `TmFormSection`, `TmValidationSummary`, `TmValidatedField`, `TmDynamicFormRenderer`, `TmFormValidationMessage`, `TmInlineEdit` |
 | Gallery | `TmImageGallery`, `TmLightbox` |
 | Icons | `TmIcon`, `IconRegistry`, `IIconProvider`, `IconNames` |
 | ImportExport | `TmImportWizard`, `TmImportPreview`, `TmExportOptions` |
 | Inputs | `TmTextInput`, `TmTextArea`, `TmSelect`, `TmCheckbox`, `TmToggle`, `TmRadio`, `TmRadioGroup`, `TmSearchInput`, `TmPasswordStrengthIndicator`, `TmNumberInput`, `TmEntityPicker`, `TmExpressionEditor`, `TmMultiSelect` |
-| Layout | `TmSidebar`, `TmBreadcrumbs`, `TmTopBar`, `TmCommandPalette`, `TmDrawer`, `TmSection`, `TmKeyboardShortcutsHelp` |
+| Layout | `TmSidebar`, `TmBreadcrumbs`, `TmTopBar`, `TmCommandPalette`, `TmDrawer`, `TmSection`, `TmKeyboardShortcutsHelp`, `TmDockManager`, `TmDockPane` |
 | Navigation | `TmTabs`, `TmTabPanel`, `TmContextMenu`, `TmContextMenuItem` |
 | Notifications | `TmNotificationBell` (extended, per-item read, severity) |
 | Pickers | `TmDatePicker`, `TmDateRangePicker`, `TmDateTimePicker`, `TmDateTimeRangePicker`, `TmTimePicker`, `TmTimeRangePicker`, `TmCalendarView` |
@@ -378,13 +381,142 @@ Use in components:
 <TmIcon Name="my-logo" />
 ```
 
+## TmPdfViewer Features
+
+The `TmPdfViewer` component is a standalone PDF viewer powered by **PDF.js v5** (ES modules). It supports both single-page and continuous scroll viewing modes with a rich toolbar and advanced productivity features.
+
+### Parameters
+
+| Parameter | Type | Default | Description |
+|-----------|------|---------|-------------|
+| `Url` | `string?` | `null` | PDF document URL (required) |
+| `Page` / `PageChanged` | `int` / `EventCallback<int>` | `1` | Two-way bound current page |
+| `Scale` / `ScaleChanged` | `double` / `EventCallback<double>` | `1.0` | Two-way bound zoom scale |
+| `ViewMode` / `ViewModeChanged` | `PdfViewMode` / `EventCallback<PdfViewMode>` | `SinglePage` | SinglePage or Continuous |
+| `ShowToolbar` | `bool` | `true` | Show navigation toolbar |
+| `ShowThumbnails` | `bool` | `false` | Show thumbnails sidebar |
+| `ShowSearch` | `bool` | `false` | Show search toggle in toolbar |
+| `ShowTextLayer` | `bool` | `false` | Render selectable text over canvas |
+| `ShowViewModeToggle` | `bool` | `false` | Show single/continuous view mode buttons |
+| `AllowRotation` | `bool` | `false` | Show rotation button |
+| `AllowDownload` | `bool` | `true` | Show download link |
+| `Height` | `string?` | `"600px"` | Viewer height CSS value |
+| `Class` | `string?` | `null` | Additional CSS classes |
+
+### Architecture
+
+- **JS wrapper** (`pdf-viewer.js`): Standalone `window.tmPdfViewer` module that dynamically imports PDF.js v5, manages the PDF document lifecycle, and exposes methods for rendering, zooming, rotating, searching, thumbnails, and continuous scroll.
+- **Composition pattern**: `TmNotionPdfBlock` delegates all PDF rendering to `TmPdfViewer` via child component parameters. The Notion block only owns caption editing, upload dialog, resize handle, and focus handling.
+- **Dispatcher safety**: All `[JSInvokable]` methods wrap `StateHasChanged()` in `InvokeAsync(() => StateHasChanged())` to avoid Blazor dispatcher errors during JS interop callbacks.
+
+### View Modes
+
+- **SinglePage** (default): Renders one page at a time on a `<canvas>` with prev/next navigation.
+- **Continuous**: Renders all pages in a scrollable container via `renderAllPages()`.
+
+### Usage
+
+```razor
+<!-- Basic viewer -->
+<TmPdfViewer Url="https://example.com/doc.pdf" />
+
+<!-- Full-featured -->
+<TmPdfViewer Url="@pdfUrl"
+             ShowThumbnails="true"
+             ShowSearch="true"
+             ShowTextLayer="true"
+             ShowViewModeToggle="true"
+             AllowRotation="true"
+             AllowDownload="true"
+             Height="600px" />
+```
+
+---
+
+## TmDiagramEditor Advanced Features
+
+The diagram editor (`TmDiagramEditor`, `TmDiagramCanvas`) supports several advanced productivity features beyond basic drawing:
+
+### Unified SVG Canvas Architecture (4-pane model)
+
+Inspired by **draw.io / mxGraph**, the canvas uses a single SVG scene with four dedicated `<g>` panes instead of the legacy dual-layer SVG+HTML overlay. This eliminates the CTM/CSS-transform drift bug, enables true global Z-order interleaving between nodes and edges, and allows simple stencils to render as native SVG primitives.
+
+| Pane | CSS Class | Purpose | Pointer Events |
+|------|-----------|---------|----------------|
+| **Background** | `.tm-diagram-bg-pane` | Grid, page background, page shadow, model-level group bounds | `none` |
+| **Scene / Draw** | `.tm-diagram-scene-pane` | Nodes (native SVG shape + `<foreignObject>` label) and edges interleaved by `ZIndex` | `auto` |
+| **Overlay** | `.tm-diagram-overlay-pane` | Selection outlines, drop-target highlights | `none` |
+| **Decorator** | `.tm-diagram-decorator-pane` | Resize/rotate handles, connect arrows, edge waypoint handles | `auto` |
+
+Key consequences:
+- **Nodes** are rendered as `<g class="tm-diagram-node" transform="translate(...) rotate(...)">` containing a native SVG shape (`<rect>`, `<ellipse>`, `<polygon>`) for simple stencils and a `<foreignObject>` with rich HTML content for complex stencils.
+- **Edges** live in the same scene pane and can be placed above or below nodes via `ZIndex`.
+- **Selection outlines** are SVG `<rect>` elements injected into the overlay pane by `diagram-editor.js`.
+- **Resize/rotate handles** are SVG `<rect>`/`<circle>` elements rendered by Blazor into the decorator pane and kept in sync during JS drags.
+- Pan and zoom are driven exclusively by the SVG `viewBox`; there is no `_syncHtmlTransform` or HTML overlay CSS transform.
+
+### Auto Layout (dagre)
+- Integrated with `dagre.min.js` for automatic hierarchical layouts.
+- `ApplyLayoutCommand` stores previous node positions for full undo/redo support.
+- `RunLayoutAsync("TB" | "LR")` computes new positions via JS interop and applies them to the current selection.
+- Toolbar dropdown **Layout** and property panel **Arrange → Auto Layout** expose the feature to users.
+
+### Layers Panel
+- `DiagramDocument` contains a list of `DiagramLayer` objects (`Id`, `Name`, `Order`, `IsVisible`, `IsLocked`).
+- `TmDiagramLayersPanel` renders layer visibility toggles, lock toggles, active-layer radio buttons, inline rename, add/delete, and drag-and-drop reorder.
+- `ReorderLayersCommand`, `ToggleLayerVisibilityCommand`, `ToggleLayerLockCommand`, `MoveNodesToLayerCommand` provide undoable operations.
+- Canvas filters nodes via `IsLayerVisible` so hidden layers do not render.
+
+### Format Painter
+- `CopyStyleCommand` copies a node's `DiagramStyle` (fill, stroke, font, etc.) to a static `DiagramClipboard.Style`.
+- `PasteStyleCommand` applies the copied style to any selection and supports undo.
+- `CopyStyleCommand` with `includeSize: true` also records `W`/`H` into `DiagramClipboard`.
+- `PasteSizeCommand` applies the recorded width/height to selected nodes and supports undo.
+- Toolbar buttons and keyboard shortcuts `Ctrl+Shift+C` / `Ctrl+Shift+V` trigger the commands.
+
+### Collapsible Nodes
+- `DiagramNode` exposes `IsCollapsible`, `Collapsed`, and `ExpandedHeight`.
+- `ToggleCollapseCommand` collapses a node to a header height (preserving original height for undo) and hides child nodes / non-top-bottom ports.
+- Built-in stencils such as UML package, UML frame, org-chart manager, BPMN pool, and BPMN subprocess are marked `IsCollapsible = true`.
+
+### Diagram Search
+- `DiagramSearchService` performs free-text search across node `Id`, `StencilId`, `Data` values, and edge `Label`.
+- `TmDiagramSearchPanel` provides a floating search bar with prev/next navigation.
+- `Ctrl+F` is handled in `diagram-editor.js` to open the panel.
+- Active results are highlighted with a pulsing `tm-diagram-search-match` CSS class and the canvas auto-centers on the match.
+
+### SQL → ER Diagram Import
+- `SqlParser` extracts tables, columns, primary keys, and foreign keys from SQL DDL (`CREATE TABLE`) using regex-based parsing.
+- `SqlToErDiagramGenerator` converts parsed tables into `erd.entity` nodes and `DiagramEdge` relationships.
+- `TmDiagramSqlImportDialog` provides a modal UI for pasting SQL, selecting layout direction (TB/LR), and previewing table/relation counts.
+- Imported diagrams are created as new pages with A4 landscape size and automatically run through the dagre layout.
+
+### CSV → Diagram Import
+- `CsvParser` auto-detects delimiter (`,`, `;`, `\t`) and parses headers/rows using `CsvHelper`.
+- `CsvToOrgChartGenerator`, `CsvToFlowchartGenerator`, and `CsvToTimelineGenerator` create diagrams from mapped columns.
+- `TmDiagramCsvImportDialog` provides a modal UI for pasting CSV, selecting diagram type (Org Chart / Flowchart / Timeline), mapping columns, and previewing data rows.
+- Org Chart uses `tree` layout, Flowchart uses `dagre`, and Timeline pre-positions nodes horizontally without auto-layout.
+
+### Edge Rendering & Interaction
+- **Cubic Bézier** — `DiagramEdge.CubicBezier` toggles between quadratic (`Q`) and cubic (`C`) SVG path commands for `Routing = "curved"`.
+- **Isometric Routing** — `Routing = "isometric"` generates 30°/60°/90°/120°/150° angled segments via the JS orthogonal router.
+- **Entity Relation Routing** — `Routing = "entityrelation"` produces horizontal tree-style arms (30px branches from source/target).
+- **Block Arrow Shapes** — `Shape = "blockArrow"`, `"doubleArrow"`, `"flexArrow"` render edges as filled SVG polygons with constant or tapered shaft width.
+- **Cardinality Labels** — `SourceCardinality` and `TargetCardinality` render as `<text>` elements positioned perpendicular to the edge terminal (~15px offset).
+- **Rubber-band Edge Selection** — The JS rubber-band rectangle samples points along each edge path; intersecting edges are added to the selection.
+- **Edge Selection Outline** — Selected edges render a dashed `tm-diagram-edge-path--selected-outline` path behind the visible stroke.
+- **Virtual Bend Transaction** — Clicking an edge segment to insert a virtual bend + dragging it is captured as a single `DiagramCommandTransaction` (one undo/redo step). Escape during the drag rolls back the transaction.
+
 ## JavaScript Interop
 
-Four JS files in `wwwroot/js/` require `<script>` tags in `index.html` when using specific components:
+Six JS files in `wwwroot/js/` require `<script>` tags in `index.html` when using specific components:
 - `dashboard.js` — required by `TmDashboard` (drag & resize grid)
 - `workflow-designer.js` — required by `TmWorkflowDesignerCanvas` (SVG drag, pan, zoom, transition creation)
 - `richEditor.js` — required by `TmRichEditorFull` / `TmRichEditorSimple` (contenteditable interop)
 - `scheduler.js` — required by `TmScheduler` (drag & drop events)
+- `pdf-viewer.js` — required by `TmPdfViewer` (PDF.js interop: render, zoom, rotation, thumbnails, search, text layer, continuous scroll)
+- `dagre.min.js` — required by `TmDiagramCanvas` for auto layout
+- `diagram-editor.js` — required by `TmDiagramEditor` (canvas interactions, selection, keyboard shortcuts)
 
 ## Security Considerations
 
