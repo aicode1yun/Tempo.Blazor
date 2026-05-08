@@ -37,7 +37,8 @@ public partial class TmSpreadsheet
     private int _formulaOriginSheetIndex = -1;
     private string? _formulaOriginCellRef;
     private bool IsFormulaBarSessionActive => _isFormulaBarEditing || _formulaBarEditValue is not null;
-    private bool HostFormulaPointMode => (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true;
+    private bool HostFormulaPointMode => IsFormulaBarSessionActive
+        && (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue)?.StartsWith("=", StringComparison.Ordinal) == true;
     private string FormulaCultureName => CultureInfo.CurrentCulture.Name;
     private string FormulaDecimalSeparator => CultureInfo.CurrentCulture.NumberFormat.NumberDecimalSeparator == "," ? "," : ".";
     private string FormulaArgumentSeparator => FormulaDecimalSeparator == "," ? ";" : ",";
@@ -448,6 +449,8 @@ public partial class TmSpreadsheet
     {
         _isFormulaBarEditing = false;
         await ApplyValueToActiveCellAsync(value);
+        if (CanvasJsEngineGrid is not null)
+            await CanvasJsEngineGrid.ClearEngineFormulaHighlightsAsync();
         var navigation = _formulaBar?.ConsumePendingCommitNavigation();
         if (navigation is { } move && _grid is not null)
             await _grid.MoveActiveCellByAsync(move.RowDelta, move.ColDelta);
@@ -455,12 +458,14 @@ public partial class TmSpreadsheet
         StateHasChanged();
     }
 
-    private void OnFormulaBarCancelled()
+    private async Task OnFormulaBarCancelled()
     {
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;
         _formulaOriginSheetIndex = -1;
         _formulaOriginCellRef = null;
+        if (CanvasJsEngineGrid is not null)
+            await CanvasJsEngineGrid.ClearEngineFormulaHighlightsAsync();
         StateHasChanged();
     }
 
@@ -481,6 +486,8 @@ public partial class TmSpreadsheet
         if (_grid is null)
             return;
 
+        if (CanvasJsEngineGrid is not null)
+            await CanvasJsEngineGrid.ClearEngineFormulaHighlightsAsync();
         await _grid.BeginInlineEditAsync();
         _isFormulaBarEditing = false;
         _formulaBarEditValue = null;

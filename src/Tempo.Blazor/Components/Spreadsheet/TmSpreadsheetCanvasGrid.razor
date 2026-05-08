@@ -36,7 +36,7 @@ else
         <div class="tm-spreadsheet-canvas-grid__size"
              style="width:@TotalScrollableWidthPx;height:@TotalScrollableHeightPx;"></div>
 
-        @if (IsEditing)
+        @if (IsEditing && !UseJsEngine)
         {
             <input class="tm-spreadsheet-canvas-grid__editor"
                    type="text"

@@ -921,6 +921,7 @@ window.tmSpreadsheetGrid.ensureCellVisible = function (grid, cell, options) {
             host.dataset.formulaPointMode = "true";
         } else {
             delete host.dataset.formulaPointMode;
+            clearHostFormulaSession(scope, "formulaBar");
         }
         const grid = host.querySelector?.(".tm-spreadsheet-canvas-grid");
         if (grid && window.tmSpreadsheetCanvas?.setExternalFormulaPointMode) {

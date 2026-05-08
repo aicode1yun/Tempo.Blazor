@@ -1566,6 +1566,122 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_InlineFormulaCommitClearsFormulaHighlightsAndPointMode()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeTarget = await GetCanvasCellCenterAsync(grid, "E4");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeTarget.X, Y = activeTarget.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "E4");
+
+        await grid.PressAsync("=");
+        var editor = grid.Locator(".tm-spreadsheet-canvas-grid__editor");
+        await editor.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await editor.FillAsync("=E2+E3");
+        await SetFormulaEditorSelectionAsync(editor, "=E2+E3".Length, "=E2+E3".Length);
+        await editor.PressAsync("Enter");
+        await page.WaitForTimeoutAsync(300);
+
+        var result = await grid.EvaluateAsync<CanvasFormulaSessionCleanupProbeResult>(
+            @"el => {
+                const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const host = el.closest('.tm-spreadsheet');
+                const session = host?.__tmSpreadsheetFormulaSession || null;
+                const editor = el.querySelector('.tm-spreadsheet-canvas-grid__editor');
+                const stateEditor = el.__tmSpreadsheetCanvas?.editor || null;
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    formulaActive: !!after.sheetState?.formulaEditor?.active,
+                    highlightedCells: after.formulaEditorHighlightCount || 0,
+                    hostFormulaPointMode: host?.dataset?.formulaPointMode === 'true',
+                    hostSessionOwner: session?.owner || '',
+                    hostSessionText: `${session?.text || ''}|editorVisible=${!!editor}|editorCount=${el.querySelectorAll('.tm-spreadsheet-canvas-grid__editor').length}|editorLabel=${editor?.getAttribute('aria-label') || ''}|editorMode=${editor?.getAttribute('data-editor-mode') || ''}|stateEditor=${!!stateEditor}|stateEditorCell=${stateEditor ? `${stateEditor.row},${stateEditor.col}` : ''}|removeAttempt=${after.editorRemoveAttemptCount || 0}|removeComplete=${after.editorRemoveCompleteCount || 0}|domAfterRemove=${after.editorLastDomCountAfterRemove || 0}`
+                };
+            }");
+
+        var resultSummary = $"activeRef={result.ActiveRef}; formulaActive={result.FormulaActive}; highlightedCells={result.HighlightedCells}; hostFormulaPointMode={result.HostFormulaPointMode}; hostSessionOwner={result.HostSessionOwner}; hostSessionText={result.HostSessionText}";
+
+        Assert.IsFalse(result.FormulaActive, $"Expected inline formula editor to close after Enter commit. {resultSummary}");
+        Assert.AreEqual(0, result.HighlightedCells, $"Expected formula reference highlights to clear after inline commit. {resultSummary}");
+        Assert.IsFalse(result.HostFormulaPointMode, $"Expected spreadsheet host formula-point mode to clear after inline commit. {resultSummary}");
+        Assert.AreEqual(string.Empty, result.HostSessionOwner, $"Expected no lingering host formula session after inline commit. {resultSummary}");
+
+        var target = await GetCanvasCellCenterAsync(grid, "H6");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = target.X, Y = target.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "H6");
+    }
+
+    [TestMethod]
+    public async Task CanvasJsEngine_FormulaBarCommitClearsFormulaHighlightsAndRestoresMousePicking()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var spreadsheet = page.Locator(".tm-spreadsheet").Filter(new() { Has = page.Locator(".tm-spreadsheet-canvas-grid") }).First;
+        var grid = spreadsheet.Locator(".tm-spreadsheet-canvas-grid");
+        await WaitForCanvasGridReadyAsync(page, grid);
+
+        var activeTarget = await GetCanvasCellCenterAsync(grid, "F3");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = activeTarget.X, Y = activeTarget.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "F3");
+
+        var input = await OpenFormulaBarEditorAsync(page, spreadsheet);
+        await input.FillAsync("=E2+E3");
+        await page.Keyboard.PressAsync("Enter");
+        await input.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Hidden, Timeout = 5000 });
+        await page.WaitForTimeoutAsync(200);
+
+        var result = await grid.EvaluateAsync<CanvasFormulaSessionCleanupProbeResult>(
+            @"el => {
+                const after = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const host = el.closest('.tm-spreadsheet');
+                const session = host?.__tmSpreadsheetFormulaSession || null;
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    formulaActive: !!after.sheetState?.formulaEditor?.active,
+                    highlightedCells: after.formulaEditorHighlightCount || 0,
+                    hostFormulaPointMode: host?.dataset?.formulaPointMode === 'true',
+                    hostSessionOwner: session?.owner || '',
+                    hostSessionText: session?.text || ''
+                };
+            }");
+
+        var resultSummary = $"activeRef={result.ActiveRef}; formulaActive={result.FormulaActive}; highlightedCells={result.HighlightedCells}; hostFormulaPointMode={result.HostFormulaPointMode}; hostSessionOwner={result.HostSessionOwner}; hostSessionText={result.HostSessionText}";
+
+        Assert.IsFalse(result.FormulaActive, $"Expected no inline formula editor to remain active after formula-bar commit. {resultSummary}");
+        Assert.AreEqual(0, result.HighlightedCells, $"Expected formula reference highlights to clear after formula-bar commit. {resultSummary}");
+        Assert.IsFalse(result.HostFormulaPointMode, $"Expected spreadsheet host formula-point mode to clear after formula-bar commit. {resultSummary}");
+        Assert.AreEqual(string.Empty, result.HostSessionOwner, $"Expected no lingering host formula session after formula-bar commit. {resultSummary}");
+
+        var target = await GetCanvasCellCenterAsync(grid, "H6");
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new() { X = target.X, Y = target.Y }
+        });
+        await WaitForCanvasActiveRefAsync(grid, "H6");
+    }
+
+    [TestMethod]
     public async Task CanvasJsEngine_F2TransfersFormulaSessionFromFormulaBarToInlineEditorWithoutLosingCaret()
     {
         var page = await CreatePageAsync();
@@ -5572,6 +5688,16 @@ public class SpreadsheetE2ETests : WasmTestBase
         public double FinalSize { get; set; }
         public int DotNetCallbacks { get; set; }
         public int BlazorFrames { get; set; }
+    }
+
+    private sealed class CanvasFormulaSessionCleanupProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public bool FormulaActive { get; set; }
+        public int HighlightedCells { get; set; }
+        public bool HostFormulaPointMode { get; set; }
+        public string HostSessionOwner { get; set; } = string.Empty;
+        public string HostSessionText { get; set; } = string.Empty;
     }
 
     private sealed class CanvasJsFirstStateProbeResult

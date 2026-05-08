@@ -79,6 +79,21 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         return getFormulaRuntime()?.setHostFormulaSession?.(root, session) || null;
     }
 
+    function clearHostFormulaSession(root, owner) {
+        return getFormulaRuntime()?.clearHostFormulaSession?.(root, owner) || null;
+    }
+
+    function forceClearHostFormulaSession(root, owner) {
+        const host = root?.closest?.(".tm-spreadsheet");
+        const current = host?.__tmSpreadsheetFormulaSession || null;
+        if (host && (!owner || !current?.owner || current.owner === owner)) {
+            delete host.__tmSpreadsheetFormulaSession;
+        }
+        if (owner === "inline" && host?.dataset?.formulaPointMode === "true") {
+            delete host.dataset.formulaPointMode;
+        }
+    }
+
     function css(root, name, fallback) {
         return getComputedStyle(root).getPropertyValue(name).trim() || fallback;
     }
@@ -510,6 +525,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function getExternalFormulaSession(root) {
         const session = getHostFormulaSession(root);
         if (!session || !session.isFormula) return null;
+        if (!isHostFormulaPointMode(root)) return null;
         const localEditor = getState(root)?.editor;
         if (localEditor) return null;
         return session;
@@ -1937,6 +1953,9 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             formulaEditorTokenReplaceCount: 0,
             formulaEditorIgnoredSelfClickCount: 0,
             formulaEditorArrowCaretCount: 0,
+            editorRemoveAttemptCount: 0,
+            editorRemoveCompleteCount: 0,
+            editorLastDomCountAfterRemove: 0,
             textMeasureCacheSize: 0,
             fontStringCacheSize: 0,
             paintStyleCacheSize: 0,
@@ -2674,36 +2693,31 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 return cells;
             }
         }
-
-        const store = getCellStore(root);
-        if (store) {
-            return [...store.formulaRefs]
-                .map(key => store.cells.get(key))
-                .filter(Boolean);
-        }
-
-        const cells = read(model, "Cells", []);
-        if (s
-            && s.formulaReferenceSource === cells
-            && s.formulaReferenceRevision === s.modelRevision
-            && Array.isArray(s.formulaReferenceCells)) {
-            return s.formulaReferenceCells;
-        }
-
-        const references = [];
-        for (const cell of cells) {
-            if (Number(read(cell, "FormulaRefColorIndex", -1)) >= 0) {
-                references.push(cell);
+        if (s) {
+            s.formulaReferenceSource = null;
+            s.formulaReferenceRevision = 0;
+            s.formulaReferenceCells = [];
+            const host = root?.closest?.(".tm-spreadsheet");
+            const hostSessionOwner = String(host?.__tmSpreadsheetFormulaSession?.owner || "");
+            const hasLocalFormulaEditor = !!s.sheetState?.formulaEditor?.active || !!s.editor;
+            if (!hasLocalFormulaEditor && hostSessionOwner === "inline") {
+                clearHostFormulaSession(root, "inline");
+                forceClearHostFormulaSession(root, "inline");
+                removeStrayInlineEditors(root);
+            } else if (!s.editor && !isHostFormulaPointMode(root)) {
+                clearHostFormulaSession(root, "inline");
+                clearHostFormulaSession(root, "formulaBar");
+                forceClearHostFormulaSession(root, "inline");
+                forceClearHostFormulaSession(root, "formulaBar");
+                removeStrayInlineEditors(root);
+            }
+            if (s.metrics) {
+                s.metrics.formulaEditorHighlightCount = 0;
+                s.metrics.formulaEditorReferenceCount = 0;
             }
         }
 
-        if (s) {
-            s.formulaReferenceSource = cells;
-            s.formulaReferenceRevision = s.modelRevision;
-            s.formulaReferenceCells = references;
-        }
-
-        return references;
+        return [];
     }
 
     function updateCellSelectionFlags(model, row, col, active, selected, selectionEnd) {
@@ -3687,8 +3701,17 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         formula.activeFunctionHint = null;
         formula.dragAnchor = null;
         formula.dragCurrent = null;
+        clearHostFormulaSession(root, "inline");
+        forceClearHostFormulaSession(root, "inline");
+        removeStrayInlineEditors(root);
         const sheet = getState(root)?.sheetState;
         if (sheet) sheet.formulaMode = false;
+        addDirtyRect(root, "selection", {
+            x: 0,
+            y: 0,
+            width: root.clientWidth || 0,
+            height: root.clientHeight || 0
+        });
         renderFormulaEditorChrome(root);
         syncEditorAccessibility(root);
     }
@@ -4160,13 +4183,15 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
         const editor = s?.editor;
         if (!s || !editor) return;
 
-        if (editor.input.__tmClosing) return;
-        editor.input.__tmClosing = true;
+        const input = editor.input;
+        if (!input || input.__tmClosing) return;
+        input.__tmClosing = true;
+        if (s.metrics) s.metrics.editorRemoveAttemptCount += 1;
         if (!commit && s.metrics) s.metrics.editorCancelCount += 1;
         if (commit && s.model) {
             bumpLocalRevision(root, "editor");
             updateSheetEditorValue(root);
-            const value = editor.input.value;
+            const value = input.value;
             const cell = findCell(s.model, editor.row, editor.col);
             const previousValue = editor.initialValue ?? (cell ? (read(cell, "Value", "") || "") : "");
             const changed = value !== previousValue;
@@ -4182,17 +4207,89 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             }
         }
 
+        removeFormulaEditorChrome(editor);
+        input.remove();
+        if (s.metrics) {
+            s.metrics.editorRemoveCompleteCount += 1;
+            s.metrics.editorLastDomCountAfterRemove = root.querySelectorAll?.(".tm-spreadsheet-canvas-grid__editor")?.length || 0;
+        }
         setSheetEditor(root, null);
         setFormulaEditorInactive(root);
-        removeFormulaEditorChrome(editor);
-        editor.input.remove();
         syncAccessibilityState(root, commit ? "immediate" : false);
         root.focus?.({ preventScroll: true });
+        setTimeout(() => finalizeInlineEditorCleanup(root), 0);
+    }
+
+    function finalizeInlineEditorCleanup(root) {
+        const s = getState(root);
+        if (!s) return;
+        if (s.editor || s.sheetState?.formulaEditor?.active) return;
+
+        clearHostFormulaSession(root, "inline");
+        forceClearHostFormulaSession(root, "inline");
+
+        let removedStrayEditor = false;
+        removedStrayEditor = removeStrayInlineEditors(root);
+
+        if (removedStrayEditor) {
+            addDirtyRect(root, "selection", {
+                x: 0,
+                y: 0,
+                width: root.clientWidth || 0,
+                height: root.clientHeight || 0
+            });
+            requestCanvasRedraw(root, "inline-editor-cleanup", "selection");
+        }
+
+        syncEditorAccessibility(root);
+        syncAccessibilityState(root, false);
+    }
+
+    function scheduleInlineEditorCleanup(root, attempt) {
+        const s = getState(root);
+        if (!s) return;
+        const nextAttempt = Number(attempt || 0);
+        if (s.inlineEditorCleanupTimer) {
+            clearTimeout(s.inlineEditorCleanupTimer);
+            s.inlineEditorCleanupTimer = 0;
+        }
+
+        s.inlineEditorCleanupTimer = setTimeout(() => {
+            s.inlineEditorCleanupTimer = 0;
+            const state = getState(root);
+            if (!state) return;
+            if (state.editor || state.sheetState?.formulaEditor?.active) {
+                if (nextAttempt < 8) {
+                    scheduleInlineEditorCleanup(root, nextAttempt + 1);
+                }
+                return;
+            }
+
+            finalizeInlineEditorCleanup(root);
+        }, nextAttempt === 0 ? 30 : 40);
+    }
+
+    function removeStrayInlineEditors(root) {
+        const s = getState(root);
+        const activeInput = s?.editor?.input || null;
+        let removed = false;
+        const editors = root?.querySelectorAll?.(".tm-spreadsheet-canvas-grid__editor") || [];
+        for (const input of editors) {
+            if (input && input !== activeInput) {
+                input.remove();
+                removed = true;
+            }
+        }
+        return removed;
     }
 
     function commitLocalEditorAndNavigate(root, dRow, dCol, extendSelection) {
         closeLocalEditor(root, true);
+        clearHostFormulaSession(root, "inline");
+        forceClearHostFormulaSession(root, "inline");
+        removeStrayInlineEditors(root);
         navigateLocal(root, dRow, dCol, !!extendSelection);
+        scheduleInlineEditorCleanup(root, 0);
     }
 
     function getEditorCellRect(root, editor) {
@@ -5314,8 +5411,43 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             captureExternalFormulaOrigin(root);
         } else {
             s.sheetState.externalFormulaOrigin = null;
+            clearExternalFormulaPicker(root);
+            s.formulaReferenceSource = null;
+            s.formulaReferenceRevision = 0;
+            s.formulaReferenceCells = [];
+            if (s.metrics) {
+                s.metrics.formulaEditorHighlightCount = 0;
+                s.metrics.formulaEditorReferenceCount = 0;
+            }
+            addDirtyRect(root, "selection", {
+                x: 0,
+                y: 0,
+                width: root.clientWidth || 0,
+                height: root.clientHeight || 0
+            });
         }
         requestCanvasRedraw(root, "external-formula-session", "selection");
+    };
+
+    window.tmSpreadsheetCanvas.clearFormulaReferenceHighlights = function (root) {
+        const s = getState(root);
+        if (!s?.sheetState) return;
+        clearExternalFormulaPicker(root);
+        s.sheetState.externalFormulaOrigin = null;
+        s.formulaReferenceSource = null;
+        s.formulaReferenceRevision = 0;
+        s.formulaReferenceCells = [];
+        if (s.metrics) {
+            s.metrics.formulaEditorHighlightCount = 0;
+            s.metrics.formulaEditorReferenceCount = 0;
+        }
+        addDirtyRect(root, "selection", {
+            x: 0,
+            y: 0,
+            width: root.clientWidth || 0,
+            height: root.clientHeight || 0
+        });
+        requestCanvasRedraw(root, "clear-formula-reference-highlights", "selection");
     };
 
     window.tmSpreadsheetCanvas.openEditorAtActive = function (root) {

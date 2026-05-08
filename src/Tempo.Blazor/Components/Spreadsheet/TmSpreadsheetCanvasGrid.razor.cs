@@ -383,6 +383,20 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         StartEdit(Sheet.ActiveCellRef ?? "A1");
     }
 
+    /// <summary>Clears any residual formula reference highlight visuals for external formula sessions in the JavaScript engine.</summary>
+    public async Task ClearEngineFormulaHighlightsAsync()
+    {
+        if (!UseJsEngine)
+            return;
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetCanvas.clearFormulaReferenceHighlights", _rootElement);
+        }
+        catch (JSException) { }
+        catch (InvalidOperationException) { }
+    }
+
     /// <inheritdoc />
     public async Task MoveActiveCellByAsync(int dRow, int dCol, bool extendSelection = false)
     {

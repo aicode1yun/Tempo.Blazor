@@ -18,6 +18,7 @@ public partial class TmSpreadsheetFormulaBar
     private int _renderedSelectionStart;
     private int _renderedSelectionEnd;
     private bool _localIsEditing;
+    private bool _suppressExternalEditing;
     private (int RowDelta, int ColDelta)? _pendingCommitNavigation;
 
     private sealed class SelectionSnapshot
@@ -58,7 +59,7 @@ public partial class TmSpreadsheetFormulaBar
 
     /// <summary>The current live value displayed inside the formula bar editor.</summary>
     public string? CurrentEditValue => _editValue;
-    private bool EditorIsEditing => IsEditing || _localIsEditing;
+    private bool EditorIsEditing => _localIsEditing || (IsEditing && !_suppressExternalEditing);
 
     /// <summary>Consumes the pending spreadsheet-like navigation requested by the last commit keystroke.</summary>
     public (int RowDelta, int ColDelta)? ConsumePendingCommitNavigation()
@@ -102,13 +103,14 @@ public partial class TmSpreadsheetFormulaBar
 
     protected override void OnParametersSet()
     {
-        if (IsEditing)
+        if (IsEditing && !_suppressExternalEditing)
         {
             _localIsEditing = true;
         }
 
-        if (!EditorIsEditing)
+        if (!IsEditing)
         {
+            _suppressExternalEditing = false;
             _localIsEditing = false;
             _editValue = DisplayValue;
         }
@@ -117,6 +119,7 @@ public partial class TmSpreadsheetFormulaBar
     private async Task StartEdit()
     {
         if (EditorIsEditing) return;
+        _suppressExternalEditing = false;
         _localIsEditing = true;
         _editValue = DisplayValue;
         _renderedSelectionStart = (_editValue ?? string.Empty).Length;
@@ -247,15 +250,25 @@ public partial class TmSpreadsheetFormulaBar
     private async Task CommitAsync()
     {
         if (!EditorIsEditing) return;
+        _suppressExternalEditing = true;
         _localIsEditing = false;
+        CurrentSession = new SpreadsheetFormulaEditSession
+        {
+            Text = _editValue ?? string.Empty,
+            SelectionStart = 0,
+            SelectionEnd = 0,
+            IsFormula = false
+        };
         try
         {
             await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.clearHostFormulaSession", _rootRef, "formulaBar");
+            await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.setHostFormulaPointMode", _rootRef, false, string.Empty);
         }
         catch
         {
             // JS can be unavailable during prerender/tests.
         }
+        await InvokeAsync(StateHasChanged);
         await OnValueCommitted.InvokeAsync(_editValue);
     }
 
@@ -283,9 +296,18 @@ public partial class TmSpreadsheetFormulaBar
     {
         if (!EditorIsEditing) return;
         _pendingCommitNavigation = null;
+        _suppressExternalEditing = true;
         _localIsEditing = false;
         _editValue = DisplayValue;
-        _ = ClearHostSessionAsync();
+        CurrentSession = new SpreadsheetFormulaEditSession
+        {
+            Text = _editValue ?? string.Empty,
+            SelectionStart = 0,
+            SelectionEnd = 0,
+            IsFormula = false
+        };
+        _ = ClearFormulaPointModeAsync();
+        _ = InvokeAsync(StateHasChanged);
         OnEditCancelled.InvokeAsync();
     }
 
@@ -368,6 +390,8 @@ public partial class TmSpreadsheetFormulaBar
         try
         {
             var selection = await JS.InvokeAsync<SelectionSnapshot>("tmSpreadsheetFormulaBar.getSelection", _inputRef);
+            if (!EditorIsEditing)
+                return;
             _renderedSelectionStart = selection?.SelectionStart ?? (_editValue ?? string.Empty).Length;
             _renderedSelectionEnd = selection?.SelectionEnd ?? _renderedSelectionStart;
             await RefreshSessionAsync(_renderedSelectionStart, _renderedSelectionEnd, notifyValueChanged: false);
@@ -380,6 +404,9 @@ public partial class TmSpreadsheetFormulaBar
 
     private async Task RefreshSessionAsync(int? selectionStart = null, int? selectionEnd = null, bool notifyValueChanged = false)
     {
+        if (!EditorIsEditing)
+            return;
+
         var value = _editValue ?? string.Empty;
         var start = selectionStart ?? _renderedSelectionStart;
         var end = selectionEnd ?? _renderedSelectionEnd;
@@ -561,6 +588,19 @@ public partial class TmSpreadsheetFormulaBar
         try
         {
             await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.clearHostFormulaSession", _rootRef, "formulaBar");
+        }
+        catch
+        {
+            // JS can be unavailable during prerender/tests.
+        }
+    }
+
+    private async Task ClearFormulaPointModeAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.clearHostFormulaSession", _rootRef, "formulaBar");
+            await JS.InvokeVoidAsync("tmSpreadsheetFormulaBar.setHostFormulaPointMode", _rootRef, false, string.Empty);
         }
         catch
         {
