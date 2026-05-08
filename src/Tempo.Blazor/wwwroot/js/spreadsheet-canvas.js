@@ -5030,6 +5030,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                 closeLocalEditor(root, true);
                 if (!isFormulaPointMode(root)) {
                     updateLocalActiveCell(root, hit.row, hit.col, !!ev.shiftKey, "pointer");
+                    flushSelectionSettled(root);
                 }
                 invokeDotNet(root, "OnCanvasCellPointer", [hit.row, hit.col, !!ev.shiftKey, !!ev.ctrlKey], true).catch(() => {});
                 return;
@@ -5067,6 +5068,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
                     return;
                 }
                 updateLocalActiveCell(root, hit.row, hit.col, false, "pointer");
+                flushSelectionSettled(root);
                 openLocalEditor(root, hit);
                 return;
             }

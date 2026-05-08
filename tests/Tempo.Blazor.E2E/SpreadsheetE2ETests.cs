@@ -3611,6 +3611,56 @@ public class SpreadsheetE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task CanvasJsEngine_MouseClickSyncsBlazorActiveCellImmediately()
+    {
+        var page = await CreatePageAsync();
+        await page.GotoAsync($"{BaseUrl}/spreadsheet");
+        await WaitForAppReadyAsync(page);
+
+        var grid = page.Locator(".tm-spreadsheet-canvas-grid").First;
+        await grid.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible });
+        await grid.ClickAsync();
+        var beforeClick = await grid.EvaluateAsync<CanvasClickSyncProbeResult>(
+            @"el => {
+                const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const host = el.closest('.tm-spreadsheet');
+                const ref = host?.querySelector('.tm-spreadsheet-formula-bar__ref');
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    commandLogCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCommandLogBatch || 0,
+                    cellPointerCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCellPointer || 0,
+                    formulaBarRef: (ref?.textContent || '').trim()
+                };
+            }");
+
+        var targetPoint = await GetCanvasCellCenterAsync(grid, "F5");
+        Assert.IsTrue(targetPoint.X >= 0 && targetPoint.Y >= 0, $"Expected a visible canvas point for F5. Point: {targetPoint.X},{targetPoint.Y}.");
+
+        await grid.ClickAsync(new LocatorClickOptions
+        {
+            Force = true,
+            Position = new Position { X = targetPoint.X, Y = targetPoint.Y }
+        });
+
+        await page.WaitForTimeoutAsync(350);
+
+        var afterClick = await grid.EvaluateAsync<CanvasClickSyncProbeResult>(
+            @"el => {
+                const metrics = window.tmSpreadsheetCanvas.getDebugMetrics(el);
+                const host = el.closest('.tm-spreadsheet');
+                const ref = host?.querySelector('.tm-spreadsheet-formula-bar__ref');
+                return {
+                    activeRef: el.__tmSpreadsheetCanvas?.model?.activeCellRef || el.__tmSpreadsheetCanvas?.model?.ActiveCellRef || '',
+                    formulaBarRef: (ref?.textContent || '').trim(),
+                    commandLogCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCommandLogBatch || 0,
+                    cellPointerCallbacks: metrics.dotNetCallbacksByMethod?.OnCanvasCellPointer || 0
+                };
+            }");
+        Assert.AreEqual("F5", afterClick.ActiveRef, $"Expected canvas active ref to stay aligned with the formula bar after click. Ref: {afterClick.ActiveRef}.");
+        Assert.AreEqual("F5", afterClick.FormulaBarRef, $"Expected Blazor formula bar ref to update immediately after canvas click. Before click activeRef={beforeClick.ActiveRef}, formulaBarRef={beforeClick.FormulaBarRef}, commandLogCallbacks={beforeClick.CommandLogCallbacks}, cellPointerCallbacks={beforeClick.CellPointerCallbacks}. After click activeRef={afterClick.ActiveRef}, formulaBarRef={afterClick.FormulaBarRef}, commandLogCallbacks={afterClick.CommandLogCallbacks}, cellPointerCallbacks={afterClick.CellPointerCallbacks}.");
+    }
+
+    [TestMethod]
     public async Task CanvasRenderer_ScrollDuringLocalEditKeepsEditorAlignedAndHidesWhenOutOfView()
     {
         var page = await CreatePageAsync();
@@ -5652,6 +5702,14 @@ public class SpreadsheetE2ETests : WasmTestBase
     {
         public int X { get; set; }
         public int Y { get; set; }
+    }
+
+    private sealed class CanvasClickSyncProbeResult
+    {
+        public string ActiveRef { get; set; } = string.Empty;
+        public string FormulaBarRef { get; set; } = string.Empty;
+        public int CommandLogCallbacks { get; set; }
+        public int CellPointerCallbacks { get; set; }
     }
 
     private sealed class CanvasCellSnapshotResult

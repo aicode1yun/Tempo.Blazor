@@ -873,10 +873,10 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     }
 
     [JSInvokable]
-    public Task OnCanvasCellPointer(int row, int col, bool shiftKey, bool ctrlKey)
+    public async Task OnCanvasCellPointer(int row, int col, bool shiftKey, bool ctrlKey)
     {
         if (Sheet is null)
-            return Task.CompletedTask;
+            return;
 
         row = Math.Clamp(row, 0, Sheet.RowCount - 1);
         col = Math.Clamp(col, 0, Sheet.ColumnCount - 1);
@@ -886,7 +886,7 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
         {
             SetActiveCell(row, col, extendSelection: false, render: false);
             _ = OnFormatPainterApply.InvokeAsync(cellRef);
-            return Task.CompletedTask;
+            return;
         }
 
         if (IsInFormulaPointMode || HasExternalFormulaSessionGuard)
@@ -895,14 +895,16 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
             {
                 _ = OnCellReferenceRequested.InvokeAsync(cellRef);
             }
-            return Task.CompletedTask;
+            return;
         }
 
         if (IsEditing)
             CommitEdit();
 
         SetActiveCell(row, col, shiftKey && !string.IsNullOrEmpty(_selection.SelectionStartRef), render: false);
-        return Task.CompletedTask;
+        await ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
+        _needsRender = true;
+        await InvokeAsync(StateHasChanged);
     }
 
     [JSInvokable]
