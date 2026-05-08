@@ -22,6 +22,21 @@ public class SignatureCaptureE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    [Description("Signature capture keeps the current stroke active when the pointer leaves and returns")]
+    public async Task SignatureCapture_Draw_ContinuesAfterPointerLeavesAndReturns()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync($"{BaseUrl}/signing-components");
+        await WaitForAppReadyAsync(page);
+
+        await DrawSignatureAcrossCanvasEdgeAsync(page, "[data-testid='signature-draw-capture']");
+
+        await Expect(page.Locator("[data-testid='signature-draw-value']")).ToContainTextAsync("Value captured");
+    }
+
+    [TestMethod]
     [Description("Signature capture clear button clears a drawn signature")]
     public async Task SignatureCapture_Clear_ClearsSignature()
     {
@@ -82,16 +97,56 @@ public class SignatureCaptureE2ETests : WasmTestBase
     {
         var canvas = page.Locator($"{rootSelector} .tm-signature-capture__canvas").First;
         await canvas.ScrollIntoViewIfNeededAsync();
+        await canvas.EvaluateAsync("element => element.scrollIntoView({ block: 'center', inline: 'center' })");
+        await page.WaitForTimeoutAsync(100);
+        var box = await canvas.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Signature canvas should have a bounding box.");
+        Assert.IsTrue(
+            double.IsFinite(box!.X) && double.IsFinite(box.Y) && double.IsFinite(box.Width) && double.IsFinite(box.Height),
+            $"Signature canvas should have finite bounds, but was x={box.X}, y={box.Y}, width={box.Width}, height={box.Height}.");
+        Assert.IsTrue(
+            Math.Abs(box.X) < 10000 && Math.Abs(box.Y) < 10000 && box.Width < 10000 && box.Height < 10000,
+            $"Signature canvas should have usable bounds, but was x={box.X}, y={box.Y}, width={box.Width}, height={box.Height}.");
+
+        var startX = box.X + box.Width * 0.18;
+        var startY = box.Y + box.Height * 0.18;
+        var hitTarget = await page.EvaluateAsync<string>(
+            "point => document.elementFromPoint(point.x, point.y)?.outerHTML.slice(0, 200) || ''",
+            new { x = startX, y = startY });
+        Assert.IsTrue(hitTarget.Contains("tm-signature-capture__canvas"), $"Mouse start should hit signature canvas, but hit: {hitTarget}");
+        await page.Mouse.MoveAsync((float)startX, (float)startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.38), (float)(box.Y + box.Height * 0.28), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.62), (float)(box.Y + box.Height * 0.20), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.82), (float)(box.Y + box.Height * 0.32), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.UpAsync();
+    }
+
+    private static async Task DrawSignatureAcrossCanvasEdgeAsync(IPage page, string rootSelector)
+    {
+        var canvas = page.Locator($"{rootSelector} .tm-signature-capture__canvas").First;
+        await canvas.ScrollIntoViewIfNeededAsync();
+        await canvas.EvaluateAsync("element => element.scrollIntoView({ block: 'center', inline: 'center' })");
+        await page.WaitForTimeoutAsync(100);
         var box = await canvas.BoundingBoxAsync();
         Assert.IsNotNull(box, "Signature canvas should have a bounding box.");
 
-        var startX = (float)(box!.X + box.Width * 0.18);
-        var startY = (float)(box.Y + box.Height * 0.62);
-        await page.Mouse.MoveAsync(startX, startY);
+        var startX = box!.X + box.Width * 0.18;
+        var startY = box.Y + box.Height * 0.25;
+        await page.Mouse.MoveAsync((float)startX, (float)startY);
         await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.38), (float)(box.Y + box.Height * 0.34), new MouseMoveOptions { Steps = 4 });
-        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.62), (float)(box.Y + box.Height * 0.58), new MouseMoveOptions { Steps = 4 });
-        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.82), (float)(box.Y + box.Height * 0.36), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.34), (float)(box.Y + box.Height * 0.34), new MouseMoveOptions { Steps = 3 });
+        await page.Mouse.MoveAsync((float)(box.X - 24), (float)(box.Y + box.Height * 0.52), new MouseMoveOptions { Steps = 3 });
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.58), (float)(box.Y + box.Height * 0.62), new MouseMoveOptions { Steps = 3 });
+
+        await page.WaitForFunctionAsync(
+            @"selector => {
+                const polyline = document.querySelector(selector);
+                const points = polyline?.getAttribute('points') || '';
+                return points.trim().split(/\s+/).filter(Boolean).length >= 3;
+            }",
+            $"{rootSelector} .tm-signature-capture__canvas polyline");
+
         await page.Mouse.UpAsync();
     }
 

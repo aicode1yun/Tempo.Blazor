@@ -29,9 +29,9 @@
                  role="img"
                  aria-label="@Loc["TmSignatureCapture_DrawPad"]"
                  @onpointerdown="HandlePointerDown"
-                 @onpointermove="HandlePointerMove"
+                 @onpointermove="HandlePointerMoveAsync"
                  @onpointerup="HandlePointerUpAsync"
-                 @onpointerleave="HandlePointerUpAsync"
+                 @onpointerleave="HandlePointerLeave"
                  @onpointercancel="HandlePointerUpAsync">
                 @if (!string.IsNullOrWhiteSpace(BackgroundColor))
                 {

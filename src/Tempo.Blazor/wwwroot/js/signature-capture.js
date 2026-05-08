@@ -1,4 +1,30 @@
 window.tmSignatureCapture = window.tmSignatureCapture || {
+    capturePointer: function (svgElement, pointerId) {
+        if (!svgElement || typeof svgElement.setPointerCapture !== 'function' || pointerId == null) {
+            return;
+        }
+
+        try {
+            svgElement.setPointerCapture(pointerId);
+        } catch {
+            // Pointer capture is an enhancement; drawing still works without it.
+        }
+    },
+
+    releasePointer: function (svgElement, pointerId) {
+        if (!svgElement || typeof svgElement.releasePointerCapture !== 'function' || pointerId == null) {
+            return;
+        }
+
+        try {
+            if (typeof svgElement.hasPointerCapture !== 'function' || svgElement.hasPointerCapture(pointerId)) {
+                svgElement.releasePointerCapture(pointerId);
+            }
+        } catch {
+            // Browsers may reject release after implicit capture loss.
+        }
+    },
+
     exportPng: function (svgElement) {
         if (!svgElement) {
             return null;
