@@ -66,6 +66,17 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Draw_PointerDown_AttemptsPointerCapture()
+    {
+        var cut = RenderComponent<TmSignatureCapture>();
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10, PointerId = 7 });
+
+        cut.WaitForAssertion(() => JSInterop.VerifyInvoke("tmSignatureCapture.capturePointer"));
+    }
+
+    [Fact]
     public void Draw_PointerUp_InvokesValueChanged()
     {
         string? captured = null;
@@ -84,6 +95,40 @@ public class TmSignatureCaptureTests : LocalizationTestBase
         changed.Should().NotBeNull();
         changed!.Mode.Should().Be(TmSignatureCaptureMode.Draw);
         cut.Instance.IsEmpty.Should().BeFalse();
+    }
+
+    [Fact]
+    public void Draw_PointerLeave_DoesNotEndStrokeAndAllowsReturnToCanvas()
+    {
+        string? captured = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointerleave", new PointerEventArgs { OffsetX = 25, OffsetY = 25, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 40, OffsetY = 35, Buttons = 1, PointerType = "mouse" });
+
+        captured.Should().BeNull();
+        cut.Find("polyline").GetAttribute("points").Should().Contain("10.0,10.0 20.0,20.0 40.0,35.0");
+    }
+
+    [Fact]
+    public void Draw_ReturningAfterPointerWasReleasedOutside_CommitsStroke()
+    {
+        string? captured = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointerleave", new PointerEventArgs { OffsetX = 25, OffsetY = 25, Buttons = 1, PointerType = "mouse" });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 40, OffsetY = 35, Buttons = 0, PointerType = "mouse" });
+
+        captured.Should().Contain("<svg");
+        cut.Find("polyline").GetAttribute("points").Should().Be("10.0,10.0 20.0,20.0");
     }
 
     [Fact]

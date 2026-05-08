@@ -13,6 +13,8 @@ public partial class TmSignatureCapture
     private readonly List<Stroke> _strokes = [];
     private Stroke? _currentStroke;
     private bool _isDrawing;
+    private bool _pointerLeftCanvas;
+    private long? _activePointerId;
     private string? _typedText;
     private string? _reason;
     private bool _rememberSignature;
@@ -183,7 +185,7 @@ public partial class TmSignatureCapture
         await Task.CompletedTask;
     }
 
-    private void HandlePointerDown(PointerEventArgs args)
+    private async Task HandlePointerDown(PointerEventArgs args)
     {
         if (Disabled || Mode != TmSignatureCaptureMode.Draw)
         {
@@ -191,18 +193,29 @@ public partial class TmSignatureCapture
         }
 
         _isDrawing = true;
+        _pointerLeftCanvas = false;
+        _activePointerId = args.PointerId;
         _currentStroke = new Stroke(StrokeColor, StrokeWidth);
         _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
         _strokes.Add(_currentStroke);
+
+        await CapturePointerAsync(args.PointerId);
     }
 
-    private void HandlePointerMove(PointerEventArgs args)
+    private async Task HandlePointerMoveAsync(PointerEventArgs args)
     {
         if (Disabled || !_isDrawing || _currentStroke is null)
         {
             return;
         }
 
+        if (ShouldFinishAbandonedPointer(args))
+        {
+            await FinishStrokeAsync(args, includePointerPosition: false);
+            return;
+        }
+
+        _pointerLeftCanvas = false;
         _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
     }
 
@@ -213,14 +226,38 @@ public partial class TmSignatureCapture
             return;
         }
 
-        if (_currentStroke is { PointCount: 1 })
+        await FinishStrokeAsync(args, includePointerPosition: true);
+    }
+
+    private void HandlePointerLeave(PointerEventArgs args)
+    {
+        if (_isDrawing)
         {
-            _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
+            _pointerLeftCanvas = true;
+        }
+    }
+
+    private async Task FinishStrokeAsync(PointerEventArgs args, bool includePointerPosition)
+    {
+        if (includePointerPosition)
+        {
+            _currentStroke?.AddPoint(args.OffsetX, args.OffsetY);
         }
 
         _isDrawing = false;
+        _pointerLeftCanvas = false;
+        var pointerId = _activePointerId;
+        _activePointerId = null;
         _currentStroke = null;
+        await ReleasePointerAsync(pointerId);
         await CommitValueAsync(await ExportDrawValueAsync());
+    }
+
+    private bool ShouldFinishAbandonedPointer(PointerEventArgs args)
+    {
+        return _pointerLeftCanvas
+            && !string.Equals(args.PointerType, "touch", StringComparison.OrdinalIgnoreCase)
+            && args.Buttons == 0;
     }
 
     private async Task HandleTypedInputAsync(ChangeEventArgs args)
@@ -295,7 +332,11 @@ public partial class TmSignatureCapture
         _strokes.Clear();
         _currentStroke = null;
         _isDrawing = false;
+        _pointerLeftCanvas = false;
+        var pointerId = _activePointerId;
+        _activePointerId = null;
         _typedText = null;
+        await ReleasePointerAsync(pointerId);
         await CommitValueAsync(null);
         StateHasChanged();
     }
@@ -340,6 +381,33 @@ public partial class TmSignatureCapture
         catch (Exception exception) when (exception is JSException or InvalidOperationException)
         {
             return svg;
+        }
+    }
+
+    private async Task CapturePointerAsync(long pointerId)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmSignatureCapture.capturePointer", _canvasRef, pointerId);
+        }
+        catch (Exception exception) when (exception is JSException or InvalidOperationException)
+        {
+        }
+    }
+
+    private async Task ReleasePointerAsync(long? pointerId)
+    {
+        if (pointerId is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmSignatureCapture.releasePointer", _canvasRef, pointerId.Value);
+        }
+        catch (Exception exception) when (exception is JSException or InvalidOperationException)
+        {
         }
     }
 
