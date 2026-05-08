@@ -1973,6 +1973,169 @@
   <data name="TmChat_TypingTwo" xml:space="preserve"><value>{0} a {1} píší…</value></data>
   <data name="TmChat_TypingMany" xml:space="preserve"><value>{0} a {1} další píší…</value></data>
 
+  <!-- Signing -->
+  <data name="TmSigning_Field_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="TmSigning_Field_Signature" xml:space="preserve"><value>Podpis</value></data>
+  <data name="TmSigning_Field_Initials" xml:space="preserve"><value>Iniciály</value></data>
+  <data name="TmSigning_Field_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="TmSigning_Field_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="TmSigning_Field_Checkbox" xml:space="preserve"><value>Zaškrtávací pole</value></data>
+  <data name="TmSigning_Field_Radio" xml:space="preserve"><value>Přepínač</value></data>
+  <data name="TmSigning_Field_Select" xml:space="preserve"><value>Výběr</value></data>
+  <data name="TmSigning_Field_Multiple" xml:space="preserve"><value>Více možností</value></data>
+  <data name="TmSigning_Field_File" xml:space="preserve"><value>Soubor</value></data>
+  <data name="TmSigning_Field_Image" xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmSigning_Field_Stamp" xml:space="preserve"><value>Razítko</value></data>
+  <data name="TmSigning_Field_Phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="TmSigning_Field_Verification" xml:space="preserve"><value>Ověření</value></data>
+  <data name="TmSigning_Field_Kba" xml:space="preserve"><value>Ověření znalostní otázkou</value></data>
+  <data name="TmSigning_Field_Cells" xml:space="preserve"><value>Buňky</value></data>
+  <data name="TmSigning_Field_Heading" xml:space="preserve"><value>Nadpis</value></data>
+  <data name="TmSigning_Field_Strikethrough" xml:space="preserve"><value>Přeškrtnutí</value></data>
+  <data name="TmSigning_Required" xml:space="preserve"><value>Povinné</value></data>
+  <data name="TmSigning_Optional" xml:space="preserve"><value>Volitelné</value></data>
+  <data name="TmSigning_Draw" xml:space="preserve"><value>Nakreslit</value></data>
+  <data name="TmSigning_Type" xml:space="preserve"><value>Napsat</value></data>
+  <data name="TmSigning_Upload" xml:space="preserve"><value>Nahrát</value></data>
+  <data name="TmSigning_Clear" xml:space="preserve"><value>Vymazat</value></data>
+  <data name="TmSigning_Complete" xml:space="preserve"><value>Dokončit</value></data>
+  <data name="TmSigning_Next" xml:space="preserve"><value>Další</value></data>
+  <data name="TmSigning_Previous" xml:space="preserve"><value>Předchozí</value></data>
+  <data name="TmSigning_AddField" xml:space="preserve"><value>Přidat pole</value></data>
+  <data name="TmSigning_FieldSettings" xml:space="preserve"><value>Nastavení pole</value></data>
+  <data name="TmSigning_Condition" xml:space="preserve"><value>Podmínka</value></data>
+  <data name="TmSigning_Formula" xml:space="preserve"><value>Vzorec</value></data>
+  <data name="TmSignatureCapture_ModeTabs" xml:space="preserve"><value>Režim zachycení podpisu</value></data>
+  <data name="TmSignatureCapture_DrawPad" xml:space="preserve"><value>Nakreslit podpis</value></data>
+  <data name="TmSignatureCapture_TypedInput" xml:space="preserve"><value>Napsaný podpis</value></data>
+  <data name="TmSignatureCapture_InitialsInput" xml:space="preserve"><value>Iniciály</value></data>
+  <data name="TmSignatureCapture_TypedPlaceholder" xml:space="preserve"><value>Napište podpis</value></data>
+  <data name="TmSignatureCapture_InitialsPlaceholder" xml:space="preserve"><value>Napište iniciály</value></data>
+  <data name="TmSignatureCapture_Font" xml:space="preserve"><value>Písmo podpisu</value></data>
+  <data name="TmSignatureCapture_FontScript" xml:space="preserve"><value>Psací</value></data>
+  <data name="TmSignatureCapture_FontSerif" xml:space="preserve"><value>Patkové</value></data>
+  <data name="TmSignatureCapture_FontSans" xml:space="preserve"><value>Bezpatkové</value></data>
+  <data name="TmSignatureCapture_UploadHint" xml:space="preserve"><value>Přetáhněte obrázek podpisu nebo vyberte soubor</value></data>
+  <data name="TmSignatureCapture_UploadButton" xml:space="preserve"><value>Nahrát podpis</value></data>
+  <data name="TmSignatureCapture_Reupload" xml:space="preserve"><value>Nahrát znovu</value></data>
+  <data name="TmSignatureCapture_CurrentPreview" xml:space="preserve"><value>Náhled aktuálního podpisu</value></data>
+  <data name="TmSignatureCapture_PreviousSignature" xml:space="preserve"><value>Předchozí podpis</value></data>
+  <data name="TmSignatureCapture_ReusePrevious" xml:space="preserve"><value>Použít předchozí</value></data>
+  <data name="TmSignatureCapture_Reason" xml:space="preserve"><value>Důvod podpisu</value></data>
+  <data name="TmSignatureCapture_RememberSignature" xml:space="preserve"><value>Zapamatovat tento podpis</value></data>
+  <data name="TmSignatureCapture_QrSigning" xml:space="preserve"><value>Podepsat v telefonu</value></data>
+  <data name="TmSignatureCapture_Required" xml:space="preserve"><value>Podpis je povinný.</value></data>
+  <data name="TmConditionBuilder_Field" xml:space="preserve"><value>Pole</value></data>
+  <data name="TmConditionBuilder_Action" xml:space="preserve"><value>Akce</value></data>
+  <data name="TmConditionBuilder_Value" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmConditionBuilder_Operation" xml:space="preserve"><value>Operace</value></data>
+  <data name="TmConditionBuilder_SelectField" xml:space="preserve"><value>Vyberte pole</value></data>
+  <data name="TmConditionBuilder_SelectValue" xml:space="preserve"><value>Vyberte hodnotu</value></data>
+  <data name="TmConditionBuilder_AddCondition" xml:space="preserve"><value>Přidat podmínku</value></data>
+  <data name="TmConditionBuilder_RemoveCondition" xml:space="preserve"><value>Odebrat podmínku</value></data>
+  <data name="TmConditionBuilder_And" xml:space="preserve"><value>A zároveň</value></data>
+  <data name="TmConditionBuilder_Or" xml:space="preserve"><value>Nebo</value></data>
+  <data name="TmConditionBuilder_Checked" xml:space="preserve"><value>zaškrtnuto</value></data>
+  <data name="TmConditionBuilder_Unchecked" xml:space="preserve"><value>nezaškrtnuto</value></data>
+  <data name="TmConditionBuilder_Equal" xml:space="preserve"><value>rovná se</value></data>
+  <data name="TmConditionBuilder_NotEqual" xml:space="preserve"><value>nerovná se</value></data>
+  <data name="TmConditionBuilder_Contains" xml:space="preserve"><value>obsahuje</value></data>
+  <data name="TmConditionBuilder_DoesNotContain" xml:space="preserve"><value>neobsahuje</value></data>
+  <data name="TmConditionBuilder_Empty" xml:space="preserve"><value>je prázdné</value></data>
+  <data name="TmConditionBuilder_NotEmpty" xml:space="preserve"><value>není prázdné</value></data>
+  <data name="TmConditionBuilder_GreaterThan" xml:space="preserve"><value>větší než</value></data>
+  <data name="TmConditionBuilder_LessThan" xml:space="preserve"><value>menší než</value></data>
+  <data name="TmConditionBuilder_MissingValue" xml:space="preserve"><value>Vyberte hodnotu pro tuto podmínku.</value></data>
+  <data name="TmConditionBuilder_CycleDetected" xml:space="preserve"><value>Tato podmínka by vytvořila cyklus závislostí.</value></data>
+  <data name="TmFormulaBuilder_Formula" xml:space="preserve"><value>Vzorec</value></data>
+  <data name="TmFormulaBuilder_Placeholder" xml:space="preserve"><value>Sestavte vzorec z tokenů polí, operátorů a funkcí.</value></data>
+  <data name="TmFormulaBuilder_Operators" xml:space="preserve"><value>Operátory vzorce</value></data>
+  <data name="TmFormulaBuilder_Tokens" xml:space="preserve"><value>Tokeny číselných polí</value></data>
+  <data name="TmFormulaBuilder_Save" xml:space="preserve"><value>Uložit vzorec</value></data>
+  <data name="TmRecipientRoleEditor_Order" xml:space="preserve"><value>Pořadí podpisu</value></data>
+  <data name="TmRecipientRoleEditor_MoveUp" xml:space="preserve"><value>Posunout roli nahoru</value></data>
+  <data name="TmRecipientRoleEditor_MoveDown" xml:space="preserve"><value>Posunout roli dolů</value></data>
+  <data name="TmRecipientRoleEditor_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmRecipientRoleEditor_RoleName" xml:space="preserve"><value>Název role</value></data>
+  <data name="TmRecipientRoleEditor_FullName" xml:space="preserve"><value>Celé jméno</value></data>
+  <data name="TmRecipientRoleEditor_Email" xml:space="preserve"><value>E-mail</value></data>
+  <data name="TmRecipientRoleEditor_Phone" xml:space="preserve"><value>Telefon</value></data>
+  <data name="TmRecipientRoleEditor_InviteByRole" xml:space="preserve"><value>Pozván rolí</value></data>
+  <data name="TmRecipientRoleEditor_OptionalInviteByRole" xml:space="preserve"><value>Volitelně pozván rolí</value></data>
+  <data name="TmRecipientRoleEditor_InviteViaField" xml:space="preserve"><value>Pozvat přes pole</value></data>
+  <data name="TmRecipientRoleEditor_NoInvite" xml:space="preserve"><value>Žádné pravidlo pozvání</value></data>
+  <data name="TmRecipientRoleEditor_RemoveRole" xml:space="preserve"><value>Odebrat roli</value></data>
+  <data name="TmRecipientRoleEditor_AddRole" xml:space="preserve"><value>Přidat roli</value></data>
+  <data name="TmRecipientRoleEditor_EmailRequired" xml:space="preserve"><value>E-mail je pro tohoto příjemce povinný.</value></data>
+  <data name="TmSigning_Field_Payment" xml:space="preserve"><value>Platba</value></data>
+  <data name="TmSigningFieldEditorPanel_Empty" xml:space="preserve"><value>Vyberte pole pro úpravu nastavení.</value></data>
+  <data name="TmSigningFieldEditorPanel_Title" xml:space="preserve"><value>Nastavení pole</value></data>
+  <data name="TmSigningFieldEditorPanel_Common" xml:space="preserve"><value>Základní nastavení</value></data>
+  <data name="TmSigningFieldEditorPanel_Type" xml:space="preserve"><value>Typ pole</value></data>
+  <data name="TmSigningFieldEditorPanel_Name" xml:space="preserve"><value>Název</value></data>
+  <data name="TmSigningFieldEditorPanel_TitleInput" xml:space="preserve"><value>Titulek</value></data>
+  <data name="TmSigningFieldEditorPanel_Description" xml:space="preserve"><value>Popis</value></data>
+  <data name="TmSigningFieldEditorPanel_SubmitterRole" xml:space="preserve"><value>Role podepisujícího</value></data>
+  <data name="TmSigningFieldEditorPanel_NoRole" xml:space="preserve"><value>Bez role</value></data>
+  <data name="TmSigningFieldEditorPanel_ReadOnly" xml:space="preserve"><value>Pouze pro čtení</value></data>
+  <data name="TmSigningFieldEditorPanel_Prefillable" xml:space="preserve"><value>Předvyplnitelné</value></data>
+  <data name="TmSigningFieldEditorPanel_Options" xml:space="preserve"><value>Možnosti</value></data>
+  <data name="TmSigningFieldEditorPanel_AddOption" xml:space="preserve"><value>Přidat možnost</value></data>
+  <data name="TmSigningFieldEditorPanel_NewOption" xml:space="preserve"><value>Možnost {0}</value></data>
+  <data name="TmSigningFieldEditorPanel_MoveOptionUp" xml:space="preserve"><value>Posunout možnost nahoru</value></data>
+  <data name="TmSigningFieldEditorPanel_MoveOptionDown" xml:space="preserve"><value>Posunout možnost dolů</value></data>
+  <data name="TmSigningFieldEditorPanel_MapOption" xml:space="preserve"><value>Mapovat oblast</value></data>
+  <data name="TmSigningFieldEditorPanel_RemoveOption" xml:space="preserve"><value>Odebrat možnost</value></data>
+  <data name="TmSigningFieldEditorPanel_DefaultValue" xml:space="preserve"><value>Výchozí hodnota</value></data>
+  <data name="TmSigningFieldEditorPanel_NoDefault" xml:space="preserve"><value>Bez výchozí hodnoty</value></data>
+  <data name="TmSigningFieldEditorPanel_Validation" xml:space="preserve"><value>Validace</value></data>
+  <data name="TmSigningFieldEditorPanel_ValidationMode" xml:space="preserve"><value>Režim validace</value></data>
+  <data name="TmSigningFieldEditorPanel_None" xml:space="preserve"><value>Žádná</value></data>
+  <data name="TmSigningFieldEditorPanel_Regex" xml:space="preserve"><value>Regulární výraz</value></data>
+  <data name="TmSigningFieldEditorPanel_Pattern" xml:space="preserve"><value>Vzor</value></data>
+  <data name="TmSigningFieldEditorPanel_Min" xml:space="preserve"><value>Minimum</value></data>
+  <data name="TmSigningFieldEditorPanel_Max" xml:space="preserve"><value>Maximum</value></data>
+  <data name="TmSigningFieldEditorPanel_Step" xml:space="preserve"><value>Krok</value></data>
+  <data name="TmSigningFieldEditorPanel_DateFormat" xml:space="preserve"><value>Formát data</value></data>
+  <data name="TmSigningFieldEditorPanel_ValidationMessage" xml:space="preserve"><value>Validační zpráva</value></data>
+  <data name="TmSigningFieldEditorPanel_Preferences" xml:space="preserve"><value>Preference</value></data>
+  <data name="TmSigningFieldEditorPanel_SignatureFormat" xml:space="preserve"><value>Formát podpisu</value></data>
+  <data name="TmSigningFieldEditorPanel_WithSignatureId" xml:space="preserve"><value>Zobrazit ID podpisu</value></data>
+  <data name="TmSigningFieldEditorPanel_WithLogo" xml:space="preserve"><value>Vložit logo</value></data>
+  <data name="TmSigningFieldEditorPanel_FontFamily" xml:space="preserve"><value>Písmo</value></data>
+  <data name="TmSigningFieldEditorPanel_FontSans" xml:space="preserve"><value>Bezpatkové</value></data>
+  <data name="TmSigningFieldEditorPanel_FontSerif" xml:space="preserve"><value>Patkové</value></data>
+  <data name="TmSigningFieldEditorPanel_FontMono" xml:space="preserve"><value>Neproporcionální</value></data>
+  <data name="TmSigningFieldEditorPanel_FontSize" xml:space="preserve"><value>Velikost písma</value></data>
+  <data name="TmSigningFieldEditorPanel_Default" xml:space="preserve"><value>Výchozí</value></data>
+  <data name="TmSigningFieldEditorPanel_Align" xml:space="preserve"><value>Zarovnání</value></data>
+  <data name="TmSigningFieldEditorPanel_Left" xml:space="preserve"><value>Vlevo</value></data>
+  <data name="TmSigningFieldEditorPanel_Center" xml:space="preserve"><value>Na střed</value></data>
+  <data name="TmSigningFieldEditorPanel_Right" xml:space="preserve"><value>Vpravo</value></data>
+  <data name="TmSigningFieldEditorPanel_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmSigningFieldEditorPanel_CopyToAllPages" xml:space="preserve"><value>Kopírovat na všechny stránky</value></data>
+  <data name="TmSigningFieldEditorPanel_Rules" xml:space="preserve"><value>Pravidla</value></data>
+  <data name="TmDocumentPageViewer_Loading" xml:space="preserve"><value>Načítání stránky dokumentu</value></data>
+  <data name="TmDocumentPageViewer_ErrorTitle" xml:space="preserve"><value>Chyba stránky dokumentu</value></data>
+  <data name="TmDocumentPageViewer_EmptyTitle" xml:space="preserve"><value>Žádná stránka dokumentu</value></data>
+  <data name="TmDocumentPageViewer_EmptyDescription" xml:space="preserve"><value>Vyberte stránku pro náhled polí k podpisu.</value></data>
+  <data name="TmDocumentPageViewer_MissingImage" xml:space="preserve"><value>Obrázek stránky není dostupný</value></data>
+  <data name="TmDocumentPageViewer_PageAlt" xml:space="preserve"><value>Stránka dokumentu {0}</value></data>
+  <data name="TmDocumentPageViewer_PageAriaLabel" xml:space="preserve"><value>Stránka dokumentu {0}</value></data>
+  <data name="TmPdfTemplateDesigner_EmptyTitle" xml:space="preserve"><value>Žádné dokumenty</value></data>
+  <data name="TmPdfTemplateDesigner_EmptyDescription" xml:space="preserve"><value>Přidejte stránky dokumentu a začněte navrhovat šablonu podpisu.</value></data>
+  <data name="TmPdfTemplateDesigner_Palette" xml:space="preserve"><value>Paleta polí</value></data>
+  <data name="TmPdfTemplateDesigner_DeleteSelected" xml:space="preserve"><value>Smazat vybrané</value></data>
+  <data name="TmPdfTemplateDesigner_Autodetect" xml:space="preserve"><value>Automaticky rozpoznat pole</value></data>
+  <data name="TmPdfTemplateDesigner_Detecting" xml:space="preserve"><value>Rozpoznávám pole...</value></data>
+  <data name="TmPdfTemplateDesigner_ContextMenu" xml:space="preserve"><value>Kontextové menu</value></data>
+  <data name="TmPdfTemplateDesigner_CopyField" xml:space="preserve"><value>Kopírovat pole</value></data>
+  <data name="TmPdfTemplateDesigner_DeleteField" xml:space="preserve"><value>Smazat pole</value></data>
+  <data name="TmPdfTemplateDesigner_Settings" xml:space="preserve"><value>Nastavení</value></data>
+  <data name="TmPdfTemplateDesigner_CopySelection" xml:space="preserve"><value>Kopírovat výběr</value></data>
+  <data name="TmPdfTemplateDesigner_DeleteSelection" xml:space="preserve"><value>Smazat výběr</value></data>
+  <data name="TmPdfTemplateDesigner_PasteField" xml:space="preserve"><value>Vložit pole</value></data>
+
   <!-- StockChart, Sparkline, Gauge -->
   <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Akciový graf</value></data>
   <data name="TmSparkline_AriaLabel" xml:space="preserve"><value>Mini graf</value></data>
@@ -2302,5 +2465,102 @@
   <data name="TmFileManager_Detail"                    xml:space="preserve"><value>Detail</value></data>
   <data name="TmFileManager_AddAttachment"             xml:space="preserve"><value>Přidat přílohu</value></data>
   <data name="TmFileManager_Attachments"               xml:space="preserve"><value>Přílohy</value></data>
+
+  <!-- Signing steps -->
+  <data name="TmSigningStep_TextPlaceholder" xml:space="preserve"><value>Zadejte text</value></data>
+  <data name="TmSigningStep_NumberPlaceholder" xml:space="preserve"><value>Zadejte číslo</value></data>
+  <data name="TmSigningStep_Required" xml:space="preserve"><value>Toto pole je povinné</value></data>
+  <data name="TmSigningStep_InvalidPattern" xml:space="preserve"><value>Pole neodpovídá požadovanému formátu</value></data>
+  <data name="TmSigningStep_InvalidNumber" xml:space="preserve"><value>Zadejte platné číslo</value></data>
+  <data name="TmSigningStep_MinValue" xml:space="preserve"><value>Hodnota musí být alespoň {0}</value></data>
+  <data name="TmSigningStep_MaxValue" xml:space="preserve"><value>Hodnota musí být nejvýše {0}</value></data>
+  <data name="TmSigningStep_Today" xml:space="preserve"><value>Dnes</value></data>
+  <data name="TmSigningStep_SelectPlaceholder" xml:space="preserve"><value>Vyberte možnost</value></data>
+  <data name="TmSigningStep_RequiredChoice" xml:space="preserve"><value>Vyberte alespoň jednu možnost</value></data>
+  <data name="TmSigningStep_CheckboxGroupHint" xml:space="preserve"><value>Potvrďte odpovídající položky.</value></data>
+  <data name="TmSigningStep_CheckboxInstruction" xml:space="preserve"><value>Zaškrtněte pro potvrzení</value></data>
+  <data name="TmSigningStep_ImageUpload" xml:space="preserve"><value>Nahrát obrázek</value></data>
+  <data name="TmSigningStep_FileUpload" xml:space="preserve"><value>Nahrát soubor</value></data>
+  <data name="TmSigningStep_RemoveAttachment" xml:space="preserve"><value>Odebrat přílohu</value></data>
+  <data name="TmSigningStep_StampPlaceholder" xml:space="preserve"><value>Zde se zobrazí generované razítko</value></data>
+  <data name="TmSigningStep_RequiredAttachment" xml:space="preserve"><value>Nahrajte přílohu</value></data>
+  <data name="TmSigningStep_PhonePlaceholder" xml:space="preserve"><value>Telefonní číslo</value></data>
+  <data name="TmSigningStep_SendCode" xml:space="preserve"><value>Odeslat kód</value></data>
+  <data name="TmSigningStep_OtpPlaceholder" xml:space="preserve"><value>Ověřovací kód</value></data>
+  <data name="TmSigningStep_ResendIn" xml:space="preserve"><value>Znovu odeslat za {0}s</value></data>
+  <data name="TmSigningStep_LoadingExternal" xml:space="preserve"><value>Načítám externí ověření...</value></data>
+  <data name="TmSigningStep_OpenExternal" xml:space="preserve"><value>Otevřít ověření</value></data>
+  <data name="TmSigningStep_StartVerification" xml:space="preserve"><value>Spustit ověření</value></data>
+  <data name="TmSigningStep_StartKba" xml:space="preserve"><value>Spustit KBA</value></data>
+  <data name="TmSigningStep_Checkout" xml:space="preserve"><value>Zaplatit</value></data>
+
+  <!-- Signing form runner -->
+  <data name="TmSigningFormRunner_EmptyTitle" xml:space="preserve"><value>Žádná pole k podpisu</value></data>
+  <data name="TmSigningFormRunner_EmptyDescription" xml:space="preserve"><value>Všechna povinná pole jsou hotová nebo nejsou dostupná žádná pole.</value></data>
+  <data name="TmSigningFormRunner_Progress" xml:space="preserve"><value>Krok {0} z {1}</value></data>
+  <data name="TmSigningFormRunner_ProgressAria" xml:space="preserve"><value>Krok {0} z {1}</value></data>
+  <data name="TmSigningFormRunner_AccessibilityMode" xml:space="preserve"><value>Režim přístupnosti</value></data>
+  <data name="TmSigningFormRunner_Skip" xml:space="preserve"><value>Přeskočit</value></data>
+  <data name="TmSigningFormRunner_SignNow" xml:space="preserve"><value>Podepsat nyní</value></data>
+  <data name="TmSigningFormRunner_Minimize" xml:space="preserve"><value>Minimalizovat</value></data>
+  <data name="TmSigningFormRunner_Saving" xml:space="preserve"><value>Ukládám...</value></data>
+  <data name="TmSigningFormRunner_Saved" xml:space="preserve"><value>Uloženo</value></data>
+  <data name="TmSigningFormRunner_SaveError" xml:space="preserve"><value>Automatické uložení selhalo</value></data>
+  <data name="TmSigningFormRunner_Unsaved" xml:space="preserve"><value>Neuložené změny</value></data>
+  <data name="TmSigningFormRunner_RequiredMissing" xml:space="preserve"><value>Před pokračováním vyplňte povinné pole.</value></data>
+  <data name="TmSigningFormRunner_CompleteBlocked" xml:space="preserve"><value>Před dokončením vyplňte všechna povinná pole.</value></data>
+  <data name="TmSigningFormRunner_Completing" xml:space="preserve"><value>Dokončuji...</value></data>
+  <data name="TmSigningFormRunner_Continue" xml:space="preserve"><value>Pokračovat</value></data>
+
+  <!-- Signing product panels -->
+  <data name="TmSigningCompletionPanel_CompletedTitle" xml:space="preserve"><value>Dokument dokončen</value></data>
+  <data name="TmSigningCompletionPanel_CompletedDescription" xml:space="preserve"><value>Vaše podepisování je dokončené.</value></data>
+  <data name="TmSigningCompletionPanel_WaitingTitle" xml:space="preserve"><value>Čeká se na ostatní</value></data>
+  <data name="TmSigningCompletionPanel_WaitingDescription" xml:space="preserve"><value>Vaše část je hotová. Dokument bude dokončen po podpisu zbývajících příjemců.</value></data>
+  <data name="TmSigningCompletionPanel_Download" xml:space="preserve"><value>Stáhnout</value></data>
+  <data name="TmSigningCompletionPanel_SendCopy" xml:space="preserve"><value>Poslat kopii</value></data>
+  <data name="TmSubmissionStatusTimeline_Empty" xml:space="preserve"><value>Žádné události odeslání</value></data>
+  <data name="TmSubmissionStatusTimeline_Sent" xml:space="preserve"><value>Odesláno</value></data>
+  <data name="TmSubmissionStatusTimeline_Opened" xml:space="preserve"><value>Otevřeno</value></data>
+  <data name="TmSubmissionStatusTimeline_Completed" xml:space="preserve"><value>Dokončeno</value></data>
+  <data name="TmSubmissionStatusTimeline_Declined" xml:space="preserve"><value>Odmítnuto</value></data>
+  <data name="TmSubmissionStatusTimeline_EmailBounced" xml:space="preserve"><value>E-mail se vrátil</value></data>
+  <data name="TmSubmissionStatusTimeline_EmailComplaint" xml:space="preserve"><value>Stížnost na e-mail</value></data>
+  <data name="TmSubmissionStatusTimeline_VerificationCompleted" xml:space="preserve"><value>Ověření dokončeno</value></data>
+  <data name="TmSubmissionStatusTimeline_KbaCompleted" xml:space="preserve"><value>KBA dokončeno</value></data>
+  <data name="TmShareLinkPanel_Title" xml:space="preserve"><value>Sdílet podpisový odkaz</value></data>
+  <data name="TmShareLinkPanel_Expires" xml:space="preserve"><value>Vyprší {0}</value></data>
+  <data name="TmShareLinkPanel_Enabled" xml:space="preserve"><value>Zapnuto</value></data>
+  <data name="TmShareLinkPanel_Disabled" xml:space="preserve"><value>Vypnuto</value></data>
+  <data name="TmShareLinkPanel_LinkLabel" xml:space="preserve"><value>Podpisový odkaz</value></data>
+  <data name="TmShareLinkPanel_EmbedCode" xml:space="preserve"><value>Embed kód</value></data>
+  <data name="TmPdfSignatureVerification_EmptyTitle" xml:space="preserve"><value>Ověřit podepsané PDF</value></data>
+  <data name="TmPdfSignatureVerification_EmptyMessage" xml:space="preserve"><value>Nahrajte nebo vyberte PDF pro ověření kontrolního součtu a podpisů.</value></data>
+  <data name="TmPdfSignatureVerification_LoadingTitle" xml:space="preserve"><value>Ověřuji PDF</value></data>
+  <data name="TmPdfSignatureVerification_LoadingMessage" xml:space="preserve"><value>Kontroluji integritu dokumentu a podpisy.</value></data>
+  <data name="TmPdfSignatureVerification_VerifiedTitle" xml:space="preserve"><value>PDF ověřeno</value></data>
+  <data name="TmPdfSignatureVerification_VerifiedMessage" xml:space="preserve"><value>Kontrolní součet odpovídá auditní stopě.</value></data>
+  <data name="TmPdfSignatureVerification_ChecksumNotFoundTitle" xml:space="preserve"><value>Kontrolní součet nenalezen</value></data>
+  <data name="TmPdfSignatureVerification_ChecksumNotFoundMessage" xml:space="preserve"><value>Tento dokument nebyl v auditním úložišti nalezen.</value></data>
+  <data name="TmPdfSignatureVerification_MalformedTitle" xml:space="preserve"><value>Neplatné PDF</value></data>
+  <data name="TmPdfSignatureVerification_MalformedMessage" xml:space="preserve"><value>Vybraný soubor není platné PDF.</value></data>
+  <data name="TmPdfSignatureVerification_ErrorTitle" xml:space="preserve"><value>Ověření selhalo</value></data>
+  <data name="TmPdfSignatureVerification_ErrorMessage" xml:space="preserve"><value>PDF se nepodařilo ověřit.</value></data>
+  <data name="TmPdfSignatureVerification_Verify" xml:space="preserve"><value>Ověřit PDF</value></data>
+  <data name="TmPdfSignatureVerification_FileName" xml:space="preserve"><value>Název souboru</value></data>
+  <data name="TmPdfSignatureVerification_Checksum" xml:space="preserve"><value>Kontrolní součet</value></data>
+  <data name="TmPdfSignatureVerification_Signatures" xml:space="preserve"><value>Podpisy</value></data>
+  <data name="TmPdfSignatureVerification_UnknownSigner" xml:space="preserve"><value>Neznámý podepisující</value></data>
+  <data name="TmAuditTrailViewer_Empty" xml:space="preserve"><value>Žádná auditní stopa</value></data>
+  <data name="TmAuditTrailViewer_Title" xml:space="preserve"><value>Auditní stopa</value></data>
+  <data name="TmAuditTrailViewer_AuditPdf" xml:space="preserve"><value>Auditní PDF</value></data>
+  <data name="TmAuditTrailViewer_Documents" xml:space="preserve"><value>Dokumenty</value></data>
+  <data name="TmAuditTrailViewer_FileName" xml:space="preserve"><value>Název souboru</value></data>
+  <data name="TmAuditTrailViewer_Checksum" xml:space="preserve"><value>Kontrolní součet</value></data>
+  <data name="TmAuditTrailViewer_Signers" xml:space="preserve"><value>Podepisující</value></data>
+  <data name="TmAuditTrailViewer_Identity" xml:space="preserve"><value>Identita</value></data>
+  <data name="TmAuditTrailViewer_Network" xml:space="preserve"><value>Síť</value></data>
+  <data name="TmAuditTrailViewer_VerificationMethod" xml:space="preserve"><value>Metoda ověření</value></data>
+  <data name="TmAuditTrailViewer_Events" xml:space="preserve"><value>Události</value></data>
 
 </root>
