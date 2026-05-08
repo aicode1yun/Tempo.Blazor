@@ -185,9 +185,26 @@
 @import "components/_qr-code.css";
 @import "components/_barcode.css";
 
-/* 21. Dock Manager */
+/* 21. Signing */
+@import "components/_document-page-viewer.css";
+@import "components/_signing-field-overlay.css";
+@import "components/_signature-capture.css";
+@import "components/_condition-builder.css";
+@import "components/_formula-builder.css";
+@import "components/_recipient-role-editor.css";
+@import "components/_signing-field-editor-panel.css";
+@import "components/_pdf-template-designer.css";
+@import "components/_signing-step-shell.css";
+@import "components/_signing-form-runner.css";
+@import "components/_signing-completion-panel.css";
+@import "components/_submission-status-timeline.css";
+@import "components/_share-link-panel.css";
+@import "components/_pdf-signature-verification.css";
+@import "components/_audit-trail-viewer.css";
+
+/* 22. Dock Manager */
 @import "components/_dock-manager.css";
 
-/* 22. AI Tools */
+/* 23. AI Tools */
 @import "components/_ai-prompt.css";
 @import "components/_chat.css";

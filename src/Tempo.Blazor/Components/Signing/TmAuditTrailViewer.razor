@@ -1,0 +1,107 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<section @attributes="AdditionalAttributes" class="@RootClass">
+    @if (Trail is null)
+    {
+        <div class="tm-audit-trail-viewer__empty">@Loc["TmAuditTrailViewer_Empty"]</div>
+    }
+    else
+    {
+        <header class="tm-audit-trail-viewer__header">
+            <h2>@Loc["TmAuditTrailViewer_Title"]</h2>
+            @if (!string.IsNullOrWhiteSpace(Trail.AuditPdfUrl))
+            {
+                <a class="tm-btn tm-btn-outline tm-btn-sm tm-audit-trail-viewer__audit-pdf"
+                   href="@Trail.AuditPdfUrl"
+                   download>
+                    <TmIcon Name="download" Size="IconSize.Xs" />
+                    <span>@Loc["TmAuditTrailViewer_AuditPdf"]</span>
+                </a>
+            }
+        </header>
+
+        <section class="tm-audit-trail-viewer__section">
+            <h3>@Loc["TmAuditTrailViewer_Documents"]</h3>
+            @foreach (var document in Trail.Documents)
+            {
+                <dl class="tm-audit-trail-viewer__document">
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_FileName"]</dt>
+                        <dd>@document.FileName</dd>
+                    </div>
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_Checksum"]</dt>
+                        <dd>@document.Checksum</dd>
+                    </div>
+                </dl>
+            }
+        </section>
+
+        <section class="tm-audit-trail-viewer__section">
+            <h3>@Loc["TmAuditTrailViewer_Signers"]</h3>
+            @foreach (var signer in Trail.Signers)
+            {
+                <dl class="tm-audit-trail-viewer__signer">
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_Identity"]</dt>
+                        <dd>@signer.FullName (@signer.Email)</dd>
+                    </div>
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_Network"]</dt>
+                        <dd>@FormatNetwork(signer.IpAddress, signer.UserAgent, signer.TimeZone)</dd>
+                    </div>
+                    @if (!string.IsNullOrWhiteSpace(signer.VerificationMethod))
+                    {
+                        <div>
+                            <dt>@Loc["TmAuditTrailViewer_VerificationMethod"]</dt>
+                            <dd>@signer.VerificationMethod</dd>
+                        </div>
+                    }
+                </dl>
+            }
+        </section>
+
+        <section class="tm-audit-trail-viewer__section">
+            <h3>@Loc["TmAuditTrailViewer_Events"]</h3>
+            <div class="tm-audit-trail-viewer__entries">
+                @foreach (var item in Trail.Events.OrderBy(item => item.OccurredAt))
+                {
+                    <article class="tm-audit-trail-viewer__entry">
+                        <strong>@item.Label</strong>
+                        <time>@item.OccurredAt.ToLocalTime().ToString("g")</time>
+                        @if (!string.IsNullOrWhiteSpace(item.Actor))
+                        {
+                            <span>@item.Actor</span>
+                        }
+                        <span>@FormatNetwork(item.IpAddress, item.UserAgent, item.TimeZone)</span>
+                        @if (!string.IsNullOrWhiteSpace(item.VerificationMethod))
+                        {
+                            <span>@item.VerificationMethod</span>
+                        }
+                    </article>
+                }
+            </div>
+        </section>
+    }
+</section>
+
+@code {
+    /// <summary>Audit trail payload to render.</summary>
+    [Parameter] public SigningAuditTrail? Trail { get; set; }
+
+    /// <summary>Additional CSS classes for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string RootClass => string.IsNullOrWhiteSpace(Class)
+        ? "tm-audit-trail-viewer"
+        : $"tm-audit-trail-viewer {Class}";
+
+    private static string FormatNetwork(string? ipAddress, string? userAgent, string? timeZone)
+    {
+        return string.Join(" · ", new[] { ipAddress, userAgent, timeZone }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+}

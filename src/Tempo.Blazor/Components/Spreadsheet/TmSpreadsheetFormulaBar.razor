@@ -1,13 +1,20 @@
 @namespace Tempo.Blazor.Components.Spreadsheet
 @using Tempo.Blazor.Components.Spreadsheet.Models
 
-<div class="tm-spreadsheet-formula-bar">
+<div class="tm-spreadsheet-formula-bar" @ref="_rootRef">
     <div class="tm-spreadsheet-formula-bar__ref"
          title="@Loc["TmSpreadsheet_CellReference"]">
         @(ActiveCellRef ?? "")
     </div>
     <div class="tm-spreadsheet-formula-bar__editor">
-        @if (IsEditing)
+        @if (EditorIsEditing && CurrentSession.IsFormula)
+        {
+            <div class="tm-spreadsheet-formula-bar__mode"
+                 aria-hidden="true">
+                fx
+            </div>
+        }
+        @if (EditorIsEditing)
         {
             <input class="tm-spreadsheet-formula-bar__input"
                    type="text"
@@ -15,10 +22,64 @@
                    @ref="_inputRef"
                    @oninput="OnInput"
                    @onkeydown="HandleKeyDown"
-                   @onblur="Commit"
+                   @onkeyup="RefreshSelectionStateAsync"
+                   @onclick="RefreshSelectionStateAsync"
+                   @ondblclick="RefreshSelectionStateAsync"
+                   @onmouseup="RefreshSelectionStateAsync"
+                   @onselect="RefreshSelectionStateAsync"
+                   @onblur="HandleBlurAsync"
                    @onkeydown:stopPropagation="true"
                    aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
-                   placeholder="@Loc["TmSpreadsheet_FormulaBarPlaceholder"]" />
+                   aria-describedby="@GetFormulaAriaDescribedBy()"
+                   placeholder="@Loc["TmSpreadsheet_FormulaBarPlaceholder"]"
+                   data-testid="tm-spreadsheet-formula-bar-input" />
+            @if (HasSuggestions)
+            {
+                <div class="tm-spreadsheet-formula-bar__suggestions"
+                     role="listbox"
+                     aria-label="@Loc["TmSpreadsheet_FormulaFunctionSuggestionsLabel"]"
+                     data-testid="tm-spreadsheet-formula-bar-suggestions">
+                    @for (var index = 0; index < CurrentSession.Suggestions.Count; index++)
+                    {
+                        var suggestion = CurrentSession.Suggestions[index];
+                        var isSelected = index == CurrentSession.SelectedSuggestionIndex;
+                        <button type="button"
+                                class="tm-spreadsheet-formula-bar__suggestion @(isSelected ? "tm-spreadsheet-formula-bar__suggestion--selected" : null)"
+                                role="option"
+                                aria-selected="@(isSelected ? "true" : "false")"
+                                @onmousedown:preventDefault
+                                @onclick="() => AcceptSuggestionAsync(index)"
+                                data-testid="tm-spreadsheet-formula-bar-suggestion">
+                            <span class="tm-spreadsheet-formula-bar__suggestion-name">@suggestion.Name</span>
+                            <span class="tm-spreadsheet-formula-bar__suggestion-signature">@suggestion.Signature</span>
+                        </button>
+                    }
+                </div>
+            }
+            @if (CurrentSession.ActiveFunctionHint is not null && !HasSuggestions)
+            {
+                <div class="tm-spreadsheet-formula-bar__hint"
+                     id="@_functionHintId"
+                     aria-live="polite"
+                     data-testid="tm-spreadsheet-formula-bar-hint">
+                    <div class="tm-spreadsheet-formula-bar__hint-name">@CurrentSession.ActiveFunctionHint.Function.Name</div>
+                    <div class="tm-spreadsheet-formula-bar__hint-signature">
+                        <span>@($"{CurrentSession.ActiveFunctionHint.Function.Name}(")</span>
+                        @for (var index = 0; index < CurrentSession.ActiveFunctionHint.Function.Arguments.Count; index++)
+                        {
+                            if (index > 0)
+                            {
+                                <span>, </span>
+                            }
+                            <span class="@(index == CurrentSession.ActiveFunctionHint.ActiveArgumentIndex ? "tm-spreadsheet-formula-bar__hint-arg tm-spreadsheet-formula-bar__hint-arg--active" : "tm-spreadsheet-formula-bar__hint-arg")">
+                                @CurrentSession.ActiveFunctionHint.Function.Arguments[index]
+                            </span>
+                        }
+                        <span>)</span>
+                    </div>
+                    <div class="tm-spreadsheet-formula-bar__hint-summary">@CurrentSession.ActiveFunctionHint.Function.Summary</div>
+                </div>
+            }
         }
         else
         {
@@ -27,6 +88,7 @@
                  tabindex="0"
                  aria-label="@Loc["TmSpreadsheet_FormulaEditorLabel"]"
                  @onkeydown="HandleDisplayKeyDown"
+                 @onmousedown="StartEdit"
                  @onclick="StartEdit">
                 @(DisplayValue ?? Loc["TmSpreadsheet_FormulaBarPlaceholder"])
             </div>

@@ -1,0 +1,119 @@
+@namespace Tempo.Blazor.Components.Signing
+@using System.Globalization
+@using Tempo.Blazor.Abstractions.Models
+
+<section @attributes="AdditionalAttributes" class="@RootClass">
+    @if (Events.Count == 0)
+    {
+        <div class="tm-submission-status-timeline__empty">@Loc["TmSubmissionStatusTimeline_Empty"]</div>
+    }
+    else
+    {
+        @foreach (var item in OrderedEvents)
+        {
+            <article class="@GetItemClass(item)" data-event-type="@item.Type">
+                <span class="tm-submission-status-timeline__marker" aria-hidden="true">
+                    <TmIcon Name="@GetIcon(item.Type)" Size="IconSize.Xs" />
+                </span>
+                <div class="tm-submission-status-timeline__body">
+                    <header class="tm-submission-status-timeline__header">
+                        <h3 class="tm-submission-status-timeline__title">@GetLabel(item.Type)</h3>
+                        <time class="tm-submission-status-timeline__time" datetime="@item.CreatedAt.ToString("O", CultureInfo.InvariantCulture)">
+                            @item.CreatedAt.ToLocalTime().ToString("g", CultureInfo.CurrentCulture)
+                        </time>
+                    </header>
+                    <div class="tm-submission-status-timeline__recipient">
+                        @GetRecipientText(item)
+                    </div>
+                    @if (item.Metadata.Count > 0)
+                    {
+                        <dl class="tm-submission-status-timeline__metadata">
+                            @foreach (var pair in item.Metadata)
+                            {
+                                <div class="tm-submission-status-timeline__metadata-row">
+                                    <dt>@pair.Key</dt>
+                                    <dd>@pair.Value</dd>
+                                </div>
+                            }
+                        </dl>
+                    }
+                </div>
+            </article>
+        }
+    }
+</section>
+
+@code {
+    /// <summary>Submission events to display.</summary>
+    [Parameter] public IReadOnlyList<SigningSubmissionStatusEvent> Events { get; set; } = [];
+
+    /// <summary>Additional CSS classes for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string RootClass => string.IsNullOrWhiteSpace(Class)
+        ? "tm-submission-status-timeline"
+        : $"tm-submission-status-timeline {Class}";
+
+    private IEnumerable<SigningSubmissionStatusEvent> OrderedEvents => Events.OrderByDescending(item => item.CreatedAt);
+
+    private string GetItemClass(SigningSubmissionStatusEvent item)
+    {
+        return $"tm-submission-status-timeline__item tm-submission-status-timeline__item--{GetSeverity(item.Type)}";
+    }
+
+    private static string GetSeverity(SigningSubmissionStatusEventType type)
+    {
+        return type switch
+        {
+            SigningSubmissionStatusEventType.Completed or SigningSubmissionStatusEventType.VerificationCompleted or SigningSubmissionStatusEventType.KbaCompleted => "success",
+            SigningSubmissionStatusEventType.Declined or SigningSubmissionStatusEventType.EmailBounced or SigningSubmissionStatusEventType.EmailComplaint => "danger",
+            SigningSubmissionStatusEventType.Opened => "info",
+            _ => "neutral"
+        };
+    }
+
+    private static string GetIcon(SigningSubmissionStatusEventType type)
+    {
+        return type switch
+        {
+            SigningSubmissionStatusEventType.Sent => "send",
+            SigningSubmissionStatusEventType.Opened => "eye",
+            SigningSubmissionStatusEventType.Completed => "check-circle",
+            SigningSubmissionStatusEventType.Declined => "x-circle",
+            SigningSubmissionStatusEventType.EmailBounced => "mail-x",
+            SigningSubmissionStatusEventType.EmailComplaint => "alert-triangle",
+            SigningSubmissionStatusEventType.VerificationCompleted => "shield-check",
+            SigningSubmissionStatusEventType.KbaCompleted => "lock",
+            _ => "circle"
+        };
+    }
+
+    private string GetLabel(SigningSubmissionStatusEventType type)
+    {
+        return type switch
+        {
+            SigningSubmissionStatusEventType.Sent => Loc["TmSubmissionStatusTimeline_Sent"],
+            SigningSubmissionStatusEventType.Opened => Loc["TmSubmissionStatusTimeline_Opened"],
+            SigningSubmissionStatusEventType.Completed => Loc["TmSubmissionStatusTimeline_Completed"],
+            SigningSubmissionStatusEventType.Declined => Loc["TmSubmissionStatusTimeline_Declined"],
+            SigningSubmissionStatusEventType.EmailBounced => Loc["TmSubmissionStatusTimeline_EmailBounced"],
+            SigningSubmissionStatusEventType.EmailComplaint => Loc["TmSubmissionStatusTimeline_EmailComplaint"],
+            SigningSubmissionStatusEventType.VerificationCompleted => Loc["TmSubmissionStatusTimeline_VerificationCompleted"],
+            SigningSubmissionStatusEventType.KbaCompleted => Loc["TmSubmissionStatusTimeline_KbaCompleted"],
+            _ => type.ToString()
+        };
+    }
+
+    private static string GetRecipientText(SigningSubmissionStatusEvent item)
+    {
+        if (!string.IsNullOrWhiteSpace(item.RecipientName) && !string.IsNullOrWhiteSpace(item.RecipientEmail))
+        {
+            return $"{item.RecipientName} ({item.RecipientEmail})";
+        }
+
+        return item.RecipientName ?? item.RecipientEmail ?? string.Empty;
+    }
+}

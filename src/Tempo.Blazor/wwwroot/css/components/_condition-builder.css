@@ -1,0 +1,140 @@
+.tm-condition-builder {
+    display: grid;
+    gap: var(--tm-space-3);
+    color: var(--tm-text-primary);
+}
+
+.tm-condition-builder--disabled {
+    color: var(--tm-text-disabled);
+}
+
+.tm-condition-builder__rows {
+    display: grid;
+    gap: var(--tm-space-3);
+}
+
+.tm-condition-builder__row {
+    display: grid;
+    grid-template-columns: minmax(var(--tm-space-16), 0.7fr) minmax(var(--tm-space-16), 1fr) minmax(var(--tm-space-16), 1fr) minmax(var(--tm-space-16), 1fr) auto;
+    gap: var(--tm-space-2);
+    align-items: start;
+    padding: var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+}
+
+.tm-condition-builder__field-group {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+}
+
+.tm-condition-builder__field-group--operation {
+    min-width: var(--tm-space-16);
+}
+
+.tm-condition-builder__field-group--value {
+    min-width: var(--tm-space-16);
+}
+
+.tm-condition-builder__label {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-medium);
+}
+
+.tm-condition-builder__field,
+.tm-condition-builder__action,
+.tm-condition-builder__operation,
+.tm-condition-builder__value-select,
+.tm-condition-builder__value-input,
+.tm-condition-builder__value-placeholder {
+    width: 100%;
+    min-height: var(--tm-input-height-sm);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-condition-builder__value-placeholder {
+    display: inline-flex;
+    align-items: center;
+    color: var(--tm-text-muted);
+}
+
+.tm-condition-builder__value-input[aria-invalid="true"],
+.tm-condition-builder__value-select[aria-invalid="true"] {
+    border-color: var(--tm-color-danger);
+    box-shadow: var(--tm-shadow-focus-danger);
+}
+
+.tm-condition-builder__operation-spacer {
+    display: block;
+}
+
+.tm-condition-builder__remove,
+.tm-condition-builder__add {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--tm-space-1);
+    min-height: var(--tm-input-height-sm);
+    padding: var(--tm-space-1) var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    font-size: var(--tm-font-size-sm);
+    cursor: pointer;
+}
+
+.tm-condition-builder__remove {
+    align-self: end;
+    width: var(--tm-input-height-sm);
+    padding: 0;
+}
+
+.tm-condition-builder__add {
+    background: var(--tm-color-primary);
+    border-color: var(--tm-color-primary);
+    color: var(--tm-text-inverse);
+}
+
+.tm-condition-builder__remove:disabled,
+.tm-condition-builder__add:disabled,
+.tm-condition-builder__field:disabled,
+.tm-condition-builder__action:disabled,
+.tm-condition-builder__operation:disabled,
+.tm-condition-builder__value-select:disabled,
+.tm-condition-builder__value-input:disabled {
+    color: var(--tm-text-disabled);
+    cursor: not-allowed;
+}
+
+.tm-condition-builder__validation {
+    grid-column: 1 / -1;
+    color: var(--tm-color-danger-text);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-condition-builder__actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+}
+
+@media (max-width: 48rem) {
+    .tm-condition-builder__row {
+        grid-template-columns: 1fr;
+    }
+
+    .tm-condition-builder__remove {
+        justify-self: end;
+    }
+}

@@ -88,6 +88,85 @@
     padding: 0 var(--tm-space-1);
 }
 
+.tm-spreadsheet-canvas-grid__formula-suggestions,
+.tm-spreadsheet-canvas-grid__formula-hint {
+    position: absolute;
+    z-index: var(--tm-z-popover, 900);
+    min-width: 220px;
+    pointer-events: auto;
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestions {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    max-height: 220px;
+    overflow: auto;
+    padding: 4px;
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: var(--tm-space-3);
+    width: 100%;
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 0;
+    border-radius: var(--tm-radius-sm);
+    background: transparent;
+    color: var(--tm-color-text);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion:hover,
+.tm-spreadsheet-canvas-grid__formula-suggestion--selected {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion-name {
+    font-weight: var(--tm-font-semibold);
+}
+
+.tm-spreadsheet-canvas-grid__formula-suggestion-signature {
+    color: var(--tm-color-text-muted);
+    font-size: 11px;
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: var(--tm-space-2);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-surface-elevated);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-name {
+    font-weight: var(--tm-font-semibold);
+    color: var(--tm-color-text);
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-signature,
+.tm-spreadsheet-canvas-grid__formula-hint-summary {
+    color: var(--tm-color-text-muted);
+    font-size: 11px;
+    line-height: 1.4;
+}
+
+.tm-spreadsheet-canvas-grid__formula-hint-arg--active {
+    color: var(--tm-color-primary);
+    font-weight: var(--tm-font-semibold);
+}
+
 .tm-sr-only {
     position: absolute;
     width: 1px;

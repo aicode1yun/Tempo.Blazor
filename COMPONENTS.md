@@ -17,6 +17,21 @@ Kompletní přehled všech komponent knihovny Tempo.Blazor, jejich parametrů, p
 9. [Pickery (datum, čas)](#pickery) — TmDatePicker, TmDateRangePicker, TmDateTimePicker, TmDateTimeRangePicker, TmTimePicker, TmTimeInput, TmTimeRangePicker, TmCalendarView
 10. [Formuláře a validace](#formuláře-a-validace) — TmFormField, TmValidatedField, TmValidationSummary, TmFormValidationMessage, TmInlineEdit, TmFormSection, TmFormRow, TmDynamicFormRenderer
 11. [DataTable](#datatable) — TmDataTable, TmDataTableColumn, TmPagination, TmColumnPicker, TmViewManager, TmFilterBuilder, TmFilterChip, TmBulkActionBar
+12. [Layout](#layout) — TmDrawer, TmSidebar, TmTopBar, TmBreadcrumbs, TmCommandPalette, TmSection, TmKeyboardShortcutsHelp
+13. [Soubory a přílohy](#soubory-a-přílohy) — TmFileDropZone, TmAttachmentManager
+14. [Galerie](#galerie) — TmImageGallery, TmLightbox
+15. [Import/Export](#importexport) — TmExportOptions, TmImportWizard, TmImportPreview
+16. [Grafy](#grafy) — TmChart
+17. [Tagy](#tagy) — TmTagPicker
+18. [Timeline](#timeline) — TmTimeline
+19. [Toolbar](#toolbar) — TmToolbar, TmToolbarButton, TmToolbarDivider
+20. [TreeView](#treeview) — TmTreeView
+21. [Scheduler](#scheduler) — TmScheduler
+22. [Dashboard](#dashboard) — TmDashboard
+23. [Workflow](#workflow) — TmStepper, TmWorkflowDesignerCanvas, TmWorkflowPropertiesPanel, TmWorkflowToolbox, TmWorkflowMinimap
+24. [Activity](#activity-komentáře-přílohy-rich-editor) — TmActivityLog, TmActivityComments, TmActivityAttachments, TmActivityTimeline, TmRichEditorFull, TmRichEditorSimple, TokenAutocomplete
+25. [Podpisové komponenty](#podpisové-komponenty) — TmDocumentPageViewer, TmSigningFieldOverlay, TmSignatureCapture, TmConditionBuilder, TmFormulaBuilder, TmRecipientRoleEditor, TmSigningFieldEditorPanel, TmPdfTemplateDesigner, signing steps, TmSigningFormRunner, TmSigningCompletionPanel, TmSubmissionStatusTimeline, TmShareLinkPanel, TmPdfSignatureVerification, TmAuditTrailViewer
+26. [Validace formulářů - kompletní příklady](#validace-formulářů---kompletní-příklady)
 12. [Spreadsheet](#spreadsheet) — TmSpreadsheet
 13. [Layout](#layout) — TmDrawer, TmSidebar, TmTopBar, TmBreadcrumbs, TmCommandPalette, TmSection, TmKeyboardShortcutsHelp
 14. [Soubory a přílohy](#soubory-a-přílohy) — TmFileDropZone, TmAttachmentManager, TmPdfViewer
@@ -5855,6 +5870,128 @@ public enum AIPromptOutputFormat { Text, Markdown, Code }
 - **Dark mode** — plná podpora přes CSS custom properties
 
 ---
+
+## Podpisové komponenty
+
+Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, editace polí, role příjemců, podpisový běh, sdílení odkazu, verifikace PDF a auditní stopa. Všechny komponenty jsou lokalizované přes `ITmLocalizer` a používají tokeny `--tm-*`.
+
+### Přehled komponent
+
+| Komponenta | Účel | Provider-agnostic |
+|------------|------|-------------------|
+| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem. | Ano |
+| `TmSigningFieldOverlay` | Interaktivní pole nad dokumentem, výběr, stav validace a resize handles. | Ano |
+| `TmSignatureCapture` | Podpis kreslením, psaným textem nebo uploadem. Vyžaduje JS soubor níže. | Ano |
+| `TmConditionBuilder` | Pravidla viditelnosti/povinnosti polí. | Ano |
+| `TmFormulaBuilder` | Editor výpočtových výrazů pro signing pole. | Ano |
+| `TmRecipientRoleEditor` | Role příjemců, pořadí, volitelné role a invitation rules. | Ano |
+| `TmSigningFieldEditorPanel` | Detailní editor vybraného podpisového pole. | Ano |
+| `TmPdfTemplateDesigner` | Návrh PDF šablon s kreslením, výběrem, resize a kontextovým menu. | Ano |
+| `TmSigningTextStep`, `TmSigningNumberStep`, `TmSigningDateStep`, `TmSigningChoiceStep`, `TmSigningAttachmentStep`, `TmSigningPhoneStep`, `TmSigningExternalStep` | Krokové editory jednotlivých typů polí. | Ano |
+| `TmSigningFormRunner` | End-user podpisový průchod dokumentem s autosave, validací a mobile panelem. | Ano |
+| `TmSigningCompletionPanel` | Dokončovací obrazovka po podpisu nebo čekání na další příjemce. | Ano |
+| `TmSubmissionStatusTimeline` | Timeline lifecycle eventů submissionu. | Ano |
+| `TmShareLinkPanel` | Veřejný signing link, copy buttony, QR kód, embed code a enable toggle. | Ano |
+| `TmPdfSignatureVerification` | Provider-agnostic vykreslení stavů ověření PDF a podpisů. | Ano |
+| `TmAuditTrailViewer` | Auditní dokumenty, checksumy, identita signerů, síťové údaje a audit PDF. | Ano |
+
+### Základní příklad šablony
+
+```razor
+<TmPdfTemplateDesigner Documents="_pages"
+                       Fields="_fields"
+                       FieldsChanged="fields => _fields = fields"
+                       SubmitterRoles="_roles" />
+
+@code {
+    private IReadOnlyList<SigningDocumentPage> _pages =
+    [
+        new()
+        {
+            AttachmentUuid = "nda",
+            PageIndex = 0,
+            Width = 612,
+            Height = 792,
+            Label = "Page 1",
+            ImageUrl = "/documents/nda-page-1.png"
+        }
+    ];
+
+    private IReadOnlyList<SigningField> _fields = [];
+
+    private readonly IReadOnlyList<SigningSubmitterRole> _roles =
+    [
+        new() { Uuid = "signer", Name = "Signer" }
+    ];
+}
+```
+
+### Podpisový průchod
+
+```razor
+<TmSigningFormRunner Pages="_pages"
+                     Fields="_fields"
+                     Values="_values"
+                     ValuesChanged="values => _values = values"
+                     OnComplete="CompleteSigningAsync" />
+
+@code {
+    private IReadOnlyDictionary<string, object?> _values =
+        new Dictionary<string, object?>(StringComparer.Ordinal);
+
+    private Task CompleteSigningAsync(IReadOnlyDictionary<string, object?> values)
+    {
+        // Persist values in the API/application layer.
+        return Task.CompletedTask;
+    }
+}
+```
+
+### Dokončení, sdílení a audit
+
+```razor
+<TmSigningCompletionPanel DownloadUrl="@_signedPdfUrl"
+                          OnSendCopy="SendCopyAsync" />
+
+<TmShareLinkPanel Link="@_publicSigningUrl"
+                  EmbedCode="@_embedCode"
+                  Enabled="@_shareEnabled"
+                  EnabledChanged="enabled => _shareEnabled = enabled" />
+
+<TmSubmissionStatusTimeline Events="_statusEvents" />
+
+<TmPdfSignatureVerification Result="_verification"
+                            OnVerifyRequested="VerifyPdfAsync" />
+
+<TmAuditTrailViewer Trail="_auditTrail" />
+```
+
+### DTO/modely
+
+Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API bez závislosti na Blazoru:
+
+- `SigningDocumentPage`, `SigningField`, `SigningFieldArea`, `SigningFieldOption`, `SigningFieldValidation`, `SigningFieldPreferences`
+- `SigningSubmitterRole`, `SigningAttachment`
+- `SigningConditionAction`, `SigningConditionOperation`, `SigningFieldCondition`
+- `SigningStepItem`, `SigningStepOverlayItem`, `SigningStepPlan`, `SigningStepPlanner`
+- `SigningFormulaHelper`, `SigningFormulaResult`
+- `SigningSubmissionStatusEvent`, `SigningSubmissionStatusEventType`
+- `SigningPdfVerificationResult`, `SigningPdfVerificationStatus`, `SigningPdfSignatureInfo`
+- `SigningAuditTrail`, `SigningAuditTrailDocument`, `SigningAuditTrailSigner`, `SigningAuditTrailEvent`
+
+### Required JS soubory
+
+`TmSignatureCapture` používá canvas/file interop a vyžaduje:
+
+```html
+<script src="_content/Tempo.Blazor/js/signature-capture.js"></script>
+```
+
+`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic a bez vlastního JS souboru. Hostitelská aplikace typicky jen načte hlavní CSS:
+
+```html
+<link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
+```
 
 ## Chat
 

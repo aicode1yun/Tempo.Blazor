@@ -1,0 +1,215 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div @attributes="AdditionalAttributes"
+     class="@RootClass"
+     tabindex="0"
+     @onmousemove="HandlePointerMoveAsync"
+     @onmouseup="HandlePointerUpAsync">
+    @if (Documents.Count == 0)
+    {
+        <TmEmptyState Icon="file-text"
+                      Title="@Loc["TmPdfTemplateDesigner_EmptyTitle"]"
+                      Description="@Loc["TmPdfTemplateDesigner_EmptyDescription"]" />
+    }
+    else
+    {
+        <div class="tm-pdf-template-designer__workspace">
+            @if (!Disabled)
+            {
+                <aside class="@PaletteClass" aria-label="@Loc["TmPdfTemplateDesigner_Palette"]">
+                    @if (MobileMode)
+                    {
+                        <button type="button"
+                                class="tm-pdf-template-designer__mobile-draw"
+                                @onclick="() => SelectFieldTypeAsync(AllowedTypes.FirstOrDefault())">
+                            <TmIcon Name="plus" Size="IconSize.Sm" />
+                            @Loc["TmSigning_AddField"]
+                        </button>
+                    }
+
+                    @foreach (var type in AllowedTypes)
+                    {
+                        <button type="button"
+                                class="@GetPaletteItemClass(type)"
+                                data-field-type="@type"
+                                title="@GetFieldTypeLabel(type)"
+                                @onclick="() => SelectFieldTypeAsync(type)">
+                            <TmIcon Name="@GetIconName(type)" Size="IconSize.Sm" />
+                            <span>@GetFieldTypeLabel(type)</span>
+                        </button>
+                    }
+                </aside>
+            }
+
+            <main class="tm-pdf-template-designer__canvas">
+                @if (!string.IsNullOrWhiteSpace(_detectionError))
+                {
+                    <TmAlert Severity="AlertSeverity.Error"
+                             Class="tm-pdf-template-designer__detection-error">
+                        @_detectionError
+                    </TmAlert>
+                }
+
+                @if (SelectedFieldCount > 1)
+                {
+                    <div class="tm-pdf-template-designer__bulk-actions">
+                        <button type="button"
+                                class="tm-pdf-template-designer__delete-selected"
+                                @onclick="DeleteSelectedAsync">
+                            <TmIcon Name="trash-2" Size="IconSize.Xs" />
+                            @Loc["TmPdfTemplateDesigner_DeleteSelected"]
+                        </button>
+                    </div>
+                }
+
+                @if (OnDetectFields is not null)
+                {
+                    <button type="button"
+                            class="tm-pdf-template-designer__detect"
+                            disabled="@_isDetecting"
+                            @onclick="DetectFieldsAsync">
+                        <TmIcon Name="scan-line" Size="IconSize.Sm" />
+                        @(_isDetecting ? Loc["TmPdfTemplateDesigner_Detecting"] : Loc["TmPdfTemplateDesigner_Autodetect"])
+                    </button>
+                }
+
+                <div class="tm-pdf-template-designer__pages">
+                    @foreach (var page in Documents)
+                    {
+                        <section class="tm-pdf-template-designer__page-frame"
+                                 data-page-key="@GetPageKey(page)">
+                            <TmDocumentPageViewer Page="page"
+                                                  Id="@GetPageElementId(page)"
+                                                  OverlayTemplate="context => RenderPageOverlay(context)" />
+                        </section>
+                    }
+                </div>
+            </main>
+
+            <aside class="tm-pdf-template-designer__panel">
+                <TmSigningFieldEditorPanel Field="SelectedField"
+                                           FieldChanged="HandleEditorFieldChangedAsync"
+                                           Fields="_fields"
+                                           SubmitterRoles="SubmitterRoles"
+                                           ReadOnly="Disabled"
+                                           CopyToAllPagesRequested="CopyFieldToAllPagesAsync" />
+            </aside>
+        </div>
+    }
+
+    @if (_contextMenu is not null)
+    {
+        <div class="tm-pdf-template-designer__context-host"
+             style="@ContextMenuStyle">
+            <div class="tm-pdf-template-designer__context-actions" role="menu">
+                @if (_contextMenu.Kind == ContextMenuKind.Field)
+                {
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__copy-field"
+                            @onclick="CopyContextFieldAsync">
+                        @Loc["TmPdfTemplateDesigner_CopyField"]
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__delete-field"
+                            @onclick="DeleteContextFieldAsync">
+                        @Loc["TmPdfTemplateDesigner_DeleteField"]
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__settings"
+                            @onclick="SelectContextFieldAsync">
+                        @Loc["TmPdfTemplateDesigner_Settings"]
+                    </button>
+                }
+                else if (_contextMenu.Kind == ContextMenuKind.Selection)
+                {
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__copy-selection"
+                            @onclick="CopySelectionAsync">
+                        @Loc["TmPdfTemplateDesigner_CopySelection"]
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__delete-selection"
+                            @onclick="DeleteSelectedAsync">
+                        @Loc["TmPdfTemplateDesigner_DeleteSelection"]
+                    </button>
+                }
+                else
+                {
+                    <button type="button"
+                            role="menuitem"
+                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__paste-field"
+                            disabled="@(_clipboardField is null)"
+                            @onclick="PasteFieldAsync">
+                        @Loc["TmPdfTemplateDesigner_PasteField"]
+                    </button>
+                    @if (OnDetectFields is not null)
+                    {
+                        <button type="button"
+                                role="menuitem"
+                                class="tm-pdf-template-designer__context-action tm-pdf-template-designer__detect-menu"
+                                @onclick="DetectFieldsAsync">
+                            @Loc["TmPdfTemplateDesigner_Autodetect"]
+                        </button>
+                    }
+                }
+            </div>
+
+            <TmContextMenu Class="tm-pdf-template-designer__context-menu">
+                <Trigger>
+                    <button type="button" class="tm-pdf-template-designer__context-trigger">@Loc["TmPdfTemplateDesigner_ContextMenu"]</button>
+                </Trigger>
+                <ChildContent>
+                    @if (_contextMenu.Kind == ContextMenuKind.Field)
+                    {
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_CopyField"]"
+                                           Icon="copy"
+                                           Class="tm-pdf-template-designer__copy-field"
+                                           OnClick="CopyContextFieldAsync" />
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_DeleteField"]"
+                                           Icon="trash-2"
+                                           IsDangerous="true"
+                                           Class="tm-pdf-template-designer__delete-field"
+                                           OnClick="DeleteContextFieldAsync" />
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_Settings"]"
+                                           Icon="settings"
+                                           Class="tm-pdf-template-designer__settings"
+                                           OnClick="SelectContextFieldAsync" />
+                    }
+                    else if (_contextMenu.Kind == ContextMenuKind.Selection)
+                    {
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_CopySelection"]"
+                                           Icon="copy"
+                                           Class="tm-pdf-template-designer__copy-selection"
+                                           OnClick="CopySelectionAsync" />
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_DeleteSelection"]"
+                                           Icon="trash-2"
+                                           IsDangerous="true"
+                                           Class="tm-pdf-template-designer__delete-selection"
+                                           OnClick="DeleteSelectedAsync" />
+                    }
+                    else
+                    {
+                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_PasteField"]"
+                                           Icon="clipboard"
+                                           Class="tm-pdf-template-designer__paste-field"
+                                           Disabled="@(_clipboardField is null)"
+                                           OnClick="PasteFieldAsync" />
+                        @if (OnDetectFields is not null)
+                        {
+                            <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_Autodetect"]"
+                                               Icon="scan-line"
+                                               Class="tm-pdf-template-designer__detect-menu"
+                                               OnClick="DetectFieldsAsync" />
+                        }
+                    }
+                </ChildContent>
+            </TmContextMenu>
+        </div>
+    }
+</div>

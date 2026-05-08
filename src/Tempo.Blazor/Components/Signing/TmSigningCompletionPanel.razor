@@ -1,0 +1,103 @@
+@namespace Tempo.Blazor.Components.Signing
+
+<section @attributes="AdditionalAttributes"
+         class="@RootClass"
+         data-state="@(IsWaitingForOthers ? "waiting" : "completed")">
+    <TmIcon Name="@IconName" Size="IconSize.Lg" />
+
+    <div class="tm-signing-completion-panel__content">
+        <h2 class="tm-signing-completion-panel__title">@PanelTitle</h2>
+        <p class="tm-signing-completion-panel__description">@PanelDescription</p>
+    </div>
+
+    <div class="tm-signing-completion-panel__actions">
+        @if (!string.IsNullOrWhiteSpace(DownloadUrl))
+        {
+            <a class="tm-btn tm-btn-primary tm-btn-md tm-signing-completion-panel__download"
+               href="@DownloadUrl"
+               download>
+                <TmIcon Name="download" Size="IconSize.Sm" />
+                <span>@Loc["TmSigningCompletionPanel_Download"]</span>
+            </a>
+        }
+        else if (OnDownload.HasDelegate)
+        {
+            <TmButton Icon="download"
+                      OnClick="OnDownload"
+                      Class="tm-signing-completion-panel__download">
+                @Loc["TmSigningCompletionPanel_Download"]
+            </TmButton>
+        }
+
+        @if (ShowSendCopy)
+        {
+            <TmButton Variant="ButtonVariant.Outline"
+                      Icon="mail"
+                      Disabled="@IsWaitingForOthers"
+                      OnClick="OnSendCopy"
+                      Class="tm-signing-completion-panel__send-copy">
+                @Loc["TmSigningCompletionPanel_SendCopy"]
+            </TmButton>
+        }
+
+        @if (!string.IsNullOrWhiteSpace(CustomActionText))
+        {
+            <TmButton Variant="ButtonVariant.Secondary"
+                      Icon="@CustomActionIcon"
+                      OnClick="OnCustomAction"
+                      Class="tm-signing-completion-panel__custom-action">
+                @CustomActionText
+            </TmButton>
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>Optional completed title override.</summary>
+    [Parameter] public string? Title { get; set; }
+
+    /// <summary>Optional completed description override.</summary>
+    [Parameter] public string? Description { get; set; }
+
+    /// <summary>Whether the signer is done but the submission is waiting for other recipients.</summary>
+    [Parameter] public bool IsWaitingForOthers { get; set; }
+
+    /// <summary>Optional completed document download URL.</summary>
+    [Parameter] public string? DownloadUrl { get; set; }
+
+    /// <summary>Whether the send-copy action is shown.</summary>
+    [Parameter] public bool ShowSendCopy { get; set; } = true;
+
+    /// <summary>Optional custom action text.</summary>
+    [Parameter] public string? CustomActionText { get; set; }
+
+    /// <summary>Optional custom action icon.</summary>
+    [Parameter] public string? CustomActionIcon { get; set; }
+
+    /// <summary>Callback invoked when download is requested and no DownloadUrl is set.</summary>
+    [Parameter] public EventCallback OnDownload { get; set; }
+
+    /// <summary>Callback invoked when sending a copy is requested.</summary>
+    [Parameter] public EventCallback OnSendCopy { get; set; }
+
+    /// <summary>Callback invoked when the custom action is clicked.</summary>
+    [Parameter] public EventCallback OnCustomAction { get; set; }
+
+    /// <summary>Additional CSS classes for the root element.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    /// <summary>Additional HTML attributes passed to the root element.</summary>
+    [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    private string RootClass => string.IsNullOrWhiteSpace(Class)
+        ? "tm-signing-completion-panel"
+        : $"tm-signing-completion-panel {Class}";
+
+    private string IconName => IsWaitingForOthers ? "clock" : "check-circle";
+
+    private string PanelTitle => Title
+        ?? (IsWaitingForOthers ? Loc["TmSigningCompletionPanel_WaitingTitle"] : Loc["TmSigningCompletionPanel_CompletedTitle"]);
+
+    private string PanelDescription => Description
+        ?? (IsWaitingForOthers ? Loc["TmSigningCompletionPanel_WaitingDescription"] : Loc["TmSigningCompletionPanel_CompletedDescription"]);
+}

@@ -1,7 +1,13 @@
 @namespace Tempo.Blazor.Components.Navigation
 
 <div class="tm-context-menu-wrapper @Class" @onkeydown="HandleKeyDown" @attributes="AdditionalAttributes">
-    <div class="tm-context-menu__trigger" @onclick="ToggleMenu">
+    <div class="tm-context-menu__trigger"
+         role="button"
+         tabindex="0"
+         aria-haspopup="menu"
+         aria-expanded="@BoolText(_isOpen)"
+         @onclick="ToggleMenu"
+         @onkeydown="HandleTriggerKeyDown">
         @Trigger
     </div>
 
@@ -49,4 +55,14 @@
             CloseMenu();
         }
     }
+
+    private void HandleTriggerKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter" or " ")
+        {
+            ToggleMenu();
+        }
+    }
+
+    private static string BoolText(bool value) => value ? "true" : "false";
 }

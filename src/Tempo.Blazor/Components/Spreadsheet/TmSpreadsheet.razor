@@ -4,6 +4,11 @@
 
 <div class="tm-spreadsheet @Class"
      style="width: @(Width ?? "100%"); height: @(Height ?? "600px");"
+     data-formula-point-mode="@(HostFormulaPointMode ? "true" : null)"
+     data-formula-guard-active="@(_formulaReferencePickingGuardActive ? "true" : "false")"
+     data-formula-argument-separator="@FormulaArgumentSeparator"
+     data-formula-decimal-separator="@FormulaDecimalSeparator"
+     data-formula-culture="@FormulaCultureName"
      @attributes="AdditionalAttributes">
     <TmSpreadsheetToolbar CanUndo="CanUndo"
                           CanRedo="CanRedo"
@@ -64,14 +69,16 @@
                style="display:none"
                accept=".xlsx" />
 
-    <TmSpreadsheetFormulaBar ActiveCellRef="@(_workbook.ActiveSheet?.ActiveCellRef)"
+    <TmSpreadsheetFormulaBar @ref="_formulaBar"
+                             ActiveCellRef="@(_workbook.ActiveSheet?.ActiveCellRef)"
                              DisplayValue="@(GetActiveCellEditValue())"
-                             IsEditing="@_isFormulaBarEditing"
+                             IsEditing="@IsFormulaBarSessionActive"
                              OnEditStarted="@OnFormulaBarEditStarted"
                              OnValueCommitted="@OnFormulaBarCommitted"
                              OnEditCancelled="@OnFormulaBarCancelled"
                              OnValueChanged="@OnFormulaBarValueChanged"
-                             OnTabPressed="@OnFormulaBarTabPressed" />
+                             OnTabPressed="@OnFormulaBarTabPressed"
+                             OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested" />
 
     @if (RenderMode != SpreadsheetRenderMode.Dom)
     {
@@ -80,6 +87,9 @@
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
                                  UseJsEngine="@UseCanvasJsEngine"
+                                 ExternalFormulaSessionActive="@(IsFormulaBarPointSessionActive || _formulaReferencePickingGuardActive || (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null))"
+                                 ExternalFormulaOriginCellRef="@((_formulaReferencePickingGuardActive || IsFormulaBarPointSessionActive) ? _formulaOriginCellRef : null)"
+                                 ExternalFormulaEditValue="@(UseCanvasJsEngine ? null : (IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null))"
                                  ActiveCellChanged="OnGridActiveCellChanged"
                                  CellValueCommitted="OnGridCellValueCommitted"
                                  CellValuesCommittedBatch="OnGridCellValuesCommittedBatch"
@@ -121,6 +131,7 @@
                            Sheet="_workbook.ActiveSheet"
                            RowHeight="RowHeight"
                            ColumnWidth="ColumnWidth"
+                           ExternalFormulaEditValue="@(IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null)"
                            ActiveCellChanged="OnGridActiveCellChanged"
                            CellValueCommitted="OnGridCellValueCommitted"
                            OnCopyRequested="Copy"

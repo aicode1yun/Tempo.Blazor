@@ -1,0 +1,49 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<TmSigningStepShell Field="Field"
+                    ValidationMessage="@_validationMessage"
+                    AppearsOn="@AppearsOn"
+                    Class="@ShellClass"
+                    @attributes="AdditionalAttributes">
+    @if (Field.Type == SigningFieldType.Stamp)
+    {
+        <div class="tm-signing-attachment-step__stamp" data-has-value="@BoolText(!string.IsNullOrWhiteSpace(StampValue))">
+            @(string.IsNullOrWhiteSpace(StampValue) ? Loc["TmSigningStep_StampPlaceholder"] : StampValue)
+        </div>
+    }
+    else
+    {
+        <label class="tm-signing-attachment-step__drop">
+            <TmIcon Name="upload" Size="IconSize.Sm" />
+            <span>@(Field.Type == SigningFieldType.Image ? Loc["TmSigningStep_ImageUpload"] : Loc["TmSigningStep_FileUpload"])</span>
+            <InputFile class="tm-signing-attachment-step__input"
+                       multiple="@AllowMultiple"
+                       accept="@Accept"
+                       disabled="@Disabled"
+                       OnChange="HandleFilesSelectedAsync" />
+        </label>
+
+        @if (Attachments.Count > 0)
+        {
+            <div class="tm-signing-attachment-step__items">
+                @foreach (var attachment in Attachments)
+                {
+                    <div class="tm-signing-attachment-step__item">
+                        @if (Field.Type == SigningFieldType.Image && !string.IsNullOrWhiteSpace(attachment.Url))
+                        {
+                            <img class="tm-signing-attachment-step__preview" src="@attachment.Url" alt="@attachment.Name" />
+                        }
+                        <span class="tm-signing-attachment-step__name">@attachment.Name</span>
+                        <button type="button"
+                                class="tm-signing-attachment-step__remove"
+                                disabled="@Disabled"
+                                @onclick="() => RemoveAttachmentAsync(attachment.Uuid)">
+                            @Loc["TmSigningStep_RemoveAttachment"]
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+    }
+</TmSigningStepShell>
