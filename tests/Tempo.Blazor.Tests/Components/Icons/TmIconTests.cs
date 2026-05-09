@@ -127,7 +127,9 @@ public class TmIconTests : LocalizationTestBase
     [InlineData("stamp")]
     [InlineData("scan-line")]
     [InlineData("clipboard-check")]
-    public void TmIcon_SigningDesignerIcons_RenderBuiltInIcons(string iconName)
+    [InlineData(IconNames.FileCheck)]
+    [InlineData(IconNames.SearchX)]
+    public void TmIcon_SigningWorkflowIcons_RenderBuiltInIcons(string iconName)
     {
         var cut = RenderComponent<TmIcon>(p => p
             .Add(c => c.Name, iconName));

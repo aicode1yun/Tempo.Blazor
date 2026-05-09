@@ -17,6 +17,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
             .Add(p => p.OnVerifyRequested, EventCallback.Factory.Create(this, () => requested = true)));
 
         cut.Markup.Should().Contain("Verify a signed PDF");
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
         cut.Find(".tm-pdf-signature-verification__verify").Click();
         requested.Should().BeTrue();
     }
@@ -32,6 +33,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
             .Add(p => p.Result, new SigningPdfVerificationResult { Status = status }));
 
         cut.Markup.Should().Contain(expected);
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
     }
 
     [Fact]

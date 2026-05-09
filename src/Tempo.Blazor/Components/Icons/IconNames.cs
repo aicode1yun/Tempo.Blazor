@@ -103,6 +103,8 @@ public static class IconNames
     public const string FileText      = "file-text";
     /// <summary>Icon name for: FilePlus, AddFile.</summary>
     public const string FilePlus      = "file-plus";
+    /// <summary>Icon name for: FileCheck, VerifiedFile.</summary>
+    public const string FileCheck     = "file-check";
     /// <summary>Icon name for: Folder.</summary>
     public const string Folder        = "folder";
     /// <summary>Icon name for: FolderOpen.</summary>
@@ -123,6 +125,8 @@ public static class IconNames
     // ─── UI Elements ──────────────────────────────────────────────────────────
     /// <summary>Icon name for: Search, Find.</summary>
     public const string Search        = "search";
+    /// <summary>Icon name for: SearchX, NotFound.</summary>
+    public const string SearchX       = "search-x";
     /// <summary>Icon name for: Filter.</summary>
     public const string Filter        = "filter";
     /// <summary>Icon name for: Settings, Gear.</summary>
