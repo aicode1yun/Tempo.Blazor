@@ -21,6 +21,8 @@ public static class IconNames
     public const string Pencil       = "edit";
     /// <summary>Icon name for: Trash, Delete.</summary>
     public const string Trash        = "trash";
+    /// <summary>Icon name for: Trash2, Delete.</summary>
+    public const string Trash2       = "trash-2";
     /// <summary>Icon name for: Save.</summary>
     public const string Save         = "save";
     /// <summary>Icon name for: Copy.</summary>

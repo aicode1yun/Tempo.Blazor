@@ -135,7 +135,10 @@ public partial class TmConditionBuilder
         }
 
         condition.Operation = operation;
-        await NotifyChangedAsync();
+        if (!IsBlank(condition))
+        {
+            await NotifyChangedAsync();
+        }
     }
 
     private async Task AddConditionAsync()
