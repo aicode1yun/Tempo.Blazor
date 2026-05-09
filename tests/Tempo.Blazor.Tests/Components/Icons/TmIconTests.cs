@@ -122,6 +122,21 @@ public class TmIconTests : LocalizationTestBase
         cut.Markup.Should().Contain("M19 6l-1 14");
     }
 
+    [Theory]
+    [InlineData("circle-dot")]
+    [InlineData("stamp")]
+    [InlineData("scan-line")]
+    [InlineData("clipboard-check")]
+    public void TmIcon_SigningDesignerIcons_RenderBuiltInIcons(string iconName)
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, iconName));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect");
+    }
+
     [Fact]
     public void TmIcon_UnknownName_Renders_Empty_Svg_Without_Throwing()
     {
