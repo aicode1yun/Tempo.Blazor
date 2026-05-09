@@ -375,9 +375,44 @@ public class TmSignatureCaptureTests : LocalizationTestBase
             parameters.Add(p => p.ShowQrSigningButton, true)
                       .Add(p => p.OnQrSigningRequested, EventCallback.Factory.Create(this, () => invoked = true)));
 
+        cut.Find(".tm-signature-capture__qr svg").Should().NotBeNull();
+        cut.FindAll(".tm-signature-capture__qr .tm-icon-unknown").Should().BeEmpty();
+
         cut.Find(".tm-signature-capture__qr").Click();
 
         invoked.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Advanced_ShowConfirmButton_RendersDisabledUntilSignatureExists()
+    {
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ShowConfirmButton, true));
+
+        var confirm = cut.Find(".tm-signature-capture__confirm");
+        confirm.TextContent.Should().Contain("Sign");
+        confirm.HasAttribute("disabled").Should().BeTrue();
+        confirm.QuerySelector("svg").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Advanced_ConfirmButton_InvokesConfirmedWithCurrentSignature()
+    {
+        TmSignatureCaptureChangedEventArgs? confirmed = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.ShowConfirmButton, true)
+                      .Add(p => p.Confirmed, EventCallback.Factory.Create<TmSignatureCaptureChangedEventArgs>(this, args => confirmed = args)));
+
+        var canvas = cut.Find("svg.tm-signature-capture__canvas");
+        canvas.TriggerEvent("onpointerdown", new PointerEventArgs { OffsetX = 10, OffsetY = 10 });
+        canvas.TriggerEvent("onpointermove", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+        canvas.TriggerEvent("onpointerup", new PointerEventArgs { OffsetX = 20, OffsetY = 20 });
+
+        cut.Find(".tm-signature-capture__confirm").Click();
+
+        confirmed.Should().NotBeNull();
+        confirmed!.Value.Should().Contain("<svg");
+        confirmed.Mode.Should().Be(TmSignatureCaptureMode.Draw);
     }
 
     [Fact]

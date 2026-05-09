@@ -101,6 +101,17 @@ public class TmIconTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmIcon_Smartphone_Renders_BuiltInIcon()
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, IconNames.Smartphone));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().Contain("<rect");
+    }
+
+    [Fact]
     public void TmIcon_UnknownName_Renders_Empty_Svg_Without_Throwing()
     {
         // Should not throw for unknown icon names — renders empty SVG gracefully

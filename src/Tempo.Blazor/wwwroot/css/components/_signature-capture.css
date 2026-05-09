@@ -22,6 +22,7 @@
 .tm-signature-capture__tab,
 .tm-signature-capture__clear,
 .tm-signature-capture__qr,
+.tm-signature-capture__confirm,
 .tm-signature-capture__upload-button,
 .tm-signature-capture__reupload,
 .tm-signature-capture__reuse {
@@ -49,11 +50,24 @@
 .tm-signature-capture__tab:disabled,
 .tm-signature-capture__clear:disabled,
 .tm-signature-capture__qr:disabled,
+.tm-signature-capture__confirm:disabled,
 .tm-signature-capture__upload-button:disabled,
 .tm-signature-capture__reupload:disabled,
 .tm-signature-capture__reuse:disabled {
     color: var(--tm-text-disabled);
     cursor: not-allowed;
+}
+
+.tm-signature-capture__confirm {
+    border-color: var(--tm-color-primary);
+    background: var(--tm-color-primary);
+    color: var(--tm-text-inverse);
+}
+
+.tm-signature-capture__confirm:disabled {
+    border-color: var(--tm-color-border);
+    background: var(--tm-bg-muted);
+    color: var(--tm-text-disabled);
 }
 
 .tm-signature-capture__surface {

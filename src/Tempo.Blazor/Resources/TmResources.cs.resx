@@ -2026,6 +2026,7 @@
   <data name="TmSignatureCapture_Reason" xml:space="preserve"><value>Důvod podpisu</value></data>
   <data name="TmSignatureCapture_RememberSignature" xml:space="preserve"><value>Zapamatovat tento podpis</value></data>
   <data name="TmSignatureCapture_QrSigning" xml:space="preserve"><value>Podepsat v telefonu</value></data>
+  <data name="TmSignatureCapture_Confirm" xml:space="preserve"><value>Podepsat</value></data>
   <data name="TmSignatureCapture_Required" xml:space="preserve"><value>Podpis je povinný.</value></data>
   <data name="TmConditionBuilder_Field" xml:space="preserve"><value>Pole</value></data>
   <data name="TmConditionBuilder_Action" xml:space="preserve"><value>Akce</value></data>

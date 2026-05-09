@@ -90,6 +90,8 @@
                 <h3 class="text-sm font-semibold text-slate-900 dark:text-white mb-3">Draw</h3>
                 <TmSignatureCapture Value="_drawSignatureValue"
                                     ValueChanged="HandleDrawSignatureChanged"
+                                    Confirmed="HandleDrawSignatureConfirmed"
+                                    ShowConfirmButton="true"
                                     ExportFormat="TmSignatureCaptureExportFormat.Svg"
                                     data-testid="signature-draw-capture" />
                 <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-draw-value">
@@ -103,6 +105,8 @@
                                     Modes="_typedSignatureModes"
                                     Value="_typedSignatureValue"
                                     ValueChanged="HandleTypedSignatureChanged"
+                                    Confirmed="HandleTypedSignatureConfirmed"
+                                    ShowConfirmButton="true"
                                     data-testid="signature-typed-capture" />
                 <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-typed-value">
                     @_typedSignatureStatus
@@ -114,6 +118,9 @@
                 <TmSignatureCapture Mode="TmSignatureCaptureMode.Upload"
                                     Modes="_uploadSignatureModes"
                                     Value="_uploadSignatureValue"
+                                    ValueChanged="value => _uploadSignatureValue = value"
+                                    Confirmed="HandleUploadSignatureConfirmed"
+                                    ShowConfirmButton="true"
                                     OnUploadRequested="HandleUploadRequested"
                                     data-testid="signature-upload-capture" />
                 <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signature-upload-value">
@@ -126,9 +133,11 @@
                 <TmSignatureCapture Value="_advancedSignatureValue"
                                     ValueChanged="value => _advancedSignatureValue = value"
                                     Changed="HandleAdvancedSignatureChanged"
+                                    Confirmed="HandleAdvancedSignatureConfirmed"
                                     RequireReason="true"
                                     ShowRememberSignature="true"
                                     ShowQrSigningButton="true"
+                                    ShowConfirmButton="true"
                                     PreviousValue="SignatureImage"
                                     OnQrSigningRequested="HandleQrSigningRequested"
                                     data-testid="signature-advanced-capture" />
@@ -1271,16 +1280,31 @@
         _drawSignatureStatus = string.IsNullOrWhiteSpace(value) ? "No value" : "Value captured";
     }
 
+    private void HandleDrawSignatureConfirmed(TmSignatureCaptureChangedEventArgs args)
+    {
+        _drawSignatureStatus = string.IsNullOrWhiteSpace(args.Value) ? "No value" : "Signature confirmed";
+    }
+
     private void HandleTypedSignatureChanged(string? value)
     {
         _typedSignatureValue = value;
         _typedSignatureStatus = string.IsNullOrWhiteSpace(value) ? "No value" : "Typed value captured";
     }
 
+    private void HandleTypedSignatureConfirmed(TmSignatureCaptureChangedEventArgs args)
+    {
+        _typedSignatureStatus = string.IsNullOrWhiteSpace(args.Value) ? "No value" : "Typed signature confirmed";
+    }
+
     private void HandleUploadRequested()
     {
         _uploadSignatureValue = SignatureImage;
         _uploadSignatureStatus = "Upload requested";
+    }
+
+    private void HandleUploadSignatureConfirmed(TmSignatureCaptureChangedEventArgs args)
+    {
+        _uploadSignatureStatus = string.IsNullOrWhiteSpace(args.Value) ? "Upload not requested" : "Uploaded signature confirmed";
     }
 
     private void HandleQrSigningRequested()
@@ -1291,6 +1315,11 @@
     private void HandleAdvancedSignatureChanged(TmSignatureCaptureChangedEventArgs args)
     {
         _advancedSignatureStatus = $"Reason: {args.Reason ?? "none"}, remember: {args.RememberSignature}";
+    }
+
+    private void HandleAdvancedSignatureConfirmed(TmSignatureCaptureChangedEventArgs args)
+    {
+        _advancedSignatureStatus = $"Signature confirmed. Reason: {args.Reason ?? "none"}, remember: {args.RememberSignature}";
     }
 
     private void HandleConditionRulesChanged(IReadOnlyList<SigningFieldCondition> conditions)

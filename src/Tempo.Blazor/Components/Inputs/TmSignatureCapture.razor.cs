@@ -80,6 +80,12 @@ public partial class TmSignatureCapture
     /// <summary>Whether to show a QR/mobile signing button.</summary>
     [Parameter] public bool ShowQrSigningButton { get; set; }
 
+    /// <summary>Whether to show an explicit confirmation button for the current signature.</summary>
+    [Parameter] public bool ShowConfirmButton { get; set; }
+
+    /// <summary>Callback invoked when the current signature is explicitly confirmed.</summary>
+    [Parameter] public EventCallback<TmSignatureCaptureChangedEventArgs> Confirmed { get; set; }
+
     /// <summary>Previously saved signature value that can be reused.</summary>
     [Parameter] public string? PreviousValue { get; set; }
 
@@ -336,6 +342,29 @@ public partial class TmSignatureCapture
             : OnQrSigningRequested.InvokeAsync();
     }
 
+    private async Task ConfirmAsync()
+    {
+        if (Disabled || IsEmpty)
+        {
+            return;
+        }
+
+        var value = await BuildCurrentValueAsync();
+        if (!string.Equals(Value, value, StringComparison.Ordinal))
+        {
+            await CommitValueAsync(value);
+        }
+
+        if (Confirmed.HasDelegate)
+        {
+            await Confirmed.InvokeAsync(new TmSignatureCaptureChangedEventArgs(
+                value,
+                Mode,
+                _reason,
+                _rememberSignature));
+        }
+    }
+
     /// <summary>Clears the captured signature and notifies value callbacks.</summary>
     public async Task ClearAsync()
     {
@@ -397,6 +426,16 @@ public partial class TmSignatureCapture
         {
             return svg;
         }
+    }
+
+    private async Task<string?> BuildCurrentValueAsync()
+    {
+        return Mode switch
+        {
+            TmSignatureCaptureMode.Draw when _strokes.Count > 0 => await ExportDrawValueAsync(),
+            TmSignatureCaptureMode.Typed when !string.IsNullOrWhiteSpace(_typedText) => BuildTypedSvgString(),
+            _ => Value
+        };
     }
 
     private async Task CapturePointerAsync(long pointerId)

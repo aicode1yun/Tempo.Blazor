@@ -152,8 +152,18 @@
                     class="tm-signature-capture__qr"
                     disabled="@Disabled"
                     @onclick="HandleQrSigningRequestedAsync">
-                <TmIcon Name="smartphone" Size="IconSize.Xs" />
+                <TmIcon Name="@IconNames.Smartphone" Size="IconSize.Xs" />
                 <span>@Loc["TmSignatureCapture_QrSigning"]</span>
+            </button>
+        }
+        @if (ShowConfirmButton)
+        {
+            <button type="button"
+                    class="tm-signature-capture__confirm"
+                    disabled="@(Disabled || IsEmpty)"
+                    @onclick="ConfirmAsync">
+                <TmIcon Name="@IconNames.Check" Size="IconSize.Xs" />
+                <span>@Loc["TmSignatureCapture_Confirm"]</span>
             </button>
         }
         <button type="button"

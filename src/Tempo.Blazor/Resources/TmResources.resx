@@ -2189,6 +2189,7 @@
   <data name="TmSignatureCapture_Reason" xml:space="preserve"><value>Signing reason</value></data>
   <data name="TmSignatureCapture_RememberSignature" xml:space="preserve"><value>Remember this signature</value></data>
   <data name="TmSignatureCapture_QrSigning" xml:space="preserve"><value>Sign on phone</value></data>
+  <data name="TmSignatureCapture_Confirm" xml:space="preserve"><value>Sign</value></data>
   <data name="TmSignatureCapture_Required" xml:space="preserve"><value>Signature is required.</value></data>
   <data name="TmConditionBuilder_Field" xml:space="preserve"><value>Field</value></data>
   <data name="TmConditionBuilder_Action" xml:space="preserve"><value>Action</value></data>
