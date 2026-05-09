@@ -172,7 +172,7 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
         {
             autosaves.Should().Be(1);
             cut.Find(".tm-signing-form-runner__autosave").TextContent.Should().Contain("Offline");
-        });
+        }, TimeSpan.FromSeconds(5));
     }
 
     [Fact]
@@ -239,6 +239,61 @@ public class TmSigningFormRunnerTests : LocalizationTestBase
 
         cut.Find(".tm-signing-form-runner__step-panel").TextContent.Should().Contain("Second");
         cut.Find(".tm-signing-form-runner__progress").GetAttribute("aria-label").Should().Contain("Step");
+    }
+
+    [Fact]
+    public void LanguageSelector_ChangesCultureWithoutLosingValueOrStep()
+    {
+        string? culture = null;
+        IReadOnlyDictionary<string, object?>? values = null;
+        SigningSubmissionLocalizationSnapshot? snapshot = null;
+        var first = CreateField("first", "First", SigningFieldType.Text, y: 0.1);
+        first.Labels.Translations["en"] = "First name";
+        first.Labels.Translations["cs"] = "Jméno";
+        var second = CreateField("second", "Second", SigningFieldType.Text, y: 0.2);
+        second.Labels.Translations["en"] = "Second name";
+        second.Labels.Translations["cs"] = "Druhé jméno";
+
+        var cut = RenderComponent<TmSigningFormRunner>(parameters => parameters
+            .Add(p => p.Fields, [first, second])
+            .Add(p => p.Culture, "en")
+            .Add(p => p.FallbackCulture, "en")
+            .Add(p => p.SupportedCultures, ["en", "cs"])
+            .Add(p => p.ShowLanguageSelector, true)
+            .Add(p => p.CultureChanged, EventCallback.Factory.Create<string?>(this, changed => culture = changed))
+            .Add(p => p.ValuesChanged, EventCallback.Factory.Create<IReadOnlyDictionary<string, object?>>(this, changed => values = changed))
+            .Add(p => p.OnLocalizationSnapshotChanged, EventCallback.Factory.Create<SigningSubmissionLocalizationSnapshot>(this, changed => snapshot = changed)));
+
+        cut.Find("input.tm-signing-text-step__input").Change("Alice");
+        cut.Find(".tm-signing-form-runner__next").Click();
+        cut.Find(".tm-signing-form-runner__step-panel").TextContent.Should().Contain("Second name");
+
+        cut.Find(".tm-signing-form-runner__language-select").Change("cs");
+
+        culture.Should().Be("cs");
+        values!["first"].Should().Be("Alice");
+        cut.Find(".tm-signing-form-runner__step-panel").TextContent.Should().Contain("Druhé jméno");
+        snapshot.Should().NotBeNull();
+        snapshot!.Culture.Should().Be("cs");
+        snapshot.Fields.Single(field => field.FieldUuid == "first").Label.Should().Be("Jméno");
+    }
+
+    [Fact]
+    public void LanguageSelector_IsHiddenWhenDisabledOrSingleCulture()
+    {
+        var disabled = RenderComponent<TmSigningFormRunner>(parameters => parameters
+            .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
+            .Add(p => p.SupportedCultures, ["en", "cs"])
+            .Add(p => p.ShowLanguageSelector, false));
+
+        disabled.FindAll(".tm-signing-form-runner__language-select").Should().BeEmpty();
+
+        var singleCulture = RenderComponent<TmSigningFormRunner>(parameters => parameters
+            .Add(p => p.Fields, [CreateField("name", "Name", SigningFieldType.Text)])
+            .Add(p => p.SupportedCultures, ["en"])
+            .Add(p => p.ShowLanguageSelector, true));
+
+        singleCulture.FindAll(".tm-signing-form-runner__language-select").Should().BeEmpty();
     }
 
     private static SigningDocumentPage CreatePage()

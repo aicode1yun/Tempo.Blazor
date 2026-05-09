@@ -48,7 +48,7 @@
                 {
                     <span class="@GetOptionClass(option)"
                           data-option-uuid="@option.Uuid">
-                        @option.Value
+                        @GetOptionLabel(option)
                     </span>
                 }
             </span>
@@ -72,12 +72,12 @@
             }
             else
             {
-                <span class="tm-signing-field__value">@LocalizedTypeName</span>
+                <span class="tm-signing-field__value">@PlaceholderText</span>
             }
         }
         else if (Field?.Type is SigningFieldType.Stamp)
         {
-            <span class="tm-signing-field__stamp">@(!string.IsNullOrWhiteSpace(TextValue) ? TextValue : Loc["TmSigning_Field_Stamp"])</span>
+            <span class="tm-signing-field__stamp">@(!string.IsNullOrWhiteSpace(TextValue) ? TextValue : PlaceholderText)</span>
         }
         else if (Field?.Type is SigningFieldType.Heading)
         {

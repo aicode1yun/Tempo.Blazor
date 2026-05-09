@@ -2285,6 +2285,16 @@
   <data name="TmSigningFieldEditorPanel_Color" xml:space="preserve"><value>Color</value></data>
   <data name="TmSigningFieldEditorPanel_CopyToAllPages" xml:space="preserve"><value>Copy to all pages</value></data>
   <data name="TmSigningFieldEditorPanel_Rules" xml:space="preserve"><value>Rules</value></data>
+  <data name="TmSigningFieldEditorPanel_Localization" xml:space="preserve"><value>Localized text</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizationCulture" xml:space="preserve"><value>Language</value></data>
+  <data name="TmSigningFieldEditorPanel_TemplateLanguage" xml:space="preserve"><value>Template language</value></data>
+  <data name="TmSigningFieldEditorPanel_MissingLocalizationWarning" xml:space="preserve"><value>{0} signer-facing text(s) are missing for {1}. Fallback text will be shown.</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedLabel" xml:space="preserve"><value>Localized label</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedTitle" xml:space="preserve"><value>Localized title</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedDescription" xml:space="preserve"><value>Localized description</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedPlaceholder" xml:space="preserve"><value>Localized placeholder</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedValidationMessage" xml:space="preserve"><value>Localized validation message</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedOptionLabels" xml:space="preserve"><value>Localized option labels</value></data>
   <data name="TmDocumentPageViewer_Loading" xml:space="preserve"><value>Loading document page</value></data>
   <data name="TmDocumentPageViewer_ErrorTitle" xml:space="preserve"><value>Document page error</value></data>
   <data name="TmDocumentPageViewer_EmptyTitle" xml:space="preserve"><value>No document page</value></data>
@@ -2329,6 +2339,8 @@
   <data name="TmPdfTemplateDesigner_SelectionCopied" xml:space="preserve"><value>Selection copied. Right-click a page to paste it.</value></data>
   <data name="TmPdfTemplateDesigner_FieldPasted" xml:space="preserve"><value>Field pasted.</value></data>
   <data name="TmPdfTemplateDesigner_SelectionPasted" xml:space="preserve"><value>Selection pasted.</value></data>
+  <data name="TmPdfTemplateDesigner_CulturePreview" xml:space="preserve"><value>Preview language</value></data>
+  <data name="TmPdfTemplateDesigner_CulturePreviewAria" xml:space="preserve"><value>Template preview language</value></data>
 
   <!-- StockChart, Sparkline, Gauge -->
   <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Stock chart</value></data>
@@ -2584,6 +2596,8 @@
   <data name="TmSigningFormRunner_EmptyDescription" xml:space="preserve"><value>All required signing fields are complete or no fields are available.</value></data>
   <data name="TmSigningFormRunner_Progress" xml:space="preserve"><value>Step {0} of {1}</value></data>
   <data name="TmSigningFormRunner_ProgressAria" xml:space="preserve"><value>Step {0} of {1}</value></data>
+  <data name="TmSigningFormRunner_Language" xml:space="preserve"><value>Language</value></data>
+  <data name="TmSigningFormRunner_LanguageAria" xml:space="preserve"><value>Signing language</value></data>
   <data name="TmSigningFormRunner_AccessibilityMode" xml:space="preserve"><value>Accessibility mode</value></data>
   <data name="TmSigningFormRunner_Skip" xml:space="preserve"><value>Skip</value></data>
   <data name="TmSigningFormRunner_SignNow" xml:space="preserve"><value>Sign now</value></data>
@@ -2647,6 +2661,13 @@
   <data name="TmAuditTrailViewer_Network" xml:space="preserve"><value>Network</value></data>
   <data name="TmAuditTrailViewer_VerificationMethod" xml:space="preserve"><value>Verification method</value></data>
   <data name="TmAuditTrailViewer_Events" xml:space="preserve"><value>Events</value></data>
+  <data name="TmAuditTrailViewer_Localization" xml:space="preserve"><value>Signing language</value></data>
+  <data name="TmAuditTrailViewer_SigningCulture" xml:space="preserve"><value>Signing culture</value></data>
+  <data name="TmAuditTrailViewer_FallbackCulture" xml:space="preserve"><value>Template fallback culture</value></data>
+  <data name="TmAuditTrailViewer_PdfContent" xml:space="preserve"><value>PDF content</value></data>
+  <data name="TmAuditTrailViewer_PdfTranslated" xml:space="preserve"><value>Translated by application</value></data>
+  <data name="TmAuditTrailViewer_PdfNotTranslated" xml:space="preserve"><value>Original PDF language</value></data>
+  <data name="TmAuditTrailViewer_NotCaptured" xml:space="preserve"><value>Not captured</value></data>
 
   <!-- Nested comment reply -->
   <data name="TmNotionBlockComment_ThreadDetail"       xml:space="preserve"><value>Thread</value></data>

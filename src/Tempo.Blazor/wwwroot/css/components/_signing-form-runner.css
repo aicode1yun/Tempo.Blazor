@@ -59,6 +59,25 @@
     font-weight: var(--tm-font-weight-semibold);
 }
 
+.tm-signing-form-runner__language {
+    display: grid;
+    gap: var(--tm-space-1);
+    min-width: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-signing-form-runner__language-select {
+    width: 100%;
+    min-height: calc(var(--tm-space-5) + var(--tm-space-4));
+    padding: 0 var(--tm-space-3);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+}
+
 .tm-signing-form-runner__accessibility-entry,
 .tm-signing-form-runner__accessibility-field,
 .tm-signing-form-runner__previous,

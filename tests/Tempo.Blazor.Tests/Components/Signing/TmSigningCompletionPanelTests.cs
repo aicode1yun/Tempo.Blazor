@@ -45,4 +45,17 @@ public class TmSigningCompletionPanelTests : LocalizationTestBase
         cut.Find(".tm-signing-completion-panel").GetAttribute("data-state").Should().Be("waiting");
         cut.Find(".tm-signing-completion-panel__send-copy").HasAttribute("disabled").Should().BeTrue();
     }
+
+    [Fact]
+    public void Render_UsesProvidedValuesWithoutSigningFieldLocalization()
+    {
+        var cut = RenderComponent<TmSigningCompletionPanel>(parameters => parameters
+            .Add(p => p.Title, "Dokument podepsán pro Alex Johnson")
+            .Add(p => p.Description, "Submission value: email")
+            .Add(p => p.CustomActionText, "Use saved value email"));
+
+        cut.Markup.Should().Contain("Dokument podepsán pro Alex Johnson");
+        cut.Markup.Should().Contain("Submission value: email");
+        cut.Find(".tm-signing-completion-panel__custom-action").TextContent.Should().Contain("Use saved value email");
+    }
 }

@@ -8,6 +8,7 @@ namespace Tempo.Blazor.Components.Signing;
 /// <summary>Renders a text-like signing step with optional multiline, cells, and regex validation.</summary>
 public partial class TmSigningTextStep
 {
+    private readonly string _validationId = $"tm-signing-text-validation-{Guid.NewGuid():N}";
     private string? _validationMessage;
 
     /// <summary>Signing field represented by this step.</summary>
@@ -28,6 +29,12 @@ public partial class TmSigningTextStep
     /// <summary>Whether the input is disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -44,6 +51,10 @@ public partial class TmSigningTextStep
 
     private string? CurrentValidationMessage => _validationMessage;
 
+    private string? ValidationDescriptionId => CurrentValidationMessage is null ? null : _validationId;
+
+    private string PlaceholderText => SigningLocalizationResolver.ResolveFieldPlaceholder(Field, Culture, FallbackCulture, Loc["TmSigningStep_TextPlaceholder"]);
+
     private string ShellClass => string.Join(" ", new[] { "tm-signing-text-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
 
     private async Task HandleValueChangedAsync(ChangeEventArgs args)
@@ -57,16 +68,14 @@ public partial class TmSigningTextStep
     {
         if (Field.Required && string.IsNullOrWhiteSpace(value))
         {
-            return Loc["TmSigningStep_Required"];
+            return SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_Required"]);
         }
 
         if (!string.IsNullOrWhiteSpace(value)
             && !string.IsNullOrWhiteSpace(Field.Validation?.Pattern)
             && !Regex.IsMatch(value, Field.Validation.Pattern))
         {
-            return !string.IsNullOrWhiteSpace(Field.Validation.Message)
-                ? Field.Validation.Message
-                : Loc["TmSigningStep_InvalidPattern"];
+            return SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_InvalidPattern"]);
         }
 
         return null;

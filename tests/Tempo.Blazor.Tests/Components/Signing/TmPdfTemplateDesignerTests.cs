@@ -32,6 +32,34 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void CulturePreviewSelector_ChangesCultureAndKeepsSelectedField()
+    {
+        string? culture = null;
+        var field = CreateField("field-1", "Name");
+        field.Labels.Translations["cs-CZ"] = "Jméno";
+        IRenderedComponent<TmPdfTemplateDesigner>? cut = null;
+        cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, new[] { field })
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowCulturePreview, true)
+                      .Add(p => p.Culture, "en-US")
+                      .Add(p => p.CultureChanged, EventCallback.Factory.Create<string?>(this, value =>
+                      {
+                          culture = value;
+                          cut!.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, value));
+                      })));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find(".tm-pdf-template-designer__culture-preview").Change("cs-CZ");
+
+        culture.Should().Be("cs-CZ");
+        cut.Find("[data-field-uuid='field-1']").TextContent.Should().Contain("Jméno");
+        cut.FindAll(".tm-signing-field--selected").Should().HaveCount(1);
+        cut.Find(".tm-signing-field-editor-panel__localization").Should().NotBeNull();
+    }
+
+    [Fact]
     public void Render_ContinuousView_RendersAllPages()
     {
         var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
@@ -144,6 +172,28 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
         field.Areas.Single().Y.Should().BeApproximately(0.4675, 0.001);
         field.Areas.Single().Width.Should().BeApproximately(0.34, 0.001);
         field.Areas.Single().Height.Should().BeApproximately(0.065, 0.001);
+    }
+
+    [Fact]
+    public void Palette_DragDropFieldType_AfterCultureChangeCreatesLocalizedDefaultLabel()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Culture, "cs-CZ")
+                      .Add(p => p.FallbackCulture, "en-US")
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowCulturePreview, true)
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-type='Signature']").DragStart(new DragEventArgs());
+        cut.Find("[data-page-key='attachment-1:0'] .tm-pdf-template-designer__page-surface")
+            .Drop(new DragEventArgs { OffsetX = 500, OffsetY = 500 });
+
+        var field = captured!.Should().ContainSingle().Subject;
+        field.Name.Should().Be("Signature");
+        field.Labels.Default.Should().Be("Signature");
+        field.Labels.Translations["cs-CZ"].Should().Be("Signature");
     }
 
     [Fact]

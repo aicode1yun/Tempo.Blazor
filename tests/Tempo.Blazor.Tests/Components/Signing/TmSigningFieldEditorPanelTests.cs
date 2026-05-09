@@ -332,6 +332,107 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     }
 
     [Fact]
+    public void LocalizationEditor_UpdatesLocalizedFieldText()
+    {
+        SigningField? captured = null;
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateField())
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowLocalizationEditor, true)
+                      .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
+
+        cut.Find(".tm-signing-field-editor-panel__localization-culture").Change("cs-CZ");
+        cut.Find(".tm-signing-field-editor-panel__localized-label").Change("Celé jméno");
+        cut.Find(".tm-signing-field-editor-panel__localized-title").Change("Vaše celé jméno");
+        cut.Find(".tm-signing-field-editor-panel__localized-description").Change("Použijte jméno z dokladu.");
+        cut.Find(".tm-signing-field-editor-panel__localized-placeholder").Change("Jan Novák");
+        cut.Find(".tm-signing-field-editor-panel__localized-validation-message").Change("Jméno je povinné.");
+
+        captured.Should().NotBeNull();
+        captured!.Labels.Translations["cs-CZ"].Should().Be("Celé jméno");
+        captured.Titles.Translations["cs-CZ"].Should().Be("Vaše celé jméno");
+        captured.Descriptions.Translations["cs-CZ"].Should().Be("Použijte jméno z dokladu.");
+        captured.Placeholders.Translations["cs-CZ"].Should().Be("Jan Novák");
+        captured.Validation!.Messages.Translations["cs-CZ"].Should().Be("Jméno je povinné.");
+    }
+
+    [Fact]
+    public void LocalizationEditor_UpdatesOptionLabelWithoutChangingValue()
+    {
+        SigningField? captured = null;
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateChoiceField(SigningFieldType.Select))
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowLocalizationEditor, true)
+                      .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field => captured = field)));
+
+        cut.Find(".tm-signing-field-editor-panel__localization-culture").Change("cs-CZ");
+        cut.Find("[data-localized-option-uuid='option-a'] .tm-signing-field-editor-panel__localized-option-label").Change("Jedna");
+
+        captured.Should().NotBeNull();
+        var option = captured!.Options.Single(item => item.Uuid == "option-a");
+        option.Value.Should().Be("One");
+        option.Labels.Translations["cs-CZ"].Should().Be("Jedna");
+    }
+
+    [Fact]
+    public void LocalizationEditor_IsHiddenByDefault()
+    {
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateField())
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" }));
+
+        cut.FindAll(".tm-signing-field-editor-panel__localization").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void LocalizationEditor_ShowsTemplateLanguage()
+    {
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateField())
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.FallbackCulture, "cs-CZ")
+                      .Add(p => p.ShowLocalizationEditor, true));
+
+        cut.Find(".tm-signing-field-editor-panel__template-language")
+            .TextContent
+            .Should()
+            .Contain("Template language")
+            .And.Contain("cs-CZ");
+    }
+
+    [Fact]
+    public void LocalizationEditor_ShowsMissingTranslationWarningForActiveCulture()
+    {
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateField())
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowLocalizationEditor, true));
+
+        var warning = cut.Find(".tm-signing-field-editor-panel__missing-localization");
+        warning.GetAttribute("role").Should().Be("status");
+        warning.GetAttribute("aria-live").Should().Be("polite");
+        warning.TextContent.Should().Contain("signer-facing text");
+        warning.TextContent.Should().Contain("en-US");
+    }
+
+    [Fact]
+    public void LocalizationEditor_DoesNotWarnWhenActiveCultureHasTranslations()
+    {
+        var field = CreateField();
+        field.Labels.Translations["en-US"] = "Full name";
+        field.Titles.Translations["en-US"] = "Full legal name";
+        field.Descriptions.Translations["en-US"] = "Use your legal name.";
+
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowLocalizationEditor, true));
+
+        cut.FindAll(".tm-signing-field-editor-panel__missing-localization").Should().BeEmpty();
+    }
+
+    [Fact]
     public void NumberValidation_UpdatesMinMaxStep()
     {
         SigningField? captured = null;

@@ -81,7 +81,7 @@
                             <option value="">@Loc["TmConditionBuilder_SelectValue"]</option>
                             @foreach (var option in sourceField!.Options)
                             {
-                                <option value="@option.Uuid">@option.Value</option>
+                                <option value="@option.Uuid">@GetOptionLabel(option)</option>
                             }
                         </select>
                     }

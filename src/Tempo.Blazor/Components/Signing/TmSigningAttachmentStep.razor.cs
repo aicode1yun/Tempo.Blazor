@@ -33,6 +33,12 @@ public partial class TmSigningAttachmentStep
     /// <summary>Whether the controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -41,6 +47,8 @@ public partial class TmSigningAttachmentStep
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private string ShellClass => string.Join(" ", new[] { "tm-signing-attachment-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
+
+    private string StampPlaceholderText => SigningLocalizationResolver.ResolveFieldPlaceholder(Field, Culture, FallbackCulture, Loc["TmSigningStep_StampPlaceholder"]);
 
     private async Task HandleFilesSelectedAsync(InputFileChangeEventArgs args)
     {
@@ -58,16 +66,18 @@ public partial class TmSigningAttachmentStep
             Size = file.Size
         }));
 
-        _validationMessage = Field.Required && attachments.Count == 0 ? Loc["TmSigningStep_RequiredAttachment"] : null;
+        _validationMessage = Field.Required && attachments.Count == 0 ? RequiredAttachmentMessage : null;
         await AttachmentsChanged.InvokeAsync(attachments);
     }
 
     private async Task RemoveAttachmentAsync(string uuid)
     {
         var attachments = Attachments.Where(item => !string.Equals(item.Uuid, uuid, StringComparison.Ordinal)).ToArray();
-        _validationMessage = Field.Required && attachments.Length == 0 ? Loc["TmSigningStep_RequiredAttachment"] : null;
+        _validationMessage = Field.Required && attachments.Length == 0 ? RequiredAttachmentMessage : null;
         await AttachmentsChanged.InvokeAsync(attachments);
     }
+
+    private string RequiredAttachmentMessage => SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_RequiredAttachment"]);
 
     private static string BoolText(bool value) => value ? "true" : "false";
 }

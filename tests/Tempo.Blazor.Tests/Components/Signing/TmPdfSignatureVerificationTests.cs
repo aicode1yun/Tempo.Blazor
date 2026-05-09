@@ -62,4 +62,21 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
         cut.Markup.Should().Contain("Alex Johnson");
         cut.Markup.Should().Contain("CN=Alex");
     }
+
+    [Fact]
+    public void Render_VerificationDataIsIndependentFromSigningFieldLocalization()
+    {
+        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+            .Add(p => p.Result, new SigningPdfVerificationResult
+            {
+                Status = SigningPdfVerificationStatus.ChecksumNotFound,
+                FileName = "localized-template.pdf",
+                Checksum = "sha256-original-value",
+                Message = "Stored field label: Podpis"
+            }));
+
+        cut.Markup.Should().Contain("localized-template.pdf");
+        cut.Markup.Should().Contain("sha256-original-value");
+        cut.Markup.Should().Contain("Stored field label: Podpis");
+    }
 }

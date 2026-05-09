@@ -81,6 +81,22 @@
                         </button>
                     </div>
 
+                    @if (ShouldShowCulturePreview)
+                    {
+                        <label class="tm-pdf-template-designer__culture-control">
+                            <span>@Loc["TmPdfTemplateDesigner_CulturePreview"]</span>
+                            <select class="tm-pdf-template-designer__culture-preview"
+                                    value="@CurrentCulture"
+                                    aria-label="@Loc["TmPdfTemplateDesigner_CulturePreviewAria"]"
+                                    @onchange="HandleCultureChangedAsync">
+                                @foreach (var culture in DesignerCultures)
+                                {
+                                    <option value="@culture">@GetCultureLabel(culture)</option>
+                                }
+                            </select>
+                        </label>
+                    }
+
                     <div class="tm-pdf-template-designer__zoom-controls">
                         <button type="button"
                                 class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__zoom-out"
@@ -173,6 +189,10 @@
                                            Fields="_fields"
                                            SubmitterRoles="SubmitterRoles"
                                            ReadOnly="Disabled"
+                                           Culture="@Culture"
+                                           FallbackCulture="@FallbackCulture"
+                                           SupportedCultures="DesignerCultures"
+                                           ShowLocalizationEditor="ShowCulturePreview"
                                            CopyToAllPagesRequested="CopyFieldToAllPagesAsync" />
             </aside>
         </div>

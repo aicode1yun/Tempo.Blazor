@@ -38,12 +38,31 @@
 
 .tm-pdf-template-designer__page-controls,
 .tm-pdf-template-designer__view-controls,
-.tm-pdf-template-designer__zoom-controls {
+.tm-pdf-template-designer__zoom-controls,
+.tm-pdf-template-designer__culture-control {
     display: inline-flex;
     flex-wrap: wrap;
     align-items: center;
     gap: var(--tm-space-1);
     min-width: 0;
+}
+
+.tm-pdf-template-designer__culture-control {
+    gap: var(--tm-space-2);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-pdf-template-designer__culture-preview {
+    box-sizing: border-box;
+    min-height: var(--tm-space-8);
+    max-width: calc(var(--tm-space-16) * 3);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
 }
 
 .tm-pdf-template-designer__toolbar-button {

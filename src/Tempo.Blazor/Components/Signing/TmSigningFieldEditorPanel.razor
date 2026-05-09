@@ -104,6 +104,107 @@
             </div>
         </section>
 
+        @if (ShouldShowLocalizationEditor)
+        {
+            <section class="tm-signing-field-editor-panel__section tm-signing-field-editor-panel__localization">
+                <div class="tm-signing-field-editor-panel__section-header">
+                    <h3 class="tm-signing-field-editor-panel__section-title">@Loc["TmSigningFieldEditorPanel_Localization"]</h3>
+                    <label class="tm-signing-field-editor-panel__field tm-signing-field-editor-panel__localization-language">
+                        <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizationCulture"]</span>
+                        <select class="tm-signing-field-editor-panel__localization-culture"
+                                value="@ActiveLocalizationCulture"
+                                disabled="@ReadOnly"
+                                @onchange="HandleLocalizationCultureChangedAsync">
+                            @foreach (var culture in LocalizationCultures)
+                            {
+                                <option value="@culture">@GetCultureLabel(culture)</option>
+                            }
+                        </select>
+                    </label>
+                </div>
+
+                @if (!string.IsNullOrWhiteSpace(FallbackCulture))
+                {
+                    <p class="tm-signing-field-editor-panel__template-language">
+                        @Loc["TmSigningFieldEditorPanel_TemplateLanguage"]: @GetCultureLabel(FallbackCulture!)
+                    </p>
+                }
+
+                @if (MissingLocalizationCount > 0)
+                {
+                    <div class="tm-signing-field-editor-panel__missing-localization"
+                         role="status"
+                         aria-live="polite">
+                        <TmIcon Name="alert-triangle" Size="IconSize.Xs" />
+                        <span>@Loc["TmSigningFieldEditorPanel_MissingLocalizationWarning", MissingLocalizationCount, ActiveLocalizationCulture]</span>
+                    </div>
+                }
+
+                <label class="tm-signing-field-editor-panel__field">
+                    <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizedLabel"]</span>
+                    <input class="tm-signing-field-editor-panel__localized-label"
+                           type="text"
+                           value="@GetLocalizedText(_field.Labels)"
+                           disabled="@ReadOnly"
+                           @onchange="args => HandleLocalizedTextChangedAsync(args, field => field.Labels)" />
+                </label>
+
+                <label class="tm-signing-field-editor-panel__field">
+                    <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizedTitle"]</span>
+                    <input class="tm-signing-field-editor-panel__localized-title"
+                           type="text"
+                           value="@GetLocalizedText(_field.Titles)"
+                           disabled="@ReadOnly"
+                           @onchange="args => HandleLocalizedTextChangedAsync(args, field => field.Titles)" />
+                </label>
+
+                <label class="tm-signing-field-editor-panel__field">
+                    <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizedDescription"]</span>
+                    <textarea class="tm-signing-field-editor-panel__localized-description"
+                              disabled="@ReadOnly"
+                              @onchange="args => HandleLocalizedTextChangedAsync(args, field => field.Descriptions)">@GetLocalizedText(_field.Descriptions)</textarea>
+                </label>
+
+                <label class="tm-signing-field-editor-panel__field">
+                    <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizedPlaceholder"]</span>
+                    <input class="tm-signing-field-editor-panel__localized-placeholder"
+                           type="text"
+                           value="@GetLocalizedText(_field.Placeholders)"
+                           disabled="@ReadOnly"
+                           @onchange="args => HandleLocalizedTextChangedAsync(args, field => field.Placeholders)" />
+                </label>
+
+                <label class="tm-signing-field-editor-panel__field">
+                    <span class="tm-signing-field-editor-panel__label">@Loc["TmSigningFieldEditorPanel_LocalizedValidationMessage"]</span>
+                    <input class="tm-signing-field-editor-panel__localized-validation-message"
+                           type="text"
+                           value="@GetLocalizedText(_field.Validation?.Messages)"
+                           disabled="@ReadOnly"
+                           @onchange="HandleLocalizedValidationMessageChangedAsync" />
+                </label>
+
+                @if (IsChoiceField)
+                {
+                    <div class="tm-signing-field-editor-panel__localized-options">
+                        <p class="tm-signing-field-editor-panel__localized-options-title">@Loc["TmSigningFieldEditorPanel_LocalizedOptionLabels"]</p>
+                        @foreach (var option in _field.Options)
+                        {
+                            var optionUuid = option.Uuid;
+                            <label class="tm-signing-field-editor-panel__field"
+                                   data-localized-option-uuid="@option.Uuid">
+                                <span class="tm-signing-field-editor-panel__label">@option.Value</span>
+                                <input class="tm-signing-field-editor-panel__localized-option-label"
+                                       type="text"
+                                       value="@GetLocalizedText(option.Labels)"
+                                       disabled="@ReadOnly"
+                                       @onchange="args => HandleLocalizedOptionLabelChangedAsync(optionUuid, args)" />
+                            </label>
+                        }
+                    </div>
+                }
+            </section>
+        }
+
         @if (IsChoiceField)
         {
             <section class="tm-signing-field-editor-panel__section tm-signing-field-editor-panel__options">
@@ -381,6 +482,8 @@
                                         CurrentFieldUuid="@_field.Uuid"
                                         Conditions="_field.Conditions"
                                         ConditionsChanged="HandleConditionsChangedAsync"
+                                        Culture="@Culture"
+                                        FallbackCulture="@FallbackCulture"
                                         Disabled="@ReadOnly" />
                 </div>
             }
@@ -390,6 +493,8 @@
                 <div class="tm-signing-field-editor-panel__formula-builder">
                     <TmFormulaBuilder Field="_field"
                                       Fields="Fields"
+                                      Culture="@Culture"
+                                      FallbackCulture="@FallbackCulture"
                                       Saved="HandleFormulaSavedAsync"
                                       Disabled="@ReadOnly" />
                 </div>

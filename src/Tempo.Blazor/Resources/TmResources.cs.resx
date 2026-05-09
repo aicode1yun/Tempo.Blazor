@@ -2122,6 +2122,16 @@
   <data name="TmSigningFieldEditorPanel_Color" xml:space="preserve"><value>Barva</value></data>
   <data name="TmSigningFieldEditorPanel_CopyToAllPages" xml:space="preserve"><value>Kopírovat na všechny stránky</value></data>
   <data name="TmSigningFieldEditorPanel_Rules" xml:space="preserve"><value>Pravidla</value></data>
+  <data name="TmSigningFieldEditorPanel_Localization" xml:space="preserve"><value>Lokalizované texty</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizationCulture" xml:space="preserve"><value>Jazyk</value></data>
+  <data name="TmSigningFieldEditorPanel_TemplateLanguage" xml:space="preserve"><value>Jazyk šablony</value></data>
+  <data name="TmSigningFieldEditorPanel_MissingLocalizationWarning" xml:space="preserve"><value>Pro {1} chybí {0} textů pro podepisujícího. Zobrazí se záložní text.</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedLabel" xml:space="preserve"><value>Lokalizovaný popisek</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedTitle" xml:space="preserve"><value>Lokalizovaný titulek</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedDescription" xml:space="preserve"><value>Lokalizovaný popis</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedPlaceholder" xml:space="preserve"><value>Lokalizovaný zástupný text</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedValidationMessage" xml:space="preserve"><value>Lokalizovaná validační zpráva</value></data>
+  <data name="TmSigningFieldEditorPanel_LocalizedOptionLabels" xml:space="preserve"><value>Lokalizované popisky možností</value></data>
   <data name="TmDocumentPageViewer_Loading" xml:space="preserve"><value>Načítání stránky dokumentu</value></data>
   <data name="TmDocumentPageViewer_ErrorTitle" xml:space="preserve"><value>Chyba stránky dokumentu</value></data>
   <data name="TmDocumentPageViewer_EmptyTitle" xml:space="preserve"><value>Žádná stránka dokumentu</value></data>
@@ -2166,6 +2176,8 @@
   <data name="TmPdfTemplateDesigner_SelectionCopied" xml:space="preserve"><value>Výběr zkopírován. Klikněte pravým tlačítkem na stránku a vložte ho.</value></data>
   <data name="TmPdfTemplateDesigner_FieldPasted" xml:space="preserve"><value>Pole vloženo.</value></data>
   <data name="TmPdfTemplateDesigner_SelectionPasted" xml:space="preserve"><value>Výběr vložen.</value></data>
+  <data name="TmPdfTemplateDesigner_CulturePreview" xml:space="preserve"><value>Jazyk náhledu</value></data>
+  <data name="TmPdfTemplateDesigner_CulturePreviewAria" xml:space="preserve"><value>Jazyk náhledu šablony</value></data>
 
   <!-- StockChart, Sparkline, Gauge -->
   <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Akciový graf</value></data>
@@ -2542,6 +2554,8 @@
   <data name="TmSigningFormRunner_EmptyDescription" xml:space="preserve"><value>Všechna povinná pole jsou hotová nebo nejsou dostupná žádná pole.</value></data>
   <data name="TmSigningFormRunner_Progress" xml:space="preserve"><value>Krok {0} z {1}</value></data>
   <data name="TmSigningFormRunner_ProgressAria" xml:space="preserve"><value>Krok {0} z {1}</value></data>
+  <data name="TmSigningFormRunner_Language" xml:space="preserve"><value>Jazyk</value></data>
+  <data name="TmSigningFormRunner_LanguageAria" xml:space="preserve"><value>Jazyk podpisu</value></data>
   <data name="TmSigningFormRunner_AccessibilityMode" xml:space="preserve"><value>Režim přístupnosti</value></data>
   <data name="TmSigningFormRunner_Skip" xml:space="preserve"><value>Přeskočit</value></data>
   <data name="TmSigningFormRunner_SignNow" xml:space="preserve"><value>Podepsat nyní</value></data>
@@ -2605,6 +2619,13 @@
   <data name="TmAuditTrailViewer_Network" xml:space="preserve"><value>Síť</value></data>
   <data name="TmAuditTrailViewer_VerificationMethod" xml:space="preserve"><value>Metoda ověření</value></data>
   <data name="TmAuditTrailViewer_Events" xml:space="preserve"><value>Události</value></data>
+  <data name="TmAuditTrailViewer_Localization" xml:space="preserve"><value>Jazyk podepisování</value></data>
+  <data name="TmAuditTrailViewer_SigningCulture" xml:space="preserve"><value>Kultura podepisování</value></data>
+  <data name="TmAuditTrailViewer_FallbackCulture" xml:space="preserve"><value>Výchozí kultura šablony</value></data>
+  <data name="TmAuditTrailViewer_PdfContent" xml:space="preserve"><value>Obsah PDF</value></data>
+  <data name="TmAuditTrailViewer_PdfTranslated" xml:space="preserve"><value>Přeloženo aplikací</value></data>
+  <data name="TmAuditTrailViewer_PdfNotTranslated" xml:space="preserve"><value>Původní jazyk PDF</value></data>
+  <data name="TmAuditTrailViewer_NotCaptured" xml:space="preserve"><value>Nezachyceno</value></data>
 
   <!-- Nested comment reply -->
   <data name="TmNotionBlockComment_ThreadDetail"       xml:space="preserve"><value>Vlákno</value></data>

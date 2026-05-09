@@ -44,6 +44,24 @@ public partial class TmSigningFormRunner : IDisposable
     /// <summary>Callback invoked when all required fields are complete and the signer completes the form.</summary>
     [Parameter] public EventCallback<IReadOnlyDictionary<string, object?>> OnComplete { get; set; }
 
+    /// <summary>Culture used to render the signing layer.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Callback invoked when the signing culture changes.</summary>
+    [Parameter] public EventCallback<string?> CultureChanged { get; set; }
+
+    /// <summary>Fallback culture used when field translations are missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
+    /// <summary>Supported cultures offered by the language selector.</summary>
+    [Parameter] public IReadOnlyList<string> SupportedCultures { get; set; } = [];
+
+    /// <summary>Whether the runner should show a language selector when multiple cultures are available.</summary>
+    [Parameter] public bool ShowLanguageSelector { get; set; }
+
+    /// <summary>Callback invoked with a resolved localization snapshot for audit storage.</summary>
+    [Parameter] public EventCallback<SigningSubmissionLocalizationSnapshot> OnLocalizationSnapshotChanged { get; set; }
+
     /// <summary>Delay before autosave is invoked after a value change.</summary>
     [Parameter] public TimeSpan AutoSaveDelay { get; set; } = TimeSpan.FromMilliseconds(600);
 
@@ -83,6 +101,12 @@ public partial class TmSigningFormRunner : IDisposable
     private bool IsSkipDisabled => IsLoading || IsCompleting || CurrentStep is null || CurrentStep.Field.Required;
 
     private bool IsCompleteDisabled => IsLoading || IsCompleting || !AllRequiredFieldsComplete();
+
+    private string CurrentCulture => !string.IsNullOrWhiteSpace(Culture)
+        ? Culture!
+        : CultureInfo.CurrentUICulture.Name;
+
+    private bool ShowLanguagePicker => ShowLanguageSelector && SupportedCultures.Count > 1;
 
     private string RootClass
     {
@@ -140,6 +164,18 @@ public partial class TmSigningFormRunner : IDisposable
         if (_currentStepIndex >= Plan.Steps.Count)
         {
             _currentStepIndex = Math.Max(0, Plan.Steps.Count - 1);
+        }
+    }
+
+    private async Task HandleCultureChangedAsync(ChangeEventArgs args)
+    {
+        var culture = args.Value?.ToString();
+        Culture = string.IsNullOrWhiteSpace(culture) ? null : culture;
+        _validationMessage = null;
+        await CultureChanged.InvokeAsync(Culture);
+        if (OnLocalizationSnapshotChanged.HasDelegate)
+        {
+            await OnLocalizationSnapshotChanged.InvokeAsync(CreateLocalizationSnapshot());
         }
     }
 
@@ -273,7 +309,7 @@ public partial class TmSigningFormRunner : IDisposable
 
         if (!IsStepComplete(CurrentStep))
         {
-            _validationMessage = Loc["TmSigningFormRunner_RequiredMissing"];
+            _validationMessage = GetRequiredMessage(CurrentStep);
             _currentStepIndex = FindFirstInvalidRequiredStep();
             return;
         }
@@ -311,13 +347,20 @@ public partial class TmSigningFormRunner : IDisposable
     {
         if (IsCompleteDisabled)
         {
-            _validationMessage = Loc["TmSigningFormRunner_CompleteBlocked"];
             _currentStepIndex = FindFirstInvalidRequiredStep();
+            _validationMessage = CurrentStep is null
+                ? Loc["TmSigningFormRunner_CompleteBlocked"]
+                : GetRequiredMessage(CurrentStep);
             return;
         }
 
         try
         {
+            if (OnLocalizationSnapshotChanged.HasDelegate)
+            {
+                await OnLocalizationSnapshotChanged.InvokeAsync(CreateLocalizationSnapshot());
+            }
+
             await OnComplete.InvokeAsync(SnapshotValues());
             _validationMessage = null;
         }
@@ -426,11 +469,56 @@ public partial class TmSigningFormRunner : IDisposable
 
     private string GetStepLabel(SigningStepItem step)
     {
-        return !string.IsNullOrWhiteSpace(step.Field.Title)
-            ? step.Field.Title
-            : !string.IsNullOrWhiteSpace(step.Field.Name)
-                ? step.Field.Name
-                : step.Field.Type.ToString();
+        return SigningLocalizationResolver.ResolveFieldLabel(step.Field, CurrentCulture, FallbackCulture, step.Field.Type.ToString());
+    }
+
+    private string GetRequiredMessage(SigningStepItem step)
+    {
+        var field = step.Fields.FirstOrDefault(item => item.Required && !IsFieldComplete(item)) ?? step.Field;
+        return SigningLocalizationResolver.ResolveValidationMessage(field.Validation, CurrentCulture, FallbackCulture, Loc["TmSigningFormRunner_RequiredMissing"]);
+    }
+
+    private SigningSubmissionLocalizationSnapshot CreateLocalizationSnapshot()
+    {
+        return new SigningSubmissionLocalizationSnapshot
+        {
+            Culture = CurrentCulture,
+            FallbackCulture = FallbackCulture,
+            GeneratedAt = DateTimeOffset.UtcNow,
+            PdfContentTranslated = false,
+            Fields = Fields.Select(CreateFieldLocalizationSnapshot).ToList()
+        };
+    }
+
+    private SigningSubmissionFieldLocalizationSnapshot CreateFieldLocalizationSnapshot(SigningField field)
+    {
+        return new SigningSubmissionFieldLocalizationSnapshot
+        {
+            FieldUuid = field.Uuid,
+            Label = SigningLocalizationResolver.ResolveFieldLabel(field, CurrentCulture, FallbackCulture, field.Type.ToString()),
+            Title = SigningLocalizationResolver.ResolveFieldTitle(field, CurrentCulture, FallbackCulture),
+            Description = SigningLocalizationResolver.ResolveFieldDescription(field, CurrentCulture, FallbackCulture),
+            ValidationMessage = SigningLocalizationResolver.ResolveValidationMessage(field.Validation, CurrentCulture, FallbackCulture),
+            Options = field.Options.Select(option => new SigningSubmissionOptionLocalizationSnapshot
+            {
+                OptionUuid = option.Uuid,
+                Value = option.Value,
+                Label = SigningLocalizationResolver.ResolveOptionLabel(option, CurrentCulture, FallbackCulture)
+            }).ToList()
+        };
+    }
+
+    private static string GetCultureDisplayName(string culture)
+    {
+        try
+        {
+            var cultureInfo = CultureInfo.GetCultureInfo(culture);
+            return string.IsNullOrWhiteSpace(cultureInfo.NativeName) ? culture : cultureInfo.NativeName;
+        }
+        catch (CultureNotFoundException)
+        {
+            return culture;
+        }
     }
 
     private static void AddClass(List<string> classes, bool condition, string cssClass)

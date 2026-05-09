@@ -97,6 +97,13 @@
 .tm-signing-field-editor-panel__validation-step,
 .tm-signing-field-editor-panel__date-format,
 .tm-signing-field-editor-panel__validation-message,
+.tm-signing-field-editor-panel__localization-culture,
+.tm-signing-field-editor-panel__localized-label,
+.tm-signing-field-editor-panel__localized-title,
+.tm-signing-field-editor-panel__localized-description,
+.tm-signing-field-editor-panel__localized-placeholder,
+.tm-signing-field-editor-panel__localized-validation-message,
+.tm-signing-field-editor-panel__localized-option-label,
 .tm-signing-field-editor-panel__signature-format,
 .tm-signing-field-editor-panel__font-family,
 .tm-signing-field-editor-panel__font-size,
@@ -116,6 +123,52 @@
 .tm-signing-field-editor-panel__description {
     min-height: var(--tm-space-20);
     resize: vertical;
+}
+
+.tm-signing-field-editor-panel__localized-description {
+    min-height: var(--tm-space-16);
+    resize: vertical;
+}
+
+.tm-signing-field-editor-panel__localization-language {
+    width: min(100%, calc(var(--tm-space-16) * 3));
+}
+
+.tm-signing-field-editor-panel__localized-options {
+    display: grid;
+    gap: var(--tm-space-2);
+}
+
+.tm-signing-field-editor-panel__localized-options-title {
+    margin: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+}
+
+.tm-signing-field-editor-panel__template-language {
+    margin: 0;
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-xs);
+    overflow-wrap: anywhere;
+}
+
+.tm-signing-field-editor-panel__missing-localization {
+    display: flex;
+    align-items: flex-start;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-2);
+    border: 1px solid var(--tm-color-warning-soft-border);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-color-warning-subtle);
+    color: var(--tm-color-warning-text);
+    font-size: var(--tm-font-size-xs);
+    line-height: var(--tm-line-height-normal);
+}
+
+.tm-signing-field-editor-panel__missing-localization span {
+    min-width: 0;
+    overflow-wrap: anywhere;
 }
 
 .tm-signing-field-editor-panel__color {

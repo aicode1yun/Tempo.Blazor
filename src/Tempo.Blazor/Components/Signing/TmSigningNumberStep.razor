@@ -4,6 +4,8 @@
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@_validationMessage"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     <input class="tm-signing-number-step__input"
@@ -13,6 +15,6 @@
            max="@Field.Validation?.Max"
            step="@Field.Validation?.Step"
            disabled="@Disabled"
-           placeholder="@Loc["TmSigningStep_NumberPlaceholder"]"
+           placeholder="@PlaceholderText"
            @onchange="HandleValueChangedAsync" />
 </TmSigningStepShell>

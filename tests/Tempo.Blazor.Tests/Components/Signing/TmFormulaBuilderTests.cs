@@ -85,8 +85,49 @@ public class TmFormulaBuilderTests : LocalizationTestBase
 
         cut.Find("[data-field-uuid='subtotal']").Click();
 
-        captured.Should().Contain("{{Subtotal}}");
-        cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Contain("{{Subtotal}}");
+        captured.Should().Contain("{{subtotal}}");
+        cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Contain("{{subtotal}}");
+    }
+
+    [Fact]
+    public void Render_TokenPickerUsesLocalizedFieldLabel()
+    {
+        var fields = CreateFields();
+        fields.First(field => field.Uuid == "subtotal").Labels = new SigningLocalizedText
+        {
+            Default = "Mezisoučet",
+            Translations = { ["en-US"] = "Subtotal localized" }
+        };
+
+        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+            parameters.Add(p => p.Field, CreateCurrentField())
+                      .Add(p => p.Fields, fields)
+                      .Add(p => p.Culture, "en-US")
+                      .Add(p => p.FallbackCulture, "cs-CZ"));
+
+        cut.Find("[data-field-uuid='subtotal']").TextContent.Trim().Should().Be("Subtotal localized");
+    }
+
+    [Fact]
+    public void ClickTokenButton_WithLocalizedLabelStillInsertsStableToken()
+    {
+        string? captured = null;
+        var fields = CreateFields();
+        fields.First(field => field.Uuid == "subtotal").Labels = new SigningLocalizedText
+        {
+            Default = "Mezisoučet",
+            Translations = { ["en-US"] = "Subtotal localized" }
+        };
+
+        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+            parameters.Add(p => p.Field, CreateCurrentField())
+                      .Add(p => p.Fields, fields)
+                      .Add(p => p.Culture, "en-US")
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string>(this, value => captured = value)));
+
+        cut.Find("[data-field-uuid='subtotal']").Click();
+
+        captured.Should().Be("{{subtotal}}");
     }
 
     [Theory]
@@ -155,6 +196,24 @@ public class TmFormulaBuilderTests : LocalizationTestBase
         saved.Should().Be("{{subtotal}} + {{tax}}");
         field.ReadOnly.Should().BeTrue();
         field.Preferences.Formula.Should().Be("{{subtotal}} + {{tax}}");
+    }
+
+    [Fact]
+    public void CultureChange_DoesNotChangeExistingFormulaToken()
+    {
+        var fields = CreateFields();
+        fields.First(field => field.Uuid == "subtotal").Labels.Translations["cs"] = "Mezisoučet";
+
+        var cut = RenderComponent<TmFormulaBuilder>(parameters =>
+            parameters.Add(p => p.Field, CreateCurrentField())
+                      .Add(p => p.Fields, fields)
+                      .Add(p => p.Value, "{{subtotal}}")
+                      .Add(p => p.Culture, "en-US"));
+
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
+
+        cut.Find(".tm-formula-builder__textarea").GetAttribute("value").Should().Be("{{Subtotal}}");
+        cut.Find("[data-field-uuid='subtotal']").TextContent.Should().Contain("Mezisoučet");
     }
 
     private static SigningField CreateCurrentField()

@@ -42,6 +42,41 @@ public class SigningAccessibilityTests : LocalizationTestBase
     }
 
     [Fact]
+    public void FieldOverlay_LocalizedLabelIsAccessibleName()
+    {
+        var field = CreateTextField();
+        field.Labels.Translations["cs"] = "Celé jméno";
+
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.Culture, "cs-CZ"));
+
+        cut.Find(".tm-signing-field").GetAttribute("aria-label").Should().Be("Celé jméno");
+    }
+
+    [Fact]
+    public void TextStep_LocalizedValidationMessageIsDescribedByInput()
+    {
+        var field = CreateTextField();
+        field.Required = true;
+        field.Validation = new SigningFieldValidation
+        {
+            Messages = { Translations = { ["cs"] = "Jméno je povinné." } }
+        };
+
+        var cut = RenderComponent<TmSigningTextStep>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.Culture, "cs-CZ"));
+
+        cut.Find(".tm-signing-text-step__input").Change(string.Empty);
+
+        var input = cut.Find(".tm-signing-text-step__input");
+        var describedBy = input.GetAttribute("aria-describedby");
+        describedBy.Should().NotBeNullOrWhiteSpace();
+        cut.Find($"#{describedBy}").TextContent.Should().Be("Jméno je povinné.");
+    }
+
+    [Fact]
     public void FieldOverlay_EnterKey_InvokesSelection()
     {
         var invoked = false;

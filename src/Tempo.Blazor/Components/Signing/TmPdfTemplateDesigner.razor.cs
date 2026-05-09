@@ -101,6 +101,21 @@ public partial class TmPdfTemplateDesigner
     /// <summary>Callback invoked when the document zoom behavior changes.</summary>
     [Parameter] public EventCallback<DocumentPageZoomMode> ZoomModeChanged { get; set; }
 
+    /// <summary>Culture used to preview localized field labels.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Callback invoked when the designer preview culture changes.</summary>
+    [Parameter] public EventCallback<string?> CultureChanged { get; set; }
+
+    /// <summary>Fallback culture used when localized field labels are missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
+    /// <summary>Cultures available for previewing and authoring localized field text.</summary>
+    [Parameter] public IReadOnlyList<string> SupportedCultures { get; set; } = [];
+
+    /// <summary>Whether to show culture preview and localized text authoring controls.</summary>
+    [Parameter] public bool ShowCulturePreview { get; set; }
+
     /// <summary>Optional async detector that returns fields to add to the template.</summary>
     [Parameter] public Func<Task<IReadOnlyList<SigningField>>>? OnDetectFields { get; set; }
 
@@ -174,6 +189,12 @@ public partial class TmPdfTemplateDesigner
 
     private bool CanZoomIn => _scale < ZoomSteps[^1] - 0.001;
 
+    private IReadOnlyList<string> DesignerCultures => GetDesignerCultures();
+
+    private bool ShouldShowCulturePreview => ShowCulturePreview && DesignerCultures.Count > 1;
+
+    private string CurrentCulture => NormalizeCulture(Culture) ?? DesignerCultures.FirstOrDefault() ?? CultureInfo.CurrentUICulture.Name;
+
     protected override void OnParametersSet()
     {
         _scale = Clamp(Scale, ZoomSteps[0], ZoomSteps[^1]);
@@ -234,6 +255,8 @@ public partial class TmPdfTemplateDesigner
                 builder.AddAttribute(sequence++, "Draggable", !Disabled && !_drawType.HasValue);
                 builder.AddAttribute(sequence++, "Editable", !Disabled && _selectedFieldUuids.Contains(currentField.Uuid));
                 builder.AddAttribute(sequence++, "ReadOnly", Disabled);
+                builder.AddAttribute(sequence++, "Culture", Culture);
+                builder.AddAttribute(sequence++, "FallbackCulture", FallbackCulture);
                 builder.AddAttribute(sequence++, "OnClick", EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, args => SelectFieldAsync(args, false)));
                 builder.AddAttribute(sequence++, "OnStartMove", EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, StartMoveAsync));
                 builder.AddAttribute(sequence++, "OnStartResize", EventCallback.Factory.Create<TmSigningFieldOverlayResizeEventArgs>(this, StartResizeAsync));
@@ -349,6 +372,13 @@ public partial class TmPdfTemplateDesigner
     private Task FitWidthAsync() => SetScaleAsync(1.0, DocumentPageZoomMode.FitWidth);
 
     private Task FitPageAsync() => SetScaleAsync(0.85, DocumentPageZoomMode.FitPage);
+
+    private async Task HandleCultureChangedAsync(ChangeEventArgs args)
+    {
+        Culture = NormalizeCulture(args.Value?.ToString());
+        _contextMenu = null;
+        await CultureChanged.InvokeAsync(Culture);
+    }
 
     private async Task SetScaleAsync(double scale, DocumentPageZoomMode zoomMode)
     {
@@ -839,11 +869,19 @@ public partial class TmPdfTemplateDesigner
 
     private SigningField CreateField(SigningFieldType type, SigningFieldArea area)
     {
+        var label = GetFieldTypeLabel(type);
+        var labels = new SigningLocalizedText { Default = label };
+        if (!string.IsNullOrWhiteSpace(CurrentCulture))
+        {
+            labels.Translations[CurrentCulture] = label;
+        }
+
         return new SigningField
         {
             Uuid = Guid.NewGuid().ToString("N"),
             SubmitterUuid = SelectedSubmitterUuid ?? SubmitterRoles.FirstOrDefault()?.Uuid,
-            Name = GetFieldTypeLabel(type),
+            Name = label,
+            Labels = labels,
             Type = type,
             Required = type is SigningFieldType.Signature or SigningFieldType.Initials,
             Areas = [SigningGeometryHelper.Clamp(area, MinWidth, MinHeight)]
@@ -1032,30 +1070,7 @@ public partial class TmPdfTemplateDesigner
 
     private string GetFieldTypeLabel(SigningFieldType type)
     {
-        return type switch
-        {
-            SigningFieldType.Text => Loc["TmSigning_Field_Text"],
-            SigningFieldType.Signature => Loc["TmSigning_Field_Signature"],
-            SigningFieldType.Initials => Loc["TmSigning_Field_Initials"],
-            SigningFieldType.Date => Loc["TmSigning_Field_Date"],
-            SigningFieldType.DateNow => Loc["TmSigning_Field_Date"],
-            SigningFieldType.Number => Loc["TmSigning_Field_Number"],
-            SigningFieldType.Checkbox => Loc["TmSigning_Field_Checkbox"],
-            SigningFieldType.Radio => Loc["TmSigning_Field_Radio"],
-            SigningFieldType.Select => Loc["TmSigning_Field_Select"],
-            SigningFieldType.Multiple => Loc["TmSigning_Field_Multiple"],
-            SigningFieldType.File => Loc["TmSigning_Field_File"],
-            SigningFieldType.Image => Loc["TmSigning_Field_Image"],
-            SigningFieldType.Stamp => Loc["TmSigning_Field_Stamp"],
-            SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
-            SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
-            SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
-            SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
-            SigningFieldType.Cells => Loc["TmSigning_Field_Cells"],
-            SigningFieldType.Heading => Loc["TmSigning_Field_Heading"],
-            SigningFieldType.Strikethrough => Loc["TmSigning_Field_Strikethrough"],
-            _ => type.ToString()
-        };
+        return SigningTextResolver.FieldTypeLabel(type, Loc);
     }
 
     private static string GetIconName(SigningFieldType type)
@@ -1092,6 +1107,69 @@ public partial class TmPdfTemplateDesigner
 
     private static double Clamp(double value, double min, double max) => Math.Min(Math.Max(value, min), max);
 
+    private IReadOnlyList<string> GetDesignerCultures()
+    {
+        var cultures = new List<string>();
+        AddCultures(cultures, SupportedCultures);
+        AddCulture(cultures, Culture);
+        AddCulture(cultures, FallbackCulture);
+        return cultures;
+    }
+
+    private static void AddCultures(List<string> target, IEnumerable<string>? cultures)
+    {
+        if (cultures is null)
+        {
+            return;
+        }
+
+        foreach (var culture in cultures)
+        {
+            AddCulture(target, culture);
+        }
+    }
+
+    private static void AddCulture(List<string> target, string? culture)
+    {
+        var normalized = NormalizeCulture(culture);
+        if (!string.IsNullOrWhiteSpace(normalized)
+            && !target.Any(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            target.Add(normalized);
+        }
+    }
+
+    private static string? NormalizeCulture(string? culture)
+    {
+        var trimmed = culture?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CultureInfo.GetCultureInfo(trimmed).Name;
+        }
+        catch (CultureNotFoundException)
+        {
+            return trimmed;
+        }
+    }
+
+    private static string GetCultureLabel(string culture)
+    {
+        try
+        {
+            var cultureInfo = CultureInfo.GetCultureInfo(culture);
+            return string.Create(CultureInfo.InvariantCulture, $"{cultureInfo.NativeName} ({cultureInfo.Name})");
+        }
+        catch (CultureNotFoundException)
+        {
+            return culture;
+        }
+    }
+
     private static void CopyInto(SigningFieldArea target, SigningFieldArea source)
     {
         target.X = source.X;
@@ -1109,8 +1187,12 @@ public partial class TmPdfTemplateDesigner
             Uuid = field.Uuid,
             SubmitterUuid = field.SubmitterUuid,
             Name = field.Name,
+            Labels = Clone(field.Labels),
             Title = field.Title,
+            Titles = Clone(field.Titles),
             Description = field.Description,
+            Descriptions = Clone(field.Descriptions),
+            Placeholders = Clone(field.Placeholders),
             Type = field.Type,
             Required = field.Required,
             ReadOnly = field.ReadOnly,
@@ -1151,6 +1233,7 @@ public partial class TmPdfTemplateDesigner
         {
             Pattern = validation.Pattern,
             Message = validation.Message,
+            Messages = Clone(validation.Messages),
             Min = validation.Min,
             Max = validation.Max,
             Step = validation.Step
@@ -1173,7 +1256,17 @@ public partial class TmPdfTemplateDesigner
         return new SigningFieldOption
         {
             Uuid = option.Uuid,
+            Labels = Clone(option.Labels),
             Value = option.Value
+        };
+    }
+
+    private static SigningLocalizedText Clone(SigningLocalizedText text)
+    {
+        return new SigningLocalizedText
+        {
+            Default = text.Default,
+            Translations = new Dictionary<string, string>(text.Translations, StringComparer.OrdinalIgnoreCase)
         };
     }
 

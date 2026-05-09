@@ -161,10 +161,22 @@
     </div>
 
     <div class="showcase-card">
+        <label class="inline-flex items-center gap-2 mb-3 text-sm text-slate-600 dark:text-slate-400">
+            <span>Preview language</span>
+            <select class="tm-input condition-builder-culture"
+                    @bind="_conditionCulture">
+                @foreach (var culture in _signingCultures)
+                {
+                    <option value="@culture">@culture</option>
+                }
+            </select>
+        </label>
         <TmConditionBuilder Fields="_conditionFields"
                             CurrentFieldUuid="conditional-signature"
                             Conditions="_conditionRules"
                             ConditionsChanged="HandleConditionRulesChanged"
+                            Culture="@_conditionCulture"
+                            FallbackCulture="en-US"
                             data-testid="condition-builder" />
         <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="condition-builder-status">
             @_conditionStatus
@@ -254,6 +266,8 @@
                                            Area="_editorArea"
                                            Value="GetEditorPreviewValue()"
                                            Completed="_editorField.Required"
+                                           Culture="@_designerCulture"
+                                           FallbackCulture="cs-CZ"
                                            Class="signing-components-page__sample-field" />
                 </div>
                 <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="field-editor-status">
@@ -265,6 +279,10 @@
                                        FieldChanged="HandleEditorFieldChanged"
                                        Fields="_editorFields"
                                        SubmitterRoles="_templateRoles"
+                                       Culture="@_designerCulture"
+                                       FallbackCulture="cs-CZ"
+                                       SupportedCultures="_signingCultures"
+                                       ShowLocalizationEditor="true"
                                        CopyToAllPagesRequested="HandleCopyToAllPagesRequested"
                                        OptionAreaMappingRequested="HandleOptionAreaMappingRequested"
                                        data-testid="field-editor-panel" />
@@ -287,6 +305,11 @@
                                FieldsChanged="HandleDesignerFieldsChanged"
                                SubmitterRoles="_templateRoles"
                                SelectedSubmitterUuid="template-signer"
+                               Culture="@_designerCulture"
+                               CultureChanged="HandleDesignerCultureChanged"
+                               FallbackCulture="cs-CZ"
+                               SupportedCultures="_signingCultures"
+                               ShowCulturePreview="true"
                                OnDetectFields="DetectDesignerFieldsAsync"
                                data-testid="pdf-template-designer" />
         <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="pdf-template-designer-status">
@@ -368,6 +391,12 @@
                              ValuesChanged="HandleRunnerValuesChanged"
                              OnAutoSave="HandleRunnerAutoSave"
                              OnComplete="HandleRunnerComplete"
+                             Culture="@_runnerCulture"
+                             CultureChanged="HandleRunnerCultureChanged"
+                             FallbackCulture="cs-CZ"
+                             SupportedCultures="_signingCultures"
+                             ShowLanguageSelector="true"
+                             OnLocalizationSnapshotChanged="HandleRunnerLocalizationSnapshotChanged"
                              AutoSaveDelay="@TimeSpan.FromMilliseconds(80)"
                              data-testid="signing-runner-demo" />
         <div class="mt-3 text-sm text-slate-600 dark:text-slate-400" data-testid="signing-runner-status">
@@ -471,6 +500,7 @@
 
     <div class="showcase-card">
         <TmAuditTrailViewer Trail="@_auditTrail"
+                            LocalizationSnapshot="@_auditLocalizationSnapshot"
                             data-testid="audit-trail-viewer" />
     </div>
 </section>
@@ -599,8 +629,12 @@
     private string _advancedSignatureStatus = "No advanced signature";
     private IReadOnlyList<SigningFieldCondition> _conditionRules = [];
     private string _conditionStatus = "No conditions";
+    private string? _conditionCulture = "en-US";
     private string? _formulaValue;
     private string _formulaStatus = "No formula saved";
+    private readonly IReadOnlyList<string> _signingCultures = ["cs-CZ", "en-US"];
+    private string? _designerCulture = "cs-CZ";
+    private string? _runnerCulture = "en-US";
     private IReadOnlyList<SigningSubmitterRole> _templateRoles = [];
     private IReadOnlyList<SigningSubmitterRole> _submissionRecipients = [];
     private string _templateRoleStatus = "2 roles";
@@ -610,9 +644,18 @@
         Uuid = "editor-country",
         SubmitterUuid = "template-signer",
         Name = "Country",
+        Labels = Localized("Země", ("en-US", "Country")),
         Title = "Country of residence",
+        Titles = Localized("Země pobytu", ("en-US", "Country of residence")),
         Description = "Choose where the signer is located.",
+        Descriptions = Localized("Vyberte, kde se podepisující nachází.", ("en-US", "Choose where the signer is located.")),
+        Placeholders = Localized("Vyberte zemi", ("en-US", "Choose a country")),
         Type = SigningFieldType.Select,
+        Validation = new SigningFieldValidation
+        {
+            Message = "Vyberte zemi.",
+            Messages = Localized("Vyberte zemi.", ("en-US", "Choose a country."))
+        },
         Preferences = new SigningFieldPreferences
         {
             Color = "#2563eb",
@@ -622,8 +665,8 @@
         },
         Options =
         [
-            new SigningFieldOption { Uuid = "editor-country-cz", Value = "Czech Republic" },
-            new SigningFieldOption { Uuid = "editor-country-us", Value = "United States" }
+            new SigningFieldOption { Uuid = "editor-country-cz", Value = "CZ", Labels = Localized("Česká republika", ("en-US", "Czech Republic")) },
+            new SigningFieldOption { Uuid = "editor-country-us", Value = "US", Labels = Localized("Spojené státy", ("en-US", "United States")) }
         ]
     };
     private string _fieldEditorStatus = "Country: Select, required: False, options: 2, conditions: 0";
@@ -634,6 +677,9 @@
             Uuid = "designer-name",
             SubmitterUuid = "template-signer",
             Name = "Full name",
+            Labels = Localized("Celé jméno", ("en-US", "Full name")),
+            Titles = Localized("Celé jméno podepisujícího", ("en-US", "Signer full name")),
+            Placeholders = Localized("Jan Novák", ("en-US", "Alex Johnson")),
             Type = SigningFieldType.Text,
             Areas =
             [
@@ -654,11 +700,12 @@
             Uuid = "designer-delivery",
             SubmitterUuid = "template-signer",
             Name = "Delivery",
+            Labels = Localized("Způsob doručení", ("en-US", "Delivery method")),
             Type = SigningFieldType.Select,
             Options =
             [
-                new SigningFieldOption { Uuid = "designer-delivery-email", Value = "Email" },
-                new SigningFieldOption { Uuid = "designer-delivery-paper", Value = "Paper" }
+                new SigningFieldOption { Uuid = "designer-delivery-email", Value = "email", Labels = Localized("E-mail", ("en-US", "Email")) },
+                new SigningFieldOption { Uuid = "designer-delivery-paper", Value = "paper", Labels = Localized("Papír", ("en-US", "Paper")) }
             ],
             Areas =
             [
@@ -698,6 +745,7 @@
     ];
     private IReadOnlyDictionary<string, object?> _runnerValues = new Dictionary<string, object?>(StringComparer.Ordinal);
     private string _runnerStatus = "Signing runner ready";
+    private SigningSubmissionLocalizationSnapshot? _auditLocalizationSnapshot;
     private string _completionStatus = "No completion action";
     private bool _shareLinkEnabled = true;
     private string _shareLinkStatus = "Share link enabled";
@@ -833,8 +881,16 @@
             Uuid = "runner-name",
             SubmitterUuid = "template-signer",
             Name = "Full name",
+            Labels = Localized("Celé jméno", ("en-US", "Full name")),
+            Descriptions = Localized("Zadejte celé jméno podle dokladu.", ("en-US", "Enter the full name from the ID document.")),
+            Placeholders = Localized("Jan Novák", ("en-US", "Alex Johnson")),
             Type = SigningFieldType.Text,
             Required = true,
+            Validation = new SigningFieldValidation
+            {
+                Message = "Celé jméno je povinné.",
+                Messages = Localized("Celé jméno je povinné.", ("en-US", "Full name is required."))
+            },
             Areas =
             [
                 new SigningFieldArea
@@ -854,8 +910,15 @@
             Uuid = "runner-amount",
             SubmitterUuid = "template-signer",
             Name = "Amount",
+            Labels = Localized("Částka bez DPH", ("en-US", "Amount without tax")),
+            Placeholders = Localized("1000", ("en-US", "1000")),
             Type = SigningFieldType.Number,
             Required = true,
+            Validation = new SigningFieldValidation
+            {
+                Message = "Částka je povinná.",
+                Messages = Localized("Částka je povinná.", ("en-US", "Amount is required."))
+            },
             Areas =
             [
                 new SigningFieldArea
@@ -872,9 +935,36 @@
         },
         new SigningField
         {
+            Uuid = "runner-delivery",
+            SubmitterUuid = "template-signer",
+            Name = "Delivery method",
+            Labels = Localized("Způsob doručení", ("en-US", "Delivery method")),
+            Type = SigningFieldType.Select,
+            Options =
+            [
+                new SigningFieldOption { Uuid = "email", Value = "email", Labels = Localized("E-mail", ("en-US", "Email")) },
+                new SigningFieldOption { Uuid = "paper", Value = "paper", Labels = Localized("Papír", ("en-US", "Paper")) }
+            ],
+            Areas =
+            [
+                new SigningFieldArea
+                {
+                    Uuid = "runner-delivery-area",
+                    AttachmentUuid = "runner-order",
+                    Page = 0,
+                    X = 0.118,
+                    Y = 0.383,
+                    Width = 0.345,
+                    Height = 0.053
+                }
+            ]
+        },
+        new SigningField
+        {
             Uuid = "runner-total",
             SubmitterUuid = "template-signer",
             Name = "Total with tax",
+            Labels = Localized("Celkem s DPH", ("en-US", "Total with tax")),
             Type = SigningFieldType.Number,
             ReadOnly = true,
             Preferences = new SigningFieldPreferences
@@ -900,6 +990,7 @@
             Uuid = "runner-extra-toggle",
             SubmitterUuid = "template-signer",
             Name = "Add internal note",
+            Labels = Localized("Přidat interní poznámku", ("en-US", "Add internal note")),
             Type = SigningFieldType.Checkbox,
             Areas =
             [
@@ -920,6 +1011,8 @@
             Uuid = "runner-extra-note",
             SubmitterUuid = "template-signer",
             Name = "Internal note",
+            Labels = Localized("Interní poznámka", ("en-US", "Internal note")),
+            Placeholders = Localized("Poznámka pro tým", ("en-US", "Note for the operations team")),
             Type = SigningFieldType.Text,
             Conditions =
             [
@@ -948,8 +1041,14 @@
             Uuid = "runner-date",
             SubmitterUuid = "template-signer",
             Name = "Signing date",
+            Labels = Localized("Datum podpisu", ("en-US", "Signing date")),
             Type = SigningFieldType.Date,
             Required = true,
+            Validation = new SigningFieldValidation
+            {
+                Message = "Datum podpisu je povinné.",
+                Messages = Localized("Datum podpisu je povinné.", ("en-US", "Signing date is required."))
+            },
             Areas =
             [
                 new SigningFieldArea
@@ -969,8 +1068,14 @@
             Uuid = "runner-signature",
             SubmitterUuid = "template-signer",
             Name = "Signature",
+            Labels = Localized("Podpis", ("en-US", "Signature")),
             Type = SigningFieldType.Signature,
             Required = true,
+            Validation = new SigningFieldValidation
+            {
+                Message = "Podpis je povinný.",
+                Messages = Localized("Podpis je povinný.", ("en-US", "Signature is required."))
+            },
             Areas =
             [
                 new SigningFieldArea
@@ -1052,40 +1157,45 @@
         {
             Uuid = "condition-country",
             Name = "Country",
+            Labels = Localized("Země", ("cs-CZ", "Země"), ("en-US", "Country")),
             Type = SigningFieldType.Select,
             Options =
             [
-                new SigningFieldOption { Uuid = "country-cz", Value = "Czech Republic" },
-                new SigningFieldOption { Uuid = "country-us", Value = "United States" }
+                new SigningFieldOption { Uuid = "country-cz", Value = "Czech Republic", Labels = Localized("Česká republika", ("cs-CZ", "Česká republika"), ("en-US", "Czech Republic")) },
+                new SigningFieldOption { Uuid = "country-us", Value = "United States", Labels = Localized("Spojené státy", ("cs-CZ", "Spojené státy"), ("en-US", "United States")) }
             ]
         },
         new SigningField
         {
             Uuid = "condition-consent",
             Name = "Consent",
+            Labels = Localized("Souhlas", ("cs-CZ", "Souhlas"), ("en-US", "Consent")),
             Type = SigningFieldType.Checkbox
         },
         new SigningField
         {
             Uuid = "condition-amount",
             Name = "Amount",
+            Labels = Localized("Částka", ("cs-CZ", "Částka"), ("en-US", "Amount")),
             Type = SigningFieldType.Number
         },
         new SigningField
         {
             Uuid = "condition-delivery",
             Name = "Delivery",
+            Labels = Localized("Doručení", ("cs-CZ", "Doručení"), ("en-US", "Delivery")),
             Type = SigningFieldType.Radio,
             Options =
             [
-                new SigningFieldOption { Uuid = "delivery-email", Value = "Email" },
-                new SigningFieldOption { Uuid = "delivery-paper", Value = "Paper" }
+                new SigningFieldOption { Uuid = "delivery-email", Value = "Email", Labels = Localized("E-mail", ("cs-CZ", "E-mail"), ("en-US", "Email")) },
+                new SigningFieldOption { Uuid = "delivery-paper", Value = "Paper", Labels = Localized("Papír", ("cs-CZ", "Papír"), ("en-US", "Paper")) }
             ]
         },
         new SigningField
         {
             Uuid = "condition-heading",
             Name = "Internal heading",
+            Labels = Localized("Interní nadpis", ("cs-CZ", "Interní nadpis"), ("en-US", "Internal heading")),
             Type = SigningFieldType.Heading
         }
     ];
@@ -1398,6 +1508,8 @@
                 OptionalInviteByRoleUuid = "recipient-signer"
             }
         ];
+
+        _auditLocalizationSnapshot = CreateLocalizationSnapshot(_runnerFields, _runnerCulture, _designerCulture);
     }
 
     private void HandleConditionRulesChanged(IReadOnlyList<SigningFieldCondition> conditions)
@@ -1450,6 +1562,12 @@
     {
         _designerFields = fields;
         _designerStatus = $"{fields.Count} designer field{(fields.Count == 1 ? string.Empty : "s")}";
+    }
+
+    private void HandleDesignerCultureChanged(string? culture)
+    {
+        _designerCulture = culture;
+        _designerStatus = $"Preview language: {culture ?? "default"}; {_designerFields.Count} designer fields";
     }
 
     private Task<IReadOnlyList<SigningField>> DetectDesignerFieldsAsync()
@@ -1518,12 +1636,24 @@
     private void HandleRunnerValuesChanged(IReadOnlyDictionary<string, object?> values)
     {
         _runnerValues = new Dictionary<string, object?>(values, StringComparer.Ordinal);
-        _runnerStatus = $"Values: {_runnerValues.Count}; total: {GetRunnerValue("runner-total") ?? "pending"}";
+        _runnerStatus = $"Values: {_runnerValues.Count}; delivery: {GetRunnerValue("runner-delivery") ?? "pending"}; total: {GetRunnerValue("runner-total") ?? "pending"}";
+    }
+
+    private void HandleRunnerCultureChanged(string? culture)
+    {
+        _runnerCulture = culture;
+        _runnerStatus = $"Signing language: {culture ?? "default"}; values: {_runnerValues.Count}";
+    }
+
+    private void HandleRunnerLocalizationSnapshotChanged(SigningSubmissionLocalizationSnapshot snapshot)
+    {
+        _auditLocalizationSnapshot = snapshot;
+        _runnerStatus = $"Language snapshot: {snapshot.Culture ?? "default"}; fields: {snapshot.Fields.Count}";
     }
 
     private void HandleRunnerAutoSave(IReadOnlyDictionary<string, object?> values)
     {
-        _runnerStatus = $"Autosaved {values.Count} values; total: {GetRunnerValue("runner-total") ?? "pending"}";
+        _runnerStatus = $"Autosaved {values.Count} values; delivery: {GetRunnerValue("runner-delivery") ?? "pending"}; total: {GetRunnerValue("runner-total") ?? "pending"}";
     }
 
     private void HandleRunnerComplete(IReadOnlyDictionary<string, object?> values)
@@ -1622,6 +1752,48 @@
             Width = 0.84,
             Height = 0.48,
             OptionUuid = optionUuid
+        };
+    }
+
+    private static SigningLocalizedText Localized(string defaultText, params (string Culture, string Value)[] translations)
+    {
+        var text = new SigningLocalizedText { Default = defaultText };
+        foreach (var (culture, value) in translations)
+        {
+            text.Translations[culture] = value;
+        }
+
+        return text;
+    }
+
+    private static SigningSubmissionLocalizationSnapshot CreateLocalizationSnapshot(
+        IReadOnlyList<SigningField> fields,
+        string? culture,
+        string? fallbackCulture)
+    {
+        return new SigningSubmissionLocalizationSnapshot
+        {
+            Culture = culture,
+            FallbackCulture = fallbackCulture,
+            PdfContentTranslated = false,
+            Fields = fields
+                .Select(field => new SigningSubmissionFieldLocalizationSnapshot
+                {
+                    FieldUuid = field.Uuid,
+                    Label = SigningLocalizationResolver.ResolveFieldLabel(field, culture, fallbackCulture, field.Name),
+                    Title = SigningLocalizationResolver.ResolveFieldTitle(field, culture, fallbackCulture, field.Name),
+                    Description = SigningLocalizationResolver.ResolveFieldDescription(field, culture, fallbackCulture),
+                    ValidationMessage = SigningLocalizationResolver.ResolveValidationMessage(field.Validation, culture, fallbackCulture),
+                    Options = field.Options
+                        .Select(option => new SigningSubmissionOptionLocalizationSnapshot
+                        {
+                            OptionUuid = option.Uuid,
+                            Value = option.Value,
+                            Label = SigningLocalizationResolver.ResolveOptionLabel(option, culture, fallbackCulture, option.Value)
+                        })
+                        .ToList()
+                })
+                .ToList()
         };
     }
 

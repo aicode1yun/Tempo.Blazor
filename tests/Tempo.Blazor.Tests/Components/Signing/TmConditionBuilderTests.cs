@@ -269,6 +269,36 @@ public class TmConditionBuilderTests : LocalizationTestBase
     }
 
     [Fact]
+    public void CultureChange_DoesNotChangeExistingConditionFieldUuid()
+    {
+        IReadOnlyList<SigningFieldCondition>? captured = null;
+        var fields = CreateFields();
+        fields.First(field => field.Uuid == "country").Labels.Translations["cs"] = "Země";
+        var conditions = new[]
+        {
+            new SigningFieldCondition
+            {
+                FieldUuid = "country",
+                Action = SigningConditionAction.Equal,
+                Value = "one"
+            }
+        };
+
+        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+            parameters.Add(p => p.Fields, fields)
+                      .Add(p => p.CurrentFieldUuid, "target")
+                      .Add(p => p.Conditions, conditions)
+                      .Add(p => p.Culture, "en-US")
+                      .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
+
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, "cs-CZ"));
+
+        captured.Should().BeNull();
+        cut.Find(".tm-condition-builder__field").GetAttribute("value").Should().Be("country");
+        cut.Find(".tm-condition-builder__field").TextContent.Should().Contain("Země");
+    }
+
+    [Fact]
     public void Cycle_DirectDependencyOnCurrentField_ShowsValidation()
     {
         var cut = RenderComponent<TmConditionBuilder>(parameters =>

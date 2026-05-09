@@ -21,6 +21,49 @@
             }
         </header>
 
+        @if (LocalizationSnapshot is not null)
+        {
+            <section class="tm-audit-trail-viewer__section tm-audit-trail-viewer__localization"
+                     aria-label="@Loc["TmAuditTrailViewer_Localization"]">
+                <h3>@Loc["TmAuditTrailViewer_Localization"]</h3>
+                <dl class="tm-audit-trail-viewer__localization-summary">
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_SigningCulture"]</dt>
+                        <dd>@FormatSnapshotValue(LocalizationSnapshot.Culture)</dd>
+                    </div>
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_FallbackCulture"]</dt>
+                        <dd>@FormatSnapshotValue(LocalizationSnapshot.FallbackCulture)</dd>
+                    </div>
+                    <div>
+                        <dt>@Loc["TmAuditTrailViewer_PdfContent"]</dt>
+                        <dd>@(LocalizationSnapshot.PdfContentTranslated ? Loc["TmAuditTrailViewer_PdfTranslated"] : Loc["TmAuditTrailViewer_PdfNotTranslated"])</dd>
+                    </div>
+                </dl>
+
+                @if (LocalizationSnapshot.Fields.Count > 0)
+                {
+                    <div class="tm-audit-trail-viewer__field-snapshots">
+                        @foreach (var field in LocalizationSnapshot.Fields)
+                        {
+                            <article class="tm-audit-trail-viewer__field-snapshot"
+                                     data-field-uuid="@field.FieldUuid">
+                                <strong>@field.Label</strong>
+                                @if (!string.IsNullOrWhiteSpace(field.Title))
+                                {
+                                    <span>@field.Title</span>
+                                }
+                                @if (field.Options.Count > 0)
+                                {
+                                    <span>@string.Join(", ", field.Options.Select(option => option.Label))</span>
+                                }
+                            </article>
+                        }
+                    </div>
+                }
+            </section>
+        }
+
         <section class="tm-audit-trail-viewer__section">
             <h3>@Loc["TmAuditTrailViewer_Documents"]</h3>
             @foreach (var document in Trail.Documents)
@@ -90,6 +133,9 @@
     /// <summary>Audit trail payload to render.</summary>
     [Parameter] public SigningAuditTrail? Trail { get; set; }
 
+    /// <summary>Optional resolved signing localization snapshot captured during the ceremony.</summary>
+    [Parameter] public SigningSubmissionLocalizationSnapshot? LocalizationSnapshot { get; set; }
+
     /// <summary>Additional CSS classes for the root element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -103,5 +149,10 @@
     private static string FormatNetwork(string? ipAddress, string? userAgent, string? timeZone)
     {
         return string.Join(" · ", new[] { ipAddress, userAgent, timeZone }.Where(value => !string.IsNullOrWhiteSpace(value)));
+    }
+
+    private string FormatSnapshotValue(string? value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? Loc["TmAuditTrailViewer_NotCaptured"] : value;
     }
 }

@@ -5937,9 +5937,18 @@ Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a r
                      Fields="_fields"
                      Values="_values"
                      ValuesChanged="values => _values = values"
+                     Culture="_signingCulture"
+                     FallbackCulture="en-US"
+                     SupportedCultures="_supportedCultures"
+                     ShowLanguageSelector="true"
+                     OnLocalizationSnapshotChanged="snapshot => _auditSnapshot = snapshot"
                      OnComplete="CompleteSigningAsync" />
 
 @code {
+    private string? _signingCulture = "cs-CZ";
+    private readonly IReadOnlyList<string> _supportedCultures = ["cs-CZ", "en-US"];
+    private SigningSubmissionLocalizationSnapshot? _auditSnapshot;
+
     private IReadOnlyDictionary<string, object?> _values =
         new Dictionary<string, object?>(StringComparer.Ordinal);
 
@@ -5950,6 +5959,58 @@ Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a r
     }
 }
 ```
+
+### Vícejazyčná podpisová vrstva
+
+Texty polí se ukládají vedle stabilních identifikátorů. UI popisek se překládá podle `Culture`, ale uložené hodnoty, option `Uuid`, field `Uuid`, formule a podmínky zůstávají stabilní a jazykově nezávislé.
+
+```csharp
+var field = new SigningField
+{
+    Uuid = "signer-name",
+    Name = "Signer name",
+    Labels = new SigningLocalizedText
+    {
+        Default = "Jméno podepisujícího",
+        Translations =
+        {
+            ["en-US"] = "Signer name",
+            ["cs-CZ"] = "Jméno podepisujícího"
+        }
+    },
+    Placeholders = new SigningLocalizedText
+    {
+        Default = "Jan Novák",
+        Translations = { ["en-US"] = "Alex Johnson" }
+    }
+};
+```
+
+Options mají překládaný label, ale submit/autosave hodnota má zůstat stabilní:
+
+```csharp
+field.Options =
+[
+    new SigningFieldOption
+    {
+        Uuid = "delivery-email",
+        Value = "email",
+        Labels = new SigningLocalizedText
+        {
+            Default = "E-mail",
+            Translations = { ["en-US"] = "Email" }
+        }
+    }
+];
+```
+
+PDF obsah se automaticky nepřekládá. Překládá se pouze podpisová vrstva, editor, validace, options a pomocné UI texty. Pokud má dokument existovat ve více jazycích, použijte buď více PDF šablon, nebo explicitně evidujte jazyk původního PDF a jazyk podpisové vrstvy.
+
+`TmSigningFormRunner` při změně jazyka vyvolá `OnLocalizationSnapshotChanged`. Snapshot doporučujeme uložit do auditu spolu s `Culture`, `FallbackCulture`, vyřešenými labely, options a informací, zda byl PDF obsah přeložen. Díky tomu později doložíte, co podepisující v konkrétním jazyce viděl.
+
+Legacy vlastnosti `Name`, `Title`, `Description`, `Option.Value` a `Validation.Message` zůstávají fallbackem. Migrace tedy může být postupná: nejprve ponechat stávající texty a následně doplňovat `SigningLocalizedText`.
+
+Formule a podmínky nikdy nestavte na přeložených popiscích. Používejte stabilní `FieldUuid`, `Option.Uuid` a tokeny typu `{{field-uuid}}`; změna jazyka pak nesmí změnit význam pravidla ani uložené hodnoty.
 
 ### Dokončení, sdílení a audit
 
