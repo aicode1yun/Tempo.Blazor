@@ -71,6 +71,29 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Palette_DragDropFieldType_CreatesDefaultSizedField()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-type='Signature']").DragStart(new DragEventArgs());
+        cut.Find(".tm-pdf-template-designer").ClassList.Should().Contain("tm-pdf-template-designer--dragging");
+
+        var surface = cut.Find("[data-page-key='attachment-1:0'] .tm-pdf-template-designer__page-surface");
+        surface.Drop(new DragEventArgs { OffsetX = 500, OffsetY = 500 });
+
+        captured.Should().NotBeNull();
+        var field = captured!.Should().ContainSingle().Subject;
+        field.Type.Should().Be(SigningFieldType.Signature);
+        field.Areas.Single().X.Should().BeApproximately(0.33, 0.001);
+        field.Areas.Single().Y.Should().BeApproximately(0.4675, 0.001);
+        field.Areas.Single().Width.Should().BeApproximately(0.34, 0.001);
+        field.Areas.Single().Height.Should().BeApproximately(0.065, 0.001);
+    }
+
+    [Fact]
     public void Palette_WhenDisabled_IsHidden()
     {
         var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
@@ -203,6 +226,22 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
 
         captured.Should().NotBeNull();
         captured.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DeleteKey_RemovesSelectedField()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find(".tm-pdf-template-designer").KeyDown(new KeyboardEventArgs { Key = "Delete" });
+
+        captured.Should().NotBeNull();
+        captured!.Should().ContainSingle(field => field.Uuid == "field-2");
     }
 
     [Fact]

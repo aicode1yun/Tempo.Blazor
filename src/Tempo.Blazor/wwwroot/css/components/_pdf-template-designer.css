@@ -6,7 +6,7 @@
 
 .tm-pdf-template-designer__workspace {
     display: grid;
-    grid-template-columns: minmax(calc(var(--tm-space-16) * 2), calc(var(--tm-space-16) * 2.5)) minmax(0, 1fr) minmax(calc(var(--tm-space-16) * 4.5), calc(var(--tm-space-16) * 5.5));
+    grid-template-columns: minmax(calc(var(--tm-space-16) * 3), calc(var(--tm-space-16) * 3.25)) minmax(0, 1fr) minmax(calc(var(--tm-space-16) * 4.25), calc(var(--tm-space-16) * 5));
     gap: var(--tm-space-4);
     align-items: start;
     min-width: 0;
@@ -62,14 +62,25 @@
 .tm-pdf-template-designer__palette-item {
     justify-content: flex-start;
     width: 100%;
+    min-width: 0;
+    touch-action: none;
 }
 
 .tm-pdf-template-designer__palette-item span,
 .tm-pdf-template-designer__mobile-draw {
     min-width: 0;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    white-space: nowrap;
+    overflow-wrap: anywhere;
+    text-align: left;
+    white-space: normal;
+}
+
+.tm-pdf-template-designer__palette-item[draggable="true"] {
+    cursor: grab;
+}
+
+.tm-pdf-template-designer--dragging .tm-pdf-template-designer__page-surface {
+    outline: 2px dashed var(--tm-color-primary);
+    outline-offset: calc(var(--tm-space-1) * -1);
 }
 
 .tm-pdf-template-designer__palette-item--active {
@@ -121,7 +132,7 @@
 
 .tm-pdf-template-designer__context-host {
     position: fixed;
-    z-index: var(--tm-z-popover);
+    z-index: var(--tm-z-tooltip, 1090);
 }
 
 .tm-pdf-template-designer__context-actions {
@@ -132,6 +143,14 @@
     border-radius: var(--tm-radius-md);
     background: var(--tm-bg-surface);
     box-shadow: var(--tm-shadow-lg);
+}
+
+.tm-pdf-template-designer__context-host .tm-context-menu-wrapper {
+    position: absolute;
+    width: 0;
+    height: 0;
+    overflow: hidden;
+    pointer-events: none;
 }
 
 .tm-pdf-template-designer__context-action {

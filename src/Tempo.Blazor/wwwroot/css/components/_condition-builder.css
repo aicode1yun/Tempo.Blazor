@@ -51,6 +51,7 @@
 .tm-condition-builder__value-input,
 .tm-condition-builder__value-placeholder {
     width: 100%;
+    box-sizing: border-box;
     min-height: var(--tm-input-height-sm);
     padding: var(--tm-space-1) var(--tm-space-2);
     border: 1px solid var(--tm-color-border);
@@ -80,6 +81,7 @@
 .tm-condition-builder__remove,
 .tm-condition-builder__add {
     display: inline-flex;
+    box-sizing: border-box;
     align-items: center;
     justify-content: center;
     gap: var(--tm-space-1);

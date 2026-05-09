@@ -1,6 +1,7 @@
 .tm-signing-field-editor-panel {
     display: grid;
     gap: var(--tm-space-4);
+    min-width: 0;
     padding: var(--tm-space-4);
     border: 1px solid var(--tm-color-border);
     border-radius: var(--tm-radius-md);
@@ -101,6 +102,7 @@
 .tm-signing-field-editor-panel__font-size,
 .tm-signing-field-editor-panel__align {
     width: 100%;
+    box-sizing: border-box;
     min-height: var(--tm-input-height-sm);
     padding: var(--tm-space-1) var(--tm-space-2);
     border: 1px solid var(--tm-color-border);
@@ -117,6 +119,7 @@
 }
 
 .tm-signing-field-editor-panel__color {
+    box-sizing: border-box;
     width: var(--tm-input-height-sm);
     height: var(--tm-input-height-sm);
     padding: 0;
@@ -167,6 +170,7 @@
 .tm-signing-field-editor-panel__open-conditions,
 .tm-signing-field-editor-panel__open-formula {
     display: inline-flex;
+    box-sizing: border-box;
     align-items: center;
     justify-content: center;
     gap: var(--tm-space-1);
@@ -200,6 +204,22 @@
 .tm-signing-field-editor-panel__formula-builder {
     display: grid;
     gap: var(--tm-space-2);
+    min-width: 0;
+}
+
+.tm-signing-field-editor-panel__condition-builder .tm-condition-builder__row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: var(--tm-space-2);
+}
+
+.tm-signing-field-editor-panel__condition-builder .tm-condition-builder__field-group,
+.tm-signing-field-editor-panel__condition-builder .tm-condition-builder__field-group--operation,
+.tm-signing-field-editor-panel__condition-builder .tm-condition-builder__field-group--value {
+    min-width: 0;
+}
+
+.tm-signing-field-editor-panel__condition-builder .tm-condition-builder__remove {
+    justify-self: end;
 }
 
 .tm-signing-field-editor-panel button:disabled,

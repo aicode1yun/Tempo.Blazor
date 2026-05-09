@@ -73,6 +73,8 @@ public partial class TmSigningFieldOverlay
 
     private int TabIndex => IsDisabled ? -1 : 0;
 
+    private bool StopMouseDownPropagation => Draggable;
+
     private string Label => !string.IsNullOrWhiteSpace(Field?.Name)
         ? Field.Name
         : !string.IsNullOrWhiteSpace(Field?.Title)

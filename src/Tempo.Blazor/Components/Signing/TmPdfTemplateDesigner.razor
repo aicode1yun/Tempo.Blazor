@@ -4,6 +4,7 @@
 <div @attributes="AdditionalAttributes"
      class="@RootClass"
      tabindex="0"
+     @onkeydown="HandleDesignerKeyDownAsync"
      @onmousemove="HandlePointerMoveAsync"
      @onmouseup="HandlePointerUpAsync">
     @if (Documents.Count == 0)
@@ -33,7 +34,10 @@
                         <button type="button"
                                 class="@GetPaletteItemClass(type)"
                                 data-field-type="@type"
+                                draggable="true"
                                 title="@GetFieldTypeLabel(type)"
+                                @ondragstart="() => StartPaletteDrag(type)"
+                                @ondragend="EndPaletteDrag"
                                 @onclick="() => SelectFieldTypeAsync(type)">
                             <TmIcon Name="@GetIconName(type)" Size="IconSize.Sm" />
                             <span>@GetFieldTypeLabel(type)</span>
@@ -87,7 +91,8 @@
                 </div>
             </main>
 
-            <aside class="tm-pdf-template-designer__panel">
+            <aside class="tm-pdf-template-designer__panel"
+                   @onkeydown:stopPropagation="true">
                 <TmSigningFieldEditorPanel Field="SelectedField"
                                            FieldChanged="HandleEditorFieldChangedAsync"
                                            Fields="_fields"

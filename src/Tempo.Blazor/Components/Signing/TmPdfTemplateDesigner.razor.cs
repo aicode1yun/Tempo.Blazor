@@ -34,6 +34,7 @@ public partial class TmPdfTemplateDesigner
     private readonly HashSet<string> _selectedFieldUuids = [];
     private IReadOnlyList<SigningField>? _lastFields;
     private SigningFieldType? _drawType;
+    private SigningFieldType? _dragType;
     private DrawState? _drawState;
     private MoveState? _moveState;
     private ResizeState? _resizeState;
@@ -92,6 +93,7 @@ public partial class TmPdfTemplateDesigner
         {
             var classes = new List<string> { "tm-pdf-template-designer" };
             AddClass(classes, _drawType.HasValue, "tm-pdf-template-designer--drawing");
+            AddClass(classes, _dragType.HasValue, "tm-pdf-template-designer--dragging");
             AddClass(classes, Disabled, "tm-pdf-template-designer--disabled");
             AddClass(classes, MobileMode, "tm-pdf-template-designer--mobile");
 
@@ -134,6 +136,10 @@ public partial class TmPdfTemplateDesigner
         builder.AddAttribute(sequence++, "onmouseup", EventCallback.Factory.Create<MouseEventArgs>(this, args => HandlePagePointerUpAsync(page, args)));
         builder.AddAttribute(sequence++, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, args => OpenPageContextMenu(page, args)));
         builder.AddEventPreventDefaultAttribute(sequence++, "oncontextmenu", true);
+        builder.AddAttribute(sequence++, "ondragover", EventCallback.Factory.Create<DragEventArgs>(this, _ => Task.CompletedTask));
+        builder.AddEventPreventDefaultAttribute(sequence++, "ondragover", true);
+        builder.AddAttribute(sequence++, "ondrop", EventCallback.Factory.Create<DragEventArgs>(this, args => HandlePaletteDropAsync(page, args)));
+        builder.AddEventPreventDefaultAttribute(sequence++, "ondrop", true);
 
         foreach (var field in _fields)
         {
@@ -145,7 +151,7 @@ public partial class TmPdfTemplateDesigner
                 builder.AddAttribute(sequence++, "Field", currentField);
                 builder.AddAttribute(sequence++, "Area", currentArea);
                 builder.AddAttribute(sequence++, "Selected", _selectedFieldUuids.Contains(currentField.Uuid));
-                builder.AddAttribute(sequence++, "Draggable", !Disabled);
+                builder.AddAttribute(sequence++, "Draggable", !Disabled && !_drawType.HasValue);
                 builder.AddAttribute(sequence++, "Editable", !Disabled && _selectedFieldUuids.Contains(currentField.Uuid));
                 builder.AddAttribute(sequence++, "ReadOnly", Disabled);
                 builder.AddAttribute(sequence++, "OnClick", EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, args => SelectFieldAsync(args, false)));
@@ -192,6 +198,43 @@ public partial class TmPdfTemplateDesigner
         _drawType = type;
         _contextMenu = null;
         return Task.CompletedTask;
+    }
+
+    private Task StartPaletteDrag(SigningFieldType type)
+    {
+        if (Disabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        _dragType = type;
+        _drawType = null;
+        _contextMenu = null;
+        return Task.CompletedTask;
+    }
+
+    private Task EndPaletteDrag()
+    {
+        _dragType = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task HandlePaletteDropAsync(SigningDocumentPage page, DragEventArgs args)
+    {
+        if (Disabled || _dragType is not { } type)
+        {
+            return;
+        }
+
+        var point = ToPoint(page, args);
+        var area = CreateDefaultAreaAtPoint(page, type, point.X, point.Y);
+        var field = CreateField(type, area);
+        _fields.Add(field);
+        _selectedFieldUuids.Clear();
+        _selectedFieldUuids.Add(field.Uuid);
+        _dragType = null;
+        _drawType = null;
+        await NotifyFieldsChangedAsync();
     }
 
     private async Task HandlePagePointerDownAsync(SigningDocumentPage page, MouseEventArgs args)
@@ -303,6 +346,16 @@ public partial class TmPdfTemplateDesigner
         }
 
         _resizeState = null;
+    }
+
+    private async Task HandleDesignerKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (Disabled || args.Key is not "Delete" || _selectedFieldUuids.Count == 0)
+        {
+            return;
+        }
+
+        await DeleteSelectedAsync();
     }
 
     private async Task SelectFieldAsync(TmSigningFieldOverlayPointerEventArgs args, bool append)
@@ -654,6 +707,37 @@ public partial class TmPdfTemplateDesigner
             Y = y,
             Width = width,
             Height = height
+        };
+    }
+
+    private static SigningFieldArea CreateDefaultAreaAtPoint(SigningDocumentPage page, SigningFieldType type, double x, double y)
+    {
+        var (width, height) = GetDefaultAreaSize(type);
+        return new SigningFieldArea
+        {
+            Uuid = Guid.NewGuid().ToString("N"),
+            AttachmentUuid = page.AttachmentUuid,
+            Page = page.PageIndex,
+            X = Clamp(x - width / 2, 0, 1 - width),
+            Y = Clamp(y - height / 2, 0, 1 - height),
+            Width = width,
+            Height = height
+        };
+    }
+
+    private static (double Width, double Height) GetDefaultAreaSize(SigningFieldType type)
+    {
+        return type switch
+        {
+            SigningFieldType.Signature => (0.34, 0.065),
+            SigningFieldType.Initials => (0.16, 0.065),
+            SigningFieldType.Date or SigningFieldType.DateNow => (0.22, 0.055),
+            SigningFieldType.Number => (0.2, 0.055),
+            SigningFieldType.Checkbox => (0.08, 0.05),
+            SigningFieldType.Radio or SigningFieldType.Select or SigningFieldType.Multiple => (0.32, 0.06),
+            SigningFieldType.File or SigningFieldType.Image or SigningFieldType.Stamp => (0.26, 0.07),
+            SigningFieldType.Phone => (0.28, 0.055),
+            _ => (0.3, 0.055)
         };
     }
 

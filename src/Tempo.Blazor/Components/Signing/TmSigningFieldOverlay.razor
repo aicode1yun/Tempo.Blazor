@@ -18,7 +18,8 @@
      @oncontextmenu:preventDefault="PreventDefaultContextMenu"
      @oncontextmenu:stopPropagation="true"
      @onkeydown="HandleKeyDownAsync"
-     @onmousedown="HandleStartMoveAsync">
+     @onmousedown="HandleStartMoveAsync"
+     @onmousedown:stopPropagation="StopMouseDownPropagation">
     <span class="tm-signing-field__icon" data-icon="@IconName" aria-hidden="true">
         <TmIcon Name="@IconName" Size="IconSize.Xs" />
     </span>
