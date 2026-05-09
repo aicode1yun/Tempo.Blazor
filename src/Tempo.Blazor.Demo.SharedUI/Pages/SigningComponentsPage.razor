@@ -506,6 +506,44 @@
         </svg>
         """);
 
+    private static readonly string RunnerPageImage = "data:image/svg+xml," + Uri.EscapeDataString("""
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 612 792">
+          <rect width="612" height="792" fill="white"/>
+          <rect x="48" y="52" width="516" height="688" fill="none" stroke="#d1d5db" stroke-width="2"/>
+          <text x="72" y="104" font-family="Arial, sans-serif" font-size="28" font-weight="700" fill="#111827">Service Order Approval</text>
+          <text x="72" y="132" font-family="Arial, sans-serif" font-size="13" fill="#4b5563">Complete the highlighted fields to approve the order and sign the agreement.</text>
+
+          <line x1="72" y1="164" x2="540" y2="164" stroke="#d1d5db" stroke-width="2"/>
+          <text x="72" y="198" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Client details</text>
+          <text x="72" y="224" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Full name</text>
+          <rect x="72" y="236" width="280" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="376" y="224" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Reference</text>
+          <rect x="376" y="236" width="164" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="392" y="263" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">SO-2026-042</text>
+
+          <text x="72" y="324" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Commercial terms</text>
+          <text x="72" y="350" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Amount without tax</text>
+          <rect x="72" y="362" width="150" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="246" y="350" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Total with 21% tax</text>
+          <rect x="246" y="362" width="168" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="438" y="350" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Currency</text>
+          <rect x="438" y="362" width="102" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="454" y="389" font-family="Arial, sans-serif" font-size="13" fill="#6b7280">EUR</text>
+
+          <text x="72" y="460" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Internal approval</text>
+          <rect x="72" y="478" width="18" height="18" rx="3" fill="#ffffff" stroke="#9ca3af"/>
+          <text x="102" y="492" font-family="Arial, sans-serif" font-size="13" fill="#374151">Add internal note for the operations team</text>
+          <text x="72" y="534" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Internal note</text>
+          <rect x="72" y="546" width="468" height="48" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+
+          <text x="72" y="642" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#111827">Acceptance</text>
+          <text x="72" y="668" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Signing date</text>
+          <rect x="72" y="680" width="220" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+          <text x="306" y="668" font-family="Arial, sans-serif" font-size="12" fill="#6b7280">Signature</text>
+          <rect x="306" y="680" width="234" height="42" rx="4" fill="#f9fafb" stroke="#d1d5db"/>
+        </svg>
+        """);
+
     private readonly SigningDocumentPage _demoPage = new()
     {
         AttachmentUuid = "demo-nda",
@@ -514,6 +552,16 @@
         Width = 612,
         Height = 792,
         Label = "NDA page 1"
+    };
+
+    private readonly SigningDocumentPage _runnerPage = new()
+    {
+        AttachmentUuid = "runner-order",
+        PageIndex = 0,
+        ImageUrl = RunnerPageImage,
+        Width = 612,
+        Height = 792,
+        Label = "Service order approval"
     };
 
     private readonly IReadOnlyList<SigningDocumentPage> _designerPages =
@@ -775,7 +823,7 @@
 
     private IReadOnlyList<SigningDocumentPage> _runnerPages =>
     [
-        _demoPage
+        _runnerPage
     ];
 
     private IReadOnlyList<SigningField> _runnerFields =>
@@ -792,12 +840,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-name-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.14,
-                    Y = 0.32,
-                    Width = 0.42,
-                    Height = 0.06
+                    X = 0.118,
+                    Y = 0.298,
+                    Width = 0.458,
+                    Height = 0.053
                 }
             ]
         },
@@ -813,12 +861,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-amount-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.14,
-                    Y = 0.41,
-                    Width = 0.24,
-                    Height = 0.06
+                    X = 0.118,
+                    Y = 0.457,
+                    Width = 0.245,
+                    Height = 0.053
                 }
             ]
         },
@@ -838,12 +886,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-total-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.42,
-                    Y = 0.41,
-                    Width = 0.24,
-                    Height = 0.06
+                    X = 0.402,
+                    Y = 0.457,
+                    Width = 0.275,
+                    Height = 0.053
                 }
             ]
         },
@@ -858,12 +906,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-extra-toggle-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.14,
-                    Y = 0.51,
-                    Width = 0.36,
-                    Height = 0.05
+                    X = 0.118,
+                    Y = 0.603,
+                    Width = 0.58,
+                    Height = 0.043
                 }
             ]
         },
@@ -886,12 +934,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-extra-note-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.14,
-                    Y = 0.58,
-                    Width = 0.52,
-                    Height = 0.06
+                    X = 0.118,
+                    Y = 0.689,
+                    Width = 0.765,
+                    Height = 0.061
                 }
             ]
         },
@@ -907,12 +955,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-date-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.14,
-                    Y = 0.67,
-                    Width = 0.24,
-                    Height = 0.06
+                    X = 0.118,
+                    Y = 0.859,
+                    Width = 0.36,
+                    Height = 0.053
                 }
             ]
         },
@@ -928,12 +976,12 @@
                 new SigningFieldArea
                 {
                     Uuid = "runner-signature-area",
-                    AttachmentUuid = "demo-nda",
+                    AttachmentUuid = "runner-order",
                     Page = 0,
-                    X = 0.52,
-                    Y = 0.73,
-                    Width = 0.34,
-                    Height = 0.06
+                    X = 0.5,
+                    Y = 0.859,
+                    Width = 0.383,
+                    Height = 0.053
                 }
             ]
         }
