@@ -164,6 +164,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
 
     [Theory]
     [InlineData(SigningFieldType.Signature)]
+    [InlineData(SigningFieldType.Initials)]
     [InlineData(SigningFieldType.Image)]
     public void Render_ImageLikeValue_RendersThumbnail(SigningFieldType type)
     {
@@ -175,6 +176,29 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
             .GetAttribute("src")
             .Should()
             .Be("data:image/png;base64,abc");
+    }
+
+    [Theory]
+    [InlineData(SigningFieldType.Signature)]
+    [InlineData(SigningFieldType.Initials)]
+    [InlineData(SigningFieldType.Image)]
+    public void Render_ImageLikeValue_WithPlainText_DoesNotRenderBrokenThumbnail(SigningFieldType type)
+    {
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, CreateField(type))
+                      .Add(p => p.Value, "option-a"));
+
+        cut.FindAll("img.tm-signing-field__thumbnail").Should().BeEmpty();
+        cut.Find(".tm-signing-field__value").TextContent.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Render_PaymentWithoutValue_RendersPaymentTypeName()
+    {
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, CreateField(SigningFieldType.Payment)));
+
+        cut.Find(".tm-signing-field__value").TextContent.Should().Be("Payment");
     }
 
     [Fact]

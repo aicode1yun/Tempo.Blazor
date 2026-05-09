@@ -109,6 +109,7 @@ public partial class TmSigningFieldOverlay
         SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
         SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
         SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
+        SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
         _ => Loc["TmSigning_Field_Text"]
     };
 
@@ -177,7 +178,19 @@ public partial class TmSigningFieldOverlay
 
     private string TextValue => FormatValue(Value ?? Field?.DefaultValue);
 
+    private string DisplayValue => string.IsNullOrWhiteSpace(TextValue) && ShouldShowTypePlaceholder
+        ? LocalizedTypeName
+        : TextValue;
+
     private string ImageValue => Value as string ?? Field?.DefaultValue as string ?? string.Empty;
+
+    private bool HasImageValue => IsImageSource(ImageValue);
+
+    private bool ShouldShowTypePlaceholder => Field?.Type is SigningFieldType.File
+        or SigningFieldType.Payment
+        or SigningFieldType.Phone
+        or SigningFieldType.Verification
+        or SigningFieldType.Kba;
 
     private string CheckboxClass => IsChecked(Value)
         ? "tm-signing-field__checkbox tm-signing-field__checkbox--checked"
@@ -214,6 +227,26 @@ public partial class TmSigningFieldOverlay
             IFormattable formattable => formattable.ToString(null, CultureInfo.InvariantCulture) ?? string.Empty,
             _ => value.ToString() ?? string.Empty
         };
+    }
+
+    private static bool IsImageSource(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("blob:", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("/", StringComparison.Ordinal)
+            || value.StartsWith("./", StringComparison.Ordinal)
+            || value.StartsWith("../", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && uri.Scheme is "http" or "https";
     }
 
     private string GetOptionClass(SigningFieldOption option)

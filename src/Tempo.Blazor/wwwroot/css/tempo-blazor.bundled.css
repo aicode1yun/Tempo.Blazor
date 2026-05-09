@@ -3515,12 +3515,12 @@ to{opacity:1;}
 .tm-signing-field__icon{display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;}
 .tm-signing-field__label{flex:0 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tm-signing-field__required{flex:0 0 auto;color:var(--tm-color-danger);font-weight:var(--tm-font-weight-bold);}
-.tm-signing-field__content{display:inline-flex;align-items:center;min-width:0;flex:1 1 auto;overflow:hidden;}
+.tm-signing-field__content{display:inline-flex;align-items:center;min-width:0;flex:1 1 auto;overflow:visible;}
 .tm-signing-field__value{min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
 .tm-signing-field__checkbox{display:inline-flex;align-items:center;justify-content:center;width:var(--tm-space-4);height:var(--tm-space-4);border:1px solid currentColor;border-radius:var(--tm-radius-xs);background:var(--tm-bg-surface);}
 .tm-signing-field__checkbox--checked{background:var(--tm-color-primary);color:var(--tm-text-inverse);}
-.tm-signing-field__options{display:inline-flex;align-items:center;gap:var(--tm-space-1);min-width:0;overflow:hidden;}
-.tm-signing-field__option{display:inline-flex;align-items:center;max-width:var(--tm-space-16);padding:0 var(--tm-space-1);border:1px solid var(--tm-color-border);border-radius:var(--tm-radius-full);overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.tm-signing-field__options{display:inline-flex;align-items:center;flex-wrap:wrap;gap:var(--tm-space-1);min-width:0;overflow:visible;}
+.tm-signing-field__option{display:inline-flex;align-items:center;max-width:100%;padding:0 var(--tm-space-1);border:1px solid var(--tm-color-border);border-radius:var(--tm-radius-full);overflow-wrap:anywhere;white-space:normal;}
 .tm-signing-field__option--checked{border-color:var(--tm-color-primary);background:var(--tm-color-primary);color:var(--tm-text-inverse);}
 .tm-signing-field__cells{display:grid;grid-auto-flow:column;grid-auto-columns:minmax(var(--tm-space-4),1fr);gap:var(--tm-space-1);width:100%;}
 .tm-signing-field__cell{display:inline-flex;align-items:center;justify-content:center;min-width:var(--tm-space-4);min-height:var(--tm-space-5);border-bottom:1px solid currentColor;}

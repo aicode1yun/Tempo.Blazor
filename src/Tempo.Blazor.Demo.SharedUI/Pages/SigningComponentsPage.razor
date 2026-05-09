@@ -251,7 +251,7 @@
                      data-testid="field-editor-preview">
                     <TmSigningFieldOverlay Field="_editorField"
                                            Area="_editorArea"
-                                           Value="_editorPreviewValue"
+                                           Value="GetEditorPreviewValue()"
                                            Completed="_editorField.Required"
                                            Class="signing-components-page__sample-field" />
                 </div>
@@ -1180,7 +1180,28 @@
         Height = 0.5
     };
 
-    private object? _editorPreviewValue => _editorField.DefaultValue ?? _editorField.Options.FirstOrDefault()?.Uuid;
+    private object? GetEditorPreviewValue()
+    {
+        return _editorField.Type switch
+        {
+            SigningFieldType.Heading or SigningFieldType.Strikethrough => null,
+            SigningFieldType.Text => _editorField.DefaultValue ?? "Sample value",
+            SigningFieldType.Signature or SigningFieldType.Initials or SigningFieldType.Image => SignatureImage,
+            SigningFieldType.Date or SigningFieldType.DateNow => new DateOnly(2026, 5, 8),
+            SigningFieldType.Number => 1250,
+            SigningFieldType.File => "sample.pdf",
+            SigningFieldType.Select or SigningFieldType.Radio => _editorField.DefaultValue ?? _editorField.Options.FirstOrDefault()?.Uuid,
+            SigningFieldType.Checkbox => true,
+            SigningFieldType.Multiple => _editorField.Options.Take(2).Select(option => option.Uuid).ToArray(),
+            SigningFieldType.Cells => "A1B2",
+            SigningFieldType.Stamp => "Approved",
+            SigningFieldType.Payment => "Card required",
+            SigningFieldType.Phone => "+420 555 010 010",
+            SigningFieldType.Verification => "Verified",
+            SigningFieldType.Kba => "KBA ready",
+            _ => _editorField.DefaultValue
+        };
+    }
 
     private readonly List<FieldOverlaySample> _fieldSamples =
     [

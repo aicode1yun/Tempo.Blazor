@@ -41,6 +41,39 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
     }
 
     [Fact]
+    public void ChangeType_FromChoiceToSignature_RemovesChoiceOptionsAndInvalidDefault()
+    {
+        SigningField? captured = null;
+        var field = CreateChoiceField(SigningFieldType.Select);
+        field.DefaultValue = "option-a";
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, changed => captured = changed)));
+
+        cut.Find(".tm-signing-field-editor-panel__type").Change(SigningFieldType.Signature.ToString());
+
+        captured.Should().NotBeNull();
+        captured!.Type.Should().Be(SigningFieldType.Signature);
+        captured.Options.Should().BeEmpty();
+        captured.DefaultValue.Should().BeNull();
+    }
+
+    [Fact]
+    public void ChangeType_ToChoice_AddsDefaultOptionsWhenMissing()
+    {
+        SigningField? captured = null;
+        var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, CreateField())
+                      .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, changed => captured = changed)));
+
+        cut.Find(".tm-signing-field-editor-panel__type").Change(SigningFieldType.Select.ToString());
+
+        captured.Should().NotBeNull();
+        captured!.Type.Should().Be(SigningFieldType.Select);
+        captured.Options.Select(option => option.Value).Should().Equal("Option 1", "Option 2");
+    }
+
+    [Fact]
     public void ReadOnly_DisablesControls()
     {
         var cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
@@ -441,6 +474,28 @@ public class TmSigningFieldEditorPanelTests : LocalizationTestBase
         captured!.Conditions.Should().ContainSingle();
         captured.Conditions[0].FieldUuid.Should().Be("country");
         captured.Conditions[0].Value.Should().Be("country-cz");
+    }
+
+    [Fact]
+    public void ConditionBuilderChange_KeepsConditionBuilderOpenWhenParentPassesUpdatedField()
+    {
+        SigningField? current = CreateField();
+        IRenderedComponent<TmSigningFieldEditorPanel>? cut = null;
+        cut = RenderComponent<TmSigningFieldEditorPanel>(parameters =>
+            parameters.Add(p => p.Field, current)
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.FieldChanged, EventCallback.Factory.Create<SigningField>(this, field =>
+                      {
+                          current = field;
+                          cut!.SetParametersAndRender(parameters => parameters.Add(p => p.Field, current));
+                      })));
+
+        cut.Find(".tm-signing-field-editor-panel__open-conditions").Click();
+        cut.Find(".tm-condition-builder__field").Change("country");
+
+        cut.FindAll(".tm-signing-field-editor-panel__condition-builder .tm-condition-builder")
+            .Should()
+            .HaveCount(1);
     }
 
     [Fact]

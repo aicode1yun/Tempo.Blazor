@@ -8,6 +8,7 @@ public partial class TmSigningFieldEditorPanel
 {
     private SigningField? _field;
     private SigningField? _lastField;
+    private string? _lastFieldUuid;
     private bool _showConditions;
     private bool _showFormula;
 
@@ -76,10 +77,16 @@ public partial class TmSigningFieldEditorPanel
     {
         if (!ReferenceEquals(_lastField, Field))
         {
+            var fieldChanged = !string.Equals(_lastFieldUuid, Field?.Uuid, StringComparison.Ordinal);
             _field = Field is null ? null : Clone(Field);
             _lastField = Field;
-            _showConditions = false;
-            _showFormula = false;
+            _lastFieldUuid = Field?.Uuid;
+
+            if (fieldChanged)
+            {
+                _showConditions = false;
+                _showFormula = false;
+            }
         }
     }
 
@@ -125,7 +132,7 @@ public partial class TmSigningFieldEditorPanel
     private Task HandleTypeChangedAsync(ChangeEventArgs args)
     {
         return Enum.TryParse<SigningFieldType>(args.Value?.ToString(), out var type)
-            ? UpdateFieldAsync(field => field.Type = type)
+            ? UpdateFieldAsync(field => ApplyFieldType(field, type))
             : Task.CompletedTask;
     }
 
@@ -333,6 +340,58 @@ public partial class TmSigningFieldEditorPanel
             SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
             _ => type.ToString()
         };
+    }
+
+    private void ApplyFieldType(SigningField field, SigningFieldType type)
+    {
+        var previousType = field.Type;
+        field.Type = type;
+
+        if (!IsChoiceType(type))
+        {
+            field.Options.Clear();
+        }
+        else if (field.Options.Count == 0)
+        {
+            field.Options.Add(new SigningFieldOption { Value = Loc["TmSigningFieldEditorPanel_NewOption", 1] });
+            field.Options.Add(new SigningFieldOption { Value = Loc["TmSigningFieldEditorPanel_NewOption", 2] });
+        }
+
+        if ((IsChoiceType(previousType) && !IsChoiceType(type))
+            || (IsImageLikeType(type) && !IsImageSource(field.DefaultValue?.ToString())))
+        {
+            field.DefaultValue = null;
+        }
+    }
+
+    private static bool IsChoiceType(SigningFieldType type)
+    {
+        return type is SigningFieldType.Select or SigningFieldType.Radio or SigningFieldType.Multiple;
+    }
+
+    private static bool IsImageLikeType(SigningFieldType type)
+    {
+        return type is SigningFieldType.Signature or SigningFieldType.Initials or SigningFieldType.Image;
+    }
+
+    private static bool IsImageSource(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("blob:", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("/", StringComparison.Ordinal)
+            || value.StartsWith("./", StringComparison.Ordinal)
+            || value.StartsWith("../", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && uri.Scheme is "http" or "https";
     }
 
     private static SigningField Clone(SigningField field)

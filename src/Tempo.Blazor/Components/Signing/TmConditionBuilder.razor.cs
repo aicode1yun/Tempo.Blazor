@@ -277,6 +277,7 @@ public partial class TmConditionBuilder
             SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
             SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
             SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
+            SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
             _ => Loc["TmSigning_Field_Text"]
         };
     }

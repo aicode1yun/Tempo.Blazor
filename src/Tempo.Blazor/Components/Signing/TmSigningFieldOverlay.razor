@@ -63,7 +63,7 @@
         }
         else if (Field?.Type is SigningFieldType.Signature or SigningFieldType.Initials or SigningFieldType.Image)
         {
-            @if (!string.IsNullOrWhiteSpace(ImageValue))
+            @if (HasImageValue)
             {
                 <img class="tm-signing-field__thumbnail"
                      src="@ImageValue"
@@ -88,7 +88,7 @@
         }
         else
         {
-            <span class="tm-signing-field__value">@TextValue</span>
+            <span class="tm-signing-field__value">@DisplayValue</span>
         }
     </div>
 

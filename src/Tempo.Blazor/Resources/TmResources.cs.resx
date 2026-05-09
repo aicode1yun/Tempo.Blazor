@@ -1989,8 +1989,8 @@
   <data name="TmSigning_Field_Image" xml:space="preserve"><value>Obrázek</value></data>
   <data name="TmSigning_Field_Stamp" xml:space="preserve"><value>Razítko</value></data>
   <data name="TmSigning_Field_Phone" xml:space="preserve"><value>Telefon</value></data>
-  <data name="TmSigning_Field_Verification" xml:space="preserve"><value>Ověření</value></data>
-  <data name="TmSigning_Field_Kba" xml:space="preserve"><value>Ověření znalostní otázkou</value></data>
+  <data name="TmSigning_Field_Verification" xml:space="preserve"><value>Ověření identity</value></data>
+  <data name="TmSigning_Field_Kba" xml:space="preserve"><value>Ověření znalostními otázkami (KBA)</value></data>
   <data name="TmSigning_Field_Cells" xml:space="preserve"><value>Buňky</value></data>
   <data name="TmSigning_Field_Heading" xml:space="preserve"><value>Nadpis</value></data>
   <data name="TmSigning_Field_Strikethrough" xml:space="preserve"><value>Přeškrtnutí</value></data>

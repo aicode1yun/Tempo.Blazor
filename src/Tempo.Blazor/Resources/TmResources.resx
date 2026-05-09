@@ -2152,8 +2152,8 @@
   <data name="TmSigning_Field_Image" xml:space="preserve"><value>Image</value></data>
   <data name="TmSigning_Field_Stamp" xml:space="preserve"><value>Stamp</value></data>
   <data name="TmSigning_Field_Phone" xml:space="preserve"><value>Phone</value></data>
-  <data name="TmSigning_Field_Verification" xml:space="preserve"><value>Verification</value></data>
-  <data name="TmSigning_Field_Kba" xml:space="preserve"><value>Knowledge-based authentication</value></data>
+  <data name="TmSigning_Field_Verification" xml:space="preserve"><value>Identity verification</value></data>
+  <data name="TmSigning_Field_Kba" xml:space="preserve"><value>Knowledge-based verification (KBA)</value></data>
   <data name="TmSigning_Field_Cells" xml:space="preserve"><value>Cells</value></data>
   <data name="TmSigning_Field_Heading" xml:space="preserve"><value>Heading</value></data>
   <data name="TmSigning_Field_Strikethrough" xml:space="preserve"><value>Strikethrough</value></data>
