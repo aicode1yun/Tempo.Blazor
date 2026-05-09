@@ -1,4 +1,5 @@
 @page "/signing-components"
+@inject ITmLocalizer Loc
 
 <PageTitle>Signing Components - Tempo.Blazor</PageTitle>
 
@@ -551,49 +552,8 @@
     private string _conditionStatus = "No conditions";
     private string? _formulaValue;
     private string _formulaStatus = "No formula saved";
-    private IReadOnlyList<SigningSubmitterRole> _templateRoles =
-    [
-        new SigningSubmitterRole
-        {
-            Uuid = "template-signer",
-            Name = "Signer",
-            Color = "#2563eb",
-            Order = 0
-        },
-        new SigningSubmitterRole
-        {
-            Uuid = "template-approver",
-            Name = "Approver",
-            Color = "#16a34a",
-            Order = 1,
-            InviteByRoleUuid = "template-signer"
-        }
-    ];
-    private IReadOnlyList<SigningSubmitterRole> _submissionRecipients =
-    [
-        new SigningSubmitterRole
-        {
-            Uuid = "recipient-signer",
-            Name = "Signer",
-            FullName = "Alex Johnson",
-            Email = "alex@example.test",
-            Phone = "+420555010101",
-            Color = "#2563eb",
-            Order = 0
-        },
-        new SigningSubmitterRole
-        {
-            Uuid = "recipient-approver",
-            Name = "Approver",
-            FullName = "Nora Lee",
-            Email = "nora@example.test",
-            Phone = "+420555010102",
-            Color = "#16a34a",
-            Order = 1,
-            IsOptional = true,
-            OptionalInviteByRoleUuid = "recipient-signer"
-        }
-    ];
+    private IReadOnlyList<SigningSubmitterRole> _templateRoles = [];
+    private IReadOnlyList<SigningSubmitterRole> _submissionRecipients = [];
     private string _templateRoleStatus = "2 roles";
     private string _submissionRecipientStatus = "2 recipients";
     private SigningField _editorField = new()
@@ -1132,13 +1092,13 @@
         new SigningField
         {
             Uuid = "recipient-manager-email",
-            Name = "Manager email",
+            Name = Loc["SigningComponents_InviteField_ManagerEmail"],
             Type = SigningFieldType.Text
         },
         new SigningField
         {
             Uuid = "recipient-assistant-phone",
-            Name = "Assistant phone",
+            Name = Loc["SigningComponents_InviteField_AssistantPhone"],
             Type = SigningFieldType.Phone
         }
     ];
@@ -1320,6 +1280,54 @@
     private void HandleAdvancedSignatureConfirmed(TmSignatureCaptureChangedEventArgs args)
     {
         _advancedSignatureStatus = $"Signature confirmed. Reason: {args.Reason ?? "none"}, remember: {args.RememberSignature}";
+    }
+
+    protected override void OnInitialized()
+    {
+        _templateRoles =
+        [
+            new SigningSubmitterRole
+            {
+                Uuid = "template-signer",
+                Name = Loc["SigningComponents_Role_Signer"],
+                Color = "#2563eb",
+                Order = 0
+            },
+            new SigningSubmitterRole
+            {
+                Uuid = "template-approver",
+                Name = Loc["SigningComponents_Role_Approver"],
+                Color = "#16a34a",
+                Order = 1,
+                InviteByRoleUuid = "template-signer"
+            }
+        ];
+
+        _submissionRecipients =
+        [
+            new SigningSubmitterRole
+            {
+                Uuid = "recipient-signer",
+                Name = Loc["SigningComponents_Role_Signer"],
+                FullName = "Alex Johnson",
+                Email = "alex@example.test",
+                Phone = "+420555010101",
+                Color = "#2563eb",
+                Order = 0
+            },
+            new SigningSubmitterRole
+            {
+                Uuid = "recipient-approver",
+                Name = Loc["SigningComponents_Role_Approver"],
+                FullName = "Nora Lee",
+                Email = "nora@example.test",
+                Phone = "+420555010102",
+                Color = "#16a34a",
+                Order = 1,
+                IsOptional = true,
+                OptionalInviteByRoleUuid = "recipient-signer"
+            }
+        ];
     }
 
     private void HandleConditionRulesChanged(IReadOnlyList<SigningFieldCondition> conditions)

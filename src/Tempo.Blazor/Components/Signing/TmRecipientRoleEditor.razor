@@ -10,7 +10,7 @@
             var rowIndex = index;
             var role = _roles[rowIndex];
 
-            <div class="tm-recipient-role-editor__row"
+            <div class="@GetRowClass(role)"
                  data-role-uuid="@role.Uuid"
                  data-order="@role.Order"
                  draggable="@BoolText(!Disabled)"
@@ -52,7 +52,7 @@
                            @onchange="args => HandleColorChangedAsync(rowIndex, args)" />
                 </label>
 
-                <label class="tm-recipient-role-editor__field">
+                <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--name">
                     <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_RoleName"]</span>
                     <input class="tm-recipient-role-editor__name"
                            type="text"
@@ -63,7 +63,7 @@
 
                 @if (Mode == TmRecipientRoleEditorMode.SubmissionRecipients)
                 {
-                    <label class="tm-recipient-role-editor__field">
+                    <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--full-name">
                         <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_FullName"]</span>
                         <input class="tm-recipient-role-editor__full-name"
                                type="text"
@@ -72,7 +72,7 @@
                                @onchange="args => HandleFullNameChangedAsync(rowIndex, args)" />
                     </label>
 
-                    <label class="tm-recipient-role-editor__field">
+                    <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--email">
                         <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_Email"]</span>
                         <input class="tm-recipient-role-editor__email"
                                type="email"
@@ -82,7 +82,7 @@
                                @onchange="args => HandleEmailChangedAsync(rowIndex, args)" />
                     </label>
 
-                    <label class="tm-recipient-role-editor__field">
+                    <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--phone">
                         <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_Phone"]</span>
                         <input class="tm-recipient-role-editor__phone"
                                type="tel"
@@ -92,7 +92,7 @@
                     </label>
                 }
 
-                <label class="tm-recipient-role-editor__field">
+                <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--invite-by-role">
                     <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_InviteByRole"]</span>
                     <select class="tm-recipient-role-editor__invite-by-role"
                             value="@(role.InviteByRoleUuid ?? string.Empty)"
@@ -106,7 +106,7 @@
                     </select>
                 </label>
 
-                <label class="tm-recipient-role-editor__field">
+                <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--optional-invite-by-role">
                     <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_OptionalInviteByRole"]</span>
                     <select class="tm-recipient-role-editor__optional-invite-by-role"
                             value="@(role.OptionalInviteByRoleUuid ?? string.Empty)"
@@ -120,7 +120,7 @@
                     </select>
                 </label>
 
-                <label class="tm-recipient-role-editor__field">
+                <label class="tm-recipient-role-editor__field tm-recipient-role-editor__field--invite-via-field">
                     <span class="tm-recipient-role-editor__label">@Loc["TmRecipientRoleEditor_InviteViaField"]</span>
                     <select class="tm-recipient-role-editor__invite-via-field"
                             value="@(role.InviteViaFieldUuid ?? string.Empty)"
@@ -144,7 +144,10 @@
 
                 @if (IsEmailMissing(role))
                 {
-                    <div class="tm-recipient-role-editor__validation" role="alert">@Loc["TmRecipientRoleEditor_EmailRequired"]</div>
+                    <div class="tm-recipient-role-editor__validation" role="alert">
+                        <TmIcon Name="@IconNames.AlertCircle" Size="IconSize.Xs" />
+                        <span>@Loc["TmRecipientRoleEditor_EmailRequired"]</span>
+                    </div>
                 }
             </div>
         }

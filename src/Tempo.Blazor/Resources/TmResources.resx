@@ -2233,6 +2233,10 @@
   <data name="TmRecipientRoleEditor_RemoveRole" xml:space="preserve"><value>Remove role</value></data>
   <data name="TmRecipientRoleEditor_AddRole" xml:space="preserve"><value>Add role</value></data>
   <data name="TmRecipientRoleEditor_EmailRequired" xml:space="preserve"><value>Email is required for this recipient.</value></data>
+  <data name="SigningComponents_Role_Signer" xml:space="preserve"><value>Signer</value></data>
+  <data name="SigningComponents_Role_Approver" xml:space="preserve"><value>Approver</value></data>
+  <data name="SigningComponents_InviteField_ManagerEmail" xml:space="preserve"><value>Manager email</value></data>
+  <data name="SigningComponents_InviteField_AssistantPhone" xml:space="preserve"><value>Assistant phone</value></data>
   <data name="TmSigning_Field_Payment" xml:space="preserve"><value>Payment</value></data>
   <data name="TmSigningFieldEditorPanel_Empty" xml:space="preserve"><value>Select a field to edit its settings.</value></data>
   <data name="TmSigningFieldEditorPanel_Title" xml:space="preserve"><value>Field settings</value></data>

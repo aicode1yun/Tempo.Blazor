@@ -215,6 +215,41 @@ public class TmConditionBuilderTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Operation_DraftCondition_DoesNotNotifyBeforeFieldIsSelected()
+    {
+        IReadOnlyList<SigningFieldCondition>? captured = null;
+        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+            parameters.Add(p => p.Fields, CreateFields())
+                      .Add(p => p.CurrentFieldUuid, "target")
+                      .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
+
+        cut.Find(".tm-condition-builder__add").Click();
+        cut.Find(".tm-condition-builder__operation").Change(SigningConditionOperation.Or.ToString());
+
+        cut.FindAll(".tm-condition-builder__row").Should().HaveCount(2);
+        captured.Should().BeNull();
+    }
+
+    [Fact]
+    public void Operation_DraftCondition_IsPreservedWhenFieldIsSelected()
+    {
+        IReadOnlyList<SigningFieldCondition>? captured = null;
+        var cut = RenderComponent<TmConditionBuilder>(parameters =>
+            parameters.Add(p => p.Fields, CreateFields())
+                      .Add(p => p.CurrentFieldUuid, "target")
+                      .Add(p => p.ConditionsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningFieldCondition>>(this, value => captured = value)));
+
+        cut.Find(".tm-condition-builder__add").Click();
+        cut.Find(".tm-condition-builder__operation").Change(SigningConditionOperation.Or.ToString());
+        cut.FindAll(".tm-condition-builder__field")[1].Change("consent");
+
+        captured.Should().NotBeNull();
+        captured!.Should().ContainSingle();
+        captured[0].FieldUuid.Should().Be("consent");
+        captured[0].Operation.Should().Be(SigningConditionOperation.Or);
+    }
+
+    [Fact]
     public void RemoveCondition_RemovesConditionAndNotifies()
     {
         IReadOnlyList<SigningFieldCondition>? captured = null;

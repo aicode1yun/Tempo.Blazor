@@ -2070,6 +2070,10 @@
   <data name="TmRecipientRoleEditor_RemoveRole" xml:space="preserve"><value>Odebrat roli</value></data>
   <data name="TmRecipientRoleEditor_AddRole" xml:space="preserve"><value>Přidat roli</value></data>
   <data name="TmRecipientRoleEditor_EmailRequired" xml:space="preserve"><value>E-mail je pro tohoto příjemce povinný.</value></data>
+  <data name="SigningComponents_Role_Signer" xml:space="preserve"><value>Podepisující</value></data>
+  <data name="SigningComponents_Role_Approver" xml:space="preserve"><value>Schvalovatel</value></data>
+  <data name="SigningComponents_InviteField_ManagerEmail" xml:space="preserve"><value>E-mail manažera</value></data>
+  <data name="SigningComponents_InviteField_AssistantPhone" xml:space="preserve"><value>Telefon asistenta</value></data>
   <data name="TmSigning_Field_Payment" xml:space="preserve"><value>Platba</value></data>
   <data name="TmSigningFieldEditorPanel_Empty" xml:space="preserve"><value>Vyberte pole pro úpravu nastavení.</value></data>
   <data name="TmSigningFieldEditorPanel_Title" xml:space="preserve"><value>Nastavení pole</value></data>

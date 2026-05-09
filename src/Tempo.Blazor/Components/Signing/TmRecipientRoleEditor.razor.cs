@@ -51,6 +51,8 @@ public partial class TmRecipientRoleEditor
             var classes = new List<string> { "tm-recipient-role-editor" };
             AddClass(classes, Disabled, "tm-recipient-role-editor--disabled");
             AddClass(classes, HasValidationErrors, "tm-recipient-role-editor--invalid");
+            AddClass(classes, Mode == TmRecipientRoleEditorMode.TemplateRoles, "tm-recipient-role-editor--template");
+            AddClass(classes, Mode == TmRecipientRoleEditorMode.SubmissionRecipients, "tm-recipient-role-editor--submission");
 
             if (!string.IsNullOrWhiteSpace(Class))
             {
@@ -59,6 +61,13 @@ public partial class TmRecipientRoleEditor
 
             return string.Join(" ", classes);
         }
+    }
+
+    private string GetRowClass(SigningSubmitterRole role)
+    {
+        var classes = new List<string> { "tm-recipient-role-editor__row" };
+        AddClass(classes, IsEmailMissing(role), "tm-recipient-role-editor__row--invalid");
+        return string.Join(" ", classes);
     }
 
     protected override void OnParametersSet()
