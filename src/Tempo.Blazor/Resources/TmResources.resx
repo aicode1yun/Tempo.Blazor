@@ -2292,9 +2292,29 @@
   <data name="TmDocumentPageViewer_MissingImage" xml:space="preserve"><value>Page image is not available</value></data>
   <data name="TmDocumentPageViewer_PageAlt" xml:space="preserve"><value>Document page {0}</value></data>
   <data name="TmDocumentPageViewer_PageAriaLabel" xml:space="preserve"><value>Document page {0}</value></data>
+  <data name="TmDocumentPageViewer_ToolbarLabel" xml:space="preserve"><value>Document page controls</value></data>
+  <data name="TmDocumentPageViewer_PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="TmDocumentPageViewer_NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="TmDocumentPageViewer_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmDocumentPageViewer_ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmDocumentPageViewer_ZoomLevel" xml:space="preserve"><value>Zoom {0}</value></data>
+  <data name="TmDocumentPageViewer_FitWidth" xml:space="preserve"><value>Fit width</value></data>
+  <data name="TmDocumentPageViewer_FitWidthShort" xml:space="preserve"><value>Width</value></data>
+  <data name="TmDocumentPageViewer_FitPage" xml:space="preserve"><value>Fit page</value></data>
+  <data name="TmDocumentPageViewer_FitPageShort" xml:space="preserve"><value>Page</value></data>
   <data name="TmPdfTemplateDesigner_EmptyTitle" xml:space="preserve"><value>No documents</value></data>
   <data name="TmPdfTemplateDesigner_EmptyDescription" xml:space="preserve"><value>Add document pages to start designing a signing template.</value></data>
   <data name="TmPdfTemplateDesigner_Palette" xml:space="preserve"><value>Field palette</value></data>
+  <data name="TmPdfTemplateDesigner_ToolbarLabel" xml:space="preserve"><value>PDF template designer controls</value></data>
+  <data name="TmPdfTemplateDesigner_PreviousPage" xml:space="preserve"><value>Previous page</value></data>
+  <data name="TmPdfTemplateDesigner_NextPage" xml:space="preserve"><value>Next page</value></data>
+  <data name="TmPdfTemplateDesigner_PageLabel" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="TmPdfTemplateDesigner_SinglePage" xml:space="preserve"><value>Single page</value></data>
+  <data name="TmPdfTemplateDesigner_Continuous" xml:space="preserve"><value>Continuous</value></data>
+  <data name="TmPdfTemplateDesigner_ZoomOut" xml:space="preserve"><value>Zoom out</value></data>
+  <data name="TmPdfTemplateDesigner_ZoomIn" xml:space="preserve"><value>Zoom in</value></data>
+  <data name="TmPdfTemplateDesigner_FitWidth" xml:space="preserve"><value>Fit width</value></data>
+  <data name="TmPdfTemplateDesigner_FitPage" xml:space="preserve"><value>Fit page</value></data>
   <data name="TmPdfTemplateDesigner_DeleteSelected" xml:space="preserve"><value>Delete selected</value></data>
   <data name="TmPdfTemplateDesigner_Autodetect" xml:space="preserve"><value>Autodetect fields</value></data>
   <data name="TmPdfTemplateDesigner_Detecting" xml:space="preserve"><value>Detecting fields...</value></data>

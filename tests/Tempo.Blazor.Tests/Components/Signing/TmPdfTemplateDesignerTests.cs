@@ -26,8 +26,61 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
-        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(2);
+        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(1);
         cut.FindAll(".tm-signing-field").Should().HaveCount(2);
+        cut.Find(".tm-pdf-template-designer__page-label").TextContent.Should().Contain("1 / 2");
+    }
+
+    [Fact]
+    public void Render_ContinuousView_RendersAllPages()
+    {
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.ViewMode, DocumentPageViewMode.Continuous));
+
+        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void PageNavigation_NextAndPreviousChangeVisiblePage()
+    {
+        int? pageIndex = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.PageIndexChanged, value => pageIndex = value));
+
+        cut.Find("[data-page-key='attachment-1:0']").Should().NotBeNull();
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
+
+        pageIndex.Should().Be(1);
+        cut.Find("[data-page-key='attachment-1:1']").Should().NotBeNull();
+        cut.Find(".tm-pdf-template-designer__page-label").TextContent.Should().Contain("2 / 2");
+
+        cut.Find(".tm-pdf-template-designer__previous-page").Click();
+        pageIndex.Should().Be(0);
+        cut.Find("[data-page-key='attachment-1:0']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ZoomControls_UpdateScaleAndMode()
+    {
+        double? scale = null;
+        DocumentPageZoomMode? zoomMode = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.ScaleChanged, value => scale = value)
+                      .Add(p => p.ZoomModeChanged, value => zoomMode = value));
+
+        cut.Find(".tm-pdf-template-designer__zoom-in").Click();
+
+        scale.Should().Be(1.25);
+        zoomMode.Should().Be(DocumentPageZoomMode.Custom);
+
+        cut.Find(".tm-pdf-template-designer__fit-page").Click();
+
+        scale.Should().Be(0.85);
+        zoomMode.Should().Be(DocumentPageZoomMode.FitPage);
     }
 
     [Fact]
@@ -287,6 +340,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
         cut.FindAll(".tm-pdf-template-designer__context-actions").Should().BeEmpty();
         cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Field copied");
 
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
         cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
             .ContextMenu(new MouseEventArgs { OffsetX = 500, OffsetY = 500 });
         cut.Find(".tm-pdf-template-designer__paste-field").Click();
@@ -317,6 +371,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
 
         cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Selection copied");
 
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
         cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
             .ContextMenu(new MouseEventArgs { OffsetX = 700, OffsetY = 700 });
         cut.Find(".tm-pdf-template-designer__paste-field").Click();

@@ -7,15 +7,85 @@ namespace Tempo.Blazor.E2E;
 public class PdfTemplateDesignerE2ETests : WasmTestBase
 {
     [TestMethod]
-    [Description("PDF template designer demo renders the two-page designer")]
+    [Description("PDF template designer demo renders the single-page designer with navigation")]
     public async Task PdfTemplateDesigner_OpensDemo()
     {
         var page = await OpenDesignerAsync();
         var designer = GetDesigner(page);
 
         await Expect(designer).ToBeVisibleAsync();
-        await Expect(designer.Locator(".tm-document-page-viewer")).ToHaveCountAsync(2);
+        await Expect(designer.Locator(".tm-document-page-viewer")).ToHaveCountAsync(1);
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-label")).ToContainTextAsync("1 / 2");
         await TakeScreenshotAsync(page, "pdf-template-designer-desktop");
+    }
+
+    [TestMethod]
+    [Description("PDF template designer switches between single page, next page, and continuous modes")]
+    public async Task PdfTemplateDesigner_PageNavigationAndViewModeWork()
+    {
+        var page = await OpenDesignerAsync();
+        var designer = GetDesigner(page);
+
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-frame[data-page-key='designer-nda:0']")).ToHaveCountAsync(1);
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-frame[data-page-key='designer-nda:1']")).ToHaveCountAsync(0);
+
+        await designer.Locator(".tm-pdf-template-designer__next-page").ClickAsync();
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-label")).ToContainTextAsync("2 / 2");
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-frame[data-page-key='designer-nda:0']")).ToHaveCountAsync(0);
+        await Expect(designer.Locator(".tm-pdf-template-designer__page-frame[data-page-key='designer-nda:1']")).ToHaveCountAsync(1);
+
+        await designer.Locator(".tm-pdf-template-designer__continuous").ClickAsync();
+        await Expect(designer.Locator(".tm-document-page-viewer")).ToHaveCountAsync(2);
+
+        await designer.Locator(".tm-pdf-template-designer__single-page").ClickAsync();
+        await Expect(designer.Locator(".tm-document-page-viewer")).ToHaveCountAsync(1);
+    }
+
+    [TestMethod]
+    [Description("PDF template designer zoom controls resize the working page without changing field count")]
+    public async Task PdfTemplateDesigner_ZoomControlsResizePage()
+    {
+        var page = await OpenDesignerAsync();
+        var designer = GetDesigner(page);
+        var pageElement = designer.Locator(".tm-document-page-viewer__page").First;
+        var before = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(before);
+
+        await designer.Locator(".tm-pdf-template-designer__zoom-in").ClickAsync();
+        await Expect(designer.Locator(".tm-pdf-template-designer__zoom-label")).ToContainTextAsync("125%");
+        var zoomed = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(zoomed);
+        Assert.IsTrue(zoomed!.Width > before!.Width, "Zoom in should increase the visible designer page width.");
+        await Expect(designer.Locator(".tm-signing-field")).ToHaveCountAsync(2);
+
+        await designer.Locator(".tm-pdf-template-designer__fit-page").ClickAsync();
+        await Expect(designer.Locator(".tm-pdf-template-designer__zoom-label")).ToContainTextAsync("85%");
+    }
+
+    [TestMethod]
+    [Description("PDF template designer can place a dragged field on the second page")]
+    public async Task PdfTemplateDesigner_DragsPaletteFieldOntoSecondPage()
+    {
+        var page = await OpenDesignerAsync();
+        var designer = GetDesigner(page);
+
+        await designer.Locator(".tm-pdf-template-designer__next-page").ClickAsync();
+        var surface = designer.Locator("[data-page-key='designer-nda:1'] .tm-pdf-template-designer__page-surface").First;
+        var surfaceBox = await surface.BoundingBoxAsync();
+        Assert.IsNotNull(surfaceBox);
+
+        await designer.Locator("[data-field-type='Signature']").DragToAsync(surface, new LocatorDragToOptions
+        {
+            TargetPosition = new TargetPosition
+            {
+                X = (float)(surfaceBox.Width * 0.5),
+                Y = (float)(surfaceBox.Height * 0.6)
+            }
+        });
+
+        await Expect(page.Locator("[data-testid='pdf-template-designer-status']")).ToContainTextAsync("3 designer fields");
+        await Expect(designer.Locator(".tm-signing-field")).ToHaveCountAsync(1);
+        await Expect(designer.Locator(".tm-signing-field--selected")).ToHaveCountAsync(1);
     }
 
     [TestMethod]

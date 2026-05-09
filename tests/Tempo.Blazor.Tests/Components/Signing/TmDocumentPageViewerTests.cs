@@ -45,6 +45,33 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_WithScale_SetsPageScaleCssVariable()
+    {
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage())
+                      .Add(p => p.Scale, 1.25));
+
+        cut.Find(".tm-document-page-viewer__page")
+            .GetAttribute("style")
+            .Should()
+            .Contain("--tm-document-page-scale: 1.25");
+    }
+
+    [Fact]
+    public void Render_WithInvalidScale_ClampsPageScale()
+    {
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage())
+                      .Add(p => p.Scale, 9)
+                      .Add(p => p.MaxScale, 2));
+
+        cut.Find(".tm-document-page-viewer__page")
+            .GetAttribute("style")
+            .Should()
+            .Contain("--tm-document-page-scale: 2");
+    }
+
+    [Fact]
     public void Render_RootContainsClassAndAdditionalAttributes()
     {
         var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
@@ -75,6 +102,69 @@ public class TmDocumentPageViewerTests : LocalizationTestBase
             parameters.Add(p => p.Error, "Could not render page."));
 
         cut.Find(".tm-alert").TextContent.Should().Contain("Could not render page.");
+    }
+
+    [Fact]
+    public void Render_WithToolbar_DisplaysAccessibleZoomControls()
+    {
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage())
+                      .Add(p => p.ShowToolbar, true));
+
+        cut.Find(".tm-document-page-viewer__toolbar").GetAttribute("role").Should().Be("toolbar");
+        cut.Find(".tm-document-page-viewer__zoom-out").GetAttribute("aria-label").Should().Be("Zoom out");
+        cut.Find(".tm-document-page-viewer__zoom-in").GetAttribute("aria-label").Should().Be("Zoom in");
+        cut.Find(".tm-document-page-viewer__zoom-label").TextContent.Should().Contain("100%");
+    }
+
+    [Fact]
+    public void Render_WithPaginationControls_DisplaysPageLabelAndButtons()
+    {
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage(pageIndex: 1))
+                      .Add(p => p.ShowToolbar, true)
+                      .Add(p => p.ShowPaginationControls, true)
+                      .Add(p => p.PageNumber, 2)
+                      .Add(p => p.TotalPages, 4));
+
+        cut.Find(".tm-document-page-viewer__page-label").TextContent.Should().Contain("2 / 4");
+        cut.Find(".tm-document-page-viewer__previous-page").GetAttribute("aria-label").Should().Be("Previous page");
+        cut.Find(".tm-document-page-viewer__next-page").GetAttribute("aria-label").Should().Be("Next page");
+    }
+
+    [Fact]
+    public void ZoomIn_InvokesScaleChangedAndUsesCustomZoomMode()
+    {
+        double? scale = null;
+        DocumentPageZoomMode? zoomMode = null;
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage())
+                      .Add(p => p.ShowToolbar, true)
+                      .Add(p => p.Scale, 1.0)
+                      .Add(p => p.ScaleChanged, value => scale = value)
+                      .Add(p => p.ZoomModeChanged, value => zoomMode = value));
+
+        cut.Find(".tm-document-page-viewer__zoom-in").Click();
+
+        scale.Should().Be(1.25);
+        zoomMode.Should().Be(DocumentPageZoomMode.Custom);
+    }
+
+    [Fact]
+    public void FitPage_InvokesZoomModeChanged()
+    {
+        double? scale = null;
+        DocumentPageZoomMode? zoomMode = null;
+        var cut = RenderComponent<TmDocumentPageViewer>(parameters =>
+            parameters.Add(p => p.Page, CreatePage())
+                      .Add(p => p.ShowToolbar, true)
+                      .Add(p => p.ScaleChanged, value => scale = value)
+                      .Add(p => p.ZoomModeChanged, value => zoomMode = value));
+
+        cut.Find(".tm-document-page-viewer__fit-page").Click();
+
+        scale.Should().Be(0.85);
+        zoomMode.Should().Be(DocumentPageZoomMode.FitPage);
     }
 
     [Fact]

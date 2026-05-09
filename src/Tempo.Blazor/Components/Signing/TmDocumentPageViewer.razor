@@ -26,40 +26,107 @@
     }
     else
     {
-        <div id="@PageElementId"
-             class="tm-document-page-viewer__page"
-             style="@PageStyle"
-             data-page-index="@Page.PageIndex"
-             role="img"
-             aria-label="@PageAriaLabel"
-             @onclick="HandlePageClickAsync"
-             @oncontextmenu="HandlePageContextMenuAsync"
-             @oncontextmenu:preventDefault="PreventDefaultContextMenu">
-            @if (PageTemplate is not null)
-            {
-                @PageTemplate(Page)
-            }
-            else if (!string.IsNullOrWhiteSpace(Page.ImageUrl))
-            {
-                <img class="tm-document-page-viewer__image"
-                     src="@Page.ImageUrl"
-                     alt="@ImageAlt"
-                     draggable="false" />
-            }
-            else
-            {
-                <div class="tm-document-page-viewer__missing-image">
-                    <TmIcon Name="file-text" Size="IconSize.Lg" />
-                    <span>@Loc["TmDocumentPageViewer_MissingImage"]</span>
-                </div>
-            }
-
-            <div class="@OverlayClass">
-                @ChildContent
-                @if (OverlayTemplate is not null)
+        @if (ShowToolbar)
+        {
+            <div class="tm-document-page-viewer__toolbar" role="toolbar" aria-label="@Loc["TmDocumentPageViewer_ToolbarLabel"]">
+                @if (ShowPaginationControls)
                 {
-                    @OverlayTemplate(Page)
+                    <div class="tm-document-page-viewer__pagination">
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__previous-page"
+                                disabled="@(!CanGoPrevious)"
+                                aria-label="@Loc["TmDocumentPageViewer_PreviousPage"]"
+                                @onclick="GoToPreviousPageAsync">
+                            <TmIcon Name="chevron-left" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-document-page-viewer__page-label">
+                            @CurrentPageNumber / @CurrentTotalPages
+                        </span>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__next-page"
+                                disabled="@(!CanGoNext)"
+                                aria-label="@Loc["TmDocumentPageViewer_NextPage"]"
+                                @onclick="GoToNextPageAsync">
+                            <TmIcon Name="chevron-right" Size="IconSize.Sm" />
+                        </button>
+                    </div>
                 }
+
+                @if (ShowZoomControls)
+                {
+                    <div class="tm-document-page-viewer__zoom-controls">
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__zoom-out"
+                                disabled="@(!CanZoomOut)"
+                                aria-label="@Loc["TmDocumentPageViewer_ZoomOut"]"
+                                @onclick="ZoomOutAsync">
+                            <TmIcon Name="zoom-out" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-document-page-viewer__zoom-label" role="status" aria-live="polite" aria-label="@Loc["TmDocumentPageViewer_ZoomLevel", ZoomLabel]">
+                            @ZoomLabel
+                        </span>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__zoom-in"
+                                disabled="@(!CanZoomIn)"
+                                aria-label="@Loc["TmDocumentPageViewer_ZoomIn"]"
+                                @onclick="ZoomInAsync">
+                            <TmIcon Name="zoom-in" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__fit-width"
+                                aria-label="@Loc["TmDocumentPageViewer_FitWidth"]"
+                                @onclick="FitWidthAsync">
+                            <TmIcon Name="maximize-2" Size="IconSize.Sm" />
+                            <span>@Loc["TmDocumentPageViewer_FitWidthShort"]</span>
+                        </button>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__fit-page"
+                                aria-label="@Loc["TmDocumentPageViewer_FitPage"]"
+                                @onclick="FitPageAsync">
+                            <TmIcon Name="minimize-2" Size="IconSize.Sm" />
+                            <span>@Loc["TmDocumentPageViewer_FitPageShort"]</span>
+                        </button>
+                    </div>
+                }
+            </div>
+        }
+
+        <div class="tm-document-page-viewer__viewport">
+            <div id="@PageElementId"
+                 class="tm-document-page-viewer__page"
+                 style="@PageStyle"
+                 data-page-index="@Page.PageIndex"
+                 role="img"
+                 aria-label="@PageAriaLabel"
+                 @onclick="HandlePageClickAsync"
+                 @oncontextmenu="HandlePageContextMenuAsync"
+                 @oncontextmenu:preventDefault="PreventDefaultContextMenu">
+                @if (PageTemplate is not null)
+                {
+                    @PageTemplate(Page)
+                }
+                else if (!string.IsNullOrWhiteSpace(Page.ImageUrl))
+                {
+                    <img class="tm-document-page-viewer__image"
+                         src="@Page.ImageUrl"
+                         alt="@ImageAlt"
+                         draggable="false" />
+                }
+                else
+                {
+                    <div class="tm-document-page-viewer__missing-image">
+                        <TmIcon Name="file-text" Size="IconSize.Lg" />
+                        <span>@Loc["TmDocumentPageViewer_MissingImage"]</span>
+                    </div>
+                }
+
+                <div class="@OverlayClass">
+                    @ChildContent
+                    @if (OverlayTemplate is not null)
+                    {
+                        @OverlayTemplate(Page)
+                    }
+                </div>
             </div>
         </div>
     }

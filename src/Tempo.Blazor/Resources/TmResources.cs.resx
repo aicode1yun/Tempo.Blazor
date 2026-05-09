@@ -2129,9 +2129,29 @@
   <data name="TmDocumentPageViewer_MissingImage" xml:space="preserve"><value>Obrázek stránky není dostupný</value></data>
   <data name="TmDocumentPageViewer_PageAlt" xml:space="preserve"><value>Stránka dokumentu {0}</value></data>
   <data name="TmDocumentPageViewer_PageAriaLabel" xml:space="preserve"><value>Stránka dokumentu {0}</value></data>
+  <data name="TmDocumentPageViewer_ToolbarLabel" xml:space="preserve"><value>Ovládání stránky dokumentu</value></data>
+  <data name="TmDocumentPageViewer_PreviousPage" xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="TmDocumentPageViewer_NextPage" xml:space="preserve"><value>Další stránka</value></data>
+  <data name="TmDocumentPageViewer_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmDocumentPageViewer_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmDocumentPageViewer_ZoomLevel" xml:space="preserve"><value>Přiblížení {0}</value></data>
+  <data name="TmDocumentPageViewer_FitWidth" xml:space="preserve"><value>Přizpůsobit šířce</value></data>
+  <data name="TmDocumentPageViewer_FitWidthShort" xml:space="preserve"><value>Šířka</value></data>
+  <data name="TmDocumentPageViewer_FitPage" xml:space="preserve"><value>Přizpůsobit stránce</value></data>
+  <data name="TmDocumentPageViewer_FitPageShort" xml:space="preserve"><value>Stránka</value></data>
   <data name="TmPdfTemplateDesigner_EmptyTitle" xml:space="preserve"><value>Žádné dokumenty</value></data>
   <data name="TmPdfTemplateDesigner_EmptyDescription" xml:space="preserve"><value>Přidejte stránky dokumentu a začněte navrhovat šablonu podpisu.</value></data>
   <data name="TmPdfTemplateDesigner_Palette" xml:space="preserve"><value>Paleta polí</value></data>
+  <data name="TmPdfTemplateDesigner_ToolbarLabel" xml:space="preserve"><value>Ovládání návrháře PDF šablony</value></data>
+  <data name="TmPdfTemplateDesigner_PreviousPage" xml:space="preserve"><value>Předchozí stránka</value></data>
+  <data name="TmPdfTemplateDesigner_NextPage" xml:space="preserve"><value>Další stránka</value></data>
+  <data name="TmPdfTemplateDesigner_PageLabel" xml:space="preserve"><value>{0} / {1}</value></data>
+  <data name="TmPdfTemplateDesigner_SinglePage" xml:space="preserve"><value>Jedna stránka</value></data>
+  <data name="TmPdfTemplateDesigner_Continuous" xml:space="preserve"><value>Souvisle</value></data>
+  <data name="TmPdfTemplateDesigner_ZoomOut" xml:space="preserve"><value>Oddálit</value></data>
+  <data name="TmPdfTemplateDesigner_ZoomIn" xml:space="preserve"><value>Přiblížit</value></data>
+  <data name="TmPdfTemplateDesigner_FitWidth" xml:space="preserve"><value>Přizpůsobit šířce</value></data>
+  <data name="TmPdfTemplateDesigner_FitPage" xml:space="preserve"><value>Přizpůsobit stránce</value></data>
   <data name="TmPdfTemplateDesigner_DeleteSelected" xml:space="preserve"><value>Smazat vybrané</value></data>
   <data name="TmPdfTemplateDesigner_Autodetect" xml:space="preserve"><value>Automaticky rozpoznat pole</value></data>
   <data name="TmPdfTemplateDesigner_Detecting" xml:space="preserve"><value>Rozpoznávám pole...</value></data>

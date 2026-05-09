@@ -13,6 +13,7 @@ public partial class TmPdfTemplateDesigner
     private const double DefaultPageHeight = 1000;
     private const double MinWidth = 0.02;
     private const double MinHeight = 0.02;
+    private static readonly double[] ZoomSteps = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
     private static readonly SigningFieldType[] DefaultAllowedFieldTypes =
     [
@@ -34,6 +35,7 @@ public partial class TmPdfTemplateDesigner
     private readonly List<SigningField> _fields = [];
     private readonly HashSet<string> _selectedFieldUuids = [];
     private IReadOnlyList<SigningField>? _lastFields;
+    private int? _lastPageIndexParameter;
     private SigningFieldType? _drawType;
     private SigningFieldType? _dragType;
     private DrawState? _drawState;
@@ -46,6 +48,10 @@ public partial class TmPdfTemplateDesigner
     private IJSObjectReference? _jsModule;
     private bool _isDetecting;
     private string? _detectionError;
+    private int _currentPageIndex;
+    private double _scale = 1.0;
+    private DocumentPageZoomMode _zoomMode = DocumentPageZoomMode.Custom;
+    private DocumentPageViewMode _viewMode = DocumentPageViewMode.SinglePage;
 
     /// <summary>Document pages available for template design.</summary>
     [Parameter] public IReadOnlyList<SigningDocumentPage> Documents { get; set; } = [];
@@ -70,6 +76,30 @@ public partial class TmPdfTemplateDesigner
 
     /// <summary>Whether to render a compact mobile-oriented designer layout.</summary>
     [Parameter] public bool MobileMode { get; set; }
+
+    /// <summary>Current page index used when <see cref="ViewMode"/> is <see cref="DocumentPageViewMode.SinglePage"/>.</summary>
+    [Parameter] public int PageIndex { get; set; }
+
+    /// <summary>Callback invoked when the current page index changes.</summary>
+    [Parameter] public EventCallback<int> PageIndexChanged { get; set; }
+
+    /// <summary>Current page presentation mode. Defaults to single page for editing precision.</summary>
+    [Parameter] public DocumentPageViewMode ViewMode { get; set; } = DocumentPageViewMode.SinglePage;
+
+    /// <summary>Callback invoked when the page presentation mode changes.</summary>
+    [Parameter] public EventCallback<DocumentPageViewMode> ViewModeChanged { get; set; }
+
+    /// <summary>Current document zoom scale shared by rendered pages.</summary>
+    [Parameter] public double Scale { get; set; } = 1.0;
+
+    /// <summary>Callback invoked when the document zoom scale changes.</summary>
+    [Parameter] public EventCallback<double> ScaleChanged { get; set; }
+
+    /// <summary>Current document zoom behavior.</summary>
+    [Parameter] public DocumentPageZoomMode ZoomMode { get; set; } = DocumentPageZoomMode.Custom;
+
+    /// <summary>Callback invoked when the document zoom behavior changes.</summary>
+    [Parameter] public EventCallback<DocumentPageZoomMode> ZoomModeChanged { get; set; }
 
     /// <summary>Optional async detector that returns fields to add to the template.</summary>
     [Parameter] public Func<Task<IReadOnlyList<SigningField>>>? OnDetectFields { get; set; }
@@ -122,8 +152,47 @@ public partial class TmPdfTemplateDesigner
 
     private bool HasClipboardFields => _clipboardFields.Count > 0;
 
+    private IReadOnlyList<SigningDocumentPage> VisibleDocuments => _viewMode == DocumentPageViewMode.Continuous
+        ? Documents
+        : CurrentPage is null ? [] : [CurrentPage];
+
+    private SigningDocumentPage? CurrentPage => Documents.Count == 0
+        ? null
+        : Documents[Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1)];
+
+    private int CurrentPageNumber => Documents.Count == 0 ? 0 : Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1) + 1;
+
+    private string PageLabel => Loc["TmPdfTemplateDesigner_PageLabel", CurrentPageNumber, Math.Max(1, Documents.Count)];
+
+    private string ZoomLabel => string.Create(CultureInfo.InvariantCulture, $"{(int)Math.Round(_scale * 100)}%");
+
+    private bool CanGoPrevious => _viewMode == DocumentPageViewMode.SinglePage && _currentPageIndex > 0;
+
+    private bool CanGoNext => _viewMode == DocumentPageViewMode.SinglePage && _currentPageIndex < Documents.Count - 1;
+
+    private bool CanZoomOut => _scale > ZoomSteps[0] + 0.001;
+
+    private bool CanZoomIn => _scale < ZoomSteps[^1] - 0.001;
+
     protected override void OnParametersSet()
     {
+        _scale = Clamp(Scale, ZoomSteps[0], ZoomSteps[^1]);
+        _zoomMode = ZoomMode;
+        _viewMode = ViewMode;
+        if (Documents.Count == 0)
+        {
+            _currentPageIndex = 0;
+        }
+        else if (_lastPageIndexParameter != PageIndex && PageIndex >= 0 && PageIndex < Documents.Count)
+        {
+            _currentPageIndex = PageIndex;
+        }
+        else
+        {
+            _currentPageIndex = Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1);
+        }
+        _lastPageIndexParameter = PageIndex;
+
         if (!ReferenceEquals(_lastFields, Fields))
         {
             _fields.Clear();
@@ -131,6 +200,8 @@ public partial class TmPdfTemplateDesigner
             _selectedFieldUuids.RemoveWhere(uuid => _fields.All(field => field.Uuid != uuid));
             _lastFields = Fields;
         }
+
+        EnsureSelectedPageVisible();
     }
 
     private RenderFragment RenderPageOverlay(SigningDocumentPage page) => builder =>
@@ -226,6 +297,65 @@ public partial class TmPdfTemplateDesigner
     {
         _dragType = null;
         return Task.CompletedTask;
+    }
+
+    private async Task GoToPreviousPageAsync()
+    {
+        if (!CanGoPrevious)
+        {
+            return;
+        }
+
+        _currentPageIndex--;
+        _selectedFieldUuids.RemoveWhere(uuid => !IsFieldOnCurrentPage(uuid));
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private async Task GoToNextPageAsync()
+    {
+        if (!CanGoNext)
+        {
+            return;
+        }
+
+        _currentPageIndex++;
+        _selectedFieldUuids.RemoveWhere(uuid => !IsFieldOnCurrentPage(uuid));
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private async Task SetViewModeAsync(DocumentPageViewMode viewMode)
+    {
+        if (_viewMode == viewMode)
+        {
+            return;
+        }
+
+        _viewMode = viewMode;
+        await ViewModeChanged.InvokeAsync(_viewMode);
+    }
+
+    private Task ZoomOutAsync()
+    {
+        var next = ZoomSteps.LastOrDefault(value => value < _scale - 0.001);
+        return SetScaleAsync(next <= 0 ? ZoomSteps[0] : next, DocumentPageZoomMode.Custom);
+    }
+
+    private Task ZoomInAsync()
+    {
+        var next = ZoomSteps.FirstOrDefault(value => value > _scale + 0.001);
+        return SetScaleAsync(next <= 0 ? ZoomSteps[^1] : next, DocumentPageZoomMode.Custom);
+    }
+
+    private Task FitWidthAsync() => SetScaleAsync(1.0, DocumentPageZoomMode.FitWidth);
+
+    private Task FitPageAsync() => SetScaleAsync(0.85, DocumentPageZoomMode.FitPage);
+
+    private async Task SetScaleAsync(double scale, DocumentPageZoomMode zoomMode)
+    {
+        _scale = Clamp(scale, ZoomSteps[0], ZoomSteps[^1]);
+        _zoomMode = zoomMode;
+        await ScaleChanged.InvokeAsync(_scale);
+        await ZoomModeChanged.InvokeAsync(_zoomMode);
     }
 
     private async Task HandlePaletteDropAsync(SigningDocumentPage page, DragEventArgs args)
@@ -386,6 +516,10 @@ public partial class TmPdfTemplateDesigner
         else
         {
             _selectedFieldUuids.Add(args.Field.Uuid);
+            if (_viewMode == DocumentPageViewMode.SinglePage && args.Area is not null)
+            {
+                await SetCurrentPageToAreaAsync(args.Area);
+            }
         }
 
         _contextMenu = null;
@@ -719,6 +853,60 @@ public partial class TmPdfTemplateDesigner
     private IEnumerable<SigningFieldArea> GetAreasForPage(SigningField field, SigningDocumentPage page)
     {
         return field.Areas.Where(area => area.AttachmentUuid == page.AttachmentUuid && area.Page == page.PageIndex);
+    }
+
+    private bool IsFieldOnCurrentPage(string fieldUuid)
+    {
+        if (_viewMode == DocumentPageViewMode.Continuous || CurrentPage is null)
+        {
+            return true;
+        }
+
+        var field = _fields.FirstOrDefault(item => item.Uuid == fieldUuid);
+        return field?.Areas.Any(area => area.AttachmentUuid == CurrentPage.AttachmentUuid && area.Page == CurrentPage.PageIndex) == true;
+    }
+
+    private void EnsureSelectedPageVisible()
+    {
+        if (_viewMode != DocumentPageViewMode.SinglePage || _selectedFieldUuids.Count != 1)
+        {
+            return;
+        }
+
+        var field = _fields.FirstOrDefault(item => _selectedFieldUuids.Contains(item.Uuid));
+        var area = field?.Areas.FirstOrDefault();
+        if (area is null || IsAreaOnCurrentPage(area))
+        {
+            return;
+        }
+
+        var pageIndex = Documents.ToList().FindIndex(page => page.AttachmentUuid == area.AttachmentUuid && page.PageIndex == area.Page);
+        if (pageIndex >= 0)
+        {
+            _currentPageIndex = pageIndex;
+        }
+    }
+
+    private async Task SetCurrentPageToAreaAsync(SigningFieldArea area)
+    {
+        if (IsAreaOnCurrentPage(area))
+        {
+            return;
+        }
+
+        var pageIndex = Documents.ToList().FindIndex(page => page.AttachmentUuid == area.AttachmentUuid && page.PageIndex == area.Page);
+        if (pageIndex < 0)
+        {
+            return;
+        }
+
+        _currentPageIndex = pageIndex;
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private bool IsAreaOnCurrentPage(SigningFieldArea area)
+    {
+        return CurrentPage is not null && area.AttachmentUuid == CurrentPage.AttachmentUuid && area.Page == CurrentPage.PageIndex;
     }
 
     private async Task<(double X, double Y)> ToPointAsync(SigningDocumentPage page, MouseEventArgs args)

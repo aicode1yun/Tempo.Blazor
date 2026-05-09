@@ -5879,14 +5879,14 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 
 | Komponenta | Účel | Provider-agnostic |
 |------------|------|-------------------|
-| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem. | Ano |
+| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem, volitelným toolbarem a zoomem. | Ano |
 | `TmSigningFieldOverlay` | Interaktivní pole nad dokumentem, výběr, stav validace a resize handles. | Ano |
 | `TmSignatureCapture` | Podpis kreslením, psaným textem nebo uploadem. Vyžaduje JS soubor níže. | Ano |
 | `TmConditionBuilder` | Pravidla viditelnosti/povinnosti polí. | Ano |
 | `TmFormulaBuilder` | Editor výpočtových výrazů pro signing pole. | Ano |
 | `TmRecipientRoleEditor` | Role příjemců, pořadí, volitelné role a invitation rules. | Ano |
 | `TmSigningFieldEditorPanel` | Detailní editor vybraného podpisového pole. | Ano |
-| `TmPdfTemplateDesigner` | Návrh PDF šablon s kreslením, výběrem, resize a kontextovým menu. | Ano |
+| `TmPdfTemplateDesigner` | Návrh PDF šablon se stránkováním, zoomem, kreslením, výběrem, resize a kontextovým menu. | Ano |
 | `TmSigningTextStep`, `TmSigningNumberStep`, `TmSigningDateStep`, `TmSigningChoiceStep`, `TmSigningAttachmentStep`, `TmSigningPhoneStep`, `TmSigningExternalStep` | Krokové editory jednotlivých typů polí. | Ano |
 | `TmSigningFormRunner` | End-user podpisový průchod dokumentem s autosave, validací a mobile panelem. | Ano |
 | `TmSigningCompletionPanel` | Dokončovací obrazovka po podpisu nebo čekání na další příjemce. | Ano |
@@ -5901,7 +5901,9 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 <TmPdfTemplateDesigner Documents="_pages"
                        Fields="_fields"
                        FieldsChanged="fields => _fields = fields"
-                       SubmitterRoles="_roles" />
+                       SubmitterRoles="_roles"
+                       ViewMode="DocumentPageViewMode.SinglePage"
+                       Scale="1.0" />
 
 @code {
     private IReadOnlyList<SigningDocumentPage> _pages =
@@ -5925,6 +5927,8 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
     ];
 }
 ```
+
+Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a režim zobrazení mění jen vizuální měřítko, takže uložené `X`, `Y`, `Width` a `Height` se při přiblížení nebo oddálení nepřepočítávají.
 
 ### Podpisový průchod
 
@@ -5987,7 +5991,7 @@ Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API
 <script src="_content/Tempo.Blazor/js/signature-capture.js"></script>
 ```
 
-`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic a bez vlastního JS souboru. Hostitelská aplikace typicky jen načte hlavní CSS:
+`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic. `TmPdfTemplateDesigner` používá malý JS helper načítaný dynamickým importem pro přesný převod souřadnic při zoomu a vkládání polí; hostitelská aplikace typicky jen načte hlavní CSS:
 
 ```html
 <link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />

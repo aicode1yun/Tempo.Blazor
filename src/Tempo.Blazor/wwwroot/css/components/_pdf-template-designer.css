@@ -26,6 +26,68 @@
     background: var(--tm-bg-muted);
 }
 
+.tm-pdf-template-designer__toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--tm-space-2);
+    min-width: 0;
+    margin-bottom: var(--tm-space-3);
+}
+
+.tm-pdf-template-designer__page-controls,
+.tm-pdf-template-designer__view-controls,
+.tm-pdf-template-designer__zoom-controls {
+    display: inline-flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: var(--tm-space-1);
+    min-width: 0;
+}
+
+.tm-pdf-template-designer__toolbar-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tm-space-8);
+    min-height: var(--tm-space-8);
+    padding: var(--tm-space-1) var(--tm-space-2);
+    border: 1px solid var(--tm-border-color);
+    border-radius: var(--tm-radius-sm);
+    background: var(--tm-bg-surface);
+    color: var(--tm-text-primary);
+    font: inherit;
+    cursor: pointer;
+}
+
+.tm-pdf-template-designer__toolbar-button:hover:not(:disabled),
+.tm-pdf-template-designer__toolbar-button--active {
+    border-color: var(--tm-color-primary);
+    background: var(--tm-color-primary-subtle);
+    color: var(--tm-color-primary-text);
+}
+
+.tm-pdf-template-designer__toolbar-button:disabled {
+    color: var(--tm-text-disabled);
+    cursor: default;
+    opacity: var(--tm-opacity-disabled);
+}
+
+.tm-pdf-template-designer__page-label,
+.tm-pdf-template-designer__zoom-label {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: var(--tm-space-8);
+    min-width: calc(var(--tm-space-10) + var(--tm-space-1));
+    padding: 0 var(--tm-space-2);
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+}
+
 .tm-pdf-template-designer__palette {
     display: grid;
     gap: var(--tm-space-2);
@@ -214,5 +276,9 @@
 
     .tm-pdf-template-designer__palette {
         grid-template-columns: repeat(auto-fit, minmax(calc(var(--tm-space-16) * 1.25), 1fr));
+    }
+
+    .tm-pdf-template-designer__toolbar {
+        justify-content: flex-start;
     }
 }

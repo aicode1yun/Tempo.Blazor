@@ -47,6 +47,71 @@
             }
 
             <main class="tm-pdf-template-designer__canvas">
+                <div class="tm-pdf-template-designer__toolbar" role="toolbar" aria-label="@Loc["TmPdfTemplateDesigner_ToolbarLabel"]">
+                    <div class="tm-pdf-template-designer__page-controls">
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__previous-page"
+                                disabled="@(!CanGoPrevious)"
+                                aria-label="@Loc["TmPdfTemplateDesigner_PreviousPage"]"
+                                @onclick="GoToPreviousPageAsync">
+                            <TmIcon Name="chevron-left" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-pdf-template-designer__page-label">@PageLabel</span>
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__next-page"
+                                disabled="@(!CanGoNext)"
+                                aria-label="@Loc["TmPdfTemplateDesigner_NextPage"]"
+                                @onclick="GoToNextPageAsync">
+                            <TmIcon Name="chevron-right" Size="IconSize.Sm" />
+                        </button>
+                    </div>
+
+                    <div class="tm-pdf-template-designer__view-controls">
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__single-page @(_viewMode == DocumentPageViewMode.SinglePage ? "tm-pdf-template-designer__toolbar-button--active" : "")"
+                                aria-label="@Loc["TmPdfTemplateDesigner_SinglePage"]"
+                                @onclick="() => SetViewModeAsync(DocumentPageViewMode.SinglePage)">
+                            <TmIcon Name="file-text" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__continuous @(_viewMode == DocumentPageViewMode.Continuous ? "tm-pdf-template-designer__toolbar-button--active" : "")"
+                                aria-label="@Loc["TmPdfTemplateDesigner_Continuous"]"
+                                @onclick="() => SetViewModeAsync(DocumentPageViewMode.Continuous)">
+                            <TmIcon Name="list" Size="IconSize.Sm" />
+                        </button>
+                    </div>
+
+                    <div class="tm-pdf-template-designer__zoom-controls">
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__zoom-out"
+                                disabled="@(!CanZoomOut)"
+                                aria-label="@Loc["TmPdfTemplateDesigner_ZoomOut"]"
+                                @onclick="ZoomOutAsync">
+                            <TmIcon Name="zoom-out" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-pdf-template-designer__zoom-label" role="status" aria-live="polite">@ZoomLabel</span>
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__zoom-in"
+                                disabled="@(!CanZoomIn)"
+                                aria-label="@Loc["TmPdfTemplateDesigner_ZoomIn"]"
+                                @onclick="ZoomInAsync">
+                            <TmIcon Name="zoom-in" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__fit-width"
+                                aria-label="@Loc["TmPdfTemplateDesigner_FitWidth"]"
+                                @onclick="FitWidthAsync">
+                            <TmIcon Name="maximize-2" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                class="tm-pdf-template-designer__toolbar-button tm-pdf-template-designer__fit-page"
+                                aria-label="@Loc["TmPdfTemplateDesigner_FitPage"]"
+                                @onclick="FitPageAsync">
+                            <TmIcon Name="minimize-2" Size="IconSize.Sm" />
+                        </button>
+                    </div>
+                </div>
+
                 @if (!string.IsNullOrWhiteSpace(_detectionError))
                 {
                     <TmAlert Severity="AlertSeverity.Error"
@@ -87,12 +152,14 @@
                 }
 
                 <div class="tm-pdf-template-designer__pages">
-                    @foreach (var page in Documents)
+                    @foreach (var page in VisibleDocuments)
                     {
                         <section class="tm-pdf-template-designer__page-frame"
                                  data-page-key="@GetPageKey(page)">
                             <TmDocumentPageViewer Page="page"
                                                   Id="@GetPageElementId(page)"
+                                                  Scale="_scale"
+                                                  ZoomMode="_zoomMode"
                                                   OverlayTemplate="context => RenderPageOverlay(context)" />
                         </section>
                     }
