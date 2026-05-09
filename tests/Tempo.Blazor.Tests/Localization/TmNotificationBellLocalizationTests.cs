@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components;
 using Microsoft.Extensions.DependencyInjection;
 using Tempo.Blazor.Components.Notifications;
 using Tempo.Blazor.NotionEditor.Enums;

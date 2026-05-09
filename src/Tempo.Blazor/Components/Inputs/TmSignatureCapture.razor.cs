@@ -10,12 +10,15 @@ namespace Tempo.Blazor.Components.Inputs;
 /// <summary>Captures signatures by drawing, typing, or uploading an image.</summary>
 public partial class TmSignatureCapture
 {
+    private const string ScriptSignatureFontFamily = "\"Dancing Script\", \"Brush Script MT\", \"Snell Roundhand\", \"Apple Chancery\", \"Segoe Script\", \"Lucida Handwriting\", \"Z003\", \"URW Chancery L\", cursive";
     private readonly List<Stroke> _strokes = [];
     private Stroke? _currentStroke;
     private bool _isDrawing;
     private bool _pointerLeftCanvas;
     private long? _activePointerId;
     private string? _typedText;
+    private string _typedFont = "script";
+    private string? _lastTypedFontParameter;
     private string? _reason;
     private bool _rememberSignature;
     private ElementReference _canvasRef;
@@ -137,7 +140,19 @@ public partial class TmSignatureCapture
     private string TypedPreviewClass => string.Join(
         " ",
         "tm-signature-capture__typed-preview",
-        $"tm-signature-capture__typed-preview--{NormalizeFont(TypedFont)}");
+        $"tm-signature-capture__typed-preview--{_typedFont}");
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var normalizedTypedFont = NormalizeFont(TypedFont);
+        if (_lastTypedFontParameter is null
+            || !string.Equals(_lastTypedFontParameter, normalizedTypedFont, StringComparison.Ordinal))
+        {
+            _typedFont = normalizedTypedFont;
+            _lastTypedFontParameter = normalizedTypedFont;
+        }
+    }
 
     private static void AddClass(List<string> classes, bool condition, string cssClass)
     {
@@ -278,7 +293,7 @@ public partial class TmSignatureCapture
             return;
         }
 
-        TypedFont = NormalizeFont(args.Value?.ToString());
+        _typedFont = NormalizeFont(args.Value?.ToString());
         if (!string.IsNullOrWhiteSpace(_typedText))
         {
             await CommitValueAsync(BuildTypedSvgString());
@@ -437,16 +452,20 @@ public partial class TmSignatureCapture
         }
 
         var escaped = System.Net.WebUtility.HtmlEncode(_typedText);
-        var fontFamily = NormalizeFont(TypedFont) switch
+        var normalizedFont = NormalizeFont(_typedFont);
+        var fontFamily = normalizedFont switch
         {
             "serif" => "Georgia, serif",
             "sans" => "Arial, sans-serif",
-            _ => "cursive"
+            _ => ScriptSignatureFontFamily
         };
+        var escapedFontFamily = System.Net.WebUtility.HtmlEncode(fontFamily);
+        var fontStyle = normalizedFont == "script" ? "italic" : "normal";
+        var fontWeight = normalizedFont == "script" ? "500" : "400";
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {Width} {Height}\" width=\"{Width}\" height=\"{Height}\"><text x=\"24\" y=\"{Height / 2}\" dominant-baseline=\"middle\" font-family=\"{fontFamily}\" font-size=\"48\" fill=\"currentColor\">{escaped}</text></svg>");
+            $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {Width} {Height}\" width=\"{Width}\" height=\"{Height}\"><text x=\"24\" y=\"{Height / 2}\" dominant-baseline=\"middle\" font-family=\"{escapedFontFamily}\" font-style=\"{fontStyle}\" font-weight=\"{fontWeight}\" font-size=\"48\" fill=\"currentColor\">{escaped}</text></svg>");
     }
 
     private RenderFragment RenderPreview(string value) => builder =>

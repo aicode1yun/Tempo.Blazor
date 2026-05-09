@@ -208,3 +208,12 @@
 /* 23. AI Tools */
 @import "components/_ai-prompt.css";
 @import "components/_chat.css";
+
+/* Local handwriting font used by typed signature previews. */
+@font-face {
+    font-family: "Dancing Script";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("../fonts/dancing-script/DancingScript-VariableFont_wght.ttf") format("truetype");
+}

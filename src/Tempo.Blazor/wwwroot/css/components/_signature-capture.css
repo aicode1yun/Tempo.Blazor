@@ -109,7 +109,10 @@
 }
 
 .tm-signature-capture__typed-preview--script {
-    font-family: cursive;
+    font-family: "Dancing Script", "Brush Script MT", "Snell Roundhand", "Apple Chancery", "Segoe Script", "Lucida Handwriting", "Z003", "URW Chancery L", cursive;
+    font-style: italic;
+    font-weight: 500;
+    line-height: 1;
 }
 
 .tm-signature-capture__typed-preview--serif {

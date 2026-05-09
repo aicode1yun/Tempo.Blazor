@@ -212,6 +212,54 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TypedMode_ScriptExport_UsesSignatureFontStack()
+    {
+        string? captured = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        cut.Find("input.tm-signature-capture__typed-input").Change("Alex Johnson");
+
+        captured.Should().Contain("Dancing Script");
+        captured.Should().Contain("font-family=\"&quot;Dancing Script&quot;");
+        captured.Should().Contain("font-style=\"italic\"");
+        captured.Should().Contain("font-weight=\"500\"");
+        captured.Should().NotContain("font-family=\"\"");
+        captured.Should().Contain("Brush Script MT");
+        captured.Should().Contain("Snell Roundhand");
+        captured.Should().Contain("Z003");
+        cut.Find(".tm-signature-capture__typed-preview")
+            .ClassList
+            .Should()
+            .Contain("tm-signature-capture__typed-preview--script");
+    }
+
+    [Fact]
+    public void TypedMode_ScriptFont_IsBundledAndRegistered()
+    {
+        var root = FindRepositoryRoot();
+        var fontPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "fonts", "dancing-script", "DancingScript-VariableFont_wght.ttf");
+        var licensePath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "fonts", "dancing-script", "OFL.txt");
+        var cssPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "tempo-blazor.css");
+        var bundledCssPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "tempo-blazor.bundled.css");
+
+        File.Exists(fontPath).Should().BeTrue();
+        File.Exists(licensePath).Should().BeTrue();
+        new FileInfo(fontPath).Length.Should().BeGreaterThan(100_000);
+
+        var css = File.ReadAllText(cssPath);
+        var bundledCss = File.ReadAllText(bundledCssPath);
+
+        css.Should().Contain("@font-face")
+            .And.Contain("Dancing Script")
+            .And.Contain("DancingScript-VariableFont_wght.ttf");
+        bundledCss.Should().Contain("@font-face")
+            .And.Contain("Dancing Script")
+            .And.Contain("DancingScript-VariableFont_wght.ttf");
+    }
+
+    [Fact]
     public void TypedMode_Initials_UsesShorterLabel()
     {
         var cut = RenderComponent<TmSignatureCapture>(parameters =>
@@ -235,6 +283,26 @@ public class TmSignatureCaptureTests : LocalizationTestBase
             .ClassList
             .Should()
             .Contain("tm-signature-capture__typed-preview--serif");
+    }
+
+    [Fact]
+    public void TypedMode_UserSelectedFont_IsNotResetByParentRerenderWithSameParameter()
+    {
+        string? captured = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.TypedFont, "serif")
+                      .Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, value => captured = value)));
+
+        cut.Find("select.tm-signature-capture__font").Change("script");
+        cut.SetParametersAndRender(parameters => parameters.Add(p => p.TypedFont, "serif"));
+        cut.Find("input.tm-signature-capture__typed-input").Change("Tyll");
+
+        cut.Find(".tm-signature-capture__typed-preview")
+            .ClassList
+            .Should()
+            .Contain("tm-signature-capture__typed-preview--script");
+        captured.Should().Contain("Dancing Script");
     }
 
     [Fact]
@@ -319,5 +387,16 @@ public class TmSignatureCaptureTests : LocalizationTestBase
             parameters.Add(p => p.PreviousValue, "data:image/png;base64,previous"));
 
         cut.Find(".tm-signature-capture__previous").Should().NotBeNull();
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null && !File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+        {
+            directory = directory.Parent;
+        }
+
+        return directory?.FullName ?? throw new DirectoryNotFoundException("Could not find repository root.");
     }
 }
