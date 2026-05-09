@@ -2,6 +2,7 @@ using System.Collections;
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Tempo.Blazor.Abstractions.Models;
+using Tempo.Blazor.Components.Inputs;
 
 namespace Tempo.Blazor.Components.Signing;
 
@@ -16,6 +17,7 @@ public partial class TmSigningFormRunner : IDisposable
     private string _autoSaveState = "idle";
     private bool _accessibilityMode;
     private bool _mobileExpanded;
+    private readonly Dictionary<string, TmSignatureCaptureMode> _signatureCaptureModes = new(StringComparer.Ordinal);
     private CancellationTokenSource? _autoSaveCts;
 
     /// <summary>Document pages shown during signing.</summary>
@@ -171,6 +173,27 @@ public partial class TmSigningFormRunner : IDisposable
         }
 
         return GetValue(field.Uuid);
+    }
+
+    private TmSignatureCaptureMode GetSignatureCaptureMode(SigningField field)
+    {
+        if (_signatureCaptureModes.TryGetValue(field.Uuid, out var mode))
+        {
+            return mode;
+        }
+
+        return field.Preferences.Format?.Trim().ToLowerInvariant() switch
+        {
+            "draw" or "drawn" or "handwritten" => TmSignatureCaptureMode.Draw,
+            "upload" => TmSignatureCaptureMode.Upload,
+            _ => TmSignatureCaptureMode.Typed
+        };
+    }
+
+    private Task SetSignatureCaptureModeAsync(string fieldUuid, TmSignatureCaptureMode mode)
+    {
+        _signatureCaptureModes[fieldUuid] = mode;
+        return Task.CompletedTask;
     }
 
     private string? GetStringValue(string fieldUuid)

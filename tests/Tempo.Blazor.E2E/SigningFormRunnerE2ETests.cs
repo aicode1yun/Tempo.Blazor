@@ -84,6 +84,25 @@ public class SigningFormRunnerE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    [Description("Signing form runner keeps draw signature mode selected after completing a stroke")]
+    public async Task SigningFormRunner_DrawSignatureModePersistsAfterMouseUp()
+    {
+        var page = await OpenRunnerAsync();
+        var panel = GetDesktopPanel(GetRunner(page));
+
+        await panel.Locator(".tm-signing-form-runner__accessibility-entry").ClickAsync();
+        await panel.Locator(".tm-signing-form-runner__accessibility-field:has-text('Signature')").ClickAsync();
+        await panel.GetByRole(AriaRole.Tab, new() { Name = "Draw" }).ClickAsync();
+
+        var signatureCapture = panel.Locator(".tm-signature-capture").First;
+        await Assertions.Expect(signatureCapture).ToHaveAttributeAsync("data-mode", "Draw");
+        await DrawSignatureAsync(page, signatureCapture);
+
+        await Assertions.Expect(signatureCapture).ToHaveAttributeAsync("data-mode", "Draw");
+        await Assertions.Expect(panel.GetByRole(AriaRole.Tab, new() { Name = "Draw" })).ToHaveAttributeAsync("aria-selected", "true");
+    }
+
+    [TestMethod]
     [Description("Signing form runner exposes a collapsible mobile signing panel")]
     public async Task SigningFormRunner_MobilePanelCollapsesAndExpands()
     {
@@ -117,5 +136,19 @@ public class SigningFormRunnerE2ETests : WasmTestBase
     private static ILocator GetDesktopPanel(ILocator runner)
     {
         return runner.Locator(".tm-signing-form-runner__steps").First;
+    }
+
+    private static async Task DrawSignatureAsync(IPage page, ILocator signatureCapture)
+    {
+        var canvas = signatureCapture.Locator(".tm-signature-capture__canvas").First;
+        await canvas.ScrollIntoViewIfNeededAsync();
+        var box = await canvas.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Signature canvas should have a bounding box.");
+
+        await page.Mouse.MoveAsync((float)(box!.X + box.Width * 0.2), (float)(box.Y + box.Height * 0.35));
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.42), (float)(box.Y + box.Height * 0.25), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.MoveAsync((float)(box.X + box.Width * 0.7), (float)(box.Y + box.Height * 0.45), new MouseMoveOptions { Steps = 4 });
+        await page.Mouse.UpAsync();
     }
 }

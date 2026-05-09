@@ -38,6 +38,9 @@ public partial class TmSignatureCapture
     /// <summary>Current capture mode. Defaults to draw mode.</summary>
     [Parameter] public TmSignatureCaptureMode Mode { get; set; } = TmSignatureCaptureMode.Draw;
 
+    /// <summary>Callback invoked when the active capture mode changes.</summary>
+    [Parameter] public EventCallback<TmSignatureCaptureMode> ModeChanged { get; set; }
+
     /// <summary>Capture modes shown in the mode selector.</summary>
     [Parameter] public IReadOnlyList<TmSignatureCaptureMode>? Modes { get; set; }
 
@@ -196,6 +199,7 @@ public partial class TmSignatureCapture
         }
 
         Mode = mode;
+        await ModeChanged.InvokeAsync(mode);
         if (Mode == TmSignatureCaptureMode.Typed && string.IsNullOrWhiteSpace(_typedText))
         {
             _typedText = Value?.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) == true

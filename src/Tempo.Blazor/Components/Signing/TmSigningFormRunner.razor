@@ -151,7 +151,8 @@
                                             ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                             Required="@CurrentStep.Field.Required"
                                             Initials="@(CurrentStep.Field.Type == SigningFieldType.Initials)"
-                                            Mode="TmSignatureCaptureMode.Typed"
+                                            Mode="@GetSignatureCaptureMode(CurrentStep.Field)"
+                                            ModeChanged="mode => SetSignatureCaptureModeAsync(CurrentStep.Field.Uuid, mode)"
                                             Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Phone:

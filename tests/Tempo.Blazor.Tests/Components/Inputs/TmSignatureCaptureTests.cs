@@ -42,6 +42,22 @@ public class TmSignatureCaptureTests : LocalizationTestBase
     }
 
     [Fact]
+    public void ModeTabClick_InvokesModeChanged()
+    {
+        TmSignatureCaptureMode? capturedMode = null;
+        var cut = RenderComponent<TmSignatureCapture>(parameters =>
+            parameters.Add(p => p.Mode, TmSignatureCaptureMode.Typed)
+                      .Add(p => p.ModeChanged, EventCallback.Factory.Create<TmSignatureCaptureMode>(this, mode => capturedMode = mode)));
+
+        cut.FindAll(".tm-signature-capture__tab")
+            .Single(button => button.TextContent.Contains("Draw", StringComparison.OrdinalIgnoreCase))
+            .Click();
+
+        capturedMode.Should().Be(TmSignatureCaptureMode.Draw);
+        cut.Find(".tm-signature-capture").GetAttribute("data-mode").Should().Be("Draw");
+    }
+
+    [Fact]
     public void Render_Disabled_AppliesStateAndDisablesControls()
     {
         var cut = RenderComponent<TmSignatureCapture>(parameters =>
