@@ -2312,6 +2312,47 @@
   <data name="TmDocumentPageViewer_FitWidthShort" xml:space="preserve"><value>Width</value></data>
   <data name="TmDocumentPageViewer_FitPage" xml:space="preserve"><value>Fit page</value></data>
   <data name="TmDocumentPageViewer_FitPageShort" xml:space="preserve"><value>Page</value></data>
+  <data name="TmDocumentComments_ToggleCommentMode" xml:space="preserve"><value>Toggle document comments</value></data>
+  <data name="TmDocumentComments_ToolbarLabel" xml:space="preserve"><value>Document comments toolbar</value></data>
+  <data name="TmDocumentComments_Comments" xml:space="preserve"><value>Comments</value></data>
+  <data name="TmDocumentComments_PanelLabel" xml:space="preserve"><value>Document comments</value></data>
+  <data name="TmDocumentComments_Title" xml:space="preserve"><value>Comments</value></data>
+  <data name="TmDocumentComments_Summary" xml:space="preserve"><value>{0} open of {1}</value></data>
+  <data name="TmDocumentComments_CloseThread" xml:space="preserve"><value>Close comment thread</value></data>
+  <data name="TmDocumentComments_FilterLabel" xml:space="preserve"><value>Comment filters</value></data>
+  <data name="TmDocumentComments_FilterOpen" xml:space="preserve"><value>Open</value></data>
+  <data name="TmDocumentComments_FilterResolved" xml:space="preserve"><value>Resolved</value></data>
+  <data name="TmDocumentComments_FilterMentions" xml:space="preserve"><value>Mentions</value></data>
+  <data name="TmDocumentComments_BackToList" xml:space="preserve"><value>Back</value></data>
+  <data name="TmDocumentComments_PageLocation" xml:space="preserve"><value>Page {0}</value></data>
+  <data name="TmDocumentComments_PageThreadTitle" xml:space="preserve"><value>Whole page {0}</value></data>
+  <data name="TmDocumentComments_Edited" xml:space="preserve"><value>edited</value></data>
+  <data name="TmDocumentComments_AddReaction" xml:space="preserve"><value>Add reaction</value></data>
+  <data name="TmDocumentComments_ReactionPickerLabel" xml:space="preserve"><value>Choose reaction</value></data>
+  <data name="TmDocumentComments_Edit" xml:space="preserve"><value>Edit</value></data>
+  <data name="TmDocumentComments_Delete" xml:space="preserve"><value>Delete</value></data>
+  <data name="TmDocumentComments_EditPlaceholder" xml:space="preserve"><value>Edit comment...</value></data>
+  <data name="TmDocumentComments_EditLabel" xml:space="preserve"><value>Edit comment</value></data>
+  <data name="TmDocumentComments_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="TmDocumentComments_ReplyPlaceholder" xml:space="preserve"><value>Reply to this thread...</value></data>
+  <data name="TmDocumentComments_ReplyLabel" xml:space="preserve"><value>Write a reply</value></data>
+  <data name="TmDocumentComments_Reply" xml:space="preserve"><value>Reply</value></data>
+  <data name="TmDocumentComments_Resolve" xml:space="preserve"><value>Resolve</value></data>
+  <data name="TmDocumentComments_Reopen" xml:space="preserve"><value>Reopen</value></data>
+  <data name="TmDocumentComments_Empty" xml:space="preserve"><value>No comments for this filter.</value></data>
+  <data name="TmDocumentComments_EmptyThread" xml:space="preserve"><value>No comments yet</value></data>
+  <data name="TmDocumentComments_Mentioned" xml:space="preserve"><value>You were mentioned</value></data>
+  <data name="TmDocumentComments_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="TmDocumentComments_Resolved" xml:space="preserve"><value>Resolved</value></data>
+  <data name="TmDocumentComments_NewThread" xml:space="preserve"><value>New comment</value></data>
+  <data name="TmDocumentComments_NewPlaceholder" xml:space="preserve"><value>Add a comment to this document...</value></data>
+  <data name="TmDocumentComments_NewLabel" xml:space="preserve"><value>New comment</value></data>
+  <data name="TmDocumentComments_AddComment" xml:space="preserve"><value>Add comment</value></data>
+  <data name="TmDocumentComments_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmDocumentComments_LayerLabel" xml:space="preserve"><value>Document comment markers</value></data>
+  <data name="TmDocumentComments_MarkerAriaLabel" xml:space="preserve"><value>Comment {0} on page {1}, {2}</value></data>
+  <data name="TmDocumentComments_MentionList" xml:space="preserve"><value>Mention suggestions</value></data>
+  <data name="TmDocumentComments_SelectedMentions" xml:space="preserve"><value>Selected mentions</value></data>
   <data name="TmPdfTemplateDesigner_EmptyTitle" xml:space="preserve"><value>No documents</value></data>
   <data name="TmPdfTemplateDesigner_EmptyDescription" xml:space="preserve"><value>Add document pages to start designing a signing template.</value></data>
   <data name="TmPdfTemplateDesigner_Palette" xml:space="preserve"><value>Field palette</value></data>

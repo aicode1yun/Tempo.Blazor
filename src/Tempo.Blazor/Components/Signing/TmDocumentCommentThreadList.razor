@@ -1,0 +1,86 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-document-comments-panel__list">
+    @foreach (var thread in Threads)
+    {
+        <button type="button"
+                class="@ThreadButtonClass(thread)"
+                data-thread-id="@thread.Id"
+                disabled="@Disabled"
+                @onclick="() => SelectThreadAsync(thread)">
+            <span class="tm-document-comments-panel__thread-marker" aria-hidden="true">@ThreadNumber(thread)</span>
+            <span class="tm-document-comments-panel__thread-body">
+                <span class="tm-document-comments-panel__thread-title">@ThreadTitle(thread)</span>
+                <span class="tm-document-comments-panel__thread-preview">@ThreadPreview(thread)</span>
+            </span>
+            @if (DocumentCommentHelper.MentionsUser(thread, CurrentUserId))
+            {
+                <span class="tm-document-comments-panel__thread-mention" title="@Loc["TmDocumentComments_Mentioned"]">
+                    <TmIcon Name="@IconNames.AtSign" Size="IconSize.Sm" />
+                </span>
+            }
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>Filtered threads to render.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread> Threads { get; set; } = [];
+
+    /// <summary>All threads used for stable numbering.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread> AllThreads { get; set; } = [];
+
+    /// <summary>Selected thread id.</summary>
+    [Parameter] public string? SelectedThreadId { get; set; }
+
+    /// <summary>Current user id for mention indicators.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether list interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback invoked when a thread is selected.</summary>
+    [Parameter] public EventCallback<DocumentCommentThread> OnThreadSelected { get; set; }
+
+    private Task SelectThreadAsync(DocumentCommentThread thread)
+    {
+        return Disabled ? Task.CompletedTask : OnThreadSelected.InvokeAsync(thread);
+    }
+
+    private string ThreadButtonClass(DocumentCommentThread thread)
+    {
+        return thread.Id == SelectedThreadId
+            ? "tm-document-comments-panel__thread tm-document-comments-panel__thread--selected"
+            : "tm-document-comments-panel__thread";
+    }
+
+    private int ThreadNumber(DocumentCommentThread thread)
+    {
+        var source = AllThreads.Count > 0 ? AllThreads : Threads;
+        for (var i = 0; i < source.Count; i++)
+        {
+            if (ReferenceEquals(source[i], thread) || string.Equals(source[i].Id, thread.Id, StringComparison.Ordinal))
+            {
+                return i + 1;
+            }
+        }
+
+        return 1;
+    }
+
+    private string ThreadTitle(DocumentCommentThread thread)
+    {
+        if (thread.Anchor.Kind == DocumentCommentAnchorKind.Page)
+        {
+            return Loc["TmDocumentComments_PageThreadTitle", thread.Anchor.PageNumber];
+        }
+
+        return Loc["TmDocumentComments_PageLocation", thread.Anchor.PageNumber];
+    }
+
+    private string ThreadPreview(DocumentCommentThread thread)
+    {
+        return thread.Comments.FirstOrDefault()?.Body ?? Loc["TmDocumentComments_EmptyThread"];
+    }
+}

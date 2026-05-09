@@ -2149,6 +2149,47 @@
   <data name="TmDocumentPageViewer_FitWidthShort" xml:space="preserve"><value>Šířka</value></data>
   <data name="TmDocumentPageViewer_FitPage" xml:space="preserve"><value>Přizpůsobit stránce</value></data>
   <data name="TmDocumentPageViewer_FitPageShort" xml:space="preserve"><value>Stránka</value></data>
+  <data name="TmDocumentComments_ToggleCommentMode" xml:space="preserve"><value>Přepnout komentáře dokumentu</value></data>
+  <data name="TmDocumentComments_ToolbarLabel" xml:space="preserve"><value>Panel komentářů dokumentu</value></data>
+  <data name="TmDocumentComments_Comments" xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmDocumentComments_PanelLabel" xml:space="preserve"><value>Komentáře dokumentu</value></data>
+  <data name="TmDocumentComments_Title" xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmDocumentComments_Summary" xml:space="preserve"><value>{0} otevřených z {1}</value></data>
+  <data name="TmDocumentComments_CloseThread" xml:space="preserve"><value>Zavřít vlákno komentářů</value></data>
+  <data name="TmDocumentComments_FilterLabel" xml:space="preserve"><value>Filtry komentářů</value></data>
+  <data name="TmDocumentComments_FilterOpen" xml:space="preserve"><value>Otevřené</value></data>
+  <data name="TmDocumentComments_FilterResolved" xml:space="preserve"><value>Vyřešené</value></data>
+  <data name="TmDocumentComments_FilterMentions" xml:space="preserve"><value>Zmínky</value></data>
+  <data name="TmDocumentComments_BackToList" xml:space="preserve"><value>Zpět</value></data>
+  <data name="TmDocumentComments_PageLocation" xml:space="preserve"><value>Stránka {0}</value></data>
+  <data name="TmDocumentComments_PageThreadTitle" xml:space="preserve"><value>Celá stránka {0}</value></data>
+  <data name="TmDocumentComments_Edited" xml:space="preserve"><value>upraveno</value></data>
+  <data name="TmDocumentComments_AddReaction" xml:space="preserve"><value>Přidat reakci</value></data>
+  <data name="TmDocumentComments_ReactionPickerLabel" xml:space="preserve"><value>Vybrat reakci</value></data>
+  <data name="TmDocumentComments_Edit" xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmDocumentComments_Delete" xml:space="preserve"><value>Smazat</value></data>
+  <data name="TmDocumentComments_EditPlaceholder" xml:space="preserve"><value>Upravit komentář...</value></data>
+  <data name="TmDocumentComments_EditLabel" xml:space="preserve"><value>Upravit komentář</value></data>
+  <data name="TmDocumentComments_Save" xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmDocumentComments_ReplyPlaceholder" xml:space="preserve"><value>Odpovědět do vlákna...</value></data>
+  <data name="TmDocumentComments_ReplyLabel" xml:space="preserve"><value>Napište odpověď</value></data>
+  <data name="TmDocumentComments_Reply" xml:space="preserve"><value>Odpovědět</value></data>
+  <data name="TmDocumentComments_Resolve" xml:space="preserve"><value>Vyřešit</value></data>
+  <data name="TmDocumentComments_Reopen" xml:space="preserve"><value>Znovu otevřít</value></data>
+  <data name="TmDocumentComments_Empty" xml:space="preserve"><value>Pro tento filtr nejsou žádné komentáře.</value></data>
+  <data name="TmDocumentComments_EmptyThread" xml:space="preserve"><value>Zatím žádné komentáře</value></data>
+  <data name="TmDocumentComments_Mentioned" xml:space="preserve"><value>Byli jste zmíněni</value></data>
+  <data name="TmDocumentComments_Open" xml:space="preserve"><value>Otevřené</value></data>
+  <data name="TmDocumentComments_Resolved" xml:space="preserve"><value>Vyřešeno</value></data>
+  <data name="TmDocumentComments_NewThread" xml:space="preserve"><value>Nový komentář</value></data>
+  <data name="TmDocumentComments_NewPlaceholder" xml:space="preserve"><value>Přidejte komentář k dokumentu...</value></data>
+  <data name="TmDocumentComments_NewLabel" xml:space="preserve"><value>Nový komentář</value></data>
+  <data name="TmDocumentComments_AddComment" xml:space="preserve"><value>Přidat komentář</value></data>
+  <data name="TmDocumentComments_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmDocumentComments_LayerLabel" xml:space="preserve"><value>Značky komentářů dokumentu</value></data>
+  <data name="TmDocumentComments_MarkerAriaLabel" xml:space="preserve"><value>Komentář {0} na stránce {1}, {2}</value></data>
+  <data name="TmDocumentComments_MentionList" xml:space="preserve"><value>Návrhy zmínek</value></data>
+  <data name="TmDocumentComments_SelectedMentions" xml:space="preserve"><value>Vybrané zmínky</value></data>
   <data name="TmPdfTemplateDesigner_EmptyTitle" xml:space="preserve"><value>Žádné dokumenty</value></data>
   <data name="TmPdfTemplateDesigner_EmptyDescription" xml:space="preserve"><value>Přidejte stránky dokumentu a začněte navrhovat šablonu podpisu.</value></data>
   <data name="TmPdfTemplateDesigner_Palette" xml:space="preserve"><value>Paleta polí</value></data>

@@ -5930,6 +5930,33 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 
 Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a režim zobrazení mění jen vizuální měřítko, takže uložené `X`, `Y`, `Width` a `Height` se při přiblížení nebo oddálení nepřepočítávají.
 
+### Komentáře nad dokumentem
+
+`TmDocumentPageViewer` může volitelně vykreslit komentářovou vrstvu nad stránkou. Ve výchozím stavu je vypnutá, takže viewer bez comments parametrů se chová stejně jako dřív. Zapnutí se dělá přes `CommentsEnabled`; režim `DocumentCommentMode.Comment` dovolí kliknutím vytvořit bodový komentář a tažením plošný komentář.
+
+```razor
+<TmDocumentPageViewer Page="_page"
+                      ShowToolbar="true"
+                      CommentsEnabled="true"
+                      CommentMode="_commentMode"
+                      CommentModeChanged="mode => _commentMode = mode"
+                      CommentThreads="_threads"
+                      SelectedCommentThreadId="_selectedThreadId"
+                      SelectedCommentThreadIdChanged="id => _selectedThreadId = id"
+                      CurrentUserId="_currentUserId"
+                      MentionUsers="_mentionUsers"
+                      OnCommentThreadCreateRequested="CreateThreadAsync"
+                      OnCommentReplyRequested="AddReplyAsync"
+                      OnCommentResolveRequested="ResolveThreadAsync"
+                      OnCommentReopenRequested="ReopenThreadAsync" />
+```
+
+Komentáře jsou provider-agnostic modely v `Tempo.Blazor.Abstractions`. Komponenta pouze emituje požadavky (`DocumentCommentThreadCreateRequest`, `DocumentCommentReplyRequest`, `DocumentCommentThreadStatusRequest`, edit/delete/reaction payloady); hostitelská aplikace rozhoduje o uložení, notifikacích, oprávněních a synchronizaci více uživatelů. Pro vlastní vzhled lze nahradit markery přes `CommentMarkerTemplate` a celý pravý panel přes `CommentThreadPanelTemplate`.
+
+Kotvy mohou být bodové, oblastní nebo celostránkové. Bodový komentář používá `DocumentCommentAnchor.Point(pageNumber, x, y)`, oblastní komentář používá `DocumentCommentAnchor.Area(pageNumber, x, y, width, height)` a širokou poznámku k celé stránce reprezentuje `DocumentCommentAnchor.Page(pageNumber)`. Souřadnice jsou normalizované vůči stránce, tedy `0..1`, stejně jako podpisová pole.
+
+Composer podporuje klikací i klávesové mentiony přes `@`, ukládá stabilní `UserId` do payloadu a při mention změně emituje `OnCommentMentionedUsersChanged`. Emoji reakce jsou vykreslené jako seskupené hodnoty s počtem uživatelů; klik na reakci nebo výběr z malého pickeru emituje `OnCommentReactionToggled`. Prázdné reakce hostitelská aplikace obvykle odstraní ze svého stavu.
+
 ### Podpisový průchod
 
 ```razor
@@ -6043,6 +6070,7 @@ Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API
 - `SigningSubmissionStatusEvent`, `SigningSubmissionStatusEventType`
 - `SigningPdfVerificationResult`, `SigningPdfVerificationStatus`, `SigningPdfSignatureInfo`
 - `SigningAuditTrail`, `SigningAuditTrailDocument`, `SigningAuditTrailSigner`, `SigningAuditTrailEvent`
+- `DocumentCommentThread`, `DocumentComment`, `DocumentCommentAnchor`, `DocumentCommentUser`, `DocumentCommentMention`, `DocumentCommentReaction`
 
 ### Required JS soubory
 

@@ -187,6 +187,7 @@
 
 /* 21. Signing */
 @import "components/_document-page-viewer.css";
+@import "components/_document-comments.css";
 @import "components/_signing-field-overlay.css";
 @import "components/_signature-capture.css";
 @import "components/_condition-builder.css";

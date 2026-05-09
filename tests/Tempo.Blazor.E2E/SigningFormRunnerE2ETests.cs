@@ -7,7 +7,7 @@ namespace Tempo.Blazor.E2E;
 public class SigningFormRunnerE2ETests : WasmTestBase
 {
     [TestMethod]
-    [Description("Signing form runner completes the required text, number, conditional note, and signature flow")]
+[Description("Signing form runner completes the required text, delivery, number, conditional note, and signature flow")]
     public async Task SigningFormRunner_CompletesRequiredFlow()
     {
         var page = await OpenRunnerAsync();
@@ -15,6 +15,10 @@ public class SigningFormRunnerE2ETests : WasmTestBase
         var panel = GetDesktopPanel(runner);
 
         await panel.Locator("input.tm-signing-text-step__input").FillAsync("Alex Johnson");
+        await panel.Locator(".tm-signing-form-runner__next").ClickAsync();
+
+        await Assertions.Expect(panel.Locator(".tm-signing-step-shell__title")).ToContainTextAsync("Delivery method");
+        await panel.Locator("select.tm-signing-choice-step__select").SelectOptionAsync("paper");
         await panel.Locator(".tm-signing-form-runner__next").ClickAsync();
 
         await panel.Locator("input.tm-signing-number-step__input").FillAsync("100");
@@ -49,7 +53,7 @@ public class SigningFormRunnerE2ETests : WasmTestBase
 
         await panel.Locator(".tm-signing-form-runner__next").ClickAsync();
 
-        await Assertions.Expect(panel.Locator(".tm-signing-form-runner__validation")).ToContainTextAsync("Complete the required field");
+        await Assertions.Expect(panel.Locator(".tm-signing-form-runner__validation")).ToContainTextAsync("Full name is required.");
         await Assertions.Expect(panel.Locator(".tm-signing-step-shell__title")).ToContainTextAsync("Full name");
     }
 
@@ -62,6 +66,8 @@ public class SigningFormRunnerE2ETests : WasmTestBase
         var panel = GetDesktopPanel(runner);
 
         await panel.Locator("input.tm-signing-text-step__input").FillAsync("Alex Johnson");
+        await panel.Locator(".tm-signing-form-runner__next").ClickAsync();
+        await panel.Locator("select.tm-signing-choice-step__select").SelectOptionAsync("paper");
         await panel.Locator(".tm-signing-form-runner__next").ClickAsync();
         await panel.Locator("input.tm-signing-number-step__input").FillAsync("100");
         await panel.Locator(".tm-signing-form-runner__next").ClickAsync();

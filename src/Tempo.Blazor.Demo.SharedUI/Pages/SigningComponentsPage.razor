@@ -54,6 +54,56 @@
 <section class="demo-section">
     <div class="flex items-center justify-between gap-4 mb-4">
         <div>
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Document comments</h2>
+            <p class="text-sm text-slate-600 dark:text-slate-400">Anchored review threads, mentions, reactions, and resolved comment history.</p>
+        </div>
+        <span class="px-2 py-0.5 text-xs font-medium bg-cyan-100 dark:bg-cyan-900/30 text-cyan-700 dark:text-cyan-300 rounded-full">Phase 15</span>
+    </div>
+
+    <div class="showcase-card">
+        <div class="mb-4 flex flex-wrap items-center gap-3 text-sm text-slate-700 dark:text-slate-300">
+            <label class="inline-flex items-center gap-2">
+                <input type="checkbox" class="rounded border-slate-300" @bind="_showResolvedComments" />
+                <span>Show resolved comments</span>
+            </label>
+            <span class="text-slate-500 dark:text-slate-400" data-testid="document-comments-last-event">@_commentLastEvent</span>
+        </div>
+
+        <TmDocumentPageViewer Page="_commentPage"
+                              Id="demo-document-comments-page"
+                              Class="signing-components-page__viewer signing-components-page__comments-viewer"
+                              ShowToolbar="true"
+                              ShowPaginationControls="true"
+                              PageNumber="@(_commentPageIndex + 1)"
+                              TotalPages="@_commentPages.Count"
+                              PreviousPageRequested="HandleCommentPreviousPageRequested"
+                              NextPageRequested="HandleCommentNextPageRequested"
+                              CommentsEnabled="true"
+                              CommentMode="_commentMode"
+                              CommentModeChanged="HandleCommentModeChanged"
+                              CommentThreads="_commentThreads"
+                              SelectedCommentThreadId="@_selectedCommentThreadId"
+                              SelectedCommentThreadIdChanged="HandleSelectedCommentThreadChanged"
+                              ShowResolvedComments="_showResolvedComments"
+                              CurrentUserId="comment-user-alice"
+                              MentionUsers="_commentMentionUsers"
+                              AllowReplyToResolved="true"
+                              OnCommentThreadCreateRequested="HandleCommentThreadCreateRequested"
+                              OnCommentReplyRequested="HandleCommentReplyRequested"
+                              OnCommentResolveRequested="HandleCommentResolveRequested"
+                              OnCommentReopenRequested="HandleCommentReopenRequested"
+                              OnCommentEditRequested="HandleCommentEditRequested"
+                              OnCommentDeleteRequested="HandleCommentDeleteRequested"
+                              OnCommentReactionToggled="HandleCommentReactionToggled"
+                              OnCommentMentionedUsersChanged="HandleCommentMentionsChanged"
+                              OnCommentThreadNavigateRequested="HandleCommentThreadNavigateRequested"
+                              data-testid="document-comments-viewer" />
+    </div>
+</section>
+
+<section class="demo-section">
+    <div class="flex items-center justify-between gap-4 mb-4">
+        <div>
             <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Field Overlay</h2>
             <p class="text-sm text-slate-600 dark:text-slate-400">All signing field types rendered through the overlay component.</p>
         </div>
@@ -586,6 +636,30 @@
         Label = "NDA page 1"
     };
 
+    private readonly IReadOnlyList<SigningDocumentPage> _commentPages =
+    [
+        new SigningDocumentPage
+        {
+            AttachmentUuid = "comments-nda",
+            PageIndex = 0,
+            ImageUrl = DemoPageImage,
+            Width = 612,
+            Height = 792,
+            Label = "Comments NDA page 1"
+        },
+        new SigningDocumentPage
+        {
+            AttachmentUuid = "comments-nda",
+            PageIndex = 1,
+            ImageUrl = DemoPageImage,
+            Width = 612,
+            Height = 792,
+            Label = "Comments NDA page 2"
+        }
+    ];
+
+    private SigningDocumentPage _commentPage => _commentPages[Math.Clamp(_commentPageIndex, 0, _commentPages.Count - 1)];
+
     private readonly SigningDocumentPage _runnerPage = new()
     {
         AttachmentUuid = "runner-order",
@@ -621,6 +695,18 @@
     private readonly DateOnly _dateValue = new(2026, 5, 8);
     private string? _selectedFieldUuid;
     private string _lastInteraction = "No page interaction yet";
+    private DocumentCommentMode _commentMode = DocumentCommentMode.Browse;
+    private bool _showResolvedComments;
+    private int _commentPageIndex;
+    private string? _selectedCommentThreadId = "comment-amount";
+    private string _commentLastEvent = "Comments ready";
+    private IReadOnlyList<DocumentCommentThread> _commentThreads = CreateInitialCommentThreads();
+    private readonly IReadOnlyList<DocumentCommentUser> _commentMentionUsers =
+    [
+        new DocumentCommentUser { UserId = "comment-user-alice", DisplayName = "Alice Johnson", Email = "alice@example.test" },
+        new DocumentCommentUser { UserId = "comment-user-nora", DisplayName = "Nora Lee", Email = "nora@example.test" },
+        new DocumentCommentUser { UserId = "comment-user-manager", DisplayName = "Manager email", Email = "manager@example.test" }
+    ];
     private string? _drawSignatureValue;
     private string? _typedSignatureValue;
     private string? _uploadSignatureValue;
@@ -1416,6 +1502,217 @@
         _lastInteraction = $"Context menu {args.Field.Name}";
     }
 
+    private Task HandleCommentModeChanged(DocumentCommentMode mode)
+    {
+        _commentMode = mode;
+        _commentLastEvent = mode == DocumentCommentMode.Comment
+            ? "Comment mode enabled"
+            : "Browse mode enabled";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleSelectedCommentThreadChanged(string? threadId)
+    {
+        _selectedCommentThreadId = threadId;
+        if (!string.IsNullOrWhiteSpace(threadId))
+        {
+            _commentLastEvent = $"Selected {threadId}";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentPreviousPageRequested()
+    {
+        _commentPageIndex = Math.Max(0, _commentPageIndex - 1);
+        _commentLastEvent = $"Comments page {_commentPageIndex + 1}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentNextPageRequested()
+    {
+        _commentPageIndex = Math.Min(_commentPages.Count - 1, _commentPageIndex + 1);
+        _commentLastEvent = $"Comments page {_commentPageIndex + 1}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentThreadNavigateRequested(DocumentCommentThreadNavigateRequest request)
+    {
+        _commentPageIndex = Math.Clamp(request.PageNumber - 1, 0, _commentPages.Count - 1);
+        _commentLastEvent = $"Navigated to {request.ThreadId} on page {request.PageNumber}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentThreadCreateRequested(DocumentCommentThreadCreateRequest request)
+    {
+        var threadId = $"comment-e2e-{_commentThreads.Count + 1}";
+        var comment = CreateDocumentComment(
+            $"comment-entry-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+            request.Body,
+            "comment-user-alice",
+            "Alice Johnson",
+            request.Mentions);
+
+        var next = _commentThreads.ToList();
+        next.Add(new DocumentCommentThread
+        {
+            Id = threadId,
+            Anchor = request.Anchor,
+            Comments = [comment]
+        });
+
+        _commentThreads = next;
+        _selectedCommentThreadId = threadId;
+        _commentMode = DocumentCommentMode.Browse;
+        _commentLastEvent = request.Mentions.Count > 0
+            ? $"Created comment for {string.Join(", ", request.Mentions.Select(mention => mention.DisplayName))}: {request.Body}"
+            : $"Created comment: {request.Body}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentReplyRequested(DocumentCommentReplyRequest request)
+    {
+        var next = _commentThreads.ToList();
+        var thread = next.FirstOrDefault(item => item.Id == request.ThreadId);
+        if (thread is not null)
+        {
+            thread.Comments.Add(CreateDocumentComment(
+                $"comment-reply-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}",
+                request.Body,
+                "comment-user-alice",
+                "Alice Johnson",
+                request.Mentions));
+            _commentThreads = next;
+            _selectedCommentThreadId = request.ThreadId;
+            _commentLastEvent = $"Reply added: {request.Body}";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentResolveRequested(DocumentCommentThreadStatusRequest request)
+    {
+        UpdateCommentThreadStatus(request.ThreadId, DocumentCommentThreadStatus.Resolved);
+        _commentLastEvent = $"Resolved {request.ThreadId}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentReopenRequested(DocumentCommentThreadStatusRequest request)
+    {
+        UpdateCommentThreadStatus(request.ThreadId, DocumentCommentThreadStatus.Open);
+        _showResolvedComments = true;
+        _commentLastEvent = $"Reopened {request.ThreadId}";
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentEditRequested(DocumentCommentEditRequest request)
+    {
+        var thread = _commentThreads.FirstOrDefault(item => item.Id == request.ThreadId);
+        var comment = thread?.Comments.FirstOrDefault(item => item.Id == request.CommentId);
+        if (comment is not null)
+        {
+            comment.Body = request.Body;
+            comment.Mentions = request.Mentions.ToList();
+            comment.EditedAt = DateTimeOffset.UtcNow;
+            _commentThreads = _commentThreads.ToList();
+            _commentLastEvent = $"Edited comment: {request.Body}";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentDeleteRequested(DocumentCommentDeleteRequest request)
+    {
+        var next = _commentThreads.ToList();
+        var thread = next.FirstOrDefault(item => item.Id == request.ThreadId);
+        var comment = thread?.Comments.FirstOrDefault(item => item.Id == request.CommentId);
+        if (thread is not null && comment is not null)
+        {
+            thread.Comments.Remove(comment);
+            if (thread.Comments.Count == 0)
+            {
+                next.Remove(thread);
+            }
+
+            _commentThreads = next;
+            _selectedCommentThreadId = _commentThreads.FirstOrDefault()?.Id;
+            _commentLastEvent = $"Deleted {request.CommentId}";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentReactionToggled(DocumentCommentReactionToggleRequest request)
+    {
+        var thread = _commentThreads.FirstOrDefault(item => item.Id == request.ThreadId);
+        var comment = thread?.Comments.FirstOrDefault(item => item.Id == request.CommentId);
+        if (comment is not null)
+        {
+            var reaction = comment.Reactions.FirstOrDefault(item => item.Value == request.Value);
+            if (reaction is null)
+            {
+                comment.Reactions.Add(new DocumentCommentReaction
+                {
+                    Value = request.Value,
+                    UserIds = ["comment-user-alice"]
+                });
+            }
+            else if (reaction.UserIds.Contains("comment-user-alice", StringComparer.Ordinal))
+            {
+                reaction.UserIds.Remove("comment-user-alice");
+                if (reaction.UserIds.Count == 0)
+                {
+                    comment.Reactions.Remove(reaction);
+                }
+            }
+            else
+            {
+                reaction.UserIds.Add("comment-user-alice");
+            }
+
+            _commentThreads = _commentThreads.ToList();
+            _commentLastEvent = $"Reaction {request.Value} toggled";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private Task HandleCommentMentionsChanged(IReadOnlyList<DocumentCommentMention> mentions)
+    {
+        if (mentions.Count > 0)
+        {
+            _commentLastEvent = $"Mentions selected: {string.Join(", ", mentions.Select(mention => mention.DisplayName))}";
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private void UpdateCommentThreadStatus(string threadId, DocumentCommentThreadStatus status)
+    {
+        var thread = _commentThreads.FirstOrDefault(item => item.Id == threadId);
+        if (thread is null)
+        {
+            return;
+        }
+
+        thread.Status = status;
+        if (status == DocumentCommentThreadStatus.Resolved)
+        {
+            thread.ResolvedByUserId = "comment-user-alice";
+            thread.ResolvedByName = "Alice Johnson";
+            thread.ResolvedAt = DateTimeOffset.UtcNow;
+        }
+        else
+        {
+            thread.ResolvedByUserId = null;
+            thread.ResolvedByName = null;
+            thread.ResolvedAt = null;
+        }
+
+        _commentThreads = _commentThreads.ToList();
+        _selectedCommentThreadId = threadId;
+    }
+
     private void HandleDrawSignatureChanged(string? value)
     {
         _drawSignatureValue = value;
@@ -1713,6 +2010,107 @@
         return _runnerValues.TryGetValue(fieldUuid, out var value)
             ? value?.ToString()
             : null;
+    }
+
+    private static IReadOnlyList<DocumentCommentThread> CreateInitialCommentThreads()
+    {
+        return
+        [
+            new DocumentCommentThread
+            {
+                Id = "comment-legal",
+                Anchor = DocumentCommentAnchor.Point(1, 0.78, 0.22),
+                Comments =
+                [
+                    CreateDocumentComment(
+                        "comment-legal-1",
+                        "Can we clarify the confidentiality period before sending this out?",
+                        "comment-user-nora",
+                        "Nora Lee",
+                        [new DocumentCommentMention { UserId = "comment-user-manager", DisplayName = "Manager email" }])
+                ]
+            },
+            new DocumentCommentThread
+            {
+                Id = "comment-amount",
+                Anchor = DocumentCommentAnchor.Area(1, 0.12, 0.42, 0.42, 0.08),
+                Comments =
+                [
+                    CreateDocumentComment(
+                        "comment-amount-1",
+                        "Please confirm this amount with finance. @Alice Johnson",
+                        "comment-user-manager",
+                        "Manager email",
+                        [new DocumentCommentMention { UserId = "comment-user-alice", DisplayName = "Alice Johnson" }],
+                        [new DocumentCommentReaction { Value = "👀", UserIds = ["comment-user-nora"] }])
+                ]
+            },
+            new DocumentCommentThread
+            {
+                Id = "comment-page",
+                Anchor = DocumentCommentAnchor.Page(1),
+                Comments =
+                [
+                    CreateDocumentComment(
+                        "comment-page-1",
+                        "This page-level thread is useful for broad document feedback.",
+                        "comment-user-manager",
+                        "Manager email")
+                ]
+            },
+            new DocumentCommentThread
+            {
+                Id = "comment-page-two",
+                Anchor = DocumentCommentAnchor.Point(2, 0.28, 0.3),
+                Comments =
+                [
+                    CreateDocumentComment(
+                        "comment-page-two-1",
+                        "Second page note for pagination checks.",
+                        "comment-user-nora",
+                        "Nora Lee")
+                ]
+            },
+            new DocumentCommentThread
+            {
+                Id = "comment-signature",
+                Anchor = DocumentCommentAnchor.Point(1, 0.72, 0.72),
+                Status = DocumentCommentThreadStatus.Resolved,
+                ResolvedByUserId = "comment-user-alice",
+                ResolvedByName = "Alice Johnson",
+                ResolvedAt = new DateTimeOffset(2026, 5, 9, 10, 0, 0, TimeSpan.Zero),
+                Comments =
+                [
+                    CreateDocumentComment(
+                        "comment-signature-1",
+                        "Signature block approved.",
+                        "comment-user-alice",
+                        "Alice Johnson")
+                ]
+            }
+        ];
+    }
+
+    private static DocumentComment CreateDocumentComment(
+        string id,
+        string body,
+        string authorId,
+        string authorName,
+        IEnumerable<DocumentCommentMention>? mentions = null,
+        IEnumerable<DocumentCommentReaction>? reactions = null)
+    {
+        return new DocumentComment
+        {
+            Id = id,
+            AuthorId = authorId,
+            AuthorName = authorName,
+            Body = body,
+            CreatedAt = DateTimeOffset.UtcNow,
+            Mentions = mentions?.ToList() ?? [],
+            Reactions = reactions?.ToList() ?? [],
+            CanEdit = authorId == "comment-user-alice",
+            CanDelete = authorId == "comment-user-alice"
+        };
     }
 
     private static SigningField CreateField(
