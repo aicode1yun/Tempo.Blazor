@@ -210,18 +210,19 @@ public partial class TmSignatureCapture
         await Task.CompletedTask;
     }
 
-    private async Task HandlePointerDown(PointerEventArgs args)
+    private async Task HandlePointerDownAsync(PointerEventArgs args)
     {
         if (Disabled || Mode != TmSignatureCaptureMode.Draw)
         {
             return;
         }
 
+        var point = await GetPointerPointAsync(args);
         _isDrawing = true;
         _pointerLeftCanvas = false;
         _activePointerId = args.PointerId;
         _currentStroke = new Stroke(StrokeColor, StrokeWidth);
-        _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
+        _currentStroke.AddPoint(point.X, point.Y);
         _strokes.Add(_currentStroke);
 
         await CapturePointerAsync(args.PointerId);
@@ -241,7 +242,8 @@ public partial class TmSignatureCapture
         }
 
         _pointerLeftCanvas = false;
-        _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
+        var point = await GetPointerPointAsync(args);
+        _currentStroke.AddPoint(point.X, point.Y);
     }
 
     private async Task HandlePointerUpAsync(PointerEventArgs args)
@@ -266,7 +268,8 @@ public partial class TmSignatureCapture
     {
         if (includePointerPosition)
         {
-            _currentStroke?.AddPoint(args.OffsetX, args.OffsetY);
+            var point = await GetPointerPointAsync(args);
+            _currentStroke?.AddPoint(point.X, point.Y);
         }
 
         _isDrawing = false;
@@ -283,6 +286,37 @@ public partial class TmSignatureCapture
         return _pointerLeftCanvas
             && !string.Equals(args.PointerType, "touch", StringComparison.OrdinalIgnoreCase)
             && args.Buttons == 0;
+    }
+
+    private async ValueTask<PointerPoint> GetPointerPointAsync(PointerEventArgs args)
+    {
+        try
+        {
+            var point = await JSRuntime.InvokeAsync<PointerPoint?>(
+                "tmSignatureCapture.getPointerPoint",
+                _canvasRef,
+                args.ClientX,
+                args.ClientY,
+                Width,
+                Height);
+
+            if (point is not null && double.IsFinite(point.X) && double.IsFinite(point.Y))
+            {
+                return ClampPointerPoint(point.X, point.Y);
+            }
+        }
+        catch (Exception exception) when (exception is JSException or InvalidOperationException)
+        {
+        }
+
+        return ClampPointerPoint(args.OffsetX, args.OffsetY);
+    }
+
+    private PointerPoint ClampPointerPoint(double x, double y)
+    {
+        return new PointerPoint(
+            Math.Clamp(x, 0, Width),
+            Math.Clamp(y, 0, Height));
     }
 
     private async Task HandleTypedInputAsync(ChangeEventArgs args)
@@ -570,6 +604,23 @@ public partial class TmSignatureCapture
 
             _points.AppendFormat(CultureInfo.InvariantCulture, "{0:0.0},{1:0.0}", x, y);
             PointCount++;
+        }
+    }
+
+    private sealed class PointerPoint
+    {
+        public double X { get; set; }
+
+        public double Y { get; set; }
+
+        public PointerPoint()
+        {
+        }
+
+        public PointerPoint(double x, double y)
+        {
+            X = x;
+            Y = y;
         }
     }
 }

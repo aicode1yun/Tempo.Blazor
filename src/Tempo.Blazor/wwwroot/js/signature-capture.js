@@ -25,6 +25,44 @@ window.tmSignatureCapture = window.tmSignatureCapture || {
         }
     },
 
+    getPointerPoint: function (svgElement, clientX, clientY, fallbackWidth, fallbackHeight) {
+        if (!svgElement) {
+            return null;
+        }
+
+        const viewBox = svgElement.viewBox && svgElement.viewBox.baseVal;
+        const minX = viewBox ? viewBox.x : 0;
+        const minY = viewBox ? viewBox.y : 0;
+        const width = Math.max(viewBox?.width || fallbackWidth || svgElement.clientWidth || 1, 1);
+        const height = Math.max(viewBox?.height || fallbackHeight || svgElement.clientHeight || 1, 1);
+        const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
+
+        try {
+            const matrix = svgElement.getScreenCTM();
+            if (matrix && typeof svgElement.createSVGPoint === 'function') {
+                const point = svgElement.createSVGPoint();
+                point.x = clientX;
+                point.y = clientY;
+                const transformed = point.matrixTransform(matrix.inverse());
+                return {
+                    x: clamp(transformed.x, minX, minX + width),
+                    y: clamp(transformed.y, minY, minY + height)
+                };
+            }
+        } catch {
+            // Fall through to the bounding-box approximation.
+        }
+
+        const rect = svgElement.getBoundingClientRect();
+        const x = rect.width > 0 ? minX + ((clientX - rect.left) / rect.width) * width : minX;
+        const y = rect.height > 0 ? minY + ((clientY - rect.top) / rect.height) * height : minY;
+
+        return {
+            x: clamp(x, minX, minX + width),
+            y: clamp(y, minY, minY + height)
+        };
+    },
+
     exportPng: function (svgElement) {
         if (!svgElement) {
             return null;
