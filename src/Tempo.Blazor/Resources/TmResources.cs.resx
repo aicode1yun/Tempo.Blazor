@@ -2142,6 +2142,10 @@
   <data name="TmPdfTemplateDesigner_CopySelection" xml:space="preserve"><value>Kopírovat výběr</value></data>
   <data name="TmPdfTemplateDesigner_DeleteSelection" xml:space="preserve"><value>Smazat výběr</value></data>
   <data name="TmPdfTemplateDesigner_PasteField" xml:space="preserve"><value>Vložit pole</value></data>
+  <data name="TmPdfTemplateDesigner_FieldCopied" xml:space="preserve"><value>Pole zkopírováno. Klikněte pravým tlačítkem na stránku a vložte ho.</value></data>
+  <data name="TmPdfTemplateDesigner_SelectionCopied" xml:space="preserve"><value>Výběr zkopírován. Klikněte pravým tlačítkem na stránku a vložte ho.</value></data>
+  <data name="TmPdfTemplateDesigner_FieldPasted" xml:space="preserve"><value>Pole vloženo.</value></data>
+  <data name="TmPdfTemplateDesigner_SelectionPasted" xml:space="preserve"><value>Výběr vložen.</value></data>
 
   <!-- StockChart, Sparkline, Gauge -->
   <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Akciový graf</value></data>

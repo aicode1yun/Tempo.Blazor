@@ -78,6 +78,14 @@
                     </button>
                 }
 
+                @if (!string.IsNullOrWhiteSpace(_clipboardStatus))
+                {
+                    <div class="tm-pdf-template-designer__clipboard-status" role="status">
+                        <TmIcon Name="clipboard-check" Size="IconSize.Xs" />
+                        <span>@_clipboardStatus</span>
+                    </div>
+                }
+
                 <div class="tm-pdf-template-designer__pages">
                     @foreach (var page in Documents)
                     {
@@ -122,12 +130,6 @@
                             @onclick="DeleteContextFieldAsync">
                         @Loc["TmPdfTemplateDesigner_DeleteField"]
                     </button>
-                    <button type="button"
-                            role="menuitem"
-                            class="tm-pdf-template-designer__context-action tm-pdf-template-designer__settings"
-                            @onclick="SelectContextFieldAsync">
-                        @Loc["TmPdfTemplateDesigner_Settings"]
-                    </button>
                 }
                 else if (_contextMenu.Kind == ContextMenuKind.Selection)
                 {
@@ -149,7 +151,7 @@
                     <button type="button"
                             role="menuitem"
                             class="tm-pdf-template-designer__context-action tm-pdf-template-designer__paste-field"
-                            disabled="@(_clipboardField is null)"
+                            disabled="@(!HasClipboardFields)"
                             @onclick="PasteFieldAsync">
                         @Loc["TmPdfTemplateDesigner_PasteField"]
                     </button>
@@ -181,10 +183,6 @@
                                            IsDangerous="true"
                                            Class="tm-pdf-template-designer__delete-field"
                                            OnClick="DeleteContextFieldAsync" />
-                        <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_Settings"]"
-                                           Icon="settings"
-                                           Class="tm-pdf-template-designer__settings"
-                                           OnClick="SelectContextFieldAsync" />
                     }
                     else if (_contextMenu.Kind == ContextMenuKind.Selection)
                     {
@@ -203,7 +201,7 @@
                         <TmContextMenuItem Label="@Loc["TmPdfTemplateDesigner_PasteField"]"
                                            Icon="clipboard"
                                            Class="tm-pdf-template-designer__paste-field"
-                                           Disabled="@(_clipboardField is null)"
+                                           Disabled="@(!HasClipboardFields)"
                                            OnClick="PasteFieldAsync" />
                         @if (OnDetectFields is not null)
                         {

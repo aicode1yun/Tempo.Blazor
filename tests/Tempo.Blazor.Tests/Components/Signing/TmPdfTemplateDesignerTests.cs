@@ -256,7 +256,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
         cut.Find(".tm-context-menu-wrapper").Should().NotBeNull();
         cut.Markup.Should().Contain("Copy field");
         cut.Markup.Should().Contain("Delete field");
-        cut.Markup.Should().Contain("Settings");
+        cut.Markup.Should().NotContain("Settings");
     }
 
     [Fact]
@@ -283,13 +283,48 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
 
         cut.Find("[data-field-uuid='field-1']").ContextMenu();
         cut.Find(".tm-pdf-template-designer__copy-field").Click();
-        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface").ContextMenu();
+
+        cut.FindAll(".tm-pdf-template-designer__context-actions").Should().BeEmpty();
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Field copied");
+
+        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
+            .ContextMenu(new MouseEventArgs { OffsetX = 500, OffsetY = 500 });
         cut.Find(".tm-pdf-template-designer__paste-field").Click();
 
         captured.Should().NotBeNull();
         captured.Should().HaveCount(2);
         captured!.Select(field => field.Uuid).Distinct().Should().HaveCount(2);
-        captured!.Last().Areas.Single().Page.Should().Be(1);
+        var pastedArea = captured!.Last().Areas.Single();
+        pastedArea.Page.Should().Be(1);
+        pastedArea.X.Should().BeApproximately(0.4, 0.001);
+        pastedArea.Y.Should().BeApproximately(0.46, 0.001);
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Field pasted");
+    }
+
+    [Fact]
+    public void CopySelection_PastesAllSelectedFields()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find("[data-field-uuid='field-2']").Click(new MouseEventArgs { CtrlKey = true });
+        cut.Find("[data-field-uuid='field-1']").ContextMenu();
+        cut.Find(".tm-pdf-template-designer__copy-selection").Click();
+
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Selection copied");
+
+        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
+            .ContextMenu(new MouseEventArgs { OffsetX = 700, OffsetY = 700 });
+        cut.Find(".tm-pdf-template-designer__paste-field").Click();
+
+        captured.Should().NotBeNull();
+        captured!.Should().HaveCount(4);
+        captured!.Count(field => field.Areas.Single().Page == 1).Should().Be(2);
+        cut.FindAll(".tm-signing-field--selected").Should().HaveCount(2);
     }
 
     [Fact]

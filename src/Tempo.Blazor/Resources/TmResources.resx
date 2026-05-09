@@ -2305,6 +2305,10 @@
   <data name="TmPdfTemplateDesigner_CopySelection" xml:space="preserve"><value>Copy selection</value></data>
   <data name="TmPdfTemplateDesigner_DeleteSelection" xml:space="preserve"><value>Delete selection</value></data>
   <data name="TmPdfTemplateDesigner_PasteField" xml:space="preserve"><value>Paste field</value></data>
+  <data name="TmPdfTemplateDesigner_FieldCopied" xml:space="preserve"><value>Field copied. Right-click a page to paste it.</value></data>
+  <data name="TmPdfTemplateDesigner_SelectionCopied" xml:space="preserve"><value>Selection copied. Right-click a page to paste it.</value></data>
+  <data name="TmPdfTemplateDesigner_FieldPasted" xml:space="preserve"><value>Field pasted.</value></data>
+  <data name="TmPdfTemplateDesigner_SelectionPasted" xml:space="preserve"><value>Selection pasted.</value></data>
 
   <!-- StockChart, Sparkline, Gauge -->
   <data name="TmStockChart_AriaLabel" xml:space="preserve"><value>Stock chart</value></data>

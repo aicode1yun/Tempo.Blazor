@@ -152,6 +152,39 @@ public class PdfTemplateDesignerE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    [Description("PDF template designer copy closes the context menu, shows feedback, and pastes at the clicked page position")]
+    public async Task PdfTemplateDesigner_CopyShowsFeedbackAndPastesAtClickPosition()
+    {
+        var page = await OpenDesignerAsync();
+        var designer = GetDesigner(page);
+        var field = designer.Locator("[data-field-uuid='designer-name']").First;
+
+        await field.ClickAsync(new LocatorClickOptions { Button = MouseButton.Right });
+        await designer.Locator(".tm-pdf-template-designer__context-actions .tm-pdf-template-designer__copy-field").ClickAsync();
+
+        await Expect(designer.Locator(".tm-pdf-template-designer__context-actions")).ToHaveCountAsync(0);
+        await Expect(designer.Locator(".tm-pdf-template-designer__clipboard-status")).ToContainTextAsync("Field copied");
+
+        var surface = designer.Locator("[data-page-key='designer-nda:0'] .tm-pdf-template-designer__page-surface").First;
+        var surfaceBox = await surface.BoundingBoxAsync();
+        Assert.IsNotNull(surfaceBox);
+        var targetX = surfaceBox.X + surfaceBox.Width * 0.72;
+        var targetY = surfaceBox.Y + surfaceBox.Height * 0.68;
+
+        await page.Mouse.ClickAsync((float)targetX, (float)targetY, new MouseClickOptions { Button = MouseButton.Right });
+        await designer.Locator(".tm-pdf-template-designer__context-actions .tm-pdf-template-designer__paste-field").ClickAsync();
+
+        await Expect(page.Locator("[data-testid='pdf-template-designer-status']")).ToContainTextAsync("3 designer fields");
+        await Expect(designer.Locator(".tm-pdf-template-designer__clipboard-status")).ToContainTextAsync("Field pasted");
+
+        var selected = designer.Locator(".tm-signing-field--selected").First;
+        var selectedBox = await selected.BoundingBoxAsync();
+        Assert.IsNotNull(selectedBox);
+        Assert.IsTrue(Math.Abs((selectedBox.X + selectedBox.Width / 2) - targetX) < 24, "Pasted field should be centered near the context-click location.");
+        Assert.IsTrue(Math.Abs((selectedBox.Y + selectedBox.Height / 2) - targetY) < 24, "Pasted field should be centered near the context-click location.");
+    }
+
+    [TestMethod]
     [Description("PDF template designer moving a field does not start page rectangle selection")]
     public async Task PdfTemplateDesigner_MoveDoesNotStartSelectionBox()
     {
