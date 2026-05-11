@@ -1,0 +1,27 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+@if (Inline is DocumentNoteReferenceRun noteReference)
+{
+    <sup class="@InlineClass" data-note-id="@noteReference.NoteId">@GetText()</sup>
+}
+else if (!string.IsNullOrWhiteSpace(SafeHref))
+{
+    <a class="@InlineClass"
+       href="@SafeHref"
+       title="@LinkTitle"
+       target="_blank"
+       rel="noopener noreferrer"
+       style="@InlineStyle">@GetText()</a>
+}
+else
+{
+    <span class="@InlineClass"
+          style="@InlineStyle"
+          data-token-key="@TokenKey"
+          data-token-type="@TokenType"
+          data-comment-id="@CommentId"
+          title="@InlineTitle"
+          data-testid="@InlineTestId"
+          @onclick="SelectCommentAsync">@GetText()</span>
+}

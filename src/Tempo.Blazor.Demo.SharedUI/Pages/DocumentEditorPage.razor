@@ -1,0 +1,206 @@
+@page "/document-editor"
+@using System.Net.Http.Headers
+@using System.Net.Http.Json
+@using System.Text.Json
+@using Microsoft.AspNetCore.Components.Forms
+@using Tempo.Blazor.DocumentEditor.Models
+@inject IHttpClientFactory HttpClientFactory
+@inject DemoDocumentEditorProvider DocumentProvider
+@inject DemoDocumentImageUrlResolver ImageResolver
+@inject DemoDocumentTokenProvider TokenProvider
+
+<PageTitle>Document Editor - Tempo.Blazor</PageTitle>
+
+<div class="mb-6">
+    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Document Editor</h1>
+    <div class="flex flex-wrap items-center gap-3">
+        <button type="button"
+                class="@GetDocumentButtonClass("contract-demo")"
+                data-testid="document-editor-contract"
+                @onclick="@(() => SelectDocument("contract-demo"))">
+            Contract
+        </button>
+        <button type="button"
+                class="@GetDocumentButtonClass("filing-demo")"
+                data-testid="document-editor-filing"
+                @onclick="@(() => SelectDocument("filing-demo"))">
+            Filing
+        </button>
+        <button type="button"
+                class="@GetDocumentButtonClass("exhibits-demo")"
+                data-testid="document-editor-exhibits"
+                @onclick="@(() => SelectDocument("exhibits-demo"))">
+            Exhibits
+        </button>
+        <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <input class="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                   type="checkbox"
+                   @bind="_readOnly"
+                   data-testid="document-editor-readonly" />
+            Read-only
+        </label>
+        <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-editor-loaded">
+            @_loadedTitle
+        </span>
+        <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+           data-testid="document-export-docx"
+           href="@ExportDocxUrl"
+           download>
+            Export DOCX
+        </a>
+        <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+           data-testid="document-export-odt"
+           href="@ExportOdtUrl"
+           download>
+            Export ODT
+        </a>
+        <label class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+               data-testid="document-import-docx-label">
+            Import DOCX
+            <InputFile class="sr-only" OnChange="ImportDocxAsync" data-testid="document-import-docx" />
+        </label>
+        <label class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
+               data-testid="document-import-odt-label">
+            Import ODT
+            <InputFile class="sr-only" OnChange="ImportOdtAsync" data-testid="document-import-odt" />
+        </label>
+        <button type="button"
+                class="px-3 py-1.5 rounded-md text-sm font-medium bg-emerald-600 text-white hover:bg-emerald-700"
+                data-testid="document-create-signing-template"
+                @onclick="CreateSigningTemplateAsync">
+            Create signing template
+        </button>
+        @if (!string.IsNullOrWhiteSpace(_formatMessage))
+        {
+            <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-format-message">@_formatMessage</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(_signingMessage))
+        {
+            <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-signing-message">@_signingMessage</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(_signingDesignerUrl))
+        {
+            <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
+               data-testid="document-open-signing-designer"
+               href="@_signingDesignerUrl">
+                Open signing designer
+            </a>
+        }
+    </div>
+</div>
+
+<TmDocumentEditor DocumentId="@_documentId"
+                  Provider="@DocumentProvider"
+                  ReadOnly="@_readOnly"
+                  ImageUrlResolver="@ImageResolver"
+                  ImageProvider="@ImageResolver"
+                  TokenProvider="@TokenProvider"
+                  TokenValueProvider="@TokenProvider"
+                  AutoSaveInterval="@TimeSpan.FromSeconds(30)"
+                  OnDocumentLoaded="HandleDocumentLoaded"
+                  data-testid="document-editor-demo" />
+
+@code {
+    private string _documentId = "contract-demo";
+    private bool _readOnly;
+    private string _loadedTitle = "Loading...";
+    private string? _formatMessage;
+    private string? _signingMessage;
+    private string? _signingDesignerUrl;
+
+    private string ExportDocxUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/docx";
+
+    private string ExportOdtUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/odt";
+
+    private void SelectDocument(string documentId)
+    {
+        _documentId = documentId;
+    }
+
+    private Task HandleDocumentLoaded(DocumentEditorDocument document)
+    {
+        _loadedTitle = document.Metadata.Title;
+        return Task.CompletedTask;
+    }
+
+    private Task ImportDocxAsync(InputFileChangeEventArgs args)
+    {
+        return ImportAsync(args.File, "api/document-editor/import/docx");
+    }
+
+    private Task ImportOdtAsync(InputFileChangeEventArgs args)
+    {
+        return ImportAsync(args.File, "api/document-editor/import/odt");
+    }
+
+    private async Task ImportAsync(IBrowserFile file, string endpoint)
+    {
+        try
+        {
+            var http = HttpClientFactory.CreateClient("DemoApi");
+            using var form = new MultipartFormDataContent();
+            await using var stream = file.OpenReadStream(10 * 1024 * 1024);
+            using var fileContent = new StreamContent(stream);
+            fileContent.Headers.ContentType = new MediaTypeHeaderValue(string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType);
+            form.Add(fileContent, "file", file.Name);
+            using var response = await http.PostAsync(endpoint, form);
+            response.EnsureSuccessStatusCode();
+
+            await using var jsonStream = await response.Content.ReadAsStreamAsync();
+            using var json = await JsonDocument.ParseAsync(jsonStream);
+            var documentId = json.RootElement.GetProperty("document").GetProperty("documentId").GetString();
+            if (!string.IsNullOrWhiteSpace(documentId))
+            {
+                _documentId = documentId;
+            }
+
+            _formatMessage = "Imported";
+        }
+        catch
+        {
+            _formatMessage = "Import failed";
+        }
+    }
+
+    private async Task CreateSigningTemplateAsync()
+    {
+        try
+        {
+            var http = HttpClientFactory.CreateClient("DemoApi");
+            var versionResponse = await http.PostAsJsonAsync($"api/document-editor/documents/{Uri.EscapeDataString(_documentId)}/versions", new DocumentVersionCreateRequest
+            {
+                Kind = DocumentVersionKind.Major,
+                Label = $"Signing baseline {DateTimeOffset.Now:HH:mm:ss}"
+            });
+            versionResponse.EnsureSuccessStatusCode();
+            var version = await versionResponse.Content.ReadFromJsonAsync<DocumentVersion>();
+
+            var renditionResponse = await http.PostAsJsonAsync($"api/document-editor/documents/{Uri.EscapeDataString(_documentId)}/renditions", new DocumentRenditionRequest
+            {
+                DocumentVersionId = version!.Id,
+                Actor = new DocumentEditorAuthor { Id = "demo-user", DisplayName = "Demo user" }
+            });
+            renditionResponse.EnsureSuccessStatusCode();
+            var result = await renditionResponse.Content.ReadFromJsonAsync<DocumentRenditionResult>();
+            _signingMessage = result?.Rendition is null
+                ? "Signing rendition failed"
+                : $"Signing rendition ready: {result.Rendition.Id}";
+            _signingDesignerUrl = result?.Rendition is null
+                ? null
+                : $"/signing-components?renditionId={Uri.EscapeDataString(result.Rendition.Id)}";
+        }
+        catch
+        {
+            _signingMessage = "Signing rendition failed";
+            _signingDesignerUrl = null;
+        }
+    }
+
+    private string GetDocumentButtonClass(string documentId)
+    {
+        const string baseClass = "px-3 py-1.5 rounded-md text-sm font-medium transition-colors";
+        return documentId == _documentId
+            ? $"{baseClass} bg-primary-600 text-white"
+            : $"{baseClass} bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 dark:hover:bg-slate-700";
+    }
+}

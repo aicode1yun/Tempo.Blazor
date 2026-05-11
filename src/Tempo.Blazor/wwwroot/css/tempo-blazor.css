@@ -142,6 +142,9 @@
 @import "components/_findreplace-dialog.css";
 @import "components/_mention-autocomplete.css";
 @import "components/_token-autocomplete.css";
+@import "components/_document-editor.css";
+@import "components/_document-editor-toolbar.css";
+@import "components/_document-editor-comments.css";
 
 /* 14. Charts & Diagrams */
 @import "components/_chart.css";

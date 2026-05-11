@@ -1,0 +1,168 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Components.Activity
+@using Tempo.Blazor.Interfaces
+
+<div class="tm-document-comment-composer" data-testid="@TestId">
+    <textarea class="tm-document-comment-composer__input"
+              data-testid="@InputTestId"
+              placeholder="@Placeholder"
+              value="@_text"
+              disabled="@(IsBusy || !CanComment)"
+              @oninput="HandleInputAsync"></textarea>
+    <MentionAutocomplete IsVisible="@_showMentionDropdown"
+                         Users="@_mentionUsers"
+                         Query="@_mentionQuery"
+                         HighlightedIndex="@_highlightedMentionIndex"
+                         OnUserSelected="SelectMentionAsync"
+                         OnHighlightedIndexChanged="index => _highlightedMentionIndex = index" />
+    <div class="tm-document-comment-composer__actions">
+        <button type="button"
+                class="tm-document-comment-composer__submit"
+                data-testid="@SubmitTestId"
+                disabled="@(!CanSubmit)"
+                @onclick="SubmitAsync">
+            @SubmitLabel
+        </button>
+        @if (OnCancel.HasDelegate)
+        {
+            <button type="button"
+                    class="tm-document-comment-composer__cancel"
+                    data-testid="@CancelTestId"
+                    disabled="@IsBusy"
+                    @onclick="CancelAsync">
+                @Loc["TmDocumentEditor_Cancel"]
+            </button>
+        }
+    </div>
+</div>
+
+@code {
+    private string _text = string.Empty;
+
+    /// <summary>Whether the current user may submit comments.</summary>
+    [Parameter] public bool CanComment { get; set; } = true;
+
+    /// <summary>Whether a comment operation is currently running.</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    /// <summary>Input placeholder.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Submit button label.</summary>
+    [Parameter] public string? SubmitLabel { get; set; }
+
+    /// <summary>Root test id.</summary>
+    [Parameter] public string TestId { get; set; } = "document-comment-composer";
+
+    /// <summary>Input test id.</summary>
+    [Parameter] public string InputTestId { get; set; } = "document-comment-input";
+
+    /// <summary>Submit test id.</summary>
+    [Parameter] public string SubmitTestId { get; set; } = "document-comment-submit";
+
+    /// <summary>Cancel test id.</summary>
+    [Parameter] public string CancelTestId { get; set; } = "document-comment-cancel";
+
+    /// <summary>Optional mention provider reused from the rich editor stack.</summary>
+    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
+
+    /// <summary>Raised when text is submitted.</summary>
+    [Parameter] public EventCallback<string> OnSubmit { get; set; }
+
+    /// <summary>Raised when the composer is cancelled.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private List<MentionUser> _mentionUsers = [];
+    private bool _showMentionDropdown;
+    private string _mentionQuery = string.Empty;
+    private int _highlightedMentionIndex;
+
+    private bool CanSubmit => CanComment && !IsBusy && !string.IsNullOrWhiteSpace(_text);
+
+    private string PlaceholderText => string.IsNullOrWhiteSpace(Placeholder)
+        ? Loc["TmDocumentEditor_CommentPlaceholder"]
+        : Placeholder!;
+
+    private string SubmitLabelText => string.IsNullOrWhiteSpace(SubmitLabel)
+        ? Loc["TmDocumentEditor_AddComment"]
+        : SubmitLabel!;
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        Placeholder ??= PlaceholderText;
+        SubmitLabel ??= SubmitLabelText;
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!CanSubmit)
+        {
+            return;
+        }
+
+        var text = _text.Trim();
+        _text = string.Empty;
+        await OnSubmit.InvokeAsync(text);
+    }
+
+    private async Task HandleInputAsync(ChangeEventArgs args)
+    {
+        _text = args.Value?.ToString() ?? string.Empty;
+        await UpdateMentionSearchAsync();
+    }
+
+    private async Task UpdateMentionSearchAsync()
+    {
+        if (MentionProvider is null)
+        {
+            _showMentionDropdown = false;
+            return;
+        }
+
+        var atIndex = _text.LastIndexOf('@');
+        if (atIndex < 0)
+        {
+            _showMentionDropdown = false;
+            return;
+        }
+
+        var query = _text[(atIndex + 1)..];
+        if (query.Any(char.IsWhiteSpace))
+        {
+            _showMentionDropdown = false;
+            return;
+        }
+
+        _mentionQuery = query;
+        var users = await MentionProvider.SearchUsersAsync(query);
+        _mentionUsers = users.Select(user => new MentionUser
+        {
+            Id = user.Id,
+            UserName = user.UserName,
+            DisplayName = user.DisplayName,
+            AvatarUrl = user.AvatarUrl
+        }).ToList();
+        _highlightedMentionIndex = 0;
+        _showMentionDropdown = _mentionUsers.Count > 0;
+    }
+
+    private Task SelectMentionAsync(MentionUser user)
+    {
+        var atIndex = _text.LastIndexOf('@');
+        if (atIndex >= 0)
+        {
+            _text = _text[..atIndex] + "@" + user.UserName + " ";
+        }
+
+        _showMentionDropdown = false;
+        _mentionUsers.Clear();
+        return Task.CompletedTask;
+    }
+
+    private async Task CancelAsync()
+    {
+        _text = string.Empty;
+        await OnCancel.InvokeAsync();
+    }
+}

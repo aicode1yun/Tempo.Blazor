@@ -1,5 +1,12 @@
 @page "/signing-components"
+@using System.Net.Http.Json
+@using Tempo.Blazor.DocumentEditor.Services
+@using DocumentRenditionAnchor = Tempo.Blazor.DocumentEditor.Models.DocumentRenditionAnchor
+@using DocumentRenditionAnchorType = Tempo.Blazor.DocumentEditor.Models.DocumentRenditionAnchorType
+@using DocumentRenditionPage = Tempo.Blazor.DocumentEditor.Models.DocumentRenditionPage
 @inject ITmLocalizer Loc
+@inject IHttpClientFactory HttpClientFactory
+@inject NavigationManager Navigation
 
 <PageTitle>Signing Components - Tempo.Blazor</PageTitle>
 
@@ -670,7 +677,7 @@
         Label = "Service order approval"
     };
 
-    private readonly IReadOnlyList<SigningDocumentPage> _designerPages =
+    private IReadOnlyList<SigningDocumentPage> _designerPages =
     [
         new SigningDocumentPage
         {
@@ -1761,7 +1768,7 @@
         _advancedSignatureStatus = $"Signature confirmed. Reason: {args.Reason ?? "none"}, remember: {args.RememberSignature}";
     }
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
         _templateRoles =
         [
@@ -1808,7 +1815,75 @@
             }
         ];
 
+        await LoadDesignerRenditionBridgeAsync();
+
         _auditLocalizationSnapshot = CreateLocalizationSnapshot(_runnerFields, _runnerCulture, _designerCulture);
+    }
+
+    private async Task LoadDesignerRenditionBridgeAsync()
+    {
+        var renditionId = GetQueryValue("renditionId");
+        if (string.IsNullOrWhiteSpace(renditionId))
+        {
+            return;
+        }
+
+        try
+        {
+            var http = HttpClientFactory.CreateClient("DemoApi");
+            var pages = await http.GetFromJsonAsync<IReadOnlyList<DocumentRenditionPage>>($"api/document-editor/renditions/{Uri.EscapeDataString(renditionId)}/pages");
+            var anchors = await http.GetFromJsonAsync<IReadOnlyList<DocumentRenditionAnchor>>($"api/document-editor/renditions/{Uri.EscapeDataString(renditionId)}/anchors");
+            if (pages is { Count: > 0 })
+            {
+                _designerPages = pages
+                    .OrderBy(page => page.PageNumber)
+                    .Select(page => new SigningDocumentPage
+                    {
+                        AttachmentUuid = renditionId,
+                        PageIndex = Math.Max(0, page.PageNumber - 1),
+                        ImageUrl = string.IsNullOrWhiteSpace(page.PreviewImageUrl) ? DemoPageImage : page.PreviewImageUrl,
+                        Width = page.Width,
+                        Height = page.Height,
+                        Label = $"Rendition {renditionId} page {page.PageNumber}"
+                    })
+                    .ToList();
+            }
+
+            if (anchors is { Count: > 0 })
+            {
+                var builder = new DocumentAnchorMapBuilder();
+                _designerFields = anchors
+                    .Where(anchor => anchor.Type is DocumentRenditionAnchorType.Token or DocumentRenditionAnchorType.Placeholder or DocumentRenditionAnchorType.SigningField)
+                    .Select(anchor => builder.ToSigningField(anchor, renditionId))
+                    .ToList();
+            }
+
+            _designerStatus = $"Loaded rendition {renditionId}: {_designerFields.Count} designer field{(_designerFields.Count == 1 ? string.Empty : "s")}";
+        }
+        catch
+        {
+            _designerStatus = $"Failed to load rendition {renditionId}";
+        }
+    }
+
+    private string? GetQueryValue(string name)
+    {
+        var query = new Uri(Navigation.Uri).Query;
+        if (query.Length <= 1)
+        {
+            return null;
+        }
+
+        foreach (var part in query[1..].Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var pieces = part.Split('=', 2);
+            if (pieces.Length == 2 && string.Equals(Uri.UnescapeDataString(pieces[0]), name, StringComparison.OrdinalIgnoreCase))
+            {
+                return Uri.UnescapeDataString(pieces[1].Replace("+", " ", StringComparison.Ordinal));
+            }
+        }
+
+        return null;
     }
 
     private void HandleConditionRulesChanged(IReadOnlyList<SigningFieldCondition> conditions)

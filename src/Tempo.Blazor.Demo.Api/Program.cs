@@ -39,6 +39,7 @@ builder.Services.AddSingleton<MockWireframeStore>();
 builder.Services.AddSingleton<MockNotionDataStore>();
 builder.Services.AddSingleton<MockNotionBlockStore>();
 builder.Services.AddSingleton<MockNotionDatabaseStore>();
+builder.Services.AddSingleton<DemoDocumentEditorStore>();
 builder.Services.AddSingleton<IDiagramExportService, DemoDiagramExportService>();
 builder.Services.AddSingleton<WireframeExportService>();
 builder.Services.AddScoped<DemoDiagramHistoryStore>();
@@ -64,6 +65,7 @@ app.MapDiagramExportEndpoints();
 app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();
 app.MapDatabaseEndpoints();
+app.MapDocumentEditorEndpoints();
 app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
 
 using (var scope = app.Services.CreateScope())

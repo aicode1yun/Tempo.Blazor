@@ -1,0 +1,104 @@
+.tm-document-editor__comment-rail {
+    display: flex;
+    flex-direction: column;
+    gap: var(--tm-space-2);
+    max-height: calc(100vh - 12rem);
+    overflow: auto;
+    scrollbar-width: thin;
+}
+
+.tm-document-editor__comment-rail > header {
+    position: sticky;
+    top: 0;
+    z-index: 1;
+    background: var(--tm-color-surface-secondary);
+}
+
+.tm-document-comment-thread {
+    scroll-margin-block: var(--tm-space-4);
+}
+
+.tm-document-comment-thread--selected {
+    background: var(--tm-color-primary-subtle);
+    border-color: var(--tm-color-primary);
+    box-shadow: 0 0 0 2px var(--tm-color-primary-subtle);
+}
+
+.tm-document-comment-thread--resolved {
+    opacity: 0.82;
+}
+
+.tm-document-comment-thread--resolved .tm-document-comment-thread__status {
+    color: var(--tm-color-success-text);
+    background: var(--tm-color-success-subtle);
+}
+
+.tm-document-comment-thread--external {
+    border-left: 3px solid var(--tm-color-warning);
+}
+
+.tm-document-inline--comment-anchor {
+    border-radius: var(--tm-radius-xs);
+    box-decoration-break: clone;
+}
+
+.tm-document-inline--comment-anchor:focus-visible {
+    outline: 2px solid var(--tm-color-warning);
+    outline-offset: 2px;
+}
+
+.tm-document-comment-composer__input:focus-visible,
+.tm-document-comment-thread button:focus-visible {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 2px;
+}
+
+.tm-document-comment-entry {
+    min-width: 0;
+}
+
+.tm-document-comment-entry__body {
+    overflow-wrap: anywhere;
+}
+
+@media (max-width: 64rem) {
+    .tm-document-editor__comment-rail {
+        max-height: 22rem;
+        overflow: auto;
+    }
+}
+
+@media (max-width: 40rem) {
+    .tm-document-editor__comment-rail {
+        max-height: 70vh;
+    }
+
+    .tm-document-comment-thread,
+    .tm-document-comment-composer {
+        border-radius: var(--tm-radius-sm);
+    }
+
+    .tm-document-comment-entry__meta {
+        display: grid;
+        gap: var(--tm-space-1);
+    }
+}
+
+[data-theme="dark"] .tm-document-editor__comment-rail > header,
+.tm-dark .tm-document-editor__comment-rail > header {
+    background: var(--tm-color-surface-elevated);
+}
+
+[data-theme="dark"] .tm-document-comment-thread,
+[data-theme="dark"] .tm-document-comment-composer,
+.tm-dark .tm-document-comment-thread,
+.tm-dark .tm-document-comment-composer {
+    background: var(--tm-color-surface-elevated);
+    border-color: var(--tm-color-border-subtle);
+}
+
+[data-theme="dark"] .tm-document-inline--comment-anchor,
+.tm-dark .tm-document-inline--comment-anchor {
+    color: var(--tm-color-text);
+    background: var(--tm-color-warning-subtle);
+}

@@ -1,0 +1,76 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+
+<section class="tm-document-diff" data-testid="document-diff-viewer">
+    <header class="tm-document-diff__header">
+        <h4>@Loc["TmDocumentEditor_DiffTitle"]</h4>
+        <span data-testid="document-diff-summary">@DiffSummary</span>
+    </header>
+
+    @if (SideBySide)
+    {
+        <div class="tm-document-diff__side-by-side" data-testid="document-diff-side-by-side">
+            <article class="tm-document-diff__pane">
+                <h5>@(string.IsNullOrWhiteSpace(OldTitle) ? Loc["TmDocumentEditor_DiffOld"] : OldTitle)</h5>
+                <pre>@OldText</pre>
+            </article>
+            <article class="tm-document-diff__pane">
+                <h5>@(string.IsNullOrWhiteSpace(NewTitle) ? Loc["TmDocumentEditor_DiffNew"] : NewTitle)</h5>
+                <pre>@NewText</pre>
+            </article>
+        </div>
+    }
+
+    <div class="tm-document-diff__inline" data-testid="document-diff-inline">
+        @foreach (var segment in Diff.Segments)
+        {
+            <span class="@GetSegmentClass(segment.Kind)" data-diff-kind="@segment.Kind.ToString().ToLowerInvariant()">@segment.Text</span>@(" ")
+        }
+    </div>
+</section>
+
+@code {
+    /// <summary>Old document snapshot.</summary>
+    [Parameter] public DocumentEditorDocument? OldDocument { get; set; }
+
+    /// <summary>New document snapshot.</summary>
+    [Parameter] public DocumentEditorDocument? NewDocument { get; set; }
+
+    /// <summary>Optional title for the old side.</summary>
+    [Parameter] public string? OldTitle { get; set; }
+
+    /// <summary>Optional title for the new side.</summary>
+    [Parameter] public string? NewTitle { get; set; }
+
+    /// <summary>Whether side-by-side text panes should be shown.</summary>
+    [Parameter] public bool SideBySide { get; set; } = true;
+
+    private string OldText => DocumentTextDiffHelper.ExtractPlainText(OldDocument);
+
+    private string NewText => DocumentTextDiffHelper.ExtractPlainText(NewDocument);
+
+    private DocumentTextDiffResult Diff => DocumentTextDiffHelper.Diff(OldText, NewText);
+
+    private string DiffSummary
+    {
+        get
+        {
+            var added = Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Added);
+            var removed = Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Removed);
+            return Diff.HasChanges
+                ? Loc["TmDocumentEditor_DiffSummary", added, removed]
+                : Loc["TmDocumentEditor_DiffNoChanges"];
+        }
+    }
+
+    private static string GetSegmentClass(DocumentTextDiffSegmentKind kind)
+    {
+        return kind switch
+        {
+            DocumentTextDiffSegmentKind.Added => "tm-document-diff__segment tm-document-diff__segment--added",
+            DocumentTextDiffSegmentKind.Removed => "tm-document-diff__segment tm-document-diff__segment--removed",
+            _ => "tm-document-diff__segment"
+        };
+    }
+}

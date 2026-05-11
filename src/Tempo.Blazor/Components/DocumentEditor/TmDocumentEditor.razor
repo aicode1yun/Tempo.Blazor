@@ -1,0 +1,203 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<div class="@RootClass"
+     tabindex="0"
+     data-can-view-audit="@CanViewAudit.ToString()"
+     @onkeydown="HandleEditorKeyDownAsync"
+     @attributes="AdditionalAttributes">
+    @if (Provider is null)
+    {
+        <div class="tm-document-editor__state tm-document-editor__error">
+            <TmAlert Severity="AlertSeverity.Error"
+                     Title="@Loc["TmDocumentEditor_ProviderMissingTitle"]">
+                @Loc["TmDocumentEditor_ProviderMissingMessage"]
+            </TmAlert>
+        </div>
+    }
+    else if (_isLoading)
+    {
+        <div class="tm-document-editor__state tm-document-editor__loading" aria-busy="true">
+            <TmSkeleton Variant="SkeletonVariant.Rect" Height="40px" Width="100%" />
+            <TmSkeleton Variant="SkeletonVariant.Rect" Height="520px" Width="min(100%, 760px)" />
+            <span class="tm-document-editor__sr-only">@Loc["TmDocumentEditor_Loading"]</span>
+        </div>
+    }
+    else if (!string.IsNullOrWhiteSpace(_errorMessage))
+    {
+        <div class="tm-document-editor__state tm-document-editor__error">
+            <TmAlert Severity="AlertSeverity.Error"
+                     Title="@Loc["TmDocumentEditor_LoadErrorTitle"]"
+                     Actions="@RetryAction">
+                @_errorMessage
+            </TmAlert>
+        </div>
+    }
+    else
+    {
+        @if (ShowToolbar)
+        {
+            <TmDocumentEditorToolbar ReadOnly="@EffectiveReadOnly"
+                                     IsSaving="@_isSaving"
+                                     IsDirty="@_isDirty"
+                                     SaveMessage="@_saveMessage"
+                                     LastSavedAt="@_lastSavedAt"
+                                     CanUndo="@_commandStack.CanUndo"
+                                     CanRedo="@_commandStack.CanRedo"
+                                     NextUndoDescription="@_commandStack.NextUndoDescription"
+                                     NextRedoDescription="@_commandStack.NextRedoDescription"
+                                     TrackChangesEnabled="@_trackChangesEnabled"
+                                     TemplatePreviewEnabled="@_templatePreviewEnabled"
+                                     CanPreviewTemplate="@CanPreviewTemplate"
+                                     CanExportPdf="@CanExportPdf"
+                                     IsExportingPdf="@_isExportingPdf"
+                                     TemplatePreviewMessage="@_templatePreviewMessage"
+                                     OnSave="SaveAsync"
+                                     OnUndo="UndoAsync"
+                                     OnRedo="RedoAsync"
+                                     OnBold="() => ToggleInlineMarkAsync(InlineMarkType.Bold)"
+                                     OnItalic="() => ToggleInlineMarkAsync(InlineMarkType.Italic)"
+                                     OnUnderline="() => ToggleInlineMarkAsync(InlineMarkType.Underline)"
+                                     OnLink="ApplyLinkAsync"
+                                     OnClearFormatting="ClearInlineFormattingAsync"
+                                     OnToggleInsert="ToggleInsertPanelAsync"
+                                     OnInsertImage="OpenImageDialogAsync"
+                                     OnToggleTrackChanges="ToggleTrackChanges"
+                                     CanComment="@CanUseComments"
+                                     OnAddComment="BeginCommentFromToolbarAsync"
+                                     OnExportPdf="ExportPdfAsync"
+                                     OnToggleTemplatePreview="ToggleTemplatePreviewAsync" />
+        }
+
+        @if (ShowOfflineBanner)
+        {
+            <div class="tm-document-editor__offline-banner"
+                 data-testid="document-offline-banner"
+                 data-status="@_offlineStatus">
+                <div class="tm-document-editor__offline-main">
+                    <TmIcon Name="@(_offlineStatus == DocumentSyncStatus.Conflict ? "alert-triangle" : "wifi-off")" />
+                    <span>@(_offlineMessage ?? Loc["TmDocumentEditor_OfflineDraftAvailable"])</span>
+                </div>
+                <div class="tm-document-editor__offline-actions">
+                    @if (_offlineConflict is not null)
+                    {
+                        <button type="button" @onclick="AcceptLocalConflictAsync" data-testid="document-offline-accept-local">
+                            @Loc["TmDocumentEditor_OfflineAcceptLocal"]
+                        </button>
+                        <button type="button" @onclick="AcceptServerConflictAsync" data-testid="document-offline-accept-server">
+                            @Loc["TmDocumentEditor_OfflineAcceptServer"]
+                        </button>
+                        <button type="button" @onclick="CreateOfflineCopyAsync" data-testid="document-offline-create-copy">
+                            @Loc["TmDocumentEditor_OfflineCreateCopy"]
+                        </button>
+                    }
+                    else if (_offlineDraft is not null)
+                    {
+                        <button type="button"
+                                @onclick="SyncOfflineDraftAsync"
+                                disabled="@_isSyncingOfflineDraft"
+                                data-testid="document-offline-sync">
+                            @Loc["TmDocumentEditor_OfflineSync"]
+                        </button>
+                        <button type="button" @onclick="DiscardOfflineDraftAsync" data-testid="document-offline-discard">
+                            @Loc["TmDocumentEditor_OfflineDiscard"]
+                        </button>
+                    }
+                </div>
+            </div>
+        }
+
+        <div class="tm-document-editor__workspace">
+            <main class="tm-document-editor__surface" aria-label="@Loc["TmDocumentEditor_DocumentSurfaceLabel"]">
+                <article class="tm-document-editor__page-surface" aria-label="@Loc["TmDocumentEditor_PageLabel"]">
+                    <header class="tm-document-editor__page-header">
+                        <h2 class="tm-document-editor__document-title">@DocumentTitle</h2>
+                        <span class="tm-document-editor__status">@DocumentStatus</span>
+                    </header>
+
+                    @if (IsDocumentEmpty)
+                    {
+                        <div class="tm-document-editor__empty">
+                            <TmIcon Name="file-text" Size="IconSize.Lg" />
+                            <span>@Loc["TmDocumentEditor_EmptyDocument"]</span>
+                        </div>
+                    }
+                    else
+                    {
+                        <TmDocumentSurface @ref="_surface"
+                                           Document="@DisplayedDocument"
+                                           ReadOnly="@EffectiveReadOnly"
+                                           ImageUrlResolver="@ImageUrlResolver"
+                                           ImageProvider="@ImageProvider"
+                                           TokenProvider="@TokenProvider"
+                                           ImageValidation="@ImageValidation"
+                                           AllowOfflineClipboardImages="@OfflineEnabled"
+                                           TrackChangesEnabled="@_trackChangesEnabled"
+                                           CanComment="@CanUseComments"
+                                           CommandStack="@_commandStack"
+                                           Selection="@_selection"
+                                           SelectionChanged="HandleSelectionChangedAsync"
+                                           CommentRequested="BeginCommentAsync"
+                                           CommentSelected="SelectComment"
+                                           DocumentChanged="HandleDocumentChangedAsync" />
+                    }
+                </article>
+            </main>
+
+            @if (ShowComments)
+            {
+                <TmDocumentCommentRail Comments="@_comments"
+                                       DraftAnchor="@_draftCommentAnchor"
+                                       ComposerOpen="@_commentComposerOpen"
+                                       SelectedCommentId="@_selectedCommentId"
+                                       IsLoading="@_isLoadingComments"
+                                       IsBusy="@_isSubmittingComment"
+                                       CanComment="@CanUseComments"
+                                       CanResolve="@CanResolveComments"
+                                       CanDeleteOwnComments="@CanDeleteOwnComments"
+                                       CurrentAuthorId="@Author?.Id"
+                                       CanStartComment="@CanStartComment"
+                                       MentionProvider="@MentionProvider"
+                                       StatusMessage="@_commentMessage"
+                                       OnBeginComment="BeginCommentFromToolbarAsync"
+                                       OnCreateComment="CreateCommentAsync"
+                                       OnCancelComment="CancelCommentComposer"
+                                       OnReplyComment="ReplyToCommentAsync"
+                                       OnResolveComment="ResolveCommentAsync"
+                                       OnReopenComment="ReopenCommentAsync"
+                                       OnDeleteComment="DeleteCommentAsync"
+                                       OnSelectComment="SelectComment" />
+            }
+
+            @if (ShowVersionHistory && _versionPanelOpen)
+            {
+                <TmDocumentVersionPanel Versions="@_versions"
+                                        IsLoading="@_isLoadingVersions"
+                                        ReadOnly="@(!CanCreateVersion)"
+                                        StatusMessage="@_versionMessage"
+                                        PreviewVersion="@_previewVersion"
+                                        OnCreateVersion="OpenVersionDialog"
+                                        OnSelectVersion="PreviewVersionAsync"
+                                        OnReturnToCurrent="ReturnToCurrentVersionAsync"
+                                        OnRestoreVersion="RestoreVersionAsync"
+                                        OnClose="CloseVersionPanel" />
+            }
+        </div>
+
+        @if (_versionDialogOpen)
+        {
+            <TmDocumentVersionDialog IsBusy="@_isCreatingVersion"
+                                     RequireMajorDescription="@RequireMajorVersionDescription"
+                                     OnCreate="CreateVersionAsync"
+                                     OnCancel="CloseVersionDialog" />
+        }
+    }
+</div>
+
+@code {
+    private RenderFragment RetryAction => @<button type="button"
+                                                   class="tm-document-editor__retry"
+                                                   @onclick="RetryAsync">
+        @Loc["TmDocumentEditor_Retry"]
+    </button>;
+}

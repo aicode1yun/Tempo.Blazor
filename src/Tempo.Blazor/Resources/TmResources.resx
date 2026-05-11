@@ -2734,4 +2734,204 @@
   <data name="TmCommentReactions_You"                  xml:space="preserve"><value>You</value></data>
   <data name="TmCommentReactions_More"                 xml:space="preserve"><value>+{0} more</value></data>
 
+  <!-- TmDocumentEditor -->
+  <data name="TmDocumentEditor_ProviderMissingTitle"   xml:space="preserve"><value>Document provider is not configured</value></data>
+  <data name="TmDocumentEditor_ProviderMissingMessage" xml:space="preserve"><value>Set Provider before rendering the document editor.</value></data>
+  <data name="TmDocumentEditor_Loading"                xml:space="preserve"><value>Loading document...</value></data>
+  <data name="TmDocumentEditor_LoadErrorTitle"         xml:space="preserve"><value>Failed to load document</value></data>
+  <data name="TmDocumentEditor_LoadErrorMessage"       xml:space="preserve"><value>Failed to load document.</value></data>
+  <data name="TmDocumentEditor_DocumentNotFound"       xml:space="preserve"><value>Document was not found.</value></data>
+  <data name="TmDocumentEditor_ReadDenied"             xml:space="preserve"><value>You do not have permission to read this document.</value></data>
+  <data name="TmDocumentEditor_Retry"                  xml:space="preserve"><value>Retry</value></data>
+  <data name="TmDocumentEditor_ToolbarLabel"           xml:space="preserve"><value>Document editor toolbar</value></data>
+  <data name="TmDocumentEditor_ToolbarTabsLabel"       xml:space="preserve"><value>Document editor tabs</value></data>
+  <data name="TmDocumentEditor_TabHome"                xml:space="preserve"><value>Home</value></data>
+  <data name="TmDocumentEditor_TabInsert"              xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDocumentEditor_TabLayout"              xml:space="preserve"><value>Layout</value></data>
+  <data name="TmDocumentEditor_TabReferences"          xml:space="preserve"><value>References</value></data>
+  <data name="TmDocumentEditor_TabReview"              xml:space="preserve"><value>Review</value></data>
+  <data name="TmDocumentEditor_TabView"                xml:space="preserve"><value>View</value></data>
+  <data name="TmDocumentEditor_GroupClipboard"         xml:space="preserve"><value>Clipboard</value></data>
+  <data name="TmDocumentEditor_GroupFormatting"        xml:space="preserve"><value>Formatting</value></data>
+  <data name="TmDocumentEditor_GroupInsert"            xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDocumentEditor_GroupLayout"            xml:space="preserve"><value>Layout</value></data>
+  <data name="TmDocumentEditor_GroupReferences"        xml:space="preserve"><value>References</value></data>
+  <data name="TmDocumentEditor_GroupReview"            xml:space="preserve"><value>Review</value></data>
+  <data name="TmDocumentEditor_Save"                   xml:space="preserve"><value>Save</value></data>
+  <data name="TmDocumentEditor_Undo"                   xml:space="preserve"><value>Undo</value></data>
+  <data name="TmDocumentEditor_Redo"                   xml:space="preserve"><value>Redo</value></data>
+  <data name="TmDocumentEditor_Bold"                   xml:space="preserve"><value>Bold</value></data>
+  <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Italic</value></data>
+  <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Underline</value></data>
+  <data name="TmDocumentEditor_Link"                   xml:space="preserve"><value>Link</value></data>
+  <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>Link URL</value></data>
+  <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Apply link</value></data>
+  <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Clear formatting</value></data>
+  <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Page layout</value></data>
+  <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Table</value></data>
+  <data name="TmDocumentEditor_InsertImage"            xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_AddComment"             xml:space="preserve"><value>Comment</value></data>
+  <data name="TmDocumentEditor_DocumentSurfaceLabel"   xml:space="preserve"><value>Document surface</value></data>
+  <data name="TmDocumentEditor_PageLabel"              xml:space="preserve"><value>Document page</value></data>
+  <data name="TmDocumentEditor_UntitledDocument"       xml:space="preserve"><value>Untitled document</value></data>
+  <data name="TmDocumentEditor_StatusLoaded"           xml:space="preserve"><value>Loaded</value></data>
+  <data name="TmDocumentEditor_EmptyDocument"          xml:space="preserve"><value>This document is empty</value></data>
+  <data name="TmDocumentEditor_BlockPreviewLabel"      xml:space="preserve"><value>Document block preview</value></data>
+  <data name="TmDocumentEditor_BlockPreview"           xml:space="preserve"><value>{0} document blocks loaded</value></data>
+  <data name="TmDocumentEditor_CommentsLabel"          xml:space="preserve"><value>Document comments</value></data>
+  <data name="TmDocumentEditor_Comments"               xml:space="preserve"><value>Comments</value></data>
+  <data name="TmDocumentEditor_CommentsPlaceholder"    xml:space="preserve"><value>No comments yet</value></data>
+  <data name="TmDocumentEditor_CommentCount"           xml:space="preserve"><value>{0} comments</value></data>
+  <data name="TmDocumentEditor_NewComment"             xml:space="preserve"><value>New comment</value></data>
+  <data name="TmDocumentEditor_LoadingComments"        xml:space="preserve"><value>Loading comments...</value></data>
+  <data name="TmDocumentEditor_NoComments"             xml:space="preserve"><value>No comments yet</value></data>
+  <data name="TmDocumentEditor_CommentPlaceholder"     xml:space="preserve"><value>Write a comment...</value></data>
+  <data name="TmDocumentEditor_ReplyPlaceholder"       xml:space="preserve"><value>Write a reply...</value></data>
+  <data name="TmDocumentEditor_Reply"                  xml:space="preserve"><value>Reply</value></data>
+  <data name="TmDocumentEditor_CommentOpen"            xml:space="preserve"><value>Open</value></data>
+  <data name="TmDocumentEditor_CommentResolved"        xml:space="preserve"><value>Resolved</value></data>
+  <data name="TmDocumentEditor_ResolveComment"         xml:space="preserve"><value>Resolve</value></data>
+  <data name="TmDocumentEditor_ReopenComment"          xml:space="preserve"><value>Reopen</value></data>
+  <data name="TmDocumentEditor_ExternalAuthor"         xml:space="preserve"><value>External</value></data>
+  <data name="TmDocumentEditor_TextCommentAnchor"      xml:space="preserve"><value>Selected text</value></data>
+  <data name="TmDocumentEditor_BlockCommentAnchor"     xml:space="preserve"><value>Block {0}</value></data>
+  <data name="TmDocumentEditor_CommentAnchor"          xml:space="preserve"><value>Comment anchor</value></data>
+  <data name="TmDocumentEditor_UnknownAnchor"          xml:space="preserve"><value>unknown</value></data>
+  <data name="TmDocumentEditor_TextCommentReady"       xml:space="preserve"><value>Commenting selected text</value></data>
+  <data name="TmDocumentEditor_BlockCommentReady"      xml:space="preserve"><value>Commenting active block</value></data>
+  <data name="TmDocumentEditor_CommentCreated"         xml:space="preserve"><value>Comment added</value></data>
+  <data name="TmDocumentEditor_CommentCreateFailed"    xml:space="preserve"><value>Comment could not be added.</value></data>
+  <data name="TmDocumentEditor_CommentLoadFailed"      xml:space="preserve"><value>Comments could not be loaded.</value></data>
+  <data name="TmDocumentEditor_CommentReplyAdded"      xml:space="preserve"><value>Reply added</value></data>
+  <data name="TmDocumentEditor_CommentReplyFailed"     xml:space="preserve"><value>Reply could not be added.</value></data>
+  <data name="TmDocumentEditor_CommentResolvedMessage" xml:space="preserve"><value>Comment resolved</value></data>
+  <data name="TmDocumentEditor_CommentResolveFailed"   xml:space="preserve"><value>Comment could not be resolved.</value></data>
+  <data name="TmDocumentEditor_CommentReopenedMessage" xml:space="preserve"><value>Comment reopened</value></data>
+  <data name="TmDocumentEditor_CommentReopenFailed"    xml:space="preserve"><value>Comment could not be reopened.</value></data>
+  <data name="TmDocumentEditor_DeleteComment"          xml:space="preserve"><value>Delete</value></data>
+  <data name="TmDocumentEditor_CommentDeleted"         xml:space="preserve"><value>Comment deleted</value></data>
+  <data name="TmDocumentEditor_CommentDeleteFailed"    xml:space="preserve"><value>Comment could not be deleted.</value></data>
+  <data name="TmDocumentEditor_TemplatePreview"        xml:space="preserve"><value>Preview data</value></data>
+  <data name="TmDocumentEditor_TemplatePreviewOn"      xml:space="preserve"><value>Template preview</value></data>
+  <data name="TmDocumentEditor_TemplatePreviewFailed"  xml:space="preserve"><value>Template preview could not be created.</value></data>
+  <data name="TmDocumentEditor_DeleteToken"            xml:space="preserve"><value>Delete token</value></data>
+  <data name="TmDocumentEditor_VersionsLabel"          xml:space="preserve"><value>Document versions</value></data>
+  <data name="TmDocumentEditor_Versions"               xml:space="preserve"><value>Versions</value></data>
+  <data name="TmDocumentEditor_VersionsPlaceholder"    xml:space="preserve"><value>No versions loaded</value></data>
+  <data name="TmDocumentEditor_CreateVersion"          xml:space="preserve"><value>Create version</value></data>
+  <data name="TmDocumentEditor_CloseVersionDialog"     xml:space="preserve"><value>Close version dialog</value></data>
+  <data name="TmDocumentEditor_CloseVersionPanel"      xml:space="preserve"><value>Close version panel</value></data>
+  <data name="TmDocumentEditor_VersionKind"            xml:space="preserve"><value>Version kind</value></data>
+  <data name="TmDocumentEditor_VersionKindMinor"       xml:space="preserve"><value>Minor version</value></data>
+  <data name="TmDocumentEditor_VersionKindMajor"       xml:space="preserve"><value>Major version</value></data>
+  <data name="TmDocumentEditor_VersionKindAutosave"    xml:space="preserve"><value>Autosave</value></data>
+  <data name="TmDocumentEditor_VersionKindRestore"     xml:space="preserve"><value>Restore point</value></data>
+  <data name="TmDocumentEditor_VersionLabel"           xml:space="preserve"><value>Label</value></data>
+  <data name="TmDocumentEditor_VersionDescription"     xml:space="preserve"><value>Description</value></data>
+  <data name="TmDocumentEditor_MajorVersionDescriptionRequired" xml:space="preserve"><value>Major versions require a description.</value></data>
+  <data name="TmDocumentEditor_VersionCreated"         xml:space="preserve"><value>Version created</value></data>
+  <data name="TmDocumentEditor_VersionCreateFailed"    xml:space="preserve"><value>Version could not be created.</value></data>
+  <data name="TmDocumentEditor_VersionCreateSaveRequired" xml:space="preserve"><value>Save the document before creating a version.</value></data>
+  <data name="TmDocumentEditor_LoadingVersions"        xml:space="preserve"><value>Loading versions...</value></data>
+  <data name="TmDocumentEditor_NoVersions"             xml:space="preserve"><value>No versions yet</value></data>
+  <data name="TmDocumentEditor_DiffTitle"              xml:space="preserve"><value>Version comparison</value></data>
+  <data name="TmDocumentEditor_DiffBase"               xml:space="preserve"><value>Base</value></data>
+  <data name="TmDocumentEditor_DiffCompare"            xml:space="preserve"><value>Compare</value></data>
+  <data name="TmDocumentEditor_DiffOld"                xml:space="preserve"><value>Old version</value></data>
+  <data name="TmDocumentEditor_DiffNew"                xml:space="preserve"><value>New version</value></data>
+  <data name="TmDocumentEditor_DiffSummary"            xml:space="preserve"><value>{0} added, {1} removed</value></data>
+  <data name="TmDocumentEditor_DiffNoChanges"          xml:space="preserve"><value>No changes</value></data>
+  <data name="TmDocumentEditor_VersionLoadFailed"      xml:space="preserve"><value>Versions could not be loaded.</value></data>
+  <data name="TmDocumentEditor_PreviewingVersion"      xml:space="preserve"><value>Previewing {0}</value></data>
+  <data name="TmDocumentEditor_ReturnToCurrentVersion" xml:space="preserve"><value>Return to current</value></data>
+  <data name="TmDocumentEditor_RestoreVersion"         xml:space="preserve"><value>Restore</value></data>
+  <data name="TmDocumentEditor_RestoreVersionConfirm"  xml:space="preserve"><value>Restore this version as the current draft?</value></data>
+  <data name="TmDocumentEditor_VersionRestored"        xml:space="preserve"><value>Version restored as an unsaved draft</value></data>
+  <data name="TmDocumentEditor_VersionRestoreFailed"   xml:space="preserve"><value>Version could not be restored.</value></data>
+  <data name="TmDocumentEditor_VersionPreviewFailed"   xml:space="preserve"><value>Version preview could not be opened.</value></data>
+  <data name="TmDocumentEditor_VersionMeta"            xml:space="preserve"><value>{0} • {1} • {2}</value></data>
+  <data name="TmDocumentEditor_UnknownAuthor"          xml:space="preserve"><value>Unknown author</value></data>
+  <data name="TmDocumentEditor_ImageLoading"           xml:space="preserve"><value>Loading image...</value></data>
+  <data name="TmDocumentEditor_ImageBroken"            xml:space="preserve"><value>Image could not be loaded</value></data>
+  <data name="TmDocumentEditor_SaveComplete"           xml:space="preserve"><value>Saved</value></data>
+  <data name="TmDocumentEditor_ExportPdfComplete"      xml:space="preserve"><value>PDF exported</value></data>
+  <data name="TmDocumentEditor_ExportPdfFailed"        xml:space="preserve"><value>PDF export failed</value></data>
+  <data name="TmDocumentEditor_AutoSaveComplete"       xml:space="preserve"><value>Autosaved</value></data>
+  <data name="TmDocumentEditor_LastSavedAt"            xml:space="preserve"><value>Last saved {0}</value></data>
+  <data name="TmDocumentEditor_SaveConflict"           xml:space="preserve"><value>The document changed on the server.</value></data>
+  <data name="TmDocumentEditor_SaveFailed"             xml:space="preserve"><value>Save failed.</value></data>
+  <data name="TmDocumentEditor_OfflineDraftAvailable"  xml:space="preserve"><value>An offline draft is available.</value></data>
+  <data name="TmDocumentEditor_OfflineDraftLoaded"     xml:space="preserve"><value>Newer offline draft loaded.</value></data>
+  <data name="TmDocumentEditor_OfflineDraftLoadFailed" xml:space="preserve"><value>Offline draft could not be loaded.</value></data>
+  <data name="TmDocumentEditor_OfflineDraftSaved"      xml:space="preserve"><value>Saved as an offline draft.</value></data>
+  <data name="TmDocumentEditor_OfflineSync"            xml:space="preserve"><value>Sync</value></data>
+  <data name="TmDocumentEditor_OfflineDiscard"         xml:space="preserve"><value>Discard draft</value></data>
+  <data name="TmDocumentEditor_OfflineSyncing"         xml:space="preserve"><value>Synchronizing offline draft...</value></data>
+  <data name="TmDocumentEditor_OfflineSyncComplete"    xml:space="preserve"><value>Offline draft synchronized.</value></data>
+  <data name="TmDocumentEditor_OfflineSyncFailed"      xml:space="preserve"><value>Offline draft could not be synchronized.</value></data>
+  <data name="TmDocumentEditor_OfflineConflict"        xml:space="preserve"><value>Offline draft conflicts with the server version.</value></data>
+  <data name="TmDocumentEditor_OfflineAcceptLocal"     xml:space="preserve"><value>Keep local</value></data>
+  <data name="TmDocumentEditor_OfflineAcceptServer"    xml:space="preserve"><value>Use server</value></data>
+  <data name="TmDocumentEditor_OfflineCreateCopy"      xml:space="preserve"><value>Create copy</value></data>
+  <data name="TmDocumentEditor_OfflineLocalAccepted"   xml:space="preserve"><value>Local draft saved over the server version.</value></data>
+  <data name="TmDocumentEditor_OfflineCopyCreated"     xml:space="preserve"><value>Offline draft was saved as a copy.</value></data>
+  <data name="TmDocumentEditor_OfflineCopyTitle"       xml:space="preserve"><value>Offline copy</value></data>
+  <data name="TmDocumentEditor_OfflineCopyTitleWithName" xml:space="preserve"><value>{0} (offline copy)</value></data>
+  <data name="TmDocumentEditor_UnsavedChanges"         xml:space="preserve"><value>Unsaved changes</value></data>
+  <data name="TmDocumentEditor_Insert"                 xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDocumentEditor_TrackChanges"           xml:space="preserve"><value>Track changes</value></data>
+  <data name="TmDocumentEditor_EditParagraph"          xml:space="preserve"><value>Edit paragraph</value></data>
+  <data name="TmDocumentEditor_HeadingLevel"           xml:space="preserve"><value>Heading level</value></data>
+  <data name="TmDocumentEditor_Heading1"               xml:space="preserve"><value>Heading 1</value></data>
+  <data name="TmDocumentEditor_Heading2"               xml:space="preserve"><value>Heading 2</value></data>
+  <data name="TmDocumentEditor_Heading3"               xml:space="preserve"><value>Heading 3</value></data>
+  <data name="TmDocumentEditor_Heading4"               xml:space="preserve"><value>Heading 4</value></data>
+  <data name="TmDocumentEditor_Heading5"               xml:space="preserve"><value>Heading 5</value></data>
+  <data name="TmDocumentEditor_Heading6"               xml:space="preserve"><value>Heading 6</value></data>
+  <data name="TmDocumentEditor_EditHeading"            xml:space="preserve"><value>Edit heading</value></data>
+  <data name="TmDocumentEditor_ListTools"              xml:space="preserve"><value>List tools</value></data>
+  <data name="TmDocumentEditor_DecreaseIndent"         xml:space="preserve"><value>Decrease indent</value></data>
+  <data name="TmDocumentEditor_IncreaseIndent"         xml:space="preserve"><value>Increase indent</value></data>
+  <data name="TmDocumentEditor_EditListItem"           xml:space="preserve"><value>Edit list item</value></data>
+  <data name="TmDocumentEditor_EditQuote"              xml:space="preserve"><value>Edit quote</value></data>
+  <data name="TmDocumentEditor_TableTools"             xml:space="preserve"><value>Table tools</value></data>
+  <data name="TmDocumentEditor_AddRow"                 xml:space="preserve"><value>Add row</value></data>
+  <data name="TmDocumentEditor_AddColumn"              xml:space="preserve"><value>Add column</value></data>
+  <data name="TmDocumentEditor_DeleteRow"              xml:space="preserve"><value>Delete row</value></data>
+  <data name="TmDocumentEditor_DeleteColumn"           xml:space="preserve"><value>Delete column</value></data>
+  <data name="TmDocumentEditor_MergeRight"             xml:space="preserve"><value>Merge right</value></data>
+  <data name="TmDocumentEditor_SplitCell"              xml:space="preserve"><value>Split cell</value></data>
+  <data name="TmDocumentEditor_ImageUrl"               xml:space="preserve"><value>Image URL</value></data>
+  <data name="TmDocumentEditor_ImageAltText"           xml:space="preserve"><value>Alt text</value></data>
+  <data name="TmDocumentEditor_ImageCaption"           xml:space="preserve"><value>Caption</value></data>
+  <data name="TmDocumentEditor_ImageWidth"             xml:space="preserve"><value>Width</value></data>
+  <data name="TmDocumentEditor_ImageTools"             xml:space="preserve"><value>Image tools</value></data>
+  <data name="TmDocumentEditor_AlignLeft"              xml:space="preserve"><value>Left</value></data>
+  <data name="TmDocumentEditor_AlignCenter"            xml:space="preserve"><value>Center</value></data>
+  <data name="TmDocumentEditor_AlignRight"             xml:space="preserve"><value>Right</value></data>
+  <data name="TmDocumentEditor_FloatingImage"          xml:space="preserve"><value>Floating</value></data>
+  <data name="TmDocumentEditor_DeleteImage"            xml:space="preserve"><value>Delete image</value></data>
+  <data name="TmDocumentEditor_Header"                 xml:space="preserve"><value>Header</value></data>
+  <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Footer</value></data>
+  <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Notes</value></data>
+  <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Footnote</value></data>
+  <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Endnote</value></data>
+  <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Footnote</value></data>
+  <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Endnote</value></data>
+  <data name="TmDocumentEditor_Revisions"              xml:space="preserve"><value>Revisions</value></data>
+  <data name="TmDocumentEditor_AcceptRevision"         xml:space="preserve"><value>Accept</value></data>
+  <data name="TmDocumentEditor_RejectRevision"         xml:space="preserve"><value>Reject</value></data>
+  <data name="TmDocumentEditor_InsertParagraph"        xml:space="preserve"><value>Paragraph</value></data>
+  <data name="TmDocumentEditor_InsertHeading"          xml:space="preserve"><value>Heading</value></data>
+  <data name="TmDocumentEditor_UploadImage"            xml:space="preserve"><value>Upload image</value></data>
+  <data name="TmDocumentEditor_DifferentFirstPage"     xml:space="preserve"><value>Different first page</value></data>
+  <data name="TmDocumentEditor_DifferentOddEven"       xml:space="preserve"><value>Different odd and even pages</value></data>
+  <data name="TmDocumentEditor_ImageProviderMissing"   xml:space="preserve"><value>Image provider is not configured.</value></data>
+  <data name="TmDocumentEditor_ImagePasteRejected"     xml:space="preserve"><value>Pasted image is not allowed.</value></data>
+  <data name="TmDocumentEditor_ImageUploadFailed"      xml:space="preserve"><value>Image upload failed.</value></data>
+  <data name="TmDocumentEditor_ImageUploading"         xml:space="preserve"><value>Uploading image...</value></data>
+  <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Page break</value></data>
+
 </root>
