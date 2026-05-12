@@ -1,0 +1,168 @@
+.tm-document-editor__ribbon {
+    position: sticky;
+    top: 0;
+    z-index: 3;
+    box-shadow: var(--tm-shadow-sm);
+}
+
+.tm-document-editor__ribbon-tabs {
+    overflow-x: auto;
+    overflow-y: hidden;
+    scrollbar-width: thin;
+}
+
+.tm-document-editor__ribbon-tab {
+    flex: 0 0 auto;
+    min-height: 2rem;
+    white-space: nowrap;
+}
+
+.tm-document-editor__ribbon-tab:focus-visible,
+.tm-document-editor__ribbon-button:focus-visible,
+.tm-document-editor__link-dialog button:focus-visible,
+.tm-document-editor__link-dialog input:focus-visible {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 2px;
+}
+
+.tm-document-editor__ribbon-groups {
+    align-items: stretch;
+}
+
+.tm-document-editor__ribbon-group {
+    align-content: flex-start;
+    align-items: center;
+    min-width: max-content;
+}
+
+.tm-document-editor__ribbon-button {
+    flex: 0 0 auto;
+    inline-size: 5.25rem;
+    min-height: 3rem;
+    flex-direction: column;
+    line-height: var(--tm-line-height-tight);
+    text-align: center;
+}
+
+.tm-document-editor__ribbon-button .tm-icon {
+    flex: 0 0 auto;
+}
+
+.tm-document-editor__ribbon-button span {
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-document-editor__ribbon-button--active {
+    border-color: var(--tm-color-primary);
+    box-shadow: inset 0 -2px 0 var(--tm-color-primary);
+}
+
+.tm-document-editor__dirty,
+.tm-document-editor__save-message,
+.tm-document-editor__last-saved {
+    display: inline-flex;
+    align-items: center;
+    min-height: 1.5rem;
+    max-width: 16rem;
+    padding: 0 var(--tm-space-2);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    border-radius: var(--tm-radius-sm);
+}
+
+.tm-document-editor__dirty {
+    color: var(--tm-color-warning-text);
+    background: var(--tm-color-warning-subtle);
+}
+
+.tm-document-editor__save-message {
+    color: var(--tm-color-success-text);
+    background: var(--tm-color-success-subtle);
+}
+
+.tm-document-editor__last-saved {
+    color: var(--tm-color-text-muted);
+    background: var(--tm-color-surface-secondary);
+}
+
+.tm-document-editor__link-dialog {
+    box-shadow: inset 0 1px 0 var(--tm-color-border);
+}
+
+@media (max-width: 64rem) {
+    .tm-document-editor__ribbon-groups {
+        flex-wrap: nowrap;
+        overflow-x: auto;
+        overflow-y: hidden;
+        padding-bottom: var(--tm-space-1);
+        scrollbar-width: thin;
+    }
+
+    .tm-document-editor__ribbon-group {
+        border-right: 1px solid var(--tm-color-border);
+    }
+}
+
+@media (max-width: 40rem) {
+    .tm-document-editor__ribbon {
+        gap: var(--tm-space-1);
+        padding: var(--tm-space-1);
+    }
+
+    .tm-document-editor__ribbon-tab {
+        min-width: 3.25rem;
+        padding: 0 var(--tm-space-2);
+        font-size: var(--tm-font-size-xs);
+    }
+
+    .tm-document-editor__ribbon-group {
+        gap: 0;
+        min-height: 2.75rem;
+        padding: 0 var(--tm-space-1);
+    }
+
+    .tm-document-editor__ribbon-button {
+        inline-size: 2.5rem;
+        min-width: 2.5rem;
+        min-height: 2.5rem;
+        padding: 0;
+    }
+
+    .tm-document-editor__ribbon-button span {
+        display: none;
+    }
+
+    .tm-document-editor__dirty,
+    .tm-document-editor__save-message,
+    .tm-document-editor__last-saved {
+        max-width: 8rem;
+    }
+
+    .tm-document-editor__link-dialog {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr);
+        align-items: stretch;
+    }
+}
+
+[data-theme="dark"] .tm-document-editor__ribbon,
+.tm-dark .tm-document-editor__ribbon {
+    background: var(--tm-color-surface-elevated);
+    border-bottom-color: var(--tm-color-border-subtle);
+}
+
+[data-theme="dark"] .tm-document-editor__ribbon-button:hover:not(:disabled),
+.tm-dark .tm-document-editor__ribbon-button:hover:not(:disabled) {
+    background: var(--tm-color-surface-hover);
+    border-color: var(--tm-color-border-subtle);
+}
+
+[data-theme="dark"] .tm-document-editor__ribbon-button--active,
+.tm-dark .tm-document-editor__ribbon-button--active {
+    background: var(--tm-color-primary-subtle);
+    border-color: var(--tm-color-primary);
+}

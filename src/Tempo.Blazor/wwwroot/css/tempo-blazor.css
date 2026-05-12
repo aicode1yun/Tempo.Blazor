@@ -142,6 +142,9 @@
 @import "components/_findreplace-dialog.css";
 @import "components/_mention-autocomplete.css";
 @import "components/_token-autocomplete.css";
+@import "components/_document-editor.css";
+@import "components/_document-editor-toolbar.css";
+@import "components/_document-editor-comments.css";
 
 /* 14. Charts & Diagrams */
 @import "components/_chart.css";
@@ -187,6 +190,7 @@
 
 /* 21. Signing */
 @import "components/_document-page-viewer.css";
+@import "components/_document-comments.css";
 @import "components/_signing-field-overlay.css";
 @import "components/_signature-capture.css";
 @import "components/_condition-builder.css";
@@ -208,3 +212,12 @@
 /* 23. AI Tools */
 @import "components/_ai-prompt.css";
 @import "components/_chat.css";
+
+/* Local handwriting font used by typed signature previews. */
+@font-face {
+    font-family: "Dancing Script";
+    font-style: normal;
+    font-weight: 400 700;
+    font-display: swap;
+    src: url("../fonts/dancing-script/DancingScript-VariableFont_wght.ttf") format("truetype");
+}

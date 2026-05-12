@@ -26,41 +26,227 @@
     }
     else
     {
-        <div id="@PageElementId"
-             class="tm-document-page-viewer__page"
-             style="@PageStyle"
-             data-page-index="@Page.PageIndex"
-             role="img"
-             aria-label="@PageAriaLabel"
-             @onclick="HandlePageClickAsync"
-             @oncontextmenu="HandlePageContextMenuAsync"
-             @oncontextmenu:preventDefault="PreventDefaultContextMenu">
-            @if (PageTemplate is not null)
-            {
-                @PageTemplate(Page)
-            }
-            else if (!string.IsNullOrWhiteSpace(Page.ImageUrl))
-            {
-                <img class="tm-document-page-viewer__image"
-                     src="@Page.ImageUrl"
-                     alt="@ImageAlt"
-                     draggable="false" />
-            }
-            else
-            {
-                <div class="tm-document-page-viewer__missing-image">
-                    <TmIcon Name="file-text" Size="IconSize.Lg" />
-                    <span>@Loc["TmDocumentPageViewer_MissingImage"]</span>
-                </div>
-            }
-
-            <div class="@OverlayClass">
-                @ChildContent
-                @if (OverlayTemplate is not null)
+        @if (ShowToolbar)
+        {
+            <div class="tm-document-page-viewer__toolbar" role="toolbar" aria-label="@Loc["TmDocumentPageViewer_ToolbarLabel"]">
+                @if (ShowPaginationControls)
                 {
-                    @OverlayTemplate(Page)
+                    <div class="tm-document-page-viewer__pagination">
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__previous-page"
+                                disabled="@(!CanGoPrevious)"
+                                aria-label="@Loc["TmDocumentPageViewer_PreviousPage"]"
+                                @onclick="GoToPreviousPageAsync">
+                            <TmIcon Name="chevron-left" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-document-page-viewer__page-label">
+                            @CurrentPageNumber / @CurrentTotalPages
+                        </span>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__next-page"
+                                disabled="@(!CanGoNext)"
+                                aria-label="@Loc["TmDocumentPageViewer_NextPage"]"
+                                @onclick="GoToNextPageAsync">
+                            <TmIcon Name="chevron-right" Size="IconSize.Sm" />
+                        </button>
+                    </div>
+                }
+
+                @if (ShowZoomControls)
+                {
+                    <div class="tm-document-page-viewer__zoom-controls">
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__zoom-out"
+                                disabled="@(!CanZoomOut)"
+                                aria-label="@Loc["TmDocumentPageViewer_ZoomOut"]"
+                                @onclick="ZoomOutAsync">
+                            <TmIcon Name="zoom-out" Size="IconSize.Sm" />
+                        </button>
+                        <span class="tm-document-page-viewer__zoom-label" role="status" aria-live="polite" aria-label="@Loc["TmDocumentPageViewer_ZoomLevel", ZoomLabel]">
+                            @ZoomLabel
+                        </span>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__zoom-in"
+                                disabled="@(!CanZoomIn)"
+                                aria-label="@Loc["TmDocumentPageViewer_ZoomIn"]"
+                                @onclick="ZoomInAsync">
+                            <TmIcon Name="zoom-in" Size="IconSize.Sm" />
+                        </button>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__fit-width"
+                                aria-label="@Loc["TmDocumentPageViewer_FitWidth"]"
+                                @onclick="FitWidthAsync">
+                            <TmIcon Name="maximize-2" Size="IconSize.Sm" />
+                            <span>@Loc["TmDocumentPageViewer_FitWidthShort"]</span>
+                        </button>
+                        <button type="button"
+                                class="tm-document-page-viewer__toolbar-button tm-document-page-viewer__fit-page"
+                                aria-label="@Loc["TmDocumentPageViewer_FitPage"]"
+                                @onclick="FitPageAsync">
+                            <TmIcon Name="minimize-2" Size="IconSize.Sm" />
+                            <span>@Loc["TmDocumentPageViewer_FitPageShort"]</span>
+                        </button>
+                    </div>
+                }
+
+                @if (CommentsEnabled)
+                {
+                    <div class="tm-document-page-viewer__comment-controls">
+                        <button type="button"
+                                class="@CommentModeButtonClass"
+                                aria-pressed="@(CommentMode == DocumentCommentMode.Comment ? "true" : "false")"
+                                aria-label="@Loc["TmDocumentComments_ToggleCommentMode"]"
+                                disabled="@Disabled"
+                                @onclick="ToggleCommentModeAsync">
+                            <TmIcon Name="@IconNames.MessageSquare" Size="IconSize.Sm" />
+                            <span>@Loc["TmDocumentComments_Comments"]</span>
+                            @if (OpenCommentCount > 0)
+                            {
+                                <span class="tm-document-page-viewer__comment-count">@OpenCommentCount</span>
+                            }
+                            @if (MentionCommentCount > 0)
+                            {
+                                <span class="tm-document-page-viewer__mention-count" title="@Loc["TmDocumentComments_FilterMentions"]">@MentionCommentCount</span>
+                            }
+                        </button>
+                    </div>
                 }
             </div>
+        }
+        else if (CommentsEnabled)
+        {
+            <div class="tm-document-page-viewer__comments-toolbar" role="toolbar" aria-label="@Loc["TmDocumentComments_ToolbarLabel"]">
+                <button type="button"
+                        class="@CommentModeButtonClass"
+                        aria-pressed="@(CommentMode == DocumentCommentMode.Comment ? "true" : "false")"
+                        aria-label="@Loc["TmDocumentComments_ToggleCommentMode"]"
+                        disabled="@Disabled"
+                        @onclick="ToggleCommentModeAsync">
+                    <TmIcon Name="@IconNames.MessageSquare" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentComments_Comments"]</span>
+                    @if (OpenCommentCount > 0)
+                    {
+                        <span class="tm-document-page-viewer__comment-count">@OpenCommentCount</span>
+                    }
+                    @if (MentionCommentCount > 0)
+                    {
+                        <span class="tm-document-page-viewer__mention-count" title="@Loc["TmDocumentComments_FilterMentions"]">@MentionCommentCount</span>
+                    }
+                </button>
+            </div>
+        }
+
+        <div class="tm-document-page-viewer__content">
+            <div class="tm-document-page-viewer__viewport">
+                <div id="@PageElementId"
+                     @ref="_pageElement"
+                     class="tm-document-page-viewer__page"
+                     style="@PageStyle"
+                     data-page-index="@Page.PageIndex"
+                     role="img"
+                     aria-label="@PageAriaLabel"
+                     @onclick="HandlePageClickAsync"
+                     @onmousedown="HandleCommentPointerDownAsync"
+                     @onmousedown:preventDefault="ShouldPreventCommentPointerDefault"
+                     @onmousemove="HandleCommentPointerMoveAsync"
+                     @onmouseup="HandleCommentPointerUpAsync"
+                     @onkeydown="HandlePageKeyDownAsync"
+                     @oncontextmenu="HandlePageContextMenuAsync"
+                     @oncontextmenu:preventDefault="PreventDefaultContextMenu"
+                     tabindex="@(CommentsEnabled ? "0" : null)">
+                    @if (PageTemplate is not null)
+                    {
+                        @PageTemplate(Page)
+                    }
+                    else if (!string.IsNullOrWhiteSpace(Page.ImageUrl))
+                    {
+                        <img class="tm-document-page-viewer__image"
+                             src="@Page.ImageUrl"
+                             alt="@ImageAlt"
+                             draggable="false" />
+                    }
+                    else
+                    {
+                        <div class="tm-document-page-viewer__missing-image">
+                            <TmIcon Name="file-text" Size="IconSize.Lg" />
+                            <span>@Loc["TmDocumentPageViewer_MissingImage"]</span>
+                        </div>
+                    }
+
+                    <div class="@OverlayClass">
+                        @ChildContent
+                        @if (OverlayTemplate is not null)
+                        {
+                            @OverlayTemplate(Page)
+                        }
+                    </div>
+
+                    @if (CommentsEnabled)
+                    {
+                        <TmDocumentCommentsLayer Threads="@CommentThreads"
+                                                 PageNumber="@CurrentPageNumber"
+                                                 SelectedThreadId="@SelectedCommentThreadId"
+                                                 CurrentUserId="@CurrentUserId"
+                                                 ShowResolved="@ShowResolvedComments"
+                                                 DraftAnchor="@_draftAnchor"
+                                                 MarkerTemplate="@CommentMarkerTemplate"
+                                                 Disabled="@Disabled"
+                                                 OnThreadSelected="SelectCommentThreadAsync" />
+                    }
+                </div>
+            </div>
+
+            @if (CommentsEnabled)
+            {
+                <div class="tm-document-page-viewer__comments-shell">
+                    @if (CommentThreadPanelTemplate is not null)
+                    {
+                        @CommentThreadPanelTemplate(CommentThreads)
+                    }
+                    else
+                    {
+                        @if (_draftAnchor is not null)
+                        {
+                            <section class="tm-document-page-viewer__draft-panel" data-testid="document-comment-draft">
+                                <header class="tm-document-page-viewer__draft-header">
+                                    <span>@Loc["TmDocumentComments_NewThread"]</span>
+                                    <button type="button"
+                                            class="tm-document-page-viewer__draft-close"
+                                            aria-label="@Loc["TmDocumentComments_Cancel"]"
+                                            @onclick="CancelDraftAsync">
+                                        <TmIcon Name="@IconNames.X" Size="IconSize.Sm" />
+                                    </button>
+                                </header>
+                                <p class="tm-document-page-viewer__draft-location">@Loc["TmDocumentComments_PageLocation", _draftAnchor.PageNumber]</p>
+                                <TmCommentComposer Placeholder="@Loc["TmDocumentComments_NewPlaceholder"]"
+                                                   AriaLabel="@Loc["TmDocumentComments_NewLabel"]"
+                                                   SubmitText="@Loc["TmDocumentComments_AddComment"]"
+                                                   MentionUsers="@MentionUsers"
+                                                   Disabled="@Disabled"
+                                                   AutoFocus="true"
+                                                   MentionsChanged="HandleDraftMentionsChangedAsync"
+                                                   OnSubmit="CreateThreadAsync"
+                                                   OnCancel="CancelDraftAsync" />
+                            </section>
+                        }
+
+                        <TmDocumentCommentThreadPanel Threads="@CommentThreads"
+                                                      SelectedThreadId="@SelectedCommentThreadId"
+                                                      SelectedThreadIdChanged="SelectCommentThreadAsync"
+                                                      CurrentUserId="@CurrentUserId"
+                                                      MentionUsers="@MentionUsers"
+                                                      AllowReplyToResolved="@AllowReplyToResolved"
+                                                      Disabled="@Disabled"
+                                                      OnReplyRequested="@OnCommentReplyRequested"
+                                                      OnResolveRequested="@OnCommentResolveRequested"
+                                                      OnReopenRequested="@OnCommentReopenRequested"
+                                                      OnEditRequested="@OnCommentEditRequested"
+                                                      OnDeleteRequested="@OnCommentDeleteRequested"
+                                                      OnReactionToggled="@OnCommentReactionToggled"
+                                                      OnThreadNavigateRequested="@OnCommentThreadNavigateRequested" />
+                    }
+                </div>
+            }
         </div>
     }
 </div>

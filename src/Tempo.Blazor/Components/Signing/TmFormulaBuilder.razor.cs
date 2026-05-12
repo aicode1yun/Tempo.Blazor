@@ -40,6 +40,12 @@ public partial class TmFormulaBuilder
     /// <summary>Whether the builder controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve field labels in the token picker.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when a field label is missing for <see cref="Culture"/>.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the root element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -101,7 +107,12 @@ public partial class TmFormulaBuilder
 
     private Task InsertFieldTokenAsync(SigningField field)
     {
-        return InsertTextAsync("{{" + SigningFormulaHelper.GetFieldLabel(field) + "}}");
+        return InsertTextAsync("{{" + field.Uuid + "}}");
+    }
+
+    private string GetLocalizedFieldLabel(SigningField field)
+    {
+        return SigningTextResolver.FieldLabel(field, Culture, FallbackCulture, Loc);
     }
 
     private static string GetOperatorText(string op)

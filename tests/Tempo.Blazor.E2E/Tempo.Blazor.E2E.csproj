@@ -18,6 +18,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\src\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Using Include="Microsoft.VisualStudio.TestTools.UnitTesting" />
     <Using Include="FluentAssertions" />
     <Using Include="Microsoft.Playwright" />

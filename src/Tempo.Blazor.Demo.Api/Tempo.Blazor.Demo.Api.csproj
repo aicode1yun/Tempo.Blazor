@@ -8,6 +8,7 @@
   <ItemGroup>
     <ProjectReference Include="..\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />
     <ProjectReference Include="..\Tempo.Blazor.Abstractions\Tempo.Blazor.Abstractions.csproj" />
+    <ProjectReference Include="..\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.5" />

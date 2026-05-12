@@ -9,6 +9,9 @@ public class SigningFieldValidation
     /// <summary>Custom validation message displayed when validation fails.</summary>
     public string? Message { get; set; }
 
+    /// <summary>Localized validation messages displayed when validation fails.</summary>
+    public SigningLocalizedText Messages { get; set; } = new();
+
     /// <summary>Minimum numeric/date value or minimum length depending on field type.</summary>
     public string? Min { get; set; }
 

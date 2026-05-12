@@ -27,6 +27,30 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_LocalizedFieldAndOptionLabels_UsesRequestedCulture()
+    {
+        var field = CreateField(SigningFieldType.Select, "Country");
+        field.Labels.Translations["cs"] = "Země";
+        field.Options =
+        [
+            new SigningFieldOption
+            {
+                Uuid = "cz",
+                Value = "CZ",
+                Labels = { Translations = { ["cs"] = "Česká republika" } }
+            }
+        ];
+
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.Culture, "cs-CZ"));
+
+        cut.Find(".tm-signing-field__label").TextContent.Should().Be("Země");
+        cut.Find(".tm-signing-field__option").TextContent.Should().Be("Česká republika");
+        cut.Find(".tm-signing-field__option").GetAttribute("data-option-uuid").Should().Be("cz");
+    }
+
+    [Fact]
     public void Render_SignatureField_RendersTypeIcon()
     {
         var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
@@ -164,6 +188,7 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
 
     [Theory]
     [InlineData(SigningFieldType.Signature)]
+    [InlineData(SigningFieldType.Initials)]
     [InlineData(SigningFieldType.Image)]
     public void Render_ImageLikeValue_RendersThumbnail(SigningFieldType type)
     {
@@ -177,6 +202,29 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
             .Be("data:image/png;base64,abc");
     }
 
+    [Theory]
+    [InlineData(SigningFieldType.Signature)]
+    [InlineData(SigningFieldType.Initials)]
+    [InlineData(SigningFieldType.Image)]
+    public void Render_ImageLikeValue_WithPlainText_DoesNotRenderBrokenThumbnail(SigningFieldType type)
+    {
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, CreateField(type))
+                      .Add(p => p.Value, "option-a"));
+
+        cut.FindAll("img.tm-signing-field__thumbnail").Should().BeEmpty();
+        cut.Find(".tm-signing-field__value").TextContent.Should().NotBeEmpty();
+    }
+
+    [Fact]
+    public void Render_PaymentWithoutValue_RendersPaymentTypeName()
+    {
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, CreateField(SigningFieldType.Payment)));
+
+        cut.Find(".tm-signing-field__value").TextContent.Should().Be("Payment");
+    }
+
     [Fact]
     public void Render_StampWithoutValue_RendersPlaceholder()
     {
@@ -184,6 +232,23 @@ public class TmSigningFieldOverlayTests : LocalizationTestBase
             parameters.Add(p => p.Field, CreateField(SigningFieldType.Stamp)));
 
         cut.Find(".tm-signing-field__stamp").TextContent.Should().Contain("Stamp");
+    }
+
+    [Theory]
+    [InlineData(SigningFieldType.Signature)]
+    [InlineData(SigningFieldType.Initials)]
+    [InlineData(SigningFieldType.Image)]
+    [InlineData(SigningFieldType.Stamp)]
+    public void Render_ImageAndStampPlaceholdersUseLocalizedLabel(SigningFieldType type)
+    {
+        var field = CreateField(type, name: "Signature");
+        field.Placeholders.Translations["cs"] = "Doplňte podpis";
+
+        var cut = RenderComponent<TmSigningFieldOverlay>(parameters =>
+            parameters.Add(p => p.Field, field)
+                      .Add(p => p.Culture, "cs-CZ"));
+
+        cut.Markup.Should().Contain("Doplňte podpis");
     }
 
     [Fact]

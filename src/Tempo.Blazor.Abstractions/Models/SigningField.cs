@@ -12,11 +12,23 @@ public class SigningField
     /// <summary>Internal field name.</summary>
     public string? Name { get; set; }
 
+    /// <summary>Localized user-facing labels shown to signers.</summary>
+    public SigningLocalizedText Labels { get; set; } = new();
+
     /// <summary>Optional user-facing title shown during signing.</summary>
     public string? Title { get; set; }
 
+    /// <summary>Localized user-facing titles shown during signing.</summary>
+    public SigningLocalizedText Titles { get; set; } = new();
+
     /// <summary>Optional user-facing field description.</summary>
     public string? Description { get; set; }
+
+    /// <summary>Localized user-facing descriptions and help text.</summary>
+    public SigningLocalizedText Descriptions { get; set; } = new();
+
+    /// <summary>Localized input placeholders.</summary>
+    public SigningLocalizedText Placeholders { get; set; } = new();
 
     /// <summary>Field type.</summary>
     public SigningFieldType Type { get; set; } = SigningFieldType.Text;

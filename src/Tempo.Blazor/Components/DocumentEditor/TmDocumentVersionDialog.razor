@@ -1,0 +1,91 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<section class="tm-document-version-dialog" role="dialog" aria-modal="true" aria-label="@Loc["TmDocumentEditor_CreateVersion"]" data-testid="document-version-dialog">
+    <header class="tm-document-version-dialog__header">
+        <h3>@Loc["TmDocumentEditor_CreateVersion"]</h3>
+        <button type="button"
+                class="tm-document-version-dialog__icon-button"
+                title="@Loc["TmDocumentEditor_CloseVersionDialog"]"
+                @onclick="OnCancel"
+                data-testid="document-version-dialog-close">
+            <TmIcon Name="x" Size="IconSize.Sm" />
+        </button>
+    </header>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_VersionKind"]</span>
+        <select value="@_kind" @onchange="ChangeKind" data-testid="document-version-kind">
+            <option value="@DocumentVersionKind.Minor">@Loc["TmDocumentEditor_VersionKindMinor"]</option>
+            <option value="@DocumentVersionKind.Major">@Loc["TmDocumentEditor_VersionKindMajor"]</option>
+        </select>
+    </label>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_VersionLabel"]</span>
+        <input value="@_label" @oninput="args => _label = args.Value?.ToString()" data-testid="document-version-label" />
+    </label>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_VersionDescription"]</span>
+        <textarea value="@_description" @oninput="args => _description = args.Value?.ToString()" data-testid="document-version-description"></textarea>
+    </label>
+
+    @if (!string.IsNullOrWhiteSpace(_validationMessage))
+    {
+        <div class="tm-document-version-dialog__error" role="alert" data-testid="document-version-error">@_validationMessage</div>
+    }
+
+    <footer class="tm-document-version-dialog__actions">
+        <button type="button" @onclick="OnCancel" data-testid="document-version-cancel">@Loc["TmDocumentEditor_Cancel"]</button>
+        <button type="button" @onclick="SubmitAsync" disabled="@IsBusy" data-testid="document-version-create-submit">
+            @Loc["TmDocumentEditor_CreateVersion"]
+        </button>
+    </footer>
+</section>
+
+@code {
+    private DocumentVersionKind _kind = DocumentVersionKind.Minor;
+    private string? _label;
+    private string? _description;
+    private string? _validationMessage;
+
+    /// <summary>Whether create action is currently running.</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    /// <summary>Whether major versions require a non-empty description.</summary>
+    [Parameter] public bool RequireMajorDescription { get; set; }
+
+    /// <summary>Raised when the user confirms version creation.</summary>
+    [Parameter] public EventCallback<DocumentVersionDialogResult> OnCreate { get; set; }
+
+    /// <summary>Raised when the dialog should close without creating a version.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    private void ChangeKind(ChangeEventArgs args)
+    {
+        _validationMessage = null;
+        if (Enum.TryParse<DocumentVersionKind>(args.Value?.ToString(), out var kind))
+        {
+            _kind = kind;
+        }
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (RequireMajorDescription
+            && _kind == DocumentVersionKind.Major
+            && string.IsNullOrWhiteSpace(_description))
+        {
+            _validationMessage = Loc["TmDocumentEditor_MajorVersionDescriptionRequired"];
+            return;
+        }
+
+        await OnCreate.InvokeAsync(new DocumentVersionDialogResult
+        {
+            Kind = _kind,
+            Label = string.IsNullOrWhiteSpace(_label) ? null : _label.Trim(),
+            Description = string.IsNullOrWhiteSpace(_description) ? null : _description.Trim()
+        });
+    }
+}

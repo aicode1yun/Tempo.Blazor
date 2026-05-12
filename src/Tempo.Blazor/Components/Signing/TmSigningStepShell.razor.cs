@@ -17,11 +17,20 @@ public partial class TmSigningStepShell
     /// <summary>Optional description rendered below the label.</summary>
     [Parameter] public string? Description { get; set; }
 
+    /// <summary>Culture used to resolve field labels and descriptions.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when the requested culture is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Whether the step is required. Defaults to the field requirement.</summary>
     [Parameter] public bool? Required { get; set; }
 
     /// <summary>Validation message shown below the step content.</summary>
     [Parameter] public string? ValidationMessage { get; set; }
+
+    /// <summary>Optional HTML id applied to the validation message for aria-describedby links.</summary>
+    [Parameter] public string? ValidationMessageId { get; set; }
 
     /// <summary>Short text describing where the field appears in the document.</summary>
     [Parameter] public string? AppearsOn { get; set; }
@@ -42,11 +51,11 @@ public partial class TmSigningStepShell
 
     private string DisplayLabel => !string.IsNullOrWhiteSpace(Label)
         ? Label
-        : !string.IsNullOrWhiteSpace(Field?.Title)
-            ? Field.Title!
-            : !string.IsNullOrWhiteSpace(Field?.Name)
-                ? Field.Name!
-                : GetFieldTypeLabel(Field?.Type ?? SigningFieldType.Text);
+        : SigningTextResolver.FieldLabel(Field, Culture, FallbackCulture, Loc);
+
+    private string ResolvedDescription => !string.IsNullOrWhiteSpace(Description)
+        ? Description!
+        : SigningTextResolver.FieldDescription(Field, Culture, FallbackCulture);
 
     private string RootClass
     {
@@ -74,26 +83,7 @@ public partial class TmSigningStepShell
 
     private string GetFieldTypeLabel(SigningFieldType type)
     {
-        return type switch
-        {
-            SigningFieldType.Text or SigningFieldType.Cells => Loc["TmSigning_Field_Text"],
-            SigningFieldType.Signature => Loc["TmSigning_Field_Signature"],
-            SigningFieldType.Initials => Loc["TmSigning_Field_Initials"],
-            SigningFieldType.Date or SigningFieldType.DateNow => Loc["TmSigning_Field_Date"],
-            SigningFieldType.Number => Loc["TmSigning_Field_Number"],
-            SigningFieldType.Checkbox => Loc["TmSigning_Field_Checkbox"],
-            SigningFieldType.Radio => Loc["TmSigning_Field_Radio"],
-            SigningFieldType.Select => Loc["TmSigning_Field_Select"],
-            SigningFieldType.Multiple => Loc["TmSigning_Field_Multiple"],
-            SigningFieldType.File => Loc["TmSigning_Field_File"],
-            SigningFieldType.Image => Loc["TmSigning_Field_Image"],
-            SigningFieldType.Stamp => Loc["TmSigning_Field_Stamp"],
-            SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
-            SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
-            SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
-            SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
-            _ => type.ToString()
-        };
+        return SigningTextResolver.FieldTypeLabel(type, Loc);
     }
 
     private static string FormatDescription(string description)

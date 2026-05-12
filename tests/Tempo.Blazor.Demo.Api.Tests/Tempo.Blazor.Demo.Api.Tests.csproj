@@ -17,5 +17,6 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Tempo.Blazor.Demo.Api\Tempo.Blazor.Demo.Api.csproj" />
     <ProjectReference Include="..\..\src\Tempo.Blazor.Demo.Shared\Tempo.Blazor.Demo.Shared.csproj" />
+    <ProjectReference Include="..\..\src\Tempo.Blazor.DocumentFormats\Tempo.Blazor.DocumentFormats.csproj" />
   </ItemGroup>
 </Project>

@@ -1,0 +1,325 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+<header class="tm-document-editor__ribbon" role="toolbar" aria-label="@Loc["TmDocumentEditor_ToolbarLabel"]" data-testid="document-toolbar">
+    <div class="tm-document-editor__ribbon-tabs" role="tablist" aria-label="@Loc["TmDocumentEditor_ToolbarTabsLabel"]">
+        <button type="button" class="tm-document-editor__ribbon-tab tm-document-editor__ribbon-tab--active">@Loc["TmDocumentEditor_TabHome"]</button>
+        <button type="button" class="tm-document-editor__ribbon-tab">@Loc["TmDocumentEditor_TabInsert"]</button>
+        <button type="button" class="tm-document-editor__ribbon-tab">@Loc["TmDocumentEditor_TabLayout"]</button>
+        <button type="button" class="tm-document-editor__ribbon-tab">@Loc["TmDocumentEditor_TabReferences"]</button>
+        <button type="button" class="tm-document-editor__ribbon-tab">@Loc["TmDocumentEditor_TabReview"]</button>
+        <button type="button" class="tm-document-editor__ribbon-tab">@Loc["TmDocumentEditor_TabView"]</button>
+    </div>
+
+    <div class="tm-document-editor__ribbon-groups">
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupClipboard"]">
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@(ReadOnly || IsSaving)"
+                    title="@Loc["TmDocumentEditor_Save"]"
+                    @onclick="OnSave"
+                    data-testid="document-save">
+                <TmIcon Name="save" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Save"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@(ReadOnly || !CanUndo)"
+                    title="@UndoTitle"
+                    @onclick="OnUndo"
+                    data-testid="document-undo">
+                <TmIcon Name="undo-2" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Undo"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@(ReadOnly || !CanRedo)"
+                    title="@RedoTitle"
+                    @onclick="OnRedo"
+                    data-testid="document-redo">
+                <TmIcon Name="redo-2" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Redo"]</span>
+            </button>
+            @if (IsDirty)
+            {
+                <span class="tm-document-editor__dirty">@Loc["TmDocumentEditor_UnsavedChanges"]</span>
+            }
+            @if (!string.IsNullOrWhiteSpace(SaveMessage))
+            {
+                <span class="tm-document-editor__save-message" data-testid="document-save-message">@SaveMessage</span>
+            }
+            @if (LastSavedAt is not null)
+            {
+                <span class="tm-document-editor__last-saved" data-testid="document-last-saved">
+                    @Loc["TmDocumentEditor_LastSavedAt", LastSavedAt.Value.ToLocalTime().ToString("HH:mm:ss")]
+                </span>
+            }
+        </section>
+
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupFormatting"]">
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_Bold"]"
+                    @onclick="OnBold"
+                    data-testid="document-bold">
+                <TmIcon Name="bold" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Bold"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_Italic"]"
+                    @onclick="OnItalic"
+                    data-testid="document-italic">
+                <TmIcon Name="italic" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Italic"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_Underline"]"
+                    @onclick="OnUnderline"
+                    data-testid="document-underline">
+                <TmIcon Name="underline" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Underline"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_Link"]"
+                    @onclick="ToggleLinkDialog"
+                    data-testid="document-link">
+                <TmIcon Name="link" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Link"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_ClearFormatting"]"
+                    @onclick="OnClearFormatting"
+                    data-testid="document-clear-formatting">
+                <TmIcon Name="eraser" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_ClearFormatting"]</span>
+            </button>
+        </section>
+
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupInsert"]">
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_Insert"]"
+                    @onclick="OnToggleInsert"
+                    data-testid="document-insert-menu">
+                <TmIcon Name="plus" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_Insert"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_InsertImage"]"
+                    @onclick="OnInsertImage"
+                    data-testid="document-toolbar-image">
+                <TmIcon Name="image" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_InsertImage"]</span>
+            </button>
+        </section>
+
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupLayout"]">
+            <button class="tm-document-editor__ribbon-button" type="button" disabled="@ReadOnly" title="@Loc["TmDocumentEditor_PageLayout"]">
+                <TmIcon Name="panel-top" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_PageLayout"]</span>
+            </button>
+        </section>
+
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReferences"]">
+            <button class="tm-document-editor__ribbon-button" type="button" disabled="@ReadOnly" title="@Loc["TmDocumentEditor_InsertFootnote"]">
+                <TmIcon Name="pilcrow" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_InsertFootnote"]</span>
+            </button>
+            @if (CanExportPdf)
+            {
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@IsExportingPdf"
+                        title="@Loc["TmDocumentEditor_ExportPdf"]"
+                        @onclick="OnExportPdf"
+                        data-testid="document-export-pdf">
+                    <TmIcon Name="file-down" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_ExportPdf"]</span>
+                </button>
+            }
+        </section>
+
+        <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReview"]">
+            <button class="tm-document-editor__ribbon-button @(TrackChangesEnabled ? "tm-document-editor__ribbon-button--active" : null)"
+                    type="button"
+                    disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_TrackChanges"]"
+                    @onclick="OnToggleTrackChanges"
+                    data-testid="document-track-changes">
+                <TmIcon Name="file-diff" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_TrackChanges"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@(!CanComment)"
+                    title="@Loc["TmDocumentEditor_AddComment"]"
+                    @onclick="OnAddComment"
+                    data-testid="document-add-comment">
+                <TmIcon Name="message-square" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_AddComment"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button @(TemplatePreviewEnabled ? "tm-document-editor__ribbon-button--active" : null)"
+                    type="button"
+                    disabled="@(!CanPreviewTemplate)"
+                    title="@Loc["TmDocumentEditor_TemplatePreview"]"
+                    @onclick="OnToggleTemplatePreview"
+                    data-testid="document-template-preview">
+                <TmIcon Name="eye" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_TemplatePreview"]</span>
+            </button>
+            @if (!string.IsNullOrWhiteSpace(TemplatePreviewMessage))
+            {
+                <span class="tm-document-editor__template-preview-message" data-testid="document-template-preview-message">
+                    @TemplatePreviewMessage
+                </span>
+            }
+        </section>
+    </div>
+
+    @if (_linkDialogOpen && !ReadOnly)
+    {
+        <section class="tm-document-editor__link-dialog" data-testid="document-link-dialog">
+            <label>
+                <span>@Loc["TmDocumentEditor_LinkUrl"]</span>
+                <input value="@_pendingLinkUrl" @oninput="args => _pendingLinkUrl = args.Value?.ToString()" />
+            </label>
+            <button type="button" @onclick="ApplyLinkAsync" data-testid="document-apply-link">@Loc["TmDocumentEditor_ApplyLink"]</button>
+            <button type="button" @onclick="CloseLinkDialog">@Loc["TmDocumentEditor_Cancel"]</button>
+        </section>
+    }
+</header>
+
+@code {
+    private bool _linkDialogOpen;
+    private string? _pendingLinkUrl;
+
+    /// <summary>Whether toolbar commands should be disabled for read-only mode.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Whether the editor is currently saving.</summary>
+    [Parameter] public bool IsSaving { get; set; }
+
+    /// <summary>Whether the document has local unsaved changes.</summary>
+    [Parameter] public bool IsDirty { get; set; }
+
+    /// <summary>Optional save status text.</summary>
+    [Parameter] public string? SaveMessage { get; set; }
+
+    /// <summary>Timestamp of the latest successful save.</summary>
+    [Parameter] public DateTimeOffset? LastSavedAt { get; set; }
+
+    /// <summary>Whether undo is currently available.</summary>
+    [Parameter] public bool CanUndo { get; set; }
+
+    /// <summary>Whether redo is currently available.</summary>
+    [Parameter] public bool CanRedo { get; set; }
+
+    /// <summary>Description of the next undo action.</summary>
+    [Parameter] public string? NextUndoDescription { get; set; }
+
+    /// <summary>Description of the next redo action.</summary>
+    [Parameter] public string? NextRedoDescription { get; set; }
+
+    /// <summary>Whether tracked changes are enabled.</summary>
+    [Parameter] public bool TrackChangesEnabled { get; set; }
+
+    /// <summary>Whether comment actions are currently available.</summary>
+    [Parameter] public bool CanComment { get; set; } = true;
+
+    /// <summary>Whether template preview is currently active.</summary>
+    [Parameter] public bool TemplatePreviewEnabled { get; set; }
+
+    /// <summary>Whether template preview can be toggled.</summary>
+    [Parameter] public bool CanPreviewTemplate { get; set; }
+
+    /// <summary>Whether PDF export is available through a host provider.</summary>
+    [Parameter] public bool CanExportPdf { get; set; }
+
+    /// <summary>Whether a PDF export request is running.</summary>
+    [Parameter] public bool IsExportingPdf { get; set; }
+
+    /// <summary>Optional template preview status text.</summary>
+    [Parameter] public string? TemplatePreviewMessage { get; set; }
+
+    /// <summary>Raised when save is requested.</summary>
+    [Parameter] public EventCallback OnSave { get; set; }
+
+    /// <summary>Raised when undo is requested.</summary>
+    [Parameter] public EventCallback OnUndo { get; set; }
+
+    /// <summary>Raised when redo is requested.</summary>
+    [Parameter] public EventCallback OnRedo { get; set; }
+
+    /// <summary>Raised when bold formatting is requested.</summary>
+    [Parameter] public EventCallback OnBold { get; set; }
+
+    /// <summary>Raised when italic formatting is requested.</summary>
+    [Parameter] public EventCallback OnItalic { get; set; }
+
+    /// <summary>Raised when underline formatting is requested.</summary>
+    [Parameter] public EventCallback OnUnderline { get; set; }
+
+    /// <summary>Raised when a link URL is submitted.</summary>
+    [Parameter] public EventCallback<string> OnLink { get; set; }
+
+    /// <summary>Raised when clear formatting is requested.</summary>
+    [Parameter] public EventCallback OnClearFormatting { get; set; }
+
+    /// <summary>Raised when the insert panel should be toggled.</summary>
+    [Parameter] public EventCallback OnToggleInsert { get; set; }
+
+    /// <summary>Raised when the image insert flow should open.</summary>
+    [Parameter] public EventCallback OnInsertImage { get; set; }
+
+    /// <summary>Raised when tracked changes should be toggled.</summary>
+    [Parameter] public EventCallback OnToggleTrackChanges { get; set; }
+
+    /// <summary>Raised when adding a comment is requested.</summary>
+    [Parameter] public EventCallback OnAddComment { get; set; }
+
+    /// <summary>Raised when template preview should be toggled.</summary>
+    [Parameter] public EventCallback OnToggleTemplatePreview { get; set; }
+
+    /// <summary>Raised when PDF export is requested.</summary>
+    [Parameter] public EventCallback OnExportPdf { get; set; }
+
+    private string UndoTitle => string.IsNullOrWhiteSpace(NextUndoDescription)
+        ? Loc["TmDocumentEditor_Undo"]
+        : $"{Loc["TmDocumentEditor_Undo"]}: {NextUndoDescription}";
+
+    private string RedoTitle => string.IsNullOrWhiteSpace(NextRedoDescription)
+        ? Loc["TmDocumentEditor_Redo"]
+        : $"{Loc["TmDocumentEditor_Redo"]}: {NextRedoDescription}";
+
+    private void ToggleLinkDialog()
+    {
+        _linkDialogOpen = !_linkDialogOpen;
+    }
+
+    private void CloseLinkDialog()
+    {
+        _linkDialogOpen = false;
+    }
+
+    private async Task ApplyLinkAsync()
+    {
+        if (!string.IsNullOrWhiteSpace(_pendingLinkUrl))
+        {
+            await OnLink.InvokeAsync(_pendingLinkUrl);
+        }
+
+        _pendingLinkUrl = null;
+        _linkDialogOpen = false;
+    }
+}

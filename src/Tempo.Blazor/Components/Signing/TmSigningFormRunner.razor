@@ -30,6 +30,8 @@
                                                    Invalid="@IsInvalid(overlay.Field)"
                                                    Completed="@IsFieldComplete(overlay.Field)"
                                                    ReadOnly="true"
+                                                   Culture="@CurrentCulture"
+                                                   FallbackCulture="@FallbackCulture"
                                                    OnClick="HandleOverlayClickAsync" />
                         }
                     </TmDocumentPageViewer>
@@ -72,6 +74,22 @@
             @Loc["TmSigningFormRunner_Progress", CurrentStepIndex + 1, Plan.Steps.Count]
         </div>
 
+        @if (ShowLanguagePicker)
+        {
+            <label class="tm-signing-form-runner__language">
+                <span>@Loc["TmSigningFormRunner_Language"]</span>
+                <select class="tm-signing-form-runner__language-select"
+                        value="@CurrentCulture"
+                        aria-label="@Loc["TmSigningFormRunner_LanguageAria"]"
+                        @onchange="HandleCultureChangedAsync">
+                    @foreach (var culture in SupportedCultures)
+                    {
+                        <option value="@culture">@GetCultureDisplayName(culture)</option>
+                    }
+                </select>
+            </label>
+        }
+
         <button type="button"
                 class="tm-signing-form-runner__accessibility-entry"
                 @onclick="ToggleAccessibilityMode">
@@ -105,6 +123,8 @@
                                            Value="@GetStringValue(CurrentStep.Field.Uuid)"
                                            ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                            AppearsOn="@CurrentStep.AppearsOn"
+                                           Culture="@CurrentCulture"
+                                           FallbackCulture="@FallbackCulture"
                                            Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Number:
@@ -112,6 +132,8 @@
                                              Value="@GetDecimalValue(CurrentStep.Field.Uuid)"
                                              ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                              AppearsOn="@CurrentStep.AppearsOn"
+                                             Culture="@CurrentCulture"
+                                             FallbackCulture="@FallbackCulture"
                                              Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Date:
@@ -120,6 +142,8 @@
                                            Value="@GetStringValue(CurrentStep.Field.Uuid)"
                                            ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                            AppearsOn="@CurrentStep.AppearsOn"
+                                           Culture="@CurrentCulture"
+                                           FallbackCulture="@FallbackCulture"
                                            Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Select:
@@ -131,6 +155,8 @@
                                              Value="@GetValue(CurrentStep.Field.Uuid)"
                                              ValueChanged="value => SetChoiceValueAsync(CurrentStep, value)"
                                              AppearsOn="@CurrentStep.AppearsOn"
+                                             Culture="@CurrentCulture"
+                                             FallbackCulture="@FallbackCulture"
                                              Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Image:
@@ -143,6 +169,8 @@
                                                  AppearsOn="@CurrentStep.AppearsOn"
                                                  AllowMultiple="@(CurrentStep.Field.Type == SigningFieldType.File)"
                                                  Accept="@(CurrentStep.Field.Type == SigningFieldType.Image ? "image/*" : null)"
+                                                 Culture="@CurrentCulture"
+                                                 FallbackCulture="@FallbackCulture"
                                                  Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Signature:
@@ -151,7 +179,8 @@
                                             ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                             Required="@CurrentStep.Field.Required"
                                             Initials="@(CurrentStep.Field.Type == SigningFieldType.Initials)"
-                                            Mode="TmSignatureCaptureMode.Typed"
+                                            Mode="@GetSignatureCaptureMode(CurrentStep.Field)"
+                                            ModeChanged="mode => SetSignatureCaptureModeAsync(CurrentStep.Field.Uuid, mode)"
                                             Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Phone:
@@ -160,6 +189,8 @@
                                             PhoneNumberChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                             ValueChanged="value => SetFieldValueAsync(CurrentStep.Field.Uuid, value)"
                                             AppearsOn="@CurrentStep.AppearsOn"
+                                            Culture="@CurrentCulture"
+                                            FallbackCulture="@FallbackCulture"
                                             Disabled="@IsLoading" />
                         break;
                     case SigningFieldType.Verification:
@@ -168,6 +199,8 @@
                         <TmSigningExternalStep Field="CurrentStep.Field"
                                                AppearsOn="@CurrentStep.AppearsOn"
                                                Disabled="@IsLoading"
+                                               Culture="@CurrentCulture"
+                                               FallbackCulture="@FallbackCulture"
                                                OnStart="field => SetFieldValueAsync(field.Uuid, true)"
                                                OnCheckout="field => SetFieldValueAsync(field.Uuid, true)" />
                         break;

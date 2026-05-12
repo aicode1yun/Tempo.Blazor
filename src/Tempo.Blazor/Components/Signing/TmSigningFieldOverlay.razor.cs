@@ -47,6 +47,12 @@ public partial class TmSigningFieldOverlay
     /// <summary>Whether the browser context menu is prevented for context menu interactions. Defaults to true.</summary>
     [Parameter] public bool PreventDefaultContextMenu { get; set; } = true;
 
+    /// <summary>Culture used to resolve localized field and option text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Callback invoked when the overlay is clicked.</summary>
     [Parameter] public EventCallback<TmSigningFieldOverlayPointerEventArgs> OnClick { get; set; }
 
@@ -73,44 +79,19 @@ public partial class TmSigningFieldOverlay
 
     private int TabIndex => IsDisabled ? -1 : 0;
 
-    private string Label => !string.IsNullOrWhiteSpace(Field?.Name)
-        ? Field.Name
-        : !string.IsNullOrWhiteSpace(Field?.Title)
-            ? Field.Title
-            : LocalizedTypeName;
+    private bool StopMouseDownPropagation => Draggable;
+
+    private string Label => SigningTextResolver.FieldLabel(Field, Culture, FallbackCulture, Loc);
 
     private string AriaLabel => Field?.Required == true
         ? string.Create(CultureInfo.InvariantCulture, $"{Label}, {Loc["TmSigning_Required"]}")
         : Label;
 
-    private string HeadingText => !string.IsNullOrWhiteSpace(Field?.Title)
-        ? Field.Title
-        : !string.IsNullOrWhiteSpace(Field?.Name)
-            ? Field.Name
-            : TextValue;
+    private string HeadingText => SigningTextResolver.FieldTitle(Field, Culture, FallbackCulture, Loc);
 
-    private string LocalizedTypeName => Field?.Type switch
-    {
-        SigningFieldType.Heading => Loc["TmSigning_Field_Heading"],
-        SigningFieldType.Strikethrough => Loc["TmSigning_Field_Strikethrough"],
-        SigningFieldType.Text => Loc["TmSigning_Field_Text"],
-        SigningFieldType.Signature => Loc["TmSigning_Field_Signature"],
-        SigningFieldType.Initials => Loc["TmSigning_Field_Initials"],
-        SigningFieldType.Date or SigningFieldType.DateNow => Loc["TmSigning_Field_Date"],
-        SigningFieldType.Number => Loc["TmSigning_Field_Number"],
-        SigningFieldType.Image => Loc["TmSigning_Field_Image"],
-        SigningFieldType.File => Loc["TmSigning_Field_File"],
-        SigningFieldType.Select => Loc["TmSigning_Field_Select"],
-        SigningFieldType.Checkbox => Loc["TmSigning_Field_Checkbox"],
-        SigningFieldType.Multiple => Loc["TmSigning_Field_Multiple"],
-        SigningFieldType.Radio => Loc["TmSigning_Field_Radio"],
-        SigningFieldType.Cells => Loc["TmSigning_Field_Cells"],
-        SigningFieldType.Stamp => Loc["TmSigning_Field_Stamp"],
-        SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
-        SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
-        SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
-        _ => Loc["TmSigning_Field_Text"]
-    };
+    private string PlaceholderText => SigningTextResolver.FieldPlaceholder(Field, Culture, FallbackCulture, Loc);
+
+    private string LocalizedTypeName => SigningTextResolver.FieldTypeLabel(Field?.Type ?? SigningFieldType.Text, Loc);
 
     private string IconName => Field?.Type switch
     {
@@ -177,7 +158,19 @@ public partial class TmSigningFieldOverlay
 
     private string TextValue => FormatValue(Value ?? Field?.DefaultValue);
 
+    private string DisplayValue => string.IsNullOrWhiteSpace(TextValue) && ShouldShowTypePlaceholder
+        ? LocalizedTypeName
+        : TextValue;
+
     private string ImageValue => Value as string ?? Field?.DefaultValue as string ?? string.Empty;
+
+    private bool HasImageValue => IsImageSource(ImageValue);
+
+    private bool ShouldShowTypePlaceholder => Field?.Type is SigningFieldType.File
+        or SigningFieldType.Payment
+        or SigningFieldType.Phone
+        or SigningFieldType.Verification
+        or SigningFieldType.Kba;
 
     private string CheckboxClass => IsChecked(Value)
         ? "tm-signing-field__checkbox tm-signing-field__checkbox--checked"
@@ -216,6 +209,26 @@ public partial class TmSigningFieldOverlay
         };
     }
 
+    private static bool IsImageSource(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return false;
+        }
+
+        if (value.StartsWith("data:image/", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("blob:", StringComparison.OrdinalIgnoreCase)
+            || value.StartsWith("/", StringComparison.Ordinal)
+            || value.StartsWith("./", StringComparison.Ordinal)
+            || value.StartsWith("../", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(value, UriKind.Absolute, out var uri)
+            && uri.Scheme is "http" or "https";
+    }
+
     private string GetOptionClass(SigningFieldOption option)
     {
         var classes = new List<string> { "tm-signing-field__option" };
@@ -226,6 +239,11 @@ public partial class TmSigningFieldOverlay
         }
 
         return string.Join(" ", classes);
+    }
+
+    private string GetOptionLabel(SigningFieldOption option)
+    {
+        return SigningTextResolver.OptionLabel(option, Culture, FallbackCulture);
     }
 
     private bool IsOptionSelected(SigningFieldOption option)

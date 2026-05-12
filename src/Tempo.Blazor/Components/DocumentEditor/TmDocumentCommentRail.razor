@@ -1,0 +1,171 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.Interfaces
+
+<aside class="tm-document-editor__comment-rail"
+       data-testid="document-comment-rail"
+       aria-label="@Loc["TmDocumentEditor_CommentsLabel"]">
+    <header class="tm-document-comment-rail__header">
+        <div>
+            <h3>@Loc["TmDocumentEditor_Comments"]</h3>
+            <span>@Loc["TmDocumentEditor_CommentCount", Comments.Count]</span>
+        </div>
+        @if (CanComment)
+        {
+            <button type="button"
+                    data-testid="document-comment-new"
+                    disabled="@(!CanStartComment || IsBusy)"
+                    @onclick="OnBeginComment">
+                @Loc["TmDocumentEditor_NewComment"]
+            </button>
+        }
+    </header>
+
+    @if (!string.IsNullOrWhiteSpace(StatusMessage))
+    {
+        <div class="tm-document-comment-rail__status" data-testid="document-comment-status-message">
+            @StatusMessage
+        </div>
+    }
+
+    @if (IsLoading)
+    {
+        <div class="tm-document-comment-rail__loading" data-testid="document-comment-loading">
+            @Loc["TmDocumentEditor_LoadingComments"]
+        </div>
+    }
+    else
+    {
+        @if (ComposerOpen && DraftAnchor is not null)
+        {
+            <section class="tm-document-comment-rail__composer" data-testid="document-comment-new-composer">
+                <span class="tm-document-comment-rail__anchor">@GetAnchorLabel(DraftAnchor)</span>
+                <TmDocumentCommentComposer CanComment="@CanComment"
+                                           IsBusy="@IsBusy"
+                                           MentionProvider="@MentionProvider"
+                                           Placeholder="@Loc["TmDocumentEditor_CommentPlaceholder"]"
+                                           SubmitLabel="@Loc["TmDocumentEditor_AddComment"]"
+                                           OnSubmit="CreateAsync"
+                                           OnCancel="OnCancelComment" />
+            </section>
+        }
+
+        @if (Comments.Count == 0)
+        {
+            <div class="tm-document-comment-rail__empty" data-testid="document-comment-empty">
+                @Loc["TmDocumentEditor_NoComments"]
+            </div>
+        }
+        else
+        {
+            <div class="tm-document-comment-rail__list" data-testid="document-comment-list">
+                @foreach (var comment in OrderedComments)
+                {
+                    <TmDocumentCommentThread Comment="@comment"
+                                             IsSelected="@(comment.Id == SelectedCommentId)"
+                                             CanComment="@CanComment"
+                                             CanResolve="@CanResolve"
+                                             CanDeleteOwnComments="@CanDeleteOwnComments"
+                                             CurrentAuthorId="@CurrentAuthorId"
+                                             IsBusy="@IsBusy"
+                                             MentionProvider="@MentionProvider"
+                                             OnSelect="OnSelectComment"
+                                             OnReply="OnReplyComment"
+                                             OnResolve="OnResolveComment"
+                                             OnReopen="OnReopenComment"
+                                             OnDelete="OnDeleteComment" />
+                }
+            </div>
+        }
+    }
+</aside>
+
+@code {
+    /// <summary>Comment threads to display.</summary>
+    [Parameter] public IReadOnlyList<DocumentComment> Comments { get; set; } = [];
+
+    /// <summary>Current draft anchor when the new comment composer is open.</summary>
+    [Parameter] public DocumentCommentAnchor? DraftAnchor { get; set; }
+
+    /// <summary>Whether the new comment composer is open.</summary>
+    [Parameter] public bool ComposerOpen { get; set; }
+
+    /// <summary>Selected comment thread id.</summary>
+    [Parameter] public string? SelectedCommentId { get; set; }
+
+    /// <summary>Whether comments are loading.</summary>
+    [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>Whether a comment operation is running.</summary>
+    [Parameter] public bool IsBusy { get; set; }
+
+    /// <summary>Whether the current user can add comments or replies.</summary>
+    [Parameter] public bool CanComment { get; set; } = true;
+
+    /// <summary>Whether the current user can resolve or reopen comments.</summary>
+    [Parameter] public bool CanResolve { get; set; } = true;
+
+    /// <summary>Whether the current user can delete comment threads they own.</summary>
+    [Parameter] public bool CanDeleteOwnComments { get; set; }
+
+    /// <summary>Current author identifier used for ownership checks.</summary>
+    [Parameter] public string? CurrentAuthorId { get; set; }
+
+    /// <summary>Whether a new comment can be started from the current selection.</summary>
+    [Parameter] public bool CanStartComment { get; set; } = true;
+
+    /// <summary>Optional mention provider reused by comment composers.</summary>
+    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
+
+    /// <summary>Optional status message.</summary>
+    [Parameter] public string? StatusMessage { get; set; }
+
+    /// <summary>Raised when a new comment flow should begin.</summary>
+    [Parameter] public EventCallback OnBeginComment { get; set; }
+
+    /// <summary>Raised when a new comment is submitted.</summary>
+    [Parameter] public EventCallback<DocumentCommentCreateRequest> OnCreateComment { get; set; }
+
+    /// <summary>Raised when the new comment composer is cancelled.</summary>
+    [Parameter] public EventCallback OnCancelComment { get; set; }
+
+    /// <summary>Raised when a reply is submitted.</summary>
+    [Parameter] public EventCallback<DocumentEditorCommentReplyRequest> OnReplyComment { get; set; }
+
+    /// <summary>Raised when a comment should be resolved.</summary>
+    [Parameter] public EventCallback<string> OnResolveComment { get; set; }
+
+    /// <summary>Raised when a comment should be reopened.</summary>
+    [Parameter] public EventCallback<string> OnReopenComment { get; set; }
+
+    /// <summary>Raised when a comment should be deleted.</summary>
+    [Parameter] public EventCallback<string> OnDeleteComment { get; set; }
+
+    /// <summary>Raised when a comment is selected.</summary>
+    [Parameter] public EventCallback<string> OnSelectComment { get; set; }
+
+    private IEnumerable<DocumentComment> OrderedComments => Comments
+        .OrderBy(comment => comment.Status == DocumentCommentStatus.Resolved)
+        .ThenByDescending(comment => comment.Entries.FirstOrDefault()?.CreatedAt ?? DateTimeOffset.MinValue);
+
+    private Task CreateAsync(string text)
+    {
+        return DraftAnchor is null
+            ? Task.CompletedTask
+            : OnCreateComment.InvokeAsync(new DocumentCommentCreateRequest
+            {
+                Anchor = DraftAnchor,
+                Text = text
+            });
+    }
+
+    private string GetAnchorLabel(DocumentCommentAnchor anchor)
+    {
+        return anchor.Type switch
+        {
+            DocumentCommentAnchorType.TextRange => Loc["TmDocumentEditor_TextCommentAnchor"],
+            DocumentCommentAnchorType.Block => Loc["TmDocumentEditor_BlockCommentAnchor", anchor.BlockId ?? Loc["TmDocumentEditor_UnknownAnchor"]],
+            _ => Loc["TmDocumentEditor_CommentAnchor"]
+        };
+    }
+}

@@ -39,6 +39,12 @@ public partial class TmSigningExternalStep
     /// <summary>Whether the controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 

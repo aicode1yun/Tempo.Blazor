@@ -1,0 +1,88 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="@RootClass" aria-label="@Loc["TmDocumentComments_LayerLabel"]">
+    @foreach (var thread in VisibleThreads)
+    {
+        <TmDocumentCommentMarker Thread="@thread"
+                                 ThreadNumber="@ThreadNumber(thread)"
+                                 Selected="@(thread.Id == SelectedThreadId)"
+                                 CurrentUserId="@CurrentUserId"
+                                 Disabled="@Disabled"
+                                 MarkerTemplate="@MarkerTemplate"
+                                 OnSelected="SelectThreadAsync" />
+    }
+
+    @if (DraftAnchor is not null)
+    {
+        @if (DraftAnchor.Kind == DocumentCommentAnchorKind.Area)
+        {
+            <div class="tm-document-comments-layer__area tm-document-comments-layer__draft"
+                 style="@DocumentCommentGeometryHelper.ToAreaStyle(DraftAnchor)"
+                 aria-hidden="true"></div>
+        }
+        else
+        {
+            <div class="tm-document-comments-layer__point tm-document-comments-layer__draft-point"
+                 style="@DocumentCommentGeometryHelper.ToPointStyle(DraftAnchor)"
+                 aria-hidden="true">
+                <span>+</span>
+            </div>
+        }
+    }
+</div>
+
+@code {
+    /// <summary>Threads available to render.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentThread> Threads { get; set; } = [];
+
+    /// <summary>One-based current page number.</summary>
+    [Parameter] public int PageNumber { get; set; } = 1;
+
+    /// <summary>Selected thread id.</summary>
+    [Parameter] public string? SelectedThreadId { get; set; }
+
+    /// <summary>Current user id for mention indicators.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether resolved threads should be rendered.</summary>
+    [Parameter] public bool ShowResolved { get; set; }
+
+    /// <summary>Current draft anchor.</summary>
+    [Parameter] public DocumentCommentAnchor? DraftAnchor { get; set; }
+
+    /// <summary>Optional marker template for each rendered thread marker.</summary>
+    [Parameter] public RenderFragment<DocumentCommentThread>? MarkerTemplate { get; set; }
+
+    /// <summary>Whether marker interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback invoked when a thread marker is selected.</summary>
+    [Parameter] public EventCallback<string> OnThreadSelected { get; set; }
+
+    private IEnumerable<DocumentCommentThread> VisibleThreads => Threads
+        .Where(thread => thread.Anchor.PageNumber == PageNumber)
+        .Where(thread => thread.Anchor.Kind is DocumentCommentAnchorKind.Point or DocumentCommentAnchorKind.Area)
+        .Where(thread => ShowResolved || thread.Status == DocumentCommentThreadStatus.Open);
+
+    private string RootClass => "tm-document-comments-layer";
+
+    private Task SelectThreadAsync(string threadId)
+    {
+        return OnThreadSelected.InvokeAsync(threadId);
+    }
+
+    private int ThreadNumber(DocumentCommentThread thread)
+    {
+        for (var i = 0; i < Threads.Count; i++)
+        {
+            if (ReferenceEquals(Threads[i], thread) || string.Equals(Threads[i].Id, thread.Id, StringComparison.Ordinal))
+            {
+                return i + 1;
+            }
+        }
+
+        return 1;
+    }
+
+}

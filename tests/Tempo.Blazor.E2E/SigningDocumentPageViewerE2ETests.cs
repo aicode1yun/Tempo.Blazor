@@ -48,4 +48,40 @@ public class SigningDocumentPageViewerE2ETests : WasmTestBase
         Assert.IsTrue(await overlay.IsVisibleAsync(), "Signature overlay should remain visible on mobile viewport.");
         await TakeScreenshotAsync(page, "signing_document_page_viewer_mobile");
     }
+
+    [TestMethod]
+    [Description("Signing document page viewer zoom controls resize the page while keeping overlays inside it")]
+    public async Task DocumentPageViewer_ZoomControlsResizePage()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync($"{BaseUrl}/signing-components");
+        await WaitForAppReadyAsync(page);
+
+        var viewer = page.Locator("[data-testid='signing-document-viewer']").First;
+        await viewer.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 15000 });
+
+        var pageElement = viewer.Locator(".tm-document-page-viewer__page").First;
+        var before = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(before);
+
+        await viewer.Locator(".tm-document-page-viewer__zoom-in").ClickAsync();
+        await Assertions.Expect(viewer.Locator(".tm-document-page-viewer__zoom-label")).ToContainTextAsync("125%");
+        var zoomed = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(zoomed);
+        Assert.IsTrue(zoomed!.Width > before!.Width, "Zoom in should increase the visual page width.");
+
+        await viewer.Locator(".tm-document-page-viewer__fit-page").ClickAsync();
+        await Assertions.Expect(viewer.Locator(".tm-document-page-viewer__zoom-label")).ToContainTextAsync("85%");
+        var fit = await pageElement.BoundingBoxAsync();
+        Assert.IsNotNull(fit);
+        Assert.IsTrue(fit!.Width < zoomed.Width, "Fit page should reduce the page after zoom in.");
+
+        var overlay = viewer.Locator("[data-testid='signature-overlay']").First;
+        var overlayBox = await overlay.BoundingBoxAsync();
+        Assert.IsNotNull(overlayBox);
+        Assert.IsTrue(overlayBox!.X >= fit.X, "Overlay should remain inside the fit page horizontally.");
+        Assert.IsTrue(overlayBox.X + overlayBox.Width <= fit.X + fit.Width + 1, "Overlay should remain inside the fit page horizontally.");
+    }
 }

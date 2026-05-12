@@ -9,6 +9,9 @@ public class SigningSubmitterRole
     /// <summary>Display name of the signer role.</summary>
     public string Name { get; set; } = string.Empty;
 
+    /// <summary>Localized display names of the signer role.</summary>
+    public SigningLocalizedText Labels { get; set; } = new();
+
     /// <summary>Optional signer email for submission recipient editing.</summary>
     public string? Email { get; set; }
 

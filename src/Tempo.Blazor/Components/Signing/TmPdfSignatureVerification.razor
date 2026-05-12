@@ -97,10 +97,10 @@
 
     private string StatusIcon => Result.Status switch
     {
-        SigningPdfVerificationStatus.Verified => "check-circle",
-        SigningPdfVerificationStatus.ChecksumNotFound => "search-x",
-        SigningPdfVerificationStatus.MalformedPdf or SigningPdfVerificationStatus.Error => "alert-triangle",
-        _ => "file-check"
+        SigningPdfVerificationStatus.Verified => IconNames.CheckCircle,
+        SigningPdfVerificationStatus.ChecksumNotFound => IconNames.SearchX,
+        SigningPdfVerificationStatus.MalformedPdf or SigningPdfVerificationStatus.Error => IconNames.AlertTriangle,
+        _ => IconNames.FileCheck
     };
 
     private string StatusTitle => Result.Status switch

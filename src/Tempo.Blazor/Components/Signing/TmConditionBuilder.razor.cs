@@ -27,6 +27,12 @@ public partial class TmConditionBuilder
     /// <summary>Whether the builder controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field and option labels.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized labels are missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the root element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -135,7 +141,10 @@ public partial class TmConditionBuilder
         }
 
         condition.Operation = operation;
-        await NotifyChangedAsync();
+        if (!IsBlank(condition))
+        {
+            await NotifyChangedAsync();
+        }
     }
 
     private async Task AddConditionAsync()
@@ -239,43 +248,12 @@ public partial class TmConditionBuilder
 
     private string GetFieldLabel(SigningField field)
     {
-        if (!string.IsNullOrWhiteSpace(field.Name))
-        {
-            return field.Name;
-        }
-
-        if (!string.IsNullOrWhiteSpace(field.Title))
-        {
-            return field.Title;
-        }
-
-        return GetFieldTypeLabel(field.Type);
+        return SigningTextResolver.FieldLabel(field, Culture, FallbackCulture, Loc);
     }
 
     private string GetFieldTypeLabel(SigningFieldType type)
     {
-        return type switch
-        {
-            SigningFieldType.Heading => Loc["TmSigning_Field_Heading"],
-            SigningFieldType.Strikethrough => Loc["TmSigning_Field_Strikethrough"],
-            SigningFieldType.Text => Loc["TmSigning_Field_Text"],
-            SigningFieldType.Signature => Loc["TmSigning_Field_Signature"],
-            SigningFieldType.Initials => Loc["TmSigning_Field_Initials"],
-            SigningFieldType.Date or SigningFieldType.DateNow => Loc["TmSigning_Field_Date"],
-            SigningFieldType.Number => Loc["TmSigning_Field_Number"],
-            SigningFieldType.Image => Loc["TmSigning_Field_Image"],
-            SigningFieldType.File => Loc["TmSigning_Field_File"],
-            SigningFieldType.Select => Loc["TmSigning_Field_Select"],
-            SigningFieldType.Checkbox => Loc["TmSigning_Field_Checkbox"],
-            SigningFieldType.Multiple => Loc["TmSigning_Field_Multiple"],
-            SigningFieldType.Radio => Loc["TmSigning_Field_Radio"],
-            SigningFieldType.Cells => Loc["TmSigning_Field_Cells"],
-            SigningFieldType.Stamp => Loc["TmSigning_Field_Stamp"],
-            SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
-            SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
-            SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
-            _ => Loc["TmSigning_Field_Text"]
-        };
+        return SigningTextResolver.FieldTypeLabel(type, Loc);
     }
 
     private static IReadOnlyList<SigningConditionAction> GetActionsFor(SigningFieldType? type)
@@ -330,6 +308,11 @@ public partial class TmConditionBuilder
             SigningConditionAction.LessThan => Loc["TmConditionBuilder_LessThan"],
             _ => action.ToString()
         };
+    }
+
+    private string GetOptionLabel(SigningFieldOption option)
+    {
+        return SigningTextResolver.OptionLabel(option, Culture, FallbackCulture);
     }
 
     private string GetOperationLabel(SigningConditionOperation operation)

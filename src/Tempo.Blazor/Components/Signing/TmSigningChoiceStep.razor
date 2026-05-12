@@ -4,6 +4,8 @@
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@_validationMessage"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     @if (IsCheckboxGroup)
@@ -32,7 +34,7 @@
             <option value="">@Loc["TmSigningStep_SelectPlaceholder"]</option>
             @foreach (var option in Field.Options)
             {
-                <option value="@option.Uuid">@option.Value</option>
+                <option value="@option.Uuid">@GetOptionLabel(option)</option>
             }
         </select>
     }
@@ -49,7 +51,7 @@
                            checked="@string.Equals(SingleValue, option.Uuid, StringComparison.Ordinal)"
                            disabled="@Disabled"
                            @onchange="args => HandleSingleValueChangedAsync(args)" />
-                    <span>@option.Value</span>
+                    <span>@GetOptionLabel(option)</span>
                 </label>
             }
         </div>
@@ -66,7 +68,7 @@
                            checked="@SelectedValues.Contains(option.Uuid)"
                            disabled="@Disabled"
                            @onchange="args => HandleMultipleValueChangedAsync(option.Uuid, args)" />
-                    <span>@option.Value</span>
+                    <span>@GetOptionLabel(option)</span>
                 </label>
             }
         </div>

@@ -20,6 +20,26 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_Select_RendersLocalizedOptionsAndKeepsStableValue()
+    {
+        object? value = null;
+        var field = CreateChoiceField(SigningFieldType.Select);
+        field.Options[0].Labels.Translations["cs"] = "Jedna";
+        field.Options[1].Labels.Translations["cs"] = "Dvě";
+
+        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+            .Add(p => p.Field, field)
+            .Add(p => p.Culture, "cs-CZ")
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
+
+        cut.FindAll("option").Select(option => option.TextContent).Should().Contain(["Jedna", "Dvě"]);
+
+        cut.Find("select").Change("two");
+
+        value.Should().Be("two");
+    }
+
+    [Fact]
     public void Render_Radio_RendersRadioOptions()
     {
         var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
@@ -29,12 +49,53 @@ public class TmSigningChoiceStepTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_Radio_RendersLocalizedOptionsAndKeepsStableValue()
+    {
+        object? value = null;
+        var field = CreateChoiceField(SigningFieldType.Radio);
+        field.Options[0].Labels.Translations["cs"] = "Jedna";
+        field.Options[1].Labels.Translations["cs"] = "Dvě";
+
+        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+            .Add(p => p.Field, field)
+            .Add(p => p.Culture, "cs-CZ")
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
+
+        cut.Find(".tm-signing-choice-step__options").TextContent.Should().Contain("Jedna");
+
+        cut.Find("input[type='radio'][value='two']").Change("two");
+
+        value.Should().Be("two");
+    }
+
+    [Fact]
     public void Render_Multiple_RendersCheckboxOptions()
     {
         var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
             .Add(p => p.Field, CreateChoiceField(SigningFieldType.Multiple)));
 
         cut.FindAll("input[type='checkbox']").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Render_Multiple_RendersLocalizedOptionsAndKeepsStableValues()
+    {
+        object? value = null;
+        var field = CreateChoiceField(SigningFieldType.Multiple);
+        field.Options[0].Labels.Translations["cs"] = "Jedna";
+        field.Options[1].Labels.Translations["cs"] = "Dvě";
+
+        var cut = RenderComponent<TmSigningChoiceStep>(parameters => parameters
+            .Add(p => p.Field, field)
+            .Add(p => p.Culture, "cs-CZ")
+            .Add(p => p.ValueChanged, EventCallback.Factory.Create<object?>(this, changed => value = changed)));
+
+        cut.Find(".tm-signing-choice-step__options").TextContent.Should().Contain("Dvě");
+
+        cut.Find("input[type='checkbox'][value='two']").Change(true);
+
+        value.Should().BeAssignableTo<string[]>();
+        value.As<string[]>().Should().Equal("two");
     }
 
     [Fact]

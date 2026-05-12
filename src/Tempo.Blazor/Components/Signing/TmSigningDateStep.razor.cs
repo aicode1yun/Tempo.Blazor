@@ -27,6 +27,12 @@ public partial class TmSigningDateStep
     /// <summary>Whether to show the button that fills today's date.</summary>
     [Parameter] public bool ShowTodayButton { get; set; } = true;
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -43,11 +49,13 @@ public partial class TmSigningDateStep
 
     private string ShellClass => string.Join(" ", new[] { "tm-signing-date-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
 
+    private string PlaceholderText => SigningLocalizationResolver.ResolveFieldPlaceholder(Field, Culture, FallbackCulture);
+
     private async Task HandleValueChangedAsync(ChangeEventArgs args)
     {
         var value = args.Value?.ToString();
         _validationMessage = Field.Required && string.IsNullOrWhiteSpace(value)
-            ? Loc["TmSigningStep_Required"]
+            ? SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_Required"])
             : null;
         await ValueChanged.InvokeAsync(value);
     }

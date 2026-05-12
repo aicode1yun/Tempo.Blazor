@@ -1,0 +1,30 @@
+@namespace Tempo.Blazor.Components.Signing
+
+<div class="tm-document-comments-panel__reaction-popover" role="listbox" aria-label="@Loc["TmDocumentComments_ReactionPickerLabel"]">
+    @foreach (var reaction in Reactions)
+    {
+        <button type="button"
+                class="tm-document-comments-panel__reaction-choice"
+                disabled="@Disabled"
+                role="option"
+                @onclick="() => SelectAsync(reaction)">
+            @reaction
+        </button>
+    }
+</div>
+
+@code {
+    /// <summary>Available reaction values.</summary>
+    [Parameter] public IReadOnlyList<string> Reactions { get; set; } = ["👍", "✅", "👀", "❤️", "🎉"];
+
+    /// <summary>Whether picker interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Callback invoked when a reaction value is selected.</summary>
+    [Parameter] public EventCallback<string> OnSelected { get; set; }
+
+    private Task SelectAsync(string reaction)
+    {
+        return Disabled ? Task.CompletedTask : OnSelected.InvokeAsync(reaction);
+    }
+}

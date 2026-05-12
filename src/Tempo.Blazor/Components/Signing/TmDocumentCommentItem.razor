@@ -1,0 +1,112 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<article class="tm-document-comments-panel__item" data-comment-id="@Comment.Id">
+    <div class="tm-document-comments-panel__avatar" aria-hidden="true">@Initials(Comment.AuthorName)</div>
+    <div class="tm-document-comments-panel__item-body">
+        <header class="tm-document-comments-panel__item-header">
+            <strong>@Comment.AuthorName</strong>
+            <time datetime="@Comment.CreatedAt.ToString("O")">@Comment.CreatedAt.ToLocalTime().ToString("g")</time>
+            @if (Comment.EditedAt is not null)
+            {
+                <span>@Loc["TmDocumentComments_Edited"]</span>
+            }
+        </header>
+        <p class="tm-document-comments-panel__body">@Comment.Body</p>
+        @if (Comment.Mentions.Count > 0)
+        {
+            <div class="tm-document-comments-panel__mentions">
+                @foreach (var mention in Comment.Mentions)
+                {
+                    <span class="tm-document-comments-panel__mention">@mention.DisplayName</span>
+                }
+            </div>
+        }
+        <div class="tm-document-comments-panel__item-actions">
+            <TmCommentReactionBar Reactions="@Comment.Reactions"
+                                  CurrentUserId="@CurrentUserId"
+                                  Disabled="@Disabled"
+                                  PickerOpen="@PickerOpen"
+                                  PickerOpenChanged="PickerOpenChanged"
+                                  OnReactionToggled="ToggleReactionAsync" />
+            @if (CanEdit)
+            {
+                <button type="button" class="tm-document-comments-panel__text-action" disabled="@Disabled" @onclick="EditAsync">
+                    @Loc["TmDocumentComments_Edit"]
+                </button>
+            }
+            @if (CanDelete)
+            {
+                <button type="button" class="tm-document-comments-panel__text-action" disabled="@Disabled" @onclick="DeleteAsync">
+                    @Loc["TmDocumentComments_Delete"]
+                </button>
+            }
+        </div>
+    </div>
+</article>
+
+@code {
+    /// <summary>Parent thread id.</summary>
+    [Parameter, EditorRequired] public string ThreadId { get; set; } = string.Empty;
+
+    /// <summary>Comment to render.</summary>
+    [Parameter, EditorRequired] public DocumentComment Comment { get; set; } = new();
+
+    /// <summary>Current user id for permissions and active reaction styling.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether item interaction is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Whether this comment's reaction picker is open.</summary>
+    [Parameter] public bool PickerOpen { get; set; }
+
+    /// <summary>Callback invoked when picker open state changes.</summary>
+    [Parameter] public EventCallback<bool> PickerOpenChanged { get; set; }
+
+    /// <summary>Callback invoked when editing is requested.</summary>
+    [Parameter] public EventCallback<DocumentComment> OnEditRequested { get; set; }
+
+    /// <summary>Callback invoked when deleting is requested.</summary>
+    [Parameter] public EventCallback<DocumentCommentDeleteRequest> OnDeleteRequested { get; set; }
+
+    /// <summary>Callback invoked when a reaction is toggled.</summary>
+    [Parameter] public EventCallback<DocumentCommentReactionToggleRequest> OnReactionToggled { get; set; }
+
+    private bool CanEdit => DocumentCommentPermissionHelper.CanEdit(Comment, CurrentUserId);
+
+    private bool CanDelete => DocumentCommentPermissionHelper.CanDelete(Comment, CurrentUserId);
+
+    private Task EditAsync()
+    {
+        return Disabled ? Task.CompletedTask : OnEditRequested.InvokeAsync(Comment);
+    }
+
+    private Task DeleteAsync()
+    {
+        return Disabled
+            ? Task.CompletedTask
+            : OnDeleteRequested.InvokeAsync(new DocumentCommentDeleteRequest
+            {
+                ThreadId = ThreadId,
+                CommentId = Comment.Id
+            });
+    }
+
+    private Task ToggleReactionAsync(string reaction)
+    {
+        return Disabled
+            ? Task.CompletedTask
+            : OnReactionToggled.InvokeAsync(new DocumentCommentReactionToggleRequest
+            {
+                ThreadId = ThreadId,
+                CommentId = Comment.Id,
+                Value = reaction
+            });
+    }
+
+    private static string Initials(string value)
+    {
+        return string.IsNullOrWhiteSpace(value) ? "?" : value[..1].ToUpperInvariant();
+    }
+}

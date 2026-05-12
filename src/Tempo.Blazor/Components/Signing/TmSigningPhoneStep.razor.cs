@@ -62,6 +62,12 @@ public partial class TmSigningPhoneStep
     /// <summary>Whether the controls are disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -70,6 +76,10 @@ public partial class TmSigningPhoneStep
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
     private string ShellClass => string.Join(" ", new[] { "tm-signing-phone-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
+
+    private string PhonePlaceholderText => SigningLocalizationResolver.ResolveFieldPlaceholder(Field, Culture, FallbackCulture, Loc["TmSigningStep_PhonePlaceholder"]);
+
+    private string OtpPlaceholderText => Loc["TmSigningStep_OtpPlaceholder"];
 
     private async Task HandleCountryChangedAsync(ChangeEventArgs args)
     {
@@ -106,7 +116,7 @@ public partial class TmSigningPhoneStep
         var normalized = NormalizePhone(CountryCode, PhoneNumber);
         if (Field.Required && string.IsNullOrWhiteSpace(normalized))
         {
-            _validationMessage = Loc["TmSigningStep_Required"];
+            _validationMessage = SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_Required"]);
             return;
         }
 

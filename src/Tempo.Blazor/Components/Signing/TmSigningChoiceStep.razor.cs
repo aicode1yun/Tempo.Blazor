@@ -29,6 +29,12 @@ public partial class TmSigningChoiceStep
     /// <summary>Whether a single checkbox should show a generic instruction instead of the field label.</summary>
     [Parameter] public bool AnonymousCheckbox { get; set; }
 
+    /// <summary>Culture used to resolve localized field and option text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -57,7 +63,7 @@ public partial class TmSigningChoiceStep
     {
         var value = args.Value?.ToString();
         _validationMessage = Field.Required && string.IsNullOrWhiteSpace(value)
-            ? Loc["TmSigningStep_RequiredChoice"]
+            ? RequiredChoiceMessage
             : null;
         await ValueChanged.InvokeAsync(value);
     }
@@ -74,14 +80,14 @@ public partial class TmSigningChoiceStep
             values.Remove(optionUuid);
         }
 
-        _validationMessage = Field.Required && values.Count == 0 ? Loc["TmSigningStep_RequiredChoice"] : null;
+        _validationMessage = Field.Required && values.Count == 0 ? RequiredChoiceMessage : null;
         await ValueChanged.InvokeAsync(values.ToArray());
     }
 
     private async Task HandleCheckboxChangedAsync(ChangeEventArgs args)
     {
         var value = ToBool(args.Value);
-        _validationMessage = Field.Required && !value ? Loc["TmSigningStep_RequiredChoice"] : null;
+        _validationMessage = Field.Required && !value ? RequiredChoiceMessage : null;
         await ValueChanged.InvokeAsync(value);
     }
 
@@ -97,7 +103,7 @@ public partial class TmSigningChoiceStep
             values.Remove(checkboxField.Uuid);
         }
 
-        _validationMessage = CheckboxFields.Any(item => item.Required) && values.Count == 0 ? Loc["TmSigningStep_RequiredChoice"] : null;
+        _validationMessage = CheckboxFields.Any(item => item.Required) && values.Count == 0 ? RequiredChoiceMessage : null;
         await ValueChanged.InvokeAsync(values.ToArray());
     }
 
@@ -109,12 +115,15 @@ public partial class TmSigningChoiceStep
             || bool.TryParse(value?.ToString(), out var parsed) && parsed;
     }
 
-    private static string GetFieldLabel(SigningField field)
+    private string RequiredChoiceMessage => SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_RequiredChoice"]);
+
+    private string GetOptionLabel(SigningFieldOption option)
     {
-        return !string.IsNullOrWhiteSpace(field.Title)
-            ? field.Title!
-            : !string.IsNullOrWhiteSpace(field.Name)
-                ? field.Name!
-                : field.Type.ToString();
+        return SigningTextResolver.OptionLabel(option, Culture, FallbackCulture);
+    }
+
+    private string GetFieldLabel(SigningField field)
+    {
+        return SigningTextResolver.FieldLabel(field, Culture, FallbackCulture, Loc);
     }
 }

@@ -24,6 +24,12 @@ public partial class TmSigningNumberStep
     /// <summary>Whether the input is disabled.</summary>
     [Parameter] public bool Disabled { get; set; }
 
+    /// <summary>Culture used to resolve localized field text.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Fallback culture used when localized field text is missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
     /// <summary>Additional CSS classes for the shell element.</summary>
     [Parameter] public string? Class { get; set; }
 
@@ -33,6 +39,8 @@ public partial class TmSigningNumberStep
 
     private string? FormattedValue => Value?.ToString(CultureInfo.InvariantCulture);
 
+    private string PlaceholderText => SigningLocalizationResolver.ResolveFieldPlaceholder(Field, Culture, FallbackCulture, Loc["TmSigningStep_NumberPlaceholder"]);
+
     private string ShellClass => string.Join(" ", new[] { "tm-signing-number-step", Class }.Where(item => !string.IsNullOrWhiteSpace(item)));
 
     private async Task HandleValueChangedAsync(ChangeEventArgs args)
@@ -40,7 +48,9 @@ public partial class TmSigningNumberStep
         var text = args.Value?.ToString();
         if (string.IsNullOrWhiteSpace(text))
         {
-            _validationMessage = Field.Required ? Loc["TmSigningStep_Required"] : null;
+            _validationMessage = Field.Required
+                ? SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_Required"])
+                : null;
             await ValueChanged.InvokeAsync(null);
             return;
         }
@@ -60,12 +70,12 @@ public partial class TmSigningNumberStep
     {
         if (TryParseDecimal(Field.Validation?.Min, out var min) && number < min)
         {
-            return Field.Validation?.Message ?? Loc["TmSigningStep_MinValue", min];
+            return SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_MinValue", min]);
         }
 
         if (TryParseDecimal(Field.Validation?.Max, out var max) && number > max)
         {
-            return Field.Validation?.Message ?? Loc["TmSigningStep_MaxValue", max];
+            return SigningLocalizationResolver.ResolveValidationMessage(Field.Validation, Culture, FallbackCulture, Loc["TmSigningStep_MaxValue", max]);
         }
 
         return null;

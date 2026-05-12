@@ -3,7 +3,10 @@
 
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@CurrentValidationMessage"
+                    ValidationMessageId="@ValidationDescriptionId"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     @if (IsMultiline)
@@ -12,7 +15,8 @@
                   value="@Value"
                   disabled="@Disabled"
                   maxlength="@MaxLength"
-                  placeholder="@Loc["TmSigningStep_TextPlaceholder"]"
+                  placeholder="@PlaceholderText"
+                  aria-describedby="@ValidationDescriptionId"
                   @onchange="HandleValueChangedAsync"></textarea>
     }
     else
@@ -22,7 +26,8 @@
                value="@Value"
                disabled="@Disabled"
                maxlength="@MaxLength"
-               placeholder="@Loc["TmSigningStep_TextPlaceholder"]"
+               placeholder="@PlaceholderText"
+               aria-describedby="@ValidationDescriptionId"
                @onchange="HandleValueChangedAsync" />
     }
 </TmSigningStepShell>

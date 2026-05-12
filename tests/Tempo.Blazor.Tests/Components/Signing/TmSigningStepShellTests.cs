@@ -38,6 +38,25 @@ public class TmSigningStepShellTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_LocalizedFieldText_UsesRequestedCulture()
+    {
+        var field = new SigningField
+        {
+            Name = "internal-name",
+            Labels = { Translations = { ["cs"] = "Celé jméno" } },
+            Descriptions = { Translations = { ["cs"] = "Vyplňte **jméno** podepisujícího." } }
+        };
+
+        var cut = RenderComponent<TmSigningStepShell>(parameters => parameters
+            .Add(p => p.Field, field)
+            .Add(p => p.Culture, "cs-CZ"));
+
+        cut.Find(".tm-signing-step-shell__title").TextContent.Should().Be("Celé jméno");
+        cut.Markup.Should().Contain("<strong>");
+        cut.Find(".tm-signing-step-shell__description").TextContent.Should().Contain("jméno");
+    }
+
+    [Fact]
     public void Render_ValidationMessage_AddsInvalidClass()
     {
         var cut = RenderComponent<TmSigningStepShell>(parameters => parameters

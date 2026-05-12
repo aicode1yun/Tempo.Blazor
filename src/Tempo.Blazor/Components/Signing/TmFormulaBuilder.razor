@@ -43,12 +43,13 @@
     <div class="tm-formula-builder__tokens" aria-label="@Loc["TmFormulaBuilder_Tokens"]">
         @foreach (var sourceField in FormulaSourceFields)
         {
+            var fieldLabel = GetLocalizedFieldLabel(sourceField);
             <button type="button"
                     class="tm-formula-builder__token"
                     data-field-uuid="@sourceField.Uuid"
                     disabled="@Disabled"
                     @onclick="() => InsertFieldTokenAsync(sourceField)">
-                @SigningFormulaHelper.GetFieldLabel(sourceField)
+                @fieldLabel
             </button>
         }
     </div>

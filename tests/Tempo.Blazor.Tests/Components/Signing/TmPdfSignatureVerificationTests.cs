@@ -17,6 +17,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
             .Add(p => p.OnVerifyRequested, EventCallback.Factory.Create(this, () => requested = true)));
 
         cut.Markup.Should().Contain("Verify a signed PDF");
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
         cut.Find(".tm-pdf-signature-verification__verify").Click();
         requested.Should().BeTrue();
     }
@@ -32,6 +33,7 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
             .Add(p => p.Result, new SigningPdfVerificationResult { Status = status }));
 
         cut.Markup.Should().Contain(expected);
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
     }
 
     [Fact]
@@ -59,5 +61,22 @@ public class TmPdfSignatureVerificationTests : LocalizationTestBase
         cut.Markup.Should().Contain("sha256-demo");
         cut.Markup.Should().Contain("Alex Johnson");
         cut.Markup.Should().Contain("CN=Alex");
+    }
+
+    [Fact]
+    public void Render_VerificationDataIsIndependentFromSigningFieldLocalization()
+    {
+        var cut = RenderComponent<TmPdfSignatureVerification>(parameters => parameters
+            .Add(p => p.Result, new SigningPdfVerificationResult
+            {
+                Status = SigningPdfVerificationStatus.ChecksumNotFound,
+                FileName = "localized-template.pdf",
+                Checksum = "sha256-original-value",
+                Message = "Stored field label: Podpis"
+            }));
+
+        cut.Markup.Should().Contain("localized-template.pdf");
+        cut.Markup.Should().Contain("sha256-original-value");
+        cut.Markup.Should().Contain("Stored field label: Podpis");
     }
 }

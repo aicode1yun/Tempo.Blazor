@@ -4,12 +4,14 @@
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@_validationMessage"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     @if (Field.Type == SigningFieldType.Stamp)
     {
         <div class="tm-signing-attachment-step__stamp" data-has-value="@BoolText(!string.IsNullOrWhiteSpace(StampValue))">
-            @(string.IsNullOrWhiteSpace(StampValue) ? Loc["TmSigningStep_StampPlaceholder"] : StampValue)
+            @(string.IsNullOrWhiteSpace(StampValue) ? StampPlaceholderText : StampValue)
         </div>
     }
     else

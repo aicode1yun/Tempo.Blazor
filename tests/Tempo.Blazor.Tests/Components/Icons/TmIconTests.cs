@@ -101,6 +101,45 @@ public class TmIconTests : LocalizationTestBase
     }
 
     [Fact]
+    public void TmIcon_Smartphone_Renders_BuiltInIcon()
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, IconNames.Smartphone));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().Contain("<rect");
+    }
+
+    [Fact]
+    public void TmIcon_Trash2_Renders_BuiltInIcon()
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, IconNames.Trash2));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().Contain("M19 6l-1 14");
+    }
+
+    [Theory]
+    [InlineData("circle-dot")]
+    [InlineData("stamp")]
+    [InlineData("scan-line")]
+    [InlineData("clipboard-check")]
+    [InlineData(IconNames.FileCheck)]
+    [InlineData(IconNames.SearchX)]
+    public void TmIcon_SigningWorkflowIcons_RenderBuiltInIcons(string iconName)
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, iconName));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect");
+    }
+
+    [Fact]
     public void TmIcon_UnknownName_Renders_Empty_Svg_Without_Throwing()
     {
         // Should not throw for unknown icon names — renders empty SVG gracefully

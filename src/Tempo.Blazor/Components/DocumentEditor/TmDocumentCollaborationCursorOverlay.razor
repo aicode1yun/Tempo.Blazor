@@ -1,0 +1,34 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+@if (Cursors.Count > 0)
+{
+    <div class="tm-document-cursors" data-testid="document-collaboration-cursors">
+        @foreach (var cursor in Cursors)
+        {
+            <span class="tm-document-cursor"
+                  style="@GetCursorStyle(cursor)"
+                  data-block-id="@cursor.BlockId"
+                  data-testid="document-collaboration-cursor">
+                <span class="tm-document-cursor__bar"></span>
+                <span class="tm-document-cursor__label">@GetLabel(cursor)</span>
+            </span>
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Remote collaboration cursors.</summary>
+    [Parameter] public IReadOnlyList<DocumentCollaborationCursor> Cursors { get; set; } = [];
+
+    private static string GetCursorStyle(DocumentCollaborationCursor cursor)
+    {
+        var color = string.IsNullOrWhiteSpace(cursor.Color) ? "var(--tm-color-primary)" : cursor.Color;
+        return $"--tm-document-cursor-color:{color};";
+    }
+
+    private static string GetLabel(DocumentCollaborationCursor cursor)
+    {
+        return string.IsNullOrWhiteSpace(cursor.DisplayName) ? cursor.ClientId : cursor.DisplayName;
+    }
+}

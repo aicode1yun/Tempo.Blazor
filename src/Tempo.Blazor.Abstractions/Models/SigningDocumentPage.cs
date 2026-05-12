@@ -20,4 +20,7 @@ public class SigningDocumentPage
 
     /// <summary>Accessible page label.</summary>
     public string? Label { get; set; }
+
+    /// <summary>Localized accessible page labels.</summary>
+    public SigningLocalizedText Labels { get; set; } = new();
 }

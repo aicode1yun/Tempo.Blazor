@@ -43,7 +43,9 @@
 
 .tm-audit-trail-viewer__document,
 .tm-audit-trail-viewer__signer,
-.tm-audit-trail-viewer__entry {
+.tm-audit-trail-viewer__entry,
+.tm-audit-trail-viewer__localization-summary,
+.tm-audit-trail-viewer__field-snapshot {
     display: grid;
     gap: var(--tm-space-2);
     margin: 0;
@@ -54,9 +56,25 @@
 }
 
 .tm-audit-trail-viewer__document div,
-.tm-audit-trail-viewer__signer div {
+.tm-audit-trail-viewer__signer div,
+.tm-audit-trail-viewer__localization-summary div {
     display: grid;
     gap: var(--tm-space-1);
+}
+
+.tm-audit-trail-viewer__localization-summary {
+    grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+
+.tm-audit-trail-viewer__field-snapshots {
+    display: grid;
+    gap: var(--tm-space-2);
+}
+
+.tm-audit-trail-viewer__field-snapshot span {
+    color: var(--tm-text-secondary);
+    font-size: var(--tm-font-size-sm);
+    overflow-wrap: anywhere;
 }
 
 .tm-audit-trail-viewer dt {

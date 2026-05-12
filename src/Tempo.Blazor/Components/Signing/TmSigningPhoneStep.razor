@@ -4,6 +4,8 @@
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@_validationMessage"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     <div class="tm-signing-phone-step__row">
@@ -22,7 +24,7 @@
                @bind:set="HandlePhoneInputAsync"
                @bind:event="oninput"
                disabled="@Disabled"
-               placeholder="@Loc["TmSigningStep_PhonePlaceholder"]" />
+               placeholder="@PhonePlaceholderText" />
         <button type="button"
                 class="tm-signing-phone-step__send"
                 disabled="@Disabled"
@@ -40,7 +42,7 @@
                    @bind:event="oninput"
                    inputmode="numeric"
                    disabled="@Disabled"
-                   placeholder="@Loc["TmSigningStep_OtpPlaceholder"]" />
+                   placeholder="@OtpPlaceholderText" />
             <span class="tm-signing-phone-step__resend">@Loc["TmSigningStep_ResendIn", ResendSeconds]</span>
         </div>
     }

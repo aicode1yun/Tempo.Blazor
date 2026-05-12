@@ -92,6 +92,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.TemplateRoles));
 
+        cut.Find(".tm-recipient-role-editor").ClassList.Should().Contain("tm-recipient-role-editor--template");
         cut.FindAll(".tm-recipient-role-editor__email").Should().BeEmpty();
         cut.FindAll(".tm-recipient-role-editor__full-name").Should().BeEmpty();
         cut.FindAll(".tm-recipient-role-editor__phone").Should().BeEmpty();
@@ -104,6 +105,7 @@ public class TmRecipientRoleEditorTests : LocalizationTestBase
             parameters.Add(p => p.Roles, CreateRoles())
                       .Add(p => p.Mode, TmRecipientRoleEditorMode.SubmissionRecipients));
 
+        cut.Find(".tm-recipient-role-editor").ClassList.Should().Contain("tm-recipient-role-editor--submission");
         cut.FindAll(".tm-recipient-role-editor__email").Should().HaveCount(2);
         cut.FindAll(".tm-recipient-role-editor__full-name").Should().HaveCount(2);
         cut.FindAll(".tm-recipient-role-editor__phone").Should().HaveCount(2);

@@ -4,6 +4,8 @@
 <TmSigningStepShell Field="Field"
                     ValidationMessage="@_validationMessage"
                     AppearsOn="@AppearsOn"
+                    Culture="@Culture"
+                    FallbackCulture="@FallbackCulture"
                     Class="@ShellClass"
                     @attributes="AdditionalAttributes">
     <div class="tm-signing-date-step__row">
@@ -13,6 +15,7 @@
                min="@NormalizeDateToken(Field.Validation?.Min)"
                max="@NormalizeDateToken(Field.Validation?.Max)"
                disabled="@Disabled"
+               placeholder="@PlaceholderText"
                @onchange="HandleValueChangedAsync" />
         @if (ShowTodayButton)
         {

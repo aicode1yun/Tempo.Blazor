@@ -1,0 +1,79 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-document-comments-panel__reaction-bar">
+    @foreach (var reaction in VisibleReactions)
+    {
+        <button type="button"
+                class="@ReactionClass(reaction)"
+                disabled="@Disabled"
+                @onclick="() => ToggleAsync(reaction.Value)">
+            <span>@reaction.Value</span>
+            <span>@reaction.UserIds.Count</span>
+        </button>
+    }
+
+    <div class="tm-document-comments-panel__reaction-picker">
+        <button type="button"
+                class="tm-document-comments-panel__reaction-add"
+                aria-label="@Loc["TmDocumentComments_AddReaction"]"
+                disabled="@Disabled"
+                @onclick="TogglePicker">
+            <TmIcon Name="@IconNames.Plus" Size="IconSize.Sm" />
+        </button>
+        @if (PickerOpen)
+        {
+            <TmReactionPicker Reactions="@AvailableReactions"
+                              Disabled="@Disabled"
+                              OnSelected="ToggleAsync" />
+        }
+    </div>
+</div>
+
+@code {
+    /// <summary>Existing grouped reactions.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentReaction> Reactions { get; set; } = [];
+
+    /// <summary>Current user id used for active reaction styling.</summary>
+    [Parameter] public string? CurrentUserId { get; set; }
+
+    /// <summary>Whether the reaction bar is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Whether the picker is open.</summary>
+    [Parameter] public bool PickerOpen { get; set; }
+
+    /// <summary>Available picker reaction values.</summary>
+    [Parameter] public IReadOnlyList<string> AvailableReactions { get; set; } = ["👍", "✅", "👀", "❤️", "🎉"];
+
+    /// <summary>Callback invoked when the picker open state changes.</summary>
+    [Parameter] public EventCallback<bool> PickerOpenChanged { get; set; }
+
+    /// <summary>Callback invoked when a reaction value is toggled.</summary>
+    [Parameter] public EventCallback<string> OnReactionToggled { get; set; }
+
+    private IEnumerable<DocumentCommentReaction> VisibleReactions => Reactions.Where(reaction => reaction.UserIds.Count > 0);
+
+    private string ReactionClass(DocumentCommentReaction reaction)
+    {
+        return !string.IsNullOrWhiteSpace(CurrentUserId) && reaction.UserIds.Contains(CurrentUserId)
+            ? "tm-document-comments-panel__reaction tm-document-comments-panel__reaction--active"
+            : "tm-document-comments-panel__reaction";
+    }
+
+    private Task TogglePicker()
+    {
+        return Disabled ? Task.CompletedTask : PickerOpenChanged.InvokeAsync(!PickerOpen);
+    }
+
+    private async Task ToggleAsync(string reaction)
+    {
+        if (Disabled)
+        {
+            return;
+        }
+
+        await PickerOpenChanged.InvokeAsync(false);
+        await OnReactionToggled.InvokeAsync(reaction);
+    }
+}

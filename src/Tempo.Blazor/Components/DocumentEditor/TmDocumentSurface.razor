@@ -1,0 +1,166 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<div class="@RootClass"
+     style="@SurfaceStyle"
+     @ref="_rootElement"
+     role="textbox"
+     aria-multiline="true"
+     aria-readonly="@(ReadOnly ? "true" : "false")"
+     contenteditable="@(!ReadOnly ? "true" : "false")"
+     @onclick="ClearSelectionAsync">
+    @if (Document is not null)
+    {
+        @if (PageMode == DocumentSurfacePageMode.Page)
+        {
+            <section class="tm-document-header-footer-surface tm-document-header-footer-surface--header"
+                     data-testid="document-header-surface"
+                     @onclick:stopPropagation="true">
+                <label>@Loc["TmDocumentEditor_Header"]</label>
+                @if (ReadOnly)
+                {
+                    <div class="tm-document-header-footer-surface__content">@GetHeaderFooterText(DocumentHeaderFooterType.Header)</div>
+                }
+                else
+                {
+                    <input value="@GetHeaderFooterText(DocumentHeaderFooterType.Header)"
+                           @onchange="args => ChangeHeaderFooterTextAsync(DocumentHeaderFooterType.Header, args.Value?.ToString() ?? string.Empty)" />
+                }
+            </section>
+            @if (!ReadOnly)
+            {
+                <section class="tm-document-section-options" data-testid="document-section-options" @onclick:stopPropagation="true">
+                    <label>
+                        <input type="checkbox"
+                               checked="@CurrentSectionProperties.DifferentFirstPage"
+                               @onchange="args => ChangeDifferentFirstPageAsync(args.Value is true)" />
+                        <span>@Loc["TmDocumentEditor_DifferentFirstPage"]</span>
+                    </label>
+                    <label>
+                        <input type="checkbox"
+                               checked="@CurrentSectionProperties.DifferentOddAndEvenPages"
+                               @onchange="args => ChangeDifferentOddEvenAsync(args.Value is true)" />
+                        <span>@Loc["TmDocumentEditor_DifferentOddEven"]</span>
+                    </label>
+                </section>
+            }
+        }
+
+        @foreach (var block in OrderedBlocks)
+        {
+            @if (ReadOnly)
+            {
+                <TmDocumentBlockRenderer DocumentId="@Document.DocumentId"
+                                         Block="@block"
+                                         ImageUrlResolver="@ImageUrlResolver"
+                                         OnCommentSelected="@CommentSelected" />
+            }
+            else
+            {
+                <TmDocumentEditableBlock DocumentId="@Document.DocumentId"
+                                         Block="@block"
+                                         IsActive="@(Selection.ActiveBlockId == block.Id)"
+                                         CanComment="@CanComment"
+                                         SelectedCellId="@Selection.ActiveTableCellId"
+                                         SelectedCellIdChanged="SetActiveTableCellAsync"
+                                         ImageUrlResolver="@ImageUrlResolver"
+                                         TokenProvider="@TokenProvider"
+                                         OnActivate="ActivateBlockAsync"
+                                         OnBlockChanged="HandleBlockChangedAsync"
+                                         OnCommentRequested="HandleCommentRequestedAsync"
+                                         OnCommand="HandleCommandAsync" />
+            }
+        }
+
+        @if (PageMode == DocumentSurfacePageMode.Page)
+        {
+            <section class="tm-document-header-footer-surface tm-document-header-footer-surface--footer"
+                     data-testid="document-footer-surface"
+                     @onclick:stopPropagation="true">
+                <label>@Loc["TmDocumentEditor_Footer"]</label>
+                @if (ReadOnly)
+                {
+                    <div class="tm-document-header-footer-surface__content">@GetHeaderFooterText(DocumentHeaderFooterType.Footer)</div>
+                }
+                else
+                {
+                    <input value="@GetHeaderFooterText(DocumentHeaderFooterType.Footer)"
+                           @onchange="args => ChangeHeaderFooterTextAsync(DocumentHeaderFooterType.Footer, args.Value?.ToString() ?? string.Empty)" />
+                }
+            </section>
+        }
+
+        @if (!ReadOnly)
+        {
+            <section class="tm-document-notes-editor" data-testid="document-notes-editor" @onclick:stopPropagation="true">
+                @if (!string.IsNullOrWhiteSpace(_clipboardPasteError))
+                {
+                    <div class="tm-document-paste-error" role="alert">@_clipboardPasteError</div>
+                }
+                @if (_pendingImageUpload)
+                {
+                    <div class="tm-document-paste-status">@Loc["TmDocumentEditor_ImageUploading"]</div>
+                }
+                <div class="tm-document-block-tools" role="toolbar" aria-label="@Loc["TmDocumentEditor_Notes"]">
+                    <button type="button" data-testid="document-insert-footnote" @onclick="() => InsertNoteAsync(DocumentNoteType.Footnote)">
+                        @Loc["TmDocumentEditor_InsertFootnote"]
+                    </button>
+                    <button type="button" data-testid="document-insert-endnote" @onclick="() => InsertNoteAsync(DocumentNoteType.Endnote)">
+                        @Loc["TmDocumentEditor_InsertEndnote"]
+                    </button>
+                </div>
+                @foreach (var note in Document.Notes)
+                {
+                    <label class="tm-document-note-editor">
+                        <span>@(note.Type == DocumentNoteType.Footnote ? Loc["TmDocumentEditor_Footnote"] : Loc["TmDocumentEditor_Endnote"]) @note.Marker</span>
+                        <input value="@GetNoteText(note)" @onchange="args => ChangeNoteTextAsync(note, args.Value?.ToString() ?? string.Empty)" />
+                    </label>
+                }
+            </section>
+
+            <section class="tm-document-revisions-panel" data-testid="document-revisions-panel" @onclick:stopPropagation="true">
+                <h3>@Loc["TmDocumentEditor_Revisions"]</h3>
+                @foreach (var revision in Document.Revisions.Where(revision => revision.Action == DocumentRevisionAction.Pending))
+                {
+                    <div class="tm-document-revisions-panel__item" data-revision-id="@revision.Id">
+                        <span>@revision.Type</span>
+                        <button type="button" @onclick="() => ReviewRevisionAsync(revision, DocumentRevisionAction.Accepted)">
+                            @Loc["TmDocumentEditor_AcceptRevision"]
+                        </button>
+                        <button type="button" @onclick="() => ReviewRevisionAsync(revision, DocumentRevisionAction.Rejected)">
+                            @Loc["TmDocumentEditor_RejectRevision"]
+                        </button>
+                    </div>
+                }
+            </section>
+
+            @if (_insertPanelOpen)
+            {
+                <section class="tm-document-insert-panel" data-testid="document-insert-panel" @onclick:stopPropagation="true">
+                    <button type="button" data-testid="document-insert-paragraph" @onclick="InsertParagraphAsync">@Loc["TmDocumentEditor_InsertParagraph"]</button>
+                    <button type="button" data-testid="document-insert-heading" @onclick="InsertHeadingAsync">@Loc["TmDocumentEditor_InsertHeading"]</button>
+                    <button type="button" data-testid="document-insert-table" @onclick="InsertTableAsync">@Loc["TmDocumentEditor_InsertTable"]</button>
+                    <button type="button" data-testid="document-open-image-dialog" @onclick="OpenImageDialogAsync">@Loc["TmDocumentEditor_InsertImage"]</button>
+                </section>
+            }
+
+            @if (_imageDialogOpen)
+            {
+                <section class="tm-document-image-dialog" data-testid="document-image-dialog" @onclick:stopPropagation="true">
+                    <label>
+                        <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
+                        <input data-testid="document-image-url-input" value="@_pendingImageUrl" @oninput="args => _pendingImageUrl = args.Value?.ToString()" />
+                    </label>
+                    <label>
+                        <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
+                        <input value="@_pendingImageAltText" @oninput="args => _pendingImageAltText = args.Value?.ToString()" />
+                    </label>
+                    <button type="button" data-testid="document-insert-image-url" @onclick="InsertImageUrlAsync">@Loc["TmDocumentEditor_InsertImage"]</button>
+                    <button type="button" data-testid="document-upload-demo-image" @onclick="InsertProviderImageAsync" disabled="@(ImageProvider is null)">
+                        @Loc["TmDocumentEditor_UploadImage"]
+                    </button>
+                </section>
+            }
+        }
+    }
+</div>

@@ -1,3 +1,4 @@
+using System.Globalization;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -34,6 +35,47 @@ public class SignatureCaptureE2ETests : WasmTestBase
         await DrawSignatureAcrossCanvasEdgeAsync(page, "[data-testid='signature-draw-capture']");
 
         await Expect(page.Locator("[data-testid='signature-draw-value']")).ToContainTextAsync("Value captured");
+    }
+
+    [TestMethod]
+    [Description("Signature capture maps pointer coordinates into SVG viewBox coordinates when the canvas is scaled")]
+    public async Task SignatureCapture_Draw_TracksCursorWhenCanvasIsScaled()
+    {
+        var context = await CreateContextAsync();
+        var page = await context.NewPageAsync();
+
+        await page.GotoAsync($"{BaseUrl}/signing-components");
+        await WaitForAppReadyAsync(page);
+
+        var root = page.Locator("[data-testid='signature-draw-capture']").First;
+        await root.ScrollIntoViewIfNeededAsync();
+        await root.EvaluateAsync("element => { element.style.width = '280px'; element.style.maxWidth = '280px'; }");
+
+        var canvas = root.Locator(".tm-signature-capture__canvas").First;
+        var box = await canvas.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Signature canvas should have a bounding box.");
+
+        var startX = box!.X + box.Width * 0.72;
+        var startY = box.Y + box.Height * 0.34;
+        var expected = await canvas.EvaluateAsync<SvgPoint>(
+            @"(element, point) => {
+                const svgPoint = element.createSVGPoint();
+                svgPoint.x = point.x;
+                svgPoint.y = point.y;
+                const transformed = svgPoint.matrixTransform(element.getScreenCTM().inverse());
+                return { x: transformed.x, y: transformed.y };
+            }",
+            new { x = startX, y = startY });
+
+        await page.Mouse.MoveAsync((float)startX, (float)startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(startX + 18), (float)(startY + 8), new MouseMoveOptions { Steps = 2 });
+        await page.Mouse.UpAsync();
+
+        await Assertions.Expect(canvas.Locator("polyline").First).ToBeVisibleAsync();
+        var firstPoint = ParseFirstPoint(await canvas.Locator("polyline").First.GetAttributeAsync("points"));
+        Assert.AreEqual(expected.X, firstPoint.X, 1.0, "The drawn stroke should start under the cursor horizontally.");
+        Assert.AreEqual(expected.Y, firstPoint.Y, 1.0, "The drawn stroke should start under the cursor vertically.");
     }
 
     [TestMethod]
@@ -151,4 +193,24 @@ public class SignatureCaptureE2ETests : WasmTestBase
     }
 
     private static ILocatorAssertions Expect(ILocator locator) => Assertions.Expect(locator);
+
+    private static SvgPoint ParseFirstPoint(string? points)
+    {
+        Assert.IsFalse(string.IsNullOrWhiteSpace(points), "Polyline points should be rendered.");
+        var first = points!.Split(' ', StringSplitOptions.RemoveEmptyEntries)[0];
+        var coordinates = first.Split(',', StringSplitOptions.RemoveEmptyEntries);
+        Assert.AreEqual(2, coordinates.Length, "First polyline point should contain x and y coordinates.");
+        return new SvgPoint
+        {
+            X = double.Parse(coordinates[0], CultureInfo.InvariantCulture),
+            Y = double.Parse(coordinates[1], CultureInfo.InvariantCulture)
+        };
+    }
+
+    private sealed class SvgPoint
+    {
+        public double X { get; set; }
+
+        public double Y { get; set; }
+    }
 }

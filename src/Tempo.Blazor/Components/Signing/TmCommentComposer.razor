@@ -1,0 +1,312 @@
+@namespace Tempo.Blazor.Components.Signing
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="@RootClass">
+    <label class="tm-comment-composer__label" for="@_inputId">@AriaLabel</label>
+    <textarea id="@_inputId"
+              class="tm-comment-composer__input"
+              rows="@Rows"
+              placeholder="@Placeholder"
+              disabled="@Disabled"
+              autofocus="@AutoFocus"
+              value="@_text"
+              @oninput="HandleInputAsync"
+              @onkeydown="HandleKeyDownAsync"></textarea>
+
+    @if (_showMentions && FilteredMentionUsers.Count > 0)
+    {
+        <div class="tm-comment-composer__mentions" role="listbox" aria-label="@Loc["TmDocumentComments_MentionList"]">
+            @for (var i = 0; i < FilteredMentionUsers.Count; i++)
+            {
+                var user = FilteredMentionUsers[i];
+                <button type="button"
+                        class="@MentionOptionClass(i)"
+                        role="option"
+                        aria-selected="@(i == _activeMentionIndex ? "true" : "false")"
+                        @onclick="() => SelectMentionAsync(user)">
+                    <span class="tm-comment-composer__mention-avatar" aria-hidden="true">@GetInitials(user)</span>
+                    <span class="tm-comment-composer__mention-body">
+                        <span class="tm-comment-composer__mention-name">@user.DisplayName</span>
+                        @if (!string.IsNullOrWhiteSpace(user.Email))
+                        {
+                            <span class="tm-comment-composer__mention-email">@user.Email</span>
+                        }
+                    </span>
+                </button>
+            }
+        </div>
+    }
+
+    @if (SelectedMentions.Count > 0)
+    {
+        <div class="tm-comment-composer__mention-chips" aria-label="@Loc["TmDocumentComments_SelectedMentions"]">
+            @foreach (var mention in SelectedMentions)
+            {
+                <span class="tm-comment-composer__mention-chip">@mention.DisplayName</span>
+            }
+        </div>
+    }
+
+    <div class="tm-comment-composer__actions">
+        @if (ShowCancel)
+        {
+            <button type="button"
+                    class="tm-comment-composer__button tm-comment-composer__button--secondary"
+                    disabled="@(Disabled || _isSubmitting)"
+                    @onclick="CancelAsync">
+                @Loc["TmDocumentComments_Cancel"]
+            </button>
+        }
+        <button type="button"
+                class="tm-comment-composer__button tm-comment-composer__button--primary"
+                disabled="@(!CanSubmit)"
+                @onclick="SubmitAsync">
+            <TmIcon Name="send" Size="IconSize.Sm" />
+            <span>@SubmitLabel</span>
+        </button>
+    </div>
+</div>
+
+@code {
+    private readonly string _inputId = $"tm-comment-composer-{Guid.NewGuid():N}";
+    private string _text = string.Empty;
+    private string _lastValueParameter = string.Empty;
+    private bool _hasInitializedValue;
+    private string _mentionQuery = string.Empty;
+    private bool _showMentions;
+    private int _activeMentionIndex;
+    private bool _isSubmitting;
+
+    /// <summary>Current text value.</summary>
+    [Parameter] public string Value { get; set; } = string.Empty;
+
+    /// <summary>Callback invoked when the text changes.</summary>
+    [Parameter] public EventCallback<string> ValueChanged { get; set; }
+
+    /// <summary>Placeholder text.</summary>
+    [Parameter] public string? Placeholder { get; set; }
+
+    /// <summary>Accessible label for the textarea.</summary>
+    [Parameter] public string? AriaLabel { get; set; }
+
+    /// <summary>Submit button label.</summary>
+    [Parameter] public string? SubmitText { get; set; }
+
+    /// <summary>Textarea row count.</summary>
+    [Parameter] public int Rows { get; set; } = 3;
+
+    /// <summary>Whether the composer is disabled.</summary>
+    [Parameter] public bool Disabled { get; set; }
+
+    /// <summary>Whether to show a cancel button.</summary>
+    [Parameter] public bool ShowCancel { get; set; } = true;
+
+    /// <summary>Whether the textarea should request focus when rendered.</summary>
+    [Parameter] public bool AutoFocus { get; set; }
+
+    /// <summary>Whether Enter submits the composer when mention selection is not open. Defaults to false.</summary>
+    [Parameter] public bool SubmitOnEnter { get; set; }
+
+    /// <summary>Users available for mention suggestions.</summary>
+    [Parameter] public IReadOnlyList<DocumentCommentUser> MentionUsers { get; set; } = [];
+
+    /// <summary>Callback invoked when the selected mention list changes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<DocumentCommentMention>> MentionsChanged { get; set; }
+
+    /// <summary>Callback invoked when the text is submitted.</summary>
+    [Parameter] public EventCallback<DocumentCommentComposerSubmitEventArgs> OnSubmit { get; set; }
+
+    /// <summary>Callback invoked when editing is canceled.</summary>
+    [Parameter] public EventCallback OnCancel { get; set; }
+
+    /// <summary>Additional CSS class.</summary>
+    [Parameter] public string? Class { get; set; }
+
+    private List<DocumentCommentMention> SelectedMentions { get; } = [];
+
+    private string RootClass => string.Join(" ", new[] { "tm-comment-composer", Class }.Where(value => !string.IsNullOrWhiteSpace(value)));
+
+    private string SubmitLabel => string.IsNullOrWhiteSpace(SubmitText) ? Loc["TmDocumentComments_AddComment"] : SubmitText!;
+
+    private bool CanSubmit => !Disabled && !_isSubmitting && !string.IsNullOrWhiteSpace(_text);
+
+    private IReadOnlyList<DocumentCommentUser> FilteredMentionUsers => string.IsNullOrWhiteSpace(_mentionQuery)
+        ? MentionUsers.Take(6).ToList()
+        : MentionUsers
+            .Where(user => user.DisplayName.Contains(_mentionQuery, StringComparison.OrdinalIgnoreCase)
+                || (user.Email?.Contains(_mentionQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+            .Take(6)
+            .ToList();
+
+    protected override void OnParametersSet()
+    {
+        if (!_hasInitializedValue || (ValueChanged.HasDelegate && Value != _lastValueParameter))
+        {
+            _text = Value;
+            _lastValueParameter = Value;
+            _hasInitializedValue = true;
+            SynchronizeMentionsFromText();
+        }
+    }
+
+    private async Task HandleInputAsync(ChangeEventArgs args)
+    {
+        _text = args.Value?.ToString() ?? string.Empty;
+        _lastValueParameter = _text;
+        UpdateMentionQuery();
+        SynchronizeMentionsFromText();
+        await ValueChanged.InvokeAsync(_text);
+        await MentionsChanged.InvokeAsync(SelectedMentions);
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (_showMentions && FilteredMentionUsers.Count > 0)
+        {
+            if (args.Key == "ArrowDown")
+            {
+                _activeMentionIndex = Math.Min(_activeMentionIndex + 1, FilteredMentionUsers.Count - 1);
+                return;
+            }
+
+            if (args.Key == "ArrowUp")
+            {
+                _activeMentionIndex = Math.Max(_activeMentionIndex - 1, 0);
+                return;
+            }
+
+            if (args.Key == "Enter")
+            {
+                await SelectMentionAsync(FilteredMentionUsers[_activeMentionIndex]);
+                return;
+            }
+        }
+
+        if (args.Key == "Enter" && SubmitOnEnter && !args.ShiftKey)
+        {
+            await SubmitAsync();
+            return;
+        }
+
+        if (args.Key == "Escape")
+        {
+            if (_showMentions)
+            {
+                _showMentions = false;
+                _mentionQuery = string.Empty;
+                return;
+            }
+
+            await CancelAsync();
+        }
+    }
+
+    private async Task SelectMentionAsync(DocumentCommentUser user)
+    {
+        var markerIndex = _text.LastIndexOf('@');
+        if (markerIndex >= 0)
+        {
+            _text = _text[..markerIndex] + "@" + user.DisplayName + " ";
+            _lastValueParameter = _text;
+        }
+
+        UpsertMention(user);
+        _showMentions = false;
+        _mentionQuery = string.Empty;
+        _activeMentionIndex = 0;
+        await ValueChanged.InvokeAsync(_text);
+        await MentionsChanged.InvokeAsync(SelectedMentions);
+    }
+
+    private async Task SubmitAsync()
+    {
+        if (!CanSubmit)
+        {
+            return;
+        }
+
+        _isSubmitting = true;
+        try
+        {
+            var args = new DocumentCommentComposerSubmitEventArgs(_text.Trim(), SelectedMentions.ToList());
+            await OnSubmit.InvokeAsync(args);
+            _text = string.Empty;
+            _lastValueParameter = _text;
+            SelectedMentions.Clear();
+            await ValueChanged.InvokeAsync(_text);
+            await MentionsChanged.InvokeAsync(SelectedMentions);
+        }
+        finally
+        {
+            _isSubmitting = false;
+        }
+    }
+
+    private async Task CancelAsync()
+    {
+        _text = string.Empty;
+        _lastValueParameter = _text;
+        SelectedMentions.Clear();
+        _showMentions = false;
+        _activeMentionIndex = 0;
+        await ValueChanged.InvokeAsync(_text);
+        await MentionsChanged.InvokeAsync(SelectedMentions);
+        await OnCancel.InvokeAsync();
+    }
+
+    private void UpdateMentionQuery()
+    {
+        var markerIndex = _text.LastIndexOf('@');
+        if (markerIndex < 0)
+        {
+            _showMentions = false;
+            _mentionQuery = string.Empty;
+            return;
+        }
+
+        var query = _text[(markerIndex + 1)..];
+        if (query.Any(char.IsWhiteSpace))
+        {
+            _showMentions = false;
+            _mentionQuery = string.Empty;
+            return;
+        }
+
+        _mentionQuery = query;
+        _showMentions = MentionUsers.Count > 0;
+        _activeMentionIndex = Math.Min(_activeMentionIndex, Math.Max(FilteredMentionUsers.Count - 1, 0));
+    }
+
+    private void SynchronizeMentionsFromText()
+    {
+        SelectedMentions.RemoveAll(mention => !_text.Contains("@" + mention.DisplayName, StringComparison.Ordinal));
+    }
+
+    private void UpsertMention(DocumentCommentUser user)
+    {
+        if (SelectedMentions.Any(mention => string.Equals(mention.UserId, user.UserId, StringComparison.Ordinal)))
+        {
+            return;
+        }
+
+        SelectedMentions.Add(new DocumentCommentMention
+        {
+            UserId = user.UserId,
+            DisplayName = user.DisplayName
+        });
+    }
+
+    private string MentionOptionClass(int index)
+    {
+        return index == _activeMentionIndex
+            ? "tm-comment-composer__mention-option tm-comment-composer__mention-option--active"
+            : "tm-comment-composer__mention-option";
+    }
+
+    private static string GetInitials(DocumentCommentUser user)
+    {
+        return string.IsNullOrWhiteSpace(user.DisplayName)
+            ? "?"
+            : user.DisplayName[..1].ToUpperInvariant();
+    }
+}

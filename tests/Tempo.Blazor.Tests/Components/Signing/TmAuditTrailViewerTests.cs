@@ -33,6 +33,22 @@ public class TmAuditTrailViewerTests : LocalizationTestBase
         cut.Markup.Should().Contain("Mozilla");
     }
 
+    [Fact]
+    public void Render_LocalizationSnapshotShowsCultureFallbackAndResolvedLabels()
+    {
+        var cut = RenderComponent<TmAuditTrailViewer>(parameters => parameters
+            .Add(p => p.Trail, CreateTrail())
+            .Add(p => p.LocalizationSnapshot, CreateLocalizationSnapshot()));
+
+        cut.Markup.Should().Contain("Signing culture");
+        cut.Markup.Should().Contain("en-US");
+        cut.Markup.Should().Contain("cs-CZ");
+        cut.Markup.Should().Contain("Original PDF language");
+        cut.Markup.Should().Contain("Full name");
+        cut.Markup.Should().Contain("Email");
+        cut.Find("[data-field-uuid='recipient-name']").TextContent.Should().Contain("Full name");
+    }
+
     private static SigningAuditTrail CreateTrail()
     {
         return new SigningAuditTrail
@@ -68,6 +84,34 @@ public class TmAuditTrailViewerTests : LocalizationTestBase
                     UserAgent = "Mozilla",
                     TimeZone = "Europe/Prague",
                     VerificationMethod = "SMS"
+                }
+            ]
+        };
+    }
+
+    private static SigningSubmissionLocalizationSnapshot CreateLocalizationSnapshot()
+    {
+        return new SigningSubmissionLocalizationSnapshot
+        {
+            Culture = "en-US",
+            FallbackCulture = "cs-CZ",
+            PdfContentTranslated = false,
+            Fields =
+            [
+                new SigningSubmissionFieldLocalizationSnapshot
+                {
+                    FieldUuid = "recipient-name",
+                    Label = "Full name",
+                    Title = "Recipient full name",
+                    Options =
+                    [
+                        new SigningSubmissionOptionLocalizationSnapshot
+                        {
+                            OptionUuid = "delivery-email",
+                            Value = "email",
+                            Label = "Email"
+                        }
+                    ]
                 }
             ]
         };

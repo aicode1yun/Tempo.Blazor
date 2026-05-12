@@ -1,6 +1,7 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Abstractions.Models;
 
 namespace Tempo.Blazor.Components.Signing;
@@ -12,6 +13,7 @@ public partial class TmPdfTemplateDesigner
     private const double DefaultPageHeight = 1000;
     private const double MinWidth = 0.02;
     private const double MinHeight = 0.02;
+    private static readonly double[] ZoomSteps = [0.5, 0.75, 1.0, 1.25, 1.5, 2.0];
 
     private static readonly SigningFieldType[] DefaultAllowedFieldTypes =
     [
@@ -33,14 +35,23 @@ public partial class TmPdfTemplateDesigner
     private readonly List<SigningField> _fields = [];
     private readonly HashSet<string> _selectedFieldUuids = [];
     private IReadOnlyList<SigningField>? _lastFields;
+    private int? _lastPageIndexParameter;
     private SigningFieldType? _drawType;
+    private SigningFieldType? _dragType;
     private DrawState? _drawState;
     private MoveState? _moveState;
     private ResizeState? _resizeState;
     private ContextMenuState? _contextMenu;
-    private SigningField? _clipboardField;
+    private readonly List<SigningField> _clipboardFields = [];
+    private readonly Dictionary<string, ElementReference> _pageSurfaceRefs = [];
+    private string? _clipboardStatus;
+    private IJSObjectReference? _jsModule;
     private bool _isDetecting;
     private string? _detectionError;
+    private int _currentPageIndex;
+    private double _scale = 1.0;
+    private DocumentPageZoomMode _zoomMode = DocumentPageZoomMode.Custom;
+    private DocumentPageViewMode _viewMode = DocumentPageViewMode.SinglePage;
 
     /// <summary>Document pages available for template design.</summary>
     [Parameter] public IReadOnlyList<SigningDocumentPage> Documents { get; set; } = [];
@@ -66,6 +77,45 @@ public partial class TmPdfTemplateDesigner
     /// <summary>Whether to render a compact mobile-oriented designer layout.</summary>
     [Parameter] public bool MobileMode { get; set; }
 
+    /// <summary>Current page index used when <see cref="ViewMode"/> is <see cref="DocumentPageViewMode.SinglePage"/>.</summary>
+    [Parameter] public int PageIndex { get; set; }
+
+    /// <summary>Callback invoked when the current page index changes.</summary>
+    [Parameter] public EventCallback<int> PageIndexChanged { get; set; }
+
+    /// <summary>Current page presentation mode. Defaults to single page for editing precision.</summary>
+    [Parameter] public DocumentPageViewMode ViewMode { get; set; } = DocumentPageViewMode.SinglePage;
+
+    /// <summary>Callback invoked when the page presentation mode changes.</summary>
+    [Parameter] public EventCallback<DocumentPageViewMode> ViewModeChanged { get; set; }
+
+    /// <summary>Current document zoom scale shared by rendered pages.</summary>
+    [Parameter] public double Scale { get; set; } = 1.0;
+
+    /// <summary>Callback invoked when the document zoom scale changes.</summary>
+    [Parameter] public EventCallback<double> ScaleChanged { get; set; }
+
+    /// <summary>Current document zoom behavior.</summary>
+    [Parameter] public DocumentPageZoomMode ZoomMode { get; set; } = DocumentPageZoomMode.Custom;
+
+    /// <summary>Callback invoked when the document zoom behavior changes.</summary>
+    [Parameter] public EventCallback<DocumentPageZoomMode> ZoomModeChanged { get; set; }
+
+    /// <summary>Culture used to preview localized field labels.</summary>
+    [Parameter] public string? Culture { get; set; }
+
+    /// <summary>Callback invoked when the designer preview culture changes.</summary>
+    [Parameter] public EventCallback<string?> CultureChanged { get; set; }
+
+    /// <summary>Fallback culture used when localized field labels are missing.</summary>
+    [Parameter] public string? FallbackCulture { get; set; }
+
+    /// <summary>Cultures available for previewing and authoring localized field text.</summary>
+    [Parameter] public IReadOnlyList<string> SupportedCultures { get; set; } = [];
+
+    /// <summary>Whether to show culture preview and localized text authoring controls.</summary>
+    [Parameter] public bool ShowCulturePreview { get; set; }
+
     /// <summary>Optional async detector that returns fields to add to the template.</summary>
     [Parameter] public Func<Task<IReadOnlyList<SigningField>>>? OnDetectFields { get; set; }
 
@@ -75,6 +125,8 @@ public partial class TmPdfTemplateDesigner
     /// <summary>Additional HTML attributes passed to the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)]
     public Dictionary<string, object>? AdditionalAttributes { get; set; }
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
 
     private IReadOnlyList<SigningFieldType> AllowedTypes => AllowedFieldTypes is { Count: > 0 }
         ? AllowedFieldTypes
@@ -92,6 +144,7 @@ public partial class TmPdfTemplateDesigner
         {
             var classes = new List<string> { "tm-pdf-template-designer" };
             AddClass(classes, _drawType.HasValue, "tm-pdf-template-designer--drawing");
+            AddClass(classes, _dragType.HasValue, "tm-pdf-template-designer--dragging");
             AddClass(classes, Disabled, "tm-pdf-template-designer--disabled");
             AddClass(classes, MobileMode, "tm-pdf-template-designer--mobile");
 
@@ -112,8 +165,55 @@ public partial class TmPdfTemplateDesigner
         ? string.Empty
         : string.Create(CultureInfo.InvariantCulture, $"left: {_contextMenu.X}px; top: {_contextMenu.Y}px;");
 
+    private bool HasClipboardFields => _clipboardFields.Count > 0;
+
+    private IReadOnlyList<SigningDocumentPage> VisibleDocuments => _viewMode == DocumentPageViewMode.Continuous
+        ? Documents
+        : CurrentPage is null ? [] : [CurrentPage];
+
+    private SigningDocumentPage? CurrentPage => Documents.Count == 0
+        ? null
+        : Documents[Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1)];
+
+    private int CurrentPageNumber => Documents.Count == 0 ? 0 : Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1) + 1;
+
+    private string PageLabel => Loc["TmPdfTemplateDesigner_PageLabel", CurrentPageNumber, Math.Max(1, Documents.Count)];
+
+    private string ZoomLabel => string.Create(CultureInfo.InvariantCulture, $"{(int)Math.Round(_scale * 100)}%");
+
+    private bool CanGoPrevious => _viewMode == DocumentPageViewMode.SinglePage && _currentPageIndex > 0;
+
+    private bool CanGoNext => _viewMode == DocumentPageViewMode.SinglePage && _currentPageIndex < Documents.Count - 1;
+
+    private bool CanZoomOut => _scale > ZoomSteps[0] + 0.001;
+
+    private bool CanZoomIn => _scale < ZoomSteps[^1] - 0.001;
+
+    private IReadOnlyList<string> DesignerCultures => GetDesignerCultures();
+
+    private bool ShouldShowCulturePreview => ShowCulturePreview && DesignerCultures.Count > 1;
+
+    private string CurrentCulture => NormalizeCulture(Culture) ?? DesignerCultures.FirstOrDefault() ?? CultureInfo.CurrentUICulture.Name;
+
     protected override void OnParametersSet()
     {
+        _scale = Clamp(Scale, ZoomSteps[0], ZoomSteps[^1]);
+        _zoomMode = ZoomMode;
+        _viewMode = ViewMode;
+        if (Documents.Count == 0)
+        {
+            _currentPageIndex = 0;
+        }
+        else if (_lastPageIndexParameter != PageIndex && PageIndex >= 0 && PageIndex < Documents.Count)
+        {
+            _currentPageIndex = PageIndex;
+        }
+        else
+        {
+            _currentPageIndex = Math.Min(Math.Max(_currentPageIndex, 0), Documents.Count - 1);
+        }
+        _lastPageIndexParameter = PageIndex;
+
         if (!ReferenceEquals(_lastFields, Fields))
         {
             _fields.Clear();
@@ -121,6 +221,8 @@ public partial class TmPdfTemplateDesigner
             _selectedFieldUuids.RemoveWhere(uuid => _fields.All(field => field.Uuid != uuid));
             _lastFields = Fields;
         }
+
+        EnsureSelectedPageVisible();
     }
 
     private RenderFragment RenderPageOverlay(SigningDocumentPage page) => builder =>
@@ -134,6 +236,11 @@ public partial class TmPdfTemplateDesigner
         builder.AddAttribute(sequence++, "onmouseup", EventCallback.Factory.Create<MouseEventArgs>(this, args => HandlePagePointerUpAsync(page, args)));
         builder.AddAttribute(sequence++, "oncontextmenu", EventCallback.Factory.Create<MouseEventArgs>(this, args => OpenPageContextMenu(page, args)));
         builder.AddEventPreventDefaultAttribute(sequence++, "oncontextmenu", true);
+        builder.AddAttribute(sequence++, "ondragover", EventCallback.Factory.Create<DragEventArgs>(this, _ => Task.CompletedTask));
+        builder.AddEventPreventDefaultAttribute(sequence++, "ondragover", true);
+        builder.AddAttribute(sequence++, "ondrop", EventCallback.Factory.Create<DragEventArgs>(this, args => HandlePaletteDropAsync(page, args)));
+        builder.AddEventPreventDefaultAttribute(sequence++, "ondrop", true);
+        builder.AddElementReferenceCapture(sequence++, reference => _pageSurfaceRefs[GetPageKey(page)] = reference);
 
         foreach (var field in _fields)
         {
@@ -145,9 +252,11 @@ public partial class TmPdfTemplateDesigner
                 builder.AddAttribute(sequence++, "Field", currentField);
                 builder.AddAttribute(sequence++, "Area", currentArea);
                 builder.AddAttribute(sequence++, "Selected", _selectedFieldUuids.Contains(currentField.Uuid));
-                builder.AddAttribute(sequence++, "Draggable", !Disabled);
+                builder.AddAttribute(sequence++, "Draggable", !Disabled && !_drawType.HasValue);
                 builder.AddAttribute(sequence++, "Editable", !Disabled && _selectedFieldUuids.Contains(currentField.Uuid));
                 builder.AddAttribute(sequence++, "ReadOnly", Disabled);
+                builder.AddAttribute(sequence++, "Culture", Culture);
+                builder.AddAttribute(sequence++, "FallbackCulture", FallbackCulture);
                 builder.AddAttribute(sequence++, "OnClick", EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, args => SelectFieldAsync(args, false)));
                 builder.AddAttribute(sequence++, "OnStartMove", EventCallback.Factory.Create<TmSigningFieldOverlayPointerEventArgs>(this, StartMoveAsync));
                 builder.AddAttribute(sequence++, "OnStartResize", EventCallback.Factory.Create<TmSigningFieldOverlayResizeEventArgs>(this, StartResizeAsync));
@@ -194,6 +303,109 @@ public partial class TmPdfTemplateDesigner
         return Task.CompletedTask;
     }
 
+    private Task StartPaletteDrag(SigningFieldType type)
+    {
+        if (Disabled)
+        {
+            return Task.CompletedTask;
+        }
+
+        _dragType = type;
+        _drawType = null;
+        _contextMenu = null;
+        return Task.CompletedTask;
+    }
+
+    private Task EndPaletteDrag()
+    {
+        _dragType = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task GoToPreviousPageAsync()
+    {
+        if (!CanGoPrevious)
+        {
+            return;
+        }
+
+        _currentPageIndex--;
+        _selectedFieldUuids.RemoveWhere(uuid => !IsFieldOnCurrentPage(uuid));
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private async Task GoToNextPageAsync()
+    {
+        if (!CanGoNext)
+        {
+            return;
+        }
+
+        _currentPageIndex++;
+        _selectedFieldUuids.RemoveWhere(uuid => !IsFieldOnCurrentPage(uuid));
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private async Task SetViewModeAsync(DocumentPageViewMode viewMode)
+    {
+        if (_viewMode == viewMode)
+        {
+            return;
+        }
+
+        _viewMode = viewMode;
+        await ViewModeChanged.InvokeAsync(_viewMode);
+    }
+
+    private Task ZoomOutAsync()
+    {
+        var next = ZoomSteps.LastOrDefault(value => value < _scale - 0.001);
+        return SetScaleAsync(next <= 0 ? ZoomSteps[0] : next, DocumentPageZoomMode.Custom);
+    }
+
+    private Task ZoomInAsync()
+    {
+        var next = ZoomSteps.FirstOrDefault(value => value > _scale + 0.001);
+        return SetScaleAsync(next <= 0 ? ZoomSteps[^1] : next, DocumentPageZoomMode.Custom);
+    }
+
+    private Task FitWidthAsync() => SetScaleAsync(1.0, DocumentPageZoomMode.FitWidth);
+
+    private Task FitPageAsync() => SetScaleAsync(0.85, DocumentPageZoomMode.FitPage);
+
+    private async Task HandleCultureChangedAsync(ChangeEventArgs args)
+    {
+        Culture = NormalizeCulture(args.Value?.ToString());
+        _contextMenu = null;
+        await CultureChanged.InvokeAsync(Culture);
+    }
+
+    private async Task SetScaleAsync(double scale, DocumentPageZoomMode zoomMode)
+    {
+        _scale = Clamp(scale, ZoomSteps[0], ZoomSteps[^1]);
+        _zoomMode = zoomMode;
+        await ScaleChanged.InvokeAsync(_scale);
+        await ZoomModeChanged.InvokeAsync(_zoomMode);
+    }
+
+    private async Task HandlePaletteDropAsync(SigningDocumentPage page, DragEventArgs args)
+    {
+        if (Disabled || _dragType is not { } type)
+        {
+            return;
+        }
+
+        var point = await ToPointAsync(page, args);
+        var area = CreateDefaultAreaAtPoint(page, type, point.X, point.Y);
+        var field = CreateField(type, area);
+        _fields.Add(field);
+        _selectedFieldUuids.Clear();
+        _selectedFieldUuids.Add(field.Uuid);
+        _dragType = null;
+        _drawType = null;
+        await NotifyFieldsChangedAsync();
+    }
+
     private async Task HandlePagePointerDownAsync(SigningDocumentPage page, MouseEventArgs args)
     {
         if (Disabled)
@@ -201,7 +413,7 @@ public partial class TmPdfTemplateDesigner
             return;
         }
 
-        var point = ToPoint(page, args);
+        var point = await ToPointAsync(page, args);
         if (_drawType.HasValue)
         {
             _drawState = new DrawState(page, point.X, point.Y, new SigningFieldArea
@@ -227,16 +439,15 @@ public partial class TmPdfTemplateDesigner
         await Task.CompletedTask;
     }
 
-    private Task HandlePagePointerMoveAsync(SigningDocumentPage page, MouseEventArgs args)
+    private async Task HandlePagePointerMoveAsync(SigningDocumentPage page, MouseEventArgs args)
     {
         if (_drawState is null || _drawState.PageKey != GetPageKey(page))
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        var point = ToPoint(page, args);
+        var point = await ToPointAsync(page, args);
         _drawState.Area = CreateAreaFromPoints(_drawState.Page, _drawState.StartX, _drawState.StartY, point.X, point.Y, _drawState.Area.Uuid);
-        return Task.CompletedTask;
     }
 
     private async Task HandlePagePointerUpAsync(SigningDocumentPage page, MouseEventArgs args)
@@ -305,6 +516,16 @@ public partial class TmPdfTemplateDesigner
         _resizeState = null;
     }
 
+    private async Task HandleDesignerKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (Disabled || args.Key is not "Delete" || _selectedFieldUuids.Count == 0)
+        {
+            return;
+        }
+
+        await DeleteSelectedAsync();
+    }
+
     private async Task SelectFieldAsync(TmSigningFieldOverlayPointerEventArgs args, bool append)
     {
         if (args.Field is null)
@@ -325,6 +546,10 @@ public partial class TmPdfTemplateDesigner
         else
         {
             _selectedFieldUuids.Add(args.Field.Uuid);
+            if (_viewMode == DocumentPageViewMode.SinglePage && args.Area is not null)
+            {
+                await SetCurrentPageToAreaAsync(args.Area);
+            }
         }
 
         _contextMenu = null;
@@ -468,33 +693,55 @@ public partial class TmPdfTemplateDesigner
             args.MouseEventArgs.ClientY,
             args.Field.Uuid,
             args.Area?.AttachmentUuid,
-            args.Area?.Page ?? 0);
+            args.Area?.Page ?? 0,
+            null,
+            null);
         return Task.CompletedTask;
     }
 
-    private Task OpenPageContextMenu(SigningDocumentPage page, MouseEventArgs args)
+    private async Task OpenPageContextMenu(SigningDocumentPage page, MouseEventArgs args)
     {
+        var point = await ToPointAsync(page, args);
         _contextMenu = new ContextMenuState(
             ContextMenuKind.Page,
             args.ClientX,
             args.ClientY,
             null,
             page.AttachmentUuid,
-            page.PageIndex);
-        return Task.CompletedTask;
+            page.PageIndex,
+            point.X,
+            point.Y);
     }
 
     private Task CopyContextFieldAsync()
     {
         var field = _fields.FirstOrDefault(item => item.Uuid == _contextMenu?.FieldUuid);
-        _clipboardField = field is null ? null : Clone(field);
+        _clipboardFields.Clear();
+        if (field is not null)
+        {
+            _clipboardFields.Add(Clone(field));
+            _clipboardStatus = Loc["TmPdfTemplateDesigner_FieldCopied"];
+        }
+
+        _contextMenu = null;
         return Task.CompletedTask;
     }
 
     private Task CopySelectionAsync()
     {
-        var field = _fields.FirstOrDefault(item => _selectedFieldUuids.Contains(item.Uuid));
-        _clipboardField = field is null ? null : Clone(field);
+        _clipboardFields.Clear();
+        _clipboardFields.AddRange(_fields
+            .Where(item => _selectedFieldUuids.Contains(item.Uuid))
+            .Select(Clone));
+
+        if (_clipboardFields.Count > 0)
+        {
+            _clipboardStatus = _clipboardFields.Count == 1
+                ? Loc["TmPdfTemplateDesigner_FieldCopied"]
+                : Loc["TmPdfTemplateDesigner_SelectionCopied"];
+        }
+
+        _contextMenu = null;
         return Task.CompletedTask;
     }
 
@@ -511,41 +758,50 @@ public partial class TmPdfTemplateDesigner
         await NotifyFieldsChangedAsync();
     }
 
-    private Task SelectContextFieldAsync()
-    {
-        if (_contextMenu?.FieldUuid is not null)
-        {
-            _selectedFieldUuids.Clear();
-            _selectedFieldUuids.Add(_contextMenu.FieldUuid);
-        }
-
-        _contextMenu = null;
-        return Task.CompletedTask;
-    }
-
     private async Task PasteFieldAsync()
     {
-        if (_clipboardField is null || _contextMenu is null)
+        if (_clipboardFields.Count == 0 || _contextMenu is null)
         {
             return;
         }
 
-        var clone = Clone(_clipboardField);
-        clone.Uuid = Guid.NewGuid().ToString("N");
-        clone.Name = $"{clone.Name} copy".Trim();
-        foreach (var area in clone.Areas)
+        var clones = _clipboardFields.Select(Clone).ToList();
+        var allAreas = clones.SelectMany(field => field.Areas).ToArray();
+        var sourceBounds = allAreas.Length > 0
+            ? SigningGeometryHelper.GetSelectionRectangle(allAreas)
+            : new SigningRectangle(0, 0, MinWidth, MinHeight);
+        var targetX = _contextMenu.DocumentX ?? Clamp(sourceBounds.X + 0.03 + sourceBounds.Width / 2, 0, 1);
+        var targetY = _contextMenu.DocumentY ?? Clamp(sourceBounds.Y + 0.03 + sourceBounds.Height / 2, 0, 1);
+        var desiredX = Clamp(targetX - sourceBounds.Width / 2, 0, Math.Max(0, 1 - sourceBounds.Width));
+        var desiredY = Clamp(targetY - sourceBounds.Height / 2, 0, Math.Max(0, 1 - sourceBounds.Height));
+        var deltaX = desiredX - sourceBounds.X;
+        var deltaY = desiredY - sourceBounds.Y;
+
+        foreach (var clone in clones)
         {
-            area.Uuid = Guid.NewGuid().ToString("N");
-            area.AttachmentUuid = _contextMenu.AttachmentUuid;
-            area.Page = _contextMenu.PageIndex;
-            area.X = Math.Min(area.X + 0.03, 1 - area.Width);
-            area.Y = Math.Min(area.Y + 0.03, 1 - area.Height);
+            clone.Uuid = Guid.NewGuid().ToString("N");
+            clone.Name = $"{clone.Name} copy".Trim();
+            foreach (var area in clone.Areas)
+            {
+                area.Uuid = Guid.NewGuid().ToString("N");
+                area.AttachmentUuid = _contextMenu.AttachmentUuid;
+                area.Page = _contextMenu.PageIndex;
+                area.X = Clamp(area.X + deltaX, 0, Math.Max(0, 1 - area.Width));
+                area.Y = Clamp(area.Y + deltaY, 0, Math.Max(0, 1 - area.Height));
+            }
         }
 
-        _fields.Add(clone);
+        _fields.AddRange(clones);
         _selectedFieldUuids.Clear();
-        _selectedFieldUuids.Add(clone.Uuid);
+        foreach (var clone in clones)
+        {
+            _selectedFieldUuids.Add(clone.Uuid);
+        }
+
         _contextMenu = null;
+        _clipboardStatus = clones.Count == 1
+            ? Loc["TmPdfTemplateDesigner_FieldPasted"]
+            : Loc["TmPdfTemplateDesigner_SelectionPasted"];
         await NotifyFieldsChangedAsync();
     }
 
@@ -613,11 +869,19 @@ public partial class TmPdfTemplateDesigner
 
     private SigningField CreateField(SigningFieldType type, SigningFieldArea area)
     {
+        var label = GetFieldTypeLabel(type);
+        var labels = new SigningLocalizedText { Default = label };
+        if (!string.IsNullOrWhiteSpace(CurrentCulture))
+        {
+            labels.Translations[CurrentCulture] = label;
+        }
+
         return new SigningField
         {
             Uuid = Guid.NewGuid().ToString("N"),
             SubmitterUuid = SelectedSubmitterUuid ?? SubmitterRoles.FirstOrDefault()?.Uuid,
-            Name = GetFieldTypeLabel(type),
+            Name = label,
+            Labels = labels,
             Type = type,
             Required = type is SigningFieldType.Signature or SigningFieldType.Initials,
             Areas = [SigningGeometryHelper.Clamp(area, MinWidth, MinHeight)]
@@ -629,7 +893,94 @@ public partial class TmPdfTemplateDesigner
         return field.Areas.Where(area => area.AttachmentUuid == page.AttachmentUuid && area.Page == page.PageIndex);
     }
 
-    private static (double X, double Y) ToPoint(SigningDocumentPage page, MouseEventArgs args)
+    private bool IsFieldOnCurrentPage(string fieldUuid)
+    {
+        if (_viewMode == DocumentPageViewMode.Continuous || CurrentPage is null)
+        {
+            return true;
+        }
+
+        var field = _fields.FirstOrDefault(item => item.Uuid == fieldUuid);
+        return field?.Areas.Any(area => area.AttachmentUuid == CurrentPage.AttachmentUuid && area.Page == CurrentPage.PageIndex) == true;
+    }
+
+    private void EnsureSelectedPageVisible()
+    {
+        if (_viewMode != DocumentPageViewMode.SinglePage || _selectedFieldUuids.Count != 1)
+        {
+            return;
+        }
+
+        var field = _fields.FirstOrDefault(item => _selectedFieldUuids.Contains(item.Uuid));
+        var area = field?.Areas.FirstOrDefault();
+        if (area is null || IsAreaOnCurrentPage(area))
+        {
+            return;
+        }
+
+        var pageIndex = Documents.ToList().FindIndex(page => page.AttachmentUuid == area.AttachmentUuid && page.PageIndex == area.Page);
+        if (pageIndex >= 0)
+        {
+            _currentPageIndex = pageIndex;
+        }
+    }
+
+    private async Task SetCurrentPageToAreaAsync(SigningFieldArea area)
+    {
+        if (IsAreaOnCurrentPage(area))
+        {
+            return;
+        }
+
+        var pageIndex = Documents.ToList().FindIndex(page => page.AttachmentUuid == area.AttachmentUuid && page.PageIndex == area.Page);
+        if (pageIndex < 0)
+        {
+            return;
+        }
+
+        _currentPageIndex = pageIndex;
+        await PageIndexChanged.InvokeAsync(_currentPageIndex);
+    }
+
+    private bool IsAreaOnCurrentPage(SigningFieldArea area)
+    {
+        return CurrentPage is not null && area.AttachmentUuid == CurrentPage.AttachmentUuid && area.Page == CurrentPage.PageIndex;
+    }
+
+    private async Task<(double X, double Y)> ToPointAsync(SigningDocumentPage page, MouseEventArgs args)
+    {
+        if (_pageSurfaceRefs.TryGetValue(GetPageKey(page), out var reference))
+        {
+            try
+            {
+                _jsModule ??= await JS.InvokeAsync<IJSObjectReference>("import", "./_content/Tempo.Blazor/js/pdf-template-designer.js");
+                if (_jsModule is null)
+                {
+                    return ToPointFromOffset(page, args);
+                }
+
+                var rect = await _jsModule.InvokeAsync<PageSurfaceRect>("getElementRect", reference);
+                if (rect is { Width: > 0, Height: > 0 } && (args.ClientX != 0 || args.ClientY != 0))
+                {
+                    return (
+                        Clamp((args.ClientX - rect.Left) / rect.Width, 0, 1),
+                        Clamp((args.ClientY - rect.Top) / rect.Height, 0, 1));
+                }
+            }
+            catch (JSException)
+            {
+                // Fall back to event offsets when JavaScript is unavailable in tests or prerendering.
+            }
+            catch (InvalidOperationException)
+            {
+                // Fall back to event offsets when JavaScript is unavailable in tests or prerendering.
+            }
+        }
+
+        return ToPointFromOffset(page, args);
+    }
+
+    private static (double X, double Y) ToPointFromOffset(SigningDocumentPage page, MouseEventArgs args)
     {
         var width = page.Width > 0 ? page.Width : DefaultPageWidth;
         var height = page.Height > 0 ? page.Height : DefaultPageHeight;
@@ -654,6 +1005,37 @@ public partial class TmPdfTemplateDesigner
             Y = y,
             Width = width,
             Height = height
+        };
+    }
+
+    private static SigningFieldArea CreateDefaultAreaAtPoint(SigningDocumentPage page, SigningFieldType type, double x, double y)
+    {
+        var (width, height) = GetDefaultAreaSize(type);
+        return new SigningFieldArea
+        {
+            Uuid = Guid.NewGuid().ToString("N"),
+            AttachmentUuid = page.AttachmentUuid,
+            Page = page.PageIndex,
+            X = Clamp(x - width / 2, 0, 1 - width),
+            Y = Clamp(y - height / 2, 0, 1 - height),
+            Width = width,
+            Height = height
+        };
+    }
+
+    private static (double Width, double Height) GetDefaultAreaSize(SigningFieldType type)
+    {
+        return type switch
+        {
+            SigningFieldType.Signature => (0.34, 0.065),
+            SigningFieldType.Initials => (0.16, 0.065),
+            SigningFieldType.Date or SigningFieldType.DateNow => (0.22, 0.055),
+            SigningFieldType.Number => (0.2, 0.055),
+            SigningFieldType.Checkbox => (0.08, 0.05),
+            SigningFieldType.Radio or SigningFieldType.Select or SigningFieldType.Multiple => (0.32, 0.06),
+            SigningFieldType.File or SigningFieldType.Image or SigningFieldType.Stamp => (0.26, 0.07),
+            SigningFieldType.Phone => (0.28, 0.055),
+            _ => (0.3, 0.055)
         };
     }
 
@@ -688,30 +1070,7 @@ public partial class TmPdfTemplateDesigner
 
     private string GetFieldTypeLabel(SigningFieldType type)
     {
-        return type switch
-        {
-            SigningFieldType.Text => Loc["TmSigning_Field_Text"],
-            SigningFieldType.Signature => Loc["TmSigning_Field_Signature"],
-            SigningFieldType.Initials => Loc["TmSigning_Field_Initials"],
-            SigningFieldType.Date => Loc["TmSigning_Field_Date"],
-            SigningFieldType.DateNow => Loc["TmSigning_Field_Date"],
-            SigningFieldType.Number => Loc["TmSigning_Field_Number"],
-            SigningFieldType.Checkbox => Loc["TmSigning_Field_Checkbox"],
-            SigningFieldType.Radio => Loc["TmSigning_Field_Radio"],
-            SigningFieldType.Select => Loc["TmSigning_Field_Select"],
-            SigningFieldType.Multiple => Loc["TmSigning_Field_Multiple"],
-            SigningFieldType.File => Loc["TmSigning_Field_File"],
-            SigningFieldType.Image => Loc["TmSigning_Field_Image"],
-            SigningFieldType.Stamp => Loc["TmSigning_Field_Stamp"],
-            SigningFieldType.Phone => Loc["TmSigning_Field_Phone"],
-            SigningFieldType.Verification => Loc["TmSigning_Field_Verification"],
-            SigningFieldType.Kba => Loc["TmSigning_Field_Kba"],
-            SigningFieldType.Payment => Loc["TmSigning_Field_Payment"],
-            SigningFieldType.Cells => Loc["TmSigning_Field_Cells"],
-            SigningFieldType.Heading => Loc["TmSigning_Field_Heading"],
-            SigningFieldType.Strikethrough => Loc["TmSigning_Field_Strikethrough"],
-            _ => type.ToString()
-        };
+        return SigningTextResolver.FieldTypeLabel(type, Loc);
     }
 
     private static string GetIconName(SigningFieldType type)
@@ -748,6 +1107,69 @@ public partial class TmPdfTemplateDesigner
 
     private static double Clamp(double value, double min, double max) => Math.Min(Math.Max(value, min), max);
 
+    private IReadOnlyList<string> GetDesignerCultures()
+    {
+        var cultures = new List<string>();
+        AddCultures(cultures, SupportedCultures);
+        AddCulture(cultures, Culture);
+        AddCulture(cultures, FallbackCulture);
+        return cultures;
+    }
+
+    private static void AddCultures(List<string> target, IEnumerable<string>? cultures)
+    {
+        if (cultures is null)
+        {
+            return;
+        }
+
+        foreach (var culture in cultures)
+        {
+            AddCulture(target, culture);
+        }
+    }
+
+    private static void AddCulture(List<string> target, string? culture)
+    {
+        var normalized = NormalizeCulture(culture);
+        if (!string.IsNullOrWhiteSpace(normalized)
+            && !target.Any(item => string.Equals(item, normalized, StringComparison.OrdinalIgnoreCase)))
+        {
+            target.Add(normalized);
+        }
+    }
+
+    private static string? NormalizeCulture(string? culture)
+    {
+        var trimmed = culture?.Trim();
+        if (string.IsNullOrWhiteSpace(trimmed))
+        {
+            return null;
+        }
+
+        try
+        {
+            return CultureInfo.GetCultureInfo(trimmed).Name;
+        }
+        catch (CultureNotFoundException)
+        {
+            return trimmed;
+        }
+    }
+
+    private static string GetCultureLabel(string culture)
+    {
+        try
+        {
+            var cultureInfo = CultureInfo.GetCultureInfo(culture);
+            return string.Create(CultureInfo.InvariantCulture, $"{cultureInfo.NativeName} ({cultureInfo.Name})");
+        }
+        catch (CultureNotFoundException)
+        {
+            return culture;
+        }
+    }
+
     private static void CopyInto(SigningFieldArea target, SigningFieldArea source)
     {
         target.X = source.X;
@@ -765,8 +1187,12 @@ public partial class TmPdfTemplateDesigner
             Uuid = field.Uuid,
             SubmitterUuid = field.SubmitterUuid,
             Name = field.Name,
+            Labels = Clone(field.Labels),
             Title = field.Title,
+            Titles = Clone(field.Titles),
             Description = field.Description,
+            Descriptions = Clone(field.Descriptions),
+            Placeholders = Clone(field.Placeholders),
             Type = field.Type,
             Required = field.Required,
             ReadOnly = field.ReadOnly,
@@ -807,6 +1233,7 @@ public partial class TmPdfTemplateDesigner
         {
             Pattern = validation.Pattern,
             Message = validation.Message,
+            Messages = Clone(validation.Messages),
             Min = validation.Min,
             Max = validation.Max,
             Step = validation.Step
@@ -829,7 +1256,17 @@ public partial class TmPdfTemplateDesigner
         return new SigningFieldOption
         {
             Uuid = option.Uuid,
+            Labels = Clone(option.Labels),
             Value = option.Value
+        };
+    }
+
+    private static SigningLocalizedText Clone(SigningLocalizedText text)
+    {
+        return new SigningLocalizedText
+        {
+            Default = text.Default,
+            Translations = new Dictionary<string, string>(text.Translations, StringComparer.OrdinalIgnoreCase)
         };
     }
 
@@ -856,13 +1293,32 @@ public partial class TmPdfTemplateDesigner
         Selection
     }
 
-    private sealed record ContextMenuState(ContextMenuKind Kind, double X, double Y, string? FieldUuid, string? AttachmentUuid, int PageIndex);
+    private sealed record ContextMenuState(
+        ContextMenuKind Kind,
+        double X,
+        double Y,
+        string? FieldUuid,
+        string? AttachmentUuid,
+        int PageIndex,
+        double? DocumentX,
+        double? DocumentY);
 
     private sealed record AreaSnapshot(string FieldUuid, string AreaUuid, SigningFieldArea Area);
 
     private sealed record MoveState(double StartClientX, double StartClientY, IReadOnlyList<AreaSnapshot> Areas);
 
     private sealed record ResizeState(string FieldUuid, string AreaUuid, SigningFieldArea Area, SigningResizeHandle Handle, double StartClientX, double StartClientY);
+
+    private sealed class PageSurfaceRect
+    {
+        public double Left { get; set; }
+
+        public double Top { get; set; }
+
+        public double Width { get; set; }
+
+        public double Height { get; set; }
+    }
 
     private sealed class DrawState
     {

@@ -26,8 +26,89 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
             parameters.Add(p => p.Documents, CreatePages())
                       .Add(p => p.Fields, CreateFields()));
 
-        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(2);
+        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(1);
         cut.FindAll(".tm-signing-field").Should().HaveCount(2);
+        cut.Find(".tm-pdf-template-designer__page-label").TextContent.Should().Contain("1 / 2");
+    }
+
+    [Fact]
+    public void CulturePreviewSelector_ChangesCultureAndKeepsSelectedField()
+    {
+        string? culture = null;
+        var field = CreateField("field-1", "Name");
+        field.Labels.Translations["cs-CZ"] = "Jméno";
+        IRenderedComponent<TmPdfTemplateDesigner>? cut = null;
+        cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, new[] { field })
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowCulturePreview, true)
+                      .Add(p => p.Culture, "en-US")
+                      .Add(p => p.CultureChanged, EventCallback.Factory.Create<string?>(this, value =>
+                      {
+                          culture = value;
+                          cut!.SetParametersAndRender(parameters => parameters.Add(p => p.Culture, value));
+                      })));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find(".tm-pdf-template-designer__culture-preview").Change("cs-CZ");
+
+        culture.Should().Be("cs-CZ");
+        cut.Find("[data-field-uuid='field-1']").TextContent.Should().Contain("Jméno");
+        cut.FindAll(".tm-signing-field--selected").Should().HaveCount(1);
+        cut.Find(".tm-signing-field-editor-panel__localization").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Render_ContinuousView_RendersAllPages()
+    {
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.ViewMode, DocumentPageViewMode.Continuous));
+
+        cut.FindAll(".tm-document-page-viewer").Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void PageNavigation_NextAndPreviousChangeVisiblePage()
+    {
+        int? pageIndex = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.PageIndexChanged, value => pageIndex = value));
+
+        cut.Find("[data-page-key='attachment-1:0']").Should().NotBeNull();
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
+
+        pageIndex.Should().Be(1);
+        cut.Find("[data-page-key='attachment-1:1']").Should().NotBeNull();
+        cut.Find(".tm-pdf-template-designer__page-label").TextContent.Should().Contain("2 / 2");
+
+        cut.Find(".tm-pdf-template-designer__previous-page").Click();
+        pageIndex.Should().Be(0);
+        cut.Find("[data-page-key='attachment-1:0']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ZoomControls_UpdateScaleAndMode()
+    {
+        double? scale = null;
+        DocumentPageZoomMode? zoomMode = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.ScaleChanged, value => scale = value)
+                      .Add(p => p.ZoomModeChanged, value => zoomMode = value));
+
+        cut.Find(".tm-pdf-template-designer__zoom-in").Click();
+
+        scale.Should().Be(1.25);
+        zoomMode.Should().Be(DocumentPageZoomMode.Custom);
+
+        cut.Find(".tm-pdf-template-designer__fit-page").Click();
+
+        scale.Should().Be(0.85);
+        zoomMode.Should().Be(DocumentPageZoomMode.FitPage);
     }
 
     [Fact]
@@ -68,6 +149,51 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
 
         cut.Find(".tm-pdf-template-designer").ClassList.Should().Contain("tm-pdf-template-designer--drawing");
         cut.Find("[data-field-type='Text']").ClassList.Should().Contain("tm-pdf-template-designer__palette-item--active");
+    }
+
+    [Fact]
+    public void Palette_DragDropFieldType_CreatesDefaultSizedField()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-type='Signature']").DragStart(new DragEventArgs());
+        cut.Find(".tm-pdf-template-designer").ClassList.Should().Contain("tm-pdf-template-designer--dragging");
+
+        var surface = cut.Find("[data-page-key='attachment-1:0'] .tm-pdf-template-designer__page-surface");
+        surface.Drop(new DragEventArgs { OffsetX = 500, OffsetY = 500 });
+
+        captured.Should().NotBeNull();
+        var field = captured!.Should().ContainSingle().Subject;
+        field.Type.Should().Be(SigningFieldType.Signature);
+        field.Areas.Single().X.Should().BeApproximately(0.33, 0.001);
+        field.Areas.Single().Y.Should().BeApproximately(0.4675, 0.001);
+        field.Areas.Single().Width.Should().BeApproximately(0.34, 0.001);
+        field.Areas.Single().Height.Should().BeApproximately(0.065, 0.001);
+    }
+
+    [Fact]
+    public void Palette_DragDropFieldType_AfterCultureChangeCreatesLocalizedDefaultLabel()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Culture, "cs-CZ")
+                      .Add(p => p.FallbackCulture, "en-US")
+                      .Add(p => p.SupportedCultures, new[] { "en-US", "cs-CZ" })
+                      .Add(p => p.ShowCulturePreview, true)
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-type='Signature']").DragStart(new DragEventArgs());
+        cut.Find("[data-page-key='attachment-1:0'] .tm-pdf-template-designer__page-surface")
+            .Drop(new DragEventArgs { OffsetX = 500, OffsetY = 500 });
+
+        var field = captured!.Should().ContainSingle().Subject;
+        field.Name.Should().Be("Signature");
+        field.Labels.Default.Should().Be("Signature");
+        field.Labels.Translations["cs-CZ"].Should().Be("Signature");
     }
 
     [Fact]
@@ -206,6 +332,22 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
     }
 
     [Fact]
+    public void DeleteKey_RemovesSelectedField()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find(".tm-pdf-template-designer").KeyDown(new KeyboardEventArgs { Key = "Delete" });
+
+        captured.Should().NotBeNull();
+        captured!.Should().ContainSingle(field => field.Uuid == "field-2");
+    }
+
+    [Fact]
     public void ContextMenus_RenderUsingContextMenuComponent()
     {
         var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
@@ -217,7 +359,7 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
         cut.Find(".tm-context-menu-wrapper").Should().NotBeNull();
         cut.Markup.Should().Contain("Copy field");
         cut.Markup.Should().Contain("Delete field");
-        cut.Markup.Should().Contain("Settings");
+        cut.Markup.Should().NotContain("Settings");
     }
 
     [Fact]
@@ -244,13 +386,50 @@ public class TmPdfTemplateDesignerTests : LocalizationTestBase
 
         cut.Find("[data-field-uuid='field-1']").ContextMenu();
         cut.Find(".tm-pdf-template-designer__copy-field").Click();
-        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface").ContextMenu();
+
+        cut.FindAll(".tm-pdf-template-designer__context-actions").Should().BeEmpty();
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Field copied");
+
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
+        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
+            .ContextMenu(new MouseEventArgs { OffsetX = 500, OffsetY = 500 });
         cut.Find(".tm-pdf-template-designer__paste-field").Click();
 
         captured.Should().NotBeNull();
         captured.Should().HaveCount(2);
         captured!.Select(field => field.Uuid).Distinct().Should().HaveCount(2);
-        captured!.Last().Areas.Single().Page.Should().Be(1);
+        var pastedArea = captured!.Last().Areas.Single();
+        pastedArea.Page.Should().Be(1);
+        pastedArea.X.Should().BeApproximately(0.4, 0.001);
+        pastedArea.Y.Should().BeApproximately(0.46, 0.001);
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Field pasted");
+    }
+
+    [Fact]
+    public void CopySelection_PastesAllSelectedFields()
+    {
+        IReadOnlyList<SigningField>? captured = null;
+        var cut = RenderComponent<TmPdfTemplateDesigner>(parameters =>
+            parameters.Add(p => p.Documents, CreatePages())
+                      .Add(p => p.Fields, CreateFields())
+                      .Add(p => p.FieldsChanged, EventCallback.Factory.Create<IReadOnlyList<SigningField>>(this, value => captured = value)));
+
+        cut.Find("[data-field-uuid='field-1']").Click();
+        cut.Find("[data-field-uuid='field-2']").Click(new MouseEventArgs { CtrlKey = true });
+        cut.Find("[data-field-uuid='field-1']").ContextMenu();
+        cut.Find(".tm-pdf-template-designer__copy-selection").Click();
+
+        cut.Find(".tm-pdf-template-designer__clipboard-status").TextContent.Should().Contain("Selection copied");
+
+        cut.Find(".tm-pdf-template-designer__next-page").Click();
+        cut.Find("[data-page-key='attachment-1:1'] .tm-pdf-template-designer__page-surface")
+            .ContextMenu(new MouseEventArgs { OffsetX = 700, OffsetY = 700 });
+        cut.Find(".tm-pdf-template-designer__paste-field").Click();
+
+        captured.Should().NotBeNull();
+        captured!.Should().HaveCount(4);
+        captured!.Count(field => field.Areas.Single().Page == 1).Should().Be(2);
+        cut.FindAll(".tm-signing-field--selected").Should().HaveCount(2);
     }
 
     [Fact]

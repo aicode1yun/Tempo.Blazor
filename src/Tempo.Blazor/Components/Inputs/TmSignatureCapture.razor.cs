@@ -10,12 +10,15 @@ namespace Tempo.Blazor.Components.Inputs;
 /// <summary>Captures signatures by drawing, typing, or uploading an image.</summary>
 public partial class TmSignatureCapture
 {
+    private const string ScriptSignatureFontFamily = "\"Dancing Script\", \"Brush Script MT\", \"Snell Roundhand\", \"Apple Chancery\", \"Segoe Script\", \"Lucida Handwriting\", \"Z003\", \"URW Chancery L\", cursive";
     private readonly List<Stroke> _strokes = [];
     private Stroke? _currentStroke;
     private bool _isDrawing;
     private bool _pointerLeftCanvas;
     private long? _activePointerId;
     private string? _typedText;
+    private string _typedFont = "script";
+    private string? _lastTypedFontParameter;
     private string? _reason;
     private bool _rememberSignature;
     private ElementReference _canvasRef;
@@ -34,6 +37,9 @@ public partial class TmSignatureCapture
 
     /// <summary>Current capture mode. Defaults to draw mode.</summary>
     [Parameter] public TmSignatureCaptureMode Mode { get; set; } = TmSignatureCaptureMode.Draw;
+
+    /// <summary>Callback invoked when the active capture mode changes.</summary>
+    [Parameter] public EventCallback<TmSignatureCaptureMode> ModeChanged { get; set; }
 
     /// <summary>Capture modes shown in the mode selector.</summary>
     [Parameter] public IReadOnlyList<TmSignatureCaptureMode>? Modes { get; set; }
@@ -76,6 +82,12 @@ public partial class TmSignatureCapture
 
     /// <summary>Whether to show a QR/mobile signing button.</summary>
     [Parameter] public bool ShowQrSigningButton { get; set; }
+
+    /// <summary>Whether to show an explicit confirmation button for the current signature.</summary>
+    [Parameter] public bool ShowConfirmButton { get; set; }
+
+    /// <summary>Callback invoked when the current signature is explicitly confirmed.</summary>
+    [Parameter] public EventCallback<TmSignatureCaptureChangedEventArgs> Confirmed { get; set; }
 
     /// <summary>Previously saved signature value that can be reused.</summary>
     [Parameter] public string? PreviousValue { get; set; }
@@ -137,7 +149,19 @@ public partial class TmSignatureCapture
     private string TypedPreviewClass => string.Join(
         " ",
         "tm-signature-capture__typed-preview",
-        $"tm-signature-capture__typed-preview--{NormalizeFont(TypedFont)}");
+        $"tm-signature-capture__typed-preview--{_typedFont}");
+
+    /// <inheritdoc />
+    protected override void OnParametersSet()
+    {
+        var normalizedTypedFont = NormalizeFont(TypedFont);
+        if (_lastTypedFontParameter is null
+            || !string.Equals(_lastTypedFontParameter, normalizedTypedFont, StringComparison.Ordinal))
+        {
+            _typedFont = normalizedTypedFont;
+            _lastTypedFontParameter = normalizedTypedFont;
+        }
+    }
 
     private static void AddClass(List<string> classes, bool condition, string cssClass)
     {
@@ -175,6 +199,7 @@ public partial class TmSignatureCapture
         }
 
         Mode = mode;
+        await ModeChanged.InvokeAsync(mode);
         if (Mode == TmSignatureCaptureMode.Typed && string.IsNullOrWhiteSpace(_typedText))
         {
             _typedText = Value?.StartsWith("<svg", StringComparison.OrdinalIgnoreCase) == true
@@ -185,18 +210,19 @@ public partial class TmSignatureCapture
         await Task.CompletedTask;
     }
 
-    private async Task HandlePointerDown(PointerEventArgs args)
+    private async Task HandlePointerDownAsync(PointerEventArgs args)
     {
         if (Disabled || Mode != TmSignatureCaptureMode.Draw)
         {
             return;
         }
 
+        var point = await GetPointerPointAsync(args);
         _isDrawing = true;
         _pointerLeftCanvas = false;
         _activePointerId = args.PointerId;
         _currentStroke = new Stroke(StrokeColor, StrokeWidth);
-        _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
+        _currentStroke.AddPoint(point.X, point.Y);
         _strokes.Add(_currentStroke);
 
         await CapturePointerAsync(args.PointerId);
@@ -216,7 +242,8 @@ public partial class TmSignatureCapture
         }
 
         _pointerLeftCanvas = false;
-        _currentStroke.AddPoint(args.OffsetX, args.OffsetY);
+        var point = await GetPointerPointAsync(args);
+        _currentStroke.AddPoint(point.X, point.Y);
     }
 
     private async Task HandlePointerUpAsync(PointerEventArgs args)
@@ -241,7 +268,8 @@ public partial class TmSignatureCapture
     {
         if (includePointerPosition)
         {
-            _currentStroke?.AddPoint(args.OffsetX, args.OffsetY);
+            var point = await GetPointerPointAsync(args);
+            _currentStroke?.AddPoint(point.X, point.Y);
         }
 
         _isDrawing = false;
@@ -258,6 +286,37 @@ public partial class TmSignatureCapture
         return _pointerLeftCanvas
             && !string.Equals(args.PointerType, "touch", StringComparison.OrdinalIgnoreCase)
             && args.Buttons == 0;
+    }
+
+    private async ValueTask<PointerPoint> GetPointerPointAsync(PointerEventArgs args)
+    {
+        try
+        {
+            var point = await JSRuntime.InvokeAsync<PointerPoint?>(
+                "tmSignatureCapture.getPointerPoint",
+                _canvasRef,
+                args.ClientX,
+                args.ClientY,
+                Width,
+                Height);
+
+            if (point is not null && double.IsFinite(point.X) && double.IsFinite(point.Y))
+            {
+                return ClampPointerPoint(point.X, point.Y);
+            }
+        }
+        catch (Exception exception) when (exception is JSException or InvalidOperationException)
+        {
+        }
+
+        return ClampPointerPoint(args.OffsetX, args.OffsetY);
+    }
+
+    private PointerPoint ClampPointerPoint(double x, double y)
+    {
+        return new PointerPoint(
+            Math.Clamp(x, 0, Width),
+            Math.Clamp(y, 0, Height));
     }
 
     private async Task HandleTypedInputAsync(ChangeEventArgs args)
@@ -278,7 +337,7 @@ public partial class TmSignatureCapture
             return;
         }
 
-        TypedFont = NormalizeFont(args.Value?.ToString());
+        _typedFont = NormalizeFont(args.Value?.ToString());
         if (!string.IsNullOrWhiteSpace(_typedText))
         {
             await CommitValueAsync(BuildTypedSvgString());
@@ -319,6 +378,29 @@ public partial class TmSignatureCapture
         return Disabled || !OnQrSigningRequested.HasDelegate
             ? Task.CompletedTask
             : OnQrSigningRequested.InvokeAsync();
+    }
+
+    private async Task ConfirmAsync()
+    {
+        if (Disabled || IsEmpty)
+        {
+            return;
+        }
+
+        var value = await BuildCurrentValueAsync();
+        if (!string.Equals(Value, value, StringComparison.Ordinal))
+        {
+            await CommitValueAsync(value);
+        }
+
+        if (Confirmed.HasDelegate)
+        {
+            await Confirmed.InvokeAsync(new TmSignatureCaptureChangedEventArgs(
+                value,
+                Mode,
+                _reason,
+                _rememberSignature));
+        }
     }
 
     /// <summary>Clears the captured signature and notifies value callbacks.</summary>
@@ -384,6 +466,16 @@ public partial class TmSignatureCapture
         }
     }
 
+    private async Task<string?> BuildCurrentValueAsync()
+    {
+        return Mode switch
+        {
+            TmSignatureCaptureMode.Draw when _strokes.Count > 0 => await ExportDrawValueAsync(),
+            TmSignatureCaptureMode.Typed when !string.IsNullOrWhiteSpace(_typedText) => BuildTypedSvgString(),
+            _ => Value
+        };
+    }
+
     private async Task CapturePointerAsync(long pointerId)
     {
         try
@@ -437,16 +529,20 @@ public partial class TmSignatureCapture
         }
 
         var escaped = System.Net.WebUtility.HtmlEncode(_typedText);
-        var fontFamily = NormalizeFont(TypedFont) switch
+        var normalizedFont = NormalizeFont(_typedFont);
+        var fontFamily = normalizedFont switch
         {
             "serif" => "Georgia, serif",
             "sans" => "Arial, sans-serif",
-            _ => "cursive"
+            _ => ScriptSignatureFontFamily
         };
+        var escapedFontFamily = System.Net.WebUtility.HtmlEncode(fontFamily);
+        var fontStyle = normalizedFont == "script" ? "italic" : "normal";
+        var fontWeight = normalizedFont == "script" ? "500" : "400";
 
         return string.Create(
             CultureInfo.InvariantCulture,
-            $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {Width} {Height}\" width=\"{Width}\" height=\"{Height}\"><text x=\"24\" y=\"{Height / 2}\" dominant-baseline=\"middle\" font-family=\"{fontFamily}\" font-size=\"48\" fill=\"currentColor\">{escaped}</text></svg>");
+            $"<svg xmlns=\"http://www.w3.org/2000/svg\" viewBox=\"0 0 {Width} {Height}\" width=\"{Width}\" height=\"{Height}\"><text x=\"24\" y=\"{Height / 2}\" dominant-baseline=\"middle\" font-family=\"{escapedFontFamily}\" font-style=\"{fontStyle}\" font-weight=\"{fontWeight}\" font-size=\"48\" fill=\"currentColor\">{escaped}</text></svg>");
     }
 
     private RenderFragment RenderPreview(string value) => builder =>
@@ -508,6 +604,23 @@ public partial class TmSignatureCapture
 
             _points.AppendFormat(CultureInfo.InvariantCulture, "{0:0.0},{1:0.0}", x, y);
             PointCount++;
+        }
+    }
+
+    private sealed class PointerPoint
+    {
+        public double X { get; set; }
+
+        public double Y { get; set; }
+
+        public PointerPoint()
+        {
+        }
+
+        public PointerPoint(double x, double y)
+        {
+            X = x;
+            Y = y;
         }
     }
 }

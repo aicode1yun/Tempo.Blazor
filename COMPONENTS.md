@@ -5879,14 +5879,14 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 
 | Komponenta | Účel | Provider-agnostic |
 |------------|------|-------------------|
-| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem. | Ano |
+| `TmDocumentPageViewer` | Zobrazení jedné stránky dokumentu s overlay slotem, volitelným toolbarem a zoomem. | Ano |
 | `TmSigningFieldOverlay` | Interaktivní pole nad dokumentem, výběr, stav validace a resize handles. | Ano |
 | `TmSignatureCapture` | Podpis kreslením, psaným textem nebo uploadem. Vyžaduje JS soubor níže. | Ano |
 | `TmConditionBuilder` | Pravidla viditelnosti/povinnosti polí. | Ano |
 | `TmFormulaBuilder` | Editor výpočtových výrazů pro signing pole. | Ano |
 | `TmRecipientRoleEditor` | Role příjemců, pořadí, volitelné role a invitation rules. | Ano |
 | `TmSigningFieldEditorPanel` | Detailní editor vybraného podpisového pole. | Ano |
-| `TmPdfTemplateDesigner` | Návrh PDF šablon s kreslením, výběrem, resize a kontextovým menu. | Ano |
+| `TmPdfTemplateDesigner` | Návrh PDF šablon se stránkováním, zoomem, kreslením, výběrem, resize a kontextovým menu. | Ano |
 | `TmSigningTextStep`, `TmSigningNumberStep`, `TmSigningDateStep`, `TmSigningChoiceStep`, `TmSigningAttachmentStep`, `TmSigningPhoneStep`, `TmSigningExternalStep` | Krokové editory jednotlivých typů polí. | Ano |
 | `TmSigningFormRunner` | End-user podpisový průchod dokumentem s autosave, validací a mobile panelem. | Ano |
 | `TmSigningCompletionPanel` | Dokončovací obrazovka po podpisu nebo čekání na další příjemce. | Ano |
@@ -5901,7 +5901,9 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 <TmPdfTemplateDesigner Documents="_pages"
                        Fields="_fields"
                        FieldsChanged="fields => _fields = fields"
-                       SubmitterRoles="_roles" />
+                       SubmitterRoles="_roles"
+                       ViewMode="DocumentPageViewMode.SinglePage"
+                       Scale="1.0" />
 
 @code {
     private IReadOnlyList<SigningDocumentPage> _pages =
@@ -5926,6 +5928,35 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
 }
 ```
 
+Souřadnice polí zůstávají normalizované vůči stránce (`0..1`). Zoom a režim zobrazení mění jen vizuální měřítko, takže uložené `X`, `Y`, `Width` a `Height` se při přiblížení nebo oddálení nepřepočítávají.
+
+### Komentáře nad dokumentem
+
+`TmDocumentPageViewer` může volitelně vykreslit komentářovou vrstvu nad stránkou. Ve výchozím stavu je vypnutá, takže viewer bez comments parametrů se chová stejně jako dřív. Zapnutí se dělá přes `CommentsEnabled`; režim `DocumentCommentMode.Comment` dovolí kliknutím vytvořit bodový komentář a tažením plošný komentář.
+
+```razor
+<TmDocumentPageViewer Page="_page"
+                      ShowToolbar="true"
+                      CommentsEnabled="true"
+                      CommentMode="_commentMode"
+                      CommentModeChanged="mode => _commentMode = mode"
+                      CommentThreads="_threads"
+                      SelectedCommentThreadId="_selectedThreadId"
+                      SelectedCommentThreadIdChanged="id => _selectedThreadId = id"
+                      CurrentUserId="_currentUserId"
+                      MentionUsers="_mentionUsers"
+                      OnCommentThreadCreateRequested="CreateThreadAsync"
+                      OnCommentReplyRequested="AddReplyAsync"
+                      OnCommentResolveRequested="ResolveThreadAsync"
+                      OnCommentReopenRequested="ReopenThreadAsync" />
+```
+
+Komentáře jsou provider-agnostic modely v `Tempo.Blazor.Abstractions`. Komponenta pouze emituje požadavky (`DocumentCommentThreadCreateRequest`, `DocumentCommentReplyRequest`, `DocumentCommentThreadStatusRequest`, edit/delete/reaction payloady); hostitelská aplikace rozhoduje o uložení, notifikacích, oprávněních a synchronizaci více uživatelů. Pro vlastní vzhled lze nahradit markery přes `CommentMarkerTemplate` a celý pravý panel přes `CommentThreadPanelTemplate`.
+
+Kotvy mohou být bodové, oblastní nebo celostránkové. Bodový komentář používá `DocumentCommentAnchor.Point(pageNumber, x, y)`, oblastní komentář používá `DocumentCommentAnchor.Area(pageNumber, x, y, width, height)` a širokou poznámku k celé stránce reprezentuje `DocumentCommentAnchor.Page(pageNumber)`. Souřadnice jsou normalizované vůči stránce, tedy `0..1`, stejně jako podpisová pole.
+
+Composer podporuje klikací i klávesové mentiony přes `@`, ukládá stabilní `UserId` do payloadu a při mention změně emituje `OnCommentMentionedUsersChanged`. Emoji reakce jsou vykreslené jako seskupené hodnoty s počtem uživatelů; klik na reakci nebo výběr z malého pickeru emituje `OnCommentReactionToggled`. Prázdné reakce hostitelská aplikace obvykle odstraní ze svého stavu.
+
 ### Podpisový průchod
 
 ```razor
@@ -5933,9 +5964,18 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
                      Fields="_fields"
                      Values="_values"
                      ValuesChanged="values => _values = values"
+                     Culture="_signingCulture"
+                     FallbackCulture="en-US"
+                     SupportedCultures="_supportedCultures"
+                     ShowLanguageSelector="true"
+                     OnLocalizationSnapshotChanged="snapshot => _auditSnapshot = snapshot"
                      OnComplete="CompleteSigningAsync" />
 
 @code {
+    private string? _signingCulture = "cs-CZ";
+    private readonly IReadOnlyList<string> _supportedCultures = ["cs-CZ", "en-US"];
+    private SigningSubmissionLocalizationSnapshot? _auditSnapshot;
+
     private IReadOnlyDictionary<string, object?> _values =
         new Dictionary<string, object?>(StringComparer.Ordinal);
 
@@ -5946,6 +5986,58 @@ Komponenty pro tvorbu DocuSeal-like podpisového workflow: návrh PDF šablony, 
     }
 }
 ```
+
+### Vícejazyčná podpisová vrstva
+
+Texty polí se ukládají vedle stabilních identifikátorů. UI popisek se překládá podle `Culture`, ale uložené hodnoty, option `Uuid`, field `Uuid`, formule a podmínky zůstávají stabilní a jazykově nezávislé.
+
+```csharp
+var field = new SigningField
+{
+    Uuid = "signer-name",
+    Name = "Signer name",
+    Labels = new SigningLocalizedText
+    {
+        Default = "Jméno podepisujícího",
+        Translations =
+        {
+            ["en-US"] = "Signer name",
+            ["cs-CZ"] = "Jméno podepisujícího"
+        }
+    },
+    Placeholders = new SigningLocalizedText
+    {
+        Default = "Jan Novák",
+        Translations = { ["en-US"] = "Alex Johnson" }
+    }
+};
+```
+
+Options mají překládaný label, ale submit/autosave hodnota má zůstat stabilní:
+
+```csharp
+field.Options =
+[
+    new SigningFieldOption
+    {
+        Uuid = "delivery-email",
+        Value = "email",
+        Labels = new SigningLocalizedText
+        {
+            Default = "E-mail",
+            Translations = { ["en-US"] = "Email" }
+        }
+    }
+];
+```
+
+PDF obsah se automaticky nepřekládá. Překládá se pouze podpisová vrstva, editor, validace, options a pomocné UI texty. Pokud má dokument existovat ve více jazycích, použijte buď více PDF šablon, nebo explicitně evidujte jazyk původního PDF a jazyk podpisové vrstvy.
+
+`TmSigningFormRunner` při změně jazyka vyvolá `OnLocalizationSnapshotChanged`. Snapshot doporučujeme uložit do auditu spolu s `Culture`, `FallbackCulture`, vyřešenými labely, options a informací, zda byl PDF obsah přeložen. Díky tomu později doložíte, co podepisující v konkrétním jazyce viděl.
+
+Legacy vlastnosti `Name`, `Title`, `Description`, `Option.Value` a `Validation.Message` zůstávají fallbackem. Migrace tedy může být postupná: nejprve ponechat stávající texty a následně doplňovat `SigningLocalizedText`.
+
+Formule a podmínky nikdy nestavte na přeložených popiscích. Používejte stabilní `FieldUuid`, `Option.Uuid` a tokeny typu `{{field-uuid}}`; změna jazyka pak nesmí změnit význam pravidla ani uložené hodnoty.
 
 ### Dokončení, sdílení a audit
 
@@ -5978,6 +6070,7 @@ Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API
 - `SigningSubmissionStatusEvent`, `SigningSubmissionStatusEventType`
 - `SigningPdfVerificationResult`, `SigningPdfVerificationStatus`, `SigningPdfSignatureInfo`
 - `SigningAuditTrail`, `SigningAuditTrailDocument`, `SigningAuditTrailSigner`, `SigningAuditTrailEvent`
+- `DocumentCommentThread`, `DocumentComment`, `DocumentCommentAnchor`, `DocumentCommentUser`, `DocumentCommentMention`, `DocumentCommentReaction`
 
 ### Required JS soubory
 
@@ -5987,7 +6080,7 @@ Signing modely jsou v `Tempo.Blazor.Abstractions`, aby je mohlo referencovat API
 <script src="_content/Tempo.Blazor/js/signature-capture.js"></script>
 ```
 
-`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic a bez vlastního JS souboru. Hostitelská aplikace typicky jen načte hlavní CSS:
+`TmPdfTemplateDesigner`, `TmSigningFormRunner`, `TmDocumentPageViewer`, produktové panely a signing step komponenty jsou provider-agnostic. `TmPdfTemplateDesigner` používá malý JS helper načítaný dynamickým importem pro přesný převod souřadnic při zoomu a vkládání polí; hostitelská aplikace typicky jen načte hlavní CSS:
 
 ```html
 <link href="_content/Tempo.Blazor/css/tempo-blazor.css" rel="stylesheet" />
