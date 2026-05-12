@@ -61,6 +61,8 @@ public partial class TmNotionEquationBlock : ComponentBase
             {
                 await JS.InvokeVoidAsync("tmNotionEditor.setCode", _inputRef, _editBuffer);
                 await _inputRef.FocusAsync();
+                if (!string.IsNullOrWhiteSpace(_editBuffer))
+                    await JS.InvokeVoidAsync("tmNotionEditor.renderEquation", _previewRef, _editBuffer);
             }
             catch { }
         }

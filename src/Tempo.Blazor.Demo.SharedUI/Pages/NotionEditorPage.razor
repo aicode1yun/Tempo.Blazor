@@ -10,6 +10,9 @@
 @inject MockNotionMentionProvider MentionProvider
 @inject MockNotionSearchProvider SearchProvider
 @inject SignalRCollaborationProvider CollaborationProvider
+@inject DemoNotionDatabaseProvider DatabaseProvider
+@inject MockNotionWireframeDocumentProvider WireframeDocumentProvider
+@inject MockNotionDiagramDocumentProvider DiagramDocumentProvider
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
 
@@ -64,6 +67,9 @@
                             MentionProvider="@MentionProvider"
                             SearchProvider="@SearchProvider"
                             CollaborationProvider="@CollaborationProvider"
+                            DatabaseProvider="@DatabaseProvider"
+                            WireframeDocumentProvider="@WireframeDocumentProvider"
+                            DiagramDocumentProvider="@DiagramDocumentProvider"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"
                             Class="h-full" />
