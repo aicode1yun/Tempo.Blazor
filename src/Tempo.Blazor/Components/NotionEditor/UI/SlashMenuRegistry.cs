@@ -89,6 +89,15 @@ public static class SlashMenuRegistry
 
         internal const string Wireframe =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string Table =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 8h16M8 3v14M13 3v14" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string ColumnList =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="6.5" height="14" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11.5" y="3" width="6.5" height="14" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>""";
+
+        internal const string Breadcrumb =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><path d="M2 10h4M6 10l3-3M6 10l3 3M9 7h4M13 7l3 3-3 3" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>""";
     }
 
     // ── Registry ───────────────────────────────────────────────────────────────
@@ -148,6 +157,10 @@ public static class SlashMenuRegistry
             Icons.Equation,       SlashMenuCategory.Basic,
             ["equation", "math", "latex", "formula", "$$", "block equation"]),
 
+        new(BlockType.Table,          "TmNotionSlashMenu_ItemName_Table",           "TmNotionSlashMenu_ItemDesc_Table",
+            Icons.Table,          SlashMenuCategory.Basic,
+            ["table", "grid", "spreadsheet", "rows", "columns", "data"]),
+
         // ── Media ────────────────────────────────────────────────────────────
         new(BlockType.Image,          "TmNotionSlashMenu_ItemName_Image",           "TmNotionSlashMenu_ItemDesc_Image",
             Icons.Image,          SlashMenuCategory.Media,
@@ -202,7 +215,15 @@ public static class SlashMenuRegistry
 
         new(BlockType.Wireframe,      "TmNotionSlashMenu_ItemName_Wireframe",       "TmNotionSlashMenu_ItemDesc_Wireframe",
             Icons.Wireframe,      SlashMenuCategory.Advanced,
-            ["wireframe", "mockup", "ui", "design", "prototype", "layout"])
+            ["wireframe", "mockup", "ui", "design", "prototype", "layout"]),
+
+        new(BlockType.ColumnList,     "TmNotionSlashMenu_ItemName_ColumnList",      "TmNotionSlashMenu_ItemDesc_ColumnList",
+            Icons.ColumnList,     SlashMenuCategory.Advanced,
+            ["columns", "column", "layout", "2 columns", "multi", "side by side", "split"]),
+
+        new(BlockType.Breadcrumb,     "TmNotionSlashMenu_ItemName_Breadcrumb",      "TmNotionSlashMenu_ItemDesc_Breadcrumb",
+            Icons.Breadcrumb,     SlashMenuCategory.Advanced,
+            ["breadcrumb", "navigation", "path", "nav", "crumb"])
     ];
 
     // ── Public API ─────────────────────────────────────────────────────────────

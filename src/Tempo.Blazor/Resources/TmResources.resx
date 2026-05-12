@@ -1343,6 +1343,9 @@
   <data name="TmNotionSlashMenu_ItemName_TemplateButton"        xml:space="preserve"><value>Template button</value></data>
   <data name="TmNotionSlashMenu_ItemName_Diagram"               xml:space="preserve"><value>Diagram</value></data>
   <data name="TmNotionSlashMenu_ItemName_Wireframe"             xml:space="preserve"><value>Wireframe</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Table"                xml:space="preserve"><value>Table</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ColumnList"           xml:space="preserve"><value>2 Columns</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Breadcrumb"           xml:space="preserve"><value>Breadcrumb</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Just start writing with plain text</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Big section heading</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Medium section heading</value></data>
@@ -1369,6 +1372,9 @@
   <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Add a button to create templates</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Create a diagram or flowchart</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Create a UI wireframe or mockup</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Insert a simple table</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Create a multi-column layout</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Show a breadcrumb navigation path</value></data>
 
   <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
   <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Text formatting</value></data>

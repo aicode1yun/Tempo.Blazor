@@ -1510,6 +1510,9 @@
   <data name="TmNotionSlashMenu_ItemName_TemplateButton"        xml:space="preserve"><value>Bouton de modèle</value></data>
   <data name="TmNotionSlashMenu_ItemName_Diagram"               xml:space="preserve"><value>Diagramme</value></data>
   <data name="TmNotionSlashMenu_ItemName_Wireframe"             xml:space="preserve"><value>Maquette</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Table"                xml:space="preserve"><value>Tableau</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ColumnList"           xml:space="preserve"><value>2 colonnes</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Breadcrumb"           xml:space="preserve"><value>Fil d'Ariane</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Commencez à écrire en texte brut</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Grand titre de section</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Titre de section moyen</value></data>
@@ -1536,6 +1539,9 @@
   <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Ajoutez un bouton de modèle</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Créez un diagramme ou un organigramme</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Créez une maquette d'interface</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Insérez un tableau simple</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Créez une mise en page multi-colonnes</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Affiche le fil de navigation de la page</value></data>
 
   <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
   <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Mise en forme du texte</value></data>

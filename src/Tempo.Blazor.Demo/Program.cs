@@ -30,7 +30,7 @@ builder.Services.AddScoped<DemoDocumentImageUrlResolver>();
 builder.Services.AddScoped<DemoDocumentTokenProvider>();
 builder.Services.AddScoped<DemoNotionDataProvider>();
 builder.Services.AddScoped<DemoNotionBlockProvider>();
-builder.Services.AddScoped<DemoNotionDatabaseProvider>();
+builder.Services.AddScoped<MockNotionDatabaseProvider>();
 builder.Services.AddScoped<MockNotionCommentProvider>();
 builder.Services.AddScoped<MockNotionHistoryProvider>();
 builder.Services.AddScoped<MockNotionMentionProvider>();

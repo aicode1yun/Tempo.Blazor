@@ -1084,6 +1084,9 @@
   <data name="TmNotionSlashMenu_ItemName_TemplateButton"        xml:space="preserve"><value>Tlačítko šablony</value></data>
   <data name="TmNotionSlashMenu_ItemName_Diagram"               xml:space="preserve"><value>Diagram</value></data>
   <data name="TmNotionSlashMenu_ItemName_Wireframe"             xml:space="preserve"><value>Drátěný model</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Table"                xml:space="preserve"><value>Tabulka</value></data>
+  <data name="TmNotionSlashMenu_ItemName_ColumnList"           xml:space="preserve"><value>2 sloupce</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Breadcrumb"           xml:space="preserve"><value>Navigační cesta</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Paragraph"             xml:space="preserve"><value>Začněte psát prostý text</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading1"              xml:space="preserve"><value>Velký nadpis sekce</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Heading2"              xml:space="preserve"><value>Střední nadpis sekce</value></data>
@@ -1110,6 +1113,9 @@
   <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Přidejte tlačítko pro vytváření šablon</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Vytvořte diagram nebo vývojový diagram</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Vytvořte drátěný model UI</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Vloží jednoduchou tabulku</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Vytvoří vícesloupcové rozložení</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Zobrazí navigační cestu stránky</value></data>
 
   <!-- ═══════════════ NOTION INLINE TOOLBAR (Phase 44) ═══════════════ -->
   <data name="TmNotionInlineToolbar_Label"         xml:space="preserve"><value>Formátování textu</value></data>

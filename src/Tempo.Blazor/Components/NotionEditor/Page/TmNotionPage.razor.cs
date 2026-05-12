@@ -739,7 +739,10 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         BlockType.BulletList   => new ListBlockContent  { Html = initialHtml },
         BlockType.NumberedList => new ListBlockContent  { Html = initialHtml },
         BlockType.TodoItem     => new TodoBlockContent  { Html = initialHtml },
-        BlockType.Toggle       => new ToggleBlockContent { Html = initialHtml },
+        BlockType.Toggle       => new ToggleBlockContent   { Html = initialHtml },
+        BlockType.Table        => new TableBlockContent(),
+        BlockType.ColumnList   => new ColumnListBlockContent(),
+        BlockType.Breadcrumb   => new BreadcrumbBlockContent(),
         _                      => new TextBlockContent  { Html = initialHtml }
     };
 

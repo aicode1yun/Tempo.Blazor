@@ -75,6 +75,10 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
                 .Where(b => b.Type == BlockType.Column)
                 .OrderBy(b => (b.Content as IColumnBlockContent)?.ColumnIndex ?? b.Order)
                 .ToList();
+
+            if (_columns.Count == 0)
+                await InitDefaultColumnsAsync();
+
             _columnsLoaded     = true;
             _resizeInitialized = false;
         }
@@ -83,6 +87,42 @@ public partial class TmNotionColumnListBlock : ComponentBase, IAsyncDisposable
         {
             _loadingColumns = false;
             StateHasChanged();
+        }
+    }
+
+    private async Task InitDefaultColumnsAsync()
+    {
+        const int count = 2;
+        const double pct = 50.0;
+        for (var i = 0; i < count; i++)
+        {
+            var col = new PageBlock
+            {
+                Id            = Guid.NewGuid(),
+                PageId        = Block.PageId,
+                ParentBlockId = Block.Id,
+                Type          = BlockType.Column,
+                Order         = i,
+                Content       = new ColumnBlockContent { ColumnIndex = i, WidthPercent = pct }
+            };
+            try
+            {
+                var created = await Context.BlockProvider.CreateBlockAsync(
+                    Block.PageId.ToString(), col,
+                    _columns.LastOrDefault()?.Id.ToString());
+                _columns.Add(created);
+            }
+            catch { }
+        }
+        if (_columns.Count > 0)
+        {
+            try
+            {
+                var updatedList = BuildColumnListBlock(Block, new ColumnListBlockContent { ColumnCount = _columns.Count });
+                await Context.BlockProvider.UpdateBlockAsync(updatedList);
+                await OnUpdated.InvokeAsync(updatedList);
+            }
+            catch { }
         }
     }
 
