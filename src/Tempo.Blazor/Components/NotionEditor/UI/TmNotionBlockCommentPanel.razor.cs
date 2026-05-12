@@ -366,6 +366,42 @@ public partial class TmNotionBlockCommentPanel : ComponentBase, IDisposable
         }
     }
 
+    private async Task ResolveThreadAsync(IBlockComment comment)
+    {
+        if (Context.CommentProvider is null) return;
+        _error = string.Empty;
+        try
+        {
+            var updated = await Context.CommentProvider.ResolveCommentAsync(comment.Id.ToString());
+            var idx = _comments.FindIndex(c => c.Id == comment.Id);
+            if (idx >= 0)
+                _comments[idx] = updated;
+            await OnCountChanged.InvokeAsync(_comments.Count);
+        }
+        catch
+        {
+            _error = Loc["TmNotionBlockComment_ActionError"];
+        }
+    }
+
+    private async Task UnresolveThreadAsync(IBlockComment comment)
+    {
+        if (Context.CommentProvider is null) return;
+        _error = string.Empty;
+        try
+        {
+            var updated = await Context.CommentProvider.UnresolveCommentAsync(comment.Id.ToString());
+            var idx = _comments.FindIndex(c => c.Id == comment.Id);
+            if (idx >= 0)
+                _comments[idx] = updated;
+            await OnCountChanged.InvokeAsync(_comments.Count);
+        }
+        catch
+        {
+            _error = Loc["TmNotionBlockComment_ActionError"];
+        }
+    }
+
     private async Task MarkAllAsReadAsync()
     {
         if (Context.CommentProvider is null || string.IsNullOrEmpty(BlockId)) return;

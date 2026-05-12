@@ -1441,6 +1441,61 @@ public class NotionCommentsE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    [Description("Resolve and unresolve a thread directly from the thread list")]
+    public async Task BlockComment_ResolveUnresolve_FromThreadList()
+    {
+        var page = await OpenNotionEditorAsync();
+        var firstBlock = page.Locator("[data-notion-block]").First;
+
+        // 1. Create first thread
+        await OpenBlockCommentPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Thread to resolve");
+        await page.Locator(".tm-nbcp__close-btn").First.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 2. Create second thread
+        await OpenNewThreadPanelOnBlockAsync(page, firstBlock);
+        await AddBlockCommentAsync(page, "Second thread");
+        await page.WaitForTimeoutAsync(500);
+
+        // Panel shows detail of new thread; click back to see list
+        var backBtn = page.Locator(".tm-nbcp__back-btn").First;
+        await backBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await backBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 3. Thread list should show both threads
+        var threadCards = page.Locator(".tm-nbcp__thread-card");
+        await threadCards.First.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.AreEqual(2, await threadCards.CountAsync(), "Thread list should show 2 threads");
+
+        // 4. Resolve first thread from list
+        var firstCard = threadCards.Filter(new() { HasText = "Thread to resolve" }).First;
+        var resolveBtn = firstCard.Locator(".tm-nbcp__thread-card__action").Filter(new() { HasText = "Resolve" }).First;
+        await resolveBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await resolveBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 5. Verify resolved badge appears on the card
+        var resolvedBadge = firstCard.Locator(".tm-nbcp__thread-card__resolved-badge").First;
+        await resolvedBadge.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        Assert.IsTrue(await resolvedBadge.IsVisibleAsync(), "Resolved badge should appear on resolved thread card");
+
+        // 6. Unresolve the same thread from list
+        var unresolveBtn = firstCard.Locator(".tm-nbcp__thread-card__action--unresolve").First;
+        await unresolveBtn.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+        await unresolveBtn.ClickAsync();
+        await page.WaitForTimeoutAsync(500);
+
+        // 7. Verify resolved badge is gone
+        var cardAfter = threadCards.Filter(new() { HasText = "Thread to resolve" }).First;
+        var resolvedAfter = cardAfter.Locator(".tm-nbcp__thread-card__resolved-badge");
+        Assert.AreEqual(0, await resolvedAfter.CountAsync(), "Resolved badge should disappear after unresolve");
+
+        await TakeScreenshotAsync(page, "block_comment_resolve_from_list");
+    }
+
+    [TestMethod]
     [Description("Margin badge shows correct thread count when multiple threads exist")]
     public async Task BlockComment_MultipleThreads_BadgeCount()
     {

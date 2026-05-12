@@ -2172,6 +2172,7 @@
   <data name="TmNotionBlockComment_NoComments"       xml:space="preserve"><value>Aucun commentaire pour l'instant</value></data>
   <data name="TmNotionBlockComment_Edited"           xml:space="preserve"><value>modifié</value></data>
   <data name="TmNotionBlockComment_EntryActions"     xml:space="preserve"><value>Actions du commentaire</value></data>
+  <data name="TmNotionBlockComment_ThreadActions"    xml:space="preserve"><value>Actions du fil</value></data>
   <data name="TmNotionBlockComment_Edit"             xml:space="preserve"><value>Modifier</value></data>
   <data name="TmNotionBlockComment_Delete"           xml:space="preserve"><value>Supprimer</value></data>
   <data name="TmNotionBlockComment_EditLabel"        xml:space="preserve"><value>Modifier le commentaire</value></data>

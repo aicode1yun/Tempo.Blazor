@@ -208,6 +208,36 @@
                                     <span class="tm-nbcp__thread-card__resolved-badge">@Loc["TmNotionBlockComment_Resolved"]</span>
                                 }
                             </div>
+                            <div class="tm-nbcp__thread-card__actions" role="group" aria-label="@Loc["TmNotionBlockComment_ThreadActions"]">
+                                @if (!comment.IsResolved)
+                                {
+                                    <button class="tm-nbcp__thread-card__action"
+                                            type="button"
+                                            title="@Loc["TmNotionBlockComment_Resolve"]"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => ResolveThreadAsync(comment)">
+                                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+                                            <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        @Loc["TmNotionBlockComment_Resolve"]
+                                    </button>
+                                }
+                                else
+                                {
+                                    <button class="tm-nbcp__thread-card__action tm-nbcp__thread-card__action--unresolve"
+                                            type="button"
+                                            title="@Loc["TmNotionBlockComment_Unresolve"]"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => UnresolveThreadAsync(comment)">
+                                        <svg width="12" height="12" viewBox="0 0 14 14" fill="none" aria-hidden="true">
+                                            <circle cx="7" cy="7" r="5.5" stroke="currentColor" stroke-width="1.4"/>
+                                            <path d="M4.5 7l2 2 3-3" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>
+                                        </svg>
+                                        @Loc["TmNotionBlockComment_Unresolve"]
+                                    </button>
+                                }
+                            </div>
                         </div>
                     </div>
                 }

@@ -2154,6 +2154,7 @@
   <data name="TmNotionBlockComment_NoComments"       xml:space="preserve"><value>Zatím žádné komentáře</value></data>
   <data name="TmNotionBlockComment_Edited"           xml:space="preserve"><value>upraveno</value></data>
   <data name="TmNotionBlockComment_EntryActions"     xml:space="preserve"><value>Akce komentáře</value></data>
+  <data name="TmNotionBlockComment_ThreadActions"    xml:space="preserve"><value>Akce vlákna</value></data>
   <data name="TmNotionBlockComment_Edit"             xml:space="preserve"><value>Upravit</value></data>
   <data name="TmNotionBlockComment_Delete"           xml:space="preserve"><value>Smazat</value></data>
   <data name="TmNotionBlockComment_EditLabel"        xml:space="preserve"><value>Upravit komentář</value></data>
