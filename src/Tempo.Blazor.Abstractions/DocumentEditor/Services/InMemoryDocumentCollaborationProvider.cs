@@ -12,7 +12,7 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     private long _sequence;
 
     /// <inheritdoc />
-    public Task<DocumentCollaborationSession> JoinAsync(
+    public virtual Task<DocumentCollaborationSession> JoinAsync(
         DocumentCollaborationJoinRequest request,
         CancellationToken cancellationToken = default)
     {
@@ -28,7 +28,7 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     }
 
     /// <inheritdoc />
-    public Task LeaveAsync(string sessionId, CancellationToken cancellationToken = default)
+    public virtual Task LeaveAsync(string sessionId, CancellationToken cancellationToken = default)
     {
         if (_sessions.Remove(sessionId, out var session))
         {
@@ -39,7 +39,7 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     }
 
     /// <inheritdoc />
-    public Task<DocumentCollaborationOperationBatch> BroadcastOperationBatchAsync(
+    public virtual Task<DocumentCollaborationOperationBatch> BroadcastOperationBatchAsync(
         string sessionId,
         DocumentOperationBatch batch,
         CancellationToken cancellationToken = default)
@@ -69,7 +69,7 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<DocumentCollaborationOperationBatch>> GetOperationBatchesAsync(
+    public virtual Task<IReadOnlyList<DocumentCollaborationOperationBatch>> GetOperationBatchesAsync(
         string documentId,
         long afterSequence,
         CancellationToken cancellationToken = default)
@@ -82,14 +82,14 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     }
 
     /// <inheritdoc />
-    public Task BroadcastCursorAsync(DocumentCollaborationCursor cursor, CancellationToken cancellationToken = default)
+    public virtual Task BroadcastCursorAsync(DocumentCollaborationCursor cursor, CancellationToken cancellationToken = default)
     {
         _cursors[GetCursorKey(cursor.DocumentId, cursor.SessionId)] = Clone(cursor);
         return Task.CompletedTask;
     }
 
     /// <inheritdoc />
-    public Task<IReadOnlyList<DocumentCollaborationCursor>> GetCursorsAsync(
+    public virtual Task<IReadOnlyList<DocumentCollaborationCursor>> GetCursorsAsync(
         string documentId,
         CancellationToken cancellationToken = default)
     {

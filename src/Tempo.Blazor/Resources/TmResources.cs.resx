@@ -2732,6 +2732,7 @@
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>URL odkazu</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Použít odkaz</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Zavřít</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Vymazat formátování</value></data>
   <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Rozložení stránky</value></data>
   <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Tabulka</value></data>
@@ -2807,6 +2808,29 @@
   <data name="TmDocumentEditor_DiffNew"                xml:space="preserve"><value>Novější verze</value></data>
   <data name="TmDocumentEditor_DiffSummary"            xml:space="preserve"><value>{0} přidáno, {1} odebráno</value></data>
   <data name="TmDocumentEditor_DiffNoChanges"          xml:space="preserve"><value>Beze změn</value></data>
+  <data name="TmDocumentEditor_CompareDocuments"       xml:space="preserve"><value>Porovnat</value></data>
+  <data name="TmDocumentEditor_CompareDialogTitle"     xml:space="preserve"><value>Porovnání dokumentů</value></data>
+  <data name="TmDocumentEditor_CompareBaseSource"      xml:space="preserve"><value>Základní zdroj</value></data>
+  <data name="TmDocumentEditor_CompareTargetSource"    xml:space="preserve"><value>Porovnávaný zdroj</value></data>
+  <data name="TmDocumentEditor_CompareBaseSourceAria"  xml:space="preserve"><value>Základní zdroj porovnání</value></data>
+  <data name="TmDocumentEditor_CompareTargetSourceAria" xml:space="preserve"><value>Cílový zdroj porovnání</value></data>
+  <data name="TmDocumentEditor_CompareSourceCurrent"   xml:space="preserve"><value>Aktuální dokument</value></data>
+  <data name="TmDocumentEditor_CompareSourceDocumentId" xml:space="preserve"><value>ID dokumentu</value></data>
+  <data name="TmDocumentEditor_CompareSourceJsonSnapshot" xml:space="preserve"><value>Nahraný DOCX</value></data>
+  <data name="TmDocumentEditor_CompareDocumentId"      xml:space="preserve"><value>ID dokumentu</value></data>
+  <data name="TmDocumentEditor_CompareBaseDocumentIdAria" xml:space="preserve"><value>ID základního dokumentu</value></data>
+  <data name="TmDocumentEditor_CompareTargetDocumentIdAria" xml:space="preserve"><value>ID cílového dokumentu</value></data>
+  <data name="TmDocumentEditor_CompareUploadDocx"      xml:space="preserve"><value>Přetáhněte DOCX soubor pro porovnání</value></data>
+  <data name="TmDocumentEditor_CompareBaseUploadAria"  xml:space="preserve"><value>Nahrát základní DOCX pro porovnání</value></data>
+  <data name="TmDocumentEditor_CompareTargetUploadAria" xml:space="preserve"><value>Nahrát cílový DOCX pro porovnání</value></data>
+  <data name="TmDocumentEditor_CompareRun"             xml:space="preserve"><value>Porovnat</value></data>
+  <data name="TmDocumentEditor_CompareLoading"         xml:space="preserve"><value>Porovnávám dokumenty...</value></data>
+  <data name="TmDocumentEditor_CompareEmpty"           xml:space="preserve"><value>Vyberte zdroje a spusťte porovnání.</value></data>
+  <data name="TmDocumentEditor_CompareError"           xml:space="preserve"><value>Porovnání dokumentů selhalo.</value></data>
+  <data name="TmDocumentEditor_CompareProviderUnavailable" xml:space="preserve"><value>Provider formátu dokumentu není dostupný.</value></data>
+  <data name="TmDocumentEditor_CompareImportFailed"    xml:space="preserve"><value>Import DOCX pro porovnání selhal.</value></data>
+  <data name="TmDocumentEditor_CompareImportComplete"  xml:space="preserve"><value>Zdroj pro porovnání importován.</value></data>
+  <data name="TmDocumentEditor_CompareSummary"         xml:space="preserve"><value>{0} přidáno, {1} odebráno, {2} změněno</value></data>
   <data name="TmDocumentEditor_VersionLoadFailed"      xml:space="preserve"><value>Verze se nepodařilo načíst.</value></data>
   <data name="TmDocumentEditor_PreviewingVersion"      xml:space="preserve"><value>Náhled {0}</value></data>
   <data name="TmDocumentEditor_ReturnToCurrentVersion" xml:space="preserve"><value>Zpět na aktuální</value></data>
@@ -2822,10 +2846,43 @@
   <data name="TmDocumentEditor_SaveComplete"           xml:space="preserve"><value>Uloženo</value></data>
   <data name="TmDocumentEditor_ExportPdfComplete"      xml:space="preserve"><value>PDF exportováno</value></data>
   <data name="TmDocumentEditor_ExportPdfFailed"        xml:space="preserve"><value>Export PDF selhal</value></data>
+  <data name="TmDocumentEditor_ExportPdfAria"          xml:space="preserve"><value>Exportovat dokument jako PDF</value></data>
+  <data name="TmDocumentEditor_ImportDocxComplete"     xml:space="preserve"><value>Importováno</value></data>
+  <data name="TmDocumentEditor_ImportDocxFailed"       xml:space="preserve"><value>Import DOCX selhal</value></data>
+  <data name="TmDocumentEditor_ImportDocxAria"         xml:space="preserve"><value>Importovat DOCX dokument</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZoneAria" xml:space="preserve"><value>Vybrat DOCX soubor pro import</value></data>
+  <data name="TmDocumentEditor_ExportDocxComplete"     xml:space="preserve"><value>DOCX exportováno</value></data>
+  <data name="TmDocumentEditor_ExportDocxFailed"       xml:space="preserve"><value>Export DOCX selhal</value></data>
+  <data name="TmDocumentEditor_ExportDocxAria"         xml:space="preserve"><value>Exportovat dokument jako DOCX</value></data>
+  <data name="TmDocumentEditor_FormatImportPanelLabel" xml:space="preserve"><value>Import formátu dokumentu</value></data>
+  <data name="TmDocumentEditor_FormatProviderUnavailable" xml:space="preserve"><value>Provider formátu dokumentu není dostupný.</value></data>
   <data name="TmDocumentEditor_AutoSaveComplete"       xml:space="preserve"><value>Automaticky uloženo</value></data>
   <data name="TmDocumentEditor_LastSavedAt"            xml:space="preserve"><value>Naposledy uloženo {0}</value></data>
   <data name="TmDocumentEditor_SaveConflict"           xml:space="preserve"><value>Dokument se změnil na serveru.</value></data>
   <data name="TmDocumentEditor_SaveFailed"             xml:space="preserve"><value>Uložení selhalo.</value></data>
+  <data name="TmDocumentEditor_CollaborationUnavailable" xml:space="preserve"><value>Spolupráce není dostupná.</value></data>
+  <data name="TmDocumentEditor_CollaborationCursorsLabel" xml:space="preserve"><value>Vzdálené kurzory spolupráce</value></data>
+  <data name="TmDocumentEditor_Suggestions"            xml:space="preserve"><value>Návrhy</value></data>
+  <data name="TmDocumentEditor_SuggestionPanelLabel"   xml:space="preserve"><value>Návrhy dokumentu</value></data>
+  <data name="TmDocumentEditor_SuggestionsEmpty"       xml:space="preserve"><value>Žádné čekající návrhy</value></data>
+  <data name="TmDocumentEditor_SuggestionsLoadFailed"  xml:space="preserve"><value>Návrhy se nepodařilo načíst.</value></data>
+  <data name="TmDocumentEditor_SuggestionCreated"      xml:space="preserve"><value>Návrh vytvořen</value></data>
+  <data name="TmDocumentEditor_SuggestionCreateFailed" xml:space="preserve"><value>Návrh se nepodařilo vytvořit.</value></data>
+  <data name="TmDocumentEditor_SuggestionAccepted"     xml:space="preserve"><value>Návrh přijat</value></data>
+  <data name="TmDocumentEditor_SuggestionRejected"     xml:space="preserve"><value>Návrh odmítnut</value></data>
+  <data name="TmDocumentEditor_SuggestionReviewFailed" xml:space="preserve"><value>Kontrola návrhu selhala.</value></data>
+  <data name="TmDocumentEditor_SuggestionConflict"     xml:space="preserve"><value>Návrh nelze použít, protože se dokument změnil.</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestion"       xml:space="preserve"><value>Přijmout</value></data>
+  <data name="TmDocumentEditor_RejectSuggestion"       xml:space="preserve"><value>Odmítnout</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestionAria"   xml:space="preserve"><value>Přijmout návrh od {0}</value></data>
+  <data name="TmDocumentEditor_RejectSuggestionAria"   xml:space="preserve"><value>Odmítnout návrh od {0}</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeInsert"   xml:space="preserve"><value>Vložení</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeDelete"   xml:space="preserve"><value>Smazání</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeReplace"  xml:space="preserve"><value>Nahrazení</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeFormatting" xml:space="preserve"><value>Formátování</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeMove"     xml:space="preserve"><value>Přesun</value></data>
+  <data name="TmDocumentEditor_SuggestionInsertAria"   xml:space="preserve"><value>Navržené vložení</value></data>
+  <data name="TmDocumentEditor_SuggestionDeleteAria"   xml:space="preserve"><value>Navržené smazání</value></data>
   <data name="TmDocumentEditor_OfflineDraftAvailable"  xml:space="preserve"><value>Je dostupný offline koncept.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoaded"     xml:space="preserve"><value>Načten novější offline koncept.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoadFailed" xml:space="preserve"><value>Offline koncept se nepodařilo načíst.</value></data>
@@ -2882,6 +2939,9 @@
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Poznámky</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Poznámka pod čarou</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Přetáhněte DOCX soubor nebo vyberte</value></data>
+  <data name="TmDocumentEditor_ExportDocx"             xml:space="preserve"><value>Export DOCX</value></data>
   <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Koncová poznámka</value></data>
   <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Poznámka pod čarou</value></data>
   <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Koncová poznámka</value></data>
@@ -2898,5 +2958,15 @@
   <data name="TmDocumentEditor_ImageUploadFailed"      xml:space="preserve"><value>Nahrání obrázku selhalo.</value></data>
   <data name="TmDocumentEditor_ImageUploading"         xml:space="preserve"><value>Nahrávání obrázku...</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Konec stránky</value></data>
+  <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG plocha dokumentu</value></data>
+  <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editovatelná plocha dokumentu. Pomocí Tab přecházíte mezi pásem karet, záhlavím, tělem, zápatím a komentáři.</value></data>
+  <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Stránka {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygBodyLabel"       xml:space="preserve"><value>Tělo dokumentu, stránka {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygHeaderLabel"     xml:space="preserve"><value>Záhlaví, stránka {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygFooterLabel"     xml:space="preserve"><value>Zápatí, stránka {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygImageResizeHandleLabel" xml:space="preserve"><value>Změnit velikost obrázku</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>WYSIWYG editor není dostupný</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>WYSIWYG editační engine se nepodařilo načíst. Použijte prosím blokový editor nebo obnovte stránku.</value></data>
+  <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Dokument se nepodařilo aktualizovat. Zkuste to znovu nebo obnovte stránku.</value></data>
 
 </root>

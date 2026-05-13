@@ -14,6 +14,45 @@ public sealed class DocumentPdfExportRequest
 
     /// <summary>Author requesting the export.</summary>
     public DocumentEditorAuthor? Author { get; set; }
+
+    /// <summary>Options that control PDF generation.</summary>
+    public DocumentPdfExportOptions Options { get; set; } = new();
+}
+
+/// <summary>Options that control PDF export behavior.</summary>
+public sealed class DocumentPdfExportOptions
+{
+    /// <summary>Whether provider-backed suggestions should be included in the exported PDF.</summary>
+    public bool IncludeSuggestions { get; set; } = true;
+
+    /// <summary>Whether comments should be included in the exported PDF.</summary>
+    public bool IncludeComments { get; set; } = true;
+
+    /// <summary>Page setup used by the PDF renderer.</summary>
+    public DocumentPdfPageSetupOptions PageSetup { get; set; } = new();
+}
+
+/// <summary>Page setup options for PDF export.</summary>
+public sealed class DocumentPdfPageSetupOptions
+{
+    /// <summary>Page size in points.</summary>
+    public DocumentPageSize PageSize { get; set; } = DocumentPageSize.A4;
+
+    /// <summary>Page orientation.</summary>
+    public DocumentPdfPageOrientation Orientation { get; set; } = DocumentPdfPageOrientation.Portrait;
+
+    /// <summary>Page margins in points.</summary>
+    public DocumentPageMargins Margins { get; set; } = DocumentPageMargins.Default;
+}
+
+/// <summary>Page orientation for PDF export.</summary>
+public enum DocumentPdfPageOrientation
+{
+    /// <summary>Portrait page orientation.</summary>
+    Portrait,
+
+    /// <summary>Landscape page orientation.</summary>
+    Landscape
 }
 
 /// <summary>PDF export provider result.</summary>

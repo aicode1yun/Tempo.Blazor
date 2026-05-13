@@ -4,6 +4,7 @@ using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 using A = DocumentFormat.OpenXml.Drawing;
+using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 
 namespace Tempo.Blazor.DocumentFormats.Docx;
 
@@ -210,12 +211,29 @@ public sealed class DocxPackageReader
     {
         var result = new List<InlineContent>();
         var inherited = inheritedMarks ?? [];
+        string? activeCommentId = null;
 
         foreach (var element in elements)
         {
+            if (element is W.CommentRangeStart commentStart)
+            {
+                activeCommentId = commentStart.Id?.Value;
+                continue;
+            }
+
+            if (element is W.CommentRangeEnd)
+            {
+                activeCommentId = null;
+                continue;
+            }
+
+            var currentInherited = !string.IsNullOrWhiteSpace(activeCommentId)
+                ? MergeMarks(inherited, [new InlineMark { Type = InlineMarkType.CommentAnchor, CommentAnchor = new CommentAnchorMarkData { CommentId = activeCommentId, AnchorId = activeCommentId } }])
+                : inherited;
+
             if (element is W.Run run)
             {
-                var marks = MergeMarks(inherited, ReadRunMarks(run.RunProperties));
+                var marks = MergeMarks(currentInherited, ReadRunMarks(run.RunProperties));
                 if (run.Descendants<W.Drawing>().Any())
                 {
                     continue;
@@ -242,19 +260,19 @@ public sealed class DocxPackageReader
                 var href = hyperlink.Id is not null && _hyperlinks.TryGetValue(hyperlink.Id!, out var link)
                     ? link
                     : hyperlink.Anchor?.Value ?? string.Empty;
-                var linkMarks = MergeMarks(inherited, [new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = href } }]);
+                var linkMarks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = href } }]);
                 result.AddRange(ReadInlines(hyperlink.ChildElements, linkMarks));
             }
             else if (element is W.InsertedRun inserted)
             {
-                var revisionId = $"docx-ins-{inserted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
-                var marks = MergeMarks(inherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
+                var revisionId = $"docx-rev-{inserted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
+                var marks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
                 result.AddRange(ReadInlines(inserted.ChildElements, marks));
             }
             else if (element is W.DeletedRun deleted)
             {
-                var revisionId = $"docx-del-{deleted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
-                var marks = MergeMarks(inherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
+                var revisionId = $"docx-rev-{deleted.Id?.Value ?? Guid.NewGuid().ToString("N")}";
+                var marks = MergeMarks(currentInherited, [new InlineMark { Type = InlineMarkType.Revision, RevisionId = revisionId }]);
                 result.AddRange(ReadInlines(deleted.ChildElements, marks));
             }
         }
@@ -378,28 +396,122 @@ public sealed class DocxPackageReader
             url = $"data:{imagePart.ContentType};base64,{Convert.ToBase64String(bytes)}";
         }
 
+        var floatingLayout = ReadFloatingLayout(drawing);
+        var extent = drawing.Descendants<DW.Extent>().FirstOrDefault();
+
         return new ImageBlockContent
         {
             Source = url is not null ? DocumentImageSource.Url : DocumentImageSource.Asset,
             Url = url,
             AssetId = url is null ? assetId : null,
             AltText = drawing.Descendants<DocumentFormat.OpenXml.Drawing.Pictures.NonVisualDrawingProperties>().FirstOrDefault()?.Description?.Value,
-            Size = new DocumentImageSize { Width = 120, Height = 90 },
-            FloatingLayout = drawing.Descendants<DocumentFormat.OpenXml.Drawing.Wordprocessing.Anchor>().Any()
-                ? new DocumentFloatingLayout { Inline = false, WrapMode = DocumentWrapMode.Square }
-                : new DocumentFloatingLayout { Inline = true, WrapMode = DocumentWrapMode.Inline }
+            Size = new DocumentImageSize
+            {
+                Width = extent?.Cx is null ? 120 : Math.Round(extent.Cx.Value / 12700d, 2),
+                Height = extent?.Cy is null ? 90 : Math.Round(extent.Cy.Value / 12700d, 2)
+            },
+            FloatingLayout = floatingLayout
         };
+    }
+
+    private static DocumentFloatingLayout ReadFloatingLayout(W.Drawing drawing)
+    {
+        var anchor = drawing.Descendants<DW.Anchor>().FirstOrDefault();
+        if (anchor is null)
+        {
+            return new DocumentFloatingLayout { Inline = true, WrapMode = DocumentWrapMode.Inline };
+        }
+
+        var horizontal = anchor.GetFirstChild<DW.HorizontalPosition>();
+        var vertical = anchor.GetFirstChild<DW.VerticalPosition>();
+        var wrapMode = anchor.Descendants<DW.WrapTopBottom>().Any()
+            ? DocumentWrapMode.TopBottom
+            : anchor.BehindDoc?.Value == true
+                ? DocumentWrapMode.BehindText
+                : anchor.Descendants<DW.WrapNone>().Any()
+                    ? DocumentWrapMode.InFrontOfText
+                    : DocumentWrapMode.Square;
+
+        return new DocumentFloatingLayout
+        {
+            Inline = false,
+            HorizontalRelativeTo = FromDocxHorizontalRelative(horizontal?.RelativeFrom?.Value),
+            VerticalRelativeTo = FromDocxVerticalRelative(vertical?.RelativeFrom?.Value),
+            X = EmuToPoint(horizontal?.GetFirstChild<DW.PositionOffset>()?.Text),
+            Y = EmuToPoint(vertical?.GetFirstChild<DW.PositionOffset>()?.Text),
+            WrapMode = wrapMode,
+            ZIndex = (int)(anchor.RelativeHeight?.Value ?? 0),
+            LockAnchor = anchor.Locked?.Value == true
+        };
+    }
+
+    private static double EmuToPoint(string? value)
+    {
+        return long.TryParse(value, out var emu)
+            ? Math.Round(emu / 12700d, 2)
+            : 0;
+    }
+
+    private static DocumentRelativePosition FromDocxHorizontalRelative(DW.HorizontalRelativePositionValues? value)
+    {
+        if (value == DW.HorizontalRelativePositionValues.Margin)
+        {
+            return DocumentRelativePosition.Margin;
+        }
+
+        if (value == DW.HorizontalRelativePositionValues.Column)
+        {
+            return DocumentRelativePosition.Column;
+        }
+
+        if (value == DW.HorizontalRelativePositionValues.Character)
+        {
+            return DocumentRelativePosition.Character;
+        }
+
+        return DocumentRelativePosition.Page;
+    }
+
+    private static DocumentRelativePosition FromDocxVerticalRelative(DW.VerticalRelativePositionValues? value)
+    {
+        if (value == DW.VerticalRelativePositionValues.Margin)
+        {
+            return DocumentRelativePosition.Margin;
+        }
+
+        if (value == DW.VerticalRelativePositionValues.Line)
+        {
+            return DocumentRelativePosition.Line;
+        }
+
+        if (value == DW.VerticalRelativePositionValues.Page)
+        {
+            return DocumentRelativePosition.Page;
+        }
+
+        return DocumentRelativePosition.Paragraph;
     }
 
     private List<DocumentHeaderFooter> ReadHeadersFooters(MainDocumentPart mainPart)
     {
         var result = new List<DocumentHeaderFooter>();
+        var sectionProperties = mainPart.Document.Body?.Elements<W.SectionProperties>().LastOrDefault();
+        var headerScopes = sectionProperties?.Elements<W.HeaderReference>()
+            .Where(reference => reference.Id is not null)
+            .ToDictionary(reference => reference.Id!.Value!, reference => FromHeaderFooterValues(reference.Type?.Value), StringComparer.Ordinal)
+            ?? [];
+        var footerScopes = sectionProperties?.Elements<W.FooterReference>()
+            .Where(reference => reference.Id is not null)
+            .ToDictionary(reference => reference.Id!.Value!, reference => FromHeaderFooterValues(reference.Type?.Value), StringComparer.Ordinal)
+            ?? [];
+
         foreach (var part in mainPart.HeaderParts)
         {
+            var relationshipId = mainPart.GetIdOfPart(part);
             result.Add(new DocumentHeaderFooter
             {
                 Type = DocumentHeaderFooterType.Header,
-                Scope = DocumentHeaderFooterScope.Primary,
+                Scope = headerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary),
                 Blocks = part.Header?.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
                 {
                     Type = DocumentBlockType.Paragraph,
@@ -411,10 +523,11 @@ public sealed class DocxPackageReader
 
         foreach (var part in mainPart.FooterParts)
         {
+            var relationshipId = mainPart.GetIdOfPart(part);
             result.Add(new DocumentHeaderFooter
             {
                 Type = DocumentHeaderFooterType.Footer,
-                Scope = DocumentHeaderFooterScope.Primary,
+                Scope = footerScopes.GetValueOrDefault(relationshipId, DocumentHeaderFooterScope.Primary),
                 Blocks = part.Footer?.Elements<W.Paragraph>().Select((p, i) => new DocumentBlock
                 {
                     Type = DocumentBlockType.Paragraph,
@@ -425,6 +538,21 @@ public sealed class DocxPackageReader
         }
 
         return result;
+    }
+
+    private static DocumentHeaderFooterScope FromHeaderFooterValues(W.HeaderFooterValues? value)
+    {
+        if (value == W.HeaderFooterValues.First)
+        {
+            return DocumentHeaderFooterScope.FirstPage;
+        }
+
+        if (value == W.HeaderFooterValues.Even)
+        {
+            return DocumentHeaderFooterScope.EvenPages;
+        }
+
+        return DocumentHeaderFooterScope.Primary;
     }
 
     private List<DocumentNote> ReadNotes(MainDocumentPart mainPart)
@@ -479,6 +607,7 @@ public sealed class DocxPackageReader
 
         return comments.Elements<W.Comment>().Select(comment => new DocumentComment
         {
+            Id = comment.Id?.Value ?? Guid.NewGuid().ToString("N"),
             SourceFormat = "docx",
             ExternalId = comment.Id?.Value,
             Anchor = new DocumentCommentAnchor

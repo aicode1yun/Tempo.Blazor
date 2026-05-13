@@ -6,6 +6,11 @@
 @using Tempo.Blazor.DocumentEditor.Models
 @inject IHttpClientFactory HttpClientFactory
 @inject DemoDocumentEditorProvider DocumentProvider
+@inject DemoDocumentCollaborationProvider CollaborationProvider
+@inject DemoDocumentSuggestionProvider SuggestionProvider
+@inject DemoDocumentFormatProvider FormatProvider
+@inject DemoDocumentPdfExportProvider PdfExportProvider
+@inject DemoDocumentComparisonProvider ComparisonProvider
 @inject DemoDocumentImageUrlResolver ImageResolver
 @inject DemoDocumentTokenProvider TokenProvider
 
@@ -39,26 +44,22 @@
                    data-testid="document-editor-readonly" />
             Read-only
         </label>
+        <label class="inline-flex items-center gap-2 text-sm font-medium text-slate-700 dark:text-slate-300">
+            <input class="rounded border-slate-300 text-primary-600 focus:ring-primary-500"
+                   type="checkbox"
+                   @bind="_disableExport"
+                   data-testid="document-editor-disable-export" />
+            Disable export
+        </label>
         <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-editor-loaded">
             @_loadedTitle
         </span>
-        <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
-           data-testid="document-export-docx"
-           href="@ExportDocxUrl"
-           download>
-            Export DOCX
-        </a>
         <a class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200"
            data-testid="document-export-odt"
            href="@ExportOdtUrl"
            download>
             Export ODT
         </a>
-        <label class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
-               data-testid="document-import-docx-label">
-            Import DOCX
-            <InputFile class="sr-only" OnChange="ImportDocxAsync" data-testid="document-import-docx" />
-        </label>
         <label class="px-3 py-1.5 rounded-md text-sm font-medium bg-slate-100 text-slate-700 hover:bg-slate-200 dark:bg-slate-800 dark:text-slate-200 cursor-pointer"
                data-testid="document-import-odt-label">
             Import ODT
@@ -72,7 +73,7 @@
         </button>
         @if (!string.IsNullOrWhiteSpace(_formatMessage))
         {
-            <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-format-message">@_formatMessage</span>
+            <span class="text-sm text-slate-500 dark:text-slate-400" data-testid="document-page-format-message">@_formatMessage</span>
         }
         @if (!string.IsNullOrWhiteSpace(_signingMessage))
         {
@@ -91,11 +92,19 @@
 
 <TmDocumentEditor DocumentId="@_documentId"
                   Provider="@DocumentProvider"
+                  CollaborationProvider="@CollaborationProvider"
+                  SuggestionProvider="@SuggestionProvider"
+                  FormatProvider="@FormatProvider"
+                  PdfExportProvider="@PdfExportProvider"
+                  ComparisonProvider="@ComparisonProvider"
+                  Permissions="@EditorPermissions"
+                  CollaborationSyncInterval="@TimeSpan.FromMilliseconds(500)"
                   ReadOnly="@_readOnly"
                   ImageUrlResolver="@ImageResolver"
                   ImageProvider="@ImageResolver"
                   TokenProvider="@TokenProvider"
                   TokenValueProvider="@TokenProvider"
+                  Author="@DemoAuthor"
                   AutoSaveInterval="@TimeSpan.FromSeconds(30)"
                   OnDocumentLoaded="HandleDocumentLoaded"
                   data-testid="document-editor-demo" />
@@ -103,12 +112,13 @@
 @code {
     private string _documentId = "contract-demo";
     private bool _readOnly;
+    private bool _disableExport;
+    private DocumentEditorPermissions EditorPermissions => new() { CanExport = !_disableExport };
     private string _loadedTitle = "Loading...";
     private string? _formatMessage;
     private string? _signingMessage;
     private string? _signingDesignerUrl;
-
-    private string ExportDocxUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/docx";
+    private static DocumentEditorAuthor DemoAuthor => new() { Id = "demo-user", DisplayName = "Demo User" };
 
     private string ExportOdtUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/odt";
 
@@ -121,11 +131,6 @@
     {
         _loadedTitle = document.Metadata.Title;
         return Task.CompletedTask;
-    }
-
-    private Task ImportDocxAsync(InputFileChangeEventArgs args)
-    {
-        return ImportAsync(args.File, "api/document-editor/import/docx");
     }
 
     private Task ImportOdtAsync(InputFileChangeEventArgs args)

@@ -154,8 +154,17 @@ public class DocumentEditorPermissions
     /// <summary>Whether the current user can create comments and replies.</summary>
     public bool CanComment { get; set; } = true;
 
+    /// <summary>Whether the current user can create review suggestions.</summary>
+    public bool CanSuggest { get; set; } = true;
+
+    /// <summary>Whether the current user can accept or reject review suggestions.</summary>
+    public bool CanReviewSuggestions { get; set; } = true;
+
     /// <summary>Whether the current user can create document versions.</summary>
     public bool CanCreateVersion { get; set; } = true;
+
+    /// <summary>Whether the current user can import external document formats.</summary>
+    public bool CanImport { get; set; } = true;
 
     /// <summary>Whether the current user can export the document.</summary>
     public bool CanExport { get; set; } = true;

@@ -1,6 +1,8 @@
 using System.Globalization;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.DocumentEditor.Commands;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -14,8 +16,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 {
     private readonly DocumentEditorCommandStack _commandStack = new();
     private readonly DocumentEditorKeyboardManager _keyboardManager = new();
+    private const long MaxDocumentFormatImportSize = 20 * 1024 * 1024;
     private Timer? _autoSaveTimer;
+    private Timer? _collaborationTimer;
     private TimeSpan? _configuredAutoSaveInterval;
+    private TimeSpan? _configuredCollaborationInterval;
 
     /// <summary>Stable document id to load from the provider.</summary>
     [Parameter, EditorRequired] public string DocumentId { get; set; } = string.Empty;
@@ -53,6 +58,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     /// <summary>Whether track changes starts enabled.</summary>
     [Parameter] public bool TrackChangesEnabled { get; set; }
 
+    /// <summary>Whether provider-backed suggestions start enabled.</summary>
+    [Parameter] public bool SuggestionsEnabled { get; set; }
+
     /// <summary>Optional autosave interval. Set to <c>null</c> to disable autosave.</summary>
     [Parameter] public TimeSpan? AutoSaveInterval { get; set; }
 
@@ -79,6 +87,27 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     /// <summary>Optional host provider used to export the current document as PDF.</summary>
     [Parameter] public IDocumentPdfExportProvider? PdfExportProvider { get; set; }
+
+    /// <summary>Optional host provider used to import and export external document formats.</summary>
+    [Parameter] public IDocumentFormatProvider? FormatProvider { get; set; }
+
+    /// <summary>Optional host provider used to compare arbitrary document sources.</summary>
+    [Parameter] public IDocumentComparisonProvider? ComparisonProvider { get; set; }
+
+    /// <summary>Whether local comparison should be used if the comparison provider fails.</summary>
+    [Parameter] public bool UseLocalComparisonFallback { get; set; } = true;
+
+    /// <summary>Optional provider used to store and review document suggestions.</summary>
+    [Parameter] public IDocumentSuggestionProvider? SuggestionProvider { get; set; }
+
+    /// <summary>Optional provider used to synchronize realtime collaborative edits.</summary>
+    [Parameter] public IDocumentCollaborationProvider? CollaborationProvider { get; set; }
+
+    /// <summary>Stable collaboration client id for the current editor instance.</summary>
+    [Parameter] public string? CollaborationClientId { get; set; }
+
+    /// <summary>Interval used to poll provider-backed collaboration updates.</summary>
+    [Parameter] public TimeSpan CollaborationSyncInterval { get; set; } = TimeSpan.FromSeconds(2);
 
     /// <summary>Offline draft behavior for the editor. Defaults to disabled.</summary>
     [Parameter] public DocumentEditorOfflineMode OfflineMode { get; set; } = DocumentEditorOfflineMode.Disabled;
@@ -116,36 +145,54 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     /// <summary>Raised after the optional PDF export provider returns a result.</summary>
     [Parameter] public EventCallback<DocumentPdfExportResult> OnPdfExported { get; set; }
 
+    /// <summary>Raised after the optional document format provider returns an export result.</summary>
+    [Parameter] public EventCallback<DocumentFormatExportProviderResult> OnDocumentFormatExported { get; set; }
+
+    /// <summary>Raised after a document comparison completes.</summary>
+    [Parameter] public EventCallback<DocumentCompareResult> OnDocumentCompared { get; set; }
+
     /// <summary>Additional HTML attributes for the root element.</summary>
     [Parameter(CaptureUnmatchedValues = true)] public Dictionary<string, object>? AdditionalAttributes { get; set; }
 
+    /// <summary>JavaScript runtime used by provider-backed download bridges.</summary>
+    [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
+
     private DocumentEditorDocument? _document;
-    private TmDocumentSurface? _surface;
+    private TmDocumentWysiwygHost? _wysiwygHost;
     private DocumentEditorSelectionState _selection = new();
     private string? _errorMessage;
     private string? _saveMessage;
     private string? _versionMessage;
     private string? _commentMessage;
+    private string? _suggestionMessage;
     private string? _templatePreviewMessage;
     private string? _concurrencyToken;
     private DateTimeOffset? _lastSavedAt;
     private DocumentEditorDocument? _currentDocument;
+    private DocumentEditorDocument? _compareDocumentSnapshot;
     private DocumentEditorDocument? _templatePreviewDocument;
     private IReadOnlyList<DocumentVersion> _versions = [];
     private IReadOnlyList<DocumentComment> _comments = [];
+    private IReadOnlyList<DocumentSuggestion> _suggestions = [];
     private DocumentVersion? _previewVersion;
     private DocumentCommentAnchor? _draftCommentAnchor;
     private bool _isLoading;
     private bool _isSaving;
     private bool _isCreatingVersion;
     private bool _isExportingPdf;
+    private bool _isImportingDocx;
+    private bool _isExportingDocx;
     private bool _isLoadingVersions;
     private bool _isLoadingComments;
+    private bool _isLoadingSuggestions;
     private bool _isSubmittingComment;
+    private bool _isReviewingSuggestion;
     private bool _isDirty;
     private bool _trackChangesEnabled;
+    private bool _suggestionsEnabled;
     private bool _templatePreviewEnabled;
     private bool _versionDialogOpen;
+    private bool _compareDialogOpen;
     private bool _versionPanelOpen = true;
     private bool _commentComposerOpen;
     private string? _selectedCommentId;
@@ -156,7 +203,23 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private DocumentSyncStatus _offlineStatus = DocumentSyncStatus.Online;
     private string? _offlineMessage;
     private bool _isSyncingOfflineDraft;
+    private DocumentCollaborationSync? _collaborationSync;
+    private IDocumentCollaborationProvider? _loadedCollaborationProvider;
+    private IDocumentSuggestionProvider? _loadedSuggestionProvider;
+    private IDocumentFormatProvider? _loadedFormatProvider;
+    private IReadOnlyList<DocumentFormatProviderCapability> _formatCapabilities = [];
+    private List<DocumentFormatProviderWarning> _formatWarnings = [];
+    private string? _formatMessage;
+    private DocumentEditorDocument? _collaborationSnapshot;
+    private IReadOnlyList<DocumentCollaborationCursor> _remoteCursors = [];
+    private readonly string _generatedCollaborationClientId = Guid.NewGuid().ToString("N");
+    private string? _activeCollaborationClientId;
+    private bool _isRefreshingCollaboration;
+    private bool _suppressCollaborationBroadcast;
+    private DocumentEditorDocument? _suggestionSnapshot;
     private bool _disposed;
+    private string? _activeWysiwygTransactionId;
+    private bool _suppressCommandStackChangedRender;
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -238,6 +301,47 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private bool CanExportPdf => EffectivePermissions.CanExport && PdfExportProvider is not null && _document is not null && !IsVersionPreview;
 
+    private bool CanImportDocx => FormatProvider is not null
+        && EffectivePermissions.CanImport
+        && CanEditDocument
+        && _document is not null
+        && _formatCapabilities.Any(capability =>
+            capability.Format == DocumentFormatProviderKind.Docx && capability.CanImport);
+
+    private bool CanExportDocx => FormatProvider is not null
+        && EffectivePermissions.CanExport
+        && _document is not null
+        && !IsVersionPreview
+        && !IsTemplatePreview
+        && _formatCapabilities.Any(capability =>
+            capability.Format == DocumentFormatProviderKind.Docx && capability.CanExport);
+
+    private bool CanCompareDocuments => _document is not null
+        && EffectivePermissions.CanRead
+        && Provider is not null
+        && !IsVersionPreview
+        && !IsTemplatePreview;
+
+    private bool CanCreateSuggestions => SuggestionProvider is not null
+        && EffectivePermissions.CanSuggest
+        && EffectivePermissions.CanComment
+        && _document is not null
+        && CanEditDocument
+        && !IsVersionPreview
+        && !IsTemplatePreview;
+
+    private bool CanReviewSuggestions => SuggestionProvider is not null
+        && EffectivePermissions.CanReviewSuggestions
+        && EffectivePermissions.CanComment
+        && CanEditDocument
+        && _document is not null
+        && !IsVersionPreview
+        && !IsTemplatePreview;
+
+    private bool CanUseSuggestions => CanCreateSuggestions;
+
+    private bool EffectiveTrackChangesEnabled => _suggestionsEnabled || _trackChangesEnabled;
+
     private bool OfflineEnabled => OfflineMode == DocumentEditorOfflineMode.Enabled && OfflineStore is not null;
 
     private bool ShowOfflineBanner => OfflineEnabled
@@ -247,10 +351,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     protected override async Task OnParametersSetAsync()
     {
         _trackChangesEnabled = TrackChangesEnabled || _trackChangesEnabled;
+        _suggestionsEnabled = SuggestionProvider is not null && (SuggestionsEnabled || _suggestionsEnabled);
+        if (SuggestionProvider is null)
+        {
+            _suggestionsEnabled = false;
+        }
+
+        await RefreshFormatCapabilitiesAsync();
         ConfigureAutoSaveTimer();
 
         if (Provider is null)
         {
+            await StopCollaborationAsync();
             _document = null;
             _errorMessage = null;
             _loadedDocumentId = null;
@@ -259,14 +371,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _previewVersion = null;
             _versions = [];
             _comments = [];
+            _suggestions = [];
+            _suggestionSnapshot = null;
             _draftCommentAnchor = null;
             _isLoading = false;
             _isDirty = false;
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
             _templatePreviewMessage = null;
+            _formatMessage = null;
+            _formatWarnings = [];
             _commentComposerOpen = false;
             _selectedCommentId = null;
+            _loadedSuggestionProvider = null;
+            _loadedFormatProvider = FormatProvider;
+            _compareDialogOpen = false;
+            _compareDocumentSnapshot = null;
             _lastSavedAt = null;
             _offlineDraft = null;
             _offlineConflict = null;
@@ -277,6 +397,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         if (!CanReadDocument)
         {
+            await StopCollaborationAsync();
             _document = null;
             _errorMessage = Loc["TmDocumentEditor_ReadDenied"];
             _loadedDocumentId = null;
@@ -285,14 +406,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _previewVersion = null;
             _versions = [];
             _comments = [];
+            _suggestions = [];
+            _suggestionSnapshot = null;
             _draftCommentAnchor = null;
             _isLoading = false;
             _isDirty = false;
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
             _templatePreviewMessage = null;
+            _formatMessage = null;
+            _formatWarnings = [];
             _commentComposerOpen = false;
             _selectedCommentId = null;
+            _loadedSuggestionProvider = null;
+            _loadedFormatProvider = FormatProvider;
+            _compareDialogOpen = false;
+            _compareDocumentSnapshot = null;
             _lastSavedAt = null;
             _offlineDraft = null;
             _offlineConflict = null;
@@ -304,10 +433,44 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         if (_loadedDocumentId == DocumentId && ReferenceEquals(_loadedProvider, Provider))
         {
+            if (!ReferenceEquals(_loadedSuggestionProvider, SuggestionProvider))
+            {
+                await RefreshSuggestionsAsync();
+                _loadedSuggestionProvider = SuggestionProvider;
+            }
+
+            await EnsureCollaborationStartedAsync();
             return;
         }
 
         await LoadDocumentAsync();
+    }
+
+    private async Task RefreshFormatCapabilitiesAsync()
+    {
+        if (FormatProvider is null)
+        {
+            _formatCapabilities = [];
+            _loadedFormatProvider = null;
+            return;
+        }
+
+        if (ReferenceEquals(_loadedFormatProvider, FormatProvider))
+        {
+            return;
+        }
+
+        try
+        {
+            _formatCapabilities = await FormatProvider.GetCapabilitiesAsync();
+            _loadedFormatProvider = FormatProvider;
+        }
+        catch
+        {
+            _formatCapabilities = [];
+            _loadedFormatProvider = null;
+            _formatMessage = Loc["TmDocumentEditor_FormatProviderUnavailable"];
+        }
     }
 
     private async Task RetryAsync()
@@ -324,6 +487,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         if (!CanReadDocument)
         {
+            await StopCollaborationAsync();
             _document = null;
             _errorMessage = Loc["TmDocumentEditor_ReadDenied"];
             _isLoading = false;
@@ -349,6 +513,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
             if (!result.Found || result.Document is null)
             {
+                await StopCollaborationAsync();
                 _document = null;
                 _errorMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
                     ? Loc["TmDocumentEditor_DocumentNotFound"]
@@ -364,7 +529,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _saveMessage = null;
             _versionMessage = null;
             _commentMessage = null;
+            _suggestionMessage = null;
             _templatePreviewMessage = null;
+            _formatMessage = null;
+            _formatWarnings = [];
             _lastSavedAt = null;
             _previewVersion = null;
             _templatePreviewDocument = null;
@@ -372,6 +540,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _comments = [];
             _draftCommentAnchor = null;
             _versionDialogOpen = false;
+            _compareDialogOpen = false;
+            _compareDocumentSnapshot = null;
             _versionPanelOpen = true;
             _commentComposerOpen = false;
             _selectedCommentId = null;
@@ -385,11 +555,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _loadedProvider = Provider;
             await RefreshVersionsAsync();
             await RefreshCommentsAsync();
+            await RefreshSuggestionsAsync();
+            _loadedSuggestionProvider = SuggestionProvider;
+            _suggestionSnapshot = Clone(_document);
+            await EnsureCollaborationStartedAsync();
             await RecordOpenAuditAsync(_document.DocumentId, DocumentEditorAuditResult.Success, null);
             await OnDocumentLoaded.InvokeAsync(_document);
         }
         catch (Exception ex)
         {
+            await StopCollaborationAsync();
             _document = null;
             _errorMessage = Loc["TmDocumentEditor_LoadErrorMessage"];
             await RecordOpenAuditAsync(DocumentId, DocumentEditorAuditResult.Failure, ex.Message);
@@ -424,10 +599,36 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         _isSaving = true;
         _saveMessage = null;
+
+        var documentToSave = _currentDocument ?? _document;
+
+        if (_wysiwygHost is not null)
+        {
+            var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
+            if (jsSnapshot is not null)
+            {
+                // Preserve document-level metadata that the JS engine does not own.
+                jsSnapshot.DocumentId = documentToSave.DocumentId;
+                jsSnapshot.SchemaVersion = documentToSave.SchemaVersion;
+                jsSnapshot.Metadata = documentToSave.Metadata;
+                jsSnapshot.PageSettings = documentToSave.PageSettings;
+                jsSnapshot.Sections = documentToSave.Sections;
+                jsSnapshot.Comments = documentToSave.Comments;
+                jsSnapshot.Notes = documentToSave.Notes;
+                // Phase 12: Headers/footers are serialized from JS DOM; preserve them.
+                jsSnapshot.Revisions = documentToSave.Revisions;
+                jsSnapshot.Assets = documentToSave.Assets;
+                jsSnapshot.Anchors = documentToSave.Anchors;
+                documentToSave = jsSnapshot;
+                _document = documentToSave;
+                _currentDocument = documentToSave;
+            }
+        }
+
         var request = new DocumentEditorSaveRequest
         {
-            DocumentId = (_currentDocument ?? _document).DocumentId,
-            Document = _currentDocument ?? _document,
+            DocumentId = documentToSave.DocumentId,
+            Document = documentToSave,
             BaseConcurrencyToken = _concurrencyToken,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Optional,
             Author = Author,
@@ -468,9 +669,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     : string.IsNullOrWhiteSpace(result.ErrorMessage)
                         ? Loc["TmDocumentEditor_SaveFailed"]
                         : result.ErrorMessage;
-                if (!result.Conflict)
+                if (result.Conflict)
                 {
-                    await SaveOfflineDraftAsync();
+                    await SaveOfflineDraftAsync(documentToSave, DocumentOfflineDraftState.Conflict, DocumentSyncStatus.Conflict);
+                    _offlineConflict = new DocumentSyncConflict
+                    {
+                        DocumentId = documentToSave.DocumentId,
+                        LocalBaseVersionId = _concurrencyToken,
+                        ServerVersionId = result.ConcurrencyToken,
+                        Reason = _saveMessage
+                    };
+                    _offlineStatus = DocumentSyncStatus.Conflict;
+                    _offlineMessage = Loc["TmDocumentEditor_OfflineConflict"];
+                }
+                else
+                {
+                    await SaveOfflineDraftAsync(documentToSave);
                 }
 
                 await RecordSaveAuditAsync(trigger, DocumentEditorAuditResult.Failure, _saveMessage);
@@ -479,7 +693,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         catch (Exception ex)
         {
             _saveMessage = Loc["TmDocumentEditor_SaveFailed"];
-            await SaveOfflineDraftAsync();
+            await SaveOfflineDraftAsync(documentToSave);
             await RecordSaveAuditAsync(trigger, DocumentEditorAuditResult.Failure, ex.Message);
         }
         finally
@@ -495,11 +709,38 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task ToggleInsertPanelAsync()
     {
-        if (_surface is not null)
+        if (_wysiwygHost is not null)
         {
-            await _surface.ToggleInsertPanelAsync();
+            await _wysiwygHost.OpenTokenMenuAsync();
         }
     }
+
+    private async Task OpenCompareDialogAsync()
+    {
+        if (!CanCompareDocuments)
+        {
+            return;
+        }
+
+        var documentToCompare = await GetCurrentDocumentForProviderExportAsync();
+        _compareDocumentSnapshot = CloneForEditor(documentToCompare);
+        _compareDialogOpen = true;
+    }
+
+    private void CloseCompareDialog()
+    {
+        _compareDialogOpen = false;
+        _compareDocumentSnapshot = null;
+    }
+
+    private async Task HandleDocumentComparedAsync(DocumentCompareResult result)
+    {
+        await RecordCompareAuditAsync(result, DocumentEditorAuditResult.Success, null);
+        await OnDocumentCompared.InvokeAsync(result);
+    }
+
+    private Task HandleDocumentCompareFailedAsync(string message)
+        => RecordCompareAuditAsync(null, DocumentEditorAuditResult.Failure, message);
 
     private async Task ExportPdfAsync()
     {
@@ -512,17 +753,29 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _saveMessage = null;
         try
         {
+            var documentToExport = await GetCurrentDocumentForProviderExportAsync();
             var result = await PdfExportProvider.ExportPdfAsync(new DocumentPdfExportRequest
             {
-                DocumentId = _document.DocumentId,
-                Document = _currentDocument ?? _document,
-                FileName = string.IsNullOrWhiteSpace(_document.Metadata.Title) ? _document.DocumentId : _document.Metadata.Title,
-                Author = Author
+                DocumentId = documentToExport.DocumentId,
+                Document = CloneForEditor(documentToExport),
+                FileName = string.IsNullOrWhiteSpace(documentToExport.Metadata.Title)
+                    ? documentToExport.DocumentId
+                    : documentToExport.Metadata.Title,
+                Author = Author,
+                Options = CreatePdfExportOptions(documentToExport)
             });
+
+            if (result.Content.Length == 0)
+            {
+                _saveMessage = Loc["TmDocumentEditor_ExportPdfFailed"];
+                await RecordExportAuditAsync(result, DocumentEditorAuditResult.Failure, _saveMessage);
+                return;
+            }
 
             _saveMessage = Loc["TmDocumentEditor_ExportPdfComplete"];
             await RecordExportAuditAsync(result, DocumentEditorAuditResult.Success, null);
             await OnPdfExported.InvokeAsync(result);
+            await DownloadFileAsync(result.FileName, result.ContentType, result.Content);
         }
         catch (Exception ex)
         {
@@ -533,13 +786,231 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         {
             _isExportingPdf = false;
         }
+
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ImportDocxAsync(InputFileChangeEventArgs args)
+    {
+        if (_document is null || FormatProvider is null || !CanImportDocx || _isImportingDocx)
+        {
+            return;
+        }
+
+        _isImportingDocx = true;
+        _formatMessage = null;
+        _formatWarnings = [];
+        var file = args.File;
+
+        try
+        {
+            using var memory = new MemoryStream();
+            await using (var stream = file.OpenReadStream(MaxDocumentFormatImportSize))
+            {
+                await stream.CopyToAsync(memory);
+            }
+
+            var result = await FormatProvider.ImportAsync(new DocumentFormatImportProviderRequest
+            {
+                DocumentId = _document.DocumentId,
+                Format = DocumentFormatProviderKind.Docx,
+                FileName = file.Name,
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType)
+                    ? "application/octet-stream"
+                    : file.ContentType,
+                Content = memory.ToArray(),
+                Author = Author
+            });
+
+            _formatWarnings = result.Warnings.ToList();
+            if (!result.Success || result.Document is null)
+            {
+                _formatMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? Loc["TmDocumentEditor_ImportDocxFailed"]
+                    : result.ErrorMessage;
+                await RecordFormatImportAuditAsync(DocumentEditorAuditResult.Failure, _formatMessage);
+                return;
+            }
+
+            var imported = result.Document;
+            imported.DocumentId = _document.DocumentId;
+            _document = imported;
+            _currentDocument = imported;
+            _selection = new DocumentEditorSelectionState();
+            _previewVersion = null;
+            _templatePreviewDocument = null;
+            _templatePreviewEnabled = false;
+            _templatePreviewMessage = null;
+            _isDirty = true;
+            ApplyCommentMarksFromComments(_document);
+            await _commandStack.ClearAsync();
+            _suggestionSnapshot = Clone(_document);
+            _formatMessage = Loc["TmDocumentEditor_ImportDocxComplete"];
+            if (_collaborationSync is not null || CollaborationProvider is not null)
+            {
+                await StopCollaborationAsync();
+                await EnsureCollaborationStartedAsync();
+            }
+            else
+            {
+                _collaborationSnapshot = Clone(_document);
+            }
+
+            await RecordFormatImportAuditAsync(DocumentEditorAuditResult.Success, file.Name);
+            await OnDocumentLoaded.InvokeAsync(_document);
+        }
+        catch (Exception ex)
+        {
+            _formatMessage = Loc["TmDocumentEditor_ImportDocxFailed"];
+            _formatWarnings = [];
+            await RecordFormatImportAuditAsync(DocumentEditorAuditResult.Failure, ex.Message);
+        }
+        finally
+        {
+            _isImportingDocx = false;
+        }
+
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task ExportDocxAsync()
+    {
+        if (_document is null || FormatProvider is null || !CanExportDocx || _isExportingDocx)
+        {
+            return;
+        }
+
+        _isExportingDocx = true;
+        _formatMessage = null;
+        _formatWarnings = [];
+
+        try
+        {
+            var documentToExport = await GetCurrentDocumentForProviderExportAsync();
+            var result = await FormatProvider.ExportAsync(new DocumentFormatExportProviderRequest
+            {
+                DocumentId = documentToExport.DocumentId,
+                Format = DocumentFormatProviderKind.Docx,
+                Document = CloneForEditor(documentToExport),
+                FileName = string.IsNullOrWhiteSpace(documentToExport.Metadata.Title)
+                    ? documentToExport.DocumentId
+                    : documentToExport.Metadata.Title,
+                Author = Author
+            });
+
+            _formatWarnings = result.Warnings.ToList();
+            if (!result.Success || result.Content.Length == 0)
+            {
+                _formatMessage = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? Loc["TmDocumentEditor_ExportDocxFailed"]
+                    : result.ErrorMessage;
+                await RecordFormatExportAuditAsync(result, DocumentEditorAuditResult.Failure, _formatMessage);
+                return;
+            }
+
+            _formatMessage = Loc["TmDocumentEditor_ExportDocxComplete"];
+            await RecordFormatExportAuditAsync(result, DocumentEditorAuditResult.Success, null);
+            await OnDocumentFormatExported.InvokeAsync(result);
+            await DownloadFormatExportAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _formatMessage = Loc["TmDocumentEditor_ExportDocxFailed"];
+            _formatWarnings = [];
+            await RecordFormatExportAuditAsync(null, DocumentEditorAuditResult.Failure, ex.Message);
+        }
+        finally
+        {
+            _isExportingDocx = false;
+        }
+
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task<DocumentEditorDocument> GetCurrentDocumentForProviderExportAsync()
+    {
+        var documentToExport = _currentDocument ?? _document ?? DocumentEditorDocument.Empty();
+        if (_wysiwygHost is not null)
+        {
+            var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
+            if (jsSnapshot is not null)
+            {
+                jsSnapshot.DocumentId = documentToExport.DocumentId;
+                jsSnapshot.SchemaVersion = documentToExport.SchemaVersion;
+                jsSnapshot.Metadata = documentToExport.Metadata;
+                jsSnapshot.PageSettings = documentToExport.PageSettings;
+                jsSnapshot.Sections = documentToExport.Sections;
+                jsSnapshot.Comments = documentToExport.Comments;
+                jsSnapshot.Notes = documentToExport.Notes;
+                jsSnapshot.Revisions = documentToExport.Revisions;
+                jsSnapshot.Assets = documentToExport.Assets;
+                jsSnapshot.Anchors = documentToExport.Anchors;
+                _document = jsSnapshot;
+                _currentDocument = jsSnapshot;
+                documentToExport = jsSnapshot;
+            }
+        }
+
+        return documentToExport;
+    }
+
+    private Task DownloadFormatExportAsync(DocumentFormatExportProviderResult result)
+        => DownloadFileAsync(result.FileName, result.ContentType, result.Content);
+
+    private Task DownloadFileAsync(string fileName, string contentType, byte[] content)
+    {
+        if (content.Length == 0 || string.IsNullOrWhiteSpace(fileName))
+        {
+            return Task.CompletedTask;
+        }
+
+        return JSRuntime.InvokeVoidAsync(
+            "tmDocumentEditor.downloadFile",
+            fileName,
+            string.IsNullOrWhiteSpace(contentType) ? "application/octet-stream" : contentType,
+            Convert.ToBase64String(content)).AsTask();
+    }
+
+    private static DocumentPdfExportOptions CreatePdfExportOptions(DocumentEditorDocument document)
+    {
+        var pageSettings = document.PageSettings ?? new DocumentPageSettings();
+        return new DocumentPdfExportOptions
+        {
+            IncludeComments = true,
+            IncludeSuggestions = true,
+            PageSetup = new DocumentPdfPageSetupOptions
+            {
+                PageSize = CloneForEditor(pageSettings.Size ?? DocumentPageSize.A4),
+                Orientation = pageSettings.Landscape
+                    ? DocumentPdfPageOrientation.Landscape
+                    : DocumentPdfPageOrientation.Portrait,
+                Margins = CloneForEditor(pageSettings.Margins ?? DocumentPageMargins.Default)
+            }
+        };
     }
 
     private async Task OpenImageDialogAsync()
     {
-        if (_surface is not null)
+        if (_wysiwygHost is not null)
         {
-            await _surface.OpenImageDialogAsync();
+            await _wysiwygHost.OpenImageDialogAsync();
+        }
+    }
+
+    private async Task InsertTableAsync()
+    {
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.ExecuteEditorCommandAsync("insertTable");
         }
     }
 
@@ -583,15 +1054,215 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         await InvokeAsync(StateHasChanged);
     }
 
-    private Task HandleDocumentChangedAsync(DocumentEditorDocument document)
+    private async Task HandleDocumentChangedAsync(DocumentEditorDocument document)
     {
+        var suggestionBefore = _suggestionSnapshot is not null ? Clone(_suggestionSnapshot) : null;
+        if (await TryCreateSuggestionAsync(suggestionBefore, document))
+        {
+            return;
+        }
+
+        var before = _collaborationSnapshot is not null
+            ? Clone(_collaborationSnapshot)
+            : _document is not null
+                ? Clone(_document)
+                : null;
+
         _document = document;
         _currentDocument = document;
         _templatePreviewDocument = null;
         _templatePreviewEnabled = false;
         _templatePreviewMessage = null;
         _isDirty = true;
+        if (before is not null)
+        {
+            await BroadcastLocalCollaborationChangeAsync(before, document);
+        }
+
+        _suggestionSnapshot = Clone(document);
+    }
+
+    private async Task HandleWysiwygPatchAsync(WysiwygPatch patch)
+    {
+        if (_document is null || patch is null)
+        {
+            return;
+        }
+
+        var deferRenderUntilTransactionCommit = IsLiveWysiwygPatch(patch);
+        try
+        {
+            var before = DocumentEditorCommandCloner.Clone(_document);
+            var applier = new WysiwygPatchApplier();
+            applier.ApplyPatch(_document, patch);
+
+            var after = DocumentEditorCommandCloner.Clone(_document);
+            if (await TryCreateSuggestionAsync(before, after))
+            {
+                await InvokeAsync(StateHasChanged);
+                return;
+            }
+
+            var command = new DocumentEditorSnapshotCommand(
+                _document,
+                before,
+                after,
+                GetPatchDescription(patch));
+
+            // Transaction batching: patches sharing the same TransactionId
+            // are grouped into a single undo step.
+            _suppressCommandStackChangedRender = deferRenderUntilTransactionCommit;
+            try
+            {
+                if (!string.IsNullOrWhiteSpace(patch.TransactionId))
+                {
+                    if (_commandStack.IsInBatch && _activeWysiwygTransactionId != patch.TransactionId)
+                    {
+                        _commandStack.CommitBatch();
+                        _commandStack.BeginBatch(command.Description);
+                        _activeWysiwygTransactionId = patch.TransactionId;
+                    }
+                    else if (!_commandStack.IsInBatch)
+                    {
+                        _commandStack.BeginBatch(command.Description);
+                        _activeWysiwygTransactionId = patch.TransactionId;
+                    }
+
+                    await _commandStack.PushAsync(command);
+                }
+                else
+                {
+                    if (_commandStack.IsInBatch)
+                    {
+                        _commandStack.CommitBatch();
+                        _activeWysiwygTransactionId = null;
+                    }
+
+                    await _commandStack.PushAsync(command);
+                }
+            }
+            finally
+            {
+                _suppressCommandStackChangedRender = false;
+            }
+
+            _currentDocument = _document;
+            _templatePreviewDocument = null;
+            _templatePreviewEnabled = false;
+            _templatePreviewMessage = null;
+            _isDirty = true;
+            await BroadcastLocalCollaborationChangeAsync(before, after);
+            _suggestionSnapshot = Clone(after);
+            if (!deferRenderUntilTransactionCommit)
+            {
+                await InvokeAsync(StateHasChanged);
+            }
+        }
+        catch (Exception ex)
+        {
+            _errorMessage = Loc["TmDocumentEditor_WysiwygPatchFailed"];
+            await RecordSaveAuditAsync(DocumentEditorSaveTrigger.Explicit, DocumentEditorAuditResult.Failure, ex.Message);
+        }
+    }
+
+    private async Task HandleWysiwygSnapshotAsync(DocumentEditorDocument document)
+    {
+        var suggestionBefore = _suggestionSnapshot is not null ? Clone(_suggestionSnapshot) : null;
+        if (await TryCreateSuggestionAsync(suggestionBefore, document))
+        {
+            return;
+        }
+
+        var before = _collaborationSnapshot is not null
+            ? Clone(_collaborationSnapshot)
+            : _document is not null
+                ? Clone(_document)
+                : null;
+
+        _document = document;
+        _currentDocument = document;
+        _templatePreviewDocument = null;
+        _templatePreviewEnabled = false;
+        _templatePreviewMessage = null;
+        _isDirty = true;
+        if (before is not null)
+        {
+            await BroadcastLocalCollaborationChangeAsync(before, document);
+        }
+
+        _suggestionSnapshot = Clone(document);
+    }
+
+    private async Task HandleWysiwygSelectionChangedAsync(WysiwygSelectionSnapshot? snapshot)
+    {
+        if (snapshot is null)
+        {
+            _selection = new DocumentEditorSelectionState();
+            await BroadcastCollaborationCursorAsync();
+            return;
+        }
+
+        var range = new DocumentEditorInlineRange
+        {
+            BlockId = snapshot.AnchorBlockId,
+            StartOffset = snapshot.AnchorOffset,
+            EndOffset = snapshot.IsCollapsed ? snapshot.AnchorOffset : snapshot.FocusOffset
+        };
+
+        if (!string.IsNullOrWhiteSpace(snapshot.AnchorBlockId) && _document is not null)
+        {
+            var block = _document.Blocks.FirstOrDefault(b => b.Id == snapshot.AnchorBlockId);
+            var inlines = GetEditableInlines(block?.Content);
+            if (inlines is not null && !string.IsNullOrWhiteSpace(snapshot.AnchorInlineId))
+            {
+                range.StartInlineIndex = inlines.FindIndex(i => i.Id == snapshot.AnchorInlineId);
+                if (range.StartInlineIndex < 0) range.StartInlineIndex = 0;
+            }
+            if (inlines is not null && !string.IsNullOrWhiteSpace(snapshot.FocusInlineId) && !snapshot.IsCollapsed)
+            {
+                range.EndInlineIndex = inlines.FindIndex(i => i.Id == snapshot.FocusInlineId);
+                if (range.EndInlineIndex < 0) range.EndInlineIndex = range.StartInlineIndex;
+            }
+            else
+            {
+                range.EndInlineIndex = range.StartInlineIndex;
+            }
+        }
+
+        _selection = new DocumentEditorSelectionState
+        {
+            ActiveBlockId = snapshot.AnchorBlockId,
+            FocusedInlineRange = range
+        };
+        await BroadcastCollaborationCursorAsync();
+    }
+
+    private Task HandleWysiwygTransactionCommittedAsync()
+    {
+        if (_commandStack.IsInBatch)
+        {
+            _commandStack.CommitBatch();
+            _activeWysiwygTransactionId = null;
+        }
+
         return Task.CompletedTask;
+    }
+
+    private static string GetPatchDescription(WysiwygPatch patch)
+    {
+        return patch.Type switch
+        {
+            "InsertText" => "Type text",
+            "InsertInline" => "Insert inline content",
+            "DeleteRange" or "DeleteContentBackward" or "DeleteContentForward" => "Delete",
+            "ToggleMark" => $"Apply {patch.MarkType}",
+            "InsertParagraph" or "InsertLineBreak" => "Insert paragraph",
+            "InsertBlock" => $"Insert {patch.BlockType}",
+            "RemoveBlock" => "Remove block",
+            "UpdateBlock" => "Update block",
+            "Paste" => "Paste",
+            _ => "Edit"
+        };
     }
 
     private async Task LoadOfflineDraftIfNeededAsync(DocumentEditorDocument serverDocument)
@@ -636,22 +1307,30 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         return draft.UpdatedAt > serverTimestamp;
     }
 
-    private async Task SaveOfflineDraftAsync()
+    private Task SaveOfflineDraftAsync()
     {
-        if (!OfflineEnabled || OfflineStore is null || _currentDocument is null)
+        return SaveOfflineDraftAsync(_currentDocument);
+    }
+
+    private async Task SaveOfflineDraftAsync(
+        DocumentEditorDocument? document,
+        DocumentOfflineDraftState state = DocumentOfflineDraftState.PendingSync,
+        DocumentSyncStatus syncStatus = DocumentSyncStatus.Offline)
+    {
+        if (!OfflineEnabled || OfflineStore is null || document is null)
         {
             return;
         }
 
-        var pendingAssets = CollectPendingAssets(_currentDocument);
+        var pendingAssets = CollectPendingAssets(document);
         var draft = new DocumentOfflineDraft
         {
             Id = _offlineDraft?.Id ?? Guid.NewGuid().ToString("N"),
-            DocumentId = _currentDocument.DocumentId,
+            DocumentId = document.DocumentId,
             BaseVersionId = _concurrencyToken,
-            JsonSnapshot = DocumentEditorJson.Serialize(_currentDocument),
-            State = DocumentOfflineDraftState.PendingSync,
-            SyncStatus = DocumentSyncStatus.Offline,
+            JsonSnapshot = DocumentEditorJson.Serialize(document),
+            State = state,
+            SyncStatus = syncStatus,
             UpdatedAt = DateTimeOffset.UtcNow,
             PendingAssets = pendingAssets,
             PendingClipboardImages = pendingAssets
@@ -664,8 +1343,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         await OfflineStore.SaveDraftAsync(draft);
         _offlineDraft = draft;
-        _offlineStatus = DocumentSyncStatus.Offline;
-        _offlineMessage = Loc["TmDocumentEditor_OfflineDraftSaved"];
+        _offlineStatus = syncStatus;
+        _offlineMessage = syncStatus == DocumentSyncStatus.Conflict
+            ? Loc["TmDocumentEditor_OfflineConflict"]
+            : Loc["TmDocumentEditor_OfflineDraftSaved"];
     }
 
     private static List<DocumentImageAsset> CollectPendingAssets(DocumentEditorDocument document)
@@ -875,10 +1556,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
     }
 
-    private Task HandleSelectionChangedAsync(DocumentEditorSelectionState selection)
+    private async Task HandleSelectionChangedAsync(DocumentEditorSelectionState selection)
     {
         _selection = selection;
-        return Task.CompletedTask;
+        await BroadcastCollaborationCursorAsync();
     }
 
     private async Task BeginCommentFromToolbarAsync()
@@ -888,9 +1569,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             return;
         }
 
-        var selectionAnchor = _surface is null
-            ? null
-            : await _surface.CaptureTextSelectionAnchorAsync();
+        var selectionAnchor = _wysiwygHost is not null
+            ? await _wysiwygHost.CaptureTextSelectionAnchorAsync()
+            : null;
 
         if (selectionAnchor is not null && !string.IsNullOrWhiteSpace(selectionAnchor.BlockId))
         {
@@ -1125,9 +1806,122 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _selectedCommentId = commentId;
     }
 
-    private void ToggleTrackChanges()
+    private async Task ToggleTrackChanges()
     {
+        if (EffectiveReadOnly)
+        {
+            return;
+        }
+
+        if (SuggestionProvider is not null)
+        {
+            if (!CanCreateSuggestions)
+            {
+                return;
+            }
+
+            _suggestionsEnabled = !_suggestionsEnabled;
+            if (_suggestionsEnabled)
+            {
+                await RefreshSuggestionsAsync();
+                _suggestionSnapshot = _document is null ? null : Clone(_document);
+            }
+
+            return;
+        }
+
         _trackChangesEnabled = !_trackChangesEnabled;
+    }
+
+    private void SelectSuggestion(DocumentSuggestion suggestion)
+    {
+        _selection.ActiveBlockId = suggestion.Range.BlockId;
+        _selection.FocusedInlineRange = new DocumentEditorInlineRange
+        {
+            BlockId = suggestion.Range.BlockId,
+            StartInlineIndex = suggestion.Range.StartInlineIndex ?? 0,
+            StartOffset = suggestion.Range.StartOffset ?? 0,
+            EndInlineIndex = suggestion.Range.EndInlineIndex ?? suggestion.Range.StartInlineIndex ?? 0,
+            EndOffset = suggestion.Range.EndOffset ?? suggestion.Range.StartOffset ?? 0
+        };
+    }
+
+    private Task AcceptSuggestionAsync(DocumentSuggestion suggestion)
+        => ReviewSuggestionAsync(suggestion, DocumentSuggestionStatus.Accepted);
+
+    private Task RejectSuggestionAsync(DocumentSuggestion suggestion)
+        => ReviewSuggestionAsync(suggestion, DocumentSuggestionStatus.Rejected);
+
+    private async Task ReviewSuggestionAsync(DocumentSuggestion suggestion, DocumentSuggestionStatus status)
+    {
+        if (SuggestionProvider is null || _document is null || _isReviewingSuggestion || !CanReviewSuggestions)
+        {
+            return;
+        }
+
+        _isReviewingSuggestion = true;
+        _suggestionMessage = null;
+        var before = Clone(_document);
+        if (status == DocumentSuggestionStatus.Accepted
+            && !string.IsNullOrWhiteSpace(suggestion.BaseSnapshotHash)
+            && !string.Equals(suggestion.BaseSnapshotHash, ComputeSnapshotHash(_document), StringComparison.Ordinal))
+        {
+            _suggestionMessage = Loc["TmDocumentEditor_SuggestionConflict"];
+            _isReviewingSuggestion = false;
+            return;
+        }
+
+        try
+        {
+            var reviewed = await SuggestionProvider.ReviewSuggestionAsync(new DocumentSuggestionReviewRequest
+            {
+                DocumentId = suggestion.DocumentId,
+                SuggestionId = suggestion.Id,
+                Status = status,
+                Reviewer = Author ?? new DocumentEditorAuthor()
+            });
+
+            if (status == DocumentSuggestionStatus.Accepted && suggestion.Operations.Count > 0)
+            {
+                var result = new DocumentOperationApplier().Apply(_document, new DocumentOperationBatch
+                {
+                    DocumentId = _document.DocumentId,
+                    Operations = suggestion.Operations.Select(Clone).ToList()
+                });
+                if (!result.IsValid)
+                {
+                    _document = before;
+                    _currentDocument = _document;
+                    _suggestionMessage = Loc["TmDocumentEditor_SuggestionReviewFailed"];
+                    return;
+                }
+
+                _currentDocument = _document;
+                _isDirty = true;
+                _suggestionSnapshot = Clone(_document);
+                await BroadcastLocalCollaborationChangeAsync(before, _document);
+            }
+
+            _suggestions = _suggestions
+                .Where(item => item.Id != suggestion.Id)
+                .Append(reviewed)
+                .Where(item => item.Status == DocumentSuggestionStatus.Pending)
+                .OrderByDescending(item => item.CreatedAt)
+                .ToList();
+            _suggestionMessage = status == DocumentSuggestionStatus.Accepted
+                ? Loc["TmDocumentEditor_SuggestionAccepted"]
+                : Loc["TmDocumentEditor_SuggestionRejected"];
+        }
+        catch
+        {
+            _document = before;
+            _currentDocument = _document;
+            _suggestionMessage = Loc["TmDocumentEditor_SuggestionReviewFailed"];
+        }
+        finally
+        {
+            _isReviewingSuggestion = false;
+        }
     }
 
     private async Task UndoAsync()
@@ -1139,6 +1933,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         await _commandStack.UndoAsync();
         MarkDirtyAfterCommand();
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.RefreshSnapshotAsync();
+        }
     }
 
     private async Task RedoAsync()
@@ -1150,29 +1948,38 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         await _commandStack.RedoAsync();
         MarkDirtyAfterCommand();
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.RefreshSnapshotAsync();
+        }
     }
 
     private async Task ToggleInlineMarkAsync(InlineMarkType markType)
     {
-        if (_surface is not null && !EffectiveReadOnly)
+        if (EffectiveReadOnly)
         {
-            await _surface.ToggleInlineMarkAsync(markType);
+            return;
+        }
+
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.ExecuteEditorCommandAsync("toggleMark", new WysiwygMarkPayload { MarkType = markType.ToString() });
         }
     }
 
     private async Task ClearInlineFormattingAsync()
     {
-        if (_surface is not null && !EffectiveReadOnly)
+        if (_wysiwygHost is not null && !EffectiveReadOnly)
         {
-            await _surface.ClearInlineFormattingAsync();
+            await _wysiwygHost.ExecuteEditorCommandAsync("clearFormatting");
         }
     }
 
     private async Task ApplyLinkAsync(string href)
     {
-        if (_surface is not null && !EffectiveReadOnly)
+        if (_wysiwygHost is not null && !EffectiveReadOnly)
         {
-            await _surface.ApplyLinkAsync(href);
+            await _wysiwygHost.ExecuteEditorCommandAsync("applyLink", new { Href = href });
         }
     }
 
@@ -1199,10 +2006,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 await ApplyLinkAsync("https://example.com");
                 break;
             case DocumentEditorKeyboardCommand.ClosePanel:
-                if (_surface is not null)
-                {
-                    await _surface.ClosePanelsAsync();
-                }
+                await Task.CompletedTask;
                 break;
         }
     }
@@ -1212,6 +2016,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         if (_document is not null)
         {
             _isDirty = true;
+            _suggestionSnapshot = Clone(_document);
         }
 
         StateHasChanged();
@@ -1219,7 +2024,28 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private void HandleCommandStackChanged()
     {
+        if (_suppressCommandStackChangedRender)
+        {
+            return;
+        }
+
         _ = InvokeAsync(StateHasChanged);
+    }
+
+    private static bool IsLiveWysiwygPatch(WysiwygPatch patch)
+    {
+        if (!string.IsNullOrWhiteSpace(patch.TransactionId))
+        {
+            return true;
+        }
+
+        return patch.Type is "InsertText"
+            or "DeleteRange"
+            or "DeleteContentBackward"
+            or "DeleteContentForward"
+            or "InsertParagraph"
+            or "InsertLineBreak"
+            or "ToggleMark";
     }
 
     private void ConfigureAutoSaveTimer()
@@ -1243,6 +2069,451 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             null,
             interval,
             interval);
+    }
+
+    private async Task<bool> TryCreateSuggestionAsync(DocumentEditorDocument? before, DocumentEditorDocument after)
+    {
+        if (!_suggestionsEnabled || !CanCreateSuggestions || before is null || _document is null)
+        {
+            return false;
+        }
+
+        var suggestion = CreateSuggestionFromDiff(before, after);
+        if (suggestion is null)
+        {
+            _document = Clone(before);
+            _currentDocument = _document;
+            _suggestionSnapshot = Clone(before);
+            return true;
+        }
+
+        try
+        {
+            var created = await SuggestionProvider.CreateSuggestionAsync(suggestion);
+            _suggestions = _suggestions
+                .Where(item => item.Id != created.Id)
+                .Append(created)
+                .OrderByDescending(item => item.CreatedAt)
+                .ToList();
+            _suggestionMessage = Loc["TmDocumentEditor_SuggestionCreated"];
+        }
+        catch
+        {
+            _suggestionMessage = Loc["TmDocumentEditor_SuggestionCreateFailed"];
+        }
+        finally
+        {
+            _document = Clone(before);
+            _currentDocument = _document;
+            _templatePreviewDocument = null;
+            _templatePreviewEnabled = false;
+            _templatePreviewMessage = null;
+            _suggestionSnapshot = Clone(before);
+        }
+
+        return true;
+    }
+
+    private DocumentSuggestion? CreateSuggestionFromDiff(DocumentEditorDocument before, DocumentEditorDocument after)
+    {
+        foreach (var afterBlock in after.Blocks.OrderBy(block => block.Order))
+        {
+            var beforeBlock = before.Blocks.FirstOrDefault(block => block.Id == afterBlock.Id);
+            if (beforeBlock is null)
+            {
+                return new DocumentSuggestion
+                {
+                    DocumentId = after.DocumentId,
+                    Type = DocumentSuggestionType.InsertText,
+                    Range = new DocumentRevisionRange { BlockId = afterBlock.Id },
+                    SuggestedText = GetBlockText(afterBlock),
+                    Author = Author ?? new DocumentEditorAuthor(),
+                    BaseSnapshotHash = ComputeSnapshotHash(before),
+                    Operations =
+                    [
+                        new DocumentOperation
+                        {
+                            Type = DocumentOperationType.InsertBlock,
+                            Target = new DocumentOperationTarget { BlockId = afterBlock.Id, Order = afterBlock.Order },
+                            Block = Clone(afterBlock),
+                            Metadata = CreateSuggestionOperationMetadata()
+                        }
+                    ]
+                };
+            }
+
+            var originalText = GetBlockText(beforeBlock);
+            var suggestedText = GetBlockText(afterBlock);
+            if (!string.Equals(originalText, suggestedText, StringComparison.Ordinal))
+            {
+                return new DocumentSuggestion
+                {
+                    DocumentId = after.DocumentId,
+                    Type = suggestedText.Length == 0
+                        ? DocumentSuggestionType.DeleteText
+                        : originalText.Length == 0
+                            ? DocumentSuggestionType.InsertText
+                            : DocumentSuggestionType.ReplaceText,
+                    Range = new DocumentRevisionRange
+                    {
+                        BlockId = afterBlock.Id,
+                        StartInlineIndex = 0,
+                        StartOffset = 0,
+                        EndInlineIndex = 0,
+                        EndOffset = originalText.Length
+                    },
+                    OriginalText = originalText,
+                    SuggestedText = suggestedText,
+                    Author = Author ?? new DocumentEditorAuthor(),
+                    BaseSnapshotHash = ComputeSnapshotHash(before),
+                    Operations =
+                    [
+                        new DocumentOperation
+                        {
+                            Type = DocumentOperationType.SetBlockAttribute,
+                            Target = new DocumentOperationTarget { BlockId = afterBlock.Id },
+                            AttributeName = "text",
+                            AttributeValueJson = System.Text.Json.JsonSerializer.Serialize(suggestedText, DocumentEditorJson.Options),
+                            Metadata = CreateSuggestionOperationMetadata()
+                        }
+                    ]
+                };
+            }
+
+            var markOperation = CreateFormattingOperation(beforeBlock, afterBlock);
+            if (markOperation is not null)
+            {
+                return new DocumentSuggestion
+                {
+                    DocumentId = after.DocumentId,
+                    Type = DocumentSuggestionType.Formatting,
+                    Range = new DocumentRevisionRange { BlockId = afterBlock.Id, StartInlineIndex = markOperation.Target.InlineIndex },
+                    OriginalText = originalText,
+                    SuggestedText = suggestedText,
+                    Author = Author ?? new DocumentEditorAuthor(),
+                    BaseSnapshotHash = ComputeSnapshotHash(before),
+                    Operations = [markOperation]
+                };
+            }
+        }
+
+        var removedBlock = before.Blocks.FirstOrDefault(block => after.Blocks.All(item => item.Id != block.Id));
+        if (removedBlock is not null)
+        {
+            return new DocumentSuggestion
+            {
+                DocumentId = after.DocumentId,
+                Type = DocumentSuggestionType.DeleteText,
+                Range = new DocumentRevisionRange { BlockId = removedBlock.Id },
+                OriginalText = GetBlockText(removedBlock),
+                Author = Author ?? new DocumentEditorAuthor(),
+                BaseSnapshotHash = ComputeSnapshotHash(before),
+                Operations =
+                [
+                    new DocumentOperation
+                    {
+                        Type = DocumentOperationType.DeleteBlock,
+                        Target = new DocumentOperationTarget { BlockId = removedBlock.Id },
+                        Metadata = CreateSuggestionOperationMetadata()
+                    }
+                ]
+            };
+        }
+
+        return null;
+    }
+
+    private DocumentOperation? CreateFormattingOperation(DocumentBlock beforeBlock, DocumentBlock afterBlock)
+    {
+        var beforeInlines = GetEditableInlines(beforeBlock.Content);
+        var afterInlines = GetEditableInlines(afterBlock.Content);
+        if (beforeInlines is null || afterInlines is null)
+        {
+            return null;
+        }
+
+        var count = Math.Min(beforeInlines.Count, afterInlines.Count);
+        for (var index = 0; index < count; index++)
+        {
+            var addedMark = afterInlines[index].Marks.FirstOrDefault(afterMark =>
+                beforeInlines[index].Marks.All(beforeMark => !SameMark(beforeMark, afterMark)));
+            if (addedMark is not null)
+            {
+                return new DocumentOperation
+                {
+                    Type = DocumentOperationType.AddMark,
+                    Target = new DocumentOperationTarget { BlockId = afterBlock.Id, InlineIndex = index },
+                    Mark = Clone(addedMark),
+                    Metadata = CreateSuggestionOperationMetadata()
+                };
+            }
+
+            var removedMark = beforeInlines[index].Marks.FirstOrDefault(beforeMark =>
+                afterInlines[index].Marks.All(afterMark => !SameMark(beforeMark, afterMark)));
+            if (removedMark is not null)
+            {
+                return new DocumentOperation
+                {
+                    Type = DocumentOperationType.RemoveMark,
+                    Target = new DocumentOperationTarget { BlockId = afterBlock.Id, InlineIndex = index },
+                    Mark = Clone(removedMark),
+                    Metadata = CreateSuggestionOperationMetadata()
+                };
+            }
+        }
+
+        return null;
+    }
+
+    private DocumentOperationMetadata CreateSuggestionOperationMetadata()
+        => new()
+        {
+            AuthorId = Author?.Id ?? string.Empty,
+            ClientId = CollaborationClientId,
+            LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            CreatedAt = DateTimeOffset.UtcNow
+        };
+
+    private static bool SameMark(InlineMark left, InlineMark right)
+        => left.Type == right.Type
+            && left.Value == right.Value
+            && left.Link?.Href == right.Link?.Href
+            && left.CommentAnchor?.CommentId == right.CommentAnchor?.CommentId;
+
+    private static string ComputeSnapshotHash(DocumentEditorDocument document)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(document, DocumentEditorJson.Options);
+        var bytes = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(json));
+        return Convert.ToHexString(bytes).ToLowerInvariant();
+    }
+
+    private async Task EnsureCollaborationStartedAsync()
+    {
+        if (_document is null || CollaborationProvider is null || IsVersionPreview)
+        {
+            await StopCollaborationAsync();
+            return;
+        }
+
+        var clientId = string.IsNullOrWhiteSpace(CollaborationClientId)
+            ? _generatedCollaborationClientId
+            : CollaborationClientId!;
+
+        if (_collaborationSync is not null
+            && ReferenceEquals(_loadedCollaborationProvider, CollaborationProvider)
+            && string.Equals(_collaborationSync.Session?.DocumentId, _document.DocumentId, StringComparison.Ordinal)
+            && string.Equals(_activeCollaborationClientId, clientId, StringComparison.Ordinal))
+        {
+            ConfigureCollaborationTimer();
+            return;
+        }
+
+        await StopCollaborationAsync();
+
+        try
+        {
+            _collaborationSync = new DocumentCollaborationSync(CollaborationProvider);
+            await _collaborationSync.JoinAsync(
+                _document,
+                clientId,
+                Author ?? new DocumentEditorAuthor { Id = clientId, DisplayName = clientId });
+            _loadedCollaborationProvider = CollaborationProvider;
+            _activeCollaborationClientId = clientId;
+            _collaborationSnapshot = Clone(_document);
+            _remoteCursors = [];
+            ConfigureCollaborationTimer();
+        }
+        catch
+        {
+            _collaborationSync = null;
+            _loadedCollaborationProvider = null;
+            _activeCollaborationClientId = null;
+            _collaborationSnapshot = _document is null ? null : Clone(_document);
+            _remoteCursors = [];
+            _saveMessage = Loc["TmDocumentEditor_CollaborationUnavailable"];
+            _collaborationTimer?.Dispose();
+            _collaborationTimer = null;
+            _configuredCollaborationInterval = null;
+        }
+    }
+
+    private async Task StopCollaborationAsync()
+    {
+        _collaborationTimer?.Dispose();
+        _collaborationTimer = null;
+        _configuredCollaborationInterval = null;
+        _remoteCursors = [];
+        _collaborationSnapshot = null;
+        _loadedCollaborationProvider = null;
+        _activeCollaborationClientId = null;
+
+        if (_collaborationSync is not null)
+        {
+            try
+            {
+                await _collaborationSync.LeaveAsync();
+            }
+            catch
+            {
+                // Collaboration is best-effort and must not block editor disposal or document reload.
+            }
+            finally
+            {
+                _collaborationSync = null;
+            }
+        }
+    }
+
+    private void ConfigureCollaborationTimer()
+    {
+        if (_collaborationSync is null || CollaborationProvider is null)
+        {
+            _collaborationTimer?.Dispose();
+            _collaborationTimer = null;
+            _configuredCollaborationInterval = null;
+            return;
+        }
+
+        if (_configuredCollaborationInterval == CollaborationSyncInterval && _collaborationTimer is not null)
+        {
+            return;
+        }
+
+        _configuredCollaborationInterval = CollaborationSyncInterval;
+        _collaborationTimer?.Dispose();
+        _collaborationTimer = null;
+
+        if (CollaborationSyncInterval <= TimeSpan.Zero)
+        {
+            return;
+        }
+
+        _collaborationTimer = new Timer(
+            _ => _ = InvokeAsync(RefreshCollaborationAsync),
+            null,
+            CollaborationSyncInterval,
+            CollaborationSyncInterval);
+    }
+
+    private async Task BroadcastLocalCollaborationChangeAsync(DocumentEditorDocument before, DocumentEditorDocument after)
+    {
+        if (_suppressCollaborationBroadcast || _collaborationSync is null || !CanEditDocument)
+        {
+            _collaborationSnapshot = Clone(after);
+            return;
+        }
+
+        var batch = _collaborationSync.CreateLocalEditBatch(before, after);
+        if (batch.Operations.Count == 0)
+        {
+            _collaborationSnapshot = Clone(after);
+            return;
+        }
+
+        try
+        {
+            var result = await _collaborationSync.SubmitLocalBatchAsync(batch);
+            if (result.IsValid)
+            {
+                _collaborationSnapshot = Clone(after);
+            }
+        }
+        catch
+        {
+            // Collaboration transport failures should not prevent local editing.
+        }
+    }
+
+    private async Task RefreshCollaborationAsync()
+    {
+        if (_collaborationSync is null || CollaborationProvider is null || _isRefreshingCollaboration || _document is null)
+        {
+            return;
+        }
+
+        _isRefreshingCollaboration = true;
+        try
+        {
+            var result = await _collaborationSync.ReconnectAsync();
+            if (result.IsValid && !DocumentsEqual(_collaborationSnapshot, _collaborationSync.Document))
+            {
+                _suppressCollaborationBroadcast = true;
+                try
+                {
+                    var updated = Clone(_collaborationSync.Document);
+                    _document = updated;
+                    _currentDocument = updated;
+                    _templatePreviewDocument = null;
+                    _templatePreviewEnabled = false;
+                    _templatePreviewMessage = null;
+                    _collaborationSnapshot = Clone(updated);
+                    _suggestionSnapshot = Clone(updated);
+                    await RefreshSuggestionsAsync();
+                }
+                finally
+                {
+                    _suppressCollaborationBroadcast = false;
+                }
+            }
+
+            var sessionId = _collaborationSync.Session?.Id;
+            _remoteCursors = (await CollaborationProvider.GetCursorsAsync(_collaborationSync.Document.DocumentId))
+                .Where(cursor => !string.Equals(cursor.SessionId, sessionId, StringComparison.Ordinal))
+                .ToList();
+        }
+        catch
+        {
+            // Keep the editor usable while the collaboration transport is unavailable.
+        }
+        finally
+        {
+            _isRefreshingCollaboration = false;
+        }
+
+        if (!_disposed)
+        {
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task BroadcastCollaborationCursorAsync()
+    {
+        if (_collaborationSync is null || _document is null)
+        {
+            return;
+        }
+
+        try
+        {
+            await _collaborationSync.UpdateCursorAsync(new DocumentCollaborationCursor
+            {
+                DisplayName = string.IsNullOrWhiteSpace(Author?.DisplayName)
+                    ? _activeCollaborationClientId ?? _generatedCollaborationClientId
+                    : Author!.DisplayName,
+                BlockId = _selection.ActiveBlockId,
+                InlineIndex = _selection.FocusedInlineRange?.StartInlineIndex,
+                Offset = _selection.FocusedInlineRange?.StartOffset,
+                Color = null
+            });
+            _remoteCursors = _collaborationSync.RemoteCursors;
+        }
+        catch
+        {
+            // Cursor updates are transient; failures should not affect editing.
+        }
+    }
+
+    private static bool DocumentsEqual(DocumentEditorDocument? left, DocumentEditorDocument? right)
+    {
+        if (left is null || right is null)
+        {
+            return left is null && right is null;
+        }
+
+        return string.Equals(
+            System.Text.Json.JsonSerializer.Serialize(left, DocumentEditorJson.Options),
+            System.Text.Json.JsonSerializer.Serialize(right, DocumentEditorJson.Options),
+            StringComparison.Ordinal);
     }
 
     private void OpenVersionDialog()
@@ -1284,6 +2555,27 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     _versionMessage = Loc["TmDocumentEditor_VersionCreateSaveRequired"];
                     await RecordVersionAuditAsync(null, DocumentEditorAuditResult.Failure, _versionMessage);
                     return;
+                }
+            }
+
+            if (_wysiwygHost is not null)
+            {
+                var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
+                if (jsSnapshot is not null)
+                {
+                    jsSnapshot.DocumentId = _currentDocument.DocumentId;
+                    jsSnapshot.SchemaVersion = _currentDocument.SchemaVersion;
+                    jsSnapshot.Metadata = _currentDocument.Metadata;
+                    jsSnapshot.PageSettings = _currentDocument.PageSettings;
+                    jsSnapshot.Sections = _currentDocument.Sections;
+                    jsSnapshot.Comments = _currentDocument.Comments;
+                    jsSnapshot.Notes = _currentDocument.Notes;
+                    // Phase 12: Headers/footers are serialized from JS DOM; preserve them.
+                    jsSnapshot.Revisions = _currentDocument.Revisions;
+                    jsSnapshot.Assets = _currentDocument.Assets;
+                    jsSnapshot.Anchors = _currentDocument.Anchors;
+                    _currentDocument = jsSnapshot;
+                    _document = jsSnapshot;
                 }
             }
 
@@ -1367,6 +2659,36 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         finally
         {
             _isLoadingComments = false;
+        }
+    }
+
+    private async Task RefreshSuggestionsAsync()
+    {
+        if (SuggestionProvider is null || string.IsNullOrWhiteSpace(DocumentId))
+        {
+            _suggestions = [];
+            _suggestionMessage = null;
+            _isLoadingSuggestions = false;
+            return;
+        }
+
+        _isLoadingSuggestions = true;
+        try
+        {
+            _suggestions = await SuggestionProvider.GetSuggestionsAsync(new DocumentSuggestionQuery
+            {
+                DocumentId = DocumentId,
+                Status = DocumentSuggestionStatus.Pending
+            });
+        }
+        catch
+        {
+            _suggestions = [];
+            _suggestionMessage = Loc["TmDocumentEditor_SuggestionsLoadFailed"];
+        }
+        finally
+        {
+            _isLoadingSuggestions = false;
         }
     }
 
@@ -1597,6 +2919,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         };
     }
 
+    private static string GetBlockText(DocumentBlock block)
+    {
+        var inlines = GetEditableInlines(block.Content);
+        return inlines is null ? string.Empty : string.Concat(inlines.Select(GetInlineText));
+    }
+
     private static T CloneForEditor<T>(T value)
     {
         var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
@@ -1724,6 +3052,67 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         });
     }
 
+    private Task RecordFormatImportAuditAsync(DocumentEditorAuditResult result, string? details)
+    {
+        var documentId = _currentDocument?.DocumentId ?? _document?.DocumentId;
+        if (string.IsNullOrWhiteSpace(documentId))
+        {
+            return Task.CompletedTask;
+        }
+
+        return DispatchAuditAsync(new DocumentEditorAuditEvent
+        {
+            DocumentId = documentId,
+            Action = DocumentEditorAuditAction.Import,
+            Result = result,
+            Actor = Author,
+            Target = new DocumentEditorAuditTarget { Type = "document-format", Id = DocumentFormatProviderKind.Docx.ToString() },
+            Details = details
+        });
+    }
+
+    private Task RecordFormatExportAuditAsync(DocumentFormatExportProviderResult? exportResult, DocumentEditorAuditResult result, string? details)
+    {
+        var documentId = _currentDocument?.DocumentId ?? _document?.DocumentId;
+        if (string.IsNullOrWhiteSpace(documentId))
+        {
+            return Task.CompletedTask;
+        }
+
+        return DispatchAuditAsync(new DocumentEditorAuditEvent
+        {
+            DocumentId = documentId,
+            Action = DocumentEditorAuditAction.Export,
+            Result = result,
+            Actor = Author,
+            Target = new DocumentEditorAuditTarget { Type = "document-format", Id = DocumentFormatProviderKind.Docx.ToString() },
+            Details = string.IsNullOrWhiteSpace(details)
+                ? exportResult?.FileName
+                : details
+        });
+    }
+
+    private Task RecordCompareAuditAsync(DocumentCompareResult? compareResult, DocumentEditorAuditResult result, string? details)
+    {
+        var documentId = _currentDocument?.DocumentId ?? _document?.DocumentId;
+        if (string.IsNullOrWhiteSpace(documentId))
+        {
+            return Task.CompletedTask;
+        }
+
+        return DispatchAuditAsync(new DocumentEditorAuditEvent
+        {
+            DocumentId = documentId,
+            Action = DocumentEditorAuditAction.Compare,
+            Result = result,
+            Actor = Author,
+            Target = new DocumentEditorAuditTarget { Type = "document-compare", Id = documentId },
+            Details = string.IsNullOrWhiteSpace(details)
+                ? $"{compareResult?.Summary.AddedBlocks ?? 0}/{compareResult?.Summary.RemovedBlocks ?? 0}/{compareResult?.Summary.ChangedBlocks ?? 0}"
+                : details
+        });
+    }
+
     private async Task DispatchAuditAsync(DocumentEditorAuditEvent auditEvent)
     {
         var auditSink = AuditSink ?? Provider as IDocumentAuditSink;
@@ -1764,5 +3153,11 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _disposed = true;
         _commandStack.OnStackChanged -= HandleCommandStackChanged;
         _autoSaveTimer?.Dispose();
+        _collaborationTimer?.Dispose();
+        if (_collaborationSync is not null)
+        {
+            _ = _collaborationSync.LeaveAsync();
+            _collaborationSync = null;
+        }
     }
 }

@@ -65,6 +65,10 @@ public static class DocumentTextDiffHelper
             .Where(text => !string.IsNullOrWhiteSpace(text)));
     }
 
+    /// <summary>Extracts readable plain text from a single document block.</summary>
+    public static string ExtractBlockPlainText(DocumentBlock block)
+        => GetBlockText(block);
+
     private static List<string> Tokenize(string? text)
     {
         if (string.IsNullOrWhiteSpace(text))

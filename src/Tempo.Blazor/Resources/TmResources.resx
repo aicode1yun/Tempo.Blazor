@@ -2774,6 +2774,7 @@
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>Link URL</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Apply link</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Close</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Clear formatting</value></data>
   <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Page layout</value></data>
   <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Table</value></data>
@@ -2849,6 +2850,29 @@
   <data name="TmDocumentEditor_DiffNew"                xml:space="preserve"><value>New version</value></data>
   <data name="TmDocumentEditor_DiffSummary"            xml:space="preserve"><value>{0} added, {1} removed</value></data>
   <data name="TmDocumentEditor_DiffNoChanges"          xml:space="preserve"><value>No changes</value></data>
+  <data name="TmDocumentEditor_CompareDocuments"       xml:space="preserve"><value>Compare</value></data>
+  <data name="TmDocumentEditor_CompareDialogTitle"     xml:space="preserve"><value>Compare documents</value></data>
+  <data name="TmDocumentEditor_CompareBaseSource"      xml:space="preserve"><value>Base source</value></data>
+  <data name="TmDocumentEditor_CompareTargetSource"    xml:space="preserve"><value>Compare source</value></data>
+  <data name="TmDocumentEditor_CompareBaseSourceAria"  xml:space="preserve"><value>Base comparison source</value></data>
+  <data name="TmDocumentEditor_CompareTargetSourceAria" xml:space="preserve"><value>Target comparison source</value></data>
+  <data name="TmDocumentEditor_CompareSourceCurrent"   xml:space="preserve"><value>Current document</value></data>
+  <data name="TmDocumentEditor_CompareSourceDocumentId" xml:space="preserve"><value>Document id</value></data>
+  <data name="TmDocumentEditor_CompareSourceJsonSnapshot" xml:space="preserve"><value>Uploaded DOCX</value></data>
+  <data name="TmDocumentEditor_CompareDocumentId"      xml:space="preserve"><value>Document id</value></data>
+  <data name="TmDocumentEditor_CompareBaseDocumentIdAria" xml:space="preserve"><value>Base document id</value></data>
+  <data name="TmDocumentEditor_CompareTargetDocumentIdAria" xml:space="preserve"><value>Target document id</value></data>
+  <data name="TmDocumentEditor_CompareUploadDocx"      xml:space="preserve"><value>Drop a DOCX file to compare</value></data>
+  <data name="TmDocumentEditor_CompareBaseUploadAria"  xml:space="preserve"><value>Upload base DOCX for comparison</value></data>
+  <data name="TmDocumentEditor_CompareTargetUploadAria" xml:space="preserve"><value>Upload target DOCX for comparison</value></data>
+  <data name="TmDocumentEditor_CompareRun"             xml:space="preserve"><value>Compare</value></data>
+  <data name="TmDocumentEditor_CompareLoading"         xml:space="preserve"><value>Comparing documents...</value></data>
+  <data name="TmDocumentEditor_CompareEmpty"           xml:space="preserve"><value>Choose sources and run comparison.</value></data>
+  <data name="TmDocumentEditor_CompareError"           xml:space="preserve"><value>Document comparison failed.</value></data>
+  <data name="TmDocumentEditor_CompareProviderUnavailable" xml:space="preserve"><value>Document format provider is unavailable.</value></data>
+  <data name="TmDocumentEditor_CompareImportFailed"    xml:space="preserve"><value>Compare DOCX import failed.</value></data>
+  <data name="TmDocumentEditor_CompareImportComplete"  xml:space="preserve"><value>Compare source imported.</value></data>
+  <data name="TmDocumentEditor_CompareSummary"         xml:space="preserve"><value>{0} added, {1} removed, {2} changed</value></data>
   <data name="TmDocumentEditor_VersionLoadFailed"      xml:space="preserve"><value>Versions could not be loaded.</value></data>
   <data name="TmDocumentEditor_PreviewingVersion"      xml:space="preserve"><value>Previewing {0}</value></data>
   <data name="TmDocumentEditor_ReturnToCurrentVersion" xml:space="preserve"><value>Return to current</value></data>
@@ -2864,10 +2888,43 @@
   <data name="TmDocumentEditor_SaveComplete"           xml:space="preserve"><value>Saved</value></data>
   <data name="TmDocumentEditor_ExportPdfComplete"      xml:space="preserve"><value>PDF exported</value></data>
   <data name="TmDocumentEditor_ExportPdfFailed"        xml:space="preserve"><value>PDF export failed</value></data>
+  <data name="TmDocumentEditor_ExportPdfAria"          xml:space="preserve"><value>Export document as PDF</value></data>
+  <data name="TmDocumentEditor_ImportDocxComplete"     xml:space="preserve"><value>Imported</value></data>
+  <data name="TmDocumentEditor_ImportDocxFailed"       xml:space="preserve"><value>DOCX import failed</value></data>
+  <data name="TmDocumentEditor_ImportDocxAria"         xml:space="preserve"><value>Import DOCX document</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZoneAria" xml:space="preserve"><value>Select DOCX file to import</value></data>
+  <data name="TmDocumentEditor_ExportDocxComplete"     xml:space="preserve"><value>DOCX exported</value></data>
+  <data name="TmDocumentEditor_ExportDocxFailed"       xml:space="preserve"><value>DOCX export failed</value></data>
+  <data name="TmDocumentEditor_ExportDocxAria"         xml:space="preserve"><value>Export document as DOCX</value></data>
+  <data name="TmDocumentEditor_FormatImportPanelLabel" xml:space="preserve"><value>Document format import</value></data>
+  <data name="TmDocumentEditor_FormatProviderUnavailable" xml:space="preserve"><value>Document format provider is unavailable.</value></data>
   <data name="TmDocumentEditor_AutoSaveComplete"       xml:space="preserve"><value>Autosaved</value></data>
   <data name="TmDocumentEditor_LastSavedAt"            xml:space="preserve"><value>Last saved {0}</value></data>
   <data name="TmDocumentEditor_SaveConflict"           xml:space="preserve"><value>The document changed on the server.</value></data>
   <data name="TmDocumentEditor_SaveFailed"             xml:space="preserve"><value>Save failed.</value></data>
+  <data name="TmDocumentEditor_CollaborationUnavailable" xml:space="preserve"><value>Collaboration is unavailable.</value></data>
+  <data name="TmDocumentEditor_CollaborationCursorsLabel" xml:space="preserve"><value>Remote collaboration cursors</value></data>
+  <data name="TmDocumentEditor_Suggestions"            xml:space="preserve"><value>Suggestions</value></data>
+  <data name="TmDocumentEditor_SuggestionPanelLabel"   xml:space="preserve"><value>Document suggestions</value></data>
+  <data name="TmDocumentEditor_SuggestionsEmpty"       xml:space="preserve"><value>No pending suggestions</value></data>
+  <data name="TmDocumentEditor_SuggestionsLoadFailed"  xml:space="preserve"><value>Suggestions could not be loaded.</value></data>
+  <data name="TmDocumentEditor_SuggestionCreated"      xml:space="preserve"><value>Suggestion created</value></data>
+  <data name="TmDocumentEditor_SuggestionCreateFailed" xml:space="preserve"><value>Suggestion could not be created.</value></data>
+  <data name="TmDocumentEditor_SuggestionAccepted"     xml:space="preserve"><value>Suggestion accepted</value></data>
+  <data name="TmDocumentEditor_SuggestionRejected"     xml:space="preserve"><value>Suggestion rejected</value></data>
+  <data name="TmDocumentEditor_SuggestionReviewFailed" xml:space="preserve"><value>Suggestion review failed.</value></data>
+  <data name="TmDocumentEditor_SuggestionConflict"     xml:space="preserve"><value>Suggestion cannot be applied because the document changed.</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestion"       xml:space="preserve"><value>Accept</value></data>
+  <data name="TmDocumentEditor_RejectSuggestion"       xml:space="preserve"><value>Reject</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestionAria"   xml:space="preserve"><value>Accept suggestion from {0}</value></data>
+  <data name="TmDocumentEditor_RejectSuggestionAria"   xml:space="preserve"><value>Reject suggestion from {0}</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeInsert"   xml:space="preserve"><value>Insert</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeDelete"   xml:space="preserve"><value>Delete</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeReplace"  xml:space="preserve"><value>Replace</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeFormatting" xml:space="preserve"><value>Formatting</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeMove"     xml:space="preserve"><value>Move</value></data>
+  <data name="TmDocumentEditor_SuggestionInsertAria"   xml:space="preserve"><value>Suggested insertion</value></data>
+  <data name="TmDocumentEditor_SuggestionDeleteAria"   xml:space="preserve"><value>Suggested deletion</value></data>
   <data name="TmDocumentEditor_OfflineDraftAvailable"  xml:space="preserve"><value>An offline draft is available.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoaded"     xml:space="preserve"><value>Newer offline draft loaded.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoadFailed" xml:space="preserve"><value>Offline draft could not be loaded.</value></data>
@@ -2924,6 +2981,9 @@
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Notes</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Footnote</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
+  <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Drop a DOCX file or browse</value></data>
+  <data name="TmDocumentEditor_ExportDocx"             xml:space="preserve"><value>Export DOCX</value></data>
   <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Endnote</value></data>
   <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Footnote</value></data>
   <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Endnote</value></data>
@@ -2940,5 +3000,15 @@
   <data name="TmDocumentEditor_ImageUploadFailed"      xml:space="preserve"><value>Image upload failed.</value></data>
   <data name="TmDocumentEditor_ImageUploading"         xml:space="preserve"><value>Uploading image...</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Page break</value></data>
+  <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG document surface</value></data>
+  <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editable document surface. Use Tab to move between the ribbon, header, body, footer, and comments.</value></data>
+  <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygBodyLabel"       xml:space="preserve"><value>Document body, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygHeaderLabel"     xml:space="preserve"><value>Header, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygFooterLabel"     xml:space="preserve"><value>Footer, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygImageResizeHandleLabel" xml:space="preserve"><value>Resize image</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>WYSIWYG editor unavailable</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>The WYSIWYG editing engine could not be loaded. Please use the block editor or reload the page.</value></data>
+  <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>The document could not be updated. Please try again or reload the page.</value></data>
 
 </root>

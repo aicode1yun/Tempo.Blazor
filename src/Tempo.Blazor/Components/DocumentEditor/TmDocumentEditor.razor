@@ -46,11 +46,16 @@
                                      CanRedo="@_commandStack.CanRedo"
                                      NextUndoDescription="@_commandStack.NextUndoDescription"
                                      NextRedoDescription="@_commandStack.NextRedoDescription"
-                                     TrackChangesEnabled="@_trackChangesEnabled"
+                                     TrackChangesEnabled="@EffectiveTrackChangesEnabled"
                                      TemplatePreviewEnabled="@_templatePreviewEnabled"
                                      CanPreviewTemplate="@CanPreviewTemplate"
                                      CanExportPdf="@CanExportPdf"
                                      IsExportingPdf="@_isExportingPdf"
+                                     CanImportDocx="@CanImportDocx"
+                                     CanExportDocx="@CanExportDocx"
+                                     IsImportingDocx="@_isImportingDocx"
+                                     IsExportingDocx="@_isExportingDocx"
+                                     CanCompareDocuments="@CanCompareDocuments"
                                      TemplatePreviewMessage="@_templatePreviewMessage"
                                      OnSave="SaveAsync"
                                      OnUndo="UndoAsync"
@@ -61,12 +66,49 @@
                                      OnLink="ApplyLinkAsync"
                                      OnClearFormatting="ClearInlineFormattingAsync"
                                      OnToggleInsert="ToggleInsertPanelAsync"
+                                     OnInsertTable="InsertTableAsync"
                                      OnInsertImage="OpenImageDialogAsync"
                                      OnToggleTrackChanges="ToggleTrackChanges"
                                      CanComment="@CanUseComments"
+                                     CanTrackChanges="@(CanCreateSuggestions || (SuggestionProvider is null && CanEditDocument))"
                                      OnAddComment="BeginCommentFromToolbarAsync"
+                                     OnCompareDocuments="OpenCompareDialogAsync"
                                      OnExportPdf="ExportPdfAsync"
+                                     OnImportDocx="ImportDocxAsync"
+                                     OnExportDocx="ExportDocxAsync"
                                      OnToggleTemplatePreview="ToggleTemplatePreviewAsync" />
+        }
+
+        @if (_compareDialogOpen && _compareDocumentSnapshot is not null)
+        {
+            <TmDocumentCompareDialog CurrentDocument="@_compareDocumentSnapshot"
+                                     DocumentProvider="@Provider"
+                                     FormatProvider="@FormatProvider"
+                                     ComparisonProvider="@ComparisonProvider"
+                                     UseLocalComparisonFallback="@UseLocalComparisonFallback"
+                                     Author="@Author"
+                                     OnCompared="HandleDocumentComparedAsync"
+                                     OnCompareFailed="HandleDocumentCompareFailedAsync"
+                                     OnClose="CloseCompareDialog" />
+        }
+
+        @if (!string.IsNullOrWhiteSpace(_formatMessage) || _formatWarnings.Count > 0)
+        {
+            <div class="tm-document-editor__format-banner" data-testid="document-format-message">
+                @if (!string.IsNullOrWhiteSpace(_formatMessage))
+                {
+                    <span>@_formatMessage</span>
+                }
+                @if (_formatWarnings.Count > 0)
+                {
+                    <ul class="tm-document-editor__format-warnings" data-testid="document-format-warnings">
+                        @foreach (var warning in _formatWarnings)
+                        {
+                            <li data-testid="document-format-warning">@warning.Message</li>
+                        }
+                    </ul>
+                }
+            </div>
         }
 
         @if (ShowOfflineBanner)
@@ -124,23 +166,26 @@
                     }
                     else
                     {
-                        <TmDocumentSurface @ref="_surface"
-                                           Document="@DisplayedDocument"
-                                           ReadOnly="@EffectiveReadOnly"
-                                           ImageUrlResolver="@ImageUrlResolver"
-                                           ImageProvider="@ImageProvider"
-                                           TokenProvider="@TokenProvider"
-                                           ImageValidation="@ImageValidation"
-                                           AllowOfflineClipboardImages="@OfflineEnabled"
-                                           TrackChangesEnabled="@_trackChangesEnabled"
-                                           CanComment="@CanUseComments"
-                                           CommandStack="@_commandStack"
-                                           Selection="@_selection"
-                                           SelectionChanged="HandleSelectionChangedAsync"
-                                           CommentRequested="BeginCommentAsync"
-                                           CommentSelected="SelectComment"
-                                           DocumentChanged="HandleDocumentChangedAsync" />
+                        <TmDocumentWysiwygHost @ref="_wysiwygHost"
+                                               Document="@DisplayedDocument"
+                                               ReadOnly="@EffectiveReadOnly"
+                                               Permissions="@EffectivePermissions"
+                                               ImageUrlResolver="@ImageUrlResolver"
+                                               ImageProvider="@ImageProvider"
+                                               ImageValidation="@ImageValidation"
+                                               AllowOfflineClipboardImages="@OfflineEnabled"
+                                               TokenProvider="@TokenProvider"
+                                               Suggestions="@_suggestions"
+                                               DocumentPatchGenerated="HandleWysiwygPatchAsync"
+                                               DocumentSnapshotChanged="HandleWysiwygSnapshotAsync"
+                                               DocumentSelectionChanged="HandleWysiwygSelectionChangedAsync"
+                                               TransactionCommitted="HandleWysiwygTransactionCommittedAsync"
+                                               UndoRequested="UndoAsync"
+                                               RedoRequested="RedoAsync"
+                                               SaveRequested="SaveAsync" />
                     }
+
+                    <TmDocumentCollaborationCursorOverlay Cursors="@_remoteCursors" />
                 </article>
             </main>
 
@@ -167,6 +212,18 @@
                                        OnReopenComment="ReopenCommentAsync"
                                        OnDeleteComment="DeleteCommentAsync"
                                        OnSelectComment="SelectComment" />
+            }
+
+            @if (SuggestionProvider is not null)
+            {
+                <TmDocumentSuggestionPanel Suggestions="@_suggestions"
+                                           IsLoading="@_isLoadingSuggestions"
+                                           IsBusy="@_isReviewingSuggestion"
+                                           CanReview="@CanReviewSuggestions"
+                                           StatusMessage="@_suggestionMessage"
+                                           OnSelectSuggestion="SelectSuggestion"
+                                           OnAcceptSuggestion="AcceptSuggestionAsync"
+                                           OnRejectSuggestion="RejectSuggestionAsync" />
             }
 
             @if (ShowVersionHistory && _versionPanelOpen)

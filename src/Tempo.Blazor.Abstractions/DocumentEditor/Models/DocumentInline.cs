@@ -9,6 +9,9 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 [JsonDerivedType(typeof(DocumentNoteReferenceRun), "noteReference")]
 public abstract class InlineContent
 {
+    /// <summary>Stable inline identifier used for selection mapping and comment anchoring.</summary>
+    public string? Id { get; set; }
+
     /// <summary>Inline marks applied to this content run.</summary>
     public List<InlineMark> Marks { get; set; } = [];
 }

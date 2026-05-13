@@ -57,6 +57,8 @@ public sealed class DocxPackageWriter
     private readonly DocumentFormatExportOptions _options;
     private MainDocumentPart _mainPart = null!;
     private long _drawingId = 1;
+    private readonly Dictionary<string, string> _commentIds = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, string> _revisionIds = new(StringComparer.Ordinal);
 
     /// <summary>Creates a DOCX package writer.</summary>
     public DocxPackageWriter(WordprocessingDocument package, DocumentEditorDocument document, DocumentFormatExportOptions options)
@@ -79,6 +81,7 @@ public sealed class DocxPackageWriter
         AddStylesPart();
         AddNumberingPart();
         AddNotesParts();
+        AddRevisionIds();
         AddCommentsPart();
 
         var body = _mainPart.Document.Body!;
@@ -140,15 +143,9 @@ public sealed class DocxPackageWriter
         {
             if (inline is TextRun text)
             {
-                if (text.Marks.Any(mark => mark.Type == InlineMarkType.Link && mark.Link is not null))
+                foreach (var element in WriteTextInline(text))
                 {
-                    var link = text.Marks.First(mark => mark.Type == InlineMarkType.Link && mark.Link is not null).Link!;
-                    var rel = _mainPart.AddHyperlinkRelationship(new Uri(link.Href, UriKind.Absolute), true);
-                    paragraph.Append(new W.Hyperlink(WriteRun(text.Text, text.Marks.Where(mark => mark.Type != InlineMarkType.Link))) { Id = rel.Id });
-                }
-                else
-                {
-                    paragraph.Append(WriteRun(text.Text, text.Marks));
+                    paragraph.Append(element);
                 }
             }
             else if (inline is TokenRun token)
@@ -168,12 +165,53 @@ public sealed class DocxPackageWriter
             }
         }
 
-        if (!paragraph.Elements<W.Run>().Any() && !paragraph.Elements<W.Hyperlink>().Any())
+        if (!paragraph.ChildElements.Any(element =>
+            element is W.Run or W.Hyperlink or W.InsertedRun or W.DeletedRun or W.CommentRangeStart or W.CommentRangeEnd))
         {
             paragraph.Append(new W.Run(new W.Text(string.Empty)));
         }
 
         return paragraph;
+    }
+
+    private IEnumerable<OpenXmlElement> WriteTextInline(TextRun text)
+    {
+        var semanticMarks = text.Marks
+            .Where(mark => mark.Type is InlineMarkType.Link or InlineMarkType.CommentAnchor or InlineMarkType.Revision)
+            .ToList();
+        OpenXmlElement content = WriteRun(text.Text, text.Marks.Except(semanticMarks));
+
+        var link = semanticMarks.FirstOrDefault(mark => mark.Type == InlineMarkType.Link && mark.Link is not null)?.Link;
+        if (link is not null && Uri.TryCreate(link.Href, UriKind.Absolute, out var uri))
+        {
+            var rel = _mainPart.AddHyperlinkRelationship(uri, true);
+            content = new W.Hyperlink(content.CloneNode(true)) { Id = rel.Id };
+        }
+
+        var revisionMark = semanticMarks.FirstOrDefault(mark => mark.Type == InlineMarkType.Revision && !string.IsNullOrWhiteSpace(mark.RevisionId));
+        if (revisionMark?.RevisionId is not null && _revisionIds.TryGetValue(revisionMark.RevisionId, out var revisionId))
+        {
+            var revision = _document.Revisions.FirstOrDefault(item => item.Id == revisionMark.RevisionId);
+            var author = revision?.Author.DisplayName ?? string.Empty;
+            var date = revision?.CreatedAt.UtcDateTime ?? DateTime.UtcNow;
+            content = revision?.Type == DocumentRevisionType.Deletion
+                ? new W.DeletedRun(content.CloneNode(true)) { Id = revisionId, Author = author, Date = date }
+                : new W.InsertedRun(content.CloneNode(true)) { Id = revisionId, Author = author, Date = date };
+        }
+
+        var commentId = semanticMarks
+            .FirstOrDefault(mark => mark.Type == InlineMarkType.CommentAnchor && mark.CommentAnchor is not null)
+            ?.CommentAnchor?.CommentId;
+        if (!string.IsNullOrWhiteSpace(commentId) && _commentIds.TryGetValue(commentId, out var docxCommentId))
+        {
+            yield return new W.CommentRangeStart { Id = docxCommentId };
+            yield return content;
+            yield return new W.CommentRangeEnd { Id = docxCommentId };
+            yield return new W.Run(new W.CommentReference { Id = docxCommentId });
+            yield break;
+        }
+
+        yield return content;
     }
 
     private static W.Run WriteRun(string text, IEnumerable<InlineMark> marks)
@@ -242,7 +280,7 @@ public sealed class DocxPackageWriter
                     properties.Append(new W.GridSpan { Val = cell.ColumnSpan });
                 }
 
-                if (cell.RowSpan > 1)
+                if (cell.RowSpan > 1 || !cell.Merge.IsOrigin)
                 {
                     properties.Append(new W.VerticalMerge { Val = cell.Merge.IsOrigin ? W.MergedCellValues.Restart : W.MergedCellValues.Continue });
                 }
@@ -292,27 +330,11 @@ public sealed class DocxPackageWriter
         var height = image.Size.Height ?? 90;
         var cx = (long)(width * 12700);
         var cy = (long)(height * 12700);
-        var drawing = new W.Drawing(new DW.Inline(
-            new DW.Extent { Cx = cx, Cy = cy },
-            new DW.EffectExtent { LeftEdge = 0, TopEdge = 0, RightEdge = 0, BottomEdge = 0 },
-            new DW.DocProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture" },
-            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
-            new A.Graphic(new A.GraphicData(
-                new PIC.Picture(
-                    new PIC.NonVisualPictureProperties(
-                        new PIC.NonVisualDrawingProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture", Description = image.AltText },
-                        new PIC.NonVisualPictureDrawingProperties()),
-                    new PIC.BlipFill(new A.Blip { Embed = relId }, new A.Stretch(new A.FillRectangle())),
-                    new PIC.ShapeProperties(
-                        new A.Transform2D(new A.Offset { X = 0, Y = 0 }, new A.Extents { Cx = cx, Cy = cy }),
-                        new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle })))
-            { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" }))
-        {
-            DistanceFromTop = 0,
-            DistanceFromBottom = 0,
-            DistanceFromLeft = 0,
-            DistanceFromRight = 0
-        });
+        var graphic = CreatePictureGraphic(image, relId, cx, cy);
+        var drawingBody = image.FloatingLayout?.Inline == false
+            ? CreateAnchoredDrawing(image, cx, cy, graphic)
+            : CreateInlineDrawing(image, cx, cy, graphic);
+        var drawing = new W.Drawing(drawingBody);
 
         var paragraph = new W.Paragraph(new W.Run(drawing));
         if (!string.IsNullOrWhiteSpace(image.Caption))
@@ -321,6 +343,106 @@ public sealed class DocxPackageWriter
         }
 
         return paragraph;
+    }
+
+    private OpenXmlElement CreateInlineDrawing(ImageBlockContent image, long cx, long cy, A.Graphic graphic)
+    {
+        return new DW.Inline(
+            new DW.Extent { Cx = cx, Cy = cy },
+            new DW.EffectExtent { LeftEdge = 0, TopEdge = 0, RightEdge = 0, BottomEdge = 0 },
+            new DW.DocProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture" },
+            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
+            graphic)
+        {
+            DistanceFromTop = 0,
+            DistanceFromBottom = 0,
+            DistanceFromLeft = 0,
+            DistanceFromRight = 0
+        };
+    }
+
+    private OpenXmlElement CreateAnchoredDrawing(ImageBlockContent image, long cx, long cy, A.Graphic graphic)
+    {
+        var layout = image.FloatingLayout!;
+        var anchor = new DW.Anchor(
+            new DW.SimplePosition { X = 0, Y = 0 },
+            new DW.HorizontalPosition(
+                new DW.PositionOffset(PointToEmu(layout.X).ToString(CultureInfo.InvariantCulture)))
+            { RelativeFrom = ToDocxHorizontalRelative(layout.HorizontalRelativeTo) },
+            new DW.VerticalPosition(
+                new DW.PositionOffset(PointToEmu(layout.Y).ToString(CultureInfo.InvariantCulture)))
+            { RelativeFrom = ToDocxVerticalRelative(layout.VerticalRelativeTo) },
+            new DW.Extent { Cx = cx, Cy = cy },
+            new DW.EffectExtent { LeftEdge = 0, TopEdge = 0, RightEdge = 0, BottomEdge = 0 },
+            CreateDocxWrap(layout.WrapMode),
+            new DW.DocProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture" },
+            new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
+            graphic)
+        {
+            DistanceFromTop = 0,
+            DistanceFromBottom = 0,
+            DistanceFromLeft = 0,
+            DistanceFromRight = 0,
+            SimplePos = false,
+            RelativeHeight = (UInt32Value)(uint)Math.Max(0, layout.ZIndex),
+            BehindDoc = layout.WrapMode == DocumentWrapMode.BehindText,
+            Locked = layout.LockAnchor,
+            LayoutInCell = true,
+            AllowOverlap = true
+        };
+
+        return anchor;
+    }
+
+    private A.Graphic CreatePictureGraphic(ImageBlockContent image, string relId, long cx, long cy)
+    {
+        return new A.Graphic(new A.GraphicData(
+            new PIC.Picture(
+                new PIC.NonVisualPictureProperties(
+                    new PIC.NonVisualDrawingProperties { Id = (UInt32Value)_drawingId++, Name = image.AltText ?? "Picture", Description = image.AltText },
+                    new PIC.NonVisualPictureDrawingProperties()),
+                new PIC.BlipFill(new A.Blip { Embed = relId }, new A.Stretch(new A.FillRectangle())),
+                new PIC.ShapeProperties(
+                    new A.Transform2D(new A.Offset { X = 0, Y = 0 }, new A.Extents { Cx = cx, Cy = cy }),
+                    new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle })))
+        { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" });
+    }
+
+    private static OpenXmlElement CreateDocxWrap(DocumentWrapMode wrapMode)
+    {
+        return wrapMode switch
+        {
+            DocumentWrapMode.TopBottom => new DW.WrapTopBottom(),
+            DocumentWrapMode.BehindText or DocumentWrapMode.InFrontOfText => new DW.WrapNone(),
+            _ => new DW.WrapSquare { WrapText = DW.WrapTextValues.BothSides }
+        };
+    }
+
+    private static long PointToEmu(double value)
+    {
+        return (long)Math.Round(value * 12700);
+    }
+
+    private static DW.HorizontalRelativePositionValues ToDocxHorizontalRelative(DocumentRelativePosition value)
+    {
+        return value switch
+        {
+            DocumentRelativePosition.Margin => DW.HorizontalRelativePositionValues.Margin,
+            DocumentRelativePosition.Column => DW.HorizontalRelativePositionValues.Column,
+            DocumentRelativePosition.Character => DW.HorizontalRelativePositionValues.Character,
+            _ => DW.HorizontalRelativePositionValues.Page
+        };
+    }
+
+    private static DW.VerticalRelativePositionValues ToDocxVerticalRelative(DocumentRelativePosition value)
+    {
+        return value switch
+        {
+            DocumentRelativePosition.Margin => DW.VerticalRelativePositionValues.Margin,
+            DocumentRelativePosition.Line => DW.VerticalRelativePositionValues.Line,
+            DocumentRelativePosition.Page => DW.VerticalRelativePositionValues.Page,
+            _ => DW.VerticalRelativePositionValues.Paragraph
+        };
     }
 
     private async Task<byte[]> ResolveImageBytesAsync(ImageBlockContent image, CancellationToken cancellationToken)
@@ -447,14 +569,27 @@ public sealed class DocxPackageWriter
             return;
         }
 
+        for (var i = 0; i < _document.Comments.Count; i++)
+        {
+            _commentIds[_document.Comments[i].Id] = i.ToString(CultureInfo.InvariantCulture);
+        }
+
         var part = _mainPart.AddNewPart<WordprocessingCommentsPart>();
         part.Comments = new W.Comments(_document.Comments.Select((comment, index) => new W.Comment(
             new W.Paragraph(new W.Run(new W.Text(comment.Entries.FirstOrDefault()?.Text ?? string.Empty))))
         {
-            Id = index.ToString(CultureInfo.InvariantCulture),
+            Id = _commentIds[comment.Id],
             Author = comment.Entries.FirstOrDefault()?.Author.DisplayName ?? string.Empty,
             Date = comment.Entries.FirstOrDefault()?.CreatedAt.UtcDateTime ?? DateTime.UtcNow
         }));
         part.Comments.Save();
+    }
+
+    private void AddRevisionIds()
+    {
+        for (var i = 0; i < _document.Revisions.Count; i++)
+        {
+            _revisionIds[_document.Revisions[i].Id] = i.ToString(CultureInfo.InvariantCulture);
+        }
     }
 }

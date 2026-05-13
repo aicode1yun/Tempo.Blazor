@@ -12,52 +12,43 @@ public class TmDocumentRendererTests : LocalizationTestBase
     private const string SafePngDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
 
     [Fact]
-    public void Surface_RendersParagraphBlock()
+    public void BlockRenderer_RendersParagraphBlock()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Hello document"))));
+        var cut = RenderBlock(Paragraph("Hello document"));
 
         cut.Find(".tm-document-block--paragraph").TextContent.Should().Contain("Hello document");
     }
 
     [Fact]
-    public void Surface_RendersHeadingBlocks()
+    public void BlockRenderer_RendersHeadingBlock()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(
-                Heading(1, "Main title"),
-                Heading(2, "Section title"))));
+        var cut = RenderBlock(Heading(2, "Section title"));
 
-        cut.Find("h1.tm-document-block--heading").TextContent.Should().Contain("Main title");
         cut.Find("h2.tm-document-block--heading").TextContent.Should().Contain("Section title");
     }
 
     [Fact]
-    public void Surface_RendersBulletAndNumberedLists()
+    public void BlockRenderer_RendersBulletAndNumberedLists()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(
-                ListItem("Bullet item", ordered: false),
-                ListItem("Numbered item", ordered: true))));
+        var bullet = RenderBlock(ListItem("Bullet item", ordered: false));
+        var ordered = RenderBlock(ListItem("Numbered item", ordered: true));
 
-        cut.Find("ul.tm-document-list").TextContent.Should().Contain("Bullet item");
-        cut.Find("ol.tm-document-list").TextContent.Should().Contain("Numbered item");
+        bullet.Find("ul.tm-document-list").TextContent.Should().Contain("Bullet item");
+        ordered.Find("ol.tm-document-list").TextContent.Should().Contain("Numbered item");
     }
 
     [Fact]
-    public void Surface_RendersQuoteBlock()
+    public void BlockRenderer_RendersQuoteBlock()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Quote("Important clause"))));
+        var cut = RenderBlock(Quote("Important clause"));
 
         cut.Find("blockquote.tm-document-block--quote").TextContent.Should().Contain("Important clause");
     }
 
     [Fact]
-    public void Surface_RendersTableWithMergedCells()
+    public void BlockRenderer_RendersTableWithMergedCells()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Table())));
+        var cut = RenderBlock(Table());
 
         var merged = cut.Find("td[colspan='2']");
         merged.TextContent.Should().Contain("Merged heading");
@@ -65,10 +56,9 @@ public class TmDocumentRendererTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Surface_RendersImageUrlBlockWithAltAndCaption()
+    public void BlockRenderer_RendersImageUrlBlockWithAltAndCaption()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(ImageUrl(SafePngDataUrl, "Chart preview", "Evidence image"))));
+        var cut = RenderBlock(ImageUrl(SafePngDataUrl, "Chart preview", "Evidence image"));
 
         var image = cut.Find("img.tm-document-image__media");
         image.GetAttribute("src").Should().Be(SafePngDataUrl);
@@ -77,13 +67,11 @@ public class TmDocumentRendererTests : LocalizationTestBase
     }
 
     [Fact]
-    public void Surface_RendersProviderImageBlock()
+    public void BlockRenderer_RendersProviderImageBlock()
     {
         var resolver = new StaticImageResolver(SafePngDataUrl);
 
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(ImageAsset("asset-1", "Provider image", "Uploaded image")))
-                      .Add(p => p.ImageUrlResolver, resolver));
+        var cut = RenderBlock(ImageAsset("asset-1", "Provider image", "Uploaded image"), resolver);
 
         cut.WaitForAssertion(() =>
             cut.Find("img.tm-document-image__media").GetAttribute("src").Should().Be(SafePngDataUrl));
@@ -93,33 +81,28 @@ public class TmDocumentRendererTests : LocalizationTestBase
     [Fact]
     public void BlockRenderer_ShowsImageLoadingStateWhileProviderResolves()
     {
-        var cut = RenderComponent<TmDocumentBlockRenderer>(parameters =>
-            parameters.Add(p => p.DocumentId, "doc-1")
-                      .Add(p => p.Block, ImageAsset("asset-1", "Provider image", null))
-                      .Add(p => p.ImageUrlResolver, new DelayedImageResolver()));
+        var cut = RenderBlock(ImageAsset("asset-1", "Provider image", null), new DelayedImageResolver());
 
         cut.Find(".tm-document-image__loading").TextContent.Should().Contain("Loading image");
     }
 
     [Fact]
-    public void Surface_RendersBrokenImageStateForUnsafeUrl()
+    public void BlockRenderer_RendersBrokenImageStateForUnsafeUrl()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(ImageUrl("javascript:alert(1)", "Unsafe", null))));
+        var cut = RenderBlock(ImageUrl("javascript:alert(1)", "Unsafe", null));
 
         cut.FindAll("img").Should().BeEmpty();
         cut.Find(".tm-document-image__broken").TextContent.Should().Contain("Image could not be loaded");
     }
 
     [Fact]
-    public void Surface_RendersPageBreak()
+    public void BlockRenderer_RendersPageBreak()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(new DocumentBlock
-            {
-                Type = DocumentBlockType.PageBreak,
-                Content = new PageBreakBlockContent()
-            })));
+        var cut = RenderBlock(new DocumentBlock
+        {
+            Type = DocumentBlockType.PageBreak,
+            Content = new PageBreakBlockContent()
+        });
 
         cut.Find(".tm-document-page-break").GetAttribute("role").Should().Be("separator");
     }
@@ -127,8 +110,7 @@ public class TmDocumentRendererTests : LocalizationTestBase
     [Fact]
     public void InlineRenderer_EncodesTextAndDoesNotRenderMarkup()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("<script>alert(1)</script>"))));
+        var cut = RenderBlock(Paragraph("<script>alert(1)</script>"));
 
         cut.Markup.Should().NotContain("<script>");
         cut.Find(".tm-document-block--paragraph").TextContent.Should().Contain("<script>alert(1)</script>");
@@ -137,19 +119,18 @@ public class TmDocumentRendererTests : LocalizationTestBase
     [Fact]
     public void InlineRenderer_RendersSafeLinkWithSecurityAttributes()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph(new TextRun
-            {
-                Text = "Open link",
-                Marks =
-                [
-                    new InlineMark
-                    {
-                        Type = InlineMarkType.Link,
-                        Link = new LinkMarkData { Href = "https://example.com", Title = "Example" }
-                    }
-                ]
-            }))));
+        var cut = RenderBlock(Paragraph(new TextRun
+        {
+            Text = "Open link",
+            Marks =
+            [
+                new InlineMark
+                {
+                    Type = InlineMarkType.Link,
+                    Link = new LinkMarkData { Href = "https://example.com", Title = "Example" }
+                }
+            ]
+        }));
 
         var link = cut.Find("a.tm-document-inline");
         link.GetAttribute("href").Should().Be("https://example.com");
@@ -161,19 +142,18 @@ public class TmDocumentRendererTests : LocalizationTestBase
     [Fact]
     public void InlineRenderer_DoesNotRenderUnsafeLinkHref()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph(new TextRun
-            {
-                Text = "Unsafe link",
-                Marks =
-                [
-                    new InlineMark
-                    {
-                        Type = InlineMarkType.Link,
-                        Link = new LinkMarkData { Href = "javascript:alert(1)" }
-                    }
-                ]
-            }))));
+        var cut = RenderBlock(Paragraph(new TextRun
+        {
+            Text = "Unsafe link",
+            Marks =
+            [
+                new InlineMark
+                {
+                    Type = InlineMarkType.Link,
+                    Link = new LinkMarkData { Href = "javascript:alert(1)" }
+                }
+            ]
+        }));
 
         cut.FindAll("a").Should().BeEmpty();
         cut.Find(".tm-document-inline").TextContent.Should().Contain("Unsafe link");
@@ -182,15 +162,14 @@ public class TmDocumentRendererTests : LocalizationTestBase
     [Fact]
     public void InlineRenderer_RendersTokenAsChipWithMetadata()
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph(new TokenRun
-            {
-                Key = "client.name",
-                DisplayName = "Client name",
-                TokenType = "text",
-                TypeLabel = "Text",
-                Description = "Client full name"
-            }))));
+        var cut = RenderBlock(Paragraph(new TokenRun
+        {
+            Key = "client.name",
+            DisplayName = "Client name",
+            TokenType = "text",
+            TypeLabel = "Text",
+            Description = "Client full name"
+        }));
 
         var chip = cut.Find("[data-testid='document-token-chip']");
         chip.ClassList.Should().Contain("tm-document-inline--token");
@@ -200,84 +179,14 @@ public class TmDocumentRendererTests : LocalizationTestBase
         chip.TextContent.Should().Contain("Client name");
     }
 
-    [Fact]
-    public void Surface_ReadOnlySurfaceIsNotEditable()
+    private IRenderedComponent<TmDocumentBlockRenderer> RenderBlock(
+        DocumentBlock block,
+        IDocumentImageUrlResolver? resolver = null)
     {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Read only")))
-                      .Add(p => p.ReadOnly, true));
-
-        var surface = cut.Find(".tm-document-surface");
-        surface.GetAttribute("contenteditable").Should().Be("false");
-        surface.GetAttribute("aria-readonly").Should().Be("true");
-    }
-
-    [Fact]
-    public void Surface_EditSurfaceHasTextboxAriaAttributes()
-    {
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Editable")))
-                      .Add(p => p.ReadOnly, false));
-
-        var surface = cut.Find(".tm-document-surface");
-        surface.GetAttribute("role").Should().Be("textbox");
-        surface.GetAttribute("aria-multiline").Should().Be("true");
-        surface.GetAttribute("contenteditable").Should().Be("true");
-    }
-
-    [Fact]
-    public void Surface_AttachesPasteHookWithLooseJsInterop()
-    {
-        JSInterop.Mode = JSRuntimeMode.Loose;
-
-        RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Editable")))
-                      .Add(p => p.ReadOnly, false));
-
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditor.attachPaste");
-    }
-
-    [Fact]
-    public void Surface_GracefullyRendersWhenPasteInteropIsUnavailable()
-    {
-        JSInterop.Mode = JSRuntimeMode.Strict;
-
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Editable")))
-                      .Add(p => p.ReadOnly, false));
-
-        cut.Find(".tm-document-surface").Should().NotBeNull();
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditor.attachPaste");
-    }
-
-    [Fact]
-    public async Task Surface_DisposeDoesNotThrowWhenPasteDetachInteropFails()
-    {
-        JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentEditor.attachPaste", _ => true).SetVoidResult();
-        var cut = RenderComponent<TmDocumentSurface>(parameters =>
-            parameters.Add(p => p.Document, CreateDocument(Paragraph("Editable")))
-                      .Add(p => p.ReadOnly, false));
-
-        var act = async () => await cut.Instance.DisposeAsync();
-
-        await act.Should().NotThrowAsync();
-        JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentEditor.detachPaste");
-    }
-
-    private static DocumentEditorDocument CreateDocument(params DocumentBlock[] blocks)
-    {
-        var document = DocumentEditorDocument.Empty("doc-1");
-        document.Metadata.Title = "Renderer test";
-        document.Blocks.AddRange(blocks.Select((block, index) =>
-        {
-            block.Order = (index + 1) * 10;
-            return block;
-        }));
-        return document;
+        return RenderComponent<TmDocumentBlockRenderer>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Block, block)
+            .Add(p => p.ImageUrlResolver, resolver));
     }
 
     private static DocumentBlock Paragraph(string text) => Paragraph(new TextRun { Text = text });

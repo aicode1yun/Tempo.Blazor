@@ -2343,6 +2343,7 @@
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>URL du lien</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Appliquer le lien</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Annuler</value></data>
+  <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Fermer</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Effacer la mise en forme</value></data>
   <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Mise en page</value></data>
   <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Tableau</value></data>
@@ -2428,15 +2429,74 @@
   <data name="TmDocumentEditor_DiffNew"                xml:space="preserve"><value>Nouvelle version</value></data>
   <data name="TmDocumentEditor_DiffSummary"            xml:space="preserve"><value>{0} ajouté(s), {1} supprimé(s)</value></data>
   <data name="TmDocumentEditor_DiffNoChanges"          xml:space="preserve"><value>Aucune modification</value></data>
+  <data name="TmDocumentEditor_CompareDocuments"       xml:space="preserve"><value>Comparer</value></data>
+  <data name="TmDocumentEditor_CompareDialogTitle"     xml:space="preserve"><value>Comparer les documents</value></data>
+  <data name="TmDocumentEditor_CompareBaseSource"      xml:space="preserve"><value>Source de base</value></data>
+  <data name="TmDocumentEditor_CompareTargetSource"    xml:space="preserve"><value>Source à comparer</value></data>
+  <data name="TmDocumentEditor_CompareBaseSourceAria"  xml:space="preserve"><value>Source de base de la comparaison</value></data>
+  <data name="TmDocumentEditor_CompareTargetSourceAria" xml:space="preserve"><value>Source cible de la comparaison</value></data>
+  <data name="TmDocumentEditor_CompareSourceCurrent"   xml:space="preserve"><value>Document actuel</value></data>
+  <data name="TmDocumentEditor_CompareSourceDocumentId" xml:space="preserve"><value>ID du document</value></data>
+  <data name="TmDocumentEditor_CompareSourceJsonSnapshot" xml:space="preserve"><value>DOCX téléversé</value></data>
+  <data name="TmDocumentEditor_CompareDocumentId"      xml:space="preserve"><value>ID du document</value></data>
+  <data name="TmDocumentEditor_CompareBaseDocumentIdAria" xml:space="preserve"><value>ID du document de base</value></data>
+  <data name="TmDocumentEditor_CompareTargetDocumentIdAria" xml:space="preserve"><value>ID du document cible</value></data>
+  <data name="TmDocumentEditor_CompareUploadDocx"      xml:space="preserve"><value>Déposez un fichier DOCX à comparer</value></data>
+  <data name="TmDocumentEditor_CompareBaseUploadAria"  xml:space="preserve"><value>Téléverser le DOCX de base pour comparaison</value></data>
+  <data name="TmDocumentEditor_CompareTargetUploadAria" xml:space="preserve"><value>Téléverser le DOCX cible pour comparaison</value></data>
+  <data name="TmDocumentEditor_CompareRun"             xml:space="preserve"><value>Comparer</value></data>
+  <data name="TmDocumentEditor_CompareLoading"         xml:space="preserve"><value>Comparaison des documents...</value></data>
+  <data name="TmDocumentEditor_CompareEmpty"           xml:space="preserve"><value>Choisissez les sources et lancez la comparaison.</value></data>
+  <data name="TmDocumentEditor_CompareError"           xml:space="preserve"><value>La comparaison des documents a échoué.</value></data>
+  <data name="TmDocumentEditor_CompareProviderUnavailable" xml:space="preserve"><value>Le fournisseur de format de document n'est pas disponible.</value></data>
+  <data name="TmDocumentEditor_CompareImportFailed"    xml:space="preserve"><value>L'import DOCX pour comparaison a échoué.</value></data>
+  <data name="TmDocumentEditor_CompareImportComplete"  xml:space="preserve"><value>Source de comparaison importée.</value></data>
+  <data name="TmDocumentEditor_CompareSummary"         xml:space="preserve"><value>{0} ajouté(s), {1} supprimé(s), {2} modifié(s)</value></data>
   <data name="TmDocumentEditor_ImageLoading"           xml:space="preserve"><value>Chargement de l'image...</value></data>
   <data name="TmDocumentEditor_ImageBroken"            xml:space="preserve"><value>L'image n'a pas pu être chargée</value></data>
   <data name="TmDocumentEditor_SaveComplete"           xml:space="preserve"><value>Enregistré</value></data>
   <data name="TmDocumentEditor_ExportPdfComplete"      xml:space="preserve"><value>PDF exporté</value></data>
   <data name="TmDocumentEditor_ExportPdfFailed"        xml:space="preserve"><value>L'export PDF a échoué</value></data>
+  <data name="TmDocumentEditor_ExportPdfAria"          xml:space="preserve"><value>Exporter le document en PDF</value></data>
+  <data name="TmDocumentEditor_ImportDocxComplete"     xml:space="preserve"><value>Importé</value></data>
+  <data name="TmDocumentEditor_ImportDocxFailed"       xml:space="preserve"><value>L'import DOCX a échoué</value></data>
+  <data name="TmDocumentEditor_ImportDocxAria"         xml:space="preserve"><value>Importer un document DOCX</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZoneAria" xml:space="preserve"><value>Sélectionner un fichier DOCX à importer</value></data>
+  <data name="TmDocumentEditor_ExportDocxComplete"     xml:space="preserve"><value>DOCX exporté</value></data>
+  <data name="TmDocumentEditor_ExportDocxFailed"       xml:space="preserve"><value>L'export DOCX a échoué</value></data>
+  <data name="TmDocumentEditor_ExportDocxAria"         xml:space="preserve"><value>Exporter le document en DOCX</value></data>
+  <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Importer DOCX</value></data>
+  <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Déposez un fichier DOCX ou parcourez</value></data>
+  <data name="TmDocumentEditor_ExportDocx"             xml:space="preserve"><value>Exporter DOCX</value></data>
+  <data name="TmDocumentEditor_FormatImportPanelLabel" xml:space="preserve"><value>Import du format de document</value></data>
+  <data name="TmDocumentEditor_FormatProviderUnavailable" xml:space="preserve"><value>Le fournisseur de format de document n'est pas disponible.</value></data>
   <data name="TmDocumentEditor_AutoSaveComplete"       xml:space="preserve"><value>Enregistrement automatique terminé</value></data>
   <data name="TmDocumentEditor_LastSavedAt"            xml:space="preserve"><value>Dernier enregistrement {0}</value></data>
   <data name="TmDocumentEditor_SaveConflict"           xml:space="preserve"><value>Le document a changé sur le serveur.</value></data>
   <data name="TmDocumentEditor_SaveFailed"             xml:space="preserve"><value>L'enregistrement a échoué.</value></data>
+  <data name="TmDocumentEditor_CollaborationUnavailable" xml:space="preserve"><value>La collaboration n'est pas disponible.</value></data>
+  <data name="TmDocumentEditor_CollaborationCursorsLabel" xml:space="preserve"><value>Curseurs de collaboration distants</value></data>
+  <data name="TmDocumentEditor_Suggestions"            xml:space="preserve"><value>Suggestions</value></data>
+  <data name="TmDocumentEditor_SuggestionPanelLabel"   xml:space="preserve"><value>Suggestions du document</value></data>
+  <data name="TmDocumentEditor_SuggestionsEmpty"       xml:space="preserve"><value>Aucune suggestion en attente</value></data>
+  <data name="TmDocumentEditor_SuggestionsLoadFailed"  xml:space="preserve"><value>Les suggestions n'ont pas pu être chargées.</value></data>
+  <data name="TmDocumentEditor_SuggestionCreated"      xml:space="preserve"><value>Suggestion créée</value></data>
+  <data name="TmDocumentEditor_SuggestionCreateFailed" xml:space="preserve"><value>La suggestion n'a pas pu être créée.</value></data>
+  <data name="TmDocumentEditor_SuggestionAccepted"     xml:space="preserve"><value>Suggestion acceptée</value></data>
+  <data name="TmDocumentEditor_SuggestionRejected"     xml:space="preserve"><value>Suggestion rejetée</value></data>
+  <data name="TmDocumentEditor_SuggestionReviewFailed" xml:space="preserve"><value>La révision de la suggestion a échoué.</value></data>
+  <data name="TmDocumentEditor_SuggestionConflict"     xml:space="preserve"><value>La suggestion ne peut pas être appliquée car le document a changé.</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestion"       xml:space="preserve"><value>Accepter</value></data>
+  <data name="TmDocumentEditor_RejectSuggestion"       xml:space="preserve"><value>Rejeter</value></data>
+  <data name="TmDocumentEditor_AcceptSuggestionAria"   xml:space="preserve"><value>Accepter la suggestion de {0}</value></data>
+  <data name="TmDocumentEditor_RejectSuggestionAria"   xml:space="preserve"><value>Rejeter la suggestion de {0}</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeInsert"   xml:space="preserve"><value>Insertion</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeDelete"   xml:space="preserve"><value>Suppression</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeReplace"  xml:space="preserve"><value>Remplacement</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeFormatting" xml:space="preserve"><value>Mise en forme</value></data>
+  <data name="TmDocumentEditor_SuggestionTypeMove"     xml:space="preserve"><value>Déplacement</value></data>
+  <data name="TmDocumentEditor_SuggestionInsertAria"   xml:space="preserve"><value>Insertion suggérée</value></data>
+  <data name="TmDocumentEditor_SuggestionDeleteAria"   xml:space="preserve"><value>Suppression suggérée</value></data>
   <data name="TmDocumentEditor_OfflineDraftAvailable"  xml:space="preserve"><value>Un brouillon hors ligne est disponible.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoaded"     xml:space="preserve"><value>Brouillon hors ligne plus récent chargé.</value></data>
   <data name="TmDocumentEditor_OfflineDraftLoadFailed" xml:space="preserve"><value>Le brouillon hors ligne n'a pas pu être chargé.</value></data>
@@ -2509,5 +2569,15 @@
   <data name="TmDocumentEditor_ImageUploadFailed"      xml:space="preserve"><value>Le téléversement de l'image a échoué.</value></data>
   <data name="TmDocumentEditor_ImageUploading"         xml:space="preserve"><value>Téléversement de l'image...</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Saut de page</value></data>
+  <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>Surface de document WYSIWYG</value></data>
+  <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Surface de document modifiable. Utilisez Tab pour passer entre le ruban, l'en-tête, le corps, le pied de page et les commentaires.</value></data>
+  <data name="TmDocumentEditor_WysiwygPageLabel"       xml:space="preserve"><value>Page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygBodyLabel"       xml:space="preserve"><value>Corps du document, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygHeaderLabel"     xml:space="preserve"><value>En-tête, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygFooterLabel"     xml:space="preserve"><value>Pied de page, page {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygImageResizeHandleLabel" xml:space="preserve"><value>Redimensionner l'image</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>Éditeur WYSIWYG indisponible</value></data>
+  <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>Le moteur d'édition WYSIWYG n'a pas pu être chargé. Veuillez utiliser l'éditeur par blocs ou recharger la page.</value></data>
+  <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Le document n'a pas pu être mis à jour. Veuillez réessayer ou recharger la page.</value></data>
 
 </root>

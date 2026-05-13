@@ -64,6 +64,7 @@
                                     <TmDocumentBlockRenderer DocumentId="@DocumentId"
                                                              Block="@nestedBlock"
                                                              ImageUrlResolver="@ImageUrlResolver"
+                                                             Suggestions="@Suggestions"
                                                              OnCommentSelected="@OnCommentSelected" />
                                 }
                             </td>
@@ -75,7 +76,7 @@
         break;
 
     case ImageBlockContent image:
-        <figure class="@GetImageClass(image)">
+        <figure class="@GetImageClass(image)" style="@GetImageFigureStyle(image)">
             @if (_isResolvingImage)
             {
                 <div class="tm-document-image__loading">@Loc["TmDocumentEditor_ImageLoading"]</div>
@@ -103,4 +104,13 @@
             <span>@Loc["TmDocumentEditor_PageBreak"]</span>
         </div>
         break;
+}
+
+@foreach (var suggestion in BlockSuggestions)
+{
+    <span class="@GetSuggestionClass(suggestion)"
+          data-testid="@GetSuggestionTestId(suggestion)"
+          aria-label="@GetSuggestionLabel(suggestion)">
+        @GetSuggestionPreview(suggestion)
+    </span>
 }

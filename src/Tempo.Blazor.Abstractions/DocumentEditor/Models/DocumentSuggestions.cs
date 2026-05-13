@@ -30,6 +30,18 @@ public sealed class DocumentSuggestion
     /// <summary>Creation timestamp.</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
+    /// <summary>Optional hash of the document snapshot the suggestion was created against.</summary>
+    public string? BaseSnapshotHash { get; set; }
+
+    /// <summary>Structured operations that apply the suggestion when accepted.</summary>
+    public List<DocumentOperation> Operations { get; set; } = [];
+
+    /// <summary>Author who reviewed the suggestion.</summary>
+    public DocumentEditorAuthor? Reviewer { get; set; }
+
+    /// <summary>Timestamp when the suggestion was accepted or rejected.</summary>
+    public DateTimeOffset? ReviewedAt { get; set; }
+
     /// <summary>Optional provider-specific payload.</summary>
     public string? PayloadJson { get; set; }
 }

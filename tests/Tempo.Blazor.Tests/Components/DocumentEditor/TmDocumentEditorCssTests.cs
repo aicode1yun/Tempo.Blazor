@@ -51,7 +51,8 @@ public class TmDocumentEditorCssTests
         css.Should().Contain(".tm-document-editor--readonly");
         css.Should().Contain(".tm-document-editor__dirty");
         css.Should().Contain(".tm-document-editor__save-message");
-        css.Should().Contain(".tm-document-editable-block--active");
+        css.Should().Contain(".tm-document-wysiwyg-host");
+        css.Should().Contain(".tm-wysiwyg-page__body");
         css.Should().Contain(".tm-document-inline--comment-anchor");
         css.Should().Contain(".tm-document-comment-thread--selected");
         css.Should().Contain(".tm-document-version-panel__preview");

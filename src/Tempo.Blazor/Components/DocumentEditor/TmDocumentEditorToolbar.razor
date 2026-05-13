@@ -1,4 +1,6 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.AspNetCore.Components.Forms
+@using Tempo.Blazor.Components.Files
 
 <header class="tm-document-editor__ribbon" role="toolbar" aria-label="@Loc["TmDocumentEditor_ToolbarLabel"]" data-testid="document-toolbar">
     <div class="tm-document-editor__ribbon-tabs" role="tablist" aria-label="@Loc["TmDocumentEditor_ToolbarTabsLabel"]">
@@ -16,6 +18,7 @@
                     type="button"
                     disabled="@(ReadOnly || IsSaving)"
                     title="@Loc["TmDocumentEditor_Save"]"
+                    aria-label="@Loc["TmDocumentEditor_Save"]"
                     @onclick="OnSave"
                     data-testid="document-save">
                 <TmIcon Name="save" Size="IconSize.Sm" />
@@ -25,6 +28,7 @@
                     type="button"
                     disabled="@(ReadOnly || !CanUndo)"
                     title="@UndoTitle"
+                    aria-label="@UndoTitle"
                     @onclick="OnUndo"
                     data-testid="document-undo">
                 <TmIcon Name="undo-2" Size="IconSize.Sm" />
@@ -34,6 +38,7 @@
                     type="button"
                     disabled="@(ReadOnly || !CanRedo)"
                     title="@RedoTitle"
+                    aria-label="@RedoTitle"
                     @onclick="OnRedo"
                     data-testid="document-redo">
                 <TmIcon Name="redo-2" Size="IconSize.Sm" />
@@ -116,6 +121,15 @@
             <button class="tm-document-editor__ribbon-button"
                     type="button"
                     disabled="@ReadOnly"
+                    title="@Loc["TmDocumentEditor_InsertTable"]"
+                    @onclick="OnInsertTable"
+                    data-testid="document-toolbar-table">
+                <TmIcon Name="table" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_InsertTable"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@ReadOnly"
                     title="@Loc["TmDocumentEditor_InsertImage"]"
                     @onclick="OnInsertImage"
                     data-testid="document-toolbar-image">
@@ -139,13 +153,40 @@
             @if (CanExportPdf)
             {
                 <button class="tm-document-editor__ribbon-button"
-                        type="button"
-                        disabled="@IsExportingPdf"
-                        title="@Loc["TmDocumentEditor_ExportPdf"]"
-                        @onclick="OnExportPdf"
-                        data-testid="document-export-pdf">
+                    type="button"
+                    disabled="@IsExportingPdf"
+                    title="@Loc["TmDocumentEditor_ExportPdf"]"
+                    aria-label="@Loc["TmDocumentEditor_ExportPdfAria"]"
+                    @onclick="OnExportPdf"
+                    data-testid="document-export-pdf">
                     <TmIcon Name="file-down" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ExportPdf"]</span>
+                </button>
+            }
+            @if (CanImportDocx)
+            {
+                <button class="tm-document-editor__ribbon-button @( _docxImportOpen ? "tm-document-editor__ribbon-button--active" : null)"
+                        type="button"
+                        disabled="@IsImportingDocx"
+                        title="@Loc["TmDocumentEditor_ImportDocx"]"
+                        aria-label="@Loc["TmDocumentEditor_ImportDocxAria"]"
+                        @onclick="ToggleDocxImportPanel"
+                        data-testid="document-import-docx-label">
+                    <TmIcon Name="upload" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_ImportDocx"]</span>
+                </button>
+            }
+            @if (CanExportDocx)
+            {
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@IsExportingDocx"
+                        title="@Loc["TmDocumentEditor_ExportDocx"]"
+                        aria-label="@Loc["TmDocumentEditor_ExportDocxAria"]"
+                        @onclick="OnExportDocx"
+                        data-testid="document-export-docx">
+                    <TmIcon Name="file-down" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_ExportDocx"]</span>
                 </button>
             }
         </section>
@@ -153,8 +194,9 @@
         <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReview"]">
             <button class="tm-document-editor__ribbon-button @(TrackChangesEnabled ? "tm-document-editor__ribbon-button--active" : null)"
                     type="button"
-                    disabled="@ReadOnly"
+                    disabled="@(ReadOnly || !CanTrackChanges)"
                     title="@Loc["TmDocumentEditor_TrackChanges"]"
+                    aria-label="@Loc["TmDocumentEditor_TrackChanges"]"
                     @onclick="OnToggleTrackChanges"
                     data-testid="document-track-changes">
                 <TmIcon Name="file-diff" Size="IconSize.Sm" />
@@ -168,6 +210,16 @@
                     data-testid="document-add-comment">
                 <TmIcon Name="message-square" Size="IconSize.Sm" />
                 <span>@Loc["TmDocumentEditor_AddComment"]</span>
+            </button>
+            <button class="tm-document-editor__ribbon-button"
+                    type="button"
+                    disabled="@(!CanCompareDocuments)"
+                    title="@Loc["TmDocumentEditor_CompareDocuments"]"
+                    aria-label="@Loc["TmDocumentEditor_CompareDocuments"]"
+                    @onclick="OnCompareDocuments"
+                    data-testid="document-compare-open">
+                <TmIcon Name="git-compare" Size="IconSize.Sm" />
+                <span>@Loc["TmDocumentEditor_CompareDocuments"]</span>
             </button>
             <button class="tm-document-editor__ribbon-button @(TemplatePreviewEnabled ? "tm-document-editor__ribbon-button--active" : null)"
                     type="button"
@@ -198,10 +250,31 @@
             <button type="button" @onclick="CloseLinkDialog">@Loc["TmDocumentEditor_Cancel"]</button>
         </section>
     }
+    @if (_docxImportOpen && CanImportDocx)
+    {
+        <section class="tm-document-editor__format-import-panel"
+                 aria-label="@Loc["TmDocumentEditor_FormatImportPanelLabel"]"
+                 data-testid="document-import-docx-panel">
+            <TmFileDropZone Multiple="false"
+                            MaxFileCount="1"
+                            Accept=".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document"
+                            Disabled="@IsImportingDocx"
+                            Class="tm-document-editor__format-drop-zone"
+                            InputTestId="document-import-docx"
+                            InputAriaLabel="@Loc["TmDocumentEditor_ImportDocxDropZoneAria"]"
+                            OnFilesSelected="HandleDocxImportSelectedAsync">
+                <div class="tm-document-editor__format-drop-zone-content">
+                    <TmIcon Name="upload" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_ImportDocxDropZone"]</span>
+                </div>
+            </TmFileDropZone>
+        </section>
+    }
 </header>
 
 @code {
     private bool _linkDialogOpen;
+    private bool _docxImportOpen;
     private string? _pendingLinkUrl;
 
     /// <summary>Whether toolbar commands should be disabled for read-only mode.</summary>
@@ -234,6 +307,9 @@
     /// <summary>Whether tracked changes are enabled.</summary>
     [Parameter] public bool TrackChangesEnabled { get; set; }
 
+    /// <summary>Whether tracked changes can be toggled.</summary>
+    [Parameter] public bool CanTrackChanges { get; set; } = true;
+
     /// <summary>Whether comment actions are currently available.</summary>
     [Parameter] public bool CanComment { get; set; } = true;
 
@@ -249,8 +325,23 @@
     /// <summary>Whether a PDF export request is running.</summary>
     [Parameter] public bool IsExportingPdf { get; set; }
 
+    /// <summary>Whether DOCX import is available through a host format provider.</summary>
+    [Parameter] public bool CanImportDocx { get; set; }
+
+    /// <summary>Whether DOCX export is available through a host format provider.</summary>
+    [Parameter] public bool CanExportDocx { get; set; }
+
+    /// <summary>Whether a DOCX import request is running.</summary>
+    [Parameter] public bool IsImportingDocx { get; set; }
+
+    /// <summary>Whether a DOCX export request is running.</summary>
+    [Parameter] public bool IsExportingDocx { get; set; }
+
     /// <summary>Optional template preview status text.</summary>
     [Parameter] public string? TemplatePreviewMessage { get; set; }
+
+    /// <summary>Whether arbitrary document comparison is available.</summary>
+    [Parameter] public bool CanCompareDocuments { get; set; }
 
     /// <summary>Raised when save is requested.</summary>
     [Parameter] public EventCallback OnSave { get; set; }
@@ -279,6 +370,9 @@
     /// <summary>Raised when the insert panel should be toggled.</summary>
     [Parameter] public EventCallback OnToggleInsert { get; set; }
 
+    /// <summary>Raised when a table should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertTable { get; set; }
+
     /// <summary>Raised when the image insert flow should open.</summary>
     [Parameter] public EventCallback OnInsertImage { get; set; }
 
@@ -288,11 +382,20 @@
     /// <summary>Raised when adding a comment is requested.</summary>
     [Parameter] public EventCallback OnAddComment { get; set; }
 
+    /// <summary>Raised when document comparison is requested.</summary>
+    [Parameter] public EventCallback OnCompareDocuments { get; set; }
+
     /// <summary>Raised when template preview should be toggled.</summary>
     [Parameter] public EventCallback OnToggleTemplatePreview { get; set; }
 
     /// <summary>Raised when PDF export is requested.</summary>
     [Parameter] public EventCallback OnExportPdf { get; set; }
+
+    /// <summary>Raised when a DOCX package is selected for import.</summary>
+    [Parameter] public EventCallback<InputFileChangeEventArgs> OnImportDocx { get; set; }
+
+    /// <summary>Raised when DOCX export is requested.</summary>
+    [Parameter] public EventCallback OnExportDocx { get; set; }
 
     private string UndoTitle => string.IsNullOrWhiteSpace(NextUndoDescription)
         ? Loc["TmDocumentEditor_Undo"]
@@ -305,6 +408,11 @@
     private void ToggleLinkDialog()
     {
         _linkDialogOpen = !_linkDialogOpen;
+    }
+
+    private void ToggleDocxImportPanel()
+    {
+        _docxImportOpen = !_docxImportOpen;
     }
 
     private void CloseLinkDialog()
@@ -321,5 +429,11 @@
 
         _pendingLinkUrl = null;
         _linkDialogOpen = false;
+    }
+
+    private async Task HandleDocxImportSelectedAsync(InputFileChangeEventArgs args)
+    {
+        await OnImportDocx.InvokeAsync(args);
+        _docxImportOpen = false;
     }
 }

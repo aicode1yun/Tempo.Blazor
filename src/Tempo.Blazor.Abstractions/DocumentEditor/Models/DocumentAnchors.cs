@@ -14,6 +14,9 @@ public class DocumentAnchor
     /// <summary>Optional target block id.</summary>
     public string? BlockId { get; set; }
 
+    /// <summary>Optional floating object block id when <see cref="BlockId"/> points to the paragraph anchor.</summary>
+    public string? ObjectBlockId { get; set; }
+
     /// <summary>Optional token key or placeholder name.</summary>
     public string? Key { get; set; }
 
@@ -112,6 +115,9 @@ public class DocumentFloatingLayout
 
     /// <summary>Z-order for multiple floating objects.</summary>
     public int ZIndex { get; set; }
+
+    /// <summary>Whether the object must keep its current paragraph anchor when moved.</summary>
+    public bool LockAnchor { get; set; }
 
     /// <summary>Optional original wrap mode when an importer normalizes an unsupported mode.</summary>
     public string? PreservedWrapMode { get; set; }
