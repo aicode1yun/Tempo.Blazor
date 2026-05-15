@@ -8,7 +8,6 @@
          aria-label="@Loc["TmNotionInlineToolbar_Label"]"
          style="top:@(_top)px;left:@(_leftClamped)px"
          @ref="_toolbarRef"
-         @onmousedown:preventDefault="true"
          @onkeydown="HandleKeyDownAsync">
 
         @if (_showLinkInput)

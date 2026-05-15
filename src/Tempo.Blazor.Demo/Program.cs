@@ -37,6 +37,7 @@ builder.Services.AddScoped<MockNotionMentionProvider>();
 builder.Services.AddScoped<MockNotionSearchProvider>();
 builder.Services.AddScoped<MockNotionWireframeDocumentProvider>();
 builder.Services.AddScoped<MockNotionDiagramDocumentProvider>();
+builder.Services.AddScoped<MockNotionImportExportProvider>();
 builder.Services.AddScoped<SignalRCollaborationProvider>();
 
 // Register Tempo.Blazor services (ITmLocalizer, ThemeService, ToastService)

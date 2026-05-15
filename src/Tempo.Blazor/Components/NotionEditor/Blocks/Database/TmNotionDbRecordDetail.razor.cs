@@ -22,6 +22,7 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     [Parameter] public EventCallback                  OnClose         { get; set; }
     [Parameter] public EventCallback<IDatabaseRecord> OnRecordUpdated { get; set; }
+    [Parameter] public EventCallback<IDatabaseRecord> OnOpenAsPage    { get; set; }
 
     // ── Field editing state ──────────────────────────────────────────────────
 
@@ -31,6 +32,11 @@ public partial class TmNotionDbRecordDetail : ComponentBase
     // ── Title editing ────────────────────────────────────────────────────────
 
     private string _titleBuffer = string.Empty;
+
+    // ── Save indicator ───────────────────────────────────────────────────────
+
+    private bool              _showSaved;
+    private CancellationTokenSource? _savedCts;
 
     // ── Content blocks ───────────────────────────────────────────────────────
 
@@ -122,8 +128,25 @@ public partial class TmNotionDbRecordDetail : ComponentBase
         {
             var result = await Context.DatabaseProvider.UpdateRecordAsync(Record.DatabaseId.ToString(), updated);
             await OnRecordUpdated.InvokeAsync(result);
+            await ShowSavedIndicatorAsync();
         }
         catch { /* silently ignore — UI already updated optimistically */ }
+    }
+
+    private async Task ShowSavedIndicatorAsync()
+    {
+        _savedCts?.Cancel();
+        _savedCts = new CancellationTokenSource();
+        var token = _savedCts.Token;
+        _showSaved = true;
+        StateHasChanged();
+        try
+        {
+            await Task.Delay(2000, token);
+            _showSaved = false;
+            StateHasChanged();
+        }
+        catch (TaskCanceledException) { }
     }
 
     // ── Block handlers ────────────────────────────────────────────────────────
@@ -236,8 +259,7 @@ public partial class TmNotionDbRecordDetail : ComponentBase
 
     private async Task HandleOpenAsPageAsync()
     {
-        if (Context.NavigateTo is not null)
-            await Context.NavigateTo(Record.Id.ToString());
+        await OnOpenAsPage.InvokeAsync(Record);
         await OnClose.InvokeAsync();
     }
 

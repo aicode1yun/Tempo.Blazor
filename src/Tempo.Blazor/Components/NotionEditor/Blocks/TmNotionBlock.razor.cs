@@ -464,10 +464,12 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleVideoMediaSetAsync((string? FileId, string? Url) media)
     {
         if (Block.Content is not IVideoBlockContent vid) return;
+        var url = media.Url ?? vid.Url;
+        var provider = !string.IsNullOrWhiteSpace(url) ? VideoProviderDetector.Detect(url) : vid.Provider;
         var updated = BuildBlockWithContent(Block, new VideoBlockContent
         {
-            Url = media.Url ?? vid.Url, FileId = media.FileId ?? vid.FileId,
-            Provider = vid.Provider, Caption = vid.Caption, Width = vid.Width
+            Url = url, FileId = media.FileId ?? vid.FileId,
+            Provider = provider, Caption = vid.Caption, Width = vid.Width
         });
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }
@@ -502,10 +504,12 @@ public partial class TmNotionBlock : ComponentBase
     private async Task HandleAudioMediaSetAsync((string? FileId, string? Url) media)
     {
         if (Block.Content is not IAudioBlockContent aud) return;
+        var url = media.Url ?? aud.Url;
+        var provider = !string.IsNullOrWhiteSpace(url) ? AudioProviderDetector.Detect(url) : aud.Provider;
         var updated = BuildBlockWithContent(Block, new AudioBlockContent
         {
-            Url = media.Url ?? aud.Url, FileId = media.FileId ?? aud.FileId,
-            Provider = aud.Provider, Caption = aud.Caption, Width = aud.Width
+            Url = url, FileId = media.FileId ?? aud.FileId,
+            Provider = provider, Caption = aud.Caption, Width = aud.Width
         });
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
         catch { }

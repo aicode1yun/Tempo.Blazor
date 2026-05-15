@@ -187,6 +187,44 @@ public partial class TmNotionTableBlock : ComponentBase
         catch { }
     }
 
+    // ── Header toggles ────────────────────────────────────────────────────────
+
+    private async Task ToggleHeaderRowAsync()
+    {
+        _hasHeaderRow = !_hasHeaderRow;
+        var updated = BuildTableBlock(Block, new TableBlockContent
+        {
+            HasHeaderRow    = _hasHeaderRow,
+            HasHeaderColumn = _hasHeaderColumn,
+            ColumnCount     = _columnCount
+        });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+            StateHasChanged();
+        }
+        catch { }
+    }
+
+    private async Task ToggleHeaderColumnAsync()
+    {
+        _hasHeaderColumn = !_hasHeaderColumn;
+        var updated = BuildTableBlock(Block, new TableBlockContent
+        {
+            HasHeaderRow    = _hasHeaderRow,
+            HasHeaderColumn = _hasHeaderColumn,
+            ColumnCount     = _columnCount
+        });
+        try
+        {
+            await Context.BlockProvider.UpdateBlockAsync(updated);
+            await OnUpdated.InvokeAsync(updated);
+            StateHasChanged();
+        }
+        catch { }
+    }
+
     // ── Cell edit ─────────────────────────────────────────────────────────────
 
     private async Task HandleCellsChangedAsync(IPageBlock row, IReadOnlyList<string> cells)

@@ -22,7 +22,16 @@
             </span>
 
             <div class="tm-dbrd__toolbar-actions">
-                @if (Context.NavigateTo is not null)
+                @if (_showSaved)
+                {
+                    <span class="tm-dbrd__saved-indicator" aria-live="polite">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                            <path d="M20 6L9 17l-5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+                        </svg>
+                        @Loc["TmNotionDbRecordDetail_Saved"]
+                    </span>
+                }
+                @if (OnOpenAsPage.HasDelegate)
                 {
                     <button class="tm-dbrd__action-btn"
                             type="button"

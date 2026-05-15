@@ -261,6 +261,50 @@ public class MockNotionBlockStore
 
         Add(BlockType.Wireframe, 31, new WireframeBlockContent());
 
+        // ── Phase 3: Table ────────────────────────────────────────────────────
+
+        Add(BlockType.Heading2, 31_1, new HeadingBlockContent { Level = 2, Html = "Phase 3: Table" });
+
+        var tableId = Guid.Parse("dddddddd-dddd-dddd-dddd-dddddddddddd");
+        _blocks[tableId] = MakeBlock(
+            id:           tableId,
+            pageId:       _pageId,
+            parentBlockId: null,
+            type:         BlockType.Table,
+            order:        31_2,
+            content:      new TableBlockContent { ColumnCount = 3, HasHeaderRow = true, HasHeaderColumn = false }
+        );
+
+        var tableRow1 = Guid.NewGuid();
+        _blocks[tableRow1] = MakeBlock(
+            id:           tableRow1,
+            pageId:       _pageId,
+            parentBlockId: tableId,
+            type:         BlockType.TableRow,
+            order:        0,
+            content:      new TableRowBlockContent { Cells = ["Name", "Status", "Priority"] }
+        );
+
+        var tableRow2 = Guid.NewGuid();
+        _blocks[tableRow2] = MakeBlock(
+            id:           tableRow2,
+            pageId:       _pageId,
+            parentBlockId: tableId,
+            type:         BlockType.TableRow,
+            order:        1,
+            content:      new TableRowBlockContent { Cells = ["Auth refactor", "In Progress", "High"] }
+        );
+
+        var tableRow3 = Guid.NewGuid();
+        _blocks[tableRow3] = MakeBlock(
+            id:           tableRow3,
+            pageId:       _pageId,
+            parentBlockId: tableId,
+            type:         BlockType.TableRow,
+            order:        2,
+            content:      new TableRowBlockContent { Cells = ["Dark mode", "Done", "Low"] }
+        );
+
         // ── Phase 3: Inline Database ──────────────────────────────────────────
 
         Add(BlockType.Heading2, 32, new HeadingBlockContent { Level = 2, Html = "Phase 3: Inline Database" });
@@ -336,6 +380,58 @@ public class MockNotionBlockStore
         AddTo(MockNotionDataStore.Page3Id, BlockType.TodoItem, 9,
             new TodoBlockContent { Html = "Charlie: write Architecture Guide first draft", IsChecked = false });
 
+        // ── Phase 12: Navigation blocks on Page 1 ────────────────────────────
+
+        Add(BlockType.Heading2, 37, new HeadingBlockContent { Level = 2, Html = "Phase 12: Navigation Blocks" });
+
+        Add(BlockType.ChildPage, 38, new ChildPageBlockContent
+        {
+            ChildPageId = MockNotionDataStore.Page2Id,
+            Title       = "Product Roadmap",
+            IconEmoji   = "📌"
+        });
+
+        Add(BlockType.LinkedPage, 39, new LinkedPageBlockContent
+        {
+            LinkedPageId = MockNotionDataStore.Page3Id,
+            Title        = "Meeting Notes",
+            IconEmoji    = "🗒️"
+        });
+
+        Add(BlockType.Breadcrumb, 40, new BreadcrumbBlockContent());
+
+        // ── Phase 13: Special blocks on Page 1 ───────────────────────────────
+
+        Add(BlockType.TableOfContents, 41, new TableOfContentsBlockContent { MaxLevel = 3 });
+
+        Add(BlockType.TemplateButton, 42, new TemplateButtonBlockContent
+        {
+            Label = "Demo Template",
+            TemplateBlocks = new List<PageBlock>
+            {
+                new PageBlock
+                {
+                    Id           = Guid.NewGuid(),
+                    PageId       = _pageId,
+                    Type         = BlockType.Heading2,
+                    Order        = 0,
+                    Content      = new HeadingBlockContent { Level = 2, Html = "Section Title" },
+                    CreatedAt    = DateTime.UtcNow,
+                    LastEditedAt = DateTime.UtcNow
+                },
+                new PageBlock
+                {
+                    Id           = Guid.NewGuid(),
+                    PageId       = _pageId,
+                    Type         = BlockType.Paragraph,
+                    Order        = 1,
+                    Content      = new TextBlockContent { Html = "Write your content here." },
+                    CreatedAt    = DateTime.UtcNow,
+                    LastEditedAt = DateTime.UtcNow
+                }
+            }
+        });
+
         // ── Page 4 — Engineering Wiki ─────────────────────────────────────────
         AddTo(MockNotionDataStore.Page4Id, BlockType.Heading1, 0,
             new HeadingBlockContent { Level = 1, Html = "Engineering Wiki" });
@@ -375,6 +471,8 @@ public class MockNotionBlockStore
             new ListBlockContent { Html = "Cascading context: <code>NotionEditorContext</code> propagates providers to all children" });
         AddTo(MockNotionDataStore.Page5Id, BlockType.NumberedList, 10,
             new ListBlockContent { Html = "Scoped CSS: every component has its own <code>.razor.css</code>" });
+
+        AddTo(MockNotionDataStore.Page5Id, BlockType.Breadcrumb, 11, new BreadcrumbBlockContent());
 
         // ── Page 6 — Development Setup ────────────────────────────────────────
         AddTo(MockNotionDataStore.Page6Id, BlockType.Heading1, 0,
@@ -512,6 +610,12 @@ public class MockNotionBlockStore
         await Task.CompletedTask;
     }
 
+    public void Reset()
+    {
+        _blocks.Clear();
+        InitializeMockBlocks();
+    }
+
     public async Task ReorderBlocksAsync(string pageId, IEnumerable<string> orderedBlockIds)
     {
         var order = 0;
@@ -571,6 +675,38 @@ public class MockNotionBlockStore
             block.Content       = CreateDefaultContent(newType);
             block.LastEditedAt  = DateTime.UtcNow;
             _blocks[id]         = block;
+
+            // When converting to Table, create default child rows
+            if (newType == BlockType.Table && block.Content is TableBlockContent tbl)
+            {
+                var colCount = tbl.ColumnCount > 0 ? tbl.ColumnCount : 3;
+                if (tbl.ColumnCount == 0)
+                {
+                    tbl.ColumnCount = colCount;
+                    _blocks[id] = block;
+                }
+
+                for (var r = 0; r < 2; r++)
+                {
+                    var rowId = Guid.NewGuid();
+                    var rowBlock = new PageBlock
+                    {
+                        Id            = rowId,
+                        PageId        = block.PageId,
+                        ParentBlockId = block.Id,
+                        Type          = BlockType.TableRow,
+                        Order         = r,
+                        Content       = new TableRowBlockContent
+                        {
+                            Cells = Enumerable.Range(0, colCount).Select(_ => string.Empty).ToList()
+                        },
+                        CreatedAt     = DateTime.UtcNow,
+                        LastEditedAt  = DateTime.UtcNow
+                    };
+                    _blocks[rowId] = rowBlock;
+                }
+            }
+
             return await Task.FromResult(block);
         }
 
@@ -609,6 +745,7 @@ public class MockNotionBlockStore
         BlockType.Equation                                          => new EquationBlockContent(),
         BlockType.Bookmark                                          => new BookmarkBlockContent(),
         BlockType.Embed                                             => new EmbedBlockContent(),
+        BlockType.Table                                             => new TableBlockContent { ColumnCount = 3 },
         BlockType.ColumnList                                        => new ColumnListBlockContent { ColumnCount = 2 },
         BlockType.Column                                            => new ColumnBlockContent(),
         BlockType.Diagram                                           => new DiagramBlockContent(),

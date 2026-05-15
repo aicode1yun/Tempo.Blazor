@@ -258,4 +258,10 @@ public class MockNotionDataStore
     {
         return _pages.Values.Cast<INotionPage>();
     }
+
+    public void Reset()
+    {
+        _pages.Clear();
+        InitializeMockData();
+    }
 }

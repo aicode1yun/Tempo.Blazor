@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -9,6 +10,10 @@ namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database;
 
 public partial class TmNotionDatabaseBlock : ComponentBase
 {
+    // ── DI ───────────────────────────────────────────────────────────────────
+
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
     // ── Cascaded context ─────────────────────────────────────────────────────
 
     [CascadingParameter]
@@ -19,8 +24,9 @@ public partial class TmNotionDatabaseBlock : ComponentBase
     [Parameter, EditorRequired] public IPageBlock Block   { get; set; } = default!;
     [Parameter] public bool ReadOnly  { get; set; }
     [Parameter] public bool IsFocused { get; set; }
-    [Parameter] public EventCallback             OnFocused { get; set; }
-    [Parameter] public EventCallback<IPageBlock> OnUpdated { get; set; }
+    [Parameter] public EventCallback             OnFocused    { get; set; }
+    [Parameter] public EventCallback<IPageBlock> OnUpdated    { get; set; }
+    [Parameter] public EventCallback             OnOpenAsPage { get; set; }
 
     // ── Derived content ──────────────────────────────────────────────────────
 
@@ -57,6 +63,17 @@ public partial class TmNotionDatabaseBlock : ComponentBase
     private INotionDatabaseFilter?             _localFilter;
     private IReadOnlyList<NotionDatabaseSort>? _localSorts;
     private NotionDatabaseGrouping?            _localGrouping;
+
+    // ── View management ───────────────────────────────────────────────────────
+    private bool           _showAddViewPicker;
+    private double         _addPickerX;
+    private double         _addPickerY;
+    private IDatabaseView? _viewContextMenu;
+    private double         _viewCtxMenuX;
+    private double         _viewCtxMenuY;
+    private IDatabaseView? _renamingView;
+    private string         _renameBuffer = string.Empty;
+    private ElementReference _renameInputRef;
 
     private IGalleryViewConfig?  GalleryConfig  => _activeView?.Config as IGalleryViewConfig;
     private ICalendarViewConfig? CalendarConfig  => _activeView?.Config as ICalendarViewConfig;
@@ -206,18 +223,121 @@ public partial class TmNotionDatabaseBlock : ComponentBase
         StateHasChanged();
     }
 
-    private async Task HandleAddViewAsync()
+    private void ToggleAddViewPicker(MouseEventArgs e)
     {
+        if (_showAddViewPicker)
+        {
+            _showAddViewPicker = false;
+        }
+        else
+        {
+            _addPickerX        = e.ClientX;
+            _addPickerY        = e.ClientY;
+            _showAddViewPicker = true;
+            _viewContextMenu   = null;
+        }
+    }
+
+    private async Task HandleAddViewAsync(DatabaseViewType type)
+    {
+        _showAddViewPicker = false;
         if (Context.DatabaseProvider is null) return;
+        var typeName = type switch
+        {
+            DatabaseViewType.Board    => Loc["TmNotionDatabaseBlock_ViewBoard"],
+            DatabaseViewType.Gallery  => Loc["TmNotionDatabaseBlock_ViewGallery"],
+            DatabaseViewType.Calendar => Loc["TmNotionDatabaseBlock_ViewCalendar"],
+            DatabaseViewType.Timeline => Loc["TmNotionDatabaseBlock_ViewTimeline"],
+            DatabaseViewType.List     => Loc["TmNotionDatabaseBlock_ViewList"],
+            _                         => Loc["TmNotionDatabaseBlock_ViewTable"]
+        };
         var newView = new DatabaseView
         {
-            Name            = Loc["TmNotionDatabaseBlock_ViewTable"],
-            Type            = DatabaseViewType.Table,
+            Name            = typeName,
+            Type            = type,
             VisibleFieldIds = _fields.Select(f => f.Id).ToList()
         };
         var created = await Context.DatabaseProvider.CreateViewAsync(_databaseId.ToString(), newView);
         _views.Add(created);
         await SetActiveViewAsync(created.Id);
+    }
+
+    private void ShowViewContextMenu(IDatabaseView view, MouseEventArgs e)
+    {
+        _viewContextMenu   = view;
+        _viewCtxMenuX      = e.ClientX;
+        _viewCtxMenuY      = e.ClientY;
+        _showAddViewPicker = false;
+    }
+
+    private void CloseViewContextMenu() => _viewContextMenu = null;
+
+    private void StartRenameView(IDatabaseView view)
+    {
+        _renamingView    = view;
+        _renameBuffer    = view.Name;
+        _viewContextMenu = null;
+        StateHasChanged();
+        _ = Task.Delay(10).ContinueWith(_ =>
+        {
+            InvokeAsync(async () =>
+            {
+                try { await _renameInputRef.FocusAsync(); } catch { }
+            });
+        });
+    }
+
+    private async Task CommitRenameViewAsync()
+    {
+        if (_renamingView is null) return;
+        var view = _renamingView;
+        _renamingView = null;
+        var name = _renameBuffer.Trim();
+        if (name.Length == 0 || name == view.Name) { StateHasChanged(); return; }
+        if (view is DatabaseView mutable)
+        {
+            mutable.Name = name;
+            if (Context.DatabaseProvider is not null)
+            {
+                try { await Context.DatabaseProvider.UpdateViewAsync(_databaseId.ToString(), mutable); }
+                catch { /* provider may not support it */ }
+            }
+        }
+        StateHasChanged();
+    }
+
+    private async Task HandleRenameViewKeyAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is "Enter")  await CommitRenameViewAsync();
+        if (e.Key is "Escape") { _renamingView = null; StateHasChanged(); }
+    }
+
+    private async Task DeleteViewAsync(IDatabaseView view)
+    {
+        _viewContextMenu = null;
+        if (_views.Count <= 1) return;
+        if (Context.DatabaseProvider is not null)
+        {
+            try { await Context.DatabaseProvider.DeleteViewAsync(_databaseId.ToString(), view.Id.ToString()); }
+            catch { /* provider may not support it */ }
+        }
+        _views.Remove(view);
+        if (_activeViewId == view.Id && _views.Count > 0)
+            await SetActiveViewAsync(_views[0].Id);
+        StateHasChanged();
+    }
+
+    private async Task DuplicateViewAsync(IDatabaseView view)
+    {
+        _viewContextMenu = null;
+        if (Context.DatabaseProvider is null) return;
+        try
+        {
+            var created = await Context.DatabaseProvider.DuplicateViewAsync(_databaseId.ToString(), view.Id.ToString());
+            _views.Add(created);
+            await SetActiveViewAsync(created.Id);
+        }
+        catch { /* ignore */ }
     }
 
     // ── Record actions ───────────────────────────────────────────────────────
@@ -277,8 +397,8 @@ public partial class TmNotionDatabaseBlock : ComponentBase
 
     private Task HandleRecordClickAsync(IDatabaseRecord record)
     {
-        _openRecord = record;
         CloseAllPanels();
+        _openRecord = record;
         return Task.CompletedTask;
     }
 
@@ -362,8 +482,8 @@ public partial class TmNotionDatabaseBlock : ComponentBase
 
     private async Task HandleOpenAsPageAsync()
     {
-        if (Context.NavigateTo is not null)
-            await Context.NavigateTo(_databaseId.ToString());
+        if (OnOpenAsPage.HasDelegate)
+            await OnOpenAsPage.InvokeAsync();
     }
 
     // ── Title editing ─────────────────────────────────────────────────────────
@@ -423,15 +543,17 @@ public partial class TmNotionDatabaseBlock : ComponentBase
 
     private void CloseAllPanels()
     {
-        _showFieldsPanel  = false;
-        _showFilterPanel  = false;
-        _showSortPanel    = false;
-        _showGroupPanel   = false;
-        _editingField     = null;
-        _openRecord       = null;
-        _showTemplateMenu = false;
-        _editingTemplate  = null;
-        _showImportExport = false;
+        _showFieldsPanel   = false;
+        _showFilterPanel   = false;
+        _showSortPanel     = false;
+        _showGroupPanel    = false;
+        _editingField      = null;
+        _openRecord        = null;
+        _showTemplateMenu  = false;
+        _editingTemplate   = null;
+        _showImportExport  = false;
+        _showAddViewPicker = false;
+        _viewContextMenu   = null;
     }
 
     private void ToggleImportExport()
@@ -584,6 +706,72 @@ public partial class TmNotionDatabaseBlock : ComponentBase
     {
         foreach (var f in _fields.Where(fld => fld.IsVisible && !fld.IsPrimary).ToList())
             await ToggleFieldVisibilityAsync(f, false);
+    }
+
+    // ── Block context menu ───────────────────────────────────────────────────
+
+    private bool   _blockCtxOpen;
+    private double _blockCtxX;
+    private double _blockCtxY;
+    private bool   _copyIdDone;
+
+    private Task HandleContextMenuAsync(MouseEventArgs e)
+    {
+        CloseAllPanels();
+        _blockCtxX    = e.ClientX;
+        _blockCtxY    = e.ClientY;
+        _blockCtxOpen = true;
+        return Task.CompletedTask;
+    }
+
+    private Task HandleRootKeyDownAsync(KeyboardEventArgs e)
+    {
+        if (e.Key is "Escape" && _blockCtxOpen)
+        {
+            _blockCtxOpen = false;
+            StateHasChanged();
+        }
+        return Task.CompletedTask;
+    }
+
+    private void CloseBlockContextMenu()
+    {
+        _blockCtxOpen = false;
+        _copyIdDone   = false;
+    }
+
+    private async Task CtxRenameAsync()
+    {
+        _blockCtxOpen = false;
+        await StartEditTitleAsync();
+    }
+
+    private async Task CtxOpenAsPageAsync()
+    {
+        _blockCtxOpen = false;
+        await HandleOpenAsPageAsync();
+    }
+
+    private Task CtxExportAsync()
+    {
+        _blockCtxOpen = false;
+        _showImportExport = true;
+        return Task.CompletedTask;
+    }
+
+    private async Task CtxCopyIdAsync()
+    {
+        try
+        {
+            await JS.InvokeVoidAsync("navigator.clipboard.writeText", _databaseId.ToString());
+        }
+        catch { /* clipboard may be blocked in some browsers */ }
+        _copyIdDone = true;
+        StateHasChanged();
+        await Task.Delay(1500);
+        _copyIdDone   = false;
+        _blockCtxOpen = false;
+        StateHasChanged();
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────

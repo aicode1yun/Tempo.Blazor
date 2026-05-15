@@ -5,6 +5,42 @@
     max-width: 100%;
 }
 
+/* ── Toolbar (header toggles) ──────────────────────────────────────────────── */
+
+.tm-notion-table-block__toolbar {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    padding-left: 28px;
+}
+
+.tm-notion-table-block__toggle {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 8px;
+    border: 1px solid var(--tm-color-border, #e3e3e3);
+    border-radius: var(--tm-radius-sm, 4px);
+    background: transparent;
+    color: var(--tm-color-muted, #9ca3af);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 0.12s, color 0.12s, border-color 0.12s;
+}
+
+.tm-notion-table-block__toggle:hover {
+    background-color: var(--tm-color-bg-hover, #f3f4f6);
+    color: var(--tm-color-text, #374151);
+}
+
+.tm-notion-table-block__toggle--active {
+    background-color: var(--tm-color-primary-bg-subtle, #eef2ff);
+    color: var(--tm-color-primary, #5470ef);
+    border-color: var(--tm-color-primary, #5470ef);
+    font-weight: 500;
+}
+
 /* ── Flex wrapper: table + add-col button ──────────────────────────────────── */
 
 .tm-notion-table-block__wrapper {

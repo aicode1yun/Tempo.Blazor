@@ -187,6 +187,39 @@ window.tmNotionEditor = (function () {
     }
 
     function applyFormat(command, value) {
+        if (command === 'unlink' && _savedRange) {
+            _applyRange(_savedRange);
+            // execCommand('unlink') often fails on <a> inserted via insertHTML.
+            // Unwrap anchor tags inside the restored selection manually.
+            const sel = window.getSelection();
+            if (sel && sel.rangeCount > 0) {
+                const range = sel.getRangeAt(0);
+                let container = range.commonAncestorContainer;
+                if (container.nodeType === Node.TEXT_NODE) {
+                    container = container.parentElement;
+                }
+                const anchors = container.nodeType === Node.ELEMENT_NODE
+                    ? container.querySelectorAll('a')
+                    : [];
+                for (const a of anchors) {
+                    const parent = a.parentNode;
+                    while (a.firstChild) {
+                        parent.insertBefore(a.firstChild, a);
+                    }
+                    parent.removeChild(a);
+                }
+                // Also unwrap if the selection itself is inside a single <a>
+                const directAnchor = container.closest?.('a');
+                if (directAnchor) {
+                    const parent = directAnchor.parentNode;
+                    while (directAnchor.firstChild) {
+                        parent.insertBefore(directAnchor.firstChild, directAnchor);
+                    }
+                    parent.removeChild(directAnchor);
+                }
+            }
+            return;
+        }
         document.execCommand(command, false, value ?? null);
     }
 
@@ -1217,13 +1250,32 @@ window.tmNotionEditor = (function () {
     // Saved selection range for link insertion (focus moves to URL input, losing selection)
     let _savedRange = null;
 
+    // Prevent toolbar buttons from stealing focus so the editor selection is preserved
+    document.addEventListener('mousedown', function (e) {
+        const toolbarEl = document.querySelector('.tm-notion-inline-toolbar');
+        if (!toolbarEl || !toolbarEl.contains(e.target)) return;
+        // Allow the link URL input to receive focus normally
+        if (e.target.closest('.tm-notion-inline-toolbar__link-input')) return;
+        e.preventDefault();
+        saveSelection();
+    }, true);
+
     function initSelectionWatcher(pageEl, dotNetRef) {
         if (!pageEl) return;
         if (_selectionWatchers.has(pageEl)) destroySelectionWatcher(pageEl);
 
         const listeners = [];
+        let _lastToolbarMouseDown = 0;
 
         function _notify() {
+            // Don't clear toolbar while user interacts with it (e.g. link input)
+            const toolbarEl = document.querySelector('.tm-notion-inline-toolbar');
+            if (toolbarEl && toolbarEl.contains(document.activeElement)) return;
+
+            // Ignore selection changes for 500ms after a toolbar mousedown
+            // (browser hasn't moved focus yet when selectionchange fires)
+            if (Date.now() - _lastToolbarMouseDown < 500) return;
+
             const sel = window.getSelection();
             if (!sel || sel.isCollapsed || sel.rangeCount === 0) {
                 dotNetRef.invokeMethodAsync('OnToolbarSelectionCleared').catch(() => {});
@@ -1249,8 +1301,20 @@ window.tmNotionEditor = (function () {
             const isItalic        = document.queryCommandState('italic');
             const isUnderline     = document.queryCommandState('underline');
             const isStrikeThrough = document.queryCommandState('strikeThrough');
-            const linkEl          = sel.anchorNode?.parentElement?.closest('a');
-            const currentHref     = linkEl?.href ?? '';
+            // Robust link detection: works when anchorNode is inside <a> or when
+            // the selection spans an element that contains an <a>.
+            let linkEl = null;
+            if (sel.anchorNode) {
+                const node = sel.anchorNode.nodeType === Node.TEXT_NODE ? sel.anchorNode.parentElement : sel.anchorNode;
+                linkEl = node?.closest?.('a');
+            }
+            if (!linkEl && range) {
+                const container = range.commonAncestorContainer;
+                if (container.nodeType === Node.ELEMENT_NODE) {
+                    linkEl = container.querySelector?.('a');
+                }
+            }
+            const currentHref = linkEl?.href ?? '';
 
             // Detect inline code by checking if selection is within a <code> element
             const codeEl   = sel.anchorNode?.parentElement?.closest('code');
@@ -1270,6 +1334,12 @@ window.tmNotionEditor = (function () {
         const onUp = () => { clearTimeout(_timer); _timer = setTimeout(_notify, 10); };
 
         listeners.push(
+            _on(document, 'mousedown', (e) => {
+                const toolbarEl = document.querySelector('.tm-notion-inline-toolbar');
+                if (toolbarEl && toolbarEl.contains(e.target)) {
+                    _lastToolbarMouseDown = Date.now();
+                }
+            }),
             _on(document, 'mouseup',  onUp),
             _on(document, 'keyup',    onUp),
             _on(document, 'selectionchange', onUp)
@@ -1288,6 +1358,12 @@ window.tmNotionEditor = (function () {
 
     function saveSelection() {
         _savedRange = _range() ? _range().cloneRange() : null;
+    }
+
+    function restoreSavedSelection() {
+        if (_savedRange) {
+            _applyRange(_savedRange);
+        }
     }
 
     function insertLinkOnSavedSelection(url) {
@@ -1785,6 +1861,70 @@ window.tmNotionPdf = (function () {
 // ── Database utilities ────────────────────────────────────────────────────────
 
 window.tmDb = window.tmDb || {};
+
+// Board drag-and-drop: fully JS-driven. Blazor drag events are async (WASM interop)
+// so preventDefault/setData never fire in time. All drag logic lives here; Blazor
+// is called back via [JSInvokable] only for state mutations.
+window.tmDb.initBoardDrag = function (element, dotNetRef) {
+    if (!element || element._tmBoardDragInit) return;
+    element._tmBoardDragInit = true;
+    console.log('[tmDb] initBoardDrag called, element:', element, 'dotNetRef:', dotNetRef);
+
+    let isDragging = false;
+    let lastEnteredCol = null;
+
+    element.addEventListener('dragstart', function (e) {
+        const card = e.target.closest('[data-record-id]');
+        console.log('[tmDb] dragstart fired, target:', e.target, 'card found:', card);
+        if (!card) return;
+        isDragging = true;
+        lastEnteredCol = null;
+        e.dataTransfer.effectAllowed = 'move';
+        e.dataTransfer.setData('text/plain', card.dataset.recordId);
+        console.log('[tmDb] dragstart: recordId=' + card.dataset.recordId + ' fromGroup=' + card.dataset.fromGroup);
+        dotNetRef.invokeMethodAsync('JsDragStart', card.dataset.recordId, card.dataset.fromGroup || '');
+    }, true);
+
+    element.addEventListener('dragover', function (e) {
+        if (!isDragging) return;
+        const col = e.target.closest('[data-group-value]');
+        if (col) e.preventDefault();
+    }, true);
+
+    element.addEventListener('dragenter', function (e) {
+        if (!isDragging) return;
+        const col = e.target.closest('[data-group-value]');
+        if (col && col !== lastEnteredCol) {
+            lastEnteredCol = col;
+            e.preventDefault();
+            console.log('[tmDb] dragenter col: groupValue=' + col.dataset.groupValue);
+            dotNetRef.invokeMethodAsync('JsDragEnter', col.dataset.groupValue);
+        }
+    }, true);
+
+    element.addEventListener('drop', function (e) {
+        const col = e.target.closest('[data-group-value]');
+        console.log('[tmDb] drop fired, isDragging=' + isDragging + ', col:', col);
+        if (!isDragging) return;
+        isDragging = false;
+        lastEnteredCol = null;
+        e.preventDefault();
+        if (col) {
+            console.log('[tmDb] drop: groupValue=' + col.dataset.groupValue);
+            dotNetRef.invokeMethodAsync('JsDrop', col.dataset.groupValue);
+        } else {
+            console.log('[tmDb] drop: outside column, calling JsDragEnd');
+            dotNetRef.invokeMethodAsync('JsDragEnd');
+        }
+    }, true);
+
+    element.addEventListener('dragend', function (e) {
+        console.log('[tmDb] dragend fired, isDragging was=' + isDragging);
+        isDragging = false;
+        lastEnteredCol = null;
+        dotNetRef.invokeMethodAsync('JsDragEnd');
+    }, true);
+};
 
 window.tmDb.downloadFileFromStream = async function (fileName, contentStreamRef) {
     const arrayBuffer = await contentStreamRef.arrayBuffer();

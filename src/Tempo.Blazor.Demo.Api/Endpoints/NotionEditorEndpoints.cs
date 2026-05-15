@@ -126,6 +126,19 @@ public static class NotionEditorEndpoints
             }
         });
 
+        blockGroup.MapPost("/batch", (BatchCreateBlocksRequest request, MockNotionBlockStore store) =>
+        {
+            try
+            {
+                var created = store.CreateBlocksAsync(request.PageId, request.Blocks, request.AfterBlockId).Result;
+                return Results.Ok(created);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(ex.Message);
+            }
+        });
+
         blockGroup.MapPut("/{blockId}", async (string blockId, PageBlock request, MockNotionBlockStore store) =>
         {
             if (!Guid.TryParse(blockId, out var id))
@@ -172,6 +185,14 @@ public static class NotionEditorEndpoints
                 return Results.NotFound();
             }
         });
+
+        // ── Reset (for E2E tests) ─────────────────────────────────────────────
+        app.MapPost("/api/notion/reset", (MockNotionDataStore dataStore, MockNotionBlockStore blockStore) =>
+        {
+            dataStore.Reset();
+            blockStore.Reset();
+            return Results.NoContent();
+        });
     }
 }
 
@@ -182,3 +203,4 @@ public record MovePageRequest(string? NewParentId);
 public record CreateBlockRequest(string PageId, PageBlock Block, string? AfterBlockId = null);
 public record ReorderBlocksRequest(string PageId, IEnumerable<string> OrderedBlockIds);
 public record ConvertBlockRequest(BlockType NewType);
+public record BatchCreateBlocksRequest(string PageId, IEnumerable<PageBlock> Blocks, string? AfterBlockId = null);

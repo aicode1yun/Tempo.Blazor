@@ -1,13 +1,18 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
+using Microsoft.JSInterop;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Database;
 
-public partial class TmNotionDbBoardView : ComponentBase
+public partial class TmNotionDbBoardView : ComponentBase, IAsyncDisposable
 {
+    [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    private ElementReference _boardRef;
+    private DotNetObjectReference<TmNotionDbBoardView>? _dotNetRef;
     private record GroupDef(string Value, string Label, string? Color);
     private record BoardGroup(string Value, string Label, string? Color, List<IDatabaseRecord> Records);
 
@@ -33,6 +38,21 @@ public partial class TmNotionDbBoardView : ComponentBase
     {
         ComputeGroups();
         ComputePreviewFields();
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            await JS.InvokeVoidAsync("tmDb.initBoardDrag", _boardRef, _dotNetRef);
+        }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        _dotNetRef?.Dispose();
+        await Task.CompletedTask;
     }
 
     private void ComputeGroups()
@@ -125,31 +145,44 @@ public partial class TmNotionDbBoardView : ComponentBase
         }
     }
 
-    // ── Drag & drop ──────────────────────────────────────────────────────────
+    // ── Drag & drop (JS-driven via [JSInvokable]) ────────────────────────────
 
     private Guid?   _dragRecordId;
     private string? _dragFromGroup;
     private string? _dragOverGroup;
 
-    private void OnDragStart(IDatabaseRecord record, string groupValue)
+    [JSInvokable]
+    public Task JsDragStart(string recordId, string fromGroup)
     {
-        _dragRecordId  = record.Id;
-        _dragFromGroup = groupValue;
+        _dragRecordId  = Guid.TryParse(recordId, out var g) ? g : (Guid?)null;
+        _dragFromGroup = fromGroup;
+        _dragOverGroup = null;
+        // Do NOT call StateHasChanged here — Blazor DOM re-render during dragstart
+        // causes the browser to lose the dragged element reference and cancel the drag.
+        return Task.CompletedTask;
     }
 
-    private void SetDragOver(string groupValue)
+    [JSInvokable]
+    public Task JsDragEnter(string groupValue)
     {
-        if (_dragRecordId is null) return;
+        if (_dragOverGroup == groupValue) return Task.CompletedTask;
         _dragOverGroup = groupValue;
+        return InvokeAsync(StateHasChanged);
     }
 
-    private async Task OnDropAsync(string groupValue)
+    [JSInvokable]
+    public async Task JsDrop(string groupValue)
     {
-        if (_dragRecordId is null) { ResetDrag(); return; }
-        if (_dragFromGroup == groupValue) { ResetDrag(); return; }
+        if (_dragRecordId is null || _dragFromGroup == groupValue)
+        {
+            await JsDragEnd();
+            return;
+        }
 
         var record = Records.FirstOrDefault(r => r.Id == _dragRecordId);
-        ResetDrag();
+        _dragRecordId  = null;
+        _dragFromGroup = null;
+        _dragOverGroup = null;
 
         if (record is DatabaseRecord mutable && GroupByField is not null)
         {
@@ -158,17 +191,19 @@ public partial class TmNotionDbBoardView : ComponentBase
                 [GroupByField.Id.ToString()] = groupValue.Length > 0 ? (object?)groupValue : null
             };
             mutable.Fields = dict;
-            await OnRecordUpdated.InvokeAsync(mutable);
+            await InvokeAsync(() => OnRecordUpdated.InvokeAsync(mutable));
         }
+
+        await InvokeAsync(StateHasChanged);
     }
 
-    private void OnDragEnd(DragEventArgs _) => ResetDrag();
-
-    private void ResetDrag()
+    [JSInvokable]
+    public Task JsDragEnd()
     {
         _dragRecordId  = null;
         _dragFromGroup = null;
         _dragOverGroup = null;
+        return InvokeAsync(StateHasChanged);
     }
 
     // ── Card actions ─────────────────────────────────────────────────────────

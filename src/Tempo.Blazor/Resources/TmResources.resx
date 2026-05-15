@@ -1119,6 +1119,8 @@
   <data name="TmNotionTableBlock_DeleteColumn"               xml:space="preserve"><value>Delete column</value></data>
   <data name="TmNotionTableBlock_DeleteRow"                  xml:space="preserve"><value>Delete row</value></data>
   <data name="TmNotionTableBlock_DragRow"                    xml:space="preserve"><value>Drag to reorder</value></data>
+  <data name="TmNotionTableBlock_ToggleHeaderRow"            xml:space="preserve"><value>Header row</value></data>
+  <data name="TmNotionTableBlock_ToggleHeaderColumn"         xml:space="preserve"><value>Header column</value></data>
 
   <!-- Phase 60: Table of Contents Block -->
   <data name="TmNotionTableOfContentsBlock_Title"             xml:space="preserve"><value>Table of contents</value></data>
@@ -1543,6 +1545,15 @@
   <data name="TmNotionDatabaseBlock_ViewCalendar"     xml:space="preserve"><value>Calendar</value></data>
   <data name="TmNotionDatabaseBlock_ViewTimeline"     xml:space="preserve"><value>Timeline</value></data>
   <data name="TmNotionDatabaseBlock_ViewList"         xml:space="preserve"><value>List</value></data>
+  <data name="TmNotionDatabaseBlock_ViewOptions"      xml:space="preserve"><value>View options</value></data>
+  <data name="TmNotionDatabaseBlock_ViewRename"       xml:space="preserve"><value>Rename</value></data>
+  <data name="TmNotionDatabaseBlock_ViewDuplicate"    xml:space="preserve"><value>Duplicate view</value></data>
+  <data name="TmNotionDatabaseBlock_ViewDelete"       xml:space="preserve"><value>Delete view</value></data>
+  <data name="TmNotionDatabaseBlock_CtxRename"        xml:space="preserve"><value>Rename database</value></data>
+  <data name="TmNotionDatabaseBlock_CtxOpenAsPage"    xml:space="preserve"><value>Open as page</value></data>
+  <data name="TmNotionDatabaseBlock_CtxExport"        xml:space="preserve"><value>Export / Import</value></data>
+  <data name="TmNotionDatabaseBlock_CtxCopyId"        xml:space="preserve"><value>Copy database ID</value></data>
+  <data name="TmNotionDatabaseBlock_CtxCopied"        xml:space="preserve"><value>Copied!</value></data>
   <data name="TmNotionDatabaseBlock_CheckedYes"       xml:space="preserve"><value>Yes</value></data>
   <data name="TmNotionDatabaseBlock_CheckedNo"        xml:space="preserve"><value>No</value></data>
 
@@ -1747,6 +1758,7 @@
   <data name="TmNotionDbRecordDetail_Close"              xml:space="preserve"><value>Close</value></data>
   <data name="TmNotionDbRecordDetail_OpenAsPage"         xml:space="preserve"><value>Open as full page</value></data>
   <data name="TmNotionDbRecordDetail_Properties"         xml:space="preserve"><value>Properties</value></data>
+  <data name="TmNotionDbRecordDetail_Saved"              xml:space="preserve"><value>Saved</value></data>
 
   <!-- TmNotionDbTemplateMenu -->
   <data name="TmNotionDbTemplateMenu_Title"             xml:space="preserve"><value>Templates</value></data>

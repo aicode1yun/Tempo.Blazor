@@ -3,21 +3,17 @@
 @using Tempo.Blazor.NotionEditor.Interfaces
 @using Tempo.Blazor.NotionEditor.Enums
 
-<div class="tm-dbb" @ondragend="OnDragEnd">
+<div class="tm-dbb" @ref="_boardRef">
 
     <div class="tm-dbb__scroll">
 
         @foreach (var group in _groups)
         {
             var gv      = group.Value;
-            var isTarget = _dragOverGroup == gv && _dragRecordId is not null;
+            var isTarget = _dragOverGroup == gv && _dragRecordId.HasValue;
 
             <div class="tm-dbb__col @(isTarget ? "tm-dbb__col--target" : "")"
-                 @ondragover:preventDefault="true"
-                 @ondragenter:preventDefault="true"
-                 @ondragenter="() => SetDragOver(gv)"
-                 @ondrop:preventDefault="true"
-                 @ondrop="() => OnDropAsync(gv)">
+                 data-group-value="@gv">
 
                 @* ── Column header ───────────────────────────── *@
                 <div class="tm-dbb__col-header">
@@ -53,10 +49,11 @@
 
                         <div class="tm-dbb__card @(isDraggingThis ? "tm-dbb__card--dragging" : "")"
                              draggable="@(!ReadOnly ? "true" : "false")"
+                             data-record-id="@rec.Id"
+                             data-from-group="@gv"
                              role="button"
                              tabindex="0"
                              @key="rec.Id"
-                             @ondragstart="() => OnDragStart(rec, gv)"
                              @onclick="() => HandleCardClickAsync(rec)"
                              @onkeydown="e => HandleCardKeyAsync(e, rec)">
 

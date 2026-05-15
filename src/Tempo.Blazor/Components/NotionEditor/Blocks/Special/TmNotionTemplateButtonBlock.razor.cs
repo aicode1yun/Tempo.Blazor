@@ -104,7 +104,7 @@ public partial class TmNotionTemplateButtonBlock : ComponentBase
     private async Task SaveConfigAsync()
     {
         var templateBlocks = _configBlocks
-            .Select((type, i) => (IPageBlock)new PageBlock
+            .Select((type, i) => new PageBlock
             {
                 Id      = Guid.NewGuid(),
                 Type    = type,
