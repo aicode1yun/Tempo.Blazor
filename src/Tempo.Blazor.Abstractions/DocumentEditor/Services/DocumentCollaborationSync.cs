@@ -10,6 +10,7 @@ public class DocumentCollaborationSync
     private readonly IDocumentCollaborationProvider _provider;
     private readonly DocumentOperationApplier _applier;
     private readonly DocumentOperationConflictResolver _resolver;
+    private readonly DocumentWysiwygOperationMapper _wysiwygOperationMapper;
     private readonly DocumentOperationLog _operationLog = new();
     private DocumentCollaborationSession? _session;
 
@@ -17,11 +18,13 @@ public class DocumentCollaborationSync
     public DocumentCollaborationSync(
         IDocumentCollaborationProvider provider,
         DocumentOperationApplier? applier = null,
-        DocumentOperationConflictResolver? resolver = null)
+        DocumentOperationConflictResolver? resolver = null,
+        DocumentWysiwygOperationMapper? wysiwygOperationMapper = null)
     {
         _provider = provider;
         _applier = applier ?? new DocumentOperationApplier();
         _resolver = resolver ?? new DocumentOperationConflictResolver();
+        _wysiwygOperationMapper = wysiwygOperationMapper ?? new DocumentWysiwygOperationMapper();
     }
 
     /// <summary>Current document.</summary>
@@ -35,6 +38,9 @@ public class DocumentCollaborationSync
 
     /// <summary>Remote cursors currently known to the sync coordinator.</summary>
     public IReadOnlyList<DocumentCollaborationCursor> RemoteCursors { get; private set; } = [];
+
+    /// <summary>Operations applied during the last reconnect cycle.</summary>
+    public IReadOnlyList<DocumentOperation> LastAppliedRemoteOperations { get; private set; } = [];
 
     /// <summary>Joined collaboration session.</summary>
     public DocumentCollaborationSession? Session => _session;
@@ -73,6 +79,16 @@ public class DocumentCollaborationSync
     public DocumentOperationBatch CreateLocalEditBatch(DocumentEditorDocument before, DocumentEditorDocument after)
     {
         var operations = new List<DocumentOperation>();
+        var revisionOperationBlockIds = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var revisionOperation in CreateRevisionOperations(before, after))
+        {
+            operations.Add(revisionOperation);
+            if (!string.IsNullOrWhiteSpace(revisionOperation.Revision?.Range.BlockId))
+            {
+                revisionOperationBlockIds.Add(revisionOperation.Revision.Range.BlockId);
+            }
+        }
+
         foreach (var afterBlock in after.Blocks.OrderBy(block => block.Order))
         {
             var beforeBlock = before.Blocks.FirstOrDefault(block => block.Id == afterBlock.Id);
@@ -98,16 +114,20 @@ public class DocumentCollaborationSync
                 });
             }
 
-            var beforeText = GetBlockText(beforeBlock);
-            var afterText = GetBlockText(afterBlock);
-            if (!string.Equals(beforeText, afterText, StringComparison.Ordinal))
+            if (!revisionOperationBlockIds.Contains(afterBlock.Id)
+                && !BlocksEqualExceptOrder(beforeBlock, afterBlock))
             {
                 operations.Add(new DocumentOperation
                 {
-                    Type = DocumentOperationType.SetBlockAttribute,
-                    Target = new DocumentOperationTarget { BlockId = afterBlock.Id },
-                    AttributeName = "text",
-                    AttributeValueJson = JsonSerializer.Serialize(afterText, DocumentEditorJson.Options),
+                    Type = DocumentOperationType.UpdateBlock,
+                    Target = new DocumentOperationTarget
+                    {
+                        BlockId = afterBlock.Id,
+                        Order = Math.Abs(beforeBlock.Order - afterBlock.Order) > double.Epsilon
+                            ? afterBlock.Order
+                            : null
+                    },
+                    Block = Clone(afterBlock),
                     Metadata = CreateMetadata()
                 });
             }
@@ -130,6 +150,62 @@ public class DocumentCollaborationSync
         };
     }
 
+    private IEnumerable<DocumentOperation> CreateRevisionOperations(DocumentEditorDocument before, DocumentEditorDocument after)
+    {
+        foreach (var revision in after.Revisions)
+        {
+            var previous = before.Revisions.FirstOrDefault(item => item.Id == revision.Id);
+            if (previous is null)
+            {
+                yield return CreateRevisionOperation(DocumentOperationType.CreateRevision, revision);
+                continue;
+            }
+
+            if (previous.Action == DocumentRevisionAction.Pending
+                && revision.Action is DocumentRevisionAction.Accepted or DocumentRevisionAction.Rejected)
+            {
+                yield return CreateRevisionOperation(
+                    revision.Action == DocumentRevisionAction.Accepted
+                        ? DocumentOperationType.AcceptRevision
+                        : DocumentOperationType.RejectRevision,
+                    revision);
+            }
+        }
+    }
+
+    private DocumentOperation CreateRevisionOperation(DocumentOperationType type, DocumentRevision revision)
+    {
+        var target = new DocumentOperationTarget
+        {
+            BlockId = revision.Range.BlockId,
+            InlineIndex = revision.Range.StartInlineIndex,
+            Offset = revision.Range.StartOffset
+        };
+        if (revision.Range.StartOffset is not null && revision.Range.EndOffset is not null)
+        {
+            target.Length = Math.Max(0, revision.Range.EndOffset.Value - revision.Range.StartOffset.Value);
+        }
+
+        var metadata = CreateMetadata();
+        metadata.RevisionId = revision.Id;
+        metadata.RevisionType = revision.Type.ToString();
+
+        return new DocumentOperation
+        {
+            Type = type,
+            Target = target,
+            Text = type == DocumentOperationType.CreateRevision ? revision.PayloadJson : null,
+            Revision = Clone(revision),
+            Metadata = metadata
+        };
+    }
+
+    /// <summary>Creates an operation batch from a local WYSIWYG patch.</summary>
+    public DocumentOperationBatch CreateLocalPatchBatch(DocumentEditorDocument before, WysiwygPatch patch)
+    {
+        return _wysiwygOperationMapper.CreateBatch(before, patch, CreateMetadata(patch));
+    }
+
     /// <summary>Applies and broadcasts local operations optimistically.</summary>
     public async Task<DocumentOperationValidationResult> SubmitLocalBatchAsync(
         DocumentOperationBatch batch,
@@ -140,12 +216,19 @@ public class DocumentCollaborationSync
             return DocumentOperationValidationResult.Invalid("Collaboration session is not joined.");
         }
 
+        EnsureLocalOperationIdentity(batch);
         var resolved = _resolver.Resolve(batch.Operations);
         batch.Operations = resolved.ToList();
+        EnsureLocalOperationIdentity(batch);
         var append = _operationLog.Append(batch);
         if (!append.IsValid)
         {
             return append;
+        }
+
+        if (batch.Operations.Count == 0)
+        {
+            return DocumentOperationValidationResult.Valid();
         }
 
         var apply = _applier.Apply(Document, batch);
@@ -163,11 +246,24 @@ public class DocumentCollaborationSync
     /// <summary>Applies a remote operation batch while preserving local dirty state.</summary>
     public DocumentOperationValidationResult ApplyRemoteBatch(DocumentCollaborationOperationBatch remoteBatch)
     {
+        if (_session is not null && string.Equals(remoteBatch.SessionId, _session.Id, StringComparison.Ordinal))
+        {
+            LastSeenSequence = Math.Max(LastSeenSequence, remoteBatch.Sequence);
+            return DocumentOperationValidationResult.Valid();
+        }
+
         var wasDirty = IsDirty;
         var append = _operationLog.Append(remoteBatch.Batch);
         if (!append.IsValid)
         {
             return append;
+        }
+
+        if (remoteBatch.Batch.Operations.Count == 0)
+        {
+            LastSeenSequence = Math.Max(LastSeenSequence, remoteBatch.Sequence);
+            IsDirty = wasDirty;
+            return DocumentOperationValidationResult.Valid();
         }
 
         var resolved = _resolver.Resolve(remoteBatch.Batch.Operations);
@@ -181,21 +277,31 @@ public class DocumentCollaborationSync
     /// <summary>Fetches and applies missed remote batches after reconnect.</summary>
     public async Task<DocumentOperationValidationResult> ReconnectAsync(CancellationToken cancellationToken = default)
     {
+        LastAppliedRemoteOperations = [];
         if (_session is null)
         {
             return DocumentOperationValidationResult.Invalid("Collaboration session is not joined.");
         }
 
+        var appliedOperations = new List<DocumentOperation>();
         var batches = await _provider.GetOperationBatchesAsync(Document.DocumentId, LastSeenSequence, cancellationToken);
         foreach (var batch in batches)
         {
+            var isEcho = string.Equals(batch.SessionId, _session.Id, StringComparison.Ordinal);
             var result = ApplyRemoteBatch(batch);
             if (!result.IsValid)
             {
+                LastAppliedRemoteOperations = appliedOperations;
                 return result;
+            }
+
+            if (!isEcho && batch.Batch.Operations.Count > 0)
+            {
+                appliedOperations.AddRange(batch.Batch.Operations.Select(Clone));
             }
         }
 
+        LastAppliedRemoteOperations = appliedOperations;
         return DocumentOperationValidationResult.Valid();
     }
 
@@ -216,36 +322,53 @@ public class DocumentCollaborationSync
             .ToList();
     }
 
-    private DocumentOperationMetadata CreateMetadata()
+    private DocumentOperationMetadata CreateMetadata(WysiwygPatch? patch = null)
     {
         return new DocumentOperationMetadata
         {
             AuthorId = _session?.Author.Id ?? string.Empty,
+            OriginSessionId = _session?.Id,
             ClientId = _session?.ClientId,
-            LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+            LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            TransactionId = patch?.TransactionId,
+            RevisionId = patch?.RevisionId,
+            RevisionType = patch?.RevisionType
         };
     }
 
-    private static string GetBlockText(DocumentBlock block)
+    private void EnsureLocalOperationIdentity(DocumentOperationBatch batch)
     {
-        return block.Content switch
+        foreach (var operation in batch.Operations)
         {
-            ParagraphBlockContent paragraph => GetInlineText(paragraph.Inlines),
-            HeadingBlockContent heading => GetInlineText(heading.Inlines),
-            ListBlockContent list => GetInlineText(list.Inlines),
-            QuoteBlockContent quote => GetInlineText(quote.Inlines),
-            _ => string.Empty
-        };
+            if (string.IsNullOrWhiteSpace(operation.OperationId))
+            {
+                operation.OperationId = Guid.NewGuid().ToString("N");
+            }
+
+            operation.Metadata ??= new DocumentOperationMetadata();
+            operation.Metadata.OriginSessionId = _session?.Id;
+            operation.Metadata.ClientId ??= _session?.ClientId;
+            if (string.IsNullOrWhiteSpace(operation.Metadata.AuthorId))
+            {
+                operation.Metadata.AuthorId = _session?.Author.Id ?? string.Empty;
+            }
+
+            if (operation.Metadata.LogicalTimestamp <= 0)
+            {
+                operation.Metadata.LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+            }
+        }
     }
 
-    private static string GetInlineText(IEnumerable<InlineContent> inlines)
+    private static bool BlocksEqualExceptOrder(DocumentBlock left, DocumentBlock right)
     {
-        return string.Concat(inlines.Select(inline => inline switch
-        {
-            TextRun run => run.Text,
-            TokenRun token => string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
-            _ => string.Empty
-        }));
+        var normalizedLeft = Clone(left);
+        var normalizedRight = Clone(right);
+        normalizedLeft.Order = 0;
+        normalizedRight.Order = 0;
+        var leftJson = JsonSerializer.Serialize(normalizedLeft, DocumentEditorJson.Options);
+        var rightJson = JsonSerializer.Serialize(normalizedRight, DocumentEditorJson.Options);
+        return string.Equals(leftJson, rightJson, StringComparison.Ordinal);
     }
 
     private static T Clone<T>(T value)

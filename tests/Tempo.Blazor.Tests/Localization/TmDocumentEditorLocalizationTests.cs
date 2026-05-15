@@ -48,6 +48,21 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
             ["TmDocumentEditor_Bold"] = "LOC bold",
             ["TmDocumentEditor_Italic"] = "LOC italic",
             ["TmDocumentEditor_Underline"] = "LOC underline",
+            ["TmDocumentEditor_FontFamily"] = "LOC font",
+            ["TmDocumentEditor_FontFamilyDefault"] = "LOC default font",
+            ["TmDocumentEditor_FontSize"] = "LOC size",
+            ["TmDocumentEditor_FontColor"] = "LOC font color",
+            ["TmDocumentEditor_HighlightColor"] = "LOC highlight",
+            ["TmDocumentEditor_GroupParagraph"] = "LOC paragraph",
+            ["TmDocumentEditor_AlignLeft"] = "LOC left",
+            ["TmDocumentEditor_AlignCenter"] = "LOC center",
+            ["TmDocumentEditor_AlignRight"] = "LOC right",
+            ["TmDocumentEditor_AlignJustify"] = "LOC justify",
+            ["TmDocumentEditor_LineSpacing"] = "LOC line spacing",
+            ["TmDocumentEditor_SpacingBefore"] = "LOC before",
+            ["TmDocumentEditor_SpacingAfter"] = "LOC after",
+            ["TmDocumentEditor_DecreaseIndent"] = "LOC decrease indent",
+            ["TmDocumentEditor_IncreaseIndent"] = "LOC increase indent",
             ["TmDocumentEditor_Link"] = "LOC link",
             ["TmDocumentEditor_ClearFormatting"] = "LOC clear formatting",
             ["TmDocumentEditor_Insert"] = "LOC insert command",
@@ -67,10 +82,12 @@ public class TmDocumentEditorLocalizationTests : LocalizationTestBase
         var text = cut.Markup;
         text.Should().Contain("LOC home");
         text.Should().Contain("LOC save");
-        text.Should().Contain("LOC PDF");
         text.Should().NotContain(">Home<");
         text.Should().NotContain(">Save<");
-        text.Should().NotContain(">Export PDF<");
+
+        cut.Find("[data-testid='document-ribbon-tab-references']").Click();
+        cut.Markup.Should().Contain("LOC PDF");
+        cut.Markup.Should().NotContain(">Export PDF<");
     }
 
     [Fact]

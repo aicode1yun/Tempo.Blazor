@@ -139,6 +139,26 @@ public class TmIconTests : LocalizationTestBase
         cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect");
     }
 
+    [Theory]
+    [InlineData(IconNames.Undo2)]
+    [InlineData(IconNames.Redo2)]
+    [InlineData(IconNames.Eraser)]
+    [InlineData(IconNames.Table)]
+    [InlineData(IconNames.PanelTop)]
+    [InlineData(IconNames.Pilcrow)]
+    [InlineData(IconNames.FileDown)]
+    [InlineData(IconNames.FileDiff)]
+    [InlineData(IconNames.GitCompare)]
+    public void TmIcon_DocumentEditorRibbonIcons_RenderBuiltInIcons(string iconName)
+    {
+        var cut = RenderComponent<TmIcon>(p => p
+            .Add(c => c.Name, iconName));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect");
+    }
+
     [Fact]
     public void TmIcon_UnknownName_Renders_Empty_Svg_Without_Throwing()
     {

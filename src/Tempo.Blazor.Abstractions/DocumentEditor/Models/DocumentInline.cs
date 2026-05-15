@@ -114,7 +114,13 @@ public enum InlineMarkType
     Highlight,
 
     /// <summary>Text color.</summary>
-    TextColor
+    TextColor,
+
+    /// <summary>Font family.</summary>
+    FontFamily,
+
+    /// <summary>Font size.</summary>
+    FontSize
 }
 
 /// <summary>Hyperlink metadata.</summary>

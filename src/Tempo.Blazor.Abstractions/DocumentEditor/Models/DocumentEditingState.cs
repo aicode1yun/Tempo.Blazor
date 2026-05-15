@@ -12,12 +12,24 @@ public class DocumentEditorSelectionState
     /// <summary>Selected table cell id, when the active block is a table.</summary>
     public string? ActiveTableCellId { get; set; }
 
+    /// <summary>Logical editor region that owns the active selection.</summary>
+    public string Region { get; set; } = "Body";
+
+    /// <summary>Active header/footer id when <see cref="Region"/> is Header or Footer.</summary>
+    public string? HeaderFooterId { get; set; }
+
+    /// <summary>Zero-based rendered page index for the active selection.</summary>
+    public int? PageIndex { get; set; }
+
     /// <summary>Clears the current selection.</summary>
     public void Clear()
     {
         ActiveBlockId = null;
         FocusedInlineRange = null;
         ActiveTableCellId = null;
+        Region = "Body";
+        HeaderFooterId = null;
+        PageIndex = null;
     }
 }
 

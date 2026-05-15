@@ -25,24 +25,34 @@ public static class IconNames
     public const string Trash2       = "trash-2";
     /// <summary>Icon name for: Save.</summary>
     public const string Save         = "save";
+    /// <summary>Icon name for: Clear formatting.</summary>
+    public const string Eraser       = "eraser";
     /// <summary>Icon name for: Copy.</summary>
     public const string Copy         = "copy";
     /// <summary>Icon name for: Brush, Format Painter.</summary>
     public const string Brush        = "brush";
     /// <summary>Icon name for: Paste.</summary>
     public const string Paste        = "paste";
+    /// <summary>Icon name for: Undo.</summary>
+    public const string Undo2        = "undo-2";
+    /// <summary>Icon name for: Redo.</summary>
+    public const string Redo2        = "redo-2";
     /// <summary>Icon name for: Send.</summary>
     public const string Send         = "send";
     /// <summary>Icon name for: Refresh, Reload.</summary>
     public const string Refresh      = "refresh";
     /// <summary>Icon name for: Download.</summary>
     public const string Download     = "download";
+    /// <summary>Icon name for: File download.</summary>
+    public const string FileDown     = "file-down";
     /// <summary>Icon name for: Upload.</summary>
     public const string Upload       = "upload";
     /// <summary>Icon name for: Share.</summary>
     public const string Share        = "share";
     /// <summary>Icon name for: Print.</summary>
     public const string Print        = "print";
+    /// <summary>Icon name for: Ruler.</summary>
+    public const string Ruler        = "ruler";
 
     // ─── Navigation ───────────────────────────────────────────────────────────
     /// <summary>Icon name for: Home.</summary>
@@ -105,6 +115,8 @@ public static class IconNames
     public const string FilePlus      = "file-plus";
     /// <summary>Icon name for: FileCheck, VerifiedFile.</summary>
     public const string FileCheck     = "file-check";
+    /// <summary>Icon name for: FileDiff, tracked changes.</summary>
+    public const string FileDiff      = "file-diff";
     /// <summary>Icon name for: Folder.</summary>
     public const string Folder        = "folder";
     /// <summary>Icon name for: FolderOpen.</summary>
@@ -137,10 +149,14 @@ public static class IconNames
     public const string BellOff       = "bell-off";
     /// <summary>Icon name for: Grid, Layout.</summary>
     public const string Grid          = "grid";
+    /// <summary>Icon name for: Table.</summary>
+    public const string Table         = "table";
     /// <summary>Icon name for: List.</summary>
     public const string List          = "list";
     /// <summary>Icon name for: Columns.</summary>
     public const string Columns       = "columns";
+    /// <summary>Icon name for: PanelTop.</summary>
+    public const string PanelTop      = "panel-top";
     /// <summary>Icon name for: Sidebar.</summary>
     public const string Sidebar       = "sidebar";
     /// <summary>Icon name for: Sliders, Settings, Filter.</summary>
@@ -173,6 +189,8 @@ public static class IconNames
     public const string Link          = "link";
     /// <summary>Icon name for: Link2, URL.</summary>
     public const string Link2         = "link-2";
+    /// <summary>Icon name for: GitCompare, compare.</summary>
+    public const string GitCompare    = "git-compare";
 
     // ─── Shapes & Indicators ──────────────────────────────────────────────────
     /// <summary>Icon name for: Circle.</summary>
@@ -317,12 +335,20 @@ public static class IconNames
     public const string AlignCenter   = "align-center";
     /// <summary>Icon name for: AlignRight.</summary>
     public const string AlignRight    = "align-right";
+    /// <summary>Icon name for: AlignJustify.</summary>
+    public const string AlignJustify  = "align-justify";
+    /// <summary>Icon name for: IncreaseIndent.</summary>
+    public const string IndentIncrease = "indent-increase";
+    /// <summary>Icon name for: DecreaseIndent.</summary>
+    public const string IndentDecrease = "indent-decrease";
     /// <summary>Icon name for: Bold.</summary>
     public const string Bold          = "bold";
     /// <summary>Icon name for: Italic.</summary>
     public const string Italic        = "italic";
     /// <summary>Icon name for: Underline.</summary>
     public const string Underline     = "underline";
+    /// <summary>Icon name for: Pilcrow, paragraph mark.</summary>
+    public const string Pilcrow       = "pilcrow";
     /// <summary>Icon name for: Strikethrough.</summary>
     public const string Strikethrough = "strikethrough";
     /// <summary>Icon name for: Type, Typography.</summary>

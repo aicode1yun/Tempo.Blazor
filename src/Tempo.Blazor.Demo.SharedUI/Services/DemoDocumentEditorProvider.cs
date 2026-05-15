@@ -7,7 +7,7 @@ namespace Tempo.Blazor.Demo.Services;
 /// <summary>Demo provider for <c>TmDocumentEditor</c>.</summary>
 public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
 {
-    private const string DemoImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=";
+    private const string DemoImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAC0CAYAAADl5PURAAACsUlEQVR42u3ZzQ2CQBCAUYuwFLuxDjuwBDqgAK9UZfwB9ECC04JGdJd5hzeZ80C+y252+9MMkNHGEQABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEBAAB0CEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAgAIDOD6nGSAjAQQEEEAAAQQQQAABBBBAAAEEEKDiAA4xADISQEAAAQQQQAABBBBAAAEEEEAAAQQQQAB/pWk74MsEUABBAAVQAEEABVAAQQAFUABBAAUQYBUBfMQCkJAAAgIIIIAAAggggAACCCCAAAIIUHEA+xgAGQkgIIAAAliJ8zgDhRNAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBHIE8D5Oc438XFC+0jsigIAACiAggAIICKAAAgIogIAACiAggAIICKAAAgIogIAACiAggAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKICAAAogIIACCAjgGwG8xViT7fGwiLXdCag4gEIHpAig2AECKHSAAIodkDiAPh6Q9hEEQAABPg7gEAtAQgIICCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgjgMpq2g2KIiQAKIAKIAAogAogACiACiAAKIAJIgQG8xgDISAABAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQIC/BrCPBSAhAQQEEEAAAQQQQAABBBBAAAEEEKDiAF5iAGQkgIAAAgggQBIvAt6vRwtbqO0AAAAASUVORK5CYII=";
     private readonly HttpClient? _http;
 
     /// <summary>Creates the demo provider with sample legal documents.</summary>
@@ -27,7 +27,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Source = DocumentImageSource.Url,
                 Url = DemoImageUrl,
                 AltText = "Embedded evidence preview",
-                Caption = "Evidence image loaded from a URL"
+                Caption = "Evidence image loaded from a URL",
+                Size = new DocumentImageSize { Width = 220, Height = 124 },
+                Alignment = DocumentImageAlignment.Center
             }
         });
 
@@ -40,7 +42,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Source = DocumentImageSource.Asset,
                 AssetId = DemoDocumentImageUrlResolver.ContractAssetId,
                 AltText = "Provider-managed exhibit",
-                Caption = "Image resolved through IDocumentImageUrlResolver"
+                Caption = "Image resolved through IDocumentImageUrlResolver",
+                Size = new DocumentImageSize { Width = 240, Height = 135 },
+                Alignment = DocumentImageAlignment.Center
             }
         });
 
@@ -442,7 +446,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Source = DocumentImageSource.Url,
                 Url = DemoImageUrl,
                 AltText = "URL exhibit",
-                Caption = "Image inserted from a URL"
+                Caption = "Image inserted from a URL",
+                Size = new DocumentImageSize { Width = 220, Height = 124 },
+                Alignment = DocumentImageAlignment.Center
             }
         });
         document.Blocks.Add(new DocumentBlock
@@ -454,7 +460,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Source = DocumentImageSource.Asset,
                 AssetId = DemoDocumentImageUrlResolver.ExhibitAssetId,
                 AltText = "Provider exhibit",
-                Caption = "Image resolved through the demo image provider"
+                Caption = "Image resolved through the demo image provider",
+                Size = new DocumentImageSize { Width = 240, Height = 135 },
+                Alignment = DocumentImageAlignment.Center
             }
         });
         return document;

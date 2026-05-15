@@ -4,6 +4,66 @@ using Tempo.Blazor.DocumentEditor.Models;
 
 namespace Tempo.Blazor.DocumentEditor.Services;
 
+/// <summary>In-memory font provider with a conservative cross-platform font catalog.</summary>
+public class InMemoryDocumentFontProvider : IDocumentFontProvider
+{
+    private readonly IReadOnlyList<DocumentFontFamily> _families;
+    private readonly string _fallbackKey;
+
+    /// <summary>Creates a font provider.</summary>
+    public InMemoryDocumentFontProvider(
+        IEnumerable<DocumentFontFamily>? families = null,
+        string fallbackKey = "aptos")
+    {
+        _families = (families ?? DefaultFamilies()).Select(Clone).ToList();
+        _fallbackKey = string.IsNullOrWhiteSpace(fallbackKey) ? "aptos" : fallbackKey;
+    }
+
+    /// <inheritdoc />
+    public Task<IReadOnlyList<DocumentFontFamily>> GetFontFamiliesAsync(
+        DocumentFontQuery? query = null,
+        CancellationToken cancellationToken = default)
+    {
+        return Task.FromResult<IReadOnlyList<DocumentFontFamily>>(_families.Select(Clone).ToList());
+    }
+
+    /// <inheritdoc />
+    public Task<DocumentFontFamily> GetFallbackFontAsync(
+        DocumentFontQuery? query = null,
+        CancellationToken cancellationToken = default)
+    {
+        var fallback = _families.FirstOrDefault(font => string.Equals(font.Key, _fallbackKey, StringComparison.OrdinalIgnoreCase))
+            ?? _families.FirstOrDefault(font => font.IsFallback)
+            ?? _families.First();
+
+        return Task.FromResult(Clone(fallback));
+    }
+
+    private static IReadOnlyList<DocumentFontFamily> DefaultFamilies()
+    {
+        return
+        [
+            new() { Key = "aptos", DisplayName = "Aptos", CssFamily = "Aptos, Calibri, Arial, sans-serif", IsFallback = true },
+            new() { Key = "arial", DisplayName = "Arial", CssFamily = "Arial, Helvetica, sans-serif" },
+            new() { Key = "calibri", DisplayName = "Calibri", CssFamily = "Calibri, Aptos, Arial, sans-serif" },
+            new() { Key = "times-new-roman", DisplayName = "Times New Roman", CssFamily = "\"Times New Roman\", Times, serif" },
+            new() { Key = "georgia", DisplayName = "Georgia", CssFamily = "Georgia, \"Times New Roman\", serif" },
+            new() { Key = "courier-new", DisplayName = "Courier New", CssFamily = "\"Courier New\", Courier, monospace" }
+        ];
+    }
+
+    private static DocumentFontFamily Clone(DocumentFontFamily font)
+    {
+        return new DocumentFontFamily
+        {
+            Key = font.Key,
+            DisplayName = font.DisplayName,
+            CssFamily = font.CssFamily,
+            IsFallback = font.IsFallback
+        };
+    }
+}
+
 /// <summary>In-memory offline draft store for tests and demos.</summary>
 public class InMemoryDocumentOfflineStore : IDocumentOfflineStore
 {

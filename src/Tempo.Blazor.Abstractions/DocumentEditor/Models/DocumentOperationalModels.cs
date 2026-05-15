@@ -179,8 +179,37 @@ public enum DocumentEditorAuditResult
 /// <summary>Low-level operation intended for future OT/CRDT engines.</summary>
 public class DocumentOperation
 {
+    private string _operationId = Guid.NewGuid().ToString("N");
+
     /// <summary>Stable operation id.</summary>
-    public string Id { get; set; } = Guid.NewGuid().ToString("N");
+    public string OperationId
+    {
+        get => _operationId;
+        set => _operationId = value;
+    }
+
+    /// <summary>Stable operation id.</summary>
+    [JsonIgnore]
+    [Obsolete("Use OperationId. Id remains as a JSON/backward-compatibility alias.")]
+    public string Id
+    {
+        get => OperationId;
+        set => OperationId = value;
+    }
+
+    /// <summary>Legacy JSON operation id alias.</summary>
+    [JsonPropertyName("Id")]
+    public string? LegacyOperationId
+    {
+        get => null;
+        set
+        {
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                OperationId = value;
+            }
+        }
+    }
 
     /// <summary>Document schema version this operation was created for.</summary>
     public int SchemaVersion { get; set; } = DocumentEditorDocument.CurrentSchemaVersion;
@@ -203,6 +232,9 @@ public class DocumentOperation
     /// <summary>Block payload for insert block operations.</summary>
     public DocumentBlock? Block { get; set; }
 
+    /// <summary>Revision payload for tracked-change operations.</summary>
+    public DocumentRevision? Revision { get; set; }
+
     /// <summary>Generic attribute name for set attribute operations.</summary>
     public string? AttributeName { get; set; }
 
@@ -220,10 +252,16 @@ public enum DocumentOperationType
     DeleteText,
 
     /// <summary>Add an inline mark.</summary>
-    AddMark,
+    AddInlineMark,
+
+    /// <summary>Add an inline mark.</summary>
+    AddMark = AddInlineMark,
 
     /// <summary>Remove an inline mark.</summary>
-    RemoveMark,
+    RemoveInlineMark,
+
+    /// <summary>Remove an inline mark.</summary>
+    RemoveMark = RemoveInlineMark,
 
     /// <summary>Insert a block.</summary>
     InsertBlock,
@@ -235,7 +273,19 @@ public enum DocumentOperationType
     MoveBlock,
 
     /// <summary>Set a block or document attribute.</summary>
-    SetBlockAttribute
+    SetBlockAttribute,
+
+    /// <summary>Update a whole block payload without degrading object content to text.</summary>
+    UpdateBlock,
+
+    /// <summary>Create a tracked revision and apply its pending document markup.</summary>
+    CreateRevision,
+
+    /// <summary>Accept a tracked revision.</summary>
+    AcceptRevision,
+
+    /// <summary>Reject a tracked revision.</summary>
+    RejectRevision
 }
 
 /// <summary>Target for a document operation.</summary>
@@ -250,8 +300,17 @@ public class DocumentOperationTarget
     /// <summary>Inline index.</summary>
     public int? InlineIndex { get; set; }
 
+    /// <summary>Stable inline id.</summary>
+    public string? InlineId { get; set; }
+
+    /// <summary>Stable table cell id when the operation targets nested table content.</summary>
+    public string? TableCellId { get; set; }
+
     /// <summary>Character offset.</summary>
     public int? Offset { get; set; }
+
+    /// <summary>Character range length.</summary>
+    public int? Length { get; set; }
 
     /// <summary>Target order for move/insert block operations.</summary>
     public double? Order { get; set; }
@@ -263,11 +322,23 @@ public class DocumentOperationMetadata
     /// <summary>Author id.</summary>
     public string AuthorId { get; set; } = string.Empty;
 
+    /// <summary>Collaboration session that originated the operation.</summary>
+    public string? OriginSessionId { get; set; }
+
     /// <summary>Logical timestamp.</summary>
     public long LogicalTimestamp { get; set; }
 
     /// <summary>Client id for offline and collaborative editing.</summary>
     public string? ClientId { get; set; }
+
+    /// <summary>WYSIWYG transaction id that produced the operation.</summary>
+    public string? TransactionId { get; set; }
+
+    /// <summary>Track-changes revision id that produced the operation.</summary>
+    public string? RevisionId { get; set; }
+
+    /// <summary>Track-changes revision type that produced the operation.</summary>
+    public string? RevisionType { get; set; }
 
     /// <summary>Timestamp when the operation was created.</summary>
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
@@ -276,17 +347,55 @@ public class DocumentOperationMetadata
 /// <summary>Batch of document operations.</summary>
 public class DocumentOperationBatch
 {
+    /// <summary>Current collaboration operation protocol version.</summary>
+    public const int CurrentProtocolVersion = 1;
+
     /// <summary>Stable batch id.</summary>
     public string Id { get; set; } = Guid.NewGuid().ToString("N");
 
     /// <summary>Document id.</summary>
     public string DocumentId { get; set; } = string.Empty;
 
+    /// <summary>Collaboration operation protocol version used by this batch.</summary>
+    public int ProtocolVersion { get; set; } = CurrentProtocolVersion;
+
     /// <summary>Base version id.</summary>
     public string? BaseVersionId { get; set; }
 
     /// <summary>Operations in the batch.</summary>
     public List<DocumentOperation> Operations { get; set; } = [];
+}
+
+/// <summary>Compatibility helpers for collaboration operation batch protocol versions.</summary>
+public static class DocumentOperationBatchProtocol
+{
+    /// <summary>Normalizes a batch to the current protocol when it is safe to do so.</summary>
+    public static DocumentOperationValidationResult Normalize(DocumentOperationBatch batch)
+    {
+        ArgumentNullException.ThrowIfNull(batch);
+
+        if (batch.ProtocolVersion == DocumentOperationBatch.CurrentProtocolVersion)
+        {
+            return DocumentOperationValidationResult.Valid();
+        }
+
+        if (batch.ProtocolVersion == 0 && IsLegacyTextOnlyBatch(batch))
+        {
+            batch.ProtocolVersion = DocumentOperationBatch.CurrentProtocolVersion;
+            return DocumentOperationValidationResult.Valid();
+        }
+
+        return DocumentOperationValidationResult.Invalid(
+            $"Unsupported collaboration protocol version {batch.ProtocolVersion}.");
+    }
+
+    private static bool IsLegacyTextOnlyBatch(DocumentOperationBatch batch)
+    {
+        return batch.Operations.All(operation =>
+            operation.Type == DocumentOperationType.SetBlockAttribute
+            && string.Equals(operation.AttributeName, "text", StringComparison.Ordinal)
+            && !string.IsNullOrWhiteSpace(operation.Target.BlockId));
+    }
 }
 
 /// <summary>Validation result for a document operation or batch.</summary>

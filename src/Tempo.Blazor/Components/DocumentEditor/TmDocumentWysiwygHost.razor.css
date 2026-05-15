@@ -52,10 +52,13 @@
 }
 
 .tm-document-wysiwyg-host .tm-wysiwyg-block {
-    margin: 0 0 var(--tm-space-3, 12px) 0;
-    line-height: 1.6;
-    font-family: var(--tm-font-sans, system-ui, sans-serif);
-    font-size: var(--tm-text-base, 1rem);
+    max-width: 100%;
+    margin: 0 0 var(--tm-document-paragraph-spacing-after, 8pt) 0;
+    overflow-wrap: anywhere;
+    word-break: normal;
+    line-height: inherit;
+    font-family: inherit;
+    font-size: inherit;
     color: var(--tm-color-text, #1f2937);
 }
 
@@ -64,7 +67,7 @@
 }
 
 .tm-document-wysiwyg-host p.tm-wysiwyg-block {
-    min-height: 1.6em;
+    min-height: 1.15em;
 }
 
 .tm-document-wysiwyg-host h1.tm-wysiwyg-block {

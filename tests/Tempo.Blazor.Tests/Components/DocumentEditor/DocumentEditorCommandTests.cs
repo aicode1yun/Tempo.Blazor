@@ -65,6 +65,117 @@ public class DocumentEditorCommandTests
     }
 
     [Fact]
+    public async Task MoveDocumentBlockCommand_UndoRedoPreservesImageMetadata()
+    {
+        var image = new DocumentBlock
+        {
+            Id = "img-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Asset,
+                AssetId = "asset-1",
+                Url = "/assets/1.png",
+                AltText = "Evidence image",
+                Size = new DocumentImageSize { Width = 240, Height = 120 }
+            }
+        };
+        var document = CreateDocument(Paragraph("One"), image, Paragraph("Two"));
+        var stack = new DocumentEditorCommandStack();
+
+        await stack.PushAsync(new MoveDocumentBlockCommand(document, image.Id, 0));
+
+        document.Blocks.OrderBy(block => block.Order).First().Id.Should().Be("img-1");
+        ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content).AssetId.Should().Be("asset-1");
+
+        await stack.UndoAsync();
+        document.Blocks.OrderBy(block => block.Order).Select(block => block.Id).Should().ContainInOrder(
+            document.Blocks.Single(block => TextOf(block) == "One").Id,
+            "img-1",
+            document.Blocks.Single(block => TextOf(block) == "Two").Id);
+
+        await stack.RedoAsync();
+        var moved = document.Blocks.OrderBy(block => block.Order).First();
+        moved.Id.Should().Be("img-1");
+        var content = moved.Content.Should().BeOfType<ImageBlockContent>().Subject;
+        content.AssetId.Should().Be("asset-1");
+        content.AltText.Should().Be("Evidence image");
+        content.Size.Width.Should().Be(240);
+    }
+
+    [Fact]
+    public async Task Commands_AreIdempotentAndExposeUndoMetadata()
+    {
+        var document = CreateDocument(Paragraph("One"), Paragraph("Two"), Paragraph("Three"));
+        var firstId = document.Blocks.OrderBy(block => block.Order).First().Id;
+        var second = document.Blocks.OrderBy(block => block.Order).Skip(1).First();
+        var move = new MoveDocumentBlockCommand(document, second.Id, 0, "Move smoke block");
+
+        await move.ExecuteAsync();
+        var once = document.Blocks.OrderBy(block => block.Order).Select(block => block.Id).ToList();
+        await move.ExecuteAsync();
+        var twice = document.Blocks.OrderBy(block => block.Order).Select(block => block.Id).ToList();
+
+        twice.Should().Equal(once);
+        move.Description.Should().Be("Move smoke block");
+
+        await move.UndoAsync();
+        var undone = document.Blocks.OrderBy(block => block.Order).Select(block => block.Id).ToList();
+        await move.UndoAsync();
+
+        document.Blocks.OrderBy(block => block.Order).Select(block => block.Id).Should().Equal(undone);
+        undone.First().Should().Be(firstId);
+    }
+
+    [Fact]
+    public async Task SnapshotCommand_UndoRedoPreservesWholeDocumentFormattingMetadata()
+    {
+        var target = CreateDocument(Paragraph("Before"));
+        target.Theme.BodyFontFamily = "Aptos, Arial, sans-serif";
+        var before = Clone(target);
+        var after = Clone(target);
+        after.Theme.BodyFontFamily = "Georgia, serif";
+        after.HeadersFooters.Add(new DocumentHeaderFooter { Id = "hf-1", Type = DocumentHeaderFooterType.Header });
+        after.Revisions.Add(new DocumentRevision { Id = "rev-1", Type = DocumentRevisionType.Formatting });
+        var command = new DocumentEditorSnapshotCommand(target, before, after, "Apply review snapshot");
+
+        await command.ExecuteAsync();
+
+        target.Theme.BodyFontFamily.Should().Be("Georgia, serif");
+        target.HeadersFooters.Should().ContainSingle(headerFooter => headerFooter.Id == "hf-1");
+        target.Revisions.Should().ContainSingle(revision => revision.Id == "rev-1");
+        command.Description.Should().Be("Apply review snapshot");
+
+        await command.UndoAsync();
+
+        target.Theme.BodyFontFamily.Should().Be("Aptos, Arial, sans-serif");
+        target.HeadersFooters.Should().BeEmpty();
+        target.Revisions.Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task CommandStack_DescriptionsTrackUndoRedoCommands()
+    {
+        var document = CreateDocument(Paragraph("Start"));
+        var stack = new DocumentEditorCommandStack();
+
+        await stack.PushAsync(new UpdateDocumentBlockCommand(
+            document,
+            document.Blocks[0].Id,
+            document.Blocks[0].Content,
+            new ParagraphBlockContent { Inlines = [new TextRun { Text = "Changed" }] },
+            "Typing smoke"));
+
+        stack.NextUndoDescription.Should().Be("Typing smoke");
+        stack.NextRedoDescription.Should().BeNull();
+
+        await stack.UndoAsync();
+
+        stack.NextUndoDescription.Should().BeNull();
+        stack.NextRedoDescription.Should().Be("Typing smoke");
+    }
+
+    [Fact]
     public async Task CommandStack_BatchCollectsMultipleCommandsAsOneUndo()
     {
         var document = CreateDocument(Paragraph("Start"));
@@ -117,4 +228,7 @@ public class DocumentEditorCommandTests
             ? string.Concat(paragraph.Inlines.OfType<TextRun>().Select(run => run.Text))
             : string.Empty;
     }
+
+    private static DocumentEditorDocument Clone(DocumentEditorDocument document)
+        => DocumentEditorJson.Deserialize(DocumentEditorJson.Serialize(document));
 }

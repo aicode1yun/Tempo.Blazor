@@ -90,4 +90,7 @@ public class LinkMark : Mark
 
     /// <summary>Link URL.</summary>
     public string Href { get; set; } = string.Empty;
+
+    /// <summary>Optional link title.</summary>
+    public string? Title { get; set; }
 }

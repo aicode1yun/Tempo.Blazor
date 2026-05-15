@@ -11,6 +11,11 @@ public sealed class DocumentEditorKeyboardManager
         ArgumentNullException.ThrowIfNull(args);
 
         var key = args.Key?.ToLowerInvariant();
+        if (key == "f10" || (key == "alt" && args.AltKey && !args.CtrlKey && !args.MetaKey && !args.ShiftKey))
+        {
+            return DocumentEditorKeyboardCommand.ActivateRibbon;
+        }
+
         if (key == "escape")
         {
             return DocumentEditorKeyboardCommand.ClosePanel;
@@ -19,6 +24,11 @@ public sealed class DocumentEditorKeyboardManager
         if (!args.CtrlKey && !args.MetaKey)
         {
             return DocumentEditorKeyboardCommand.None;
+        }
+
+        if (args.AltKey && key == "v")
+        {
+            return DocumentEditorKeyboardCommand.OpenVersions;
         }
 
         return key switch
@@ -58,6 +68,12 @@ public enum DocumentEditorKeyboardCommand
 
     /// <summary>Open the link dialog.</summary>
     Link,
+
+    /// <summary>Open the document versions side panel.</summary>
+    OpenVersions,
+
+    /// <summary>Move focus to the active ribbon tab.</summary>
+    ActivateRibbon,
 
     /// <summary>Close an open panel or dialog.</summary>
     ClosePanel

@@ -59,9 +59,12 @@ public class TmDocumentEditorCssTests
 
         css.Should().Contain("@media (max-width: 64rem)");
         css.Should().Contain("@media (max-width: 40rem)");
-        css.Should().Contain("inline-size: 5.25rem");
+        css.Should().Contain("inline-size: 4.75rem");
         css.Should().Contain("inline-size: 2.5rem");
         css.Should().Contain("max-height: 70vh");
+        css.Should().Contain("content: attr(aria-label)");
+        css.Should().Contain(".tm-document-revision-panel__item");
+        css.Should().Contain("box-shadow: 0 0.75rem 2rem");
 
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__page-surface");
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__ribbon");

@@ -89,6 +89,20 @@ public interface IDocumentTokenValueProvider
         CancellationToken cancellationToken = default);
 }
 
+/// <summary>Provider boundary for document editor font families and typography constraints.</summary>
+public interface IDocumentFontProvider
+{
+    /// <summary>Gets font families available to the document editor.</summary>
+    Task<IReadOnlyList<DocumentFontFamily>> GetFontFamiliesAsync(
+        DocumentFontQuery? query = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Gets the fallback font used when no explicit family is selected.</summary>
+    Task<DocumentFontFamily> GetFallbackFontAsync(
+        DocumentFontQuery? query = null,
+        CancellationToken cancellationToken = default);
+}
+
 /// <summary>Audit sink for host applications that persist editor events.</summary>
 public interface IDocumentAuditSink
 {
@@ -290,5 +304,17 @@ public interface IDocumentCollaborationProvider
     /// <summary>Gets currently known cursors for a document.</summary>
     Task<IReadOnlyList<DocumentCollaborationCursor>> GetCursorsAsync(
         string documentId,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>Realtime collaboration provider extension for push transports such as SignalR.</summary>
+public interface IDocumentCollaborationRealtimeProvider : IDocumentCollaborationProvider
+{
+    /// <summary>Raised when a remote operation batch is pushed by the transport.</summary>
+    event Func<DocumentCollaborationOperationBatch, CancellationToken, Task>? RemoteOperationBatchReceived;
+
+    /// <summary>Receives a remote operation batch from the realtime transport.</summary>
+    Task ReceiveRemoteOperationBatchAsync(
+        DocumentCollaborationOperationBatch batch,
         CancellationToken cancellationToken = default);
 }

@@ -11,7 +11,7 @@ public class DocumentOperationLog
     /// <summary>Appended operation batches.</summary>
     public IReadOnlyList<DocumentOperationBatch> Batches => _batches;
 
-    /// <summary>Appends a batch after validation and skips operations already present in the log.</summary>
+    /// <summary>Appends a batch after validation and keeps only operations not already present in the log.</summary>
     public DocumentOperationValidationResult Append(DocumentOperationBatch batch)
     {
         var validation = Validate(batch);
@@ -20,10 +20,12 @@ public class DocumentOperationLog
             return validation;
         }
 
+        var seenOperationIds = new HashSet<string>(_operationIds, StringComparer.Ordinal);
         var uniqueOperations = batch.Operations
-            .Where(operation => !_operationIds.Contains(operation.Id))
+            .Where(operation => seenOperationIds.Add(operation.OperationId))
             .Select(Clone)
             .ToList();
+        batch.Operations = uniqueOperations.Select(Clone).ToList();
 
         if (uniqueOperations.Count == 0)
         {
@@ -32,13 +34,14 @@ public class DocumentOperationLog
 
         foreach (var operation in uniqueOperations)
         {
-            _operationIds.Add(operation.Id);
+            _operationIds.Add(operation.OperationId);
         }
 
         _batches.Add(new DocumentOperationBatch
         {
             Id = batch.Id,
             DocumentId = batch.DocumentId,
+            ProtocolVersion = batch.ProtocolVersion,
             BaseVersionId = batch.BaseVersionId,
             Operations = uniqueOperations
         });
@@ -65,6 +68,12 @@ public class DocumentOperationLog
     /// <summary>Validates a batch.</summary>
     public static DocumentOperationValidationResult Validate(DocumentOperationBatch batch)
     {
+        var protocol = DocumentOperationBatchProtocol.Normalize(batch);
+        if (!protocol.IsValid)
+        {
+            return protocol;
+        }
+
         if (string.IsNullOrWhiteSpace(batch.DocumentId))
         {
             return DocumentOperationValidationResult.Invalid("Batch document id is required.");
@@ -72,7 +81,7 @@ public class DocumentOperationLog
 
         foreach (var operation in batch.Operations)
         {
-            if (string.IsNullOrWhiteSpace(operation.Id))
+            if (string.IsNullOrWhiteSpace(operation.OperationId))
             {
                 return DocumentOperationValidationResult.Invalid("Operation id is required.");
             }
