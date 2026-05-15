@@ -19,6 +19,7 @@ public partial class TmSpreadsheet
     private ISpreadsheetGridController? _grid;
     private TmSpreadsheetFormulaBar? _formulaBar;
     private SpreadsheetWorkbook _workbook = new();
+    private bool _initialWorkbookApplied;
     private SpreadsheetCommandManager? _commandManager;
     private bool _isFormulaBarEditing;
     private string? _formulaBarEditValue;
@@ -84,6 +85,15 @@ public partial class TmSpreadsheet
 
     /// <summary>Renderer used for the spreadsheet grid surface. Defaults to DOM for full compatibility.</summary>
     [Parameter] public SpreadsheetRenderMode RenderMode { get; set; } = SpreadsheetRenderMode.Dom;
+
+    /// <summary>
+    /// Pre-populates the spreadsheet with an existing workbook on first render.
+    /// Subsequent parameter changes are ignored — use <see cref="Workbook"/> to read the current state after editing.
+    /// </summary>
+    [Parameter] public SpreadsheetWorkbook? InitialWorkbook { get; set; }
+
+    /// <summary>Controls the display and interaction mode of the spreadsheet. Defaults to <see cref="SpreadsheetMode.Full"/>.</summary>
+    [Parameter] public SpreadsheetMode Mode { get; set; } = SpreadsheetMode.Full;
 
     /// <summary>Additional CSS classes to apply to the root element.</summary>
     [Parameter] public string? Class { get; set; }
@@ -230,6 +240,12 @@ public partial class TmSpreadsheet
 
     protected override void OnParametersSet()
     {
+        if (!_initialWorkbookApplied && InitialWorkbook is not null)
+        {
+            _workbook = InitialWorkbook;
+            _initialWorkbookApplied = true;
+            _commandManager = null;
+        }
         if (_workbook.ActiveSheet is not null)
         {
             _workbook.ActiveSheet.RowCount = RowsCount;

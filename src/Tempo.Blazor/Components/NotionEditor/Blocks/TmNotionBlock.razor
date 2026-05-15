@@ -554,6 +554,17 @@
                 break;
             }
 
+            // ── Spreadsheet ───────────────────────────────────────────────────
+            case BlockType.Spreadsheet:
+            {
+                var c = Block.Content as ISpreadsheetBlockContent;
+                <TmNotionSpreadsheetBlock Content="c"
+                                          ReadOnly="ReadOnly"
+                                          OnContentSaved="HandleSpreadsheetContentSavedAsync"
+                                          OnFocused="OnFocusedAsync" />
+                break;
+            }
+
             // ── Table ────────────────────────────────────────────────────────
             case BlockType.Table:
             {

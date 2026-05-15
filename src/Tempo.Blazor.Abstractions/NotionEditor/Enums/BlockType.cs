@@ -36,5 +36,6 @@ public enum BlockType
     TemplateButton,
     TableOfContents,
     Diagram,
-    Wireframe
+    Wireframe,
+    Spreadsheet
 }

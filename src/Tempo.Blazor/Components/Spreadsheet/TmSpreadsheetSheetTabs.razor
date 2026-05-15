@@ -10,7 +10,7 @@
             var isActive = index == ActiveIndex;
             <div class="tm-spreadsheet-sheet-tab @(isActive ? "tm-spreadsheet-sheet-tab--active" : "")"
                  @onclick="() => OnTabClick(index)"
-                 @oncontextmenu="e => OnTabContextMenu(e, index)"
+                 @oncontextmenu="e => { if (!IsReadonly) OnTabContextMenu(e, index); }"
                  @oncontextmenu:preventDefault>
                 @if (_editingIndex == index)
                 {
@@ -26,7 +26,7 @@
                 {
                     <span class="tm-spreadsheet-sheet-tab__label">@sheet.Name</span>
                 }
-                @if (Sheets.Count > 1)
+                @if (!IsReadonly && Sheets.Count > 1)
                 {
                     <button class="tm-spreadsheet-sheet-tab__close"
                             title="@Loc["TmSpreadsheet_DeleteSheet"]"
@@ -39,13 +39,16 @@
         }
     </div>
 
-    <button class="tm-spreadsheet-sheet-tabs__add"
-            title="@Loc["TmSpreadsheet_AddSheet"]"
-            @onclick="OnAddSheet">
-        <TmIcon Name="plus" />
-    </button>
+    @if (!IsReadonly)
+    {
+        <button class="tm-spreadsheet-sheet-tabs__add"
+                title="@Loc["TmSpreadsheet_AddSheet"]"
+                @onclick="OnAddSheet">
+            <TmIcon Name="plus" />
+        </button>
+    }
 
-    @if (_contextMenuVisible)
+    @if (!IsReadonly && _contextMenuVisible)
     {
         <div class="tm-spreadsheet-sheet-tabs__context-menu"
              style="left:@(_contextMenuX)px;top:@(_contextMenuY)px;"

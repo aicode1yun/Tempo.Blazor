@@ -3148,6 +3148,7 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
     function handleCommandKey(root, ev) {
         const s = getState(root);
         if (!s?.dotNet || !s.model) return false;
+        if (root.dataset.readonly === "true") return false;
 
         const key = ev.key || "";
         const shortcutKey = key.length === 1 ? key.toLowerCase() : key;
@@ -5138,6 +5139,10 @@ window.tmSpreadsheetCanvas = window.tmSpreadsheetCanvas || {};
             invokeDotNet(root, "OnCanvasPointer", [p.x, p.y, !!ev.shiftKey, !!ev.ctrlKey], true).catch(() => {});
         };
         const onDblClick = ev => {
+            if (root.dataset.readonly === "true") {
+                ev.preventDefault();
+                return;
+            }
             if (performance.now() < Number(s.nonPrimaryGestureUntil || 0)) {
                 ev.preventDefault();
                 return;

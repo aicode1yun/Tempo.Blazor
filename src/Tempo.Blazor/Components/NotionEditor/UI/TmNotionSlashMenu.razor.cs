@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
@@ -10,6 +11,11 @@ public partial class TmNotionSlashMenu : ComponentBase
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Cascaded context ─────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
@@ -91,7 +97,13 @@ public partial class TmNotionSlashMenu : ComponentBase
 
     private void RebuildGroups()
     {
-        _groups     = SlashMenuRegistry.GetGrouped(_query, _recentlyUsed, ResolveName, ResolveDesc);
+        var allowed = Context?.AllowedBlockTypes;
+
+        var recent = allowed is null
+            ? _recentlyUsed
+            : _recentlyUsed.Where(t => allowed.Contains(t)).ToList();
+
+        _groups     = SlashMenuRegistry.GetGrouped(_query, recent, ResolveName, ResolveDesc, allowed);
         _totalItems = _groups.Sum(g => g.Items.Count);
     }
 

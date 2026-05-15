@@ -39,6 +39,7 @@ builder.Services.AddSingleton<MockTokenStore>();
 builder.Services.AddSingleton<MockWireframeStore>();
 builder.Services.AddSingleton<MockNotionDataStore>();
 builder.Services.AddSingleton<MockNotionBlockStore>();
+builder.Services.AddSingleton<MockSpreadsheetDocumentStore>();
 builder.Services.AddSingleton<MockNotionDatabaseStore>();
 builder.Services.AddSingleton<DemoDocumentEditorStore>();
 builder.Services.AddSingleton<DemoDocumentFormatProvider>();

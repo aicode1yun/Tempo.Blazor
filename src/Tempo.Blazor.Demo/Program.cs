@@ -42,6 +42,7 @@ builder.Services.AddScoped<MockNotionMentionProvider>();
 builder.Services.AddScoped<MockNotionSearchProvider>();
 builder.Services.AddScoped<MockNotionWireframeDocumentProvider>();
 builder.Services.AddScoped<MockNotionDiagramDocumentProvider>();
+builder.Services.AddScoped<ApiSpreadsheetDocumentProvider>();
 builder.Services.AddScoped<MockNotionImportExportProvider>();
 builder.Services.AddScoped<SignalRCollaborationProvider>();
 

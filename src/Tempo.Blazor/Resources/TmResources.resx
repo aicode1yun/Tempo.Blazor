@@ -1374,6 +1374,8 @@
   <data name="TmNotionSlashMenu_ItemDesc_TemplateButton"        xml:space="preserve"><value>Add a button to create templates</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Diagram"               xml:space="preserve"><value>Create a diagram or flowchart</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Wireframe"             xml:space="preserve"><value>Create a UI wireframe or mockup</value></data>
+  <data name="TmNotionSlashMenu_ItemName_Spreadsheet"          xml:space="preserve"><value>Spreadsheet</value></data>
+  <data name="TmNotionSlashMenu_ItemDesc_Spreadsheet"          xml:space="preserve"><value>Embed an interactive spreadsheet with formulas</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Table"                xml:space="preserve"><value>Insert a simple table</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_ColumnList"           xml:space="preserve"><value>Create a multi-column layout</value></data>
   <data name="TmNotionSlashMenu_ItemDesc_Breadcrumb"           xml:space="preserve"><value>Show a breadcrumb navigation path</value></data>
@@ -1484,9 +1486,17 @@
   <data name="TmNotionWireframeBlock_CreateWireframe"      xml:space="preserve"><value>Create wireframe</value></data>
   <data name="TmNotionWireframeBlock_Edit"                 xml:space="preserve"><value>Edit wireframe</value></data>
   <data name="TmNotionWireframeBlock_CaptionPlaceholder"   xml:space="preserve"><value>Add caption…</value></data>
+
+  <data name="TmNotionSpreadsheetBlock_Create"             xml:space="preserve"><value>Create spreadsheet</value></data>
+  <data name="TmNotionSpreadsheetBlock_Edit"               xml:space="preserve"><value>Edit spreadsheet</value></data>
+  <data name="TmNotionSpreadsheetBlock_CaptionPlaceholder" xml:space="preserve"><value>Add caption…</value></data>
   <data name="TmNotionWireframeEditModal_Title"            xml:space="preserve"><value>Wireframe editor</value></data>
   <data name="TmNotionWireframeEditModal_Save"             xml:space="preserve"><value>Save &amp; close</value></data>
   <data name="TmNotionWireframeEditModal_Discard"          xml:space="preserve"><value>Discard changes</value></data>
+
+  <data name="TmNotionSpreadsheetEditModal_Title"          xml:space="preserve"><value>Spreadsheet editor</value></data>
+  <data name="TmNotionSpreadsheetEditModal_Save"           xml:space="preserve"><value>Save &amp; close</value></data>
+  <data name="TmNotionSpreadsheetEditModal_Discard"        xml:space="preserve"><value>Discard changes</value></data>
 
   <!-- ═══════════════ WIREFRAME MULTI-PAGE ═══════════════ -->
   <data name="TmWireframe_Page" xml:space="preserve"><value>Page</value></data>

@@ -4,6 +4,7 @@ using Microsoft.JSInterop;
 using Tempo.Blazor.Components.Diagram.Models;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.Wireframe.Models;
+using Tempo.Blazor.Components.NotionEditor.Blocks.TempoBlocks;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -668,6 +669,13 @@ public partial class TmNotionBlock : ComponentBase
     // ── Wireframe (TmNotionWireframeBlock) callbacks ──────────────────────────
 
     private async Task HandleWireframeContentSavedAsync(WireframeBlockContent content)
+    {
+        var updated = BuildBlockWithContent(Block, content);
+        try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }
+        catch { }
+    }
+
+    private async Task HandleSpreadsheetContentSavedAsync(SpreadsheetBlockContent content)
     {
         var updated = BuildBlockWithContent(Block, content);
         try { await Context.BlockProvider.UpdateBlockAsync(updated); await OnUpdated.InvokeAsync(updated); }

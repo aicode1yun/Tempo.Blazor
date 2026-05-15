@@ -35,6 +35,9 @@ public partial class TmSpreadsheetSheetTabs
     /// <summary>Called when a sheet should be renamed.</summary>
     [Parameter] public EventCallback<(int Index, string NewName)> OnRenameSheetRequested { get; set; }
 
+    /// <summary>When true, hides add/delete/rename controls (embedded/readonly view).</summary>
+    [Parameter] public bool IsReadonly { get; set; }
+
     /// <summary>Whether formula-point mode is active (tab click selects sheet for formula rather than switching view).</summary>
     [Parameter] public bool IsFormulaPointMode { get; set; }
 

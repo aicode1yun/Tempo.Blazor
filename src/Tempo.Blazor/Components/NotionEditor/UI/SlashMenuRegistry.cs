@@ -90,6 +90,9 @@ public static class SlashMenuRegistry
         internal const string Wireframe =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="4" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="2" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/><rect x="11" y="8" width="7" height="10" rx="1" stroke="currentColor" stroke-width="1.3"/></svg>""";
 
+        internal const string Spreadsheet =
+            """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="2" width="16" height="16" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 7h16M2 12h16M7 2v16M13 2v16" stroke="currentColor" stroke-width="1.1"/></svg>""";
+
         internal const string Table =
             """<svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true"><rect x="2" y="3" width="16" height="14" rx="1.5" stroke="currentColor" stroke-width="1.3"/><path d="M2 8h16M8 3v14M13 3v14" stroke="currentColor" stroke-width="1.3"/></svg>""";
 
@@ -217,6 +220,10 @@ public static class SlashMenuRegistry
             Icons.Wireframe,      SlashMenuCategory.Advanced,
             ["wireframe", "mockup", "ui", "design", "prototype", "layout"]),
 
+        new(BlockType.Spreadsheet,    "TmNotionSlashMenu_ItemName_Spreadsheet",     "TmNotionSlashMenu_ItemDesc_Spreadsheet",
+            Icons.Spreadsheet,    SlashMenuCategory.Advanced,
+            ["spreadsheet", "tabulka", "excel", "sheet", "data", "formula", "grid", "table"]),
+
         new(BlockType.ColumnList,     "TmNotionSlashMenu_ItemName_ColumnList",      "TmNotionSlashMenu_ItemDesc_ColumnList",
             Icons.ColumnList,     SlashMenuCategory.Advanced,
             ["columns", "column", "layout", "2 columns", "multi", "side by side", "split"]),
@@ -243,7 +250,8 @@ public static class SlashMenuRegistry
         string                        query,
         IReadOnlyList<BlockType>      recentlyUsed,
         Func<SlashMenuItem, string>   resolveName,
-        Func<SlashMenuItem, string>   resolveDescription)
+        Func<SlashMenuItem, string>   resolveDescription,
+        IReadOnlySet<BlockType>?      allowedTypes = null)
     {
         var q = query.Trim().ToLowerInvariant();
 
@@ -256,7 +264,10 @@ public static class SlashMenuRegistry
             return false;
         }
 
-        var filtered = _all.Where(Matches).ToList();
+        var filtered = _all
+            .Where(Matches)
+            .Where(i => allowedTypes is null || allowedTypes.Contains(i.Type))
+            .ToList();
 
         var result = new List<(SlashMenuCategory, List<SlashMenuItem>)>();
 

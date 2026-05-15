@@ -13,6 +13,7 @@
 @inject MockNotionDatabaseProvider DatabaseProvider
 @inject MockNotionWireframeDocumentProvider WireframeDocumentProvider
 @inject MockNotionDiagramDocumentProvider DiagramDocumentProvider
+@inject ApiSpreadsheetDocumentProvider SpreadsheetDocumentProvider
 @inject MockNotionImportExportProvider ImportExportProvider
 
 <PageTitle>Notion Editor – Tempo.Blazor</PageTitle>
@@ -71,6 +72,7 @@
                             DatabaseProvider="@DatabaseProvider"
                             WireframeDocumentProvider="@WireframeDocumentProvider"
                             DiagramDocumentProvider="@DiagramDocumentProvider"
+                            SpreadsheetDocumentProvider="@SpreadsheetDocumentProvider"
                             ImportExportProvider="@ImportExportProvider"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"

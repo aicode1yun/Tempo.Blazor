@@ -87,6 +87,9 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
     /// <summary>The origin cell of an external formula-bar session, used as an additional guard against unintended pointer selection changes.</summary>
     [Parameter] public string? ExternalFormulaOriginCellRef { get; set; }
 
+    /// <summary>When true the grid is displayed in read-only mode: cell editing, context menu, and editing-related callbacks are disabled.</summary>
+    [Parameter] public bool IsReadonly { get; set; }
+
     /// <summary>Called when the active cell changes.</summary>
     [Parameter] public EventCallback<string?> ActiveCellChanged { get; set; }
 

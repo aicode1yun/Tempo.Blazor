@@ -1,4 +1,5 @@
 using Microsoft.AspNetCore.Components;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
@@ -10,6 +11,11 @@ namespace Tempo.Blazor.Components.NotionEditor.Blocks;
 /// </summary>
 public partial class TmNotionBlockContextMenu : ComponentBase
 {
+    // ── Cascaded context ─────────────────────────────────────────────────────
+
+    [CascadingParameter]
+    private NotionEditorContext Context { get; set; } = default!;
+
     // ── Parameters ───────────────────────────────────────────────────────────
 
     [Parameter, EditorRequired]
@@ -134,6 +140,11 @@ public partial class TmNotionBlockContextMenu : ComponentBase
         new("pink",   "TmNotionBlockContextMenu_ColorPink"),
         new("red",    "TmNotionBlockContextMenu_ColorRed"),
     ];
+
+    private IEnumerable<TurnIntoItem> AllowedTurnIntoItems =>
+        Context?.AllowedBlockTypes is null
+            ? _turnIntoItems
+            : _turnIntoItems.Where(i => Context.AllowedBlockTypes.Contains(i.Type));
 
     private sealed record TurnIntoItem(BlockType Type, string LabelKey);
     private sealed record ColorItem(string? Value, string LabelKey);

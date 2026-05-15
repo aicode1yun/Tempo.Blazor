@@ -10,6 +10,8 @@
      data-formula-decimal-separator="@FormulaDecimalSeparator"
      data-formula-culture="@FormulaCultureName"
      @attributes="AdditionalAttributes">
+    @if (Mode == SpreadsheetMode.Full)
+    {
     <TmSpreadsheetToolbar CanUndo="CanUndo"
                           CanRedo="CanRedo"
                           SelectedFontFamily="ToolbarFontFamily"
@@ -79,6 +81,7 @@
                              OnValueChanged="@OnFormulaBarValueChanged"
                              OnTabPressed="@OnFormulaBarTabPressed"
                              OnTransferToInlineEditorRequested="@OnFormulaBarTransferToInlineEditorRequested" />
+    }
 
     @if (RenderMode != SpreadsheetRenderMode.Dom)
     {
@@ -87,6 +90,7 @@
                                  RowHeight="RowHeight"
                                  ColumnWidth="ColumnWidth"
                                  UseJsEngine="@UseCanvasJsEngine"
+                                 IsReadonly="@(Mode == SpreadsheetMode.Embedded)"
                                  ExternalFormulaSessionActive="@(IsFormulaBarPointSessionActive || _formulaReferencePickingGuardActive || (_formulaOriginSheetIndex >= 0 && _formulaOriginCellRef is not null))"
                                  ExternalFormulaOriginCellRef="@((_formulaReferencePickingGuardActive || IsFormulaBarPointSessionActive) ? _formulaOriginCellRef : null)"
                                  ExternalFormulaEditValue="@(UseCanvasJsEngine ? null : (IsFormulaBarSessionActive ? (_formulaBar?.CurrentEditValue ?? _formulaBarEditValue) : null))"
@@ -169,6 +173,7 @@
 
     <TmSpreadsheetSheetTabs Sheets="_workbook.Sheets"
                             ActiveIndex="_workbook.ActiveSheetIndex"
+                            IsReadonly="@(Mode == SpreadsheetMode.Embedded)"
                             IsFormulaPointMode="@(_grid?.IsInFormulaPointMode == true)"
                             OnActiveSheetChanged="SwitchSheet"
                             OnSheetSelectedForFormula="OnGridSheetSwitchForFormula"

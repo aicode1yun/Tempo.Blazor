@@ -47,7 +47,7 @@
         @if (_showTurnInto)
         {
             <div class="tm-notion-ctx-sub tm-notion-ctx-sub--right">
-                @foreach (var item in _turnIntoItems)
+                @foreach (var item in AllowedTurnIntoItems)
                 {
                     <button class="tm-notion-ctx__item @(Block.Type == item.Type ? "tm-notion-ctx__item--active" : "")"
                             type="button" role="menuitem"

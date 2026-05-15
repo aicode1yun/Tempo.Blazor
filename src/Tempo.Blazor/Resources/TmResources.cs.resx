@@ -2510,9 +2510,18 @@
   <data name="TmNotionWireframeBlock_CreateWireframe"  xml:space="preserve"><value>Vytvořit drátový model</value></data>
   <data name="TmNotionWireframeBlock_Edit"             xml:space="preserve"><value>Upravit drátový model</value></data>
   <data name="TmNotionWireframeBlock_CaptionPlaceholder" xml:space="preserve"><value>Přidat popisek…</value></data>
+
+  <!-- Spreadsheet block -->
+  <data name="TmNotionSpreadsheetBlock_Create"             xml:space="preserve"><value>Vytvořit tabulku</value></data>
+  <data name="TmNotionSpreadsheetBlock_Edit"               xml:space="preserve"><value>Upravit tabulku</value></data>
+  <data name="TmNotionSpreadsheetBlock_CaptionPlaceholder" xml:space="preserve"><value>Přidat popisek…</value></data>
   <data name="TmNotionWireframeEditModal_Title"        xml:space="preserve"><value>Editor drátových modelů</value></data>
   <data name="TmNotionWireframeEditModal_Save"         xml:space="preserve"><value>Uložit a zavřít</value></data>
   <data name="TmNotionWireframeEditModal_Discard"      xml:space="preserve"><value>Zahodit změny</value></data>
+
+  <data name="TmNotionSpreadsheetEditModal_Title"      xml:space="preserve"><value>Editor tabulky</value></data>
+  <data name="TmNotionSpreadsheetEditModal_Save"       xml:space="preserve"><value>Uložit a zavřít</value></data>
+  <data name="TmNotionSpreadsheetEditModal_Discard"    xml:space="preserve"><value>Zahodit změny</value></data>
 
   <!-- Page search (Ctrl+P) -->
   <data name="TmNotionPageSearch_Placeholder"          xml:space="preserve"><value>Hledat stránky a obsah…</value></data>

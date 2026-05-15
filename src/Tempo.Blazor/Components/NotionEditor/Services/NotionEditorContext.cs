@@ -1,3 +1,4 @@
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 
 namespace Tempo.Blazor.Components.NotionEditor.Services;
@@ -21,8 +22,9 @@ public sealed class NotionEditorContext
     public INotionFileProvider?          FileProvider             { get; init; }
     public INotionImportExportProvider?  ImportExportProvider     { get; init; }
     public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; init; }
-    public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; init; }
-    public INotionSyncedBlockProvider?    SyncedBlockProvider      { get; init; }
+    public IWireframeDocumentProvider?    WireframeDocumentProvider  { get; init; }
+    public ISpreadsheetDocumentProvider?  SpreadsheetDocumentProvider{ get; init; }
+    public INotionSyncedBlockProvider?    SyncedBlockProvider        { get; init; }
 
     /// <summary>Active collaboration sync service (null when CollaborationProvider is absent).</summary>
     public NotionCollaborationSync?        CollaborationSync         { get; init; }
@@ -42,4 +44,15 @@ public sealed class NotionEditorContext
 
     /// <summary>Invokes <see cref="BlockConverted"/> if any subscriber is attached.</summary>
     public void RaiseBlockConverted(IPageBlock block) => BlockConverted?.Invoke(block);
+
+    /// <summary>
+    /// When non-null, only these block types are available in the slash menu and type
+    /// conversion ("Turn Into") menus. Existing blocks of other types still render normally.
+    /// When null, all block types are allowed (default).
+    /// </summary>
+    public IReadOnlySet<BlockType>? AllowedBlockTypes { get; init; }
+
+    /// <summary>Returns true when the given block type may be created or converted to.</summary>
+    public bool IsBlockTypeAllowed(BlockType type)
+        => AllowedBlockTypes is null || AllowedBlockTypes.Contains(type);
 }

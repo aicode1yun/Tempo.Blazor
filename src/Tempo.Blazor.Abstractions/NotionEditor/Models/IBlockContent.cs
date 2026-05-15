@@ -34,6 +34,7 @@ namespace Tempo.Blazor.NotionEditor.Models;
 [JsonDerivedType(typeof(ToggleBlockContent), "toggle")]
 [JsonDerivedType(typeof(VideoBlockContent), "video")]
 [JsonDerivedType(typeof(WireframeBlockContent), "wireframe")]
+[JsonDerivedType(typeof(SpreadsheetBlockContent), "spreadsheet")]
 public interface IBlockContent
 {
 }

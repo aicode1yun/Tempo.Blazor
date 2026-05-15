@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.Notifications;
+using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
 
@@ -40,8 +41,15 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public INotionFileProvider?          FileProvider           { get; set; }
     [Parameter] public INotionImportExportProvider?  ImportExportProvider   { get; set; }
     [Parameter] public IDiagramDocumentProvider?     DiagramDocumentProvider  { get; set; }
-    [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider{ get; set; }
-    [Parameter] public INotionSyncedBlockProvider?   SyncedBlockProvider      { get; set; }
+    [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider   { get; set; }
+    [Parameter] public ISpreadsheetDocumentProvider? SpreadsheetDocumentProvider { get; set; }
+    [Parameter] public INotionSyncedBlockProvider?   SyncedBlockProvider         { get; set; }
+
+    /// <summary>
+    /// When non-null, restricts the slash menu and Turn Into menu to only these block types.
+    /// Existing blocks of other types are still displayed. When null, all types are available.
+    /// </summary>
+    [Parameter] public IReadOnlySet<BlockType>? AllowedBlockTypes { get; set; }
 
     // ── Behaviour parameters ─────────────────────────────────────────────────
 
@@ -239,8 +247,10 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         FileProvider              = FileProvider,
         ImportExportProvider      = ImportExportProvider,
         DiagramDocumentProvider   = DiagramDocumentProvider,
-        WireframeDocumentProvider = WireframeDocumentProvider,
-        SyncedBlockProvider       = SyncedBlockProvider,
+        WireframeDocumentProvider   = WireframeDocumentProvider,
+        SpreadsheetDocumentProvider = SpreadsheetDocumentProvider,
+        SyncedBlockProvider         = SyncedBlockProvider,
+        AllowedBlockTypes           = AllowedBlockTypes,
         NavigateTo                = pageId => NavigateToPageAsync(pageId)
     };
 

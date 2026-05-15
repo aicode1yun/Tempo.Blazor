@@ -261,6 +261,17 @@ public class MockNotionBlockStore
 
         Add(BlockType.Wireframe, 31, new WireframeBlockContent());
 
+        // ── Phase 2: Spreadsheet ──────────────────────────────────────────────
+
+        Add(BlockType.Heading2, 31_3, new HeadingBlockContent { Level = 2, Html = "Phase 2: Spreadsheet Block" });
+
+        Add(BlockType.Paragraph, 31_4, new TextBlockContent
+        {
+            Html = "The block below shows the Spreadsheet editor. Click <strong>Create Spreadsheet</strong> to open the full-screen editor. After saving, an embedded live spreadsheet is shown inline."
+        });
+
+        Add(BlockType.Spreadsheet, 31_5, new SpreadsheetBlockContent());
+
         // ── Phase 3: Table ────────────────────────────────────────────────────
 
         Add(BlockType.Heading2, 31_1, new HeadingBlockContent { Level = 2, Html = "Phase 3: Table" });
@@ -750,6 +761,7 @@ public class MockNotionBlockStore
         BlockType.Column                                            => new ColumnBlockContent(),
         BlockType.Diagram                                           => new DiagramBlockContent(),
         BlockType.Wireframe                                         => new WireframeBlockContent(),
+        BlockType.Spreadsheet                                       => new SpreadsheetBlockContent(),
         _                                                           => new TextBlockContent()
     };
 }

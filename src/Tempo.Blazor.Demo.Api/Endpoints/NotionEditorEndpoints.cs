@@ -1,3 +1,4 @@
+using Tempo.Blazor.Components.Spreadsheet.Models;
 using Tempo.Blazor.Demo.Api.Data;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
@@ -185,6 +186,25 @@ public static class NotionEditorEndpoints
                 return Results.NotFound();
             }
         });
+
+        // ── Spreadsheet documents ─────────────────────────────────────────────
+
+        var spreadsheetGroup = app.MapGroup("/api/notion/spreadsheets").WithTags("Notion Editor");
+
+        spreadsheetGroup.MapPost("/", (MockSpreadsheetDocumentStore store) =>
+        {
+            var (id, workbook) = store.Create();
+            return Results.Ok(new { id, workbook });
+        });
+
+        spreadsheetGroup.MapGet("/{id}", (Guid id, MockSpreadsheetDocumentStore store) =>
+        {
+            var workbook = store.Get(id);
+            return workbook is null ? Results.NotFound() : Results.Ok(workbook);
+        });
+
+        spreadsheetGroup.MapPut("/{id}", (Guid id, SpreadsheetWorkbook workbook, MockSpreadsheetDocumentStore store) =>
+            Results.Ok(store.Save(id, workbook)));
 
         // ── Reset (for E2E tests) ─────────────────────────────────────────────
         app.MapPost("/api/notion/reset", (MockNotionDataStore dataStore, MockNotionBlockStore blockStore) =>
