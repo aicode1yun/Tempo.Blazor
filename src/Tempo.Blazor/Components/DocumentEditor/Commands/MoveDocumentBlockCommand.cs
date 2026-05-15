@@ -35,7 +35,8 @@ public sealed class MoveDocumentBlockCommand : IDocumentEditorCommand
     /// <inheritdoc />
     public Task ExecuteAsync()
     {
-        ApplyMove(_sourceIndex, _targetIndex);
+        var current = OrderedBlocks().FindIndex(block => block.Id == _blockId);
+        ApplyMove(current, _targetIndex);
         return Task.CompletedTask;
     }
 
@@ -63,6 +64,8 @@ public sealed class MoveDocumentBlockCommand : IDocumentEditorCommand
         {
             ordered[index].Order = (index + 1) * 10;
         }
+
+        _document.Blocks = ordered;
     }
 
     private List<DocumentBlock> OrderedBlocks() => _document.Blocks.OrderBy(block => block.Order).ToList();

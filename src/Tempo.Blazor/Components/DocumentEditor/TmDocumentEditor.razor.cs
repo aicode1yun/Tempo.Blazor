@@ -85,6 +85,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     /// <summary>Optional provider used to resolve template token values for preview.</summary>
     [Parameter] public IDocumentTokenValueProvider? TokenValueProvider { get; set; }
 
+    /// <summary>Optional provider for available editor font families.</summary>
+    [Parameter] public IDocumentFontProvider? FontProvider { get; set; }
+
     /// <summary>Optional host provider used to export the current document as PDF.</summary>
     [Parameter] public IDocumentPdfExportProvider? PdfExportProvider { get; set; }
 
@@ -158,6 +161,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     [Inject] private IJSRuntime JSRuntime { get; set; } = default!;
 
     private DocumentEditorDocument? _document;
+    private TmDocumentEditorToolbar? _toolbar;
     private TmDocumentWysiwygHost? _wysiwygHost;
     private DocumentEditorSelectionState _selection = new();
     private string? _errorMessage;
@@ -165,7 +169,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private string? _versionMessage;
     private string? _commentMessage;
     private string? _suggestionMessage;
+    private string? _revisionMessage;
     private string? _templatePreviewMessage;
+    private WysiwygFormattingState _formattingState = new();
     private string? _concurrencyToken;
     private DateTimeOffset? _lastSavedAt;
     private DocumentEditorDocument? _currentDocument;
@@ -174,6 +180,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private IReadOnlyList<DocumentVersion> _versions = [];
     private IReadOnlyList<DocumentComment> _comments = [];
     private IReadOnlyList<DocumentSuggestion> _suggestions = [];
+    private IReadOnlyList<DocumentFontFamily> _fontFamilies = [];
     private DocumentVersion? _previewVersion;
     private DocumentCommentAnchor? _draftCommentAnchor;
     private bool _isLoading;
@@ -187,13 +194,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private bool _isLoadingSuggestions;
     private bool _isSubmittingComment;
     private bool _isReviewingSuggestion;
+    private bool _isReviewingRevision;
     private bool _isDirty;
     private bool _trackChangesEnabled;
     private bool _suggestionsEnabled;
     private bool _templatePreviewEnabled;
     private bool _versionDialogOpen;
     private bool _compareDialogOpen;
-    private bool _versionPanelOpen = true;
+    private bool _sidePanelOpen = true;
+    private DocumentSidePanelTab _activeSidePanelTab = DocumentSidePanelTab.Versions;
     private bool _commentComposerOpen;
     private string? _selectedCommentId;
     private string? _loadedDocumentId;
@@ -207,6 +216,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private IDocumentCollaborationProvider? _loadedCollaborationProvider;
     private IDocumentSuggestionProvider? _loadedSuggestionProvider;
     private IDocumentFormatProvider? _loadedFormatProvider;
+    private IDocumentFontProvider? _loadedFontProvider;
     private IReadOnlyList<DocumentFormatProviderCapability> _formatCapabilities = [];
     private List<DocumentFormatProviderWarning> _formatWarnings = [];
     private string? _formatMessage;
@@ -220,6 +230,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private bool _disposed;
     private string? _activeWysiwygTransactionId;
     private bool _suppressCommandStackChangedRender;
+    private DocumentReviewDisplayMode _reviewDisplayMode = DocumentReviewDisplayMode.AllMarkup;
+    private readonly IDocumentFontProvider _fallbackFontProvider = new InMemoryDocumentFontProvider();
+    private string _activeWysiwygRegion = "Body";
+    private WysiwygSelectionSnapshot? _lastBodySelectionSnapshot;
+    private WysiwygSelectionSnapshot? _lastBodyRangeSelectionSnapshot;
+    private WysiwygSelectionSnapshot? _pendingLinkSelectionSnapshot;
+    private bool _showRuler = true;
+    private int _zoomPercent = 100;
+    private bool _zoomPageWidth = true;
+    private bool _ribbonKeyboardMode;
+    private WysiwygTextContextMenuRequest? _textContextMenu;
+    private WysiwygTableContextMenuRequest? _tableContextMenu;
+    private WysiwygMiniToolbarRequest? _miniToolbar;
 
     /// <inheritdoc />
     protected override void OnInitialized()
@@ -340,7 +363,43 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private bool CanUseSuggestions => CanCreateSuggestions;
 
-    private bool EffectiveTrackChangesEnabled => _suggestionsEnabled || _trackChangesEnabled;
+    private bool CanReviewRevisions => CanEditDocument
+        && _document is not null
+        && !IsVersionPreview
+        && !IsTemplatePreview;
+
+    private bool HasPendingRevisions => _document?.Revisions.Any(revision => revision.Action == DocumentRevisionAction.Pending) == true;
+
+    private int PendingRevisionCount => _document?.Revisions.Count(revision => revision.Action == DocumentRevisionAction.Pending) ?? 0;
+
+    private string WorkspaceClass => _sidePanelOpen
+        ? "tm-document-editor__workspace tm-document-editor__workspace--side-panel-open"
+        : "tm-document-editor__workspace tm-document-editor__workspace--side-panel-closed";
+
+    private DocumentSidePanelTab ActiveSidePanelTab => NormalizeSidePanelTab(_activeSidePanelTab);
+
+    private bool EffectiveTrackChangesEnabled => _trackChangesEnabled;
+
+    private DocumentSection? ActiveSection => DisplayedDocument?.Sections.OrderBy(section => section.Order).FirstOrDefault();
+
+    private bool DifferentFirstPageHeaderFooter => ActiveSection?.Properties.DifferentFirstPage == true;
+
+    private bool DifferentOddAndEvenHeaderFooter => ActiveSection?.Properties.DifferentOddAndEvenPages == true;
+
+    private int DocumentWordCount => CountWords(DisplayedDocument);
+
+    private int DocumentPageCount => CountPages(DisplayedDocument);
+
+    private string ActiveRegionLabel => _activeWysiwygRegion switch
+    {
+        "Header" => Loc["TmDocumentEditor_RegionHeader"],
+        "Footer" => Loc["TmDocumentEditor_RegionFooter"],
+        _ => Loc["TmDocumentEditor_RegionBody"]
+    };
+
+    private string ZoomStatusLabel => _zoomPageWidth
+        ? Loc["TmDocumentEditor_ZoomPageWidth"]
+        : string.Create(CultureInfo.InvariantCulture, $"{_zoomPercent}%");
 
     private bool OfflineEnabled => OfflineMode == DocumentEditorOfflineMode.Enabled && OfflineStore is not null;
 
@@ -358,6 +417,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
 
         await RefreshFormatCapabilitiesAsync();
+        await RefreshFontFamiliesAsync();
         ConfigureAutoSaveTimer();
 
         if (Provider is null)
@@ -379,12 +439,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
             _templatePreviewMessage = null;
+            _revisionMessage = null;
             _formatMessage = null;
             _formatWarnings = [];
             _commentComposerOpen = false;
             _selectedCommentId = null;
             _loadedSuggestionProvider = null;
             _loadedFormatProvider = FormatProvider;
+            _loadedFontProvider = null;
             _compareDialogOpen = false;
             _compareDocumentSnapshot = null;
             _lastSavedAt = null;
@@ -414,12 +476,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
             _templatePreviewMessage = null;
+            _revisionMessage = null;
             _formatMessage = null;
             _formatWarnings = [];
             _commentComposerOpen = false;
             _selectedCommentId = null;
             _loadedSuggestionProvider = null;
             _loadedFormatProvider = FormatProvider;
+            _loadedFontProvider = null;
             _compareDialogOpen = false;
             _compareDocumentSnapshot = null;
             _lastSavedAt = null;
@@ -473,6 +537,39 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
     }
 
+    private async Task RefreshFontFamiliesAsync()
+    {
+        var provider = FontProvider ?? _fallbackFontProvider;
+        if (ReferenceEquals(_loadedFontProvider, provider) && _fontFamilies.Count > 0)
+        {
+            return;
+        }
+
+        try
+        {
+            var query = new DocumentFontQuery
+            {
+                DocumentId = DocumentId,
+                CultureName = CultureInfo.CurrentUICulture.Name
+            };
+            var fonts = await provider.GetFontFamiliesAsync(query);
+            var fallback = await provider.GetFallbackFontAsync(query);
+            _fontFamilies = fonts.Count > 0
+                ? fonts
+                : [fallback];
+            _loadedFontProvider = provider;
+        }
+        catch
+        {
+            _fontFamilies = (await _fallbackFontProvider.GetFontFamiliesAsync(new DocumentFontQuery
+            {
+                DocumentId = DocumentId,
+                CultureName = CultureInfo.CurrentUICulture.Name
+            })).ToList();
+            _loadedFontProvider = _fallbackFontProvider;
+        }
+    }
+
     private async Task RetryAsync()
     {
         await LoadDocumentAsync(force: true);
@@ -522,14 +619,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             }
 
             _document = result.Document;
-            _currentDocument = result.Document;
+            DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(_document);
+            _currentDocument = _document;
             _concurrencyToken = result.ConcurrencyToken;
             _selection = new DocumentEditorSelectionState();
+            _activeWysiwygRegion = "Body";
+            _lastBodySelectionSnapshot = null;
+            _lastBodyRangeSelectionSnapshot = null;
             _isDirty = false;
             _saveMessage = null;
             _versionMessage = null;
             _commentMessage = null;
             _suggestionMessage = null;
+            _revisionMessage = null;
             _templatePreviewMessage = null;
             _formatMessage = null;
             _formatWarnings = [];
@@ -542,7 +644,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _versionDialogOpen = false;
             _compareDialogOpen = false;
             _compareDocumentSnapshot = null;
-            _versionPanelOpen = true;
+            _sidePanelOpen = ShowComments || ShowVersionHistory || _trackChangesEnabled;
+            _activeSidePanelTab = _trackChangesEnabled
+                ? DocumentSidePanelTab.Revisions
+                : ShowVersionHistory
+                ? DocumentSidePanelTab.Versions
+                : ShowComments
+                    ? DocumentSidePanelTab.Comments
+                    : DocumentSidePanelTab.Properties;
             _commentComposerOpen = false;
             _selectedCommentId = null;
             _offlineConflict = null;
@@ -607,22 +716,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
             if (jsSnapshot is not null)
             {
-                // Preserve document-level metadata that the JS engine does not own.
-                jsSnapshot.DocumentId = documentToSave.DocumentId;
-                jsSnapshot.SchemaVersion = documentToSave.SchemaVersion;
-                jsSnapshot.Metadata = documentToSave.Metadata;
-                jsSnapshot.PageSettings = documentToSave.PageSettings;
-                jsSnapshot.Sections = documentToSave.Sections;
-                jsSnapshot.Comments = documentToSave.Comments;
-                jsSnapshot.Notes = documentToSave.Notes;
-                // Phase 12: Headers/footers are serialized from JS DOM; preserve them.
-                jsSnapshot.Revisions = documentToSave.Revisions;
-                jsSnapshot.Assets = documentToSave.Assets;
-                jsSnapshot.Anchors = documentToSave.Anchors;
-                documentToSave = jsSnapshot;
+                documentToSave = CreateProviderBoundarySnapshot(documentToSave, jsSnapshot);
                 _document = documentToSave;
                 _currentDocument = documentToSave;
             }
+        }
+        else
+        {
+            documentToSave = CreateProviderBoundarySnapshot(documentToSave);
         }
 
         var request = new DocumentEditorSaveRequest
@@ -837,9 +938,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
             var imported = result.Document;
             imported.DocumentId = _document.DocumentId;
+            DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(imported);
             _document = imported;
             _currentDocument = imported;
             _selection = new DocumentEditorSelectionState();
+            _activeWysiwygRegion = "Body";
+            _lastBodySelectionSnapshot = null;
+            _lastBodyRangeSelectionSnapshot = null;
             _previewVersion = null;
             _templatePreviewDocument = null;
             _templatePreviewEnabled = false;
@@ -944,23 +1049,99 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
             if (jsSnapshot is not null)
             {
-                jsSnapshot.DocumentId = documentToExport.DocumentId;
-                jsSnapshot.SchemaVersion = documentToExport.SchemaVersion;
-                jsSnapshot.Metadata = documentToExport.Metadata;
-                jsSnapshot.PageSettings = documentToExport.PageSettings;
-                jsSnapshot.Sections = documentToExport.Sections;
-                jsSnapshot.Comments = documentToExport.Comments;
-                jsSnapshot.Notes = documentToExport.Notes;
-                jsSnapshot.Revisions = documentToExport.Revisions;
-                jsSnapshot.Assets = documentToExport.Assets;
-                jsSnapshot.Anchors = documentToExport.Anchors;
-                _document = jsSnapshot;
-                _currentDocument = jsSnapshot;
-                documentToExport = jsSnapshot;
+                documentToExport = CreateProviderBoundarySnapshot(documentToExport, jsSnapshot);
+                _document = documentToExport;
+                _currentDocument = documentToExport;
             }
         }
 
-        return documentToExport;
+        return CreateProviderBoundarySnapshot(documentToExport);
+    }
+
+    private static DocumentEditorDocument CreateProviderBoundarySnapshot(
+        DocumentEditorDocument currentDocument,
+        DocumentEditorDocument? wysiwygSnapshot = null)
+    {
+        var snapshot = wysiwygSnapshot is null
+            ? CloneForEditor(currentDocument)
+            : CloneForEditor(wysiwygSnapshot);
+
+        snapshot.DocumentId = currentDocument.DocumentId;
+        snapshot.SchemaVersion = currentDocument.SchemaVersion;
+        snapshot.Metadata = CloneForEditor(currentDocument.Metadata);
+        snapshot.PageSettings = CloneForEditor(currentDocument.PageSettings);
+        snapshot.Theme = CloneForEditor(currentDocument.Theme);
+        snapshot.Sections = CloneForEditor(currentDocument.Sections);
+        snapshot.Comments = CloneForEditor(currentDocument.Comments);
+        snapshot.Notes = CloneForEditor(currentDocument.Notes);
+        snapshot.Assets = CloneForEditor(currentDocument.Assets);
+        snapshot.Anchors = CloneForEditor(currentDocument.Anchors);
+
+        if (snapshot.HeadersFooters.Count == 0 && currentDocument.HeadersFooters.Count > 0)
+        {
+            snapshot.HeadersFooters = CloneForEditor(currentDocument.HeadersFooters);
+        }
+
+        if (snapshot.Revisions.Count == 0 && currentDocument.Revisions.Count > 0)
+        {
+            snapshot.Revisions = CloneForEditor(currentDocument.Revisions);
+        }
+
+        DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(snapshot);
+        RemoveTransientDisplayData(snapshot);
+        return snapshot;
+    }
+
+    private static void RemoveTransientDisplayData(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateProviderBoundaryBlocks(document.Blocks))
+        {
+            RemoveTransientDisplayData(block);
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            foreach (var block in EnumerateProviderBoundaryBlocks(headerFooter.Blocks))
+            {
+                RemoveTransientDisplayData(block);
+            }
+        }
+
+        foreach (var note in document.Notes)
+        {
+            foreach (var block in EnumerateProviderBoundaryBlocks(note.Blocks))
+            {
+                RemoveTransientDisplayData(block);
+            }
+        }
+    }
+
+    private static void RemoveTransientDisplayData(DocumentBlock block)
+    {
+        if (block.Content is ImageBlockContent { Source: DocumentImageSource.Asset } image
+            && !string.IsNullOrWhiteSpace(image.AssetId))
+        {
+            image.Url = null;
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateProviderBoundaryBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            yield return block;
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var nested in table.Rows
+                         .SelectMany(row => row.Cells)
+                         .SelectMany(cell => EnumerateProviderBoundaryBlocks(cell.Blocks)))
+            {
+                yield return nested;
+            }
+        }
     }
 
     private Task DownloadFormatExportAsync(DocumentFormatExportProviderResult result)
@@ -1069,17 +1250,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 : null;
 
         _document = document;
-        _currentDocument = document;
+        DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(_document);
+        _currentDocument = _document;
         _templatePreviewDocument = null;
         _templatePreviewEnabled = false;
         _templatePreviewMessage = null;
         _isDirty = true;
         if (before is not null)
         {
-            await BroadcastLocalCollaborationChangeAsync(before, document);
+            await BroadcastLocalCollaborationChangeAsync(before, _document);
         }
 
-        _suggestionSnapshot = Clone(document);
+        _suggestionSnapshot = Clone(_document);
     }
 
     private async Task HandleWysiwygPatchAsync(WysiwygPatch patch)
@@ -1093,11 +1275,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         try
         {
             var before = DocumentEditorCommandCloner.Clone(_document);
-            var applier = new WysiwygPatchApplier();
-            applier.ApplyPatch(_document, patch);
+            var handledAsRevision = _trackChangesEnabled && TryApplyTrackedRevisionPatch(_document, patch);
+            var handledAsTrackedStructuralChange = _trackChangesEnabled && IsTrackedStructuralPatch(patch);
+            if (!handledAsRevision)
+            {
+                var applier = new WysiwygPatchApplier();
+                applier.ApplyPatch(_document, patch);
+            }
 
             var after = DocumentEditorCommandCloner.Clone(_document);
-            if (await TryCreateSuggestionAsync(before, after))
+            if (!handledAsRevision && !handledAsTrackedStructuralChange && await TryCreateSuggestionAsync(before, after))
             {
                 await InvokeAsync(StateHasChanged);
                 return;
@@ -1151,9 +1338,21 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _templatePreviewEnabled = false;
             _templatePreviewMessage = null;
             _isDirty = true;
-            await BroadcastLocalCollaborationChangeAsync(before, after);
+            if (handledAsRevision)
+            {
+                await BroadcastLocalCollaborationChangeAsync(before, after, patch);
+            }
+            else if (!handledAsTrackedStructuralChange)
+            {
+                await BroadcastLocalCollaborationChangeAsync(before, after, patch);
+            }
             _suggestionSnapshot = Clone(after);
-            if (!deferRenderUntilTransactionCommit)
+            if (handledAsRevision || handledAsTrackedStructuralChange)
+            {
+                OpenSidePanel(DocumentSidePanelTab.Revisions);
+                await InvokeAsync(StateHasChanged);
+            }
+            else if (!deferRenderUntilTransactionCommit)
             {
                 await InvokeAsync(StateHasChanged);
             }
@@ -1195,11 +1394,28 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task HandleWysiwygSelectionChangedAsync(WysiwygSelectionSnapshot? snapshot)
     {
+        if (snapshot?.IsCollapsed != false)
+        {
+            _miniToolbar = null;
+        }
+
         if (snapshot is null)
         {
             _selection = new DocumentEditorSelectionState();
+            _formattingState = new WysiwygFormattingState();
+            _activeWysiwygRegion = "Body";
             await BroadcastCollaborationCursorAsync();
             return;
+        }
+
+        _activeWysiwygRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region;
+        if (string.Equals(_activeWysiwygRegion, "Body", StringComparison.OrdinalIgnoreCase))
+        {
+            _lastBodySelectionSnapshot = snapshot;
+            if (snapshot.IsCollapsed == false)
+            {
+                _lastBodyRangeSelectionSnapshot = snapshot;
+            }
         }
 
         var range = new DocumentEditorInlineRange
@@ -1211,7 +1427,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         if (!string.IsNullOrWhiteSpace(snapshot.AnchorBlockId) && _document is not null)
         {
-            var block = _document.Blocks.FirstOrDefault(b => b.Id == snapshot.AnchorBlockId);
+            var block = FindBlockForSelection(_document, snapshot.AnchorBlockId, snapshot);
             var inlines = GetEditableInlines(block?.Content);
             if (inlines is not null && !string.IsNullOrWhiteSpace(snapshot.AnchorInlineId))
             {
@@ -1232,10 +1448,291 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _selection = new DocumentEditorSelectionState
         {
             ActiveBlockId = snapshot.AnchorBlockId,
-            FocusedInlineRange = range
+            FocusedInlineRange = range,
+            ActiveTableCellId = snapshot.ActiveTableCellId,
+            Region = _activeWysiwygRegion,
+            HeaderFooterId = snapshot.HeaderFooterId,
+            PageIndex = snapshot.PageIndex
         };
+        _formattingState = ComputeFormattingState(snapshot);
         await BroadcastCollaborationCursorAsync();
     }
+
+    private Task HandleTextContextMenuRequestedAsync(WysiwygTextContextMenuRequest request)
+    {
+        _textContextMenu = request;
+        _tableContextMenu = null;
+        _miniToolbar = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleTableContextMenuRequestedAsync(WysiwygTableContextMenuRequest request)
+    {
+        _tableContextMenu = request;
+        _textContextMenu = null;
+        _miniToolbar = null;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleMiniToolbarChangedAsync(WysiwygMiniToolbarRequest? request)
+    {
+        _miniToolbar = request?.IsVisible == true ? request : null;
+        if (_miniToolbar is not null)
+        {
+            _textContextMenu = null;
+            _tableContextMenu = null;
+        }
+
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task InsertTableRowFromContextAsync()
+        => RunTableContextCommandAsync("insertTableRow");
+
+    private Task InsertTableColumnFromContextAsync()
+        => RunTableContextCommandAsync("insertTableColumn");
+
+    private Task DeleteTableRowFromContextAsync()
+        => RunTableContextCommandAsync("deleteTableRow");
+
+    private Task DeleteTableColumnFromContextAsync()
+        => RunTableContextCommandAsync("deleteTableColumn");
+
+    private async Task RunTableContextCommandAsync(string command)
+    {
+        var selection = _tableContextMenu?.Selection;
+        if (_wysiwygHost is not null && selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+            await _wysiwygHost.ExecuteEditorCommandAsync(command);
+        }
+
+        CloseFloatingUi();
+    }
+
+    private async Task RunFloatingSelectionCommandAsync(WysiwygSelectionSnapshot? selection, Func<Task> command)
+    {
+        if (_wysiwygHost is not null && selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
+
+        await command();
+        CloseFloatingUi();
+    }
+
+    private Task ApplyDefaultFloatingLinkAsync()
+    {
+        return ApplyLinkAsync("https://example.com");
+    }
+
+    private void CloseFloatingUi()
+    {
+        if (_textContextMenu is null && _tableContextMenu is null && _miniToolbar is null)
+        {
+            return;
+        }
+
+        _textContextMenu = null;
+        _tableContextMenu = null;
+        _miniToolbar = null;
+    }
+
+    private static string FloatingStyle(WysiwygFloatingUiPosition position)
+    {
+        return string.Create(
+            CultureInfo.InvariantCulture,
+            $"left: {position.Left:0.##}px; top: {position.Top:0.##}px;");
+    }
+
+    private WysiwygFormattingState ComputeFormattingState(WysiwygSelectionSnapshot snapshot)
+    {
+        var (paragraphAlignment, paragraphAlignmentMixed) = ComputeParagraphAlignmentState(snapshot);
+        return new WysiwygFormattingState
+        {
+            Bold = ComputeMarkState(snapshot, InlineMarkType.Bold),
+            Italic = ComputeMarkState(snapshot, InlineMarkType.Italic),
+            Underline = ComputeMarkState(snapshot, InlineMarkType.Underline),
+            ParagraphAlignment = paragraphAlignment,
+            ParagraphAlignmentMixed = paragraphAlignmentMixed
+        };
+    }
+
+    private (DocumentTextAlignment Alignment, bool Mixed) ComputeParagraphAlignmentState(WysiwygSelectionSnapshot snapshot)
+    {
+        var blocks = ResolveSelectedBlocks(snapshot).ToList();
+        if (blocks.Count == 0)
+        {
+            return (DocumentTextAlignment.Left, false);
+        }
+
+        var first = blocks[0].ParagraphProperties?.Alignment ?? DocumentTextAlignment.Left;
+        var mixed = blocks.Any(block => (block.ParagraphProperties?.Alignment ?? DocumentTextAlignment.Left) != first);
+        return (first, mixed);
+    }
+
+    private IEnumerable<DocumentBlock> ResolveSelectedBlocks(WysiwygSelectionSnapshot snapshot)
+    {
+        var document = DisplayedDocument;
+        if (document is null || string.IsNullOrWhiteSpace(snapshot.AnchorBlockId))
+        {
+            return [];
+        }
+
+        var blocks = ResolveSelectionBlocks(document, snapshot);
+        var anchorIndex = blocks.FindIndex(block => block.Id == snapshot.AnchorBlockId);
+        if (anchorIndex < 0)
+        {
+            return [];
+        }
+
+        var focusBlockId = string.IsNullOrWhiteSpace(snapshot.FocusBlockId)
+            ? snapshot.AnchorBlockId
+            : snapshot.FocusBlockId;
+        var focusIndex = blocks.FindIndex(block => block.Id == focusBlockId);
+        if (focusIndex < 0)
+        {
+            focusIndex = anchorIndex;
+        }
+
+        var start = Math.Min(anchorIndex, focusIndex);
+        var end = Math.Max(anchorIndex, focusIndex);
+        return blocks
+            .Skip(start)
+            .Take(end - start + 1)
+            .Where(block => block.Content is ParagraphBlockContent or HeadingBlockContent or ListBlockContent or QuoteBlockContent)
+            .ToList();
+    }
+
+    private WysiwygFormattingValue ComputeMarkState(WysiwygSelectionSnapshot snapshot, InlineMarkType markType)
+    {
+        var document = DisplayedDocument;
+        var block = document is null
+            ? null
+            : FindBlockForSelection(document, snapshot.AnchorBlockId, snapshot);
+        if (block is null)
+        {
+            return WysiwygFormattingValue.Inactive;
+        }
+
+        var inlines = GetEditableInlines(block.Content);
+        if (inlines is null || inlines.Count == 0)
+        {
+            return WysiwygFormattingValue.Inactive;
+        }
+
+        var textLength = inlines.Sum(inline => GetInlineText(inline).Length);
+        var start = Math.Min(snapshot.AnchorOffset, snapshot.FocusOffset);
+        var end = Math.Max(snapshot.AnchorOffset, snapshot.FocusOffset);
+        start = Math.Clamp(start, 0, textLength);
+        end = Math.Clamp(end, start, textLength);
+
+        if (snapshot.IsCollapsed || start == end)
+        {
+            var inline = ResolveInlineAtOffset(inlines, snapshot.AnchorInlineId, start);
+            return inline?.Marks.Any(mark => mark.Type == markType) == true
+                ? WysiwygFormattingValue.Active
+                : WysiwygFormattingValue.Inactive;
+        }
+
+        var current = 0;
+        var any = false;
+        var all = true;
+        foreach (var inline in inlines)
+        {
+            var length = GetInlineText(inline).Length;
+            var inlineStart = current;
+            var inlineEnd = current + length;
+            current = inlineEnd;
+
+            if (inlineEnd <= start || inlineStart >= end)
+            {
+                continue;
+            }
+
+            any |= inline.Marks.Any(mark => mark.Type == markType);
+            all &= inline.Marks.Any(mark => mark.Type == markType);
+        }
+
+        return any switch
+        {
+            true when all => WysiwygFormattingValue.Active,
+            true => WysiwygFormattingValue.Mixed,
+            _ => WysiwygFormattingValue.Inactive
+        };
+    }
+
+    private static List<DocumentBlock> ResolveSelectionBlocks(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot snapshot)
+    {
+        if ((string.Equals(snapshot.Region, "Header", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(snapshot.Region, "Footer", StringComparison.OrdinalIgnoreCase))
+            && !string.IsNullOrWhiteSpace(snapshot.HeaderFooterId))
+        {
+            var headerFooter = document.HeadersFooters.FirstOrDefault(item =>
+                string.Equals(item.Id, snapshot.HeaderFooterId, StringComparison.Ordinal));
+            if (headerFooter is not null)
+            {
+                return headerFooter.Blocks;
+            }
+        }
+
+        if (!string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
+            && !document.Blocks.Any(block => block.Id == snapshot.AnchorBlockId))
+        {
+            var headerFooter = document.HeadersFooters.FirstOrDefault(item =>
+                item.Blocks.Any(block => block.Id == snapshot.AnchorBlockId));
+            if (headerFooter is not null)
+            {
+                return headerFooter.Blocks;
+            }
+        }
+
+        return document.Blocks;
+    }
+
+    private static DocumentBlock? FindBlockForSelection(
+        DocumentEditorDocument document,
+        string? blockId,
+        WysiwygSelectionSnapshot snapshot)
+    {
+        if (string.IsNullOrWhiteSpace(blockId))
+        {
+            return null;
+        }
+
+        return ResolveSelectionBlocks(document, snapshot).FirstOrDefault(block => block.Id == blockId)
+            ?? document.Blocks.FirstOrDefault(block => block.Id == blockId)
+            ?? document.HeadersFooters.SelectMany(headerFooter => headerFooter.Blocks).FirstOrDefault(block => block.Id == blockId);
+    }
+
+    private static InlineContent? ResolveInlineAtOffset(List<InlineContent> inlines, string? inlineId, int offset)
+    {
+        if (!string.IsNullOrWhiteSpace(inlineId))
+        {
+            var exact = inlines.FirstOrDefault(inline => inline.Id == inlineId);
+            if (exact is not null)
+            {
+                return exact;
+            }
+        }
+
+        var current = 0;
+        foreach (var inline in inlines)
+        {
+            var length = GetInlineText(inline).Length;
+            if (offset <= current + Math.Max(length, 1))
+            {
+                return inline;
+            }
+
+            current += length;
+        }
+
+        return inlines.LastOrDefault();
+    }
+
 
     private Task HandleWysiwygTransactionCommittedAsync()
     {
@@ -1256,9 +1753,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             "InsertInline" => "Insert inline content",
             "DeleteRange" or "DeleteContentBackward" or "DeleteContentForward" => "Delete",
             "ToggleMark" => $"Apply {patch.MarkType}",
-            "InsertParagraph" or "InsertLineBreak" => "Insert paragraph",
+            "SetMarks" => $"Apply {patch.MarkType}",
+            "ClearFormatting" => "Clear formatting",
+            "SetParagraphProperties" => "Format paragraph",
+            "InsertParagraph" or "SplitBlock" => "Insert paragraph",
+            "InsertLineBreak" or "InsertSoftBreak" => "Insert line break",
             "InsertBlock" => $"Insert {patch.BlockType}",
             "RemoveBlock" => "Remove block",
+            "MoveBlock" => "Move block",
             "UpdateBlock" => "Update block",
             "Paste" => "Paste",
             _ => "Edit"
@@ -1562,6 +2064,154 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         await BroadcastCollaborationCursorAsync();
     }
 
+    private Task SetSidePanelTabAsync(DocumentSidePanelTab tab)
+    {
+        OpenSidePanel(tab);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenSidePanelAsync()
+    {
+        _sidePanelOpen = true;
+        _activeSidePanelTab = NormalizeSidePanelTab(_activeSidePanelTab);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenCommentsPanelAsync()
+    {
+        OpenSidePanel(DocumentSidePanelTab.Comments);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenRevisionsPanelAsync()
+    {
+        OpenSidePanel(DocumentSidePanelTab.Revisions);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task OpenVersionsPanelAsync()
+    {
+        OpenSidePanel(DocumentSidePanelTab.Versions);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetDifferentFirstPageHeaderFooterAsync(bool enabled)
+    {
+        if (_document is null || EffectiveReadOnly)
+        {
+            return;
+        }
+
+        await GetCurrentDocumentForProviderExportAsync();
+        if (_document is null)
+        {
+            return;
+        }
+
+        var before = DocumentEditorCommandCloner.Clone(_document);
+        DocumentHeaderFooterResolver.SetDifferentFirstPage(_document, enabled);
+        var after = DocumentEditorCommandCloner.Clone(_document);
+        await _commandStack.PushAsync(new DocumentEditorSnapshotCommand(
+            _document,
+            before,
+            after,
+            "Change header/footer first page setting"));
+        _currentDocument = _document;
+        MarkDirtyAfterCommand();
+    }
+
+    private async Task SetDifferentOddAndEvenHeaderFooterAsync(bool enabled)
+    {
+        if (_document is null || EffectiveReadOnly)
+        {
+            return;
+        }
+
+        await GetCurrentDocumentForProviderExportAsync();
+        if (_document is null)
+        {
+            return;
+        }
+
+        var before = DocumentEditorCommandCloner.Clone(_document);
+        DocumentHeaderFooterResolver.SetDifferentOddAndEvenPages(_document, enabled);
+        var after = DocumentEditorCommandCloner.Clone(_document);
+        await _commandStack.PushAsync(new DocumentEditorSnapshotCommand(
+            _document,
+            before,
+            after,
+            "Change header/footer odd-even setting"));
+        _currentDocument = _document;
+        MarkDirtyAfterCommand();
+    }
+
+    private async Task CloseHeaderFooterAsync()
+    {
+        _activeWysiwygRegion = "Body";
+        _selection.Region = "Body";
+        _selection.HeaderFooterId = null;
+        _selection.PageIndex = null;
+
+        if (_wysiwygHost is not null)
+        {
+            if (_lastBodySelectionSnapshot is not null)
+            {
+                await _wysiwygHost.RestoreSelectionAsync(_lastBodySelectionSnapshot);
+            }
+            else
+            {
+                await _wysiwygHost.FocusAsync();
+            }
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetRulerVisibleAsync(bool visible)
+    {
+        _showRuler = visible;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetZoomPercentAsync(int percent)
+    {
+        _zoomPercent = Math.Clamp(percent, 50, 200);
+        _zoomPageWidth = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetZoomPageWidthAsync()
+    {
+        _zoomPageWidth = true;
+        _zoomPercent = 100;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private void OpenSidePanel(DocumentSidePanelTab tab)
+    {
+        _activeSidePanelTab = NormalizeSidePanelTab(tab);
+        _sidePanelOpen = true;
+    }
+
+    private void CloseSidePanel()
+    {
+        _sidePanelOpen = false;
+    }
+
+    private DocumentSidePanelTab NormalizeSidePanelTab(DocumentSidePanelTab tab)
+    {
+        return tab switch
+        {
+            DocumentSidePanelTab.Comments when ShowComments => DocumentSidePanelTab.Comments,
+            DocumentSidePanelTab.Revisions => DocumentSidePanelTab.Revisions,
+            DocumentSidePanelTab.Versions when ShowVersionHistory => DocumentSidePanelTab.Versions,
+            DocumentSidePanelTab.Properties => DocumentSidePanelTab.Properties,
+            _ when ShowVersionHistory => DocumentSidePanelTab.Versions,
+            _ when ShowComments => DocumentSidePanelTab.Comments,
+            _ => DocumentSidePanelTab.Properties
+        };
+    }
+
     private async Task BeginCommentFromToolbarAsync()
     {
         if (!CanUseComments || _document is null)
@@ -1599,6 +2249,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             return Task.CompletedTask;
         }
 
+        OpenSidePanel(DocumentSidePanelTab.Comments);
         _draftCommentAnchor = anchor;
         _commentComposerOpen = true;
         _commentMessage = anchor.Type == DocumentCommentAnchorType.TextRange
@@ -1643,7 +2294,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             var created = await Provider.CreateCommentAsync(DocumentId, comment);
             UpsertComment(created);
             ApplyCommentAnchorMark(created);
+            if (_wysiwygHost is not null && _document is not null)
+            {
+                await _wysiwygHost.RefreshSnapshotAsync(_document);
+            }
+
             _selectedCommentId = created.Id;
+            OpenSidePanel(DocumentSidePanelTab.Comments);
             _commentComposerOpen = false;
             _draftCommentAnchor = null;
             _commentMessage = Loc["TmDocumentEditor_CommentCreated"];
@@ -1804,6 +2461,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private void SelectComment(string commentId)
     {
         _selectedCommentId = commentId;
+        OpenSidePanel(DocumentSidePanelTab.Comments);
     }
 
     private async Task ToggleTrackChanges()
@@ -1813,24 +2471,27 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             return;
         }
 
-        if (SuggestionProvider is not null)
+        _trackChangesEnabled = !_trackChangesEnabled;
+        _revisionMessage = _trackChangesEnabled
+            ? Loc["TmDocumentEditor_TrackChangesOn"]
+            : Loc["TmDocumentEditor_TrackChangesOff"];
+        if (_trackChangesEnabled)
         {
-            if (!CanCreateSuggestions)
-            {
-                return;
-            }
-
-            _suggestionsEnabled = !_suggestionsEnabled;
-            if (_suggestionsEnabled)
-            {
-                await RefreshSuggestionsAsync();
-                _suggestionSnapshot = _document is null ? null : Clone(_document);
-            }
-
-            return;
+            OpenSidePanel(DocumentSidePanelTab.Revisions);
         }
 
-        _trackChangesEnabled = !_trackChangesEnabled;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task SetReviewDisplayModeAsync(DocumentReviewDisplayMode mode)
+    {
+        _reviewDisplayMode = mode;
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.SetReviewDisplayModeAsync(mode);
+        }
+
+        await InvokeAsync(StateHasChanged);
     }
 
     private void SelectSuggestion(DocumentSuggestion suggestion)
@@ -1851,6 +2512,111 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private Task RejectSuggestionAsync(DocumentSuggestion suggestion)
         => ReviewSuggestionAsync(suggestion, DocumentSuggestionStatus.Rejected);
+
+    private async Task SelectRevision(DocumentRevision revision)
+    {
+        OpenSidePanel(DocumentSidePanelTab.Revisions);
+        _selection.ActiveBlockId = revision.Range.BlockId;
+        _selection.FocusedInlineRange = new DocumentEditorInlineRange
+        {
+            BlockId = revision.Range.BlockId,
+            StartInlineIndex = revision.Range.StartInlineIndex ?? 0,
+            StartOffset = revision.Range.StartOffset ?? 0,
+            EndInlineIndex = revision.Range.EndInlineIndex ?? revision.Range.StartInlineIndex ?? 0,
+            EndOffset = revision.Range.EndOffset ?? revision.Range.StartOffset ?? 0
+        };
+
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.ScrollToRevisionAsync(revision.Id);
+        }
+    }
+
+    private Task AcceptRevisionAsync(DocumentRevision revision)
+        => ReviewRevisionAsync(revision, DocumentRevisionAction.Accepted);
+
+    private Task RejectRevisionAsync(DocumentRevision revision)
+        => ReviewRevisionAsync(revision, DocumentRevisionAction.Rejected);
+
+    private Task ReviewInlineRevisionAsync(WysiwygRevisionReviewRequest request)
+    {
+        if (_document is null || string.IsNullOrWhiteSpace(request.RevisionId))
+        {
+            return Task.CompletedTask;
+        }
+
+        var revision = _document.Revisions.FirstOrDefault(item => item.Id == request.RevisionId);
+        if (revision is null || request.Action is not (DocumentRevisionAction.Accepted or DocumentRevisionAction.Rejected))
+        {
+            return Task.CompletedTask;
+        }
+
+        return ReviewRevisionAsync(revision, request.Action);
+    }
+
+    private async Task ReviewRevisionAsync(DocumentRevision revision, DocumentRevisionAction action)
+    {
+        if (_document is null || _isReviewingRevision || !CanReviewRevisions || revision.Action != DocumentRevisionAction.Pending)
+        {
+            return;
+        }
+
+        var target = _document.Revisions.FirstOrDefault(item => item.Id == revision.Id);
+        if (target is null)
+        {
+            return;
+        }
+
+        _isReviewingRevision = true;
+        _revisionMessage = null;
+        var before = DocumentEditorCommandCloner.Clone(_document);
+
+        try
+        {
+            var removeContent = (target.Type == DocumentRevisionType.Insertion && action == DocumentRevisionAction.Rejected)
+                || (target.Type == DocumentRevisionType.Deletion && action == DocumentRevisionAction.Accepted);
+
+            if (target.Type == DocumentRevisionType.Formatting)
+            {
+                ApplyFormattingRevisionDecision(_document, target, action);
+            }
+            else if (removeContent)
+            {
+                RemoveRevisionContent(_document, target.Id);
+            }
+            else
+            {
+                RemoveRevisionMarks(_document, target.Id);
+            }
+
+            target.Action = action;
+            var after = DocumentEditorCommandCloner.Clone(_document);
+            await _commandStack.PushAsync(new DocumentEditorSnapshotCommand(
+                _document,
+                before,
+                after,
+                action == DocumentRevisionAction.Accepted ? "Accept revision" : "Reject revision"));
+
+            _currentDocument = _document;
+            _isDirty = true;
+            _suggestionSnapshot = Clone(after);
+            await BroadcastLocalCollaborationChangeAsync(before, after);
+            if (_wysiwygHost is not null)
+            {
+                await _wysiwygHost.RefreshSnapshotAsync();
+                await _wysiwygHost.ClearRevisionDecorationsAsync(target.Id, removeContent);
+            }
+
+            _revisionMessage = action == DocumentRevisionAction.Accepted
+                ? Loc["TmDocumentEditor_RevisionAccepted"]
+                : Loc["TmDocumentEditor_RevisionRejected"];
+        }
+        finally
+        {
+            _isReviewingRevision = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
     private async Task ReviewSuggestionAsync(DocumentSuggestion suggestion, DocumentSuggestionStatus status)
     {
@@ -1967,6 +2733,131 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
     }
 
+    private async Task ApplyFontFamilyAsync(string cssFamily)
+    {
+        if (_wysiwygHost is null || EffectiveReadOnly || string.IsNullOrWhiteSpace(cssFamily))
+        {
+            return;
+        }
+
+        if (!_fontFamilies.Any(font => string.Equals(font.CssFamily, cssFamily, StringComparison.OrdinalIgnoreCase)))
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("toggleMark", new WysiwygMarkPayload
+        {
+            MarkType = InlineMarkType.FontFamily.ToString(),
+            Data = cssFamily
+        });
+    }
+
+    private async Task ApplyFontSizeAsync(double sizePt)
+    {
+        if (_wysiwygHost is null || EffectiveReadOnly || sizePt is < 6 or > 96)
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("toggleMark", new WysiwygMarkPayload
+        {
+            MarkType = InlineMarkType.FontSize.ToString(),
+            Data = FormattableString.Invariant($"{sizePt:0.##}pt")
+        });
+    }
+
+    private Task ApplyTextColorAsync(string color)
+    {
+        return ApplyColorMarkAsync(InlineMarkType.TextColor, color);
+    }
+
+    private Task ApplyHighlightColorAsync(string color)
+    {
+        return ApplyColorMarkAsync(InlineMarkType.Highlight, color);
+    }
+
+    private Task ApplyParagraphAlignmentAsync(DocumentTextAlignment alignment)
+    {
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { Alignment = alignment });
+    }
+
+    private Task ApplyLineSpacingAsync(double lineSpacing)
+    {
+        if (lineSpacing is < 0.8 or > 3)
+        {
+            return Task.CompletedTask;
+        }
+
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { LineSpacing = lineSpacing });
+    }
+
+    private Task ApplySpacingBeforeAsync(double spacingBefore)
+    {
+        if (spacingBefore is < 0 or > 144)
+        {
+            return Task.CompletedTask;
+        }
+
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { SpacingBefore = spacingBefore });
+    }
+
+    private Task ApplySpacingAfterAsync(double spacingAfter)
+    {
+        if (spacingAfter is < 0 or > 144)
+        {
+            return Task.CompletedTask;
+        }
+
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { SpacingAfter = spacingAfter });
+    }
+
+    private Task IncreaseParagraphIndentAsync()
+    {
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { LeftIndentDelta = 36 });
+    }
+
+    private Task DecreaseParagraphIndentAsync()
+    {
+        return ApplyParagraphPropertiesAsync(new DocumentParagraphPropertiesPatch { LeftIndentDelta = -36 });
+    }
+
+    private async Task ApplyParagraphPropertiesAsync(DocumentParagraphPropertiesPatch properties)
+    {
+        if (_wysiwygHost is null || EffectiveReadOnly)
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("setParagraphProperties", new
+        {
+            ParagraphProperties = properties
+        });
+    }
+
+    private async Task ApplyColorMarkAsync(InlineMarkType markType, string color)
+    {
+        if (_wysiwygHost is null || EffectiveReadOnly || !IsSafeHexColor(color))
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("toggleMark", new WysiwygMarkPayload
+        {
+            MarkType = markType.ToString(),
+            Data = color
+        });
+    }
+
+    private static bool IsSafeHexColor(string? color)
+    {
+        if (string.IsNullOrWhiteSpace(color) || color.Length != 7 || color[0] != '#')
+        {
+            return false;
+        }
+
+        return color.Skip(1).All(Uri.IsHexDigit);
+    }
+
     private async Task ClearInlineFormattingAsync()
     {
         if (_wysiwygHost is not null && !EffectiveReadOnly)
@@ -1976,11 +2867,50 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     }
 
     private async Task ApplyLinkAsync(string href)
+        => await ApplyLinkAsync(new WysiwygLinkPayload { Href = href });
+
+    private async Task ApplyLinkAsync(WysiwygLinkPayload payload)
     {
-        if (_wysiwygHost is not null && !EffectiveReadOnly)
+        if (_wysiwygHost is null || EffectiveReadOnly)
         {
-            await _wysiwygHost.ExecuteEditorCommandAsync("applyLink", new { Href = href });
+            return;
         }
+
+        var href = DocumentLinkUtility.NormalizeHref(payload.Href);
+        if (!DocumentLinkUtility.IsSafeHref(href))
+        {
+            return;
+        }
+
+        var selection = _pendingLinkSelectionSnapshot?.IsCollapsed == false
+            ? _pendingLinkSelectionSnapshot
+            : _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+        _pendingLinkSelectionSnapshot = null;
+        if (selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
+
+        await _wysiwygHost.ExecuteEditorCommandAsync("applyLink", new
+        {
+            Href = href,
+            Title = string.IsNullOrWhiteSpace(payload.Title) ? null : payload.Title.Trim(),
+            Selection = selection
+        });
+    }
+
+    private async Task<WysiwygLinkInfo?> GetCurrentLinkInfoAsync()
+    {
+        if (_wysiwygHost is null)
+        {
+            return null;
+        }
+
+        var selection = await _wysiwygHost.RequestSelectionSnapshotAsync();
+        _pendingLinkSelectionSnapshot = selection?.IsCollapsed == false
+            ? selection
+            : _lastBodyRangeSelectionSnapshot;
+        return await _wysiwygHost.RequestLinkInfoAsync();
     }
 
     private async Task HandleEditorKeyDownAsync(KeyboardEventArgs args)
@@ -2005,9 +2935,67 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             case DocumentEditorKeyboardCommand.Link:
                 await ApplyLinkAsync("https://example.com");
                 break;
-            case DocumentEditorKeyboardCommand.ClosePanel:
-                await Task.CompletedTask;
+            case DocumentEditorKeyboardCommand.OpenVersions:
+                OpenSidePanel(DocumentSidePanelTab.Versions);
+                await InvokeAsync(StateHasChanged);
                 break;
+            case DocumentEditorKeyboardCommand.ActivateRibbon:
+                await ActivateRibbonKeyboardModeAsync();
+                break;
+            case DocumentEditorKeyboardCommand.ClosePanel:
+                await CloseTopmostEditorLayerAsync();
+                break;
+        }
+    }
+
+    private async Task ActivateRibbonKeyboardModeAsync()
+    {
+        if (!ShowToolbar || _toolbar is null)
+        {
+            return;
+        }
+
+        _ribbonKeyboardMode = true;
+        await _toolbar.FocusActiveTabAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CloseTopmostEditorLayerAsync()
+    {
+        var handled = false;
+        if (_textContextMenu is not null || _tableContextMenu is not null || _miniToolbar is not null)
+        {
+            CloseFloatingUi();
+            handled = true;
+        }
+        else if (_versionDialogOpen)
+        {
+            CloseVersionDialog();
+            handled = true;
+        }
+        else if (_compareDialogOpen)
+        {
+            CloseCompareDialog();
+            handled = true;
+        }
+        else if (_sidePanelOpen)
+        {
+            CloseSidePanel();
+            handled = true;
+        }
+
+        if (handled)
+        {
+            await FocusDocumentAsync();
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task FocusDocumentAsync()
+    {
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.FocusAsync();
         }
     }
 
@@ -2044,8 +3032,600 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             or "DeleteContentBackward"
             or "DeleteContentForward"
             or "InsertParagraph"
+            or "SplitBlock"
             or "InsertLineBreak"
-            or "ToggleMark";
+            or "InsertSoftBreak"
+            or "MergeWithPreviousBlock"
+            or "ToggleMark"
+            or "SetMarks"
+            or "ClearFormatting"
+            or "SetParagraphProperties";
+    }
+
+    private static bool IsTrackedStructuralPatch(WysiwygPatch patch)
+    {
+        return string.Equals(patch.RevisionType, "Structural", StringComparison.Ordinal)
+            || patch.Type is "InsertParagraph" or "SplitBlock";
+    }
+
+    private bool TryApplyTrackedRevisionPatch(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        return patch.Type switch
+        {
+            "InsertText" => TryApplyTrackedInsertion(document, patch),
+            "DeleteRange" => TryApplyTrackedDeletion(document, patch, patch.DeleteLength),
+            "DeleteContentBackward" => TryApplyTrackedDeletion(
+                document,
+                patch,
+                string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length,
+                backward: true),
+            "DeleteContentForward" => TryApplyTrackedDeletion(
+                document,
+                patch,
+                string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length),
+            "DeleteWordBackward" => TryApplyTrackedDeletion(
+                document,
+                patch,
+                string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length,
+                backward: true),
+            "DeleteWordForward" => TryApplyTrackedDeletion(
+                document,
+                patch,
+                string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length),
+            "ToggleMark" => TryApplyTrackedFormatting(document, patch),
+            _ => false
+        };
+    }
+
+    private bool TryApplyTrackedInsertion(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        var context = ResolveEditableInlineContext(document, patch.Selection);
+        if (context.Inlines is null || context.Inline is not TextRun textRun || string.IsNullOrEmpty(patch.Data))
+        {
+            return false;
+        }
+
+        var suppliedRevisionId = string.IsNullOrWhiteSpace(patch.RevisionId) ? null : patch.RevisionId;
+        if (!string.IsNullOrWhiteSpace(suppliedRevisionId)
+            && TryFindRevisionTextRun(document, suppliedRevisionId, DocumentRevisionType.Insertion, out var existingRun))
+        {
+            existingRun.TextRun.Text += patch.Data;
+            var existingRevision = document.Revisions.FirstOrDefault(revision => revision.Id == suppliedRevisionId);
+            if (existingRevision is not null)
+            {
+                existingRevision.PayloadJson = GetRevisionPayload(existingRevision.PayloadJson, patch.Data);
+                UpdateRevisionRange(existingRevision, existingRun.InlineIndex, 0, existingRun.TextRun.Text.Length);
+            }
+
+            return true;
+        }
+
+        var existingInsertionRevisionId = GetPendingRevisionMark(textRun, DocumentRevisionType.Insertion);
+        if (!string.IsNullOrWhiteSpace(existingInsertionRevisionId))
+        {
+            var offset = Math.Clamp(patch.Selection?.AnchorOffset ?? textRun.Text.Length, 0, textRun.Text.Length);
+            textRun.Text = textRun.Text.Insert(offset, patch.Data);
+            var existing = document.Revisions.FirstOrDefault(revision => revision.Id == existingInsertionRevisionId);
+            if (existing is not null)
+            {
+                existing.PayloadJson = GetRevisionPayload(existing.PayloadJson, patch.Data);
+            }
+
+            return true;
+        }
+
+        var revision = CreateRevision(DocumentRevisionType.Insertion, context.Block?.Id, patch.Data, suppliedRevisionId);
+        document.Revisions.Add(revision);
+
+        var offsetToInsert = Math.Clamp(patch.Selection?.AnchorOffset ?? textRun.Text.Length, 0, textRun.Text.Length);
+        var replacement = new List<InlineContent>();
+        AddTextSlice(replacement, textRun, 0, offsetToInsert);
+        replacement.Add(new TextRun
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Text = patch.Data,
+            Marks = CopyMarks(textRun.Marks)
+                .Where(mark => mark.Type != InlineMarkType.Revision)
+                .Append(CreateRevisionMark(revision))
+                .ToList()
+        });
+        AddTextSlice(replacement, textRun, offsetToInsert, textRun.Text.Length);
+
+        context.Inlines.RemoveAt(context.InlineIndex);
+        context.Inlines.InsertRange(context.InlineIndex, MergeAdjacentTextRuns(replacement));
+        UpdateRevisionRange(revision, context.InlineIndex, 0, patch.Data.Length);
+        return true;
+    }
+
+    private bool TryApplyTrackedDeletion(DocumentEditorDocument document, WysiwygPatch patch, int length, bool backward = false)
+    {
+        var context = ResolveEditableInlineContext(document, patch.Selection);
+        if (context.Inlines is null || context.Inline is not TextRun textRun)
+        {
+            return false;
+        }
+
+        var offset = Math.Clamp(patch.Selection?.AnchorOffset ?? 0, 0, textRun.Text.Length);
+        var start = backward ? Math.Clamp(offset - length, 0, textRun.Text.Length) : offset;
+        var end = backward ? offset : Math.Clamp(offset + Math.Max(length, 0), start, textRun.Text.Length);
+        if (end <= start)
+        {
+            return true;
+        }
+
+        var deletedText = textRun.Text[start..end];
+        var insertionRevisionId = GetPendingRevisionMark(textRun, DocumentRevisionType.Insertion);
+        var replacement = new List<InlineContent>();
+        AddTextSlice(replacement, textRun, 0, start);
+
+        if (string.IsNullOrWhiteSpace(insertionRevisionId))
+        {
+            var suppliedRevisionId = string.IsNullOrWhiteSpace(patch.RevisionId) ? null : patch.RevisionId;
+            var revision = document.Revisions.FirstOrDefault(candidate =>
+                string.Equals(candidate.Id, suppliedRevisionId, StringComparison.Ordinal)
+                && candidate.Type == DocumentRevisionType.Deletion
+                && candidate.Action == DocumentRevisionAction.Pending);
+            if (revision is null)
+            {
+                revision = CreateRevision(DocumentRevisionType.Deletion, context.Block?.Id, deletedText, suppliedRevisionId);
+                document.Revisions.Add(revision);
+            }
+            else
+            {
+                revision.PayloadJson = GetRevisionPayload(revision.PayloadJson, deletedText);
+            }
+
+            replacement.Add(new TextRun
+            {
+                Id = Guid.NewGuid().ToString("N"),
+                Text = deletedText,
+                Marks = CopyMarks(textRun.Marks)
+                    .Where(mark => mark.Type != InlineMarkType.Revision)
+                    .Append(CreateRevisionMark(revision))
+                    .ToList()
+            });
+            UpdateRevisionRange(revision, context.InlineIndex, start, end);
+        }
+
+        AddTextSlice(replacement, textRun, end, textRun.Text.Length);
+        context.Inlines.RemoveAt(context.InlineIndex);
+        context.Inlines.InsertRange(context.InlineIndex, MergeAdjacentTextRuns(replacement));
+        EnsureEditableInlinesHaveText(context.Inlines);
+        return true;
+    }
+
+    private bool TryApplyTrackedFormatting(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        if (patch.Selection is null || patch.Selection.IsCollapsed)
+        {
+            return false;
+        }
+
+        var block = document.Blocks.FirstOrDefault(candidate => candidate.Id == patch.Selection.AnchorBlockId);
+        var inlines = GetEditableInlines(block?.Content);
+        if (block is null || inlines is null || inlines.Count == 0)
+        {
+            return false;
+        }
+
+        var markType = ParseInlineMarkType(patch.MarkType);
+        var start = Math.Min(patch.Selection.AnchorOffset, patch.Selection.FocusOffset);
+        var end = Math.Max(patch.Selection.AnchorOffset, patch.Selection.FocusOffset);
+        var textLength = inlines.Sum(inline => GetInlineText(inline).Length);
+        start = Math.Clamp(start, 0, textLength);
+        end = Math.Clamp(end, start, textLength);
+        if (end <= start)
+        {
+            return false;
+        }
+
+        var rangeHadMark = RangeHasMark(inlines, markType, start, end);
+        new WysiwygPatchApplier().ApplyPatch(document, patch);
+
+        inlines = GetEditableInlines(block.Content);
+        if (inlines is null)
+        {
+            return true;
+        }
+
+        var payload = new DocumentFormattingRevisionPayload
+        {
+            MarkType = markType,
+            NewActive = !rangeHadMark
+        };
+        var revision = CreateRevision(
+            DocumentRevisionType.Formatting,
+            block.Id,
+            System.Text.Json.JsonSerializer.Serialize(payload, DocumentEditorJson.Options),
+            patch.RevisionId);
+        UpdateRevisionRange(revision, 0, start, end);
+        document.Revisions.Add(revision);
+        AddRevisionMarkToRange(inlines, revision, start, end);
+        return true;
+    }
+
+    private DocumentRevision CreateRevision(DocumentRevisionType type, string? blockId, string payload, string? revisionId = null)
+        => new()
+        {
+            Id = string.IsNullOrWhiteSpace(revisionId) ? Guid.NewGuid().ToString("N") : revisionId,
+            Type = type,
+            Range = new DocumentRevisionRange { BlockId = blockId },
+            Author = new DocumentRevisionAuthor
+            {
+                Id = Author?.Id ?? string.Empty,
+                DisplayName = Author?.DisplayName ?? Loc["TmDocumentEditor_UnknownAuthor"]
+            },
+            CreatedAt = DateTimeOffset.UtcNow,
+            Action = DocumentRevisionAction.Pending,
+            PayloadJson = payload
+        };
+
+    private static void UpdateRevisionRange(DocumentRevision revision, int inlineIndex, int startOffset, int endOffset)
+    {
+        revision.Range.StartInlineIndex = inlineIndex;
+        revision.Range.EndInlineIndex = inlineIndex;
+        revision.Range.StartOffset = startOffset;
+        revision.Range.EndOffset = endOffset;
+    }
+
+    private static InlineMark CreateRevisionMark(DocumentRevision revision)
+        => new()
+        {
+            Type = InlineMarkType.Revision,
+            RevisionId = revision.Id,
+            Value = revision.Type.ToString()
+        };
+
+    private static InlineMarkType ParseInlineMarkType(string? value)
+    {
+        return Enum.TryParse<InlineMarkType>(value, ignoreCase: true, out var markType)
+            ? markType
+            : InlineMarkType.Bold;
+    }
+
+    private static bool RangeHasMark(List<InlineContent> inlines, InlineMarkType markType, int startOffset, int endOffset)
+    {
+        var current = 0;
+        foreach (var inline in inlines)
+        {
+            var text = GetInlineText(inline);
+            var inlineStart = current;
+            var inlineEnd = current + text.Length;
+            current = inlineEnd;
+            if (inlineEnd <= startOffset || inlineStart >= endOffset)
+            {
+                continue;
+            }
+
+            if (inline.Marks.Any(mark => mark.Type == markType))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static void AddRevisionMarkToRange(List<InlineContent> inlines, DocumentRevision revision, int startOffset, int endOffset)
+    {
+        var current = 0;
+        var replacement = new List<InlineContent>();
+        foreach (var inline in inlines)
+        {
+            var text = GetInlineText(inline);
+            var inlineStart = current;
+            var inlineEnd = current + text.Length;
+            current = inlineEnd;
+
+            if (inlineEnd <= startOffset || inlineStart >= endOffset || inline is not TextRun)
+            {
+                replacement.Add(CloneInline(inline));
+                continue;
+            }
+
+            var rangeStart = Math.Max(startOffset, inlineStart) - inlineStart;
+            var rangeEnd = Math.Min(endOffset, inlineEnd) - inlineStart;
+            if (rangeStart > 0)
+            {
+                replacement.Add(SplitInline(inline, 0, rangeStart));
+            }
+
+            var marked = SplitInline(inline, rangeStart, rangeEnd);
+            marked.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Revision);
+            marked.Marks.Add(CreateRevisionMark(revision));
+            replacement.Add(marked);
+
+            if (rangeEnd < text.Length)
+            {
+                replacement.Add(SplitInline(inline, rangeEnd, text.Length));
+            }
+        }
+
+        inlines.Clear();
+        inlines.AddRange(MergeAdjacentTextRuns(replacement));
+        EnsureEditableInlinesHaveText(inlines);
+    }
+
+    private static string GetRevisionPayload(string? current, string appended)
+        => string.IsNullOrEmpty(current) ? appended : current + appended;
+
+    private static (DocumentBlock? Block, List<InlineContent>? Inlines, InlineContent? Inline, int InlineIndex) ResolveEditableInlineContext(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot? selection)
+    {
+        var block = document.Blocks.FirstOrDefault(candidate => candidate.Id == selection?.AnchorBlockId);
+        var inlines = GetEditableInlines(block?.Content);
+        if (inlines is null || inlines.Count == 0)
+        {
+            return (block, inlines, null, -1);
+        }
+
+        var inlineIndex = string.IsNullOrWhiteSpace(selection?.AnchorInlineId)
+            ? -1
+            : inlines.FindIndex(inline => inline.Id == selection.AnchorInlineId);
+        if (inlineIndex < 0)
+        {
+            inlineIndex = 0;
+        }
+
+        return (block, inlines, inlines[inlineIndex], inlineIndex);
+    }
+
+    private static string? GetPendingRevisionMark(InlineContent inline, DocumentRevisionType type)
+    {
+        return inline.Marks.FirstOrDefault(mark =>
+            mark.Type == InlineMarkType.Revision
+            && string.Equals(mark.Value, type.ToString(), StringComparison.Ordinal))?.RevisionId;
+    }
+
+    private static bool TryFindRevisionTextRun(
+        DocumentEditorDocument document,
+        string revisionId,
+        DocumentRevisionType type,
+        out (TextRun TextRun, int InlineIndex) result)
+    {
+        foreach (var inlines in EnumerateEditableInlineLists(document))
+        {
+            for (var index = 0; index < inlines.Count; index++)
+            {
+                if (inlines[index] is not TextRun textRun)
+                {
+                    continue;
+                }
+
+                var candidateRevisionId = GetPendingRevisionMark(textRun, type);
+                if (string.Equals(candidateRevisionId, revisionId, StringComparison.Ordinal))
+                {
+                    result = (textRun, index);
+                    return true;
+                }
+            }
+        }
+
+        result = default;
+        return false;
+    }
+
+    private static void AddTextSlice(List<InlineContent> target, TextRun source, int start, int end)
+    {
+        if (end <= start)
+        {
+            return;
+        }
+
+        target.Add(new TextRun
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Text = source.Text[start..end],
+            Marks = CopyMarks(source.Marks)
+        });
+    }
+
+    private static List<InlineMark> CopyMarks(IEnumerable<InlineMark> marks)
+        => marks.Select(mark => new InlineMark
+        {
+            Type = mark.Type,
+            Link = mark.Link is null ? null : new LinkMarkData { Href = mark.Link.Href, Title = mark.Link.Title },
+            CommentAnchor = mark.CommentAnchor is null ? null : new CommentAnchorMarkData
+            {
+                CommentId = mark.CommentAnchor.CommentId,
+                AnchorId = mark.CommentAnchor.AnchorId
+            },
+            RevisionId = mark.RevisionId,
+            Value = mark.Value
+        }).ToList();
+
+    private static InlineContent CloneInline(InlineContent inline)
+    {
+        return inline switch
+        {
+            TextRun textRun => new TextRun
+            {
+                Id = textRun.Id,
+                Text = textRun.Text,
+                Marks = CopyMarks(textRun.Marks)
+            },
+            TokenRun token => new TokenRun
+            {
+                Id = token.Id,
+                Key = token.Key,
+                DisplayName = token.DisplayName,
+                TokenType = token.TokenType,
+                TypeLabel = token.TypeLabel,
+                ColorClass = token.ColorClass,
+                Description = token.Description,
+                FallbackText = token.FallbackText,
+                Marks = CopyMarks(token.Marks)
+            },
+            DocumentNoteReferenceRun note => new DocumentNoteReferenceRun
+            {
+                Id = note.Id,
+                NoteId = note.NoteId,
+                NoteType = note.NoteType,
+                DisplayMarker = note.DisplayMarker,
+                Marks = CopyMarks(note.Marks)
+            },
+            _ => new TextRun { Id = Guid.NewGuid().ToString("N"), Text = GetInlineText(inline) }
+        };
+    }
+
+    private static InlineContent SplitInline(InlineContent inline, int start, int end)
+    {
+        var text = GetInlineText(inline);
+        var length = Math.Min(end, text.Length) - start;
+        length = Math.Max(length, 0);
+        var slice = length > 0 ? text.Substring(start, length) : string.Empty;
+        var cloned = CloneInline(inline);
+        switch (cloned)
+        {
+            case TextRun textRun:
+                textRun.Text = slice;
+                break;
+            case TokenRun token:
+                token.DisplayName = slice;
+                break;
+            case DocumentNoteReferenceRun note:
+                note.DisplayMarker = slice;
+                break;
+        }
+
+        return cloned;
+    }
+
+    private static void ApplyFormattingRevisionDecision(
+        DocumentEditorDocument document,
+        DocumentRevision revision,
+        DocumentRevisionAction action)
+    {
+        var payload = string.IsNullOrWhiteSpace(revision.PayloadJson)
+            ? null
+            : System.Text.Json.JsonSerializer.Deserialize<DocumentFormattingRevisionPayload>(
+                revision.PayloadJson,
+                DocumentEditorJson.Options);
+        var markType = payload?.MarkType ?? InlineMarkType.Bold;
+
+        foreach (var inlines in EnumerateEditableInlineLists(document))
+        {
+            foreach (var inline in inlines.Where(inline => HasRevisionMark(inline, revision.Id)))
+            {
+                inline.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == revision.Id);
+                if (action == DocumentRevisionAction.Rejected)
+                {
+                    if (payload?.NewActive == true)
+                    {
+                        inline.Marks.RemoveAll(mark => mark.Type == markType);
+                    }
+                    else if (!inline.Marks.Any(mark => mark.Type == markType))
+                    {
+                        inline.Marks.Add(new InlineMark { Type = markType });
+                    }
+                }
+            }
+        }
+    }
+
+    private static void RemoveRevisionContent(DocumentEditorDocument document, string revisionId)
+    {
+        foreach (var inlines in EnumerateEditableInlineLists(document))
+        {
+            inlines.RemoveAll(inline => HasRevisionMark(inline, revisionId));
+            EnsureEditableInlinesHaveText(inlines);
+        }
+    }
+
+    private static void RemoveRevisionMarks(DocumentEditorDocument document, string revisionId)
+    {
+        foreach (var inlines in EnumerateEditableInlineLists(document))
+        {
+            foreach (var inline in inlines)
+            {
+                inline.Marks.RemoveAll(mark =>
+                    mark.Type == InlineMarkType.Revision
+                    && string.Equals(mark.RevisionId, revisionId, StringComparison.Ordinal));
+            }
+        }
+    }
+
+    private static IEnumerable<List<InlineContent>> EnumerateEditableInlineLists(DocumentEditorDocument document)
+    {
+        foreach (var block in document.Blocks)
+        {
+            var inlines = GetEditableInlines(block.Content);
+            if (inlines is not null)
+            {
+                yield return inlines;
+            }
+
+            if (block.Content is not TableBlockContent table)
+            {
+                continue;
+            }
+
+            foreach (var cell in table.Rows.SelectMany(row => row.Cells))
+            {
+                foreach (var nestedBlock in cell.Blocks)
+                {
+                    var nestedInlines = GetEditableInlines(nestedBlock.Content);
+                    if (nestedInlines is not null)
+                    {
+                        yield return nestedInlines;
+                    }
+                }
+            }
+        }
+    }
+
+    private static bool HasRevisionMark(InlineContent inline, string revisionId)
+        => inline.Marks.Any(mark =>
+            mark.Type == InlineMarkType.Revision
+            && string.Equals(mark.RevisionId, revisionId, StringComparison.Ordinal));
+
+    private static void EnsureEditableInlinesHaveText(List<InlineContent> inlines)
+    {
+        if (inlines.Count == 0)
+        {
+            inlines.Add(new TextRun { Id = Guid.NewGuid().ToString("N"), Text = string.Empty });
+        }
+    }
+
+    private static List<InlineContent> MergeAdjacentTextRuns(List<InlineContent> inlines)
+    {
+        var merged = new List<InlineContent>();
+        foreach (var inline in inlines)
+        {
+            if (inline is TextRun text && text.Text.Length == 0)
+            {
+                continue;
+            }
+
+            if (merged.LastOrDefault() is TextRun previousText
+                && inline is TextRun currentText
+                && MarksEqual(previousText.Marks, currentText.Marks))
+            {
+                previousText.Text += currentText.Text;
+                continue;
+            }
+
+            merged.Add(inline);
+        }
+
+        return merged;
+    }
+
+    private static bool MarksEqual(IReadOnlyList<InlineMark> left, IReadOnlyList<InlineMark> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        return left.Zip(right).All(pair =>
+            pair.First.Type == pair.Second.Type
+            && pair.First.Value == pair.Second.Value
+            && pair.First.RevisionId == pair.Second.RevisionId
+            && pair.First.Link?.Href == pair.Second.Link?.Href
+            && pair.First.Link?.Title == pair.Second.Link?.Title
+            && pair.First.CommentAnchor?.CommentId == pair.Second.CommentAnchor?.CommentId);
     }
 
     private void ConfigureAutoSaveTimer()
@@ -2278,6 +3858,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         => left.Type == right.Type
             && left.Value == right.Value
             && left.Link?.Href == right.Link?.Href
+            && left.Link?.Title == right.Link?.Title
             && left.CommentAnchor?.CommentId == right.CommentAnchor?.CommentId;
 
     private static string ComputeSnapshotHash(DocumentEditorDocument document)
@@ -2395,7 +3976,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             CollaborationSyncInterval);
     }
 
-    private async Task BroadcastLocalCollaborationChangeAsync(DocumentEditorDocument before, DocumentEditorDocument after)
+    private async Task BroadcastLocalCollaborationChangeAsync(
+        DocumentEditorDocument before,
+        DocumentEditorDocument after,
+        WysiwygPatch? patch = null)
     {
         if (_suppressCollaborationBroadcast || _collaborationSync is null || !CanEditDocument)
         {
@@ -2403,7 +3987,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             return;
         }
 
-        var batch = _collaborationSync.CreateLocalEditBatch(before, after);
+        var batch = patch is null
+            ? _collaborationSync.CreateLocalEditBatch(before, after)
+            : _collaborationSync.CreateLocalPatchBatch(before, patch);
+        if (batch.Operations.Count == 0 && patch is not null)
+        {
+            batch = _collaborationSync.CreateLocalEditBatch(before, after);
+        }
+
         if (batch.Operations.Count == 0)
         {
             _collaborationSnapshot = Clone(after);
@@ -2432,6 +4023,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
 
         _isRefreshingCollaboration = true;
+        var shouldRender = false;
         try
         {
             var result = await _collaborationSync.ReconnectAsync();
@@ -2441,6 +4033,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 try
                 {
                     var updated = Clone(_collaborationSync.Document);
+                    var remoteWysiwygOperations = _collaborationSync.LastAppliedRemoteOperations
+                        .Where(CanApplyRemoteOperationInWysiwyg)
+                        .ToList();
                     _document = updated;
                     _currentDocument = updated;
                     _templatePreviewDocument = null;
@@ -2448,7 +4043,23 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     _templatePreviewMessage = null;
                     _collaborationSnapshot = Clone(updated);
                     _suggestionSnapshot = Clone(updated);
+                    if (updated.Revisions.Any(revision => revision.Action == DocumentRevisionAction.Pending))
+                    {
+                        OpenSidePanel(DocumentSidePanelTab.Revisions);
+                    }
+
                     await RefreshSuggestionsAsync();
+                    shouldRender = true;
+                    if (remoteWysiwygOperations.Count > 0 && _wysiwygHost is not null)
+                    {
+                        var applyResult = await _wysiwygHost.ApplyRemoteOperationBatchAsync(remoteWysiwygOperations, updated);
+                        if (!applyResult.Success)
+                        {
+                            _saveMessage = BuildRemoteApplyRecoveryMessage(applyResult);
+                            await _wysiwygHost.RefreshSnapshotAsync(updated);
+                            shouldRender = true;
+                        }
+                    }
                 }
                 finally
                 {
@@ -2457,23 +4068,127 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             }
 
             var sessionId = _collaborationSync.Session?.Id;
-            _remoteCursors = (await CollaborationProvider.GetCursorsAsync(_collaborationSync.Document.DocumentId))
+            var remoteCursors = (await CollaborationProvider.GetCursorsAsync(_collaborationSync.Document.DocumentId))
                 .Where(cursor => !string.Equals(cursor.SessionId, sessionId, StringComparison.Ordinal))
                 .ToList();
+            if (!CursorsEqual(_remoteCursors, remoteCursors))
+            {
+                _remoteCursors = remoteCursors;
+                shouldRender = true;
+            }
         }
         catch
         {
             // Keep the editor usable while the collaboration transport is unavailable.
+            var unavailable = Loc["TmDocumentEditor_CollaborationUnavailable"];
+            if (_lastSavedAt is null && !string.Equals(_saveMessage, unavailable, StringComparison.Ordinal))
+            {
+                _saveMessage = unavailable;
+                shouldRender = true;
+            }
         }
         finally
         {
             _isRefreshingCollaboration = false;
         }
 
-        if (!_disposed)
+        if (shouldRender && !_disposed)
         {
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private static bool CursorsEqual(
+        IReadOnlyList<DocumentCollaborationCursor> left,
+        IReadOnlyList<DocumentCollaborationCursor> right)
+    {
+        if (left.Count != right.Count)
+        {
+            return false;
+        }
+
+        var orderedLeft = left.OrderBy(cursor => cursor.SessionId, StringComparer.Ordinal).ToList();
+        var orderedRight = right.OrderBy(cursor => cursor.SessionId, StringComparer.Ordinal).ToList();
+        for (var i = 0; i < orderedLeft.Count; i++)
+        {
+            if (!CursorEqual(orderedLeft[i], orderedRight[i]))
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool CursorEqual(DocumentCollaborationCursor left, DocumentCollaborationCursor right)
+        => string.Equals(left.SessionId, right.SessionId, StringComparison.Ordinal)
+            && string.Equals(left.ClientId, right.ClientId, StringComparison.Ordinal)
+            && string.Equals(left.DisplayName, right.DisplayName, StringComparison.Ordinal)
+            && string.Equals(left.BlockId, right.BlockId, StringComparison.Ordinal)
+            && left.InlineIndex == right.InlineIndex
+            && left.Offset == right.Offset
+            && string.Equals(left.Color, right.Color, StringComparison.Ordinal)
+            && left.UpdatedAt == right.UpdatedAt;
+
+    private static bool CanApplyRemoteOperationInWysiwyg(DocumentOperation operation)
+    {
+        if (operation.Type is DocumentOperationType.InsertText or DocumentOperationType.DeleteText)
+        {
+            return operation.Target.Offset is not null
+                && operation.Target.Length is > 0
+                && !string.IsNullOrWhiteSpace(operation.Target.BlockId);
+        }
+
+        if (operation.Type is DocumentOperationType.AddInlineMark or DocumentOperationType.RemoveInlineMark)
+        {
+            return operation.Target.Offset is not null
+                && operation.Target.Length is > 0
+                && operation.Mark is not null;
+        }
+
+        if (operation.Type is DocumentOperationType.InsertBlock or DocumentOperationType.UpdateBlock)
+        {
+            return operation.Block is not null;
+        }
+
+        if (operation.Type is DocumentOperationType.DeleteBlock)
+        {
+            return !string.IsNullOrWhiteSpace(operation.Target.BlockId);
+        }
+
+        if (operation.Type is DocumentOperationType.MoveBlock)
+        {
+            return !string.IsNullOrWhiteSpace(operation.Target.BlockId)
+                && operation.Target.Order is not null;
+        }
+
+        if (operation.Type is DocumentOperationType.SetBlockAttribute)
+        {
+            return string.Equals(operation.AttributeName, "headingLevel", StringComparison.OrdinalIgnoreCase)
+                || string.Equals(operation.AttributeName, "table.cell.text", StringComparison.OrdinalIgnoreCase);
+        }
+
+        if (operation.Type is DocumentOperationType.CreateRevision)
+        {
+            return operation.Revision is not null
+                && operation.Revision.Type is DocumentRevisionType.Insertion or DocumentRevisionType.Deletion
+                && !string.IsNullOrWhiteSpace(operation.Target.BlockId);
+        }
+
+        if (operation.Type is DocumentOperationType.AcceptRevision or DocumentOperationType.RejectRevision)
+        {
+            return operation.Revision is not null || !string.IsNullOrWhiteSpace(operation.Metadata.RevisionId);
+        }
+
+        return false;
+    }
+
+    private string BuildRemoteApplyRecoveryMessage(WysiwygRemoteOperationBatchApplyResult applyResult)
+    {
+        var failed = applyResult.FailedOperationIds.Count == 0
+            ? string.Empty
+            : $" ({string.Join(", ", applyResult.FailedOperationIds.Take(3))})";
+        return $"{Loc["TmDocumentEditor_CollaborationRecovery"]}{failed}";
     }
 
     private async Task BroadcastCollaborationCursorAsync()
@@ -2520,6 +4235,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     {
         if (CanCreateVersion)
         {
+            OpenSidePanel(DocumentSidePanelTab.Versions);
             _versionDialogOpen = true;
             _versionMessage = null;
         }
@@ -2532,7 +4248,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private void CloseVersionPanel()
     {
-        _versionPanelOpen = false;
+        CloseSidePanel();
     }
 
     private async Task CreateVersionAsync(DocumentVersionDialogResult result)
@@ -2574,6 +4290,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     jsSnapshot.Revisions = _currentDocument.Revisions;
                     jsSnapshot.Assets = _currentDocument.Assets;
                     jsSnapshot.Anchors = _currentDocument.Anchors;
+                    DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(jsSnapshot);
                     _currentDocument = jsSnapshot;
                     _document = jsSnapshot;
                 }
@@ -2699,6 +4416,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _templatePreviewEnabled = false;
             _templatePreviewDocument = null;
             _templatePreviewMessage = null;
+            OpenSidePanel(DocumentSidePanelTab.Versions);
             _currentDocument ??= _document;
             _previewVersion = version;
             _document = DocumentEditorJson.Deserialize(version.Snapshot.Json);
@@ -3145,6 +4863,108 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             DocumentVersionKind.Restore => Loc["TmDocumentEditor_VersionKindRestore"],
             _ => Loc["TmDocumentEditor_VersionKindMinor"]
         };
+    }
+
+    private static int CountPages(DocumentEditorDocument? document)
+    {
+        if (document is null)
+        {
+            return 0;
+        }
+
+        return Math.Max(1, 1 + document.Blocks.Count(block => block.Content is PageBreakBlockContent));
+    }
+
+    private static int CountWords(DocumentEditorDocument? document)
+    {
+        if (document is null)
+        {
+            return 0;
+        }
+
+        var count = 0;
+        foreach (var text in EnumerateDocumentText(document))
+        {
+            count += CountWords(text);
+        }
+
+        return count;
+    }
+
+    private static IEnumerable<string> EnumerateDocumentText(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateTextBlocks(document.Blocks))
+        {
+            yield return block;
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            foreach (var block in EnumerateTextBlocks(headerFooter.Blocks))
+            {
+                yield return block;
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateTextBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            foreach (var text in EnumerateInlineText(GetEditableInlines(block.Content) ?? []))
+            {
+                yield return text;
+            }
+
+            if (block.Content is TableBlockContent table)
+            {
+                foreach (var nested in table.Rows
+                    .SelectMany(row => row.Cells)
+                    .SelectMany(cell => EnumerateTextBlocks(cell.Blocks)))
+                {
+                    yield return nested;
+                }
+            }
+        }
+    }
+
+    private static IEnumerable<string> EnumerateInlineText(IEnumerable<InlineContent> inlines)
+    {
+        foreach (var inline in inlines)
+        {
+            switch (inline)
+            {
+                case TextRun textRun when !string.IsNullOrWhiteSpace(textRun.Text):
+                    yield return textRun.Text;
+                    break;
+                case TokenRun tokenRun when !string.IsNullOrWhiteSpace(tokenRun.DisplayName):
+                    yield return tokenRun.DisplayName;
+                    break;
+            }
+        }
+    }
+
+    private static int CountWords(string text)
+    {
+        var count = 0;
+        var inWord = false;
+        foreach (var character in text)
+        {
+            if (char.IsLetterOrDigit(character))
+            {
+                if (!inWord)
+                {
+                    count++;
+                    inWord = true;
+                }
+            }
+            else
+            {
+                inWord = false;
+            }
+        }
+
+        return count;
     }
 
     /// <inheritdoc />

@@ -7,7 +7,7 @@ namespace Tempo.Blazor.DocumentEditor.Services;
 /// Demo-friendly SignalR collaboration boundary adapter.
 /// Host applications can wrap their actual SignalR hub client behind this provider without adding SignalR dependencies to abstractions.
 /// </summary>
-public class SignalRDocumentCollaborationProvider : IDocumentCollaborationProvider
+public class SignalRDocumentCollaborationProvider : IDocumentCollaborationRealtimeProvider
 {
     private readonly IDocumentCollaborationProvider _transport;
 
@@ -16,6 +16,9 @@ public class SignalRDocumentCollaborationProvider : IDocumentCollaborationProvid
     {
         _transport = transport;
     }
+
+    /// <inheritdoc />
+    public event Func<DocumentCollaborationOperationBatch, CancellationToken, Task>? RemoteOperationBatchReceived;
 
     /// <inheritdoc />
     public Task<DocumentCollaborationSession> JoinAsync(DocumentCollaborationJoinRequest request, CancellationToken cancellationToken = default)
@@ -48,4 +51,21 @@ public class SignalRDocumentCollaborationProvider : IDocumentCollaborationProvid
         string documentId,
         CancellationToken cancellationToken = default)
         => _transport.GetCursorsAsync(documentId, cancellationToken);
+
+    /// <inheritdoc />
+    public async Task ReceiveRemoteOperationBatchAsync(
+        DocumentCollaborationOperationBatch batch,
+        CancellationToken cancellationToken = default)
+    {
+        var handler = RemoteOperationBatchReceived;
+        if (handler is null)
+        {
+            return;
+        }
+
+        foreach (var subscriber in handler.GetInvocationList().Cast<Func<DocumentCollaborationOperationBatch, CancellationToken, Task>>())
+        {
+            await subscriber(batch, cancellationToken).ConfigureAwait(false);
+        }
+    }
 }

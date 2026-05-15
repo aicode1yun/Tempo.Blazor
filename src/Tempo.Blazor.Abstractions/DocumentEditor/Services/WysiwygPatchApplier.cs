@@ -53,8 +53,14 @@ public sealed class WysiwygPatchApplier
             case "InsertBlock":
                 ApplyInsertBlock(document, patch);
                 break;
+            case "SplitBlock":
+                ApplySplitBlock(document, patch);
+                break;
             case "UpdateBlock":
                 ApplyUpdateBlock(document, patch);
+                break;
+            case "MoveBlock":
+                ApplyMoveBlock(document, patch);
                 break;
             case "RemoveBlock":
                 ApplyRemoveBlock(document, patch);
@@ -63,7 +69,11 @@ public sealed class WysiwygPatchApplier
                 ApplyInsertParagraph(document, patch);
                 break;
             case "InsertLineBreak":
-                ApplyInsertLineBreak(document, patch);
+            case "InsertSoftBreak":
+                ApplyInsertSoftBreak(document, patch);
+                break;
+            case "MergeWithPreviousBlock":
+                ApplyMergeWithPreviousBlock(document, patch);
                 break;
             case "DeleteContentBackward":
                 ApplyDeleteContentBackward(document, patch);
@@ -74,6 +84,12 @@ public sealed class WysiwygPatchApplier
             case "ToggleMark":
                 ApplyToggleMark(document, patch);
                 break;
+            case "ClearFormatting":
+                ApplyClearFormatting(document, patch);
+                break;
+            case "SetParagraphProperties":
+                ApplySetParagraphProperties(document, patch);
+                break;
             default:
                 throw new ArgumentException($"Unknown patch type: {patch.Type}", nameof(patch));
         }
@@ -81,8 +97,9 @@ public sealed class WysiwygPatchApplier
 
     private static void ApplyInsertText(DocumentEditorDocument document, WysiwygPatch patch)
     {
-        var (block, inline) = ResolveBlockAndInline(document, patch.Selection);
-        if (inline is not TextRun textRun)
+        var (_, inline) = ResolveBlockAndInline(document, patch.Selection);
+        var textRun = inline as TextRun ?? EnsureTableCellTextRun(document, patch.Selection);
+        if (textRun is null)
         {
             return;
         }
@@ -164,7 +181,7 @@ public sealed class WysiwygPatchApplier
 
     private static void ApplyDeleteRange(DocumentEditorDocument document, WysiwygPatch patch)
     {
-        var (block, inline) = ResolveBlockAndInline(document, patch.Selection);
+        var (_, inline) = ResolveBlockAndInline(document, patch.Selection);
         if (inline is not TextRun textRun)
         {
             return;
@@ -183,7 +200,7 @@ public sealed class WysiwygPatchApplier
 
     private static void ApplyDeleteContentBackward(DocumentEditorDocument document, WysiwygPatch patch)
     {
-        var (block, inline) = ResolveBlockAndInline(document, patch.Selection);
+        var (_, inline) = ResolveBlockAndInline(document, patch.Selection);
         if (inline is not TextRun textRun)
         {
             return;
@@ -191,6 +208,12 @@ public sealed class WysiwygPatchApplier
 
         var offset = patch.Selection?.AnchorOffset ?? 0;
         var length = string.IsNullOrEmpty(patch.Data) ? 1 : patch.Data.Length;
+        if (offset <= 0)
+        {
+            ApplyMergeWithPreviousBlock(document, patch);
+            return;
+        }
+
         var start = Math.Clamp(offset - length, 0, textRun.Text.Length);
         var end = Math.Clamp(offset, start, textRun.Text.Length);
 
@@ -247,7 +270,7 @@ public sealed class WysiwygPatchApplier
             return;
         }
 
-        ApplyMarksToInlines(inlines, markType, startOffset, endOffset, patch.Data);
+        ApplyMarksToInlines(inlines, markType, startOffset, endOffset, patch.Data, patch.LinkTitle);
     }
 
     private static void ApplyToggleMark(DocumentEditorDocument document, WysiwygPatch patch)
@@ -286,8 +309,38 @@ public sealed class WysiwygPatchApplier
         }
         else
         {
-            ApplyMarksToInlines(inlines, markType, startOffset, endOffset, patch.Data);
+            ApplyMarksToInlines(inlines, markType, startOffset, endOffset, patch.Data, patch.LinkTitle);
         }
+    }
+
+    private static void ApplyClearFormatting(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        var (_, inlines) = ResolveBlockAndInlines(document, patch.Selection);
+        if (inlines is null || inlines.Count == 0)
+        {
+            return;
+        }
+
+        var anchorOffset = patch.Selection?.AnchorOffset ?? 0;
+        var focusOffset = patch.Selection?.FocusOffset ?? anchorOffset;
+        var startOffset = Math.Min(anchorOffset, focusOffset);
+        var endOffset = Math.Max(anchorOffset, focusOffset);
+
+        if (patch.Selection?.IsCollapsed == true || startOffset == endOffset)
+        {
+            return;
+        }
+
+        var text = string.Concat(inlines.Select(GetInlineText));
+        startOffset = Math.Clamp(startOffset, 0, text.Length);
+        endOffset = Math.Clamp(endOffset, startOffset, text.Length);
+
+        if (startOffset >= endOffset)
+        {
+            return;
+        }
+
+        RemoveStyleMarksFromInlines(inlines, startOffset, endOffset);
     }
 
     private static void ApplyInsertBlock(DocumentEditorDocument document, WysiwygPatch patch)
@@ -297,22 +350,126 @@ public sealed class WysiwygPatchApplier
         block.Id = string.IsNullOrWhiteSpace(block.Id) ? Guid.NewGuid().ToString("N") : block.Id;
         SanitizeBlock(block);
 
+        if (IsStructuralBlockSplit(patch) && TryApplyStructuralBlockSplit(document, patch, block))
+        {
+            return;
+        }
+
+        if (TryFindBlockList(document, block.Id, out var existingBlocks, out var existingIndex, patch.Selection))
+        {
+            UpdateExistingBlock(document, existingBlocks[existingIndex], block, patch.Selection);
+            return;
+        }
+
+        var targetBlocks = ResolveTopLevelBlockList(document, patch.Selection);
         var anchorBlockId = patch.Selection?.AnchorBlockId;
-        var targetIndex = document.Blocks.Count;
+        var targetIndex = targetBlocks.Count;
 
         if (!string.IsNullOrWhiteSpace(anchorBlockId))
         {
-            var anchorIndex = document.Blocks.FindIndex(b => b.Id == anchorBlockId);
+            var anchorIndex = targetBlocks.FindIndex(b => b.Id == anchorBlockId);
             if (anchorIndex >= 0)
             {
                 targetIndex = anchorIndex + 1;
             }
         }
 
-        block.Order = CalculateOrder(document.Blocks, targetIndex);
-        document.Blocks.Insert(targetIndex, block);
+        block.Order = CalculateOrder(targetBlocks, targetIndex);
+        targetBlocks.Insert(targetIndex, block);
         SyncFloatingImageAnchor(document, block, patch.Selection);
     }
+
+    private static bool IsStructuralBlockSplit(WysiwygPatch patch)
+        => string.Equals(patch.RevisionType, "Structural", StringComparison.Ordinal)
+            && string.Equals(patch.BlockType, "Paragraph", StringComparison.OrdinalIgnoreCase)
+            && patch.Selection is not null;
+
+    private static bool TryApplyStructuralBlockSplit(DocumentEditorDocument document, WysiwygPatch patch, DocumentBlock block)
+    {
+        return TryApplyBlockSplit(document, patch, block);
+    }
+
+    private static bool TryFindBlockList(
+        DocumentEditorDocument document,
+        string? blockId,
+        out List<DocumentBlock> blocks,
+        out int index,
+        WysiwygSelectionSnapshot? selection = null)
+    {
+        if (selection is not null
+            && IsHeaderFooterRegion(selection)
+            && !string.IsNullOrWhiteSpace(selection.HeaderFooterId)
+            && DocumentHeaderFooterResolver.FindById(document, selection.HeaderFooterId) is { } headerFooter)
+        {
+            blocks = headerFooter.Blocks;
+            index = string.IsNullOrWhiteSpace(blockId)
+                ? -1
+                : blocks.FindIndex(block => block.Id == blockId);
+            if (index >= 0 || string.IsNullOrWhiteSpace(blockId))
+            {
+                return index >= 0;
+            }
+        }
+
+        blocks = document.Blocks;
+        index = string.IsNullOrWhiteSpace(blockId)
+            ? -1
+            : document.Blocks.FindIndex(block => block.Id == blockId);
+        if (index >= 0)
+        {
+            return true;
+        }
+
+        foreach (var candidateHeaderFooter in document.HeadersFooters)
+        {
+            blocks = candidateHeaderFooter.Blocks;
+            index = string.IsNullOrWhiteSpace(blockId)
+                ? -1
+                : blocks.FindIndex(block => block.Id == blockId);
+            if (index >= 0)
+            {
+                return true;
+            }
+        }
+
+        var cellResult = FindCellContainingBlock(document, blockId, selection);
+        if (cellResult.Cell is not null)
+        {
+            blocks = cellResult.Cell.Blocks;
+            index = blocks.FindIndex(block => block.Id == blockId);
+            return index >= 0;
+        }
+
+        return false;
+    }
+
+    private static int FindInlineIndex(List<InlineContent> inlines, string? inlineId)
+    {
+        if (string.IsNullOrWhiteSpace(inlineId))
+        {
+            return 0;
+        }
+
+        var index = inlines.FindIndex(inline => inline.Id == inlineId);
+        if (index >= 0)
+        {
+            return index;
+        }
+
+        const string revisionInlinePrefix = "rev-";
+        if (inlineId.StartsWith(revisionInlinePrefix, StringComparison.Ordinal))
+        {
+            var revisionId = inlineId[revisionInlinePrefix.Length..];
+            return inlines.FindIndex(inline => inline.Marks.Any(mark =>
+                mark.Type == InlineMarkType.Revision
+                && string.Equals(mark.RevisionId, revisionId, StringComparison.Ordinal)));
+        }
+
+        return -1;
+    }
+
+    private static string? GetFirstEditableInlineId(DocumentBlockContent? content)
+        => GetEditableInlines(content)?.FirstOrDefault()?.Id;
 
     private static void ApplyUpdateBlock(DocumentEditorDocument document, WysiwygPatch patch)
     {
@@ -323,21 +480,164 @@ public sealed class WysiwygPatchApplier
 
         SanitizeBlock(patch.Block);
 
-        var existing = document.Blocks.FirstOrDefault(b => b.Id == patch.Block.Id);
-        if (existing is null)
+        if (!TryFindBlockList(document, patch.Block.Id, out var blocks, out var existingIndex, patch.Selection))
+        {
+            var targetBlocks = ResolveTopLevelBlockList(document, patch.Selection);
+            var targetIndex = targetBlocks.Count;
+            patch.Block.Order = patch.Block.Order == 0
+                ? CalculateOrder(targetBlocks, targetIndex)
+                : patch.Block.Order;
+            targetBlocks.Insert(targetIndex, patch.Block);
+            SyncFloatingImageAnchor(document, patch.Block, patch.Selection);
+            return;
+        }
+
+        UpdateExistingBlock(document, blocks[existingIndex], patch.Block, patch.Selection);
+    }
+
+    private static void UpdateExistingBlock(
+        DocumentEditorDocument document,
+        DocumentBlock existing,
+        DocumentBlock updated,
+        WysiwygSelectionSnapshot? selection)
+    {
+        existing.Type = updated.Type;
+        existing.Content = updated.Content;
+        existing.ParagraphProperties = updated.ParagraphProperties ?? new DocumentParagraphProperties();
+        // Phase 13: preserve existing order when patch carries 0 (JS table updates).
+        if (updated.Order != 0)
+        {
+            existing.Order = updated.Order;
+        }
+
+        existing.SectionId = updated.SectionId;
+        SyncFloatingImageAnchor(document, existing, selection);
+    }
+
+    private static void ApplySetParagraphProperties(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        if (patch.ParagraphProperties is null)
         {
             return;
         }
 
-        existing.Type = patch.Block.Type;
-        existing.Content = patch.Block.Content;
-        // Phase 13: preserve existing order when patch carries 0 (JS table updates).
-        if (patch.Block.Order != 0)
+        foreach (var block in ResolveSelectedBlocks(document, patch.Selection))
         {
-            existing.Order = patch.Block.Order;
+            if (!IsParagraphLikeBlock(block))
+            {
+                continue;
+            }
+
+            block.ParagraphProperties ??= new DocumentParagraphProperties();
+            ApplyParagraphPropertiesPatch(block.ParagraphProperties, patch.ParagraphProperties);
         }
-        existing.SectionId = patch.Block.SectionId;
-        SyncFloatingImageAnchor(document, existing, patch.Selection);
+    }
+
+    private static IEnumerable<DocumentBlock> ResolveSelectedBlocks(DocumentEditorDocument document, WysiwygSelectionSnapshot? selection)
+    {
+        if (selection is null || string.IsNullOrWhiteSpace(selection.AnchorBlockId))
+        {
+            return [];
+        }
+
+        if (!TryFindBlockList(document, selection.AnchorBlockId, out var anchorBlocks, out var anchorIndex, selection))
+        {
+            return [];
+        }
+
+        var focusBlockId = string.IsNullOrWhiteSpace(selection.FocusBlockId)
+            ? selection.AnchorBlockId
+            : selection.FocusBlockId;
+        var focusIndex = anchorBlocks.FindIndex(block => block.Id == focusBlockId);
+        if (focusIndex < 0)
+        {
+            focusIndex = anchorIndex;
+        }
+
+        var start = Math.Min(anchorIndex, focusIndex);
+        var end = Math.Max(anchorIndex, focusIndex);
+        return anchorBlocks.Skip(start).Take(end - start + 1).ToList();
+    }
+
+    private static bool IsParagraphLikeBlock(DocumentBlock block)
+    {
+        return block.Content is ParagraphBlockContent
+            or HeadingBlockContent
+            or ListBlockContent
+            or QuoteBlockContent;
+    }
+
+    private static void ApplyParagraphPropertiesPatch(
+        DocumentParagraphProperties properties,
+        DocumentParagraphPropertiesPatch patch)
+    {
+        if (patch.Alignment is { } alignment)
+        {
+            properties.Alignment = alignment;
+        }
+
+        if (patch.LineSpacing is { } lineSpacing)
+        {
+            properties.LineSpacing = Math.Clamp(lineSpacing, 0.8, 3);
+        }
+
+        if (patch.SpacingBefore is { } spacingBefore)
+        {
+            properties.SpacingBefore = Math.Clamp(spacingBefore, 0, 144);
+        }
+
+        if (patch.SpacingAfter is { } spacingAfter)
+        {
+            properties.SpacingAfter = Math.Clamp(spacingAfter, 0, 144);
+        }
+
+        if (patch.LeftIndent is { } leftIndent)
+        {
+            properties.LeftIndent = Math.Clamp(leftIndent, 0, 432);
+        }
+
+        if (patch.RightIndent is { } rightIndent)
+        {
+            properties.RightIndent = Math.Clamp(rightIndent, 0, 432);
+        }
+
+        if (patch.FirstLineIndent is { } firstLineIndent)
+        {
+            properties.FirstLineIndent = Math.Clamp(firstLineIndent, -216, 216);
+        }
+
+        if (patch.LeftIndentDelta is { } leftIndentDelta)
+        {
+            properties.LeftIndent = Math.Clamp(properties.LeftIndent + leftIndentDelta, 0, 432);
+        }
+
+        if (patch.RightIndentDelta is { } rightIndentDelta)
+        {
+            properties.RightIndent = Math.Clamp(properties.RightIndent + rightIndentDelta, 0, 432);
+        }
+
+        if (patch.FirstLineIndentDelta is { } firstLineIndentDelta)
+        {
+            properties.FirstLineIndent = Math.Clamp(properties.FirstLineIndent + firstLineIndentDelta, -216, 216);
+        }
+    }
+
+    private static void ApplyMoveBlock(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        var blockId = patch.Block?.Id ?? patch.Selection?.AnchorBlockId;
+        if (string.IsNullOrWhiteSpace(blockId) || patch.Block?.Order is null or 0)
+        {
+            return;
+        }
+
+        if (!TryFindBlockList(document, blockId, out var blocks, out var index, patch.Selection))
+        {
+            return;
+        }
+
+        var block = blocks[index];
+        block.Order = patch.Block.Order;
+        blocks.Sort(static (left, right) => left.Order.CompareTo(right.Order));
     }
 
     private static void ApplyRemoveBlock(DocumentEditorDocument document, WysiwygPatch patch)
@@ -348,17 +648,16 @@ public sealed class WysiwygPatchApplier
             return;
         }
 
-        var index = document.Blocks.FindIndex(b => b.Id == blockId);
-        if (index >= 0)
+        if (TryFindBlockList(document, blockId, out var blocks, out var index, patch.Selection))
         {
-            var block = document.Blocks[index];
-            document.Blocks.RemoveAt(index);
+            var block = blocks[index];
+            blocks.RemoveAt(index);
             RemoveFloatingImageAnchor(document, block.Id);
             return;
         }
 
         // Phase 13: block may be inside a table cell.
-        var cellResult = FindCellContainingBlock(document, blockId);
+        var cellResult = FindCellContainingBlock(document, blockId, patch.Selection);
         if (cellResult.Cell is not null)
         {
             cellResult.Cell.Blocks.RemoveAll(b => b.Id == blockId);
@@ -367,12 +666,19 @@ public sealed class WysiwygPatchApplier
 
     private static void ApplyInsertParagraph(DocumentEditorDocument document, WysiwygPatch patch)
     {
+        if (!string.IsNullOrWhiteSpace(patch.Selection?.AnchorInlineId))
+        {
+            ApplySplitBlock(document, patch);
+            return;
+        }
+
+        var targetBlocks = ResolveTopLevelBlockList(document, patch.Selection);
         var anchorBlockId = patch.Selection?.AnchorBlockId;
-        var targetIndex = document.Blocks.Count;
+        var targetIndex = targetBlocks.Count;
 
         if (!string.IsNullOrWhiteSpace(anchorBlockId))
         {
-            var anchorIndex = document.Blocks.FindIndex(b => b.Id == anchorBlockId);
+            var anchorIndex = targetBlocks.FindIndex(b => b.Id == anchorBlockId);
             if (anchorIndex >= 0)
             {
                 targetIndex = anchorIndex + 1;
@@ -380,7 +686,7 @@ public sealed class WysiwygPatchApplier
             else
             {
                 // Phase 13: block may be inside a table cell.
-                var cellResult = FindCellContainingBlock(document, anchorBlockId);
+                var cellResult = FindCellContainingBlock(document, anchorBlockId, patch.Selection);
                 if (cellResult.Cell is not null)
                 {
                     var cellIndex = cellResult.Cell.Blocks.FindIndex(b => b.Id == anchorBlockId);
@@ -404,16 +710,158 @@ public sealed class WysiwygPatchApplier
         {
             Id = Guid.NewGuid().ToString("N"),
             Type = DocumentBlockType.Paragraph,
-            Order = CalculateOrder(document.Blocks, targetIndex),
+            Order = CalculateOrder(targetBlocks, targetIndex),
             Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = patch.Data ?? string.Empty }] }
         };
 
-        document.Blocks.Insert(targetIndex, block);
+        targetBlocks.Insert(targetIndex, block);
     }
 
-    private static void ApplyInsertLineBreak(DocumentEditorDocument document, WysiwygPatch patch)
+    private static void ApplySplitBlock(DocumentEditorDocument document, WysiwygPatch patch)
     {
-        var (block, inline) = ResolveBlockAndInline(document, patch.Selection);
+        var block = patch.Block ?? CreateDefaultBlock(DocumentBlockType.Paragraph, patch.HeadingLevel);
+        block.Id = string.IsNullOrWhiteSpace(block.Id) ? Guid.NewGuid().ToString("N") : block.Id;
+        block.Type = DocumentBlockType.Paragraph;
+        SanitizeBlock(block);
+
+        if (!TryApplyBlockSplit(document, patch, block))
+        {
+            ApplyInsertParagraph(document, patch);
+        }
+    }
+
+    private static bool TryApplyBlockSplit(DocumentEditorDocument document, WysiwygPatch patch, DocumentBlock block)
+    {
+        if (!TryFindBlockList(document, patch.Selection?.AnchorBlockId, out var blocks, out var anchorIndex, patch.Selection))
+        {
+            return false;
+        }
+
+        var anchorBlock = blocks[anchorIndex];
+        var inlines = GetEditableInlines(anchorBlock.Content);
+        if (inlines is null)
+        {
+            return false;
+        }
+
+        if (inlines.Count == 0)
+        {
+            inlines.Add(new TextRun
+            {
+                Id = patch.Selection?.AnchorInlineId ?? Guid.NewGuid().ToString("N"),
+                Text = string.Empty
+            });
+        }
+
+        var inlineIndex = FindInlineIndex(inlines, patch.Selection?.AnchorInlineId);
+        if (inlineIndex < 0)
+        {
+            inlineIndex = Math.Clamp(inlines.Count - 1, 0, inlines.Count - 1);
+        }
+
+        var newInlineId = GetFirstEditableInlineId(block.Content) ?? patch.AfterSelection?.AnchorInlineId ?? Guid.NewGuid().ToString("N");
+        var split = SplitInlinesForBlockBreak(inlines, inlineIndex, patch.Selection?.AnchorOffset ?? 0, newInlineId);
+
+        inlines.Clear();
+        inlines.AddRange(split.Before);
+
+        block.Content = new ParagraphBlockContent { Inlines = split.After };
+        var targetIndex = anchorIndex + 1;
+        block.Order = CalculateOrder(blocks, targetIndex);
+        blocks.Insert(targetIndex, block);
+        SyncFloatingImageAnchor(document, block, patch.Selection);
+        return true;
+    }
+
+    private static (List<InlineContent> Before, List<InlineContent> After) SplitInlinesForBlockBreak(
+        List<InlineContent> inlines,
+        int inlineIndex,
+        int offset,
+        string newInlineId)
+    {
+        var before = new List<InlineContent>();
+        var after = new List<InlineContent>();
+        var selected = inlines[inlineIndex];
+        var typingMarks = CloneTypingMarks(selected.Marks);
+
+        for (var i = 0; i < inlines.Count; i++)
+        {
+            var inline = inlines[i];
+            if (i < inlineIndex)
+            {
+                before.Add(CloneInline(inline));
+                continue;
+            }
+
+            if (i > inlineIndex)
+            {
+                after.Add(CloneInline(inline));
+                continue;
+            }
+
+            if (inline is TextRun textRun)
+            {
+                var splitOffset = Math.Clamp(offset, 0, textRun.Text.Length);
+                var beforeText = textRun.Text[..splitOffset];
+                var afterText = textRun.Text[splitOffset..];
+
+                if (beforeText.Length > 0)
+                {
+                    var beforeRun = (TextRun)CloneInline(textRun);
+                    beforeRun.Text = beforeText;
+                    before.Add(beforeRun);
+                }
+
+                if (afterText.Length > 0)
+                {
+                    var afterRun = (TextRun)CloneInline(textRun);
+                    afterRun.Id = newInlineId;
+                    afterRun.Text = afterText;
+                    after.Add(afterRun);
+                }
+
+                continue;
+            }
+
+            var selectedTextLength = GetInlineText(inline).Length;
+            if (offset <= 0)
+            {
+                var moved = CloneInline(inline);
+                moved.Id = newInlineId;
+                after.Add(moved);
+            }
+            else if (offset >= selectedTextLength)
+            {
+                before.Add(CloneInline(inline));
+            }
+        }
+
+        if (before.Count == 0)
+        {
+            before.Add(new TextRun
+            {
+                Id = selected.Id,
+                Text = string.Empty,
+                Marks = CloneTypingMarks(selected.Marks)
+            });
+        }
+
+        if (after.Count == 0)
+        {
+            after.Add(new TextRun
+            {
+                Id = newInlineId,
+                Text = string.Empty,
+                Marks = typingMarks
+            });
+        }
+
+        return (before, after);
+    }
+
+    private static void ApplyInsertSoftBreak(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        var (_, inline) = ResolveBlockAndInline(document, patch.Selection);
         if (inline is not TextRun textRun)
         {
             return;
@@ -421,57 +869,33 @@ public sealed class WysiwygPatchApplier
 
         var offset = patch.Selection?.AnchorOffset ?? 0;
         offset = Math.Clamp(offset, 0, textRun.Text.Length);
+        textRun.Text = textRun.Text.Insert(offset, "\n");
+    }
 
-        var before = textRun.Text[..offset];
-        var after = textRun.Text[offset..];
-
-        textRun.Text = before;
-
-        var targetIndex = document.Blocks.FindIndex(b => b.Id == block?.Id);
-        List<DocumentBlock>? targetList = null;
-        if (targetIndex < 0)
+    private static void ApplyMergeWithPreviousBlock(DocumentEditorDocument document, WysiwygPatch patch)
+    {
+        if (!TryFindBlockList(document, patch.Selection?.AnchorBlockId, out var blocks, out var index, patch.Selection) || index <= 0)
         {
-            // Phase 13: block may be inside a table cell.
-            var cellResult = FindCellContainingBlock(document, block?.Id);
-            if (cellResult.Cell is not null)
-            {
-                targetList = cellResult.Cell.Blocks;
-                targetIndex = targetList.FindIndex(b => b.Id == block?.Id);
-                if (targetIndex >= 0)
-                {
-                    targetIndex++;
-                }
-                else
-                {
-                    targetIndex = targetList.Count;
-                }
-            }
-            else
-            {
-                targetIndex = document.Blocks.Count;
-            }
-        }
-        else
-        {
-            targetIndex++;
+            return;
         }
 
-        var newBlock = new DocumentBlock
+        var current = blocks[index];
+        var previous = blocks[index - 1];
+        var currentInlines = GetEditableInlines(current.Content);
+        var previousInlines = GetEditableInlines(previous.Content);
+        if (currentInlines is null || previousInlines is null)
         {
-            Id = Guid.NewGuid().ToString("N"),
-            Type = block?.Type ?? DocumentBlockType.Paragraph,
-            Order = CalculateOrder(targetList ?? document.Blocks, targetIndex),
-            Content = CloneBlockContent(block?.Content, after)
-        };
+            return;
+        }
 
-        if (targetList is not null)
+        if (previousInlines.Count == 1 && previousInlines[0] is TextRun { Text.Length: 0 })
         {
-            targetList.Insert(targetIndex, newBlock);
+            previousInlines.Clear();
         }
-        else
-        {
-            document.Blocks.Insert(targetIndex, newBlock);
-        }
+
+        previousInlines.AddRange(currentInlines.Select(CloneInline));
+        blocks.RemoveAt(index);
+        RemoveFloatingImageAnchor(document, current.Id);
     }
 
     private static (DocumentBlock? Block, InlineContent? Inline) ResolveBlockAndInline(DocumentEditorDocument document, WysiwygSelectionSnapshot? selection)
@@ -481,7 +905,7 @@ public sealed class WysiwygPatchApplier
             return (null, null);
         }
 
-        var block = FindBlockById(document, selection.AnchorBlockId);
+        var block = FindBlockById(document, selection.AnchorBlockId, selection);
         if (block is null)
         {
             return (null, null);
@@ -510,7 +934,7 @@ public sealed class WysiwygPatchApplier
             return (null, null);
         }
 
-        var block = FindBlockById(document, selection.AnchorBlockId);
+        var block = FindBlockById(document, selection.AnchorBlockId, selection);
         if (block is null)
         {
             return (null, null);
@@ -521,48 +945,89 @@ public sealed class WysiwygPatchApplier
     }
 
     /// <summary>Phase 13: Finds a block by id, including inside table cells.</summary>
-    private static DocumentBlock? FindBlockById(DocumentEditorDocument document, string? blockId)
+    private static DocumentBlock? FindBlockById(
+        DocumentEditorDocument document,
+        string? blockId,
+        WysiwygSelectionSnapshot? selection = null)
     {
         if (string.IsNullOrWhiteSpace(blockId))
         {
             return null;
         }
 
-        var block = document.Blocks.FirstOrDefault(b => b.Id == blockId);
-        if (block is not null)
+        if (TryFindBlockList(document, blockId, out var blocks, out var index, selection))
         {
-            return block;
-        }
-
-        // Search inside table cells.
-        foreach (var tableBlock in document.Blocks.Where(b => b.Content is TableBlockContent))
-        {
-            var tableContent = (TableBlockContent)tableBlock.Content;
-            foreach (var row in tableContent.Rows)
-            {
-                foreach (var cell in row.Cells)
-                {
-                    var nested = cell.Blocks.FirstOrDefault(b => b.Id == blockId);
-                    if (nested is not null)
-                    {
-                        return nested;
-                    }
-                }
-            }
+            return blocks[index];
         }
 
         return null;
     }
 
+    private static List<DocumentBlock> ResolveTopLevelBlockList(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot? selection)
+    {
+        if (selection is not null
+            && IsHeaderFooterRegion(selection)
+            && !string.IsNullOrWhiteSpace(selection.HeaderFooterId)
+            && DocumentHeaderFooterResolver.FindById(document, selection.HeaderFooterId) is { } headerFooter)
+        {
+            return headerFooter.Blocks;
+        }
+
+        return document.Blocks;
+    }
+
+    private static bool IsHeaderFooterRegion(WysiwygSelectionSnapshot selection)
+        => string.Equals(selection.Region, "Header", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(selection.Region, "Footer", StringComparison.OrdinalIgnoreCase);
+
+    private static IEnumerable<List<DocumentBlock>> EnumerateTopLevelBlockLists(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot? selection = null)
+    {
+        var preferred = ResolveTopLevelBlockList(document, selection);
+        yield return preferred;
+
+        if (!ReferenceEquals(preferred, document.Blocks))
+        {
+            yield return document.Blocks;
+        }
+
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            if (!ReferenceEquals(preferred, headerFooter.Blocks))
+            {
+                yield return headerFooter.Blocks;
+            }
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateTopLevelBlocks(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot? selection = null)
+    {
+        foreach (var blocks in EnumerateTopLevelBlockLists(document, selection))
+        {
+            foreach (var block in blocks)
+            {
+                yield return block;
+            }
+        }
+    }
+
     /// <summary>Phase 13: Finds the table cell containing a block.</summary>
-    private static (TableCellContent? Cell, TableRowContent? Row, TableBlockContent? Table) FindCellContainingBlock(DocumentEditorDocument document, string? blockId)
+    private static (TableCellContent? Cell, TableRowContent? Row, TableBlockContent? Table) FindCellContainingBlock(
+        DocumentEditorDocument document,
+        string? blockId,
+        WysiwygSelectionSnapshot? selection = null)
     {
         if (string.IsNullOrWhiteSpace(blockId))
         {
             return (null, null, null);
         }
 
-        foreach (var tableBlock in document.Blocks.Where(b => b.Content is TableBlockContent))
+        foreach (var tableBlock in EnumerateTopLevelBlocks(document, selection).Where(b => b.Content is TableBlockContent))
         {
             var tableContent = (TableBlockContent)tableBlock.Content;
             foreach (var row in tableContent.Rows)
@@ -578,6 +1043,99 @@ public sealed class WysiwygPatchApplier
         }
 
         return (null, null, null);
+    }
+
+    private static TableCellContent? FindTableCellById(
+        DocumentEditorDocument document,
+        string? cellId,
+        WysiwygSelectionSnapshot? selection = null)
+    {
+        if (string.IsNullOrWhiteSpace(cellId))
+        {
+            return null;
+        }
+
+        foreach (var tableBlock in EnumerateTopLevelBlocks(document, selection).Where(b => b.Content is TableBlockContent))
+        {
+            var tableContent = (TableBlockContent)tableBlock.Content;
+            foreach (var row in tableContent.Rows)
+            {
+                foreach (var cell in row.Cells)
+                {
+                    if (cell.Id == cellId)
+                    {
+                        return cell;
+                    }
+                }
+            }
+        }
+
+        return null;
+    }
+
+    private static TextRun? EnsureTableCellTextRun(
+        DocumentEditorDocument document,
+        WysiwygSelectionSnapshot? selection)
+    {
+        if (selection is null || !string.Equals(selection.Region, "TableCell", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var cell = FindTableCellById(document, selection.ActiveTableCellId, selection);
+        if (cell is null)
+        {
+            return null;
+        }
+
+        var block = !string.IsNullOrWhiteSpace(selection.AnchorBlockId)
+            ? cell.Blocks.FirstOrDefault(b => b.Id == selection.AnchorBlockId)
+            : null;
+        if (block is null)
+        {
+            block = cell.Blocks.FirstOrDefault(b => GetEditableInlines(b.Content) is not null);
+        }
+
+        if (block is null)
+        {
+            block = new DocumentBlock
+            {
+                Id = string.IsNullOrWhiteSpace(selection.AnchorBlockId) ? Guid.NewGuid().ToString("N") : selection.AnchorBlockId!,
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent()
+            };
+            cell.Blocks.Add(block);
+        }
+
+        var inlines = GetEditableInlines(block.Content);
+        if (inlines is null)
+        {
+            block.Type = DocumentBlockType.Paragraph;
+            block.Content = new ParagraphBlockContent();
+            inlines = ((ParagraphBlockContent)block.Content).Inlines;
+        }
+
+        var run = !string.IsNullOrWhiteSpace(selection.AnchorInlineId)
+            ? inlines.OfType<TextRun>().FirstOrDefault(i => i.Id == selection.AnchorInlineId)
+            : null;
+        if (run is not null)
+        {
+            return run;
+        }
+
+        run = inlines.OfType<TextRun>().FirstOrDefault();
+        if (run is not null)
+        {
+            return run;
+        }
+
+        run = new TextRun
+        {
+            Id = string.IsNullOrWhiteSpace(selection.AnchorInlineId) ? Guid.NewGuid().ToString("N") : selection.AnchorInlineId!,
+            Text = string.Empty
+        };
+        inlines.Add(run);
+        return run;
     }
 
     private static List<InlineContent>? GetEditableInlines(DocumentBlockContent? content)
@@ -742,14 +1300,14 @@ public sealed class WysiwygPatchApplier
         var selectedBlockId = selection?.AnchorBlockId;
         if (!string.IsNullOrWhiteSpace(selectedBlockId)
             && !string.Equals(selectedBlockId, imageBlockId, StringComparison.Ordinal)
-            && FindBlockById(document, selectedBlockId) is not null)
+            && FindBlockById(document, selectedBlockId, selection) is not null)
         {
             return selectedBlockId;
         }
 
         if (!string.IsNullOrWhiteSpace(existingAnchor?.BlockId)
             && !string.Equals(existingAnchor.BlockId, imageBlockId, StringComparison.Ordinal)
-            && FindBlockById(document, existingAnchor.BlockId) is not null)
+            && FindBlockById(document, existingAnchor.BlockId, selection) is not null)
         {
             return existingAnchor.BlockId;
         }
@@ -828,7 +1386,7 @@ public sealed class WysiwygPatchApplier
         };
     }
 
-    private static void ApplyMarksToInlines(List<InlineContent> inlines, InlineMarkType markType, int startOffset, int endOffset, string? data)
+    private static void ApplyMarksToInlines(List<InlineContent> inlines, InlineMarkType markType, int startOffset, int endOffset, string? data, string? linkTitle)
     {
         var currentOffset = 0;
         var newInlines = new List<InlineContent>();
@@ -855,14 +1413,18 @@ public sealed class WysiwygPatchApplier
             }
 
             var marked = SplitInline(inline, rangeStart, rangeEnd);
+            if (IsValueMark(markType) || markType == InlineMarkType.Link)
+            {
+                marked.Marks.RemoveAll(m => m.Type == markType);
+            }
+
             if (!marked.Marks.Any(m => m.Type == markType))
             {
-                var mark = new InlineMark { Type = markType };
-                if (markType == InlineMarkType.Link && !string.IsNullOrWhiteSpace(data))
+                if (markType != InlineMarkType.Link || DocumentLinkUtility.IsSafeHref(data))
                 {
-                    mark.Link = new LinkMarkData { Href = data };
+                    var mark = CreateMark(markType, data, linkTitle);
+                    marked.Marks.Add(mark);
                 }
-                marked.Marks.Add(mark);
             }
             newInlines.Add(marked);
 
@@ -920,6 +1482,61 @@ public sealed class WysiwygPatchApplier
         inlines.AddRange(MergeAdjacentTextRuns(newInlines));
     }
 
+    private static void RemoveStyleMarksFromInlines(List<InlineContent> inlines, int startOffset, int endOffset)
+    {
+        var styleMarks = new HashSet<InlineMarkType>
+        {
+            InlineMarkType.Bold,
+            InlineMarkType.Italic,
+            InlineMarkType.Underline,
+            InlineMarkType.Strikethrough,
+            InlineMarkType.Superscript,
+            InlineMarkType.Subscript,
+            InlineMarkType.FontFamily,
+            InlineMarkType.FontSize,
+            InlineMarkType.TextColor,
+            InlineMarkType.Highlight
+        };
+        var currentOffset = 0;
+        var newInlines = new List<InlineContent>();
+
+        foreach (var inline in inlines)
+        {
+            var text = GetInlineText(inline);
+            var inlineStart = currentOffset;
+            var inlineEnd = currentOffset + text.Length;
+
+            if (inlineEnd <= startOffset || inlineStart >= endOffset)
+            {
+                newInlines.Add(CloneInline(inline));
+                currentOffset += text.Length;
+                continue;
+            }
+
+            var rangeStart = Math.Max(startOffset, inlineStart) - inlineStart;
+            var rangeEnd = Math.Min(endOffset, inlineEnd) - inlineStart;
+
+            if (rangeStart > 0)
+            {
+                newInlines.Add(SplitInline(inline, 0, rangeStart));
+            }
+
+            var cleared = SplitInline(inline, rangeStart, rangeEnd);
+            cleared.Marks.RemoveAll(mark => styleMarks.Contains(mark.Type));
+            newInlines.Add(cleared);
+
+            if (rangeEnd < text.Length)
+            {
+                newInlines.Add(SplitInline(inline, rangeEnd, text.Length));
+            }
+
+            currentOffset += text.Length;
+        }
+
+        inlines.Clear();
+        inlines.AddRange(MergeAdjacentTextRuns(newInlines));
+    }
+
     private static bool RangeHasMark(List<InlineContent> inlines, InlineMarkType markType, int startOffset, int endOffset)
     {
         var currentOffset = 0;
@@ -942,6 +1559,33 @@ public sealed class WysiwygPatchApplier
         }
 
         return false;
+    }
+
+    private static InlineMark CreateMark(InlineMarkType markType, string? data, string? linkTitle)
+    {
+        var mark = new InlineMark { Type = markType };
+        if (markType == InlineMarkType.Link && !string.IsNullOrWhiteSpace(data))
+        {
+            mark.Link = new LinkMarkData
+            {
+                Href = DocumentLinkUtility.NormalizeHref(data),
+                Title = string.IsNullOrWhiteSpace(linkTitle) ? null : linkTitle.Trim()
+            };
+        }
+        else if (IsValueMark(markType) && !string.IsNullOrWhiteSpace(data))
+        {
+            mark.Value = data;
+        }
+
+        return mark;
+    }
+
+    private static bool IsValueMark(InlineMarkType markType)
+    {
+        return markType is InlineMarkType.FontFamily
+            or InlineMarkType.FontSize
+            or InlineMarkType.TextColor
+            or InlineMarkType.Highlight;
     }
 
     private static InlineContent CloneInline(InlineContent inline)
@@ -982,6 +1626,28 @@ public sealed class WysiwygPatchApplier
                 Marks = note.Marks.ToList()
             },
             _ => new TextRun { Text = GetInlineText(inline) }
+        };
+    }
+
+    private static List<InlineMark> CloneTypingMarks(IEnumerable<InlineMark> marks)
+    {
+        return marks
+            .Where(mark => mark.Type != InlineMarkType.Revision)
+            .Select(CloneMark)
+            .ToList();
+    }
+
+    private static InlineMark CloneMark(InlineMark mark)
+    {
+        return new InlineMark
+        {
+            Type = mark.Type,
+            Link = mark.Link is not null ? new LinkMarkData { Href = mark.Link.Href, Title = mark.Link.Title } : null,
+            CommentAnchor = mark.CommentAnchor is not null
+                ? new CommentAnchorMarkData { CommentId = mark.CommentAnchor.CommentId, AnchorId = mark.CommentAnchor.AnchorId }
+                : null,
+            RevisionId = mark.RevisionId,
+            Value = mark.Value
         };
     }
 
@@ -1051,10 +1717,17 @@ public sealed class WysiwygPatchApplier
             return false;
         }
 
-        var aTypes = a.Select(m => m.Type).OrderBy(t => t).ToList();
-        var bTypes = b.Select(m => m.Type).OrderBy(t => t).ToList();
+        var orderedA = a.OrderBy(m => m.Type).ThenBy(m => m.Value).ToList();
+        var orderedB = b.OrderBy(m => m.Type).ThenBy(m => m.Value).ToList();
 
-        return aTypes.SequenceEqual(bTypes);
+        return orderedA.Zip(orderedB).All(pair =>
+            pair.First.Type == pair.Second.Type
+            && pair.First.Link?.Href == pair.Second.Link?.Href
+            && pair.First.Link?.Title == pair.Second.Link?.Title
+            && pair.First.CommentAnchor?.CommentId == pair.Second.CommentAnchor?.CommentId
+            && pair.First.CommentAnchor?.AnchorId == pair.Second.CommentAnchor?.AnchorId
+            && pair.First.RevisionId == pair.Second.RevisionId
+            && pair.First.Value == pair.Second.Value);
     }
 
     private static WysiwygPatch UpgradePatch(WysiwygPatch patch)
@@ -1066,6 +1739,8 @@ public sealed class WysiwygPatchApplier
             Type = patch.Type,
             Data = patch.Data,
             Selection = patch.Selection,
+            BeforeSelection = patch.BeforeSelection,
+            AfterSelection = patch.AfterSelection,
             TransactionId = patch.TransactionId,
             ProtocolVersion = SupportedProtocolVersion,
             Html = patch.Html,
@@ -1075,7 +1750,9 @@ public sealed class WysiwygPatchApplier
             BlockType = patch.BlockType,
             Block = patch.Block,
             DeleteLength = patch.DeleteLength,
-            HeadingLevel = patch.HeadingLevel
+            HeadingLevel = patch.HeadingLevel,
+            RevisionId = patch.RevisionId,
+            RevisionType = patch.RevisionType
         };
     }
 }

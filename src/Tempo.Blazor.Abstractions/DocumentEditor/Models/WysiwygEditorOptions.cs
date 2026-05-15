@@ -36,9 +36,21 @@ public sealed class WysiwygEditorOptions
     /// <summary>Accessible label for floating image resize handles.</summary>
     public string ImageResizeHandleLabel { get; set; } = "Resize image";
 
+    /// <summary>Label for retrying a failed image load.</summary>
+    public string ImageRetryLabel { get; set; } = "Retry";
+
+    /// <summary>Font families allowed for font family marks.</summary>
+    public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
+
     /// <summary>Accessible label used for insertion suggestion decorations.</summary>
     public string SuggestionInsertLabel { get; set; } = "Suggested insertion";
 
     /// <summary>Accessible label used for deletion suggestion decorations.</summary>
     public string SuggestionDeleteLabel { get; set; } = "Suggested deletion";
+
+    /// <summary>Whether the JS surface should render live track-changes decorations.</summary>
+    public bool TrackChangesEnabled { get; set; }
+
+    /// <summary>How tracked changes should be displayed in the JS-owned surface.</summary>
+    public DocumentReviewDisplayMode ReviewDisplayMode { get; set; } = DocumentReviewDisplayMode.AllMarkup;
 }

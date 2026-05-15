@@ -3,15 +3,20 @@
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Interfaces
 @using Microsoft.JSInterop
+@using System.Globalization
 @using System.Text.Json
 @implements IAsyncDisposable
 @inject IJSRuntime JSRuntime
 
 <div @ref="_rootElement"
-     class="tm-document-wysiwyg-host"
+     class="@RootClass"
+     style="@RootStyle"
      data-testid="document-wysiwyg-host"
      data-surface-mode="wysiwyg"
      data-instance-id="@_instanceId"
+     data-ruler-visible="@ShowRuler.ToString().ToLowerInvariant()"
+     data-zoom-percent="@ZoomPercent"
+     data-zoom-mode="@(ZoomPageWidth ? "page-width" : "percent")"
      role="textbox"
      aria-label="@Loc["TmDocumentEditor_WysiwygSurfaceLabel"]"
      aria-describedby="@_accessibilityDescriptionId"
@@ -125,6 +130,8 @@
     private DocumentEditorDocument? _lastSnapshotDocument;
     private IReadOnlyList<DocumentSuggestion>? _lastSnapshotSuggestions;
     private bool _lastSnapshotReadOnly;
+    private bool _lastTrackChangesEnabled;
+    private DocumentReviewDisplayMode _lastReviewDisplayMode = DocumentReviewDisplayMode.AllMarkup;
     private bool _hasSentSnapshot;
     private bool _tokenMenuOpen;
     private bool _tokenMenuLoading;
@@ -156,8 +163,26 @@
     /// <summary>Optional token provider for document token autocomplete.</summary>
     [Parameter] public ITokenDataProvider? TokenProvider { get; set; }
 
+    /// <summary>Font families allowed by the host editor.</summary>
+    [Parameter] public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
+
+    /// <summary>Whether the page ruler should be visible.</summary>
+    [Parameter] public bool ShowRuler { get; set; } = true;
+
+    /// <summary>Current page zoom percentage.</summary>
+    [Parameter] public int ZoomPercent { get; set; } = 100;
+
+    /// <summary>Whether page-width zoom mode is active.</summary>
+    [Parameter] public bool ZoomPageWidth { get; set; }
+
     /// <summary>Pending provider-backed suggestions to decorate in the WYSIWYG surface.</summary>
     [Parameter] public IReadOnlyList<DocumentSuggestion> Suggestions { get; set; } = [];
+
+    /// <summary>Whether live track-changes decorations are enabled in the JS-owned surface.</summary>
+    [Parameter] public bool TrackChangesEnabled { get; set; }
+
+    /// <summary>How tracked changes should be displayed in the JS-owned surface.</summary>
+    [Parameter] public DocumentReviewDisplayMode ReviewDisplayMode { get; set; } = DocumentReviewDisplayMode.AllMarkup;
 
     /// <summary>Raised when the JS engine generates a patch that should be applied to the document.</summary>
     [Parameter] public EventCallback<WysiwygPatch> DocumentPatchGenerated { get; set; }
@@ -167,6 +192,18 @@
 
     /// <summary>Raised when the JS engine reports selection change.</summary>
     [Parameter] public EventCallback<WysiwygSelectionSnapshot?> DocumentSelectionChanged { get; set; }
+
+    /// <summary>Raised when the JS engine requests a text context menu.</summary>
+    [Parameter] public EventCallback<WysiwygTextContextMenuRequest> TextContextMenuRequested { get; set; }
+
+    /// <summary>Raised when the JS engine requests a table context menu.</summary>
+    [Parameter] public EventCallback<WysiwygTableContextMenuRequest> TableContextMenuRequested { get; set; }
+
+    /// <summary>Raised when the JS engine shows or hides the inline mini toolbar.</summary>
+    [Parameter] public EventCallback<WysiwygMiniToolbarRequest?> MiniToolbarChanged { get; set; }
+
+    /// <summary>Raised when the JS-owned inline revision UI requests accept or reject.</summary>
+    [Parameter] public EventCallback<WysiwygRevisionReviewRequest> RevisionReviewRequested { get; set; }
 
     /// <summary>Raised when a typing transaction is committed.</summary>
     [Parameter] public EventCallback TransactionCommitted { get; set; }
@@ -179,6 +216,34 @@
 
     /// <summary>Raised when the user requests save via keyboard.</summary>
     [Parameter] public EventCallback SaveRequested { get; set; }
+
+    private string RootClass
+    {
+        get
+        {
+            var classes = new List<string> { "tm-document-wysiwyg-host" };
+            if (ShowRuler)
+            {
+                classes.Add("tm-document-wysiwyg-host--ruler");
+            }
+
+            if (ZoomPageWidth)
+            {
+                classes.Add("tm-document-wysiwyg-host--zoom-page-width");
+            }
+
+            return string.Join(" ", classes);
+        }
+    }
+
+    private string RootStyle
+    {
+        get
+        {
+            var zoom = Math.Clamp(ZoomPercent, 50, 200) / 100d;
+            return string.Create(CultureInfo.InvariantCulture, $"--tm-document-zoom: {zoom:0.##};");
+        }
+    }
 
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -207,8 +272,12 @@
                 HeaderLabel = Loc["TmDocumentEditor_WysiwygHeaderLabel"],
                 FooterLabel = Loc["TmDocumentEditor_WysiwygFooterLabel"],
                 ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
+                ImageRetryLabel = Loc["TmDocumentEditor_Retry"],
+                FontFamilies = FontFamilies,
                 SuggestionInsertLabel = Loc["TmDocumentEditor_SuggestionInsertAria"],
-                SuggestionDeleteLabel = Loc["TmDocumentEditor_SuggestionDeleteAria"]
+                SuggestionDeleteLabel = Loc["TmDocumentEditor_SuggestionDeleteAria"],
+                TrackChangesEnabled = TrackChangesEnabled,
+                ReviewDisplayMode = ReviewDisplayMode
             };
 
             await JSRuntime.InvokeVoidAsync(
@@ -242,9 +311,30 @@
     /// <inheritdoc />
     protected override async Task OnParametersSetAsync()
     {
-        if (_jsReady && !_jsFailed && !_disposed && ShouldSendParameterSnapshot())
+        if (!_jsReady || _jsFailed || _disposed)
         {
-            await SendSnapshotAsync();
+            return;
+        }
+
+        var readOnlyChanged = ReadOnly != _lastSnapshotReadOnly;
+        if (readOnlyChanged)
+        {
+            await SetReadOnlyAsync(ReadOnly);
+        }
+
+        if (TrackChangesEnabled != _lastTrackChangesEnabled)
+        {
+            await SetTrackChangesEnabledAsync(TrackChangesEnabled);
+        }
+
+        if (ReviewDisplayMode != _lastReviewDisplayMode)
+        {
+            await SetReviewDisplayModeAsync(ReviewDisplayMode);
+        }
+
+        if (ShouldSendParameterSnapshot())
+        {
+            await SendSnapshotAsync(force: readOnlyChanged);
         }
     }
 
@@ -252,6 +342,138 @@
     public Task RefreshSnapshotAsync()
     {
         return SendSnapshotAsync(force: true);
+    }
+
+    /// <summary>Forces a synchronized document into the JS-owned WYSIWYG DOM.</summary>
+    public Task RefreshSnapshotAsync(DocumentEditorDocument synchronizedDocument)
+    {
+        return SendSnapshotAsync(force: true, documentOverride: synchronizedDocument);
+    }
+
+    /// <summary>Applies a remote granular operation batch directly to the JS-owned DOM.</summary>
+    public async Task<WysiwygRemoteOperationBatchApplyResult> ApplyRemoteOperationBatchAsync(
+        IReadOnlyList<DocumentOperation> operations,
+        DocumentEditorDocument synchronizedDocument)
+    {
+        if (_jsFailed || _disposed || !_jsReady)
+        {
+            return WysiwygRemoteOperationBatchApplyResult.Failed("wysiwyg-engine-unavailable");
+        }
+
+        if (operations.Count == 0)
+        {
+            RememberSynchronizedSnapshot(synchronizedDocument);
+            return WysiwygRemoteOperationBatchApplyResult.Ok();
+        }
+
+        try
+        {
+            var result = await JSRuntime.InvokeAsync<WysiwygRemoteOperationBatchApplyResult>(
+                "tmDocumentWysiwyg.applyRemoteOperationBatch",
+                _instanceId,
+                new { Operations = operations });
+
+            if (result is null)
+            {
+                return WysiwygRemoteOperationBatchApplyResult.Failed("wysiwyg-remote-apply-null-result");
+            }
+
+            if (result.Success)
+            {
+                RememberSynchronizedSnapshot(synchronizedDocument);
+            }
+
+            return result;
+        }
+        catch (JSException)
+        {
+            return WysiwygRemoteOperationBatchApplyResult.Failed(
+                operations.FirstOrDefault()?.OperationId ?? "wysiwyg-remote-apply-js-error");
+        }
+    }
+
+    /// <summary>Applies remote granular operations directly to the JS-owned DOM.</summary>
+    public async Task<bool> ApplyRemoteOperationsAsync(
+        IReadOnlyList<DocumentOperation> operations,
+        DocumentEditorDocument synchronizedDocument)
+    {
+        var result = await ApplyRemoteOperationBatchAsync(operations, synchronizedDocument);
+        return result.Success && (result.Applied > 0 || result.Skipped > 0 || operations.Count == 0);
+    }
+
+    private async Task SetTrackChangesEnabledAsync(bool enabled)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setTrackChangesEnabled", _instanceId, enabled);
+            _lastTrackChangesEnabled = enabled;
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next JS initialization or snapshot will carry the option.
+        }
+    }
+
+    /// <summary>Updates tracked-change display mode in the JS-owned DOM.</summary>
+    public async Task SetReviewDisplayModeAsync(DocumentReviewDisplayMode mode)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setReviewDisplayMode", _instanceId, mode.ToString());
+            _lastReviewDisplayMode = mode;
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next JS initialization or snapshot will carry the option.
+        }
+    }
+
+    /// <summary>Scrolls to a tracked revision in the JS-owned DOM.</summary>
+    public async Task ScrollToRevisionAsync(string revisionId)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(revisionId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToRevision", _instanceId, revisionId);
+        }
+        catch (JSException)
+        {
+            // Best-effort; selection state still reflects the chosen revision.
+        }
+    }
+
+    private async Task SetReadOnlyAsync(bool readOnly)
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setReadOnly", _instanceId, readOnly);
+        }
+        catch (JSException)
+        {
+            // Best-effort; the forced snapshot below will reconcile the DOM when possible.
+        }
+    }
+
+    /// <summary>Clears revision decorations from the JS-owned DOM after a review action.</summary>
+    public async Task ClearRevisionDecorationsAsync(string revisionId, bool removeContent)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(revisionId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.clearRevisionDecorations", _instanceId, revisionId, removeContent);
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next snapshot render will reconcile the DOM.
+        }
     }
 
     private bool ShouldSendParameterSnapshot()
@@ -262,28 +484,30 @@
             || ReadOnly != _lastSnapshotReadOnly;
     }
 
-    private async Task SendSnapshotAsync(bool force = false)
+    private async Task SendSnapshotAsync(bool force = false, DocumentEditorDocument? documentOverride = null)
     {
-        if (_disposed || _jsFailed || Document is null) return;
+        var document = documentOverride ?? Document;
+        if (_disposed || _jsFailed || document is null) return;
 
         try
         {
+            var displayDocument = await PrepareDocumentForDisplayAsync(document);
             var snapshot = new WysiwygDocumentSnapshot
             {
                 ProtocolVersion = 1,
-                Document = Document,
+                Document = displayDocument,
                 Suggestions = Suggestions
             };
 
             var snapshotJson = JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options);
             if (!force && string.Equals(snapshotJson, _lastSentSnapshotJson, StringComparison.Ordinal))
             {
-                RememberSentSnapshot(snapshotJson);
+                RememberSentSnapshot(snapshotJson, document);
                 return;
             }
 
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.applySnapshot", _instanceId, snapshot);
-            RememberSentSnapshot(snapshotJson);
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.applySnapshot", _instanceId, snapshot, force);
+            RememberSentSnapshot(snapshotJson, document);
         }
         catch (JSException)
         {
@@ -291,12 +515,119 @@
         }
     }
 
-    private void RememberSentSnapshot(string snapshotJson)
+    private async Task<DocumentEditorDocument> PrepareDocumentForDisplayAsync(DocumentEditorDocument document)
+    {
+        if (ImageProvider is null && ImageUrlResolver is null)
+        {
+            return document;
+        }
+
+        var clone = CloneDocument(document);
+        var changed = false;
+        foreach (var image in EnumerateImages(clone))
+        {
+            if (image.Source == DocumentImageSource.Url || string.IsNullOrWhiteSpace(image.AssetId))
+            {
+                continue;
+            }
+
+            if (IsSafeImageUrl(image.Url))
+            {
+                continue;
+            }
+
+            string? resolvedUrl;
+            try
+            {
+                resolvedUrl = await ResolveImageUrlAsync(clone.DocumentId, image.AssetId);
+            }
+            catch
+            {
+                continue;
+            }
+
+            if (!string.IsNullOrWhiteSpace(resolvedUrl) && IsSafeImageUrl(resolvedUrl))
+            {
+                image.Url = resolvedUrl;
+                changed = true;
+            }
+        }
+
+        return changed ? clone : document;
+    }
+
+    private async Task<string?> ResolveImageUrlAsync(string documentId, string assetId)
+    {
+        if (ImageProvider is not null)
+        {
+            var result = await ImageProvider.ResolveAsync(new DocumentImageResolveRequest
+            {
+                DocumentId = documentId,
+                AssetId = assetId
+            });
+
+            if (result.Success && !string.IsNullOrWhiteSpace(result.Url))
+            {
+                return result.Url;
+            }
+        }
+
+        return ImageUrlResolver is null
+            ? null
+            : await ImageUrlResolver.ResolveUrlAsync(documentId, assetId);
+    }
+
+    private static IEnumerable<ImageBlockContent> EnumerateImages(DocumentEditorDocument document)
+    {
+        foreach (var block in EnumerateBlocks(document.Blocks))
+        {
+            if (block.Content is ImageBlockContent image)
+            {
+                yield return image;
+            }
+        }
+    }
+
+    private static IEnumerable<DocumentBlock> EnumerateBlocks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            yield return block;
+            if (block.Content is TableBlockContent table)
+            {
+                foreach (var nested in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => EnumerateBlocks(cell.Blocks)))
+                {
+                    yield return nested;
+                }
+            }
+        }
+    }
+
+    private static DocumentEditorDocument CloneDocument(DocumentEditorDocument document)
+    {
+        var json = JsonSerializer.Serialize(document, DocumentEditorJson.Options);
+        return JsonSerializer.Deserialize<DocumentEditorDocument>(json, DocumentEditorJson.Options)!;
+    }
+
+    private void RememberSynchronizedSnapshot(DocumentEditorDocument synchronizedDocument)
+    {
+        var snapshot = new WysiwygDocumentSnapshot
+        {
+            ProtocolVersion = 1,
+            Document = synchronizedDocument,
+            Suggestions = Suggestions
+        };
+        RememberSentSnapshot(JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options), synchronizedDocument);
+    }
+
+    private void RememberSentSnapshot(string snapshotJson, DocumentEditorDocument? document)
     {
         _lastSentSnapshotJson = snapshotJson;
-        _lastSnapshotDocument = Document;
+        _lastSnapshotDocument = document;
         _lastSnapshotSuggestions = Suggestions;
         _lastSnapshotReadOnly = ReadOnly;
+        _lastTrackChangesEnabled = TrackChangesEnabled;
+        _lastReviewDisplayMode = ReviewDisplayMode;
         _hasSentSnapshot = true;
     }
 
@@ -335,6 +666,74 @@
         }
     }
 
+    /// <summary>Requests a diagnostic snapshot of the live JS editor state.</summary>
+    public async Task<WysiwygDebugSnapshot?> RequestDebugSnapshotAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygDebugSnapshot?>(
+                "tmDocumentWysiwyg.getDebugSnapshot",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests the current selection formatting state from the JS engine.</summary>
+    public async Task<WysiwygFormattingState?> RequestFormattingStateAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygFormattingState?>(
+                "tmDocumentWysiwyg.getFormattingState",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests the current selection snapshot from the JS engine.</summary>
+    public async Task<WysiwygSelectionSnapshot?> RequestSelectionSnapshotAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygSelectionSnapshot?>(
+                "tmDocumentWysiwyg.getSelectionSnapshot",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests current hyperlink metadata from the JS engine selection.</summary>
+    public async Task<WysiwygLinkInfo?> RequestLinkInfoAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygLinkInfo?>(
+                "tmDocumentWysiwyg.getLinkInfo",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
     /// <summary>Called by the JS engine when a patch is generated.</summary>
     [JSInvokable]
     public Task HandlePatchGenerated(WysiwygPatch patch)
@@ -348,6 +747,50 @@
     {
         _lastSelectionSnapshot = snapshot;
         return DocumentSelectionChanged.InvokeAsync(snapshot);
+    }
+
+    /// <summary>Called by the JS engine when the text context menu should open.</summary>
+    [JSInvokable]
+    public Task HandleTextContextMenuRequested(WysiwygTextContextMenuRequest request)
+    {
+        _lastSelectionSnapshot = request.Selection ?? _lastSelectionSnapshot;
+        return TextContextMenuRequested.InvokeAsync(request);
+    }
+
+    /// <summary>Called by the JS engine when the table context menu should open.</summary>
+    [JSInvokable]
+    public Task HandleTableContextMenuRequested(WysiwygTableContextMenuRequest request)
+    {
+        _lastSelectionSnapshot = request.Selection ?? _lastSelectionSnapshot;
+        return TableContextMenuRequested.InvokeAsync(request);
+    }
+
+    /// <summary>Called by the JS engine when the inline mini toolbar changes visibility or position.</summary>
+    [JSInvokable]
+    public Task HandleMiniToolbarChanged(WysiwygMiniToolbarRequest? request)
+    {
+        if (request?.Selection is not null)
+        {
+            _lastSelectionSnapshot = request.Selection;
+        }
+
+        return MiniToolbarChanged.InvokeAsync(request);
+    }
+
+    /// <summary>Called by the JS engine when an inline revision action is requested.</summary>
+    [JSInvokable]
+    public Task HandleRevisionReviewRequested(string revisionId, string action)
+    {
+        if (!Enum.TryParse<DocumentRevisionAction>(action, ignoreCase: true, out var reviewAction))
+        {
+            reviewAction = DocumentRevisionAction.Pending;
+        }
+
+        return RevisionReviewRequested.InvokeAsync(new WysiwygRevisionReviewRequest
+        {
+            RevisionId = revisionId,
+            Action = reviewAction
+        });
     }
 
     /// <summary>Called by the JS engine when a transaction is committed.</summary>
@@ -784,6 +1227,20 @@
         }
     }
 
+    /// <summary>Focuses the editable document body.</summary>
+    public async Task FocusAsync()
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.focus", _instanceId);
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
     /// <summary>Called by the JS engine when the mutation guard detects unexpected DOM changes.</summary>
     [JSInvokable]
     public Task HandleMutationGuardTriggered(List<WysiwygMutationRecord> mutations)
@@ -805,6 +1262,10 @@
         {
             Type = "ToggleMark",
             MarkType = payload.MarkType,
+            Data = string.IsNullOrWhiteSpace(payload.Href)
+                ? string.IsNullOrWhiteSpace(payload.Value) ? payload.Data : payload.Value
+                : payload.Href,
+            LinkTitle = payload.Title,
             Selection = payload.Selection ?? _lastSelectionSnapshot,
             ProtocolVersion = 1
         };

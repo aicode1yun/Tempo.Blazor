@@ -1,6 +1,10 @@
+using FluentAssertions;
 using Microsoft.Playwright;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Net.Http.Json;
+using System.Text.Json;
 using System.Text.RegularExpressions;
+using Tempo.Blazor.DocumentEditor.Models;
 
 namespace Tempo.Blazor.E2E;
 
@@ -17,13 +21,329 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         await Assertions.Expect(editor.Locator(".tm-document-editor__ribbon")).ToBeVisibleAsync();
         await Assertions.Expect(editor.Locator(".tm-document-editor__page-surface")).ToBeVisibleAsync();
-        await Assertions.Expect(editor.Locator(".tm-document-editor__comment-rail")).ToBeVisibleAsync();
-        await Assertions.Expect(editor.Locator(".tm-document-editor__version-panel")).ToBeVisibleAsync();
+        await Assertions.Expect(editor.Locator("[data-testid='document-side-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(editor.Locator("[data-testid='document-version-panel']")).ToBeVisibleAsync();
         await Assertions.Expect(editor.Locator(".tm-document-editor__document-title")).ToContainTextAsync("Service agreement");
-        await WaitForWysiwygBodyAsync(host);
+        var body = await WaitForWysiwygBodyAsync(host);
         await Assertions.Expect(host.Locator(".tm-wysiwyg-block").First).ToContainTextAsync(new Regex(@"\S"));
         await Assertions.Expect(page.Locator("[data-testid='document-editor-wysiwyg-mode']")).ToHaveCountAsync(0);
         await Assertions.Expect(page.Locator("[data-testid='document-paragraph-editor']")).ToHaveCountAsync(0);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_RibbonTabs_SwitchCommandPanels()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-save']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-toolbar-table']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-toolbar-table']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-toolbar-image']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-bold']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-references']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-pdf']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-import-docx-label']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-track-changes']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-open-revisions']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-template-preview']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-open-versions']")).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase11_PageCanvasStatusAndViewControlsWork()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        var editor = page.Locator("[data-testid='document-editor-demo']");
+        var host = editor.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await Assertions.Expect(editor.Locator("[data-testid='document-status-bar']")).ToBeVisibleAsync();
+        await Assertions.Expect(editor.Locator("[data-testid='document-status-word-count']")).ToContainTextAsync("words");
+        await Assertions.Expect(editor.Locator("[data-testid='document-status-page-count']")).ToContainTextAsync("pages");
+        await Assertions.Expect(editor.Locator("[data-testid='document-status-region']")).ToContainTextAsync("body");
+        await Assertions.Expect(editor.Locator(".tm-document-editor__ribbon-status")).ToHaveCountAsync(0);
+
+        var layoutOk = await page.EvaluateAsync<bool>(
+            """
+            () => {
+                const surface = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__surface');
+                const panel = document.querySelector('[data-testid="document-side-panel"]');
+                const status = document.querySelector('[data-testid="document-status-bar"]');
+                const pageEl = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)');
+                if (!surface || !panel || !status || !pageEl) return false;
+                const surfaceRect = surface.getBoundingClientRect();
+                const panelRect = panel.getBoundingClientRect();
+                const statusRect = status.getBoundingClientRect();
+                const pageRect = pageEl.getBoundingClientRect();
+                return surfaceRect.right <= panelRect.left
+                    && pageRect.width > 500
+                    && pageRect.height > pageRect.width
+                    && statusRect.top >= surfaceRect.bottom - 1;
+            }
+            """);
+        layoutOk.Should().BeTrue();
+
+        await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-toggle-ruler']")).ToBeVisibleAsync();
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-ruler-visible", "true");
+        await page.Locator("[data-testid='document-toggle-ruler']").ClickAsync();
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-ruler-visible", "false");
+
+        var beforeZoom = await host.Locator(".tm-wysiwyg-page").First.BoundingBoxAsync();
+        await page.Locator("[data-testid='document-zoom-in']").ClickAsync();
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-zoom-percent", "110");
+        await Assertions.Expect(page.Locator("[data-testid='document-status-zoom']")).ToContainTextAsync("110%");
+        var afterZoom = await host.Locator(".tm-wysiwyg-page").First.BoundingBoxAsync();
+        afterZoom!.Width.Should().BeGreaterThan(beforeZoom!.Width);
+
+        var marker = $" phase11 {DateTimeOffset.UtcNow:HHmmssfff}";
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        await page.Keyboard.InsertTextAsync(marker);
+        await Assertions.Expect(host).ToContainTextAsync(marker.Trim());
+        await page.WaitForTimeoutAsync(800);
+        await Assertions.Expect(page.Locator("[data-testid='document-dirty-status']")).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase16_AccessibilityRegionsExposeLabelsAndCriticalSmoke()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        var editor = page.Locator("[data-testid='document-editor-demo']");
+        await WaitForWysiwygBodyAsync(editor.Locator("[data-testid='document-wysiwyg-host']"));
+
+        await Assertions.Expect(editor).ToHaveAttributeAsync("role", "application");
+        await Assertions.Expect(editor).ToHaveAttributeAsync("aria-label", "Document editor");
+        await Assertions.Expect(editor.Locator("[data-testid='document-toolbar']")).ToHaveAttributeAsync("aria-label", "Document editor toolbar");
+        await Assertions.Expect(editor.Locator(".tm-document-editor__surface")).ToHaveAttributeAsync("aria-label", "Document surface");
+        await Assertions.Expect(editor.Locator("[data-testid='document-side-panel']")).ToHaveAttributeAsync("aria-label", "Document side panel");
+        await Assertions.Expect(editor.Locator("[data-testid='document-status-bar']")).ToHaveAttributeAsync("aria-label", "Document status");
+
+        var missingLabels = await page.EvaluateAsync<string[]>(
+            """
+            () => Array.from(document.querySelectorAll([
+                '[data-testid="document-editor-demo"][role="application"]',
+                '[data-testid="document-toolbar"][role="toolbar"]',
+                '[data-testid="document-status-bar"][role="status"]',
+                '[data-testid="document-side-panel"]',
+                '[data-testid="document-wysiwyg-host"][role="textbox"]',
+                '.tm-document-editor__surface'
+            ].join(',')))
+                .filter(element => !element.getAttribute('aria-label') && !element.getAttribute('aria-labelledby'))
+                .map(element => element.getAttribute('data-testid') || element.className || element.tagName);
+            """);
+        Assert.AreEqual(0, missingLabels.Length, $"Critical editor accessibility regions must be labelled. Missing: {string.Join(", ", missingLabels)}");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase16_TabNavigationMovesBetweenRibbonDocumentAndPanel()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+
+        await page.Locator("[data-testid='document-ribbon-tab-home']").FocusAsync();
+        var reachedDocument = false;
+        for (var i = 0; i < 30; i++)
+        {
+            await page.Keyboard.PressAsync("Tab");
+            if (await ActiveElementIsInWysiwygAsync(page))
+            {
+                reachedDocument = true;
+                break;
+            }
+        }
+
+        Assert.IsTrue(reachedDocument, "Tab should leave the ribbon and reach the document surface.");
+
+        var returnedToRibbonOrPanel = false;
+        for (var i = 0; i < 30; i++)
+        {
+            await page.Keyboard.PressAsync("Shift+Tab");
+            returnedToRibbonOrPanel = await page.EvaluateAsync<bool>(
+                """
+                () => {
+                    const active = document.activeElement;
+                    return !!active?.closest?.('[data-testid="document-toolbar"], [data-testid="document-side-panel"]');
+                }
+                """);
+            if (returnedToRibbonOrPanel)
+            {
+                break;
+            }
+        }
+
+        Assert.IsTrue(returnedToRibbonOrPanel, "Shift+Tab should leave the document without trapping focus.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase16_EscapeClosesFloatingUiAndPanelThenReturnsFocusToDocument()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await SelectFirstInlineRangeAsync(page, 0, 5);
+        await OpenSelectionContextMenuAsync(page);
+        await Assertions.Expect(page.Locator("[data-testid='document-text-context-menu']")).ToBeVisibleAsync();
+
+        await page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(page.Locator("[data-testid='document-text-context-menu']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+        Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Escape from a floating menu should return focus to the WYSIWYG surface.");
+
+        await page.Keyboard.PressAsync("Escape");
+
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+        Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Escape from the side panel should keep focus in the WYSIWYG surface.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase16_F10ActivatesRibbonKeyboardMode()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await host.FocusAsync();
+        await page.Keyboard.PressAsync("F10");
+
+        await Assertions.Expect(page.Locator("[data-testid='document-toolbar']")).ToHaveAttributeAsync("data-keyboard-mode", "true", new() { Timeout = 5000 });
+        var activeTestId = await page.EvaluateAsync<string?>("() => document.activeElement?.getAttribute('data-testid')");
+        Assert.AreEqual("document-ribbon-tab-home", activeTestId);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase11_NarrowViewportKeepsDocumentCanvasContained()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 390, height: 840);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        var metrics = await page.EvaluateAsync<ViewportOverflowMetrics>(
+            """
+            () => {
+                const editor = document.querySelector('[data-testid="document-editor-demo"]');
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                return {
+                    viewportWidth: window.innerWidth,
+                    documentScrollWidth: document.documentElement.scrollWidth,
+                    editorRight: editor?.getBoundingClientRect().right || 0,
+                    hostRight: host?.getBoundingClientRect().right || 0,
+                    wideElements: Array.from(document.querySelectorAll('body *'))
+                        .map(element => {
+                            const rect = element.getBoundingClientRect();
+                            return {
+                                testId: element.getAttribute('data-testid') || '',
+                                className: String(element.className || ''),
+                                right: Math.round(rect.right),
+                                width: Math.round(rect.width),
+                                scrollWidth: element.scrollWidth
+                            };
+                        })
+                        .filter(item => item.right > window.innerWidth + 2 || item.width > window.innerWidth + 2 || item.scrollWidth > window.innerWidth + 2)
+                        .sort((a, b) => Math.max(b.right, b.width, b.scrollWidth) - Math.max(a.right, a.width, a.scrollWidth))
+                        .slice(0, 8)
+                        .map(item => `${item.testId || item.className}: r=${item.right} w=${item.width} sw=${item.scrollWidth}`)
+                        .join(' | ')
+                };
+            }
+            """);
+
+        metrics.DocumentScrollWidth.Should().BeLessThanOrEqualTo(metrics.ViewportWidth + 2, metrics.WideElements);
+        metrics.EditorRight.Should().BeLessThanOrEqualTo(metrics.ViewportWidth + 2);
+        metrics.HostRight.Should().BeLessThanOrEqualTo(metrics.ViewportWidth + 2);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase11_LongTextWrapsInsidePage()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        await page.Keyboard.InsertTextAsync(" " + new string('W', 180));
+
+        var wrapsInsidePage = await host.EvaluateAsync<bool>(
+            """
+            host => {
+                const block = Array.from(host.querySelectorAll('.tm-wysiwyg-page__body .tm-wysiwyg-block'))
+                    .find(el => !el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual'));
+                const body = block?.closest('.tm-wysiwyg-page__body');
+                if (!block || !body) return false;
+                return block.scrollWidth <= body.clientWidth + 2;
+            }
+            """);
+
+        wrapsInsidePage.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_SidePanel_CanCloseAndReopenFromRibbonTabs()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToBeVisibleAsync();
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-edge-toggle']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-open-revisions']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-revisions']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+        await page.Locator("[data-testid='document-open-versions']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-versions']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-version-panel']")).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_SidePanel_AddCommentOpensCommentsTabAndMarksAnchor()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+        selected.Should().NotBeNullOrWhiteSpace();
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-add-comment']").ClickAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-comments']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-comment-rail']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-comment-new-composer']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-comment-input']").FillAsync($"phase 9 comment {DateTimeOffset.UtcNow:HHmmssfff}");
+        await page.Locator("[data-testid='document-comment-submit']").ClickAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-comment-thread']").First).ToBeVisibleAsync();
+        await Assertions.Expect(host.Locator(".tm-document-inline--comment-anchor").First).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_RibbonTabs_ReviewShowsReviewCommandsAndHidesHomeCommands()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-save']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-ribbon-tab-review']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-track-changes']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-review-display-mode']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-save']")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-testid='document-bold']")).ToHaveCountAsync(0);
     }
 
     [TestMethod]
@@ -44,6 +364,25 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_ReadOnly_DoesNotAllowKeyboardContentChanges()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var before = await GetFirstVisibleInlineBlockTextAsync(host);
+
+        await page.Locator("[data-testid='document-editor-readonly']").CheckAsync();
+        await Assertions.Expect(page.Locator(".tm-wysiwyg-page__body").First).ToHaveAttributeAsync("contenteditable", "false");
+        await page.Locator(".tm-wysiwyg-page__body").First.FocusAsync();
+        await page.Keyboard.InsertTextAsync("READONLY-SHOULD-NOT-APPEAR");
+        await page.Keyboard.PressAsync("Control+B");
+
+        var after = await GetFirstVisibleInlineBlockTextAsync(host);
+        after.Should().Be(before);
+        await Assertions.Expect(host).Not.ToContainTextAsync("READONLY-SHOULD-NOT-APPEAR");
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_DemoPage_RendersInDarkModeAndMobileViewport()
     {
         var page = await OpenDocumentEditorPageAsync();
@@ -61,7 +400,7 @@ public class DocumentEditorE2ETests : WasmTestBase
     [TestMethod]
     public async Task DocumentEditor_Wysiwyg_CanTypeSaveAndReloadThroughDemoApi()
     {
-        var page = await OpenDocumentEditorPageAsync();
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         var body = await WaitForWysiwygBodyAsync(host);
         var uniqueText = $" WYSIWYG saved {DateTimeOffset.UtcNow:HHmmssfff}";
@@ -77,6 +416,1024 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         await ReloadDocumentEditorPageAsync(page);
         await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host']")).ToContainTextAsync(uniqueText);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase17_StructuredDocumentPersistsAndReloadsVisualMetadata()
+    {
+        var original = await LoadDemoDocumentAsync("contract-demo");
+        Assert.IsNotNull(original);
+
+        try
+        {
+            await SaveDemoDocumentAsync(CreatePhase17E2EDocument());
+
+            var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+            var host = page.Locator("[data-testid='document-wysiwyg-host']");
+            await WaitForWysiwygBodyAsync(host);
+
+            await Assertions.Expect(host).ToContainTextAsync("Phase 17 styled body");
+            await Assertions.Expect(host.Locator("[data-revision-id='phase17-revision'].tm-wysiwyg-revision--insert")).ToBeVisibleAsync();
+            await Assertions.Expect(host.Locator("figure.tm-wysiwyg-image[data-block-id='phase17-image'] img[alt='Phase 17 image']")).ToBeVisibleAsync();
+            await Assertions.Expect(host.Locator(".tm-wysiwyg-page__header")).ToContainTextAsync("Phase 17 header");
+            await Assertions.Expect(host.Locator(".tm-wysiwyg-page__footer")).ToContainTextAsync("Phase 17 footer");
+
+            var paragraphStyle = await GetFirstVisibleParagraphStyleAsync(page);
+            paragraphStyle.TextAlign.Should().Be("right");
+            var inlineStyle = await GetVisibleInlineStyleForTextAsync(page, "Phase 17 styled body");
+            inlineStyle.FontFamily.Should().Contain("Georgia");
+            inlineStyle.FontSize.Should().Be("18pt");
+
+            await page.Locator("[data-testid='document-save']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-save-message']")).ToContainTextAsync("Saved");
+            await ReloadDocumentEditorPageAsync(page);
+
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host']")).ToContainTextAsync("Phase 17 styled body");
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='phase17-image'] img[alt='Phase 17 image']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__header")).ToContainTextAsync("Phase 17 header");
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__footer")).ToContainTextAsync("Phase 17 footer");
+
+            var reloaded = await LoadDemoDocumentAsync("contract-demo");
+            Assert.IsNotNull(reloaded);
+            Assert.IsNotNull(reloaded!.Document);
+            reloaded.Document!.Theme.BodyFontFamily.Should().Contain("Aptos");
+            reloaded.Document.HeadersFooters.Should().Contain(headerFooter => headerFooter.Id == "phase17-header");
+            reloaded.Document.Revisions.Should().Contain(revision => revision.Id == "phase17-revision");
+            ((ImageBlockContent)reloaded.Document.Blocks.Single(block => block.Id == "phase17-image").Content).Size.Width.Should().Be(180);
+        }
+        finally
+        {
+            await SaveDemoDocumentAsync(original!.Document!);
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase17_ExportButtonsReflectProviderAvailability()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1280, height: 720);
+        await page.Locator("[data-testid='document-ribbon-tab-references']").ClickAsync();
+
+        await Assertions.Expect(page.Locator("[data-testid='document-export-pdf']")).ToBeEnabledAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-docx']")).ToBeEnabledAsync();
+
+        await page.Locator("[data-testid='document-editor-disable-export']").CheckAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-pdf']")).ToBeDisabledAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-docx']")).ToBeDisabledAsync();
+
+        await page.Locator("[data-testid='document-editor-disable-export']").UncheckAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-pdf']")).ToBeEnabledAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-export-docx']")).ToBeEnabledAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase18_DemoQualityGateRendersRepresentativeContent()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__header").First)
+            .ToContainTextAsync("Tempo Legal - Service agreement");
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__footer").First)
+            .ToContainTextAsync("Confidential - Page 1");
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) img[alt='Provider-managed exhibit']").First)
+            .ToBeVisibleAsync();
+        await Assertions.Expect(host.Locator("[data-testid='document-wysiwyg-revision-insert']").First)
+            .ToContainTextAsync("Priority support");
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-open-revisions']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").First)
+            .ToContainTextAsync("Priority support");
+
+        await page.Locator("[data-testid='document-side-panel-tab-comments']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-comment-list']"))
+            .ToContainTextAsync("client token");
+
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToHaveCountAsync(0);
+        await page.Locator("[data-testid='document-side-panel-edge-toggle']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToBeVisibleAsync();
+
+        var brokenImageCount = await page.Locator("[data-testid='document-wysiwyg-image-retry']").CountAsync();
+        Assert.AreEqual(0, brokenImageCount, "The demo document should not render broken image retry placeholders.");
+        var criticalErrorCount = await page.Locator(".tm-document-editor__error").CountAsync();
+        Assert.AreEqual(0, criticalErrorCount, "The demo document should not render critical placeholder errors.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase18_DesktopLayoutsHaveNoCriticalOverlap()
+    {
+        (int Width, int Height)[] viewports = [(1440, 900), (1280, 720)];
+
+        foreach (var viewport in viewports)
+        {
+            var page = await OpenDocumentEditorPageAsync(width: viewport.Width, height: viewport.Height);
+            await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+
+            try
+            {
+                var screenshot = await page.ScreenshotAsync(new() { FullPage = false });
+                screenshot.Length.Should().BeGreaterThan(10_000);
+
+                var layoutIssues = await page.EvaluateAsync<string[]>(
+                    """
+                    () => {
+                        const issues = [];
+                        const editor = document.querySelector('[data-testid="document-editor-demo"]');
+                        const ribbon = document.querySelector('[data-testid="document-toolbar"]');
+                        const workspace = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__workspace');
+                        const surface = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__surface');
+                        const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                        const panel = document.querySelector('[data-testid="document-side-panel"]');
+                        const status = document.querySelector('[data-testid="document-status-bar"]');
+                        const pageEl = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)');
+                        if (!editor || !ribbon || !workspace || !surface || !host || !panel || !status || !pageEl) {
+                            return ['missing critical editor region'];
+                        }
+
+                        const ribbonRect = ribbon.getBoundingClientRect();
+                        const workspaceRect = workspace.getBoundingClientRect();
+                        const surfaceRect = surface.getBoundingClientRect();
+                        const panelRect = panel.getBoundingClientRect();
+                        const statusRect = status.getBoundingClientRect();
+                        const pageRect = pageEl.getBoundingClientRect();
+                        if (document.documentElement.scrollWidth > window.innerWidth + 2) issues.push('horizontal page overflow');
+                        if (ribbonRect.bottom > workspaceRect.top + 2) issues.push('ribbon overlaps workspace');
+                        if (surfaceRect.right > panelRect.left + 1 && surfaceRect.bottom > panelRect.top && surfaceRect.top < panelRect.bottom) issues.push('surface overlaps side panel');
+                        if (statusRect.top < workspaceRect.bottom - 2) issues.push('status bar overlaps workspace');
+                        if (pageRect.width < 420) issues.push('document page is too narrow');
+                        if (host.scrollWidth > host.clientWidth + 24) issues.push('document host has horizontal overflow');
+
+                        const overflowingButtons = Array.from(ribbon.querySelectorAll('button, label'))
+                            .filter(element => element.scrollWidth > element.clientWidth + 2 || element.scrollHeight > element.clientHeight + 2)
+                            .map(element => element.getAttribute('data-testid') || element.textContent?.trim() || element.tagName);
+                        if (overflowingButtons.length > 0) issues.push('overflowing ribbon controls: ' + overflowingButtons.slice(0, 4).join(', '));
+                        return issues;
+                    }
+                    """);
+
+                Assert.AreEqual(0, layoutIssues.Length, $"Viewport {viewport.Width}x{viewport.Height}: {string.Join("; ", layoutIssues)}");
+            }
+            catch
+            {
+                await SaveDocumentEditorDebugArtifactsAsync(page, $"{nameof(DocumentEditor_Phase18_DesktopLayoutsHaveNoCriticalOverlap)}_{viewport.Width}x{viewport.Height}");
+                throw;
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_HeaderFooter_DoubleClickEditsClosesAndPersists()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        var headerText = $" HF header {DateTimeOffset.UtcNow:HHmmssfff}";
+        var bodyText = $" HF body {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        await host.Locator(".tm-wysiwyg-page__header[contenteditable='true']").First.DblClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-ribbon-tab-header-footer']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-ribbon-tab-header-footer']")).ToHaveAttributeAsync("aria-selected", "true");
+
+        await PlaceCaretAtEndOfVisibleRegionAsync(page, ".tm-wysiwyg-page__header[contenteditable='true']");
+        await page.Keyboard.InsertTextAsync(headerText);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page__header").First).ToContainTextAsync(headerText.Trim());
+
+        await page.Locator("[data-testid='document-close-header-footer']").ClickAsync();
+        await page.Keyboard.InsertTextAsync(bodyText);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page__body").First).ToContainTextAsync(bodyText.Trim());
+
+        await page.Locator("[data-testid='document-ribbon-tab-home']").ClickAsync();
+        await SaveDocumentAsync(page);
+
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__header").First).ToContainTextAsync(headerText.Trim());
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__body").First).ToContainTextAsync(bodyText.Trim());
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_HeaderFooter_FirstPageHeaderAndPrimaryFooterPersistAfterReload()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        var firstHeaderText = $" First page header {DateTimeOffset.UtcNow:HHmmssfff}";
+        var footerText = $" Primary footer {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await page.Locator("[data-testid='document-ribbon-tab-layout']").ClickAsync();
+        await page.Locator("[data-testid='document-different-first-page']").ClickAsync();
+
+        await host.Locator(".tm-wysiwyg-page__header[contenteditable='true']").First.DblClickAsync();
+        await PlaceCaretAtEndOfVisibleRegionAsync(page, ".tm-wysiwyg-page__header[contenteditable='true']");
+        await page.Keyboard.InsertTextAsync(firstHeaderText);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page__header").First).ToContainTextAsync(firstHeaderText.Trim());
+
+        await host.Locator(".tm-wysiwyg-page__footer[contenteditable='true']").First.DblClickAsync();
+        await PlaceCaretAtEndOfVisibleRegionAsync(page, ".tm-wysiwyg-page__footer[contenteditable='true']");
+        await page.Keyboard.InsertTextAsync(footerText);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-page__footer").First).ToContainTextAsync(footerText.Trim());
+
+        await page.Locator("[data-testid='document-ribbon-tab-home']").ClickAsync();
+        await SaveDocumentAsync(page);
+
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__header").First).ToContainTextAsync(firstHeaderText.Trim());
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__footer").First).ToContainTextAsync(footerText.Trim());
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_Phase1TypingKeepsCaretAfterInsertedCharacter()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            await PlaceCaretInFirstInlineAsync(page, 6);
+            var before = await CaptureWysiwygSelectionAsync(page);
+
+            const string marker = "ZPH1";
+            await page.Keyboard.InsertTextAsync(marker);
+            var after = await CaptureWysiwygSelectionAsync(page);
+
+            await Assertions.Expect(host).ToContainTextAsync(marker);
+            Assert.AreEqual(before.BlockId, after.BlockId, "Local typing must not move the caret to another block.");
+            Assert.AreEqual(before.InlineId, after.InlineId, "Local typing must not move the caret to another inline.");
+            Assert.IsTrue(after.Offset >= before.Offset + marker.Length, "Caret should stay immediately after the inserted character.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_Phase1TypingKeepsCaretAfterInsertedCharacter));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_TrackChangesShowsInlineRevisionAndAcceptsIt()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var uniqueText = $" REV{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+
+        await body.ClickAsync();
+        await page.Keyboard.InsertTextAsync(uniqueText);
+
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").First).ToContainTextAsync(uniqueText.Trim());
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").First).ToBeVisibleAsync();
+
+        await page.EvaluateAsync("() => document.querySelector('[data-testid=\"document-revision-accept\"]')?.click()");
+
+        await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']")).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert")).ToHaveCountAsync(0);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_InlineRevisionContextAcceptsSameAsPanel()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var uniqueText = $" INL{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+
+        await body.ClickAsync();
+        await page.Keyboard.InsertTextAsync(uniqueText);
+
+        var revision = host.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = uniqueText.Trim() }).First;
+        await Assertions.Expect(revision).ToBeVisibleAsync();
+        await revision.ClickAsync();
+        await Assertions.Expect(host.Locator("[data-testid='document-inline-revision-review']")).ToBeVisibleAsync();
+
+        await host.Locator("[data-testid='document-inline-revision-accept']").ClickAsync();
+
+        await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_SelectedWordCanCombineFormattingWithoutChangingSurroundings()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var beforeText = await GetFirstVisibleInlineBlockTextAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            Assert.IsFalse(string.IsNullOrWhiteSpace(selected), "The first word selection should contain text.");
+            await page.Locator("[data-testid='document-bold']").ClickAsync();
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-italic']").ClickAsync();
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-underline']").ClickAsync();
+
+            var probe = await host.EvaluateAsync<InlineFormattingProbe>(
+                """
+                (el, selected) => {
+                    const isVisible = node => {
+                        if (!node || node.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                        const rect = node.getBoundingClientRect();
+                        const style = getComputedStyle(node);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.visibility !== 'hidden'
+                            && style.display !== 'none';
+                    };
+                    const target = Array.from(el.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]'))
+                        .find(node => (node.textContent || '') === selected);
+                    const block = target?.closest('[data-block-id]')
+                        || Array.from(el.querySelectorAll('.tm-wysiwyg-page__body .tm-wysiwyg-block')).find(isVisible);
+                    const style = target ? getComputedStyle(target) : null;
+                    const weight = style ? style.fontWeight : '';
+                    const decoration = style ? (style.textDecorationLine || style.textDecoration || '') : '';
+                    return {
+                        bodyText: block ? (block.textContent || '') : '',
+                        formattedText: target ? (target.textContent || '') : '',
+                        bold: weight === 'bold' || parseInt(weight, 10) >= 600,
+                        italic: style ? style.fontStyle === 'italic' : false,
+                        underline: decoration.includes('underline'),
+                        inlineCount: block ? block.querySelectorAll('[data-inline-id]').length : 0
+                    };
+                }
+                """,
+                selected);
+
+            Assert.AreEqual(selected, probe.FormattedText);
+            Assert.AreEqual(beforeText, probe.BodyText, "Formatting a range must not rewrite the paragraph text.");
+            Assert.IsTrue(probe.Bold, "Selected text should be bold.");
+            Assert.IsTrue(probe.Italic, "Selected text should be italic.");
+            Assert.IsTrue(probe.Underline, "Selected text should be underlined.");
+            Assert.IsTrue(probe.InlineCount >= 2, "The formatted word should be split from surrounding text.");
+
+            await PlaceCaretInInlineAsync(page, blockIndex: 0, offset: 2);
+            await Assertions.Expect(page.Locator("[data-testid='document-bold']"))
+                .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 5000 });
+            await PlaceCaretInInlineAsync(page, blockIndex: 1, offset: 1);
+            await Assertions.Expect(page.Locator("[data-testid='document-bold']"))
+                .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_SelectedWordCanCombineFormattingWithoutChangingSurroundings));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase12_TextContextMenuRunsBoldAndCommentCommands()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await OpenSelectionContextMenuAsync(page);
+            await Assertions.Expect(page.Locator("[data-testid='document-text-context-menu']")).ToBeVisibleAsync();
+            await page.Locator("[data-testid='document-context-bold']").ClickAsync();
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            var isBold = await InlineTextIsBoldAsync(host, selected);
+            Assert.IsTrue(isBold, "Context-menu Bold should format the selected text.");
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await OpenSelectionContextMenuAsync(page);
+            await page.Locator("[data-testid='document-context-comment']").ClickAsync();
+
+            await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-comments']"))
+                .ToHaveAttributeAsync("aria-selected", "true");
+            await Assertions.Expect(page.Locator("[data-testid='document-comment-new-composer']")).ToBeVisibleAsync();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase12_TextContextMenuRunsBoldAndCommentCommands));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase12_MiniToolbarBoldPreservesSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync();
+
+            await page.Locator("[data-testid='document-mini-bold']").ClickAsync();
+
+            var selectionText = await page.EvaluateAsync<string>("() => window.getSelection()?.toString() || ''");
+            Assert.AreEqual(selected, selectionText, "Mini-toolbar command should keep the selected range usable.");
+            var isBold = await InlineTextIsBoldAsync(host, selected);
+            Assert.IsTrue(isBold, "Mini-toolbar Bold should format the selected text.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase12_MiniToolbarBoldPreservesSelection));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_FontFamilyPersistsAfterSaveAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            var fontValue = await SelectFontByVisibleTextAsync(page, "Georgia");
+
+            var probe = await GetVisibleInlineStyleForTextAsync(page, selected);
+            probe.FontFamily.Should().Contain("Georgia");
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloaded = await GetVisibleInlineStyleForTextAsync(page, selected);
+            reloaded.FontFamily.Should().Contain("Georgia");
+            fontValue.Should().Contain("Georgia");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_FontFamilyPersistsAfterSaveAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase13_LinkDialogAppliesEditsAndPersists()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-link']").ClickAsync();
+            await page.Locator("[data-testid='document-link-url']").FillAsync("https://example.test/phase13");
+            await page.Locator("[data-testid='document-link-title']").FillAsync("Phase 13 link");
+            await page.Locator("[data-testid='document-apply-link']").ClickAsync();
+
+            var link = host.Locator("[data-link-href='https://example.test/phase13']").First;
+            await Assertions.Expect(link).ToBeVisibleAsync();
+            await Assertions.Expect(link).ToHaveAttributeAsync("title", "Phase 13 link");
+            await Assertions.Expect(link).ToContainTextAsync(selected);
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-link']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-link-url']")).ToHaveValueAsync("https://example.test/phase13");
+            await Assertions.Expect(page.Locator("[data-testid='document-link-title']")).ToHaveValueAsync("Phase 13 link");
+            await page.Locator("[data-testid='document-link-url']").FillAsync("https://example.test/phase13-edited");
+            await page.Locator("[data-testid='document-link-title']").FillAsync("Edited phase 13 link");
+            await page.Locator("[data-testid='document-apply-link']").ClickAsync();
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloaded = page.Locator("[data-testid='document-wysiwyg-host'] [data-link-href='https://example.test/phase13-edited']").First;
+            await Assertions.Expect(reloaded).ToBeVisibleAsync();
+            await Assertions.Expect(reloaded).ToHaveAttributeAsync("title", "Edited phase 13 link");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase13_LinkDialogAppliesEditsAndPersists));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase13_TokenRunSurvivesTypingFormattingAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            await PlaceCaretInFirstInlineAsync(page, 5);
+            await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+            await page.Locator("[data-testid='document-insert-menu']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-token-popover']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator(".tm-rte-token-item").First).ToBeVisibleAsync();
+            await page.Locator(".tm-rte-token-item").First.ClickAsync();
+
+            var token = host.Locator(".tm-wysiwyg-token[data-inline-atomic='true']").First;
+            await Assertions.Expect(token).ToBeVisibleAsync();
+            await Assertions.Expect(token).ToHaveAttributeAsync("contenteditable", "false");
+
+            await PlaceCaretAfterFirstTokenAsync(page);
+            await page.Keyboard.InsertTextAsync(" phase13");
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-ribbon-tab-home']").ClickAsync();
+            await page.Locator("[data-testid='document-bold']").ClickAsync();
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloadedToken = page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-token[data-inline-atomic='true']").First;
+            await Assertions.Expect(reloadedToken).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host']")).ToContainTextAsync("phase13");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase13_TokenRunSurvivesTypingFormattingAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_FontSizeAffectsOnlySelectedTextAndPersists()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-font-size']").SelectOptionAsync("24");
+
+            var probe = await GetVisibleInlineStyleForTextAsync(page, selected);
+            probe.FontSize.Should().Be("24pt");
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloaded = await GetVisibleInlineStyleForTextAsync(page, selected);
+            reloaded.FontSize.Should().Be("24pt");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_FontSizeAffectsOnlySelectedTextAndPersists));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ColorHighlightAndClearFormattingKeepCaretStable()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await SetColorInputAsync(page, "[data-testid='document-font-color']", "#123456");
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await SetColorInputAsync(page, "[data-testid='document-highlight-color']", "#fff59d");
+
+            var colored = await GetVisibleInlineStyleForTextAsync(page, selected);
+            colored.Color.Should().Be("#123456");
+            colored.BackgroundColor.Should().Be("#fff59d");
+
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-clear-formatting']").ClickAsync();
+            var cleared = await GetVisibleInlineStyleForTextAsync(page, selected);
+
+            cleared.Color.Should().NotBe("#123456");
+            cleared.BackgroundColor.Should().NotBe("#fff59d");
+            Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Clear formatting should keep focus inside the WYSIWYG surface.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ColorHighlightAndClearFormattingKeepCaretStable));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ParagraphAlignmentPersistsAfterSaveAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-align-center']").ClickAsync();
+
+            var centered = await GetFirstVisibleParagraphStyleAsync(page);
+            centered.TextAlign.Should().Be("center");
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloaded = await GetFirstVisibleParagraphStyleAsync(page);
+            reloaded.TextAlign.Should().Be("center");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ParagraphAlignmentPersistsAfterSaveAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_LineSpacingAndIndentAreVisibleAndKeepCaretStable()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-line-spacing']").SelectOptionAsync("1.5");
+            await page.Locator("[data-testid='document-increase-indent']").ClickAsync();
+
+            var styled = await GetFirstVisibleParagraphStyleAsync(page);
+            styled.LineHeight.Should().Be("1.5");
+            styled.LeftIndentPt.Should().BeGreaterThan(0);
+            Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Paragraph formatting should keep focus inside the WYSIWYG surface.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_LineSpacingAndIndentAreVisibleAndKeepCaretStable));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_TrackChangesBackspaceShowsDeletionRevision()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+        await page.EvaluateAsync(
+            """
+            () => {
+                const inline = document.querySelector('.tm-wysiwyg-page__body [data-inline-id]');
+                const text = inline?.firstChild;
+                if (!text || text.nodeType !== Node.TEXT_NODE || text.textContent.length < 4) {
+                    throw new Error('Editable text node was not found.');
+                }
+
+                inline.closest('[contenteditable="true"]')?.focus();
+                const range = document.createRange();
+                range.setStart(text, 4);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """);
+
+        await page.Keyboard.PressAsync("Backspace");
+
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").First).ToBeVisibleAsync();
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--delete").First).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ReviewNoMarkupDoesNotDestroyPendingRevisions()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        await page.Keyboard.PressAsync("Backspace");
+
+        var deletion = host.Locator(".tm-wysiwyg-revision--delete").First;
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(deletion).ToBeVisibleAsync();
+        var pendingAfterDeletion = await page.Locator("[data-testid='document-revision-item']").CountAsync();
+        Assert.IsTrue(pendingAfterDeletion > 0, "Deleting with track changes should leave at least one pending revision in the panel.");
+
+        await page.Locator("[data-testid='document-review-display-mode']").SelectOptionAsync("NoMarkup");
+
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-review-display-mode", "NoMarkup");
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']")).ToHaveCountAsync(pendingAfterDeletion);
+        await Assertions.Expect(deletion).ToBeHiddenAsync();
+
+        await page.Locator("[data-testid='document-review-display-mode']").SelectOptionAsync("AllMarkup");
+
+        await Assertions.Expect(host).ToHaveAttributeAsync("data-review-display-mode", "AllMarkup");
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']")).ToHaveCountAsync(pendingAfterDeletion);
+        await Assertions.Expect(deletion).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_TrackChangesEnterKeepsPendingRevisionPanel()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var uniqueText = $" ENTER{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+
+        await body.ClickAsync();
+        await page.Keyboard.InsertTextAsync(uniqueText);
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").First).ToContainTextAsync(uniqueText.Trim());
+
+        await page.Keyboard.PressAsync("Enter");
+        await page.Keyboard.InsertTextAsync("after enter");
+
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = uniqueText.Trim() })).ToBeVisibleAsync();
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").First).ToBeVisibleAsync();
+        await Assertions.Expect(host).ToContainTextAsync("after enter");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_EnterContinuesAtCaret()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var marker = $" enter-target-{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        try
+        {
+            await PlaceCaretInFirstInlineAsync(page, 6);
+            var before = await CaptureWysiwygSelectionAsync(page);
+
+            await page.Keyboard.PressAsync("Enter");
+            await page.Keyboard.InsertTextAsync(marker);
+            var after = await CaptureWysiwygSelectionAsync(page);
+
+            await Assertions.Expect(host).ToContainTextAsync(marker.Trim());
+            Assert.AreNotEqual(before.BlockId, after.BlockId, "Enter should create a new paragraph block at the caret.");
+            Assert.IsTrue(after.Offset >= marker.Trim().Length, "Typing after Enter should continue in the new paragraph, not jump elsewhere.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_EnterContinuesAtCaret));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ShiftEnterCreatesSoftBreakAtCaret()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var marker = $" softbreak-target-{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        try
+        {
+            await PlaceCaretInFirstInlineAsync(page, 6);
+            var before = await CaptureWysiwygSelectionAsync(page);
+
+            await page.Keyboard.PressAsync("Shift+Enter");
+            await page.Keyboard.InsertTextAsync(marker);
+            var after = await CaptureWysiwygSelectionAsync(page);
+
+            await Assertions.Expect(host).ToContainTextAsync(marker.Trim());
+            Assert.AreEqual(before.BlockId, after.BlockId, "Shift+Enter should stay in the same paragraph block as a soft break.");
+            Assert.IsTrue(after.Offset > before.Offset, "Typing after Shift+Enter should continue after the soft break, not on a previous visual line.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ShiftEnterCreatesSoftBreakAtCaret));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    [Ignore("Known WYSIWYG quality regression from 2026-05-14 video. Enable when implementing revision accept fix.")]
+    public async Task DocumentEditor_Wysiwyg_AcceptRevisionKeepsContentAndCaretStable()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var marker = $" accept-target-{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        try
+        {
+            await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+            await page.Locator("[data-testid='document-track-changes']").ClickAsync();
+
+            await body.ClickAsync();
+            await page.Keyboard.InsertTextAsync(marker);
+            await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").First).ToContainTextAsync(marker.Trim());
+            var before = await CaptureWysiwygSelectionAsync(page);
+
+            await page.Locator("[data-testid='document-revision-accept']").First.ClickAsync();
+
+            await Assertions.Expect(host).ToContainTextAsync(marker.Trim());
+            await Assertions.Expect(page.Locator("[data-testid='document-revision-item']")).ToHaveCountAsync(0);
+            await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert")).ToHaveCountAsync(0);
+            var after = await CaptureWysiwygSelectionAsync(page);
+            Assert.AreEqual(before.BlockId, after.BlockId, "Accepting a revision should not move the caret to an unrelated block.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_AcceptRevisionKeepsContentAndCaretStable));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ImageAssetRendersAsImageObject()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var image = host.Locator("figure.tm-wysiwyg-image-block img, figure[data-image-source] img").First;
+            await Assertions.Expect(image).ToBeVisibleAsync();
+            var naturalWidth = await image.EvaluateAsync<int>("img => img.naturalWidth || 0");
+            var naturalHeight = await image.EvaluateAsync<int>("img => img.naturalHeight || 0");
+            Assert.IsTrue(naturalWidth > 0 && naturalHeight > 0, "Provider image should render as a loaded image, not as a broken placeholder.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ImageAssetRendersAsImageObject));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ImageContextMenuDeleteRemovesImageBlock()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var figure = host.Locator("figure.tm-wysiwyg-image").First;
+            await Assertions.Expect(figure).ToHaveCountAsync(1, new() { Timeout = 5000 });
+            var blockId = await figure.GetAttributeAsync("data-block-id");
+            Assert.IsFalse(string.IsNullOrWhiteSpace(blockId));
+            await figure.DispatchEventAsync("contextmenu", new { clientX = 120, clientY = 120, button = 2 });
+
+            var menu = host.Locator("[data-testid='document-wysiwyg-image-context-menu']");
+            await Assertions.Expect(menu).ToBeVisibleAsync();
+            var delete = menu.Locator("[data-testid='document-wysiwyg-image-delete']");
+            await Assertions.Expect(delete).ToBeVisibleAsync();
+            await delete.ClickAsync();
+
+            await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{blockId}']")).ToHaveCountAsync(0);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ImageContextMenuDeleteRemovesImageBlock));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_ImageResizePersistsAfterSaveAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"e2e-image-resize-{Guid.NewGuid():N}";
+
+        try
+        {
+            await InsertLocalImageBlockAsync(page, imageId, "Resizable image", width: 140);
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            var image = figure.Locator("img").First;
+            await Assertions.Expect(image).ToBeVisibleAsync();
+
+            await ResizeImageAsync(page, figure, deltaX: 95, deltaY: 0);
+            var resizedWidth = await image.EvaluateAsync<double>("img => parseFloat(img.style.width || '0') || img.getBoundingClientRect().width");
+            Assert.IsTrue(resizedWidth >= 210, $"Image width should grow after resize, actual width was {resizedWidth}.");
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloadedImage = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible img").First;
+            await Assertions.Expect(reloadedImage).ToBeVisibleAsync();
+            var reloadedWidth = await reloadedImage.EvaluateAsync<double>("img => parseFloat(img.style.width || '0') || img.getBoundingClientRect().width");
+            Assert.IsTrue(reloadedWidth >= resizedWidth - 2, "Saved resized image width should survive reload.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ImageResizePersistsAfterSaveAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_InlineImageDragMovePersistsAfterSaveAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"e2e-image-move-{Guid.NewGuid():N}";
+
+        try
+        {
+            await InsertLocalImageBlockAsync(page, imageId, "Movable image", width: 140, order: 5);
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToBeVisibleAsync();
+
+            var beforeIndex = await GetVisibleBlockIndexAsync(page, imageId);
+            await DragInlineImageToEndAsync(page, figure);
+            var afterIndex = await GetVisibleBlockIndexAsync(page, imageId);
+            Assert.IsTrue(afterIndex > beforeIndex, $"Dragging should move the image later in the document. Before={beforeIndex}, after={afterIndex}.");
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var reloadedIndex = await GetVisibleBlockIndexAsync(page, imageId);
+            Assert.AreEqual(afterIndex, reloadedIndex, "Moved inline image order should survive reload.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_InlineImageDragMovePersistsAfterSaveAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_FloatingImageDragKeepsTextFlowAndSelectionStable()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"e2e-image-floating-{Guid.NewGuid():N}";
+
+        try
+        {
+            await InsertLocalImageBlockAsync(page, imageId, "Floating image", width: 140);
+            await SetImageWrapModeAsync(page, imageId, "Square");
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--floating"));
+            var textBefore = await GetFirstVisibleInlineBlockTextAsync(host);
+
+            await DragFloatingImageAsync(page, figure, deltaX: 70, deltaY: 40);
+
+            var position = await figure.EvaluateAsync<FloatingImagePosition>(
+                "figure => ({ X: parseFloat(figure.getAttribute('data-image-x') || '0') || 0, Y: parseFloat(figure.getAttribute('data-image-y') || '0') || 0 })");
+            Assert.IsTrue(position.X > 0 || position.Y > 0, "Floating image drag should update image coordinates.");
+            Assert.AreEqual(textBefore, await GetFirstVisibleInlineBlockTextAsync(host), "Dragging a wrapped image must not rewrite surrounding text.");
+            Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Dragging a wrapped image should keep focus inside the WYSIWYG surface.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_FloatingImageDragKeepsTextFlowAndSelectionStable));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_DroppedImagePersistsAfterSaveAndReload()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1800, height: 1000);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var altText = $"drop-image-{Guid.NewGuid():N}.png";
+
+        try
+        {
+            await DropImageFileAsync(page, altText);
+            var image = host.Locator($"figure.tm-wysiwyg-image:visible img[alt='{altText}']").First;
+            await Assertions.Expect(image).ToBeVisibleAsync();
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            await Assertions.Expect(page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image:visible img[alt='{altText}']").First).ToBeVisibleAsync();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_DroppedImagePersistsAfterSaveAndReload));
+            throw;
+        }
     }
 
     [TestMethod]
@@ -97,6 +1454,616 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         var merged = host.Locator(".tm-wysiwyg-table td[colspan='2'][rowspan='2']").Filter(new() { HasText = "Excel merged" });
         await Assertions.Expect(merged).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase14_TableCellTypingStaysInsideCell()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var uniqueText = $"CELL{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        try
+        {
+            var tableId = await InsertTableFromRibbonAsync(page);
+            await PlaceCaretInTableCellAsync(page, tableId, 0, 0);
+            await page.Keyboard.InsertTextAsync(uniqueText);
+
+            var firstCell = host.Locator($".tm-wysiwyg-table[data-block-id='{tableId}'] td[data-cell-id]").First;
+            await Assertions.Expect(firstCell).ToContainTextAsync(uniqueText);
+            var occurrences = await host.Locator($".tm-wysiwyg-page__body :text('{uniqueText}')").CountAsync();
+            occurrences.Should().Be(1);
+
+            var activeCellId = await GetCurrentTableCellIdAsync(page);
+            activeCellId.Should().NotBeNullOrWhiteSpace();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase14_TableCellTypingStaysInsideCell));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase14_TableContextMenuAddsRowAndPersists()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var tableId = await InsertTableFromRibbonAsync(page);
+            await OpenTableCellContextMenuAsync(page, tableId, 0, 0);
+            await Assertions.Expect(page.Locator("[data-testid='document-table-context-menu']")).ToBeVisibleAsync();
+            await page.Locator("[data-testid='document-table-insert-row']").ClickAsync();
+
+            await Assertions.Expect(host.Locator($".tm-wysiwyg-table[data-block-id='{tableId}']").Locator("tr")).ToHaveCountAsync(3);
+            await page.WaitForTimeoutAsync(300);
+            await page.Locator("[data-testid='document-ribbon-tab-home']").ClickAsync();
+            await Assertions.Expect(host.Locator($".tm-wysiwyg-table[data-block-id='{tableId}']").Locator("tr")).ToHaveCountAsync(3);
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+
+            await Assertions.Expect(host.Locator($".tm-wysiwyg-table[data-block-id='{tableId}']").Locator("tr")).ToHaveCountAsync(3);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase14_TableContextMenuAddsRowAndPersists));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationOwnTypingIsNotDuplicatedAfterProviderEcho()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var uniqueText = $" ECHO{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await body.ClickAsync();
+        await page.Keyboard.InsertTextAsync(uniqueText);
+
+        await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
+        await page.WaitForTimeoutAsync(1500);
+
+        var occurrences = await CountTextOccurrencesAsync(host, uniqueText.Trim());
+        Assert.AreEqual(1, occurrences, "Local collaboration echo must not duplicate the text in the source editor.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteBoldMarkKeepsFocusedSurface()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        await PlaceCaretInFirstInlineAsync(page, 8);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 5);
+
+        await BroadcastRemoteBoldOperationAsync(target);
+
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-remote-mark").Filter(new() { HasText = target.SelectedText }).First).ToBeVisibleAsync(new() { Timeout = 5000 });
+        var isBold = await RemoteMarkTextIsBoldAsync(host, target.SelectedText);
+        Assert.IsTrue(isBold, "Remote bold collaboration mark must render as bold in the receiving WYSIWYG DOM.");
+
+        var activeInWysiwyg = await page.EvaluateAsync<bool>(
+            """
+            () => {
+                const active = document.activeElement;
+                return !!active
+                    && active.isContentEditable
+                    && !!active.closest('[data-testid="document-wysiwyg-host"]');
+            }
+            """);
+        Assert.IsTrue(activeInWysiwyg, "Remote mark operation must keep focus inside the receiving WYSIWYG surface.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteImageInsertRendersWithoutReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"remote-image-{Guid.NewGuid():N}";
+        var altText = $"Remote image {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await BroadcastRemoteOperationsAsync(RemoteInsertImageOperation(imageId, altText, width: 180));
+
+        var image = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img[alt='{altText}']");
+        await Assertions.Expect(image).ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteImageUpdateRendersWithoutFullReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"remote-image-{Guid.NewGuid():N}";
+        var updatedAlt = $"Updated remote image {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await BroadcastRemoteOperationsAsync(RemoteInsertImageOperation(imageId, "Initial remote image", width: 160));
+        await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img")).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await BroadcastRemoteOperationsAsync(RemoteUpdateImageOperation(imageId, updatedAlt, width: 260));
+
+        var image = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img[alt='{updatedAlt}']");
+        await Assertions.Expect(image).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(image).ToHaveAttributeAsync("style", new Regex("260px"), new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteTableCellEditDoesNotResetCaret()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var tableId = $"remote-table-{Guid.NewGuid():N}";
+        var cellId = $"remote-cell-{Guid.NewGuid():N}";
+
+        await BroadcastRemoteOperationsAsync(RemoteInsertTableOperation(tableId, cellId, "Before"));
+        await Assertions.Expect(host.Locator($"table.tm-wysiwyg-table[data-block-id='{tableId}']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        var before = await CaptureWysiwygSelectionAsync(page);
+
+        await BroadcastRemoteOperationsAsync(RemoteSetTableCellTextOperation(tableId, cellId, "After remote edit"));
+
+        await Assertions.Expect(host.Locator($"table.tm-wysiwyg-table[data-block-id='{tableId}'] [data-cell-id='{cellId}']")).ToContainTextAsync("After remote edit", new() { Timeout = 5000 });
+        var after = await CaptureWysiwygSelectionAsync(page);
+        Assert.AreEqual(before.BlockId, after.BlockId, "Remote table cell edit must not move caret to another block.");
+        Assert.AreEqual(before.InlineId, after.InlineId, "Remote table cell edit must not move caret to another inline.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationTwoClientsDifferentLinesKeepLocalCaret()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostA = pageA.Locator("[data-testid='document-wysiwyg-host']");
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(hostA);
+        await WaitForWysiwygBodyAsync(hostB);
+        var remoteBlockId = $"remote-line-{Guid.NewGuid():N}";
+        var uniqueText = $" LINE{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await BroadcastRemoteOperationsAsync(RemoteInsertParagraphOperation(remoteBlockId, "Remote editable line", sequence: 1));
+        await Assertions.Expect(hostA.Locator($"[data-block-id='{remoteBlockId}']")).ToContainTextAsync("Remote editable line", new() { Timeout = 10000 });
+        await Assertions.Expect(hostB.Locator($"[data-block-id='{remoteBlockId}']")).ToContainTextAsync("Remote editable line", new() { Timeout = 10000 });
+        await PlaceCaretInInlineAsync(pageB, blockIndex: 0, offset: 4);
+        var before = await CaptureWysiwygSelectionAsync(pageB);
+        await PlaceCaretInBlockAsync(pageA, remoteBlockId, offset: 0);
+        await pageA.Keyboard.InsertTextAsync(uniqueText);
+
+        await Assertions.Expect(hostB).ToContainTextAsync(uniqueText.Trim(), new() { Timeout = 5000 });
+        var after = await CaptureWysiwygSelectionAsync(pageB);
+        Assert.AreEqual(before.BlockId, after.BlockId, "Remote typing on another line must not move the local caret.");
+        Assert.AreEqual(before.InlineId, after.InlineId, "Remote typing on another line must not move the local caret inline.");
+        Assert.AreEqual(before.Offset, after.Offset, "Remote typing on another line must not change the local caret offset.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationTwoClientsSameParagraphConvergeDeterministically()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostA = pageA.Locator("[data-testid='document-wysiwyg-host']");
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(hostA);
+        await WaitForWysiwygBodyAsync(hostB);
+        var textA = $"A{DateTimeOffset.UtcNow:HHmmssfff}";
+        var textB = $"B{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await PlaceCaretInInlineAsync(pageA, blockIndex: 0, offset: 0);
+        await pageA.Keyboard.InsertTextAsync(textA);
+        await Assertions.Expect(hostB).ToContainTextAsync(textA, new() { Timeout = 5000 });
+
+        await PlaceCaretInInlineAsync(pageB, blockIndex: 0, offset: 0);
+        await pageB.Keyboard.InsertTextAsync(textB);
+
+        await Assertions.Expect(hostA).ToContainTextAsync(textA, new() { Timeout = 5000 });
+        await Assertions.Expect(hostA).ToContainTextAsync(textB, new() { Timeout = 5000 });
+        await Assertions.Expect(hostB).ToContainTextAsync(textA, new() { Timeout = 5000 });
+        await Assertions.Expect(hostB).ToContainTextAsync(textB, new() { Timeout = 5000 });
+
+        var orderA = await GetTextOrderAsync(hostA, textA, textB);
+        var orderB = await GetTextOrderAsync(hostB, textA, textB);
+        Assert.AreEqual(orderA, orderB, "Both clients must converge to the same order for concurrent same-paragraph inserts.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteUpdateDuringFastTypingDoesNotBatchJump()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        var typed = $"KFAST{DateTimeOffset.UtcNow:HHmmssfff}{Guid.NewGuid():N}";
+        var remoteBlockId = $"remote-fast-{Guid.NewGuid():N}";
+
+        await PlaceCaretInFirstInlineAsync(page, 6);
+        await page.WaitForTimeoutAsync(1000);
+        var typing = page.Keyboard.TypeAsync(typed, new() { Delay = 15 });
+        await page.WaitForTimeoutAsync(120);
+        await BroadcastRemoteOperationsAsync(RemoteInsertParagraphOperation(remoteBlockId, "Remote while typing", sequence: 1));
+        await typing;
+
+        await Assertions.Expect(host).ToContainTextAsync(typed, new() { Timeout = 5000 });
+        await Assertions.Expect(host.Locator($"[data-block-id='{remoteBlockId}']")).ToContainTextAsync("Remote while typing", new() { Timeout = 10000 });
+        await Assertions.Expect(host).ToContainTextAsync(typed, new() { Timeout = 5000 });
+        Assert.IsTrue(await ActiveElementIsInWysiwygAsync(page), "Fast local typing with a queued remote patch must keep focus inside the WYSIWYG surface.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationClientFormattingMatrixRendersOnPeer()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(pageA.Locator("[data-testid='document-wysiwyg-host']"));
+        await WaitForWysiwygBodyAsync(hostB);
+        await SelectFirstInlineRangeAsync(pageA, 0, 5);
+        await pageA.Keyboard.PressAsync("Control+B");
+        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='0']").First).ToBeVisibleAsync(new() { Timeout = 10000 });
+
+        await SelectFirstInlineRangeAsync(pageA, 6, 11);
+        await pageA.Keyboard.PressAsync("Control+I");
+        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='1']").First).ToBeVisibleAsync(new() { Timeout = 10000 });
+
+        await SelectFirstInlineRangeAsync(pageA, 12, 17);
+        await pageA.Keyboard.PressAsync("Control+K");
+
+        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='6']").First)
+            .ToBeVisibleAsync(new() { Timeout = 10000 });
+        await Assertions.Expect(hostB.Locator("a[href*='example.com']").First)
+            .ToHaveCountAsync(1, new() { Timeout = 10000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteImageRemoveRendersWithoutReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"remote-image-{Guid.NewGuid():N}";
+        var altText = $"Remove remote image {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await BroadcastRemoteOperationsAsync(RemoteInsertImageOperation(imageId, altText, width: 180));
+        await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img[alt='{altText}']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await BroadcastRemoteOperationsAsync(RemoteDeleteBlockOperation(imageId, sequence: 2));
+
+        await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationClientTrackedChangesRoundTripBetweenPeers()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostA = pageA.Locator("[data-testid='document-wysiwyg-host']");
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        var bodyA = await WaitForWysiwygBodyAsync(hostA);
+        await WaitForWysiwygBodyAsync(hostB);
+        var acceptedText = $" AC{DateTimeOffset.UtcNow:HHmmssfff} ";
+        var rejectedText = $" RJ{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await pageA.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await pageA.Locator("[data-testid='document-track-changes']").ClickAsync();
+
+        await bodyA.ClickAsync();
+        await pageA.Keyboard.InsertTextAsync(acceptedText);
+        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = acceptedText.Trim() }).First)
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(pageB.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = acceptedText.Trim() }))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await pageB.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = acceptedText.Trim() })
+            .Locator("[data-testid='document-revision-accept']").ClickAsync();
+
+        await Assertions.Expect(hostA.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = acceptedText.Trim() }))
+            .ToHaveCountAsync(0, new() { Timeout = 5000 });
+        await Assertions.Expect(hostA).ToContainTextAsync(acceptedText.Trim(), new() { Timeout = 5000 });
+
+        await bodyA.ClickAsync();
+        await pageA.Keyboard.InsertTextAsync(rejectedText);
+        await Assertions.Expect(pageB.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = rejectedText.Trim() }))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await pageB.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = rejectedText.Trim() })
+            .Locator("[data-testid='document-revision-reject']").ClickAsync();
+
+        await Assertions.Expect(hostA.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = rejectedText.Trim() }))
+            .ToHaveCountAsync(0, new() { Timeout = 5000 });
+        await Assertions.Expect(hostA).Not.ToContainTextAsync(rejectedText.Trim(), new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteOperationBatchAppliesTextInOrderAndIdempotently()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        var first = $"B1{DateTimeOffset.UtcNow:HHmmssfff}";
+        var second = $"B2{DateTimeOffset.UtcNow:HHmmssfff}";
+        var firstOperation = RemoteInsertTextOperation("batch-first", target, first, offset: 0, sequence: 1);
+        var secondOperation = RemoteInsertTextOperation("batch-second", target, second, offset: 0, sequence: 2);
+
+        var result = await ApplyRemoteOperationBatchAsync(page, secondOperation, firstOperation);
+        var duplicateResult = await ApplyRemoteOperationBatchAsync(page, secondOperation, firstOperation);
+
+        Assert.IsTrue(result.Success);
+        Assert.AreEqual(2, result.Applied);
+        Assert.IsTrue(duplicateResult.Success);
+        Assert.AreEqual(2, duplicateResult.Skipped);
+        await Assertions.Expect(host).ToContainTextAsync(first + second, new() { Timeout = 5000 });
+        var occurrences = await CountTextOccurrencesAsync(host, first + second);
+        Assert.AreEqual(1, occurrences, "A repeated remote operation batch must be idempotent by operation id.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteOperationBatchOrdersConcurrentSameOffsetByStableId()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        var first = $"S1{DateTimeOffset.UtcNow:HHmmssfff}";
+        var second = $"S2{DateTimeOffset.UtcNow:HHmmssfff}";
+        var firstOperation = RemoteInsertTextOperationWithoutSequence("stable-a", target, first, offset: 0);
+        var secondOperation = RemoteInsertTextOperationWithoutSequence("stable-b", target, second, offset: 0);
+
+        var result = await ApplyRemoteOperationBatchAsync(page, secondOperation, firstOperation);
+
+        Assert.IsTrue(result.Success);
+        Assert.AreEqual(2, result.Applied);
+        await Assertions.Expect(host).ToContainTextAsync(first + second, new() { Timeout = 5000 });
+        var occurrences = await CountTextOccurrencesAsync(host, first + second);
+        Assert.AreEqual(1, occurrences, "Concurrent same-offset inserts without a sequence must converge by stable operation id.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteDeletePreservesAdjacentRevisionSpan()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        var revisionId = $"js-rev-{Guid.NewGuid():N}";
+        var text = $"JR{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await ApplyRemoteOperationBatchAsync(page, RemoteCreateRevisionOperation(revisionId, target, text, revisionType: 0));
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--insert")).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await ApplyRemoteOperationBatchAsync(page, RemoteDeleteTextOperation("delete-before-revision", target, offset: text.Length + 1, length: 1, sequence: 1));
+
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--insert")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(host).ToContainTextAsync(text, new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteInsertBeforeCaretTransformsSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        await PlaceCaretInFirstInlineAsync(page, 8);
+        var before = await CaptureWysiwygSelectionAsync(page);
+        var text = $"SB{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await ApplyRemoteOperationBatchAsync(page, RemoteInsertTextOperation("selection-before", target, text, offset: 0, sequence: 1));
+
+        var after = await CaptureWysiwygSelectionAsync(page);
+        Assert.AreEqual(before.BlockId, after.BlockId);
+        Assert.AreEqual(before.InlineId, after.InlineId);
+        Assert.AreEqual(before.Offset + text.Length, after.Offset, "Remote insert before the local caret must shift the caret forward.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteInsertAfterCaretDoesNotMoveSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        await PlaceCaretInFirstInlineAsync(page, 4);
+        var before = await CaptureWysiwygSelectionAsync(page);
+        var text = $"SA{DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await ApplyRemoteOperationBatchAsync(page, RemoteInsertTextOperation("selection-after", target, text, offset: 16, sequence: 1));
+
+        var after = await CaptureWysiwygSelectionAsync(page);
+        Assert.AreEqual(before.BlockId, after.BlockId);
+        Assert.AreEqual(before.InlineId, after.InlineId);
+        Assert.AreEqual(before.Offset, after.Offset, "Remote insert after the local caret must keep the caret offset.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteOperationBatchPatchesBlocksAndImageInDom()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var paragraphId = $"remote-paragraph-{Guid.NewGuid():N}";
+        var imageId = $"remote-image-{Guid.NewGuid():N}";
+        var imageAlt = $"Batch image {DateTimeOffset.UtcNow:HHmmssfff}";
+
+        await ApplyRemoteOperationBatchAsync(
+            page,
+            RemoteInsertParagraphOperation(paragraphId, "Remote paragraph from batch", sequence: 1),
+            RemoteInsertImageOperation(imageId, imageAlt, width: 160));
+
+        await Assertions.Expect(host.Locator($"[data-block-id='{paragraphId}']")).ToContainTextAsync("Remote paragraph from batch", new() { Timeout = 5000 });
+        var image = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img[alt='{imageAlt}']");
+        await Assertions.Expect(image).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await page.EvaluateAsync(
+            """
+            imageId => {
+                const image = document.querySelector(`figure.tm-wysiwyg-image[data-block-id="${imageId}"] img`);
+                if (image) image.dataset.probe = 'preserved';
+            }
+            """,
+            imageId);
+        await ApplyRemoteOperationBatchAsync(
+            page,
+            RemoteUpdateImageOperation(imageId, "Updated " + imageAlt, width: 260),
+            RemoteDeleteBlockOperation(paragraphId, sequence: 3));
+
+        await Assertions.Expect(host.Locator($"[data-block-id='{paragraphId}']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+        await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}'] img[alt='Updated {imageAlt}']")).ToHaveAttributeAsync("style", new Regex("260px"), new() { Timeout = 5000 });
+        var imageNodeWasPreserved = await page.EvaluateAsync<bool>(
+            """
+            imageId => document.querySelector(`figure.tm-wysiwyg-image[data-block-id="${imageId}"] img`)?.dataset.probe === 'preserved'
+            """,
+            imageId);
+        Assert.IsTrue(imageNodeWasPreserved, "Remote image update should patch the existing image node in place.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JsRemoteOperationBatchAppliesAndPartiallyRemovesFormattingRange()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 8);
+
+        await ApplyRemoteOperationBatchAsync(
+            page,
+            RemoteMarkOperation("remote-bold-range", target, offset: 0, length: 8, markType: 0, add: true, sequence: 1),
+            RemoteMarkOperation("remote-italic-range", target, offset: 8, length: 4, markType: 1, add: true, sequence: 2),
+            RemoteMarkOperation("remote-underline-range", target, offset: 12, length: 4, markType: 2, add: true, sequence: 3));
+
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='0']").First).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='1']").First).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='2']").First).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await ApplyRemoteOperationBatchAsync(page, RemoteMarkOperation("remote-bold-remove-middle", target, offset: 2, length: 3, markType: 0, add: false, sequence: 4));
+
+        var hasPlainMiddleBetweenBoldWrappers = await page.EvaluateAsync<bool>(
+            """
+            () => {
+                const inline = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page__body p.tm-wysiwyg-block [data-inline-id]');
+                if (!inline) return false;
+                const nodes = Array.from(inline.childNodes);
+                return nodes.some((node, index) =>
+                    node.nodeType === Node.TEXT_NODE
+                    && (node.textContent || '').length > 0
+                    && nodes[index - 1]?.getAttribute?.('data-remote-mark') === '0'
+                    && nodes[index + 1]?.getAttribute?.('data-remote-mark') === '0');
+            }
+            """);
+        Assert.IsTrue(hasPlainMiddleBetweenBoldWrappers, "Partial remove mark should split the wrapper and leave the removed range unmarked.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteTrackedInsertionShowsSpanAndPanelWithoutFocusLoss()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        await PlaceCaretInFirstInlineAsync(page, 8);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        var revisionId = $"remote-rev-{Guid.NewGuid():N}";
+        var text = $" RI{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await BroadcastRemoteOperationsAsync(RemoteCreateRevisionOperation(revisionId, target, text, revisionType: 0));
+
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--insert")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = text.Trim() })).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        var activeInWysiwyg = await ActiveElementIsInWysiwygAsync(page);
+        Assert.IsTrue(activeInWysiwyg, "Remote revision insertion must keep focus inside the receiving WYSIWYG surface.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteTrackedDeletionShowsDeletionSpanAndPanel()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 3);
+        var revisionId = $"remote-rev-{Guid.NewGuid():N}";
+
+        await BroadcastRemoteOperationsAsync(RemoteCreateRevisionOperation(revisionId, target, target.SelectedText, revisionType: 1));
+
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--delete")).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = target.SelectedText })).ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteRevisionReviewClearsDecorationsWithoutReload()
+    {
+        var page = await OpenDocumentEditorPageAsync();
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var target = await GetFirstParagraphInlineTargetAsync(page, 0, 0);
+        var revisionId = $"remote-rev-{Guid.NewGuid():N}";
+        var text = $" RA{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await BroadcastRemoteOperationsAsync(RemoteCreateRevisionOperation(revisionId, target, text, revisionType: 0));
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--insert")).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+        await BroadcastRemoteOperationsAsync(RemoteReviewRevisionOperation(revisionId, target, text, operationType: 10, revisionType: 0));
+
+        await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+        await Assertions.Expect(host).ToContainTextAsync(text.Trim(), new() { Timeout = 5000 });
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = text.Trim() })).ToHaveCountAsync(0, new() { Timeout = 5000 });
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteTextKeepsFocusedSurface()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostA = pageA.Locator("[data-testid='document-wysiwyg-host']");
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        var bodyA = await WaitForWysiwygBodyAsync(hostA);
+        var bodyB = await WaitForWysiwygBodyAsync(hostB);
+        var uniqueText = $" REMOTE{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await bodyB.ClickAsync();
+        await bodyA.ClickAsync();
+        await pageA.Keyboard.InsertTextAsync(uniqueText);
+
+        await Assertions.Expect(hostB).ToContainTextAsync(uniqueText.Trim(), new() { Timeout = 5000 });
+        var activeInWysiwyg = await pageB.EvaluateAsync<bool>(
+            """
+            () => {
+                const active = document.activeElement;
+                return !!active
+                    && active.isContentEditable
+                    && !!active.closest('[data-testid="document-wysiwyg-host"]');
+            }
+            """);
+
+        Assert.IsTrue(activeInWysiwyg, "Remote collaboration updates must keep focus inside the WYSIWYG surface.");
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_CollaborationRemoteTextDoesNotResetCaretToDocumentStart()
+    {
+        var pageA = await OpenDocumentEditorPageAsync();
+        var pageB = await OpenDocumentEditorPageAsync();
+        var hostA = pageA.Locator("[data-testid='document-wysiwyg-host']");
+        var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
+        var bodyA = await WaitForWysiwygBodyAsync(hostA);
+        await WaitForWysiwygBodyAsync(hostB);
+        var uniqueText = $" CARET{DateTimeOffset.UtcNow:HHmmssfff} ";
+
+        await PlaceCaretInFirstInlineAsync(pageB, 4);
+        var before = await CaptureWysiwygSelectionAsync(pageB);
+
+        await bodyA.ClickAsync();
+        await pageA.Keyboard.InsertTextAsync(uniqueText);
+
+        await Assertions.Expect(hostB).ToContainTextAsync(uniqueText.Trim(), new() { Timeout = 5000 });
+        var after = await CaptureWysiwygSelectionAsync(pageB);
+
+        Assert.AreEqual(before.BlockId, after.BlockId, "Remote collaboration update must not move the caret to another block.");
+        Assert.AreEqual(before.InlineId, after.InlineId, "Remote collaboration update must not move the caret to another inline.");
+        Assert.IsTrue(after.Offset >= before.Offset, "Remote collaboration update must not reset the caret to the document start.");
     }
 
     private async Task<IPage> OpenDocumentEditorPageAsync(int width = 1280, int height = 720)
@@ -123,11 +2090,154 @@ public class DocumentEditorE2ETests : WasmTestBase
         await WaitForDocumentEditorReadyAsync(page);
     }
 
+    private static async Task<DocumentEditorLoadResult?> LoadDemoDocumentAsync(string documentId)
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+
+        return await http.GetFromJsonAsync<DocumentEditorLoadResult>($"api/document-editor/{Uri.EscapeDataString(documentId)}");
+    }
+
+    private static async Task SaveDemoDocumentAsync(DocumentEditorDocument document)
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+
+        var response = await http.PutAsJsonAsync(
+            $"api/document-editor/{Uri.EscapeDataString(document.DocumentId)}",
+            new DocumentEditorSaveRequest
+            {
+                DocumentId = document.DocumentId,
+                Document = document,
+                ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+            });
+        response.EnsureSuccessStatusCode();
+    }
+
+    private static DocumentEditorDocument CreatePhase17E2EDocument()
+    {
+        const string imageDataUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMB/axqOyoAAAAASUVORK5CYII=";
+        var document = DocumentEditorDocument.Empty("contract-demo");
+        document.Metadata.Title = "Service agreement";
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 12,
+            BodyLineHeight = 1.3,
+            ParagraphSpacingAfter = 10
+        };
+        document.Sections[0].Id = "phase17-section";
+        document.Sections[0].Properties.HeaderFooterReferences =
+        [
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "phase17-header",
+                Type = DocumentHeaderFooterType.Header,
+                Scope = DocumentHeaderFooterScope.Primary
+            },
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "phase17-footer",
+                Type = DocumentHeaderFooterType.Footer,
+                Scope = DocumentHeaderFooterScope.Primary
+            }
+        ];
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "phase17-body",
+            Type = DocumentBlockType.Paragraph,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Right,
+                LineSpacing = 1.5,
+                SpacingAfter = 12
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "phase17-inline",
+                        Text = "Phase 17 styled body",
+                        Marks =
+                        [
+                            new InlineMark { Type = InlineMarkType.FontFamily, Value = "Georgia, \"Times New Roman\", serif" },
+                            new InlineMark { Type = InlineMarkType.FontSize, Value = "18pt" },
+                            new InlineMark { Type = InlineMarkType.Revision, RevisionId = "phase17-revision", Value = "Insertion" }
+                        ]
+                    }
+                ]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "phase17-image",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = imageDataUrl,
+                AltText = "Phase 17 image",
+                Caption = "Phase 17 caption",
+                Size = new DocumentImageSize { Width = 180, Height = 90 },
+                Alignment = DocumentImageAlignment.Center
+            }
+        });
+        document.HeadersFooters.Add(CreateHeaderFooter("phase17-header", DocumentHeaderFooterType.Header, "Phase 17 header"));
+        document.HeadersFooters.Add(CreateHeaderFooter("phase17-footer", DocumentHeaderFooterType.Footer, "Phase 17 footer"));
+        document.Revisions.Add(new DocumentRevision
+        {
+            Id = "phase17-revision",
+            Type = DocumentRevisionType.Insertion,
+            Range = new DocumentRevisionRange { BlockId = "phase17-body", StartInlineIndex = 0, EndInlineIndex = 0, StartOffset = 0, EndOffset = 20 },
+            Author = new DocumentRevisionAuthor { Id = "e2e", DisplayName = "E2E" },
+            CreatedAt = DateTimeOffset.Parse("2026-05-14T13:00:00Z"),
+            Action = DocumentRevisionAction.Pending
+        });
+
+        return document;
+    }
+
+    private static DocumentHeaderFooter CreateHeaderFooter(string id, DocumentHeaderFooterType type, string text)
+    {
+        return new DocumentHeaderFooter
+        {
+            Id = id,
+            Type = type,
+            Scope = DocumentHeaderFooterScope.Primary,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = $"{id}-block",
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = text }]
+                    }
+                }
+            ]
+        };
+    }
+
     private static async Task WaitForDocumentEditorReadyAsync(IPage page)
     {
         await page.WaitForSelectorAsync("[data-testid='document-editor-demo']", new PageWaitForSelectorOptions
         {
-            State = WaitForSelectorState.Visible,
+            State = WaitForSelectorState.Attached,
             Timeout = 60000
         });
         await page.WaitForSelectorAsync("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-block", new PageWaitForSelectorOptions
@@ -143,6 +2253,307 @@ public class DocumentEditorE2ETests : WasmTestBase
         var body = host.Locator(".tm-wysiwyg-page__body[contenteditable]").First;
         await body.WaitForAsync(new() { State = WaitForSelectorState.Visible, Timeout = 60000 });
         return body;
+    }
+
+    private static async Task SaveDocumentAsync(IPage page)
+    {
+        await Assertions.Expect(page.Locator("[data-testid='document-dirty-status']")).ToBeVisibleAsync(new() { Timeout = 10000 });
+        await page.Locator("[data-testid='document-save']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-dirty-status']")).ToBeHiddenAsync(new() { Timeout = 10000 });
+        await Assertions.Expect(page.Locator("[data-testid='document-save-message']")).ToContainTextAsync("Saved");
+    }
+
+    private static async Task SaveDocumentWithShortcutAsync(IPage page)
+    {
+        await Assertions.Expect(page.Locator("[data-testid='document-dirty-status']")).ToBeVisibleAsync(new() { Timeout = 10000 });
+        await page.Keyboard.PressAsync("Control+S");
+        await Assertions.Expect(page.Locator("[data-testid='document-dirty-status']")).ToBeHiddenAsync(new() { Timeout = 10000 });
+        await Assertions.Expect(page.Locator("[data-testid='document-save-message']")).ToContainTextAsync("Saved");
+    }
+
+    private static async Task<string> InsertTableFromRibbonAsync(IPage page)
+    {
+        await PlaceCaretAtEndOfVisibleRegionAsync(page, ".tm-wysiwyg-page__body[contenteditable='true']");
+        await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+        await page.Locator("[data-testid='document-toolbar-table']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-table").Last)
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+        return await page.EvaluateAsync<string>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const tables = Array.from(host?.querySelectorAll('.tm-wysiwyg-table[data-block-id]') || []);
+                const inserted = tables
+                    .map(table => table.getAttribute('data-block-id') || '')
+                    .filter(id => id.startsWith('tbl-'))
+                    .sort()
+                    .at(-1);
+                if (!inserted) throw new Error('Inserted table id was not found.');
+                return inserted;
+            }
+            """);
+    }
+
+    private static async Task PlaceCaretInTableCellAsync(IPage page, string tableId, int rowIndex, int cellIndex)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ tableId, rowIndex, cellIndex }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const table = host?.querySelector(`.tm-wysiwyg-table[data-block-id="${CSS.escape(tableId)}"]`);
+                const row = table?.querySelectorAll('tr')[rowIndex];
+                const cell = row?.querySelectorAll('td[data-cell-id], th[data-cell-id]')[cellIndex];
+                if (!cell) throw new Error('Table cell was not found.');
+
+                const body = cell.closest('[contenteditable="true"]');
+                body?.focus();
+                let text = null;
+                const walker = document.createTreeWalker(cell, NodeFilter.SHOW_TEXT);
+                while (walker.nextNode()) {
+                    text = walker.currentNode;
+                    break;
+                }
+
+                const range = document.createRange();
+                if (text) {
+                    range.setStart(text, text.textContent.length);
+                    range.collapse(true);
+                } else {
+                    range.selectNodeContents(cell);
+                    range.collapse(false);
+                }
+
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            new { tableId, rowIndex, cellIndex });
+    }
+
+    private static async Task OpenTableCellContextMenuAsync(IPage page, string tableId, int rowIndex, int cellIndex)
+    {
+        await PlaceCaretInTableCellAsync(page, tableId, rowIndex, cellIndex);
+        await page.EvaluateAsync(
+            """
+            ({ tableId, rowIndex, cellIndex }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const table = host?.querySelector(`.tm-wysiwyg-table[data-block-id="${CSS.escape(tableId)}"]`);
+                const row = table?.querySelectorAll('tr')[rowIndex];
+                const cell = row?.querySelectorAll('td[data-cell-id], th[data-cell-id]')[cellIndex];
+                if (!cell) throw new Error('Table cell was not found.');
+                const rect = cell.getBoundingClientRect();
+                cell.dispatchEvent(new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 2,
+                    clientX: rect.left + Math.min(12, Math.max(2, rect.width / 2)),
+                    clientY: rect.top + Math.min(12, Math.max(2, rect.height / 2))
+                }));
+            }
+            """,
+            new { tableId, rowIndex, cellIndex });
+    }
+
+    private static async Task<string?> GetCurrentTableCellIdAsync(IPage page)
+    {
+        return await page.EvaluateAsync<string?>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId);
+                return snapshot?.CurrentSelection?.ActiveTableCellId
+                    || snapshot?.LastSelection?.ActiveTableCellId
+                    || null;
+            }
+            """);
+    }
+
+    private static async Task InsertLocalImageBlockAsync(IPage page, string imageId, string altText, double width = 180, double order = 15)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ imageId, altText, width, order }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const body = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body[contenteditable]') || [])
+                    .find(isVisible);
+                const anchor = Array.from(body?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(isVisible);
+                body?.focus();
+                if (anchor) {
+                    const range = document.createRange();
+                    range.selectNodeContents(anchor);
+                    range.collapse(false);
+                    const selection = window.getSelection();
+                    selection?.removeAllRanges();
+                    selection?.addRange(range);
+                }
+                const block = {
+                    Id: imageId,
+                    Type: 5,
+                    Order: order,
+                    Content: {
+                        $type: 'image',
+                        Source: 0,
+                        Url: '/favicon.png',
+                        AltText: altText,
+                        Size: { Width: width, Height: 120, LockAspectRatio: true },
+                        Alignment: 1
+                    }
+                };
+                window.tmDocumentEditorWysiwyg.insertImageNode(instanceId, block, true);
+            }
+            """,
+            new { imageId, altText, width, order });
+    }
+
+    private static async Task ResizeImageAsync(IPage page, ILocator figure, double deltaX, double deltaY)
+    {
+        await figure.ClickAsync();
+        var handle = figure.Locator("[data-testid='document-wysiwyg-image-resize-handle']").First;
+        await Assertions.Expect(handle).ToBeVisibleAsync();
+        var box = await handle.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Image resize handle should have a bounding box.");
+        var x = box!.X + (box.Width / 2);
+        var y = box.Y + (box.Height / 2);
+        await page.Mouse.MoveAsync(x, y);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(x + deltaX), (float)(y + deltaY), new() { Steps = 6 });
+        await page.Mouse.UpAsync();
+    }
+
+    private static async Task DragInlineImageToEndAsync(IPage page, ILocator figure)
+    {
+        var imageBox = await figure.BoundingBoxAsync();
+        Assert.IsNotNull(imageBox, "Inline image should have a bounding box before dragging.");
+        var bodyBox = await page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page__body").First.BoundingBoxAsync();
+        Assert.IsNotNull(bodyBox, "WYSIWYG body should have a bounding box before image dragging.");
+        var startX = imageBox!.X + Math.Min(imageBox.Width - 6, Math.Max(6, imageBox.Width / 2));
+        var startY = imageBox.Y + Math.Min(imageBox.Height - 6, Math.Max(6, imageBox.Height / 2));
+        var endX = bodyBox!.X + Math.Min(bodyBox.Width - 16, Math.Max(16, bodyBox.Width / 2));
+        var endY = bodyBox.Y + bodyBox.Height - 18;
+        await page.Mouse.MoveAsync(startX, startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync(endX, endY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+    }
+
+    private static async Task DragFloatingImageAsync(IPage page, ILocator figure, double deltaX, double deltaY)
+    {
+        await figure.ClickAsync();
+        var box = await figure.BoundingBoxAsync();
+        Assert.IsNotNull(box, "Floating image should have a bounding box before dragging.");
+        var x = box!.X + Math.Min(box.Width - 8, Math.Max(8, box.Width / 2));
+        var y = box.Y + Math.Min(box.Height - 8, Math.Max(8, box.Height / 2));
+        await page.Mouse.MoveAsync(x, y);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(x + deltaX), (float)(y + deltaY), new() { Steps = 8 });
+        await page.Mouse.UpAsync();
+    }
+
+    private static async Task SetImageWrapModeAsync(IPage page, string imageId, string wrapMode)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ imageId, wrapMode }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${imageId}"]`) || [])
+                    .find(isVisible);
+                figure?.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, button: 0, pointerId: 91, clientX: 10, clientY: 10 }));
+                figure?.dispatchEvent(new PointerEvent('pointerup', { bubbles: true, button: 0, pointerId: 91, clientX: 10, clientY: 10 }));
+                window.tmDocumentEditorWysiwyg.executeCommand(instanceId, 'setImageWrapMode', { wrapMode });
+            }
+            """,
+            new { imageId, wrapMode });
+    }
+
+    private static async Task DropImageFileAsync(IPage page, string fileName)
+    {
+        await page.EvaluateAsync(
+            """
+            fileName => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const body = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body') || [])
+                    .find(isVisible);
+                const anchor = Array.from(body?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(isVisible);
+                body?.focus();
+                if (anchor) {
+                    const range = document.createRange();
+                    range.selectNodeContents(anchor);
+                    range.collapse(false);
+                    const selection = window.getSelection();
+                    selection?.removeAllRanges();
+                    selection?.addRange(range);
+                }
+                const bytes = Uint8Array.from([
+                    137,80,78,71,13,10,26,10,0,0,0,13,73,72,68,82,
+                    0,0,0,1,0,0,0,1,8,6,0,0,0,31,21,196,137,
+                    0,0,0,13,73,68,65,84,120,156,99,248,15,4,0,9,
+                    251,3,253,167,88,61,101,0,0,0,0,73,69,78,68,
+                    174,66,96,130
+                ]);
+                const file = new File([bytes], fileName, { type: 'image/png' });
+                const data = new DataTransfer();
+                data.items.add(file);
+                const event = new DragEvent('drop', { bubbles: true, cancelable: true, dataTransfer: data });
+                body?.dispatchEvent(event);
+            }
+            """,
+            fileName);
+    }
+
+    private static async Task<int> GetVisibleBlockIndexAsync(IPage page, string blockId)
+    {
+        return await page.EvaluateAsync<int>(
+            """
+            blockId => {
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const blocks = Array.from(document.querySelectorAll('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page__body > .tm-wysiwyg-block[data-block-id]'))
+                    .filter(isVisible);
+                return blocks.findIndex(block => block.getAttribute('data-block-id') === blockId);
+            }
+            """,
+            blockId);
     }
 
     private static async Task DispatchClipboardPasteAsync(IPage page, string? html, string plain)
@@ -161,5 +2572,1167 @@ public class DocumentEditorE2ETests : WasmTestBase
             }
             """,
             new { html, plain });
+    }
+
+    private static async Task<int> CountTextOccurrencesAsync(ILocator host, string text)
+    {
+        return await host.EvaluateAsync<int>(
+            """
+            (el, text) => {
+                const content = el.innerText || el.textContent || '';
+                if (!text) return 0;
+                return content.split(text).length - 1;
+            }
+            """,
+            text);
+    }
+
+    private static async Task<string> GetFirstVisibleInlineBlockTextAsync(ILocator host)
+    {
+        return await host.EvaluateAsync<string>(
+            """
+            el => {
+                const isVisible = node => {
+                    if (!node || node.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = getComputedStyle(node);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const inline = Array.from(el.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]')).find(isVisible);
+                return inline?.closest('[data-block-id]')?.textContent || inline?.textContent || '';
+            }
+            """);
+    }
+
+    private static async Task PlaceCaretInFirstInlineAsync(IPage page, int offset)
+    {
+        await PlaceCaretInInlineAsync(page, blockIndex: 0, offset);
+    }
+
+    private static async Task PlaceCaretInInlineAsync(IPage page, int blockIndex, int offset)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ blockIndex, offset }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const inlines = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block [data-inline-id]') || [])
+                    .filter(isVisible);
+                const fallback = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || [])
+                    .filter(isVisible);
+                const inline = inlines[blockIndex] || fallback[blockIndex] || inlines[0] || fallback[0];
+                if (!inline) {
+                    throw new Error('Editable inline text node was not found.');
+                }
+
+                inline.closest('[contenteditable="true"]')?.focus();
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(inline, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return { node, offset: Math.max(0, Math.min(absoluteOffset - current, length)) };
+                        }
+                        current += length;
+                    }
+                    const fallback = inline.appendChild(document.createTextNode(''));
+                    return { node: fallback, offset: 0 };
+                };
+                const textLength = inline.textContent.length;
+                const pos = resolve(Math.min(offset, textLength));
+                const range = document.createRange();
+                range.setStart(pos.node, pos.offset);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            new { blockIndex, offset });
+    }
+
+    private static async Task PlaceCaretInBlockAsync(IPage page, string blockId, int offset)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ blockId, offset }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const block = host?.querySelector(`[data-block-id="${CSS.escape(blockId)}"]`);
+                const inline = block?.querySelector('[data-inline-id]');
+                if (!inline) {
+                    throw new Error('Editable inline text node was not found in the requested block.');
+                }
+
+                inline.closest('[contenteditable="true"]')?.focus();
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(inline, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return { node, offset: Math.max(0, Math.min(absoluteOffset - current, length)) };
+                        }
+                        current += length;
+                    }
+                    const fallback = inline.appendChild(document.createTextNode(''));
+                    return { node: fallback, offset: 0 };
+                };
+                const pos = resolve(Math.min(offset, inline.textContent.length));
+                const range = document.createRange();
+                range.setStart(pos.node, pos.offset);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            new { blockId, offset });
+    }
+
+    private static async Task PlaceCaretAtEndOfVisibleRegionAsync(IPage page, string selector)
+    {
+        await page.EvaluateAsync(
+            """
+            selector => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const region = Array.from(host?.querySelectorAll(selector) || []).find(isVisible);
+                if (!region) {
+                    throw new Error(`Editable region was not found for selector ${selector}.`);
+                }
+
+                region.focus();
+                const blocks = Array.from(region.querySelectorAll('[data-block-id]'));
+                const visibleBlocks = blocks.filter(isVisible);
+                const block = visibleBlocks[visibleBlocks.length - 1] || blocks[blocks.length - 1] || region;
+                const range = document.createRange();
+                const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                let text = null;
+                while (walker.nextNode()) {
+                    text = walker.currentNode;
+                }
+
+                if (text) {
+                    range.setStart(text, text.textContent.length);
+                    range.collapse(true);
+                } else {
+                    range.selectNodeContents(block);
+                    range.collapse(false);
+                }
+
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            selector);
+    }
+
+    private static async Task<string> SelectFirstInlineRangeAsync(IPage page, int start, int end)
+    {
+        return await page.EvaluateAsync<string>(
+            """
+            ({ start, end }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || []).find(isVisible)
+                    || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-block-id]') || []).find(isVisible);
+                if (!block) {
+                    const inline = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || []).find(isVisible);
+                    if (inline) {
+                        const resolveInline = absoluteOffset => {
+                            const walker = document.createTreeWalker(inline, NodeFilter.SHOW_TEXT);
+                            let current = 0;
+                            let node;
+                            while ((node = walker.nextNode())) {
+                                const length = node.textContent.length;
+                                if (absoluteOffset <= current + length) {
+                                    return { node, offset: Math.max(0, Math.min(absoluteOffset - current, length)) };
+                                }
+                                current += length;
+                            }
+                            return null;
+                        };
+                        const textLength = inline.textContent.length;
+                        const rangeStart = Math.max(0, Math.min(start, textLength));
+                        const rangeEnd = Math.max(rangeStart, Math.min(end, textLength));
+                        const startPos = resolveInline(rangeStart);
+                        const endPos = resolveInline(rangeEnd);
+                        if (!startPos || !endPos) {
+                            throw new Error('Editable inline text node was not found.');
+                        }
+
+                        const range = document.createRange();
+                        range.setStart(startPos.node, startPos.offset);
+                        range.setEnd(endPos.node, endPos.offset);
+                        inline.closest('[contenteditable="true"]')?.focus();
+                        const selection = window.getSelection();
+                        selection.removeAllRanges();
+                        selection.addRange(range);
+                        document.dispatchEvent(new Event('selectionchange'));
+                        return range.toString();
+                    }
+
+                    throw new Error('Editable paragraph block was not found.');
+                }
+
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return { node, offset: Math.max(0, Math.min(absoluteOffset - current, length)) };
+                        }
+                        current += length;
+                    }
+                    return null;
+                };
+                const textLength = block.textContent.length;
+                const rangeStart = Math.max(0, Math.min(start, textLength));
+                const rangeEnd = Math.max(rangeStart, Math.min(end, textLength));
+                const startPos = resolve(rangeStart);
+                const endPos = resolve(rangeEnd);
+                if (!startPos || !endPos) {
+                    throw new Error('Editable paragraph text node was not found.');
+                }
+
+                const range = document.createRange();
+                range.setStart(startPos.node, startPos.offset);
+                range.setEnd(endPos.node, endPos.offset);
+                block.closest('[contenteditable="true"]')?.focus();
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+                return range.toString();
+            }
+            """,
+            new { start, end });
+    }
+
+    private static async Task OpenSelectionContextMenuAsync(IPage page)
+    {
+        await page.EvaluateAsync(
+            """
+            () => {
+                const selection = window.getSelection();
+                if (!selection || selection.rangeCount === 0) {
+                    throw new Error('Selection is required before opening the context menu.');
+                }
+
+                const range = selection.getRangeAt(0);
+                const rect = range.getBoundingClientRect();
+                const x = Math.max(8, rect.left + Math.min(12, Math.max(1, rect.width / 2)));
+                const y = Math.max(8, rect.top + Math.min(12, Math.max(1, rect.height / 2)));
+                const target = document.elementFromPoint(x, y)
+                    || selection.anchorNode?.parentElement
+                    || document.querySelector('[data-testid="document-wysiwyg-host"] [data-inline-id]');
+                target.dispatchEvent(new MouseEvent('contextmenu', {
+                    bubbles: true,
+                    cancelable: true,
+                    button: 2,
+                    clientX: x,
+                    clientY: y
+                }));
+            }
+            """);
+    }
+
+    private static async Task PlaceCaretAfterFirstTokenAsync(IPage page)
+    {
+        await page.EvaluateAsync(
+            """
+            () => {
+                const token = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-token[data-inline-atomic="true"]');
+                if (!token || !token.parentNode) {
+                    throw new Error('Atomic token was not found.');
+                }
+
+                const parent = token.parentNode;
+                const index = Array.prototype.indexOf.call(parent.childNodes, token);
+                const range = document.createRange();
+                range.setStart(parent, index + 1);
+                range.collapse(true);
+                token.closest('[contenteditable="true"]')?.focus();
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """);
+    }
+
+    private static async Task SelectFirstTokenAsync(IPage page)
+    {
+        await page.EvaluateAsync(
+            """
+            () => {
+                const token = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-token[data-inline-atomic="true"]');
+                if (!token || !token.parentNode) {
+                    throw new Error('Atomic token was not found.');
+                }
+
+                const parent = token.parentNode;
+                const index = Array.prototype.indexOf.call(parent.childNodes, token);
+                const range = document.createRange();
+                range.setStart(parent, index);
+                range.setEnd(parent, index + 1);
+                token.closest('[contenteditable="true"]')?.focus();
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """);
+    }
+
+    private static async Task<bool> InlineTextIsBoldAsync(ILocator host, string text)
+    {
+        return await host.EvaluateAsync<bool>(
+            """
+            (el, text) => {
+                const isVisible = node => {
+                    if (!node || node.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = node.getBoundingClientRect();
+                    const style = getComputedStyle(node);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const target = Array.from(el.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]'))
+                    .filter(isVisible)
+                    .find(node => (node.textContent || '') === text);
+                if (!target) return false;
+                const style = getComputedStyle(target);
+                const weight = parseInt(style.fontWeight || '400', 10);
+                return style.fontWeight === 'bold' || weight >= 600;
+            }
+            """,
+            text);
+    }
+
+    private static async Task<string> SelectFontByVisibleTextAsync(IPage page, string text)
+    {
+        var value = await page.Locator("[data-testid='document-font-family']").EvaluateAsync<string>(
+            """
+            (select, text) => {
+                const option = Array.from(select.options).find(item => (item.textContent || '').includes(text));
+                if (!option) throw new Error(`Font option '${text}' was not found.`);
+                return option.value;
+            }
+            """,
+            text);
+        await page.Locator("[data-testid='document-font-family']").SelectOptionAsync(value);
+        return value;
+    }
+
+    private static async Task SetColorInputAsync(IPage page, string selector, string value)
+    {
+        await page.Locator(selector).EvaluateAsync(
+            """
+            (input, value) => {
+                input.value = value;
+                input.dispatchEvent(new Event('change', { bubbles: true }));
+            }
+            """,
+            value);
+    }
+
+    private static async Task<InlineStyleProbe> GetVisibleInlineStyleForTextAsync(IPage page, string text)
+    {
+        return await page.EvaluateAsync<InlineStyleProbe>(
+            """
+            text => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const normalizeColor = value => {
+                    if (!value || value === 'transparent' || value === 'rgba(0, 0, 0, 0)') return '';
+                    if (/^#[0-9a-f]{6}$/i.test(value)) return value.toLowerCase();
+                    const match = String(value).match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+                    if (!match || match[4] === '0') return '';
+                    return '#' + [match[1], match[2], match[3]].map(part =>
+                        Math.max(0, Math.min(255, parseInt(part, 10))).toString(16).padStart(2, '0')).join('');
+                };
+                const inline = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || [])
+                    .find(node => isVisible(node) && (node.textContent || '') === text)
+                    || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || [])
+                        .find(node => isVisible(node) && (node.textContent || '').includes(text));
+                if (!inline) {
+                    throw new Error(`Inline with text '${text}' was not found.`);
+                }
+                const style = getComputedStyle(inline);
+                return {
+                    Text: inline.textContent || '',
+                    FontFamily: inline.style.fontFamily || style.fontFamily || '',
+                    FontSize: inline.style.fontSize || style.fontSize || '',
+                    Color: normalizeColor(inline.style.color || style.color || ''),
+                    BackgroundColor: normalizeColor(inline.style.backgroundColor || style.backgroundColor || '')
+                };
+            }
+            """,
+            text);
+    }
+
+    private static async Task<ParagraphStyleProbe> GetFirstVisibleParagraphStyleAsync(IPage page)
+    {
+        return await page.EvaluateAsync<ParagraphStyleProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || []).find(isVisible)
+                    || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body .tm-wysiwyg-block[data-block-id]') || []).find(isVisible);
+                if (!block) {
+                    throw new Error('Visible paragraph block was not found.');
+                }
+                const style = getComputedStyle(block);
+                const toPt = value => {
+                    if (!value) return 0;
+                    const text = String(value).trim().toLowerCase();
+                    const number = parseFloat(text);
+                    if (!Number.isFinite(number)) return 0;
+                    return text.endsWith('px') ? number * 0.75 : number;
+                };
+                return {
+                    TextAlign: block.style.textAlign || style.textAlign || '',
+                    LineHeight: block.style.lineHeight || style.lineHeight || '',
+                    MarginTopPt: toPt(block.style.marginTop || style.marginTop),
+                    MarginBottomPt: toPt(block.style.marginBottom || style.marginBottom),
+                    LeftIndentPt: toPt(block.style.marginLeft || style.marginLeft),
+                    RightIndentPt: toPt(block.style.marginRight || style.marginRight),
+                    FirstLineIndentPt: toPt(block.style.textIndent || style.textIndent)
+                };
+            }
+            """);
+    }
+
+    private static async Task<bool> RemoteMarkTextIsBoldAsync(ILocator host, string text)
+    {
+        return await host.EvaluateAsync<bool>(
+            """
+            (el, text) => {
+                return Array.from(el.querySelectorAll('.tm-wysiwyg-remote-mark'))
+                    .some(node => (node.textContent || '').includes(text)
+                        && (node.style.fontWeight === 'bold'
+                            || getComputedStyle(node).fontWeight === 'bold'
+                            || parseInt(getComputedStyle(node).fontWeight, 10) >= 600));
+            }
+            """,
+            text);
+    }
+
+    private static async Task<int> GetTextOrderAsync(ILocator host, string left, string right)
+    {
+        return await host.EvaluateAsync<int>(
+            """
+            (el, args) => {
+                const text = el.textContent || '';
+                const leftIndex = text.indexOf(args.left);
+                const rightIndex = text.indexOf(args.right);
+                if (leftIndex < 0 || rightIndex < 0) return 0;
+                return leftIndex < rightIndex ? -1 : 1;
+            }
+            """,
+            new { left, right });
+    }
+
+    private static async Task<bool> ActiveElementIsInWysiwygAsync(IPage page)
+    {
+        return await page.EvaluateAsync<bool>(
+            """
+            () => {
+                const active = document.activeElement;
+                return !!active
+                    && active.isContentEditable
+                    && !!active.closest('[data-testid="document-wysiwyg-host"]');
+            }
+            """);
+    }
+
+    private async Task SaveDocumentEditorDebugArtifactsAsync(IPage page, string name)
+    {
+        await TakeScreenshotAsync(page, name);
+        var json = await CaptureWysiwygDebugSnapshotJsonAsync(page);
+        var path = Path.Combine(TestContext.TestResultsDirectory ?? ".", $"{name}_debug_{DateTime.Now:yyyyMMdd_HHmmss}.json");
+        await File.WriteAllTextAsync(path, json);
+        TestContext.AddResultFile(path);
+    }
+
+    private static async Task<string> CaptureWysiwygDebugSnapshotJsonAsync(IPage page)
+    {
+        return await page.EvaluateAsync<string>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const snapshot = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId)
+                    || { InstanceId: instanceId, HasInstance: false, Error: 'getDebugSnapshot unavailable' };
+                return JSON.stringify(snapshot, null, 2);
+            }
+            """);
+    }
+
+    private static async Task<RemoteInlineTarget> GetFirstParagraphInlineTargetAsync(IPage page, int start, int end)
+    {
+        return await page.EvaluateAsync<RemoteInlineTarget>(
+            """
+            ({ start, end }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return el.offsetParent !== null
+                        && rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || []).find(isVisible)
+                    || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-block-id]') || []).find(isVisible);
+                if (!host || !block) {
+                    throw new Error('Editable paragraph target was not found.');
+                }
+
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return {
+                                node,
+                                offset: Math.max(0, Math.min(absoluteOffset - current, length))
+                            };
+                        }
+                        current += length;
+                    }
+                    return null;
+                };
+
+                const text = block.textContent || '';
+                const rangeStart = Math.max(0, Math.min(start, text.length));
+                const rangeEnd = Math.max(rangeStart, Math.min(end, text.length));
+                const startPos = resolve(rangeStart);
+                const startInline = startPos?.node.parentElement?.closest('[data-inline-id]');
+                if (!startInline) {
+                    throw new Error('Editable inline target was not found.');
+                }
+
+                const inlineOffset = (inline, node, offset) => {
+                    const range = document.createRange();
+                    range.setStart(inline, 0);
+                    range.setEnd(node, offset);
+                    return range.toString().length;
+                };
+
+                const inlineText = startInline.textContent || '';
+                const offset = Math.max(0, Math.min(inlineOffset(startInline, startPos.node, startPos.offset), inlineText.length));
+                const selectedLength = Math.max(0, Math.min(rangeEnd - rangeStart, inlineText.length - offset));
+                const selectedText = inlineText.slice(offset, offset + selectedLength);
+                const inlineIndex = Array.from(block.querySelectorAll('[data-inline-id]')).indexOf(startInline);
+                return {
+                    BlockId: block.getAttribute('data-block-id'),
+                    InlineId: startInline.getAttribute('data-inline-id') || '',
+                    InlineIndex: inlineIndex < 0 ? 0 : inlineIndex,
+                    Offset: offset,
+                    Length: selectedText.length,
+                    SelectedText: selectedText
+                };
+            }
+            """,
+            new { start, end });
+    }
+
+    private static async Task<RemoteBatchApplyResult> ApplyRemoteOperationBatchAsync(IPage page, params object[] operations)
+    {
+        return await page.EvaluateAsync<RemoteBatchApplyResult>(
+            """
+            ({ operations }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id');
+                if (!instanceId) throw new Error('WYSIWYG instance id was not found.');
+                if (!window.tmDocumentEditorWysiwyg?.applyRemoteOperationBatch) {
+                    throw new Error('Public remote operation batch API was not found.');
+                }
+                return window.tmDocumentEditorWysiwyg.applyRemoteOperationBatch(instanceId, { operations });
+            }
+            """,
+            new { operations });
+    }
+
+    private static object RemoteInsertParagraphOperation(string blockId, string text, int sequence)
+    {
+        var order = 9100 + Random.Shared.Next(1, 999);
+        return new
+        {
+            OperationId = $"insert-{blockId}",
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = 4,
+            Target = new { BlockId = blockId, Order = order },
+            Block = new
+            {
+                Id = blockId,
+                Type = 0,
+                Order = order,
+                Content = new Dictionary<string, object?>
+                {
+                    ["$type"] = "paragraph",
+                    ["Inlines"] = new object[]
+                    {
+                        new Dictionary<string, object?>
+                        {
+                            ["$type"] = "text",
+                            ["Id"] = $"{blockId}-inline",
+                            ["Text"] = text
+                        }
+                    }
+                }
+            },
+            Metadata = RemoteMetadata()
+        };
+    }
+
+    private static object RemoteDeleteBlockOperation(string blockId, int sequence)
+        => new
+        {
+            OperationId = $"delete-{blockId}",
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = 5,
+            Target = new { BlockId = blockId },
+            Metadata = RemoteMetadata()
+        };
+
+    private static object RemoteInsertTextOperation(string operationId, RemoteInlineTarget target, string text, int offset, int sequence)
+        => new
+        {
+            OperationId = operationId,
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = 0,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                Offset = offset,
+                Length = text.Length
+            },
+            Text = text,
+            Metadata = RemoteMetadata()
+        };
+
+    private static object RemoteInsertTextOperationWithoutSequence(string operationId, RemoteInlineTarget target, string text, int offset)
+        => new
+        {
+            OperationId = operationId,
+            SchemaVersion = 1,
+            Type = 0,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                Offset = offset,
+                Length = text.Length
+            },
+            Text = text,
+            Metadata = new
+            {
+                AuthorId = "e2e-remote",
+                ClientId = "e2e-remote"
+            }
+        };
+
+    private static object RemoteDeleteTextOperation(string operationId, RemoteInlineTarget target, int offset, int length, int sequence)
+        => new
+        {
+            OperationId = operationId,
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = 1,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                Offset = offset,
+                Length = length
+            },
+            Metadata = RemoteMetadata()
+        };
+
+    private static object RemoteMarkOperation(string operationId, RemoteInlineTarget target, int offset, int length, int markType, bool add, int sequence)
+        => new
+        {
+            OperationId = operationId,
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = add ? 2 : 3,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                Offset = offset,
+                Length = length
+            },
+            Mark = new { Type = markType },
+            Metadata = RemoteMetadata()
+        };
+
+    private static object RemoteLinkOperation(string operationId, RemoteInlineTarget target, string href, int sequence)
+        => new
+        {
+            OperationId = operationId,
+            SchemaVersion = 1,
+            Sequence = sequence,
+            Type = 2,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                target.Offset,
+                target.Length
+            },
+            Mark = new { Type = 6, Link = new { Href = href } },
+            Metadata = RemoteMetadata()
+        };
+
+    private static object RemoteCreateRevisionOperation(string revisionId, RemoteInlineTarget target, string text, int revisionType)
+        => new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = 9,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                target.Offset,
+                Length = revisionType == 1 ? target.Length : text.Length
+            },
+            Text = text,
+            Revision = RevisionPayload(revisionId, target, text, revisionType, action: 0),
+            Metadata = RemoteRevisionMetadata(revisionId, revisionType)
+        };
+
+    private static object RemoteReviewRevisionOperation(string revisionId, RemoteInlineTarget target, string text, int operationType, int revisionType)
+        => new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = operationType,
+            Target = new
+            {
+                target.BlockId,
+                target.InlineId,
+                target.InlineIndex,
+                target.Offset,
+                Length = revisionType == 1 ? target.Length : text.Length
+            },
+            Text = text,
+            Revision = RevisionPayload(revisionId, target, text, revisionType, action: operationType == 10 ? 1 : 2),
+            Metadata = RemoteRevisionMetadata(revisionId, revisionType)
+        };
+
+    private static object RevisionPayload(string revisionId, RemoteInlineTarget target, string text, int revisionType, int action)
+        => new
+        {
+            Id = revisionId,
+            Type = revisionType,
+            Range = new
+            {
+                target.BlockId,
+                StartInlineIndex = target.InlineIndex,
+                StartOffset = target.Offset,
+                EndInlineIndex = target.InlineIndex,
+                EndOffset = target.Offset + (revisionType == 1 ? target.Length : text.Length)
+            },
+            Author = new { Id = "e2e-remote", DisplayName = "E2E Remote" },
+            CreatedAt = DateTimeOffset.UtcNow,
+            Action = action,
+            PayloadJson = text
+        };
+
+    private static object RemoteRevisionMetadata(string revisionId, int revisionType)
+        => new
+        {
+            AuthorId = "e2e-remote",
+            ClientId = "e2e-remote",
+            LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds(),
+            RevisionId = revisionId,
+            RevisionType = revisionType == 1 ? "Deletion" : "Insertion"
+        };
+
+    private static async Task BroadcastRemoteBoldOperationAsync(RemoteInlineTarget target)
+    {
+        await BroadcastRemoteOperationsAsync(
+            new
+            {
+                OperationId = Guid.NewGuid().ToString("N"),
+                SchemaVersion = 1,
+                Type = 2,
+                Target = new
+                {
+                    target.BlockId,
+                    target.InlineId,
+                    target.InlineIndex,
+                    target.Offset,
+                    target.Length
+                },
+                Mark = new { Type = 0 },
+                Metadata = RemoteMetadata()
+            });
+    }
+
+    private static async Task BroadcastRemoteOperationsAsync(params object[] operations)
+    {
+        using var handler = new HttpClientHandler
+        {
+            ServerCertificateCustomValidationCallback = HttpClientHandler.DangerousAcceptAnyServerCertificateValidator
+        };
+        using var http = new HttpClient(handler)
+        {
+            BaseAddress = new Uri("https://localhost:5100")
+        };
+        var joinResponse = await http.PostAsJsonAsync("api/document-editor/collaboration/join", new
+        {
+            DocumentId = "contract-demo",
+            ClientId = $"e2e-remote-{Guid.NewGuid():N}",
+            Author = new { Id = "e2e-remote", DisplayName = "E2E Remote" }
+        });
+        joinResponse.EnsureSuccessStatusCode();
+        var session = await joinResponse.Content.ReadFromJsonAsync<RemoteSession>();
+        Assert.IsNotNull(session);
+
+        var batchResponse = await http.PostAsJsonAsync(
+            $"api/document-editor/collaboration/{Uri.EscapeDataString(session!.Id)}/batches",
+            new
+            {
+                DocumentId = "contract-demo",
+                Operations = operations
+            });
+        batchResponse.EnsureSuccessStatusCode();
+    }
+
+    private static object RemoteInsertImageOperation(string imageId, string altText, double width)
+    {
+        var order = 9000 + Random.Shared.Next(1, 999);
+        return new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = 4,
+            Target = new { BlockId = imageId, Order = order },
+            Block = ImageBlockPayload(imageId, altText, width, order),
+            Metadata = RemoteMetadata()
+        };
+    }
+
+    private static object RemoteUpdateImageOperation(string imageId, string altText, double width)
+    {
+        var order = 9000 + Random.Shared.Next(1, 999);
+        return new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = 8,
+            Target = new { BlockId = imageId, Order = order },
+            Block = ImageBlockPayload(imageId, altText, width, order),
+            Metadata = RemoteMetadata()
+        };
+    }
+
+    private static object RemoteInsertTableOperation(string tableId, string cellId, string text)
+    {
+        var order = 9200 + Random.Shared.Next(1, 999);
+        return new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = 4,
+            Target = new { BlockId = tableId, Order = order },
+            Block = new
+            {
+                Id = tableId,
+                Type = 4,
+                Order = order,
+                Content = new Dictionary<string, object?>
+                {
+                    ["$type"] = "table",
+                    ["Rows"] = new[]
+                    {
+                        new
+                        {
+                            Cells = new[]
+                            {
+                                new
+                                {
+                                    Id = cellId,
+                                    ColumnSpan = 1,
+                                    RowSpan = 1,
+                                    Merge = new { IsOrigin = true },
+                                    Blocks = new[]
+                                    {
+                                        new
+                                        {
+                                            Id = $"{cellId}-block",
+                                            Type = 0,
+                                            Order = 0,
+                                            Content = new Dictionary<string, object?>
+                                            {
+                                                ["$type"] = "paragraph",
+                                                ["Inlines"] = new object[]
+                                                {
+                                                    new Dictionary<string, object?>
+                                                    {
+                                                        ["$type"] = "text",
+                                                        ["Id"] = $"{cellId}-inline",
+                                                        ["Text"] = text
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            },
+            Metadata = RemoteMetadata()
+        };
+    }
+
+    private static object RemoteSetTableCellTextOperation(string tableId, string cellId, string text)
+        => new
+        {
+            OperationId = Guid.NewGuid().ToString("N"),
+            SchemaVersion = 1,
+            Type = 7,
+            Target = new { BlockId = tableId, TableCellId = cellId },
+            AttributeName = "table.cell.text",
+            AttributeValueJson = JsonSerializer.Serialize(text),
+            Metadata = RemoteMetadata()
+        };
+
+    private static object ImageBlockPayload(string imageId, string altText, double width, double order)
+        => new
+        {
+            Id = imageId,
+            Type = 5,
+            Order = order,
+            Content = new Dictionary<string, object?>
+            {
+                ["$type"] = "image",
+                ["Source"] = 1,
+                ["Url"] = "/favicon.png",
+                ["AssetId"] = $"asset-{imageId}",
+                ["AltText"] = altText,
+                ["Size"] = new { Width = width, Height = 120, LockAspectRatio = true },
+                ["Alignment"] = 1
+            }
+        };
+
+    private static object RemoteMetadata()
+        => new
+        {
+            AuthorId = "e2e-remote",
+            ClientId = "e2e-remote",
+            LogicalTimestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()
+        };
+
+    private sealed class RemoteInlineTarget
+    {
+        public string BlockId { get; set; } = string.Empty;
+
+        public string InlineId { get; set; } = string.Empty;
+
+        public int InlineIndex { get; set; }
+
+        public int Offset { get; set; }
+
+        public int Length { get; set; }
+
+        public string SelectedText { get; set; } = string.Empty;
+    }
+
+    private sealed class RemoteSession
+    {
+        public string Id { get; set; } = string.Empty;
+    }
+
+    private sealed class RemoteBatchApplyResult
+    {
+        public bool Success { get; set; }
+
+        public int Applied { get; set; }
+
+        public int Skipped { get; set; }
+
+        public string[] FailedOperationIds { get; set; } = [];
+    }
+
+    private sealed class InlineFormattingProbe
+    {
+        public string BodyText { get; set; } = string.Empty;
+
+        public string FormattedText { get; set; } = string.Empty;
+
+        public bool Bold { get; set; }
+
+        public bool Italic { get; set; }
+
+        public bool Underline { get; set; }
+
+        public int InlineCount { get; set; }
+    }
+
+    private sealed class InlineStyleProbe
+    {
+        public string Text { get; set; } = string.Empty;
+
+        public string FontFamily { get; set; } = string.Empty;
+
+        public string FontSize { get; set; } = string.Empty;
+
+        public string Color { get; set; } = string.Empty;
+
+        public string BackgroundColor { get; set; } = string.Empty;
+    }
+
+    private sealed class ParagraphStyleProbe
+    {
+        public string TextAlign { get; set; } = string.Empty;
+
+        public string LineHeight { get; set; } = string.Empty;
+
+        public double MarginTopPt { get; set; }
+
+        public double MarginBottomPt { get; set; }
+
+        public double LeftIndentPt { get; set; }
+
+        public double RightIndentPt { get; set; }
+
+        public double FirstLineIndentPt { get; set; }
+    }
+
+    private sealed class FloatingImagePosition
+    {
+        public double X { get; set; }
+
+        public double Y { get; set; }
+    }
+
+    private sealed class ViewportOverflowMetrics
+    {
+        public double ViewportWidth { get; set; }
+
+        public double DocumentScrollWidth { get; set; }
+
+        public double EditorRight { get; set; }
+
+        public double HostRight { get; set; }
+
+        public string WideElements { get; set; } = string.Empty;
+    }
+
+    private static async Task<WysiwygCaretSnapshot> CaptureWysiwygSelectionAsync(IPage page)
+    {
+        return await page.EvaluateAsync<WysiwygCaretSnapshot>(
+            """
+            () => {
+                const selection = window.getSelection();
+                const node = selection?.anchorNode;
+                const element = node?.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+                const inline = element?.closest?.('[data-inline-id]');
+                const block = element?.closest?.('[data-block-id]');
+                let absoluteOffset = selection?.anchorOffset || 0;
+                if (inline && node) {
+                    const range = document.createRange();
+                    range.setStart(inline, 0);
+                    try {
+                        range.setEnd(node, selection?.anchorOffset || 0);
+                        absoluteOffset = range.toString().length;
+                    } catch {
+                        absoluteOffset = selection?.anchorOffset || 0;
+                    }
+                }
+
+                return {
+                    BlockId: block?.getAttribute('data-block-id') || '',
+                    InlineId: inline?.getAttribute('data-inline-id') || '',
+                    Offset: absoluteOffset
+                };
+            }
+            """);
+    }
+
+    private sealed class WysiwygCaretSnapshot
+    {
+        public string BlockId { get; set; } = string.Empty;
+
+        public string InlineId { get; set; } = string.Empty;
+
+        public int Offset { get; set; }
     }
 }

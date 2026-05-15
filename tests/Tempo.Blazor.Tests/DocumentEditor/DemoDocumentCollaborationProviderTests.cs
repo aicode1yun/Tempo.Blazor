@@ -1,4 +1,5 @@
 using System.Net;
+using System.Text.Json;
 using System.Net.Http.Json;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -36,6 +37,84 @@ public class DemoDocumentCollaborationProviderTests
         handler.Requests.Should().ContainSingle(request =>
             request.Method == HttpMethod.Post
             && request.RequestUri!.ToString().EndsWith("/api/document-editor/collaboration/join", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task BroadcastOperationBatchAsync_PostsOperationIdentityAndProtocolVersion()
+    {
+        string? requestJson = null;
+        var response = new DocumentCollaborationOperationBatch
+        {
+            Sequence = 7,
+            SessionId = "session-1",
+            Batch = new DocumentOperationBatch
+            {
+                DocumentId = "doc-1",
+                ProtocolVersion = DocumentOperationBatch.CurrentProtocolVersion,
+                Operations =
+                [
+                    new DocumentOperation
+                    {
+                        OperationId = "operation-1",
+                        Type = DocumentOperationType.InsertText,
+                        Target = new DocumentOperationTarget { BlockId = "block-1", Offset = 0, Length = 3 },
+                        Text = "Hey"
+                    }
+                ]
+            }
+        };
+        var handler = new RecordingHandler(async request =>
+        {
+            requestJson = await request.Content!.ReadAsStringAsync();
+            return JsonResponse(response);
+        });
+        var provider = new DemoDocumentCollaborationProvider(new TestHttpClientFactory(handler));
+
+        var result = await provider.BroadcastOperationBatchAsync("session-1", response.Batch);
+
+        result.Sequence.Should().Be(7);
+        requestJson.Should().Contain("\"protocolVersion\"");
+        requestJson.Should().Contain("\"operationId\":\"operation-1\"");
+        handler.Requests.Should().ContainSingle(request =>
+            request.Method == HttpMethod.Post
+            && request.RequestUri!.ToString().EndsWith("/api/document-editor/collaboration/session-1/batches", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public async Task GetOperationBatchesAsync_ReturnsEchoWithClearSessionMetadata()
+    {
+        var batches = new[]
+        {
+            new DocumentCollaborationOperationBatch
+            {
+                Sequence = 3,
+                SessionId = "session-1",
+                Batch = new DocumentOperationBatch
+                {
+                    DocumentId = "doc-1",
+                    ProtocolVersion = DocumentOperationBatch.CurrentProtocolVersion,
+                    Operations = [new DocumentOperation { OperationId = "operation-1", Text = "Echo" }]
+                }
+            }
+        };
+        var handler = new RecordingHandler(_ => Task.FromResult(JsonResponse(batches)));
+        var provider = new DemoDocumentCollaborationProvider(new TestHttpClientFactory(handler));
+
+        var result = await provider.GetOperationBatchesAsync("doc-1", 0);
+
+        result.Should().ContainSingle(batch =>
+            batch.SessionId == "session-1"
+            && batch.Batch.ProtocolVersion == DocumentOperationBatch.CurrentProtocolVersion
+            && batch.Batch.Operations.Single().OperationId == "operation-1");
+    }
+
+    private static HttpResponseMessage JsonResponse<T>(T value)
+    {
+        var json = JsonSerializer.Serialize(value, DocumentEditorJson.Options);
+        return new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StringContent(json, System.Text.Encoding.UTF8, "application/json")
+        };
     }
 
     private sealed class TestHttpClientFactory : IHttpClientFactory

@@ -16,6 +16,7 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
         DocumentCollaborationJoinRequest request,
         CancellationToken cancellationToken = default)
     {
+        _sequence = Math.Max(_sequence, request.LastSeenSequence);
         var session = new DocumentCollaborationSession
         {
             DocumentId = request.DocumentId,
@@ -49,11 +50,18 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
             throw new InvalidOperationException("Collaboration session was not found.");
         }
 
+        var normalized = Clone(batch);
+        var validation = DocumentOperationLog.Validate(normalized);
+        if (!validation.IsValid)
+        {
+            throw new InvalidOperationException(string.Join(" ", validation.Errors));
+        }
+
         var item = new DocumentCollaborationOperationBatch
         {
             Sequence = ++_sequence,
             SessionId = sessionId,
-            Batch = Clone(batch)
+            Batch = normalized
         };
 
         if (!_batches.TryGetValue(session.DocumentId, out var documentBatches))

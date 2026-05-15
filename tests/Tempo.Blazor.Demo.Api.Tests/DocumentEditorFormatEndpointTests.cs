@@ -42,6 +42,7 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
     public async Task DemoSeed_IncludesImageDocumentCommentsAndVersions()
     {
         var load = await _client.GetFromJsonAsync<DocumentEditorLoadResult>("/api/document-editor/documents/exhibits-demo");
+        var contractLoad = await _client.GetFromJsonAsync<DocumentEditorLoadResult>("/api/document-editor/documents/contract-demo");
 
         load.Should().NotBeNull();
         load!.Found.Should().BeTrue();
@@ -53,6 +54,33 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
             .Should()
             .Contain(image => image.Source == DocumentImageSource.Url)
             .And.Contain(image => image.Source == DocumentImageSource.Asset && image.AssetId == "exhibit-provider-asset");
+
+        contractLoad.Should().NotBeNull();
+        contractLoad!.Found.Should().BeTrue();
+        contractLoad.Document.Should().NotBeNull();
+        var contract = contractLoad.Document!;
+        contract.HeadersFooters.Should().Contain(header => header.Id == "contract-header-primary");
+        contract.HeadersFooters.Should().Contain(footer => footer.Id == "contract-footer-primary");
+        contract.Revisions.Should().Contain(revision =>
+            revision.Id == "contract-revision-scope"
+            && revision.Action == DocumentRevisionAction.Pending
+            && revision.Type == DocumentRevisionType.Insertion);
+        contract.Blocks
+            .Select(block => block.Content)
+            .OfType<ImageBlockContent>()
+            .Should()
+            .Contain(image =>
+                image.Source == DocumentImageSource.Asset
+                && image.AssetId == "contract-evidence-asset"
+                && image.Size.Width >= 200);
+        contract.Blocks
+            .Select(block => block.Content)
+            .OfType<ParagraphBlockContent>()
+            .SelectMany(content => content.Inlines)
+            .OfType<TextRun>()
+            .Should()
+            .Contain(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Bold))
+            .And.Contain(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == "contract-revision-scope"));
 
         var comments = await _client.GetFromJsonAsync<IReadOnlyList<DocumentComment>>(
             "/api/document-editor/documents/contract-demo/comments");
@@ -306,10 +334,12 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
             new DocumentOperationBatch
             {
                 DocumentId = "contract-demo",
+                ProtocolVersion = DocumentOperationBatch.CurrentProtocolVersion,
                 Operations =
                 [
                     new DocumentOperation
                     {
+                        OperationId = "api-operation-1",
                         Type = DocumentOperationType.SetBlockAttribute,
                         Target = new DocumentOperationTarget { BlockId = "b-1" },
                         AttributeName = "text",
@@ -321,7 +351,10 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
 
         var batches = await _client.GetFromJsonAsync<IReadOnlyList<DocumentCollaborationOperationBatch>>(
             "/api/document-editor/collaboration/documents/contract-demo/batches?afterSequence=0");
-        batches.Should().ContainSingle(batch => batch.SessionId == session.Id);
+        batches.Should().ContainSingle(batch =>
+            batch.SessionId == session.Id
+            && batch.Batch.ProtocolVersion == DocumentOperationBatch.CurrentProtocolVersion
+            && batch.Batch.Operations.Single().OperationId == "api-operation-1");
 
         var cursorResponse = await _client.PostAsJsonAsync(
             "/api/document-editor/collaboration/cursors",

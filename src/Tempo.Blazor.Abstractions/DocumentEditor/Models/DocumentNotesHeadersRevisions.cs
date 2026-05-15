@@ -115,6 +115,16 @@ public class DocumentRevision
     public string? PayloadJson { get; set; }
 }
 
+/// <summary>Structured payload stored for formatting tracked-change revisions.</summary>
+public sealed class DocumentFormattingRevisionPayload
+{
+    /// <summary>Inline mark affected by the formatting change.</summary>
+    public InlineMarkType MarkType { get; set; }
+
+    /// <summary>Whether the pending revision currently applies the mark.</summary>
+    public bool NewActive { get; set; }
+}
+
 /// <summary>Tracked revision type.</summary>
 public enum DocumentRevisionType
 {
@@ -169,4 +179,17 @@ public enum DocumentRevisionAction
 
     /// <summary>Revision was rejected.</summary>
     Rejected
+}
+
+/// <summary>Display mode used when rendering tracked changes.</summary>
+public enum DocumentReviewDisplayMode
+{
+    /// <summary>Show all insertion/deletion/formatting markup.</summary>
+    AllMarkup,
+
+    /// <summary>Show text normally and keep only compact revision indicators.</summary>
+    SimpleMarkup,
+
+    /// <summary>Show the final document content without visible revision markup.</summary>
+    NoMarkup
 }

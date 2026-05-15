@@ -216,7 +216,7 @@ public class DocumentSerializer
             Wyg.LinkMark l => new InlineMark
             {
                 Type = InlineMarkType.Link,
-                Link = new LinkMarkData { Href = l.Href }
+                Link = new LinkMarkData { Href = l.Href, Title = l.Title }
             },
             _ => new InlineMark { Type = InlineMarkType.Bold }
         };
@@ -307,7 +307,7 @@ public class DocumentSerializer
                 InlineMarkType.Strikethrough => new Wyg.StrikethroughMark(),
                 InlineMarkType.Subscript => new Wyg.SubscriptMark(),
                 InlineMarkType.Superscript => new Wyg.SuperscriptMark(),
-                InlineMarkType.Link => new Wyg.LinkMark { Href = mark.Link?.Href ?? string.Empty },
+                InlineMarkType.Link => new Wyg.LinkMark { Href = mark.Link?.Href ?? string.Empty, Title = mark.Link?.Title },
                 _ => null
             };
             if (wysiwygMark is not null)

@@ -20,6 +20,9 @@ public class DocumentEditorDocument
     /// <summary>Default page settings for the document.</summary>
     public DocumentPageSettings PageSettings { get; set; } = new();
 
+    /// <summary>Default visual theme and typography for the document body.</summary>
+    public DocumentEditorTheme Theme { get; set; } = new();
+
     /// <summary>Document sections.</summary>
     public List<DocumentSection> Sections { get; set; } = [];
 
@@ -190,6 +193,22 @@ public class DocumentPageMargins
 
     /// <summary>Left margin in points.</summary>
     public double Left { get; set; }
+}
+
+/// <summary>Default document typography used when individual runs or paragraphs do not override it.</summary>
+public class DocumentEditorTheme
+{
+    /// <summary>Default body font family CSS value.</summary>
+    public string BodyFontFamily { get; set; } = "Aptos, Arial, sans-serif";
+
+    /// <summary>Default body font size in points.</summary>
+    public double BodyFontSize { get; set; } = 11;
+
+    /// <summary>Default paragraph line-height multiplier.</summary>
+    public double BodyLineHeight { get; set; } = 1.15;
+
+    /// <summary>Default spacing after body paragraphs in points.</summary>
+    public double ParagraphSpacingAfter { get; set; } = 8;
 }
 
 /// <summary>Document section with independent page settings and headers/footers.</summary>

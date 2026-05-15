@@ -23,9 +23,15 @@ public partial class TmDocumentInlineRenderer : ComponentBase
     private string? CommentId => Inline?.Marks.FirstOrDefault(mark => mark.Type == InlineMarkType.CommentAnchor)
         ?.CommentAnchor?.CommentId;
 
+    private InlineMark? RevisionMark => Inline?.Marks.FirstOrDefault(mark => mark.Type == InlineMarkType.Revision);
+
+    private string? RevisionId => RevisionMark?.RevisionId;
+
     private string? InlineTestId => Inline is TokenRun
         ? "document-token-chip"
-        : string.IsNullOrWhiteSpace(CommentId) ? null : "document-comment-highlight";
+        : !string.IsNullOrWhiteSpace(RevisionId)
+            ? GetRevisionTestId()
+            : string.IsNullOrWhiteSpace(CommentId) ? null : "document-comment-highlight";
 
     private string? InlineTitle => Inline is TokenRun token
         ? string.IsNullOrWhiteSpace(token.Description) ? token.Key : token.Description
@@ -62,7 +68,7 @@ public partial class TmDocumentInlineRenderer : ComponentBase
                     InlineMarkType.Subscript => "tm-document-inline--subscript",
                     InlineMarkType.Link => "tm-document-inline--link",
                     InlineMarkType.CommentAnchor => "tm-document-inline--comment-anchor",
-                    InlineMarkType.Revision => "tm-document-inline--revision",
+                    InlineMarkType.Revision => GetRevisionClass(mark),
                     InlineMarkType.Highlight => "tm-document-inline--highlight",
                     InlineMarkType.TextColor => "tm-document-inline--text-color",
                     _ => string.Empty
@@ -110,6 +116,16 @@ public partial class TmDocumentInlineRenderer : ComponentBase
         };
     }
 
+    private string GetRevisionClass(InlineMark mark)
+        => string.Equals(mark.Value, "Deletion", StringComparison.Ordinal)
+            ? "tm-document-inline--revision tm-document-inline--revision-delete"
+            : "tm-document-inline--revision tm-document-inline--revision-insert";
+
+    private string GetRevisionTestId()
+        => string.Equals(RevisionMark?.Value, "Deletion", StringComparison.Ordinal)
+            ? "document-revision-delete"
+            : "document-revision-insert";
+
     private string? GetSafeHref()
     {
         var href = Inline?.Marks.FirstOrDefault(mark => mark.Type == InlineMarkType.Link)?.Link?.Href;
@@ -118,27 +134,11 @@ public partial class TmDocumentInlineRenderer : ComponentBase
             return null;
         }
 
-        return IsSafeLinkUrl(href) ? href : null;
+        return DocumentLinkUtility.IsSafeHref(href) ? DocumentLinkUtility.NormalizeHref(href) : null;
     }
 
     internal static bool IsSafeLinkUrl(string href)
-    {
-        if (string.IsNullOrWhiteSpace(href))
-        {
-            return false;
-        }
-
-        if (href.StartsWith("/", StringComparison.Ordinal) || href.StartsWith("#", StringComparison.Ordinal))
-        {
-            return true;
-        }
-
-        return Uri.TryCreate(href, UriKind.Absolute, out var uri)
-            && (uri.Scheme == Uri.UriSchemeHttps
-                || uri.Scheme == Uri.UriSchemeHttp
-                || uri.Scheme == Uri.UriSchemeMailto
-                || uri.Scheme == "tel");
-    }
+        => DocumentLinkUtility.IsSafeHref(href);
 
     private static bool IsSafeCssColor(string value)
     {

@@ -2,9 +2,13 @@
 @using Tempo.Blazor.DocumentEditor.Models
 
 <div class="@RootClass"
+     role="application"
+     aria-label="@Loc["TmDocumentEditor_EditorLabel"]"
      tabindex="0"
      data-can-view-audit="@CanViewAudit.ToString()"
+     data-ribbon-keyboard-mode="@_ribbonKeyboardMode.ToString().ToLowerInvariant()"
      @onkeydown="HandleEditorKeyDownAsync"
+     @onclick="CloseFloatingUi"
      @attributes="AdditionalAttributes">
     @if (Provider is null)
     {
@@ -37,7 +41,8 @@
     {
         @if (ShowToolbar)
         {
-            <TmDocumentEditorToolbar ReadOnly="@EffectiveReadOnly"
+            <TmDocumentEditorToolbar @ref="_toolbar"
+                                     ReadOnly="@EffectiveReadOnly"
                                      IsSaving="@_isSaving"
                                      IsDirty="@_isDirty"
                                      SaveMessage="@_saveMessage"
@@ -47,6 +52,13 @@
                                      NextUndoDescription="@_commandStack.NextUndoDescription"
                                      NextRedoDescription="@_commandStack.NextRedoDescription"
                                      TrackChangesEnabled="@EffectiveTrackChangesEnabled"
+                                     ReviewDisplayMode="@_reviewDisplayMode"
+                                     BoldState="@_formattingState.Bold"
+                                     ItalicState="@_formattingState.Italic"
+                                     UnderlineState="@_formattingState.Underline"
+                                     ParagraphAlignment="@_formattingState.ParagraphAlignment"
+                                     ParagraphAlignmentMixed="@_formattingState.ParagraphAlignmentMixed"
+                                     FontFamilies="@_fontFamilies"
                                      TemplatePreviewEnabled="@_templatePreviewEnabled"
                                      CanPreviewTemplate="@CanPreviewTemplate"
                                      CanExportPdf="@CanExportPdf"
@@ -56,6 +68,16 @@
                                      IsImportingDocx="@_isImportingDocx"
                                      IsExportingDocx="@_isExportingDocx"
                                      CanCompareDocuments="@CanCompareDocuments"
+                                     ActiveRegion="@_activeWysiwygRegion"
+                                     DifferentFirstPage="@DifferentFirstPageHeaderFooter"
+                                     DifferentFirstPageChanged="SetDifferentFirstPageHeaderFooterAsync"
+                                     DifferentOddAndEvenPages="@DifferentOddAndEvenHeaderFooter"
+                                     DifferentOddAndEvenPagesChanged="SetDifferentOddAndEvenHeaderFooterAsync"
+                                     ShowRuler="@_showRuler"
+                                     ShowRulerChanged="SetRulerVisibleAsync"
+                                     ZoomPercent="@_zoomPercent"
+                                     ZoomPageWidth="@_zoomPageWidth"
+                                     ZoomPercentChanged="SetZoomPercentAsync"
                                      TemplatePreviewMessage="@_templatePreviewMessage"
                                      OnSave="SaveAsync"
                                      OnUndo="UndoAsync"
@@ -63,19 +85,37 @@
                                      OnBold="() => ToggleInlineMarkAsync(InlineMarkType.Bold)"
                                      OnItalic="() => ToggleInlineMarkAsync(InlineMarkType.Italic)"
                                      OnUnderline="() => ToggleInlineMarkAsync(InlineMarkType.Underline)"
+                                     OnFontFamilyChanged="ApplyFontFamilyAsync"
+                                     OnFontSizeChanged="ApplyFontSizeAsync"
+                                     OnTextColorChanged="ApplyTextColorAsync"
+                                     OnHighlightColorChanged="ApplyHighlightColorAsync"
+                                     OnParagraphAlignmentChanged="ApplyParagraphAlignmentAsync"
+                                     OnLineSpacingChanged="ApplyLineSpacingAsync"
+                                     OnSpacingBeforeChanged="ApplySpacingBeforeAsync"
+                                     OnSpacingAfterChanged="ApplySpacingAfterAsync"
+                                     OnIncreaseIndent="IncreaseParagraphIndentAsync"
+                                     OnDecreaseIndent="DecreaseParagraphIndentAsync"
                                      OnLink="ApplyLinkAsync"
+                                     OnLinkApplied="ApplyLinkAsync"
+                                     LinkInfoProvider="GetCurrentLinkInfoAsync"
                                      OnClearFormatting="ClearInlineFormattingAsync"
                                      OnToggleInsert="ToggleInsertPanelAsync"
                                      OnInsertTable="InsertTableAsync"
                                      OnInsertImage="OpenImageDialogAsync"
                                      OnToggleTrackChanges="ToggleTrackChanges"
+                                     ReviewDisplayModeChanged="SetReviewDisplayModeAsync"
                                      CanComment="@CanUseComments"
-                                     CanTrackChanges="@(CanCreateSuggestions || (SuggestionProvider is null && CanEditDocument))"
+                                     CanTrackChanges="@(CanEditDocument && !IsVersionPreview && !IsTemplatePreview)"
                                      OnAddComment="BeginCommentFromToolbarAsync"
+                                     OnOpenComments="OpenCommentsPanelAsync"
+                                     OnOpenRevisions="OpenRevisionsPanelAsync"
                                      OnCompareDocuments="OpenCompareDialogAsync"
                                      OnExportPdf="ExportPdfAsync"
                                      OnImportDocx="ImportDocxAsync"
                                      OnExportDocx="ExportDocxAsync"
+                                     OnOpenVersions="OpenVersionsPanelAsync"
+                                     OnCloseHeaderFooter="CloseHeaderFooterAsync"
+                                     OnZoomPageWidth="SetZoomPageWidthAsync"
                                      OnToggleTemplatePreview="ToggleTemplatePreviewAsync" />
         }
 
@@ -149,7 +189,7 @@
             </div>
         }
 
-        <div class="tm-document-editor__workspace">
+        <div class="@WorkspaceClass">
             <main class="tm-document-editor__surface" aria-label="@Loc["TmDocumentEditor_DocumentSurfaceLabel"]">
                 <article class="tm-document-editor__page-surface" aria-label="@Loc["TmDocumentEditor_PageLabel"]">
                     <header class="tm-document-editor__page-header">
@@ -175,10 +215,20 @@
                                                ImageValidation="@ImageValidation"
                                                AllowOfflineClipboardImages="@OfflineEnabled"
                                                TokenProvider="@TokenProvider"
+                                               FontFamilies="@_fontFamilies"
+                                               ShowRuler="@_showRuler"
+                                               ZoomPercent="@_zoomPercent"
+                                               ZoomPageWidth="@_zoomPageWidth"
                                                Suggestions="@_suggestions"
+                                               TrackChangesEnabled="@EffectiveTrackChangesEnabled"
+                                               ReviewDisplayMode="@_reviewDisplayMode"
                                                DocumentPatchGenerated="HandleWysiwygPatchAsync"
                                                DocumentSnapshotChanged="HandleWysiwygSnapshotAsync"
                                                DocumentSelectionChanged="HandleWysiwygSelectionChangedAsync"
+                                               TextContextMenuRequested="HandleTextContextMenuRequestedAsync"
+                                               TableContextMenuRequested="HandleTableContextMenuRequestedAsync"
+                                               MiniToolbarChanged="HandleMiniToolbarChangedAsync"
+                                               RevisionReviewRequested="ReviewInlineRevisionAsync"
                                                TransactionCommitted="HandleWysiwygTransactionCommittedAsync"
                                                UndoRequested="UndoAsync"
                                                RedoRequested="RedoAsync"
@@ -189,57 +239,235 @@
                 </article>
             </main>
 
-            @if (ShowComments)
-            {
-                <TmDocumentCommentRail Comments="@_comments"
-                                       DraftAnchor="@_draftCommentAnchor"
-                                       ComposerOpen="@_commentComposerOpen"
-                                       SelectedCommentId="@_selectedCommentId"
-                                       IsLoading="@_isLoadingComments"
-                                       IsBusy="@_isSubmittingComment"
-                                       CanComment="@CanUseComments"
-                                       CanResolve="@CanResolveComments"
-                                       CanDeleteOwnComments="@CanDeleteOwnComments"
-                                       CurrentAuthorId="@Author?.Id"
-                                       CanStartComment="@CanStartComment"
-                                       MentionProvider="@MentionProvider"
-                                       StatusMessage="@_commentMessage"
-                                       OnBeginComment="BeginCommentFromToolbarAsync"
-                                       OnCreateComment="CreateCommentAsync"
-                                       OnCancelComment="CancelCommentComposer"
-                                       OnReplyComment="ReplyToCommentAsync"
-                                       OnResolveComment="ResolveCommentAsync"
-                                       OnReopenComment="ReopenCommentAsync"
-                                       OnDeleteComment="DeleteCommentAsync"
-                                       OnSelectComment="SelectComment" />
-            }
-
-            @if (SuggestionProvider is not null)
-            {
-                <TmDocumentSuggestionPanel Suggestions="@_suggestions"
-                                           IsLoading="@_isLoadingSuggestions"
-                                           IsBusy="@_isReviewingSuggestion"
-                                           CanReview="@CanReviewSuggestions"
-                                           StatusMessage="@_suggestionMessage"
-                                           OnSelectSuggestion="SelectSuggestion"
-                                           OnAcceptSuggestion="AcceptSuggestionAsync"
-                                           OnRejectSuggestion="RejectSuggestionAsync" />
-            }
-
-            @if (ShowVersionHistory && _versionPanelOpen)
-            {
-                <TmDocumentVersionPanel Versions="@_versions"
-                                        IsLoading="@_isLoadingVersions"
-                                        ReadOnly="@(!CanCreateVersion)"
-                                        StatusMessage="@_versionMessage"
-                                        PreviewVersion="@_previewVersion"
-                                        OnCreateVersion="OpenVersionDialog"
-                                        OnSelectVersion="PreviewVersionAsync"
-                                        OnReturnToCurrent="ReturnToCurrentVersionAsync"
-                                        OnRestoreVersion="RestoreVersionAsync"
-                                        OnClose="CloseVersionPanel" />
-            }
+            <TmDocumentSidePanel IsOpen="@_sidePanelOpen"
+                                 ActiveTab="@ActiveSidePanelTab"
+                                 ActiveTabChanged="SetSidePanelTabAsync"
+                                 ShowComments="@ShowComments"
+                                 ShowRevisions="true"
+                                 ShowVersions="@ShowVersionHistory"
+                                 ShowProperties="true"
+                                 CommentsCount="@_comments.Count"
+                                 RevisionsCount="@PendingRevisionCount"
+                                 VersionsCount="@_versions.Count"
+                                 OnOpen="OpenSidePanelAsync"
+                                 OnClose="CloseSidePanel">
+                <CommentsContent>
+                    <TmDocumentCommentRail Comments="@_comments"
+                                           DraftAnchor="@_draftCommentAnchor"
+                                           ComposerOpen="@_commentComposerOpen"
+                                           SelectedCommentId="@_selectedCommentId"
+                                           IsLoading="@_isLoadingComments"
+                                           IsBusy="@_isSubmittingComment"
+                                           CanComment="@CanUseComments"
+                                           CanResolve="@CanResolveComments"
+                                           CanDeleteOwnComments="@CanDeleteOwnComments"
+                                           CurrentAuthorId="@Author?.Id"
+                                           CanStartComment="@CanStartComment"
+                                           MentionProvider="@MentionProvider"
+                                           StatusMessage="@_commentMessage"
+                                           OnBeginComment="BeginCommentFromToolbarAsync"
+                                           OnCreateComment="CreateCommentAsync"
+                                           OnCancelComment="CancelCommentComposer"
+                                           OnReplyComment="ReplyToCommentAsync"
+                                           OnResolveComment="ResolveCommentAsync"
+                                           OnReopenComment="ReopenCommentAsync"
+                                           OnDeleteComment="DeleteCommentAsync"
+                                           OnSelectComment="SelectComment" />
+                </CommentsContent>
+                <RevisionsContent>
+                    <TmDocumentRevisionPanel Revisions="@(_document?.Revisions ?? [])"
+                                             IsBusy="@_isReviewingRevision"
+                                             CanReview="@CanReviewRevisions"
+                                             StatusMessage="@_revisionMessage"
+                                             OnSelectRevision="SelectRevision"
+                                             OnAcceptRevision="AcceptRevisionAsync"
+                                             OnRejectRevision="RejectRevisionAsync" />
+                    @if (SuggestionProvider is not null && _suggestionsEnabled)
+                    {
+                        <TmDocumentSuggestionPanel Suggestions="@_suggestions"
+                                                   IsLoading="@_isLoadingSuggestions"
+                                                   IsBusy="@_isReviewingSuggestion"
+                                                   CanReview="@CanReviewSuggestions"
+                                                   StatusMessage="@_suggestionMessage"
+                                                   OnSelectSuggestion="SelectSuggestion"
+                                                   OnAcceptSuggestion="AcceptSuggestionAsync"
+                                                   OnRejectSuggestion="RejectSuggestionAsync" />
+                    }
+                </RevisionsContent>
+                <VersionsContent>
+                    <TmDocumentVersionPanel Versions="@_versions"
+                                            IsLoading="@_isLoadingVersions"
+                                            ReadOnly="@(!CanCreateVersion)"
+                                            StatusMessage="@_versionMessage"
+                                            PreviewVersion="@_previewVersion"
+                                            OnCreateVersion="OpenVersionDialog"
+                                            OnSelectVersion="PreviewVersionAsync"
+                                            OnReturnToCurrent="ReturnToCurrentVersionAsync"
+                                            OnRestoreVersion="RestoreVersionAsync"
+                                            OnClose="CloseVersionPanel" />
+                </VersionsContent>
+                <PropertiesContent>
+                    <section class="tm-document-properties-panel" data-testid="document-properties-panel">
+                        <h3>@Loc["TmDocumentEditor_Properties"]</h3>
+                        <dl>
+                            <div>
+                                <dt>@Loc["TmDocumentEditor_PropertyTitle"]</dt>
+                                <dd>@DocumentTitle</dd>
+                            </div>
+                            <div>
+                                <dt>@Loc["TmDocumentEditor_PropertyBlocks"]</dt>
+                                <dd>@(_document?.Blocks.Count ?? 0)</dd>
+                            </div>
+                            <div>
+                                <dt>@Loc["TmDocumentEditor_PropertyStatus"]</dt>
+                                <dd>@DocumentStatus</dd>
+                            </div>
+                        </dl>
+                    </section>
+                </PropertiesContent>
+            </TmDocumentSidePanel>
         </div>
+
+        <TmDocumentEditorStatusBar IsDirty="@_isDirty"
+                                   SaveMessage="@_saveMessage"
+                                   LastSavedAt="@_lastSavedAt"
+                                   WordCount="@DocumentWordCount"
+                                   PageCount="@DocumentPageCount"
+                                   ActiveRegionLabel="@ActiveRegionLabel"
+                                   ZoomLabel="@ZoomStatusLabel" />
+
+        @if (_miniToolbar is { IsVisible: true })
+        {
+            <section class="tm-document-editor__mini-toolbar"
+                     style="@FloatingStyle(_miniToolbar)"
+                     role="toolbar"
+                     aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
+                     data-testid="document-mini-toolbar"
+                     @onclick:stopPropagation="true"
+                     @onpointerdown:preventDefault="true">
+                <button type="button"
+                        data-testid="document-mini-bold"
+                        aria-label="@Loc["TmDocumentEditor_Bold"]"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_miniToolbar.Selection, () => ToggleInlineMarkAsync(InlineMarkType.Bold))">
+                    <TmIcon Name="bold" Size="IconSize.Sm" />
+                </button>
+                <button type="button"
+                        data-testid="document-mini-italic"
+                        aria-label="@Loc["TmDocumentEditor_Italic"]"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_miniToolbar.Selection, () => ToggleInlineMarkAsync(InlineMarkType.Italic))">
+                    <TmIcon Name="italic" Size="IconSize.Sm" />
+                </button>
+                <button type="button"
+                        data-testid="document-mini-link"
+                        aria-label="@Loc["TmDocumentEditor_Link"]"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_miniToolbar.Selection, ApplyDefaultFloatingLinkAsync)">
+                    <TmIcon Name="link" Size="IconSize.Sm" />
+                </button>
+                <button type="button"
+                        data-testid="document-mini-comment"
+                        aria-label="@Loc["TmDocumentEditor_AddComment"]"
+                        disabled="@(!CanUseComments)"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_miniToolbar.Selection, BeginCommentFromToolbarAsync)">
+                    <TmIcon Name="message-square" Size="IconSize.Sm" />
+                </button>
+            </section>
+        }
+
+        @if (_textContextMenu is not null)
+        {
+            <section class="tm-document-editor__text-context-menu"
+                     style="@FloatingStyle(_textContextMenu)"
+                     role="menu"
+                     aria-label="@Loc["TmDocumentEditor_TextContextMenuLabel"]"
+                     data-testid="document-text-context-menu"
+                     @onclick:stopPropagation="true"
+                     @onpointerdown:preventDefault="true">
+                <button type="button" role="menuitem" data-testid="document-context-cut" disabled>
+                    <TmIcon Name="scissors" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Cut"]</span>
+                </button>
+                <button type="button" role="menuitem" data-testid="document-context-copy" disabled>
+                    <TmIcon Name="copy" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Copy"]</span>
+                </button>
+                <button type="button" role="menuitem" data-testid="document-context-paste" disabled>
+                    <TmIcon Name="paste" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Paste"]</span>
+                </button>
+                <div class="tm-document-editor__context-separator" role="separator"></div>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-context-bold"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_textContextMenu.Selection, () => ToggleInlineMarkAsync(InlineMarkType.Bold))">
+                    <TmIcon Name="bold" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Bold"]</span>
+                </button>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-context-italic"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_textContextMenu.Selection, () => ToggleInlineMarkAsync(InlineMarkType.Italic))">
+                    <TmIcon Name="italic" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Italic"]</span>
+                </button>
+                <button type="button" role="menuitem" data-testid="document-context-font" disabled>
+                    <TmIcon Name="type" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_FontFamily"]</span>
+                </button>
+                <button type="button" role="menuitem" data-testid="document-context-paragraph" disabled>
+                    <TmIcon Name="pilcrow" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_GroupParagraph"]</span>
+                </button>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-context-comment"
+                        disabled="@(!CanUseComments)"
+                        @onclick="() => RunFloatingSelectionCommandAsync(_textContextMenu.Selection, BeginCommentFromToolbarAsync)">
+                    <TmIcon Name="message-square" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_AddComment"]</span>
+                </button>
+            </section>
+        }
+
+        @if (_tableContextMenu is not null)
+        {
+            <section class="tm-document-editor__table-context-menu"
+                     style="@FloatingStyle(_tableContextMenu)"
+                     role="menu"
+                     aria-label="@Loc["TmDocumentEditor_TableContextMenuLabel"]"
+                     data-testid="document-table-context-menu"
+                     @onclick:stopPropagation="true"
+                     @onpointerdown:preventDefault="true">
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-table-insert-row"
+                        @onclick="InsertTableRowFromContextAsync">
+                    <TmIcon Name="insert-row" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_AddRow"]</span>
+                </button>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-table-insert-column"
+                        @onclick="InsertTableColumnFromContextAsync">
+                    <TmIcon Name="insert-column" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_AddColumn"]</span>
+                </button>
+                <div class="tm-document-editor__context-separator" role="separator"></div>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-table-delete-row"
+                        @onclick="DeleteTableRowFromContextAsync">
+                    <TmIcon Name="delete-row" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_DeleteRow"]</span>
+                </button>
+                <button type="button"
+                        role="menuitem"
+                        data-testid="document-table-delete-column"
+                        @onclick="DeleteTableColumnFromContextAsync">
+                    <TmIcon Name="delete-column" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_DeleteColumn"]</span>
+                </button>
+            </section>
+        }
 
         @if (_versionDialogOpen)
         {

@@ -36,14 +36,14 @@ public class DocumentOperationConflictResolver
 
             if (operation.Type == DocumentOperationType.MoveBlock
                 && finalBlockMoves.TryGetValue(operation.Target.BlockId ?? string.Empty, out var moveId)
-                && moveId != operation.Id)
+                && moveId != operation.OperationId)
             {
                 continue;
             }
 
             if (operation.Type == DocumentOperationType.SetBlockAttribute
                 && finalTextAttributes.TryGetValue($"{operation.Target.BlockId}:{operation.AttributeName}", out var setId)
-                && setId != operation.Id)
+                && setId != operation.OperationId)
             {
                 continue;
             }
@@ -106,7 +106,7 @@ public class DocumentOperationConflictResolver
             }
 
             var deleteOffset = delete.Target.Offset ?? 0;
-            var deleteLength = (delete.Text ?? string.Empty).Length;
+            var deleteLength = GetTextLength(delete);
             var offset = operation.Target.Offset ?? 0;
 
             if (offset > deleteOffset + deleteLength)
@@ -126,18 +126,26 @@ public class DocumentOperationConflictResolver
         return deletes.Any(delete =>
             SameTextTarget(operation, delete)
             && offset >= (delete.Target.Offset ?? 0)
-            && offset < (delete.Target.Offset ?? 0) + (delete.Text ?? string.Empty).Length);
+            && offset < (delete.Target.Offset ?? 0) + GetTextLength(delete));
     }
 
     private static bool SameTextTarget(DocumentOperation left, DocumentOperation right)
     {
         return left.Target.BlockId == right.Target.BlockId
+            && (string.IsNullOrWhiteSpace(left.Target.InlineId)
+                || string.IsNullOrWhiteSpace(right.Target.InlineId)
+                || string.Equals(left.Target.InlineId, right.Target.InlineId, StringComparison.Ordinal))
             && (left.Target.InlineIndex ?? 0) == (right.Target.InlineIndex ?? 0);
     }
 
     private static string GetTextRangeKey(DocumentOperation operation)
     {
-        return $"{operation.Target.BlockId}:{operation.Target.InlineIndex ?? 0}:{operation.Target.Offset ?? 0}:{(operation.Text ?? string.Empty).Length}";
+        return $"{operation.Target.BlockId}:{operation.Target.InlineId}:{operation.Target.InlineIndex ?? 0}:{operation.Target.Offset ?? 0}:{GetTextLength(operation)}";
+    }
+
+    private static int GetTextLength(DocumentOperation operation)
+    {
+        return operation.Target.Length ?? (operation.Text ?? string.Empty).Length;
     }
 
     private static Dictionary<string, string> GetFinalOperationKeys(
@@ -147,15 +155,15 @@ public class DocumentOperationConflictResolver
     {
         return operations
             .Where(operation => operation.Type == type)
-            .Select(operation => new { Key = keySelector(operation) ?? string.Empty, operation.Id })
+            .Select(operation => new { Key = keySelector(operation) ?? string.Empty, operation.OperationId })
             .Where(item => !string.IsNullOrWhiteSpace(item.Key))
             .GroupBy(item => item.Key, StringComparer.Ordinal)
-            .ToDictionary(group => group.Key, group => group.Last().Id, StringComparer.Ordinal);
+            .ToDictionary(group => group.Key, group => group.Last().OperationId, StringComparer.Ordinal);
     }
 
     private static string GetOrderKey(DocumentOperation operation)
     {
-        return $"{operation.Metadata.LogicalTimestamp:D20}|{operation.Metadata.ClientId}|{operation.Metadata.AuthorId}|{operation.Id}";
+        return $"{operation.Metadata.LogicalTimestamp:D20}|{operation.Metadata.ClientId}|{operation.Metadata.AuthorId}|{operation.OperationId}";
     }
 
     private static DocumentOperation Clone(DocumentOperation operation)

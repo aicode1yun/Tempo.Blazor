@@ -45,6 +45,7 @@ public sealed class DocumentEditorSnapshotCommand : IDocumentEditorCommand
         _target.DocumentId = source.DocumentId;
         _target.Metadata = DocumentEditorCommandCloner.Clone(source.Metadata);
         _target.PageSettings = DocumentEditorCommandCloner.Clone(source.PageSettings);
+        _target.Theme = DocumentEditorCommandCloner.Clone(source.Theme);
         _target.Sections = DocumentEditorCommandCloner.Clone(source.Sections);
         _target.Blocks = DocumentEditorCommandCloner.Clone(source.Blocks);
         _target.Comments = DocumentEditorCommandCloner.Clone(source.Comments);

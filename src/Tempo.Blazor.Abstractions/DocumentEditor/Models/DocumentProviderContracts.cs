@@ -360,6 +360,7 @@ public static class DocumentEditorJson
 
         document.Metadata ??= new DocumentEditorMetadata();
         document.PageSettings ??= new DocumentPageSettings();
+        document.Theme ??= new DocumentEditorTheme();
         document.Sections ??= [];
         document.Blocks ??= [];
         document.Comments ??= [];

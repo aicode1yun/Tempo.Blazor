@@ -28,6 +28,10 @@
                 <section class="@GetEntryClass(entry)" data-testid="document-comment-entry">
                     <div class="tm-document-comment-entry__meta">
                         <strong>@GetAuthorName(entry.Author)</strong>
+                        <time class="tm-document-comment-entry__time"
+                              datetime="@entry.CreatedAt.UtcDateTime.ToString("O")">
+                            @entry.CreatedAt.ToLocalTime().ToString("g")
+                        </time>
                         @if (entry.IsExternalAuthor)
                         {
                             <span class="tm-document-comment-entry__external">@Loc["TmDocumentEditor_ExternalAuthor"]</span>

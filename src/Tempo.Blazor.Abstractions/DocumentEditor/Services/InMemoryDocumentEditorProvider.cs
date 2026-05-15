@@ -23,34 +23,163 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         return Clone(document);
     }
 
-    /// <summary>Seeds a simple contract document.</summary>
+    /// <summary>Seeds a representative contract document.</summary>
     public DocumentEditorDocument SeedContractDocument(string documentId = "contract-demo")
     {
         var document = DocumentEditorDocument.Empty(documentId);
         document.Metadata.Title = "Service agreement";
+        document.Theme = new DocumentEditorTheme
+        {
+            BodyFontFamily = "Aptos, Arial, sans-serif",
+            BodyFontSize = 11.5,
+            BodyLineHeight = 1.25,
+            ParagraphSpacingAfter = 9
+        };
+        document.Sections[0].Id = "contract-section-main";
+        document.Sections[0].Title = "Agreement";
+        document.Sections[0].Properties.HeaderFooterReferences =
+        [
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "contract-header-primary",
+                Type = DocumentHeaderFooterType.Header,
+                Scope = DocumentHeaderFooterScope.Primary
+            },
+            new DocumentHeaderFooterReference
+            {
+                HeaderFooterId = "contract-footer-primary",
+                Type = DocumentHeaderFooterType.Footer,
+                Scope = DocumentHeaderFooterScope.Primary
+            }
+        ];
         document.Blocks.Add(new DocumentBlock
         {
+            Id = "contract-heading",
+            SectionId = "contract-section-main",
             Type = DocumentBlockType.Heading,
             Order = 10,
             Content = new HeadingBlockContent
             {
                 Level = 1,
-                Inlines = [new TextRun { Text = "Service agreement" }]
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "contract-heading-text",
+                        Text = "Service agreement",
+                        Marks =
+                        [
+                            new InlineMark { Type = InlineMarkType.FontFamily, Value = "Aptos Display, Aptos, Arial, sans-serif" },
+                            new InlineMark { Type = InlineMarkType.FontSize, Value = "24pt" }
+                        ]
+                    }
+                ]
             }
         });
         document.Blocks.Add(new DocumentBlock
         {
+            Id = "contract-intro",
+            SectionId = "contract-section-main",
             Type = DocumentBlockType.Paragraph,
             Order = 20,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Justify,
+                LineSpacing = 1.25,
+                SpacingAfter = 10
+            },
             Content = new ParagraphBlockContent
             {
                 Inlines =
                 [
-                    new TextRun { Text = "This agreement is made with " },
-                    new TokenRun { Key = "client.name", DisplayName = "Client name" },
-                    new TextRun { Text = "." }
+                    new TextRun
+                    {
+                        Id = "contract-intro-prefix",
+                        Text = "This agreement is made with ",
+                        Marks = [new InlineMark { Type = InlineMarkType.Bold }]
+                    },
+                    new TokenRun
+                    {
+                        Id = "contract-client-token",
+                        Key = "client.name",
+                        DisplayName = "Client name",
+                        TokenType = "text",
+                        TypeLabel = "CRM",
+                        FallbackText = "Acme s.r.o."
+                    },
+                    new TextRun { Id = "contract-intro-suffix", Text = "." }
                 ]
             }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "contract-scope",
+            SectionId = "contract-section-main",
+            Type = DocumentBlockType.Paragraph,
+            Order = 25,
+            ParagraphProperties = new DocumentParagraphProperties
+            {
+                Alignment = DocumentTextAlignment.Left,
+                LineSpacing = 1.25,
+                SpacingAfter = 12
+            },
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "contract-scope-approved",
+                        Text = "The provider will deliver implementation, training, and documentation services.",
+                        Marks = [new InlineMark { Type = InlineMarkType.TextColor, Value = "#1f2937" }]
+                    },
+                    new TextRun
+                    {
+                        Id = "contract-scope-revision",
+                        Text = " Priority support is included during the first thirty days.",
+                        Marks =
+                        [
+                            new InlineMark
+                            {
+                                Type = InlineMarkType.Revision,
+                                RevisionId = "contract-revision-scope",
+                                Value = "Insertion"
+                            },
+                            new InlineMark { Type = InlineMarkType.Highlight, Value = "#dcfce7" }
+                        ]
+                    }
+                ]
+            }
+        });
+        document.HeadersFooters.Add(CreateSeedHeaderFooter(
+            "contract-header-primary",
+            DocumentHeaderFooterType.Header,
+            "Tempo Legal - Service agreement"));
+        document.HeadersFooters.Add(CreateSeedHeaderFooter(
+            "contract-footer-primary",
+            DocumentHeaderFooterType.Footer,
+            "Confidential - Page 1"));
+        document.Revisions.Add(new DocumentRevision
+        {
+            Id = "contract-revision-scope",
+            Type = DocumentRevisionType.Insertion,
+            Range = new DocumentRevisionRange
+            {
+                BlockId = "contract-scope",
+                StartInlineIndex = 1,
+                EndInlineIndex = 1,
+                StartOffset = 0,
+                EndOffset = 60
+            },
+            Author = new DocumentRevisionAuthor
+            {
+                Id = "demo-reviewer",
+                DisplayName = "Demo Reviewer",
+                Email = "reviewer@example.local"
+            },
+            CreatedAt = new DateTimeOffset(2026, 5, 14, 8, 30, 0, TimeSpan.Zero),
+            Action = DocumentRevisionAction.Pending,
+            PayloadJson = "Priority support is included during the first thirty days."
         });
 
         StoreDocument(document);
@@ -354,6 +483,38 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         }
 
         return entry;
+    }
+
+    private static DocumentHeaderFooter CreateSeedHeaderFooter(string id, DocumentHeaderFooterType type, string text)
+    {
+        return new DocumentHeaderFooter
+        {
+            Id = id,
+            Type = type,
+            Scope = DocumentHeaderFooterScope.Primary,
+            SectionId = "contract-section-main",
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = $"{id}-block",
+                    SectionId = "contract-section-main",
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines =
+                        [
+                            new TextRun
+                            {
+                                Id = $"{id}-text",
+                                Text = text,
+                                Marks = [new InlineMark { Type = InlineMarkType.FontSize, Value = "9pt" }]
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
     }
 
     private static T Clone<T>(T value)

@@ -126,6 +126,147 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
+    public void InsertText_WithHeaderRegion_UpdatesHeaderFooterBlocksOnly()
+    {
+        var document = CreateDocument(Paragraph("body-1", "Body text"));
+        var header = AddHeaderFooter(document, DocumentHeaderFooterType.Header, DocumentHeaderFooterScope.Primary, "header-primary", "header-block", "Header");
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = " edited",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Header",
+                HeaderFooterId = header.Id,
+                AnchorBlockId = "header-block",
+                AnchorInlineId = "i-header-block",
+                AnchorOffset = 6
+            }
+        });
+
+        GetInlineText(document, "body-1").Should().Be("Body text");
+        GetHeaderFooterInlineText(header, "header-block").Should().Be("Header edited");
+    }
+
+    [Fact]
+    public void InsertText_FirstPageHeader_DoesNotChangePrimaryHeader()
+    {
+        var document = CreateDocument(Paragraph("body-1", "Body text"));
+        var primaryHeader = AddHeaderFooter(document, DocumentHeaderFooterType.Header, DocumentHeaderFooterScope.Primary, "header-primary", "primary-header-block", "Primary");
+        var firstPageHeader = AddHeaderFooter(document, DocumentHeaderFooterType.Header, DocumentHeaderFooterScope.FirstPage, "header-first", "first-header-block", "First");
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = " page",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Header",
+                PageIndex = 0,
+                HeaderFooterId = firstPageHeader.Id,
+                AnchorBlockId = "first-header-block",
+                AnchorInlineId = "i-first-header-block",
+                AnchorOffset = 5
+            }
+        });
+
+        GetHeaderFooterInlineText(primaryHeader, "primary-header-block").Should().Be("Primary");
+        GetHeaderFooterInlineText(firstPageHeader, "first-header-block").Should().Be("First page");
+    }
+
+    [Fact]
+    public void InsertText_TableCellSelection_UpdatesOnlyTargetCellContent()
+    {
+        var document = CreateDocument(
+            Paragraph("before", "Before"),
+            new DocumentBlock
+            {
+                Id = "table-1",
+                Type = DocumentBlockType.Table,
+                Content = new TableBlockContent
+                {
+                    Rows =
+                    [
+                        new TableRowContent
+                        {
+                            Cells =
+                            [
+                                new TableCellContent { Id = "cell-1", Blocks = [Paragraph("cell-block-1", "Alpha")] },
+                                new TableCellContent { Id = "cell-2", Blocks = [Paragraph("cell-block-2", "Beta")] }
+                            ]
+                        }
+                    ]
+                }
+            },
+            Paragraph("after", "After"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "!",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "TableCell",
+                AnchorBlockId = "cell-block-2",
+                AnchorInlineId = "i-cell-block-2",
+                AnchorOffset = 4,
+                ActiveTableCellId = "cell-2",
+                TableCellPath = "table-1/row-0/cell-2"
+            }
+        });
+
+        var table = (TableBlockContent)document.Blocks[1].Content;
+        ReadCellText(table.Rows[0].Cells[0]).Should().Be("Alpha");
+        ReadCellText(table.Rows[0].Cells[1]).Should().Be("Beta!");
+        GetInlineText(document, "before").Should().Be("Before");
+        GetInlineText(document, "after").Should().Be("After");
+    }
+
+    [Fact]
+    public void InsertText_EmptyTableCellSelection_CreatesCellParagraphTarget()
+    {
+        var document = CreateDocument(new DocumentBlock
+        {
+            Id = "table-1",
+            Type = DocumentBlockType.Table,
+            Content = new TableBlockContent
+            {
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent { Id = "cell-1", Blocks = [] }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "First",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "TableCell",
+                AnchorBlockId = "generated-cell-block",
+                AnchorInlineId = "generated-cell-inline",
+                AnchorOffset = 0,
+                ActiveTableCellId = "cell-1",
+                TableCellPath = "table-1/row-0/cell-1"
+            }
+        });
+
+        var table = (TableBlockContent)document.Blocks[0].Content;
+        table.Rows[0].Cells[0].Blocks.Should().ContainSingle();
+        table.Rows[0].Cells[0].Blocks[0].Id.Should().Be("generated-cell-block");
+        ReadCellText(table.Rows[0].Cells[0]).Should().Be("First");
+    }
+
+    [Fact]
     public void InsertInline_SplitsTextRunAndPreservesToken()
     {
         var document = CreateDocument(Paragraph("b1", "Hello world"));
@@ -273,6 +414,27 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
+    public void ToggleMark_Bold_SplitsPartialTextRunIntoBeforeSelectionAfter()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+        var patch = new WysiwygPatch
+        {
+            Type = "ToggleMark",
+            MarkType = "Bold",
+            Selection = Selection("b1", "i-b1", 1, 4)
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        var inlines = GetInlines(document, "b1").OfType<TextRun>().ToList();
+        inlines.Should().HaveCount(3);
+        inlines.Select(inline => inline.Text).Should().Equal("H", "ell", "o");
+        inlines[0].Marks.Should().BeEmpty();
+        inlines[1].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Bold);
+        inlines[2].Marks.Should().BeEmpty();
+    }
+
+    [Fact]
     public void ToggleMark_Bold_RemovesMarkOnSecondToggle()
     {
         var document = CreateDocument(Paragraph("b1", "Hello world"));
@@ -298,6 +460,29 @@ public class WysiwygPatchApplierTests
         var inlines = GetInlines(document, "b1");
         inlines.Should().HaveCount(1);
         inlines[0].Marks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ToggleMark_ItalicAndUnderline_DoNotRemoveEachOther()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "ToggleMark",
+            MarkType = "Italic",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "ToggleMark",
+            MarkType = "Underline",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var inline = GetInlines(document, "b1").Should().ContainSingle().Subject;
+        inline.Marks.Select(mark => mark.Type).Should().BeEquivalentTo(
+            [InlineMarkType.Italic, InlineMarkType.Underline]);
     }
 
     [Fact]
@@ -405,6 +590,40 @@ public class WysiwygPatchApplierTests
 
         document.Blocks.Should().HaveCount(2);
         document.Blocks[1].Type.Should().Be(DocumentBlockType.Paragraph);
+    }
+
+    [Fact]
+    public void InsertBlock_StructuralParagraph_SplitsAnchorTextAndKeepsInsertedInlineId()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello world"));
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertBlock",
+            BlockType = "Paragraph",
+            RevisionType = "Structural",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 6
+            },
+            Block = new DocumentBlock
+            {
+                Id = "b2",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "i-b2", Text = "world" }]
+                }
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().HaveCount(2);
+        GetInlineText(document, "b1").Should().Be("Hello ");
+        GetInlineText(document, "b2").Should().Be("world");
+        GetInlines(document, "b2").OfType<TextRun>().Single().Id.Should().Be("i-b2");
     }
 
     [Fact]
@@ -644,6 +863,48 @@ public class WysiwygPatchApplierTests
         GetInlineText(document, "b1").Should().Be("New text");
     }
 
+    [Fact]
+    public void MoveBlock_MovesImageWithoutLosingMetadata()
+    {
+        var image = new DocumentBlock
+        {
+            Id = "img-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Asset,
+                AssetId = "asset-1",
+                Url = "/assets/1.png",
+                AltText = "Evidence",
+                Size = new DocumentImageSize { Width = 320, Height = 180 }
+            }
+        };
+        var document = CreateDocument(
+            Paragraph("p1", "Before"),
+            image,
+            Paragraph("p2", "After"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "MoveBlock",
+            Block = new DocumentBlock
+            {
+                Id = "img-1",
+                Type = DocumentBlockType.Image,
+                Order = 35,
+                Content = image.Content
+            },
+            Selection = new WysiwygSelectionSnapshot { AnchorBlockId = "img-1" }
+        });
+
+        document.Blocks.Select(block => block.Id).Should().ContainInOrder("p1", "p2", "img-1");
+        var moved = document.Blocks.Single(block => block.Id == "img-1");
+        var content = moved.Content.Should().BeOfType<ImageBlockContent>().Subject;
+        content.AssetId.Should().Be("asset-1");
+        content.AltText.Should().Be("Evidence");
+        content.Size.Width.Should().Be(320);
+    }
+
     // ── RemoveBlock ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -671,35 +932,18 @@ public class WysiwygPatchApplierTests
     // ── InsertParagraph ──────────────────────────────────────────────────────
 
     [Fact]
-    public void InsertParagraph_CreatesNewParagraphWithText()
-    {
-        var document = CreateDocument(Paragraph("b1", "First"));
-        var patch = new WysiwygPatch
-        {
-            Type = "InsertParagraph",
-            Data = "Second",
-            Selection = new WysiwygSelectionSnapshot
-            {
-                AnchorBlockId = "b1",
-                AnchorOffset = 0
-            }
-        };
-
-        _applier.ApplyPatch(document, patch);
-
-        document.Blocks.Should().HaveCount(2);
-        GetInlineText(document, document.Blocks[1].Id).Should().Be("Second");
-    }
-
-    // ── InsertLineBreak ──────────────────────────────────────────────────────
-
-    [Fact]
-    public void InsertLineBreak_SplitsBlockAtOffset()
+    public void SplitBlock_SplitsMiddleParagraphIntoTwoParagraphs()
     {
         var document = CreateDocument(Paragraph("b1", "Hello world"));
         var patch = new WysiwygPatch
         {
-            Type = "InsertLineBreak",
+            Type = "SplitBlock",
+            Block = new DocumentBlock
+            {
+                Id = "b2",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent { Inlines = [new TextRun { Id = "i-b2", Text = string.Empty }] }
+            },
             Selection = new WysiwygSelectionSnapshot
             {
                 AnchorBlockId = "b1",
@@ -711,8 +955,109 @@ public class WysiwygPatchApplierTests
         _applier.ApplyPatch(document, patch);
 
         document.Blocks.Should().HaveCount(2);
+        document.Blocks[1].Id.Should().Be("b2");
         GetInlineText(document, "b1").Should().Be("Hello ");
-        GetInlineText(document, document.Blocks[1].Id).Should().Be("world");
+        GetInlineText(document, "b2").Should().Be("world");
+        GetInlines(document, "b2")[0].Id.Should().Be("i-b2");
+    }
+
+    [Fact]
+    public void SplitBlock_PreservesTypingMarksButDoesNotSpillRevisionMarksToEmptyParagraph()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+        var run = (TextRun)GetInlines(document, "b1")[0];
+        run.Marks.Add(new InlineMark { Type = InlineMarkType.Bold });
+        run.Marks.Add(new InlineMark { Type = InlineMarkType.Revision, RevisionId = "rev-1", Value = "Insertion" });
+        var patch = new WysiwygPatch
+        {
+            Type = "SplitBlock",
+            Block = new DocumentBlock
+            {
+                Id = "b2",
+                Type = DocumentBlockType.Paragraph,
+                Content = new ParagraphBlockContent { Inlines = [new TextRun { Id = "i-b2", Text = string.Empty }] }
+            },
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 5
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        var newRun = (TextRun)GetInlines(document, "b2")[0];
+        newRun.Text.Should().BeEmpty();
+        newRun.Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Bold);
+        newRun.Marks.Should().NotContain(mark => mark.Type == InlineMarkType.Revision);
+    }
+
+    // ── InsertLineBreak ──────────────────────────────────────────────────────
+
+    [Fact]
+    public void InsertSoftBreak_KeepsOneBlockAndInsertsBreakInline()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello world"));
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertSoftBreak",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 6
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().ContainSingle();
+        GetInlineText(document, "b1").Should().Be("Hello \nworld");
+    }
+
+    [Fact]
+    public void DeleteContentBackward_AtBeginningParagraph_MergesWithPreviousParagraph()
+    {
+        var document = CreateDocument(
+            Paragraph("b1", "Hello "),
+            Paragraph("b2", "world"));
+        var patch = new WysiwygPatch
+        {
+            Type = "DeleteContentBackward",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b2",
+                AnchorInlineId = "i-b2",
+                AnchorOffset = 0
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().ContainSingle();
+        GetInlineText(document, "b1").Should().Be("Hello world");
+    }
+
+    [Fact]
+    public void DeleteContentForward_BeforeSoftBreak_RemovesOnlySoftBreak()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello\nworld"));
+        var patch = new WysiwygPatch
+        {
+            Type = "DeleteContentForward",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 5
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().ContainSingle();
+        GetInlineText(document, "b1").Should().Be("Helloworld");
     }
 
     // ── Protocol versioning ──────────────────────────────────────────────────
@@ -919,6 +1264,152 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
+    public void UpdateBlock_Table_WhenInsertPatchIsLate_InsertsTableBlock()
+    {
+        var document = CreateDocument(Paragraph("b1", "Before"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "UpdateBlock",
+            Block = new DocumentBlock
+            {
+                Id = "tbl-late",
+                Type = DocumentBlockType.Table,
+                Order = 0,
+                Content = new TableBlockContent
+                {
+                    Rows =
+                    [
+                        new TableRowContent
+                        {
+                            Cells =
+                            [
+                                new TableCellContent { Id = "c1", Blocks = [Paragraph("cell-1", "A1")] }
+                            ]
+                        }
+                    ]
+                }
+            }
+        });
+
+        document.Blocks.Should().HaveCount(2);
+        document.Blocks[1].Id.Should().Be("tbl-late");
+        document.Blocks[1].Order.Should().BeGreaterThan(document.Blocks[0].Order);
+    }
+
+    [Fact]
+    public void InsertBlock_Table_WhenUpdatePatchAlreadyInsertedBlock_DoesNotDuplicate()
+    {
+        var document = DocumentEditorDocument.Empty("doc-1");
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "tbl-1",
+            Type = DocumentBlockType.Table,
+            Order = 42,
+            Content = new TableBlockContent
+            {
+                Rows = [new TableRowContent { Cells = [new TableCellContent { Id = "c1", Blocks = [Paragraph("cell-1", "A1")] }] }]
+            }
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertBlock",
+            BlockType = "Table",
+            Block = new DocumentBlock
+            {
+                Id = "tbl-1",
+                Type = DocumentBlockType.Table,
+                Order = 0,
+                Content = new TableBlockContent
+                {
+                    Rows =
+                    [
+                        new TableRowContent
+                        {
+                            Cells =
+                            [
+                                new TableCellContent { Id = "c1", Blocks = [Paragraph("cell-1", "A1")] },
+                                new TableCellContent { Id = "c2", Blocks = [Paragraph("cell-2", "B1")] }
+                            ]
+                        }
+                    ]
+                }
+            }
+        });
+
+        document.Blocks.Should().ContainSingle(block => block.Id == "tbl-1");
+        document.Blocks[0].Order.Should().Be(42);
+        var table = (TableBlockContent)document.Blocks[0].Content;
+        table.Rows[0].Cells.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void UpdateBlock_Table_RowAndColumnInsertPreservesExistingCellContent()
+    {
+        var document = CreateDocument(new DocumentBlock
+        {
+            Id = "tbl-1",
+            Type = DocumentBlockType.Table,
+            Order = 10,
+            Content = new TableBlockContent
+            {
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent { Id = "a1", Blocks = [Paragraph("a1-block", "A1")] },
+                            new TableCellContent { Id = "b1", Blocks = [Paragraph("b1-block", "B1")] }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "UpdateBlock",
+            Block = new DocumentBlock
+            {
+                Id = "tbl-1",
+                Type = DocumentBlockType.Table,
+                Content = new TableBlockContent
+                {
+                    Rows =
+                    [
+                        new TableRowContent
+                        {
+                            Cells =
+                            [
+                                new TableCellContent { Id = "a1", Blocks = [Paragraph("a1-block", "A1")] },
+                                new TableCellContent { Id = "new-col-1", Blocks = [Paragraph("new-col-1-block", "")] },
+                                new TableCellContent { Id = "b1", Blocks = [Paragraph("b1-block", "B1")] }
+                            ]
+                        },
+                        new TableRowContent
+                        {
+                            Cells =
+                            [
+                                new TableCellContent { Id = "a2", Blocks = [Paragraph("a2-block", "")] },
+                                new TableCellContent { Id = "new-col-2", Blocks = [Paragraph("new-col-2-block", "")] },
+                                new TableCellContent { Id = "b2", Blocks = [Paragraph("b2-block", "")] }
+                            ]
+                        }
+                    ]
+                }
+            }
+        });
+
+        var table = (TableBlockContent)document.Blocks[0].Content;
+        table.Rows.Should().HaveCount(2);
+        table.Rows[0].Cells.Should().HaveCount(3);
+        ReadCellText(table.Rows[0].Cells[0]).Should().Be("A1");
+        ReadCellText(table.Rows[0].Cells[2]).Should().Be("B1");
+    }
+
+    [Fact]
     public void RemoveBlock_Table_RemovesTableBlock()
     {
         var document = CreateDocument(new DocumentBlock
@@ -941,6 +1432,233 @@ public class WysiwygPatchApplierTests
         _applier.ApplyPatch(document, patch);
 
         document.Blocks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SetMarks_FontFamily_AppliesValueOnlyToSelection()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello world"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontFamily),
+            Data = "Georgia, serif",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var inlines = GetInlines(document, "b1").OfType<TextRun>().ToList();
+        inlines.Should().HaveCount(2);
+        inlines[0].Text.Should().Be("Hello");
+        inlines[0].Marks.Should().ContainSingle(mark =>
+            mark.Type == InlineMarkType.FontFamily && mark.Value == "Georgia, serif");
+        inlines[1].Text.Should().Be(" world");
+        inlines[1].Marks.Should().BeEmpty();
+    }
+
+    [Fact]
+    public void SetMarks_FontSize_ReplacesExistingSizeValue()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontSize),
+            Data = "12pt",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontSize),
+            Data = "18pt",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        run.Marks.Should().ContainSingle(mark =>
+            mark.Type == InlineMarkType.FontSize && mark.Value == "18pt");
+    }
+
+    [Fact]
+    public void SetMarks_Link_PersistsSafeHrefAndTitle()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.Link),
+            Data = " https://example.test/doc ",
+            LinkTitle = "Document",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        run.Marks.Should().ContainSingle(mark =>
+            mark.Type == InlineMarkType.Link
+            && mark.Link != null
+            && mark.Link.Href == "https://example.test/doc"
+            && mark.Link.Title == "Document");
+    }
+
+    [Fact]
+    public void SetMarks_Link_RejectsUnsafeHref()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.Link),
+            Data = "javascript:alert(1)",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        run.Marks.Should().NotContain(mark => mark.Type == InlineMarkType.Link);
+    }
+
+    [Fact]
+    public void ClearFormatting_RemovesStyleMarksButKeepsLinkAndRevision()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+        var run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        run.Marks =
+        [
+            new InlineMark { Type = InlineMarkType.Bold },
+            new InlineMark { Type = InlineMarkType.FontFamily, Value = "Georgia, serif" },
+            new InlineMark { Type = InlineMarkType.TextColor, Value = "#123456" },
+            new InlineMark { Type = InlineMarkType.Highlight, Value = "#fff59d" },
+            new InlineMark { Type = InlineMarkType.Link, Link = new LinkMarkData { Href = "https://example.test" } },
+            new InlineMark { Type = InlineMarkType.Revision, RevisionId = "rev-1", Value = "Insertion" }
+        ];
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "ClearFormatting",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        var removedTypes = new[]
+        {
+            InlineMarkType.Bold,
+            InlineMarkType.FontFamily,
+            InlineMarkType.TextColor,
+            InlineMarkType.Highlight
+        };
+        run.Marks.Should().NotContain(mark => removedTypes.Contains(mark.Type));
+        run.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Link);
+        run.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Revision);
+    }
+
+    [Fact]
+    public void SetParagraphProperties_Alignment_ChangesOnlyActiveBlock()
+    {
+        var document = CreateDocument(
+            Paragraph("b1", "First"),
+            Paragraph("b2", "Second"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetParagraphProperties",
+            ParagraphProperties = new DocumentParagraphPropertiesPatch
+            {
+                Alignment = DocumentTextAlignment.Center
+            },
+            Selection = Selection("b1", "i-b1", 0, 0)
+        });
+
+        document.Blocks[0].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Center);
+        document.Blocks[1].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Left);
+    }
+
+    [Fact]
+    public void SetParagraphProperties_Alignment_AppliesToMultiBlockSelection()
+    {
+        var document = CreateDocument(
+            Paragraph("b1", "First"),
+            Paragraph("b2", "Second"),
+            Paragraph("b3", "Third"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetParagraphProperties",
+            ParagraphProperties = new DocumentParagraphPropertiesPatch
+            {
+                Alignment = DocumentTextAlignment.Right
+            },
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 0,
+                FocusBlockId = "b2",
+                FocusInlineId = "i-b2",
+                FocusOffset = 3,
+                IsCollapsed = false
+            }
+        });
+
+        document.Blocks[0].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Right);
+        document.Blocks[1].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Right);
+        document.Blocks[2].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Left);
+    }
+
+    [Fact]
+    public void SetParagraphProperties_WithFooterRegion_UpdatesFooterParagraphOnly()
+    {
+        var document = CreateDocument(Paragraph("body-1", "Body text"));
+        var footer = AddHeaderFooter(document, DocumentHeaderFooterType.Footer, DocumentHeaderFooterScope.Primary, "footer-primary", "footer-block", "Footer");
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetParagraphProperties",
+            ParagraphProperties = new DocumentParagraphPropertiesPatch
+            {
+                Alignment = DocumentTextAlignment.Center
+            },
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Footer",
+                HeaderFooterId = footer.Id,
+                AnchorBlockId = "footer-block",
+                AnchorInlineId = "i-footer-block",
+                AnchorOffset = 0
+            }
+        });
+
+        document.Blocks[0].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Left);
+        footer.Blocks[0].ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Center);
+    }
+
+    [Fact]
+    public void SetParagraphProperties_LineSpacingSpacingAndIndent_AreClampedAndApplied()
+    {
+        var document = CreateDocument(Paragraph("b1", "First"));
+        document.Blocks[0].ParagraphProperties.LeftIndent = 18;
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetParagraphProperties",
+            ParagraphProperties = new DocumentParagraphPropertiesPatch
+            {
+                LineSpacing = 1.5,
+                SpacingBefore = 12,
+                SpacingAfter = 999,
+                LeftIndentDelta = 36,
+                FirstLineIndent = -24
+            },
+            Selection = Selection("b1", "i-b1", 0, 0)
+        });
+
+        document.Blocks[0].ParagraphProperties.LineSpacing.Should().Be(1.5);
+        document.Blocks[0].ParagraphProperties.SpacingBefore.Should().Be(12);
+        document.Blocks[0].ParagraphProperties.SpacingAfter.Should().Be(144);
+        document.Blocks[0].ParagraphProperties.LeftIndent.Should().Be(54);
+        document.Blocks[0].ParagraphProperties.FirstLineIndent.Should().Be(-24);
     }
 
     // ── Helpers ──────────────────────────────────────────────────────────────
@@ -970,5 +1688,67 @@ public class WysiwygPatchApplierTests
             QuoteBlockContent q => q.Inlines,
             _ => new List<InlineContent>()
         };
+    }
+
+    private static string ReadCellText(TableCellContent cell)
+        => string.Concat(cell.Blocks.Select(block => block.Content switch
+        {
+            ParagraphBlockContent p => string.Concat(p.Inlines.OfType<TextRun>().Select(run => run.Text)),
+            HeadingBlockContent h => string.Concat(h.Inlines.OfType<TextRun>().Select(run => run.Text)),
+            ListBlockContent l => string.Concat(l.Inlines.OfType<TextRun>().Select(run => run.Text)),
+            QuoteBlockContent q => string.Concat(q.Inlines.OfType<TextRun>().Select(run => run.Text)),
+            _ => string.Empty
+        }));
+
+    private static WysiwygSelectionSnapshot Selection(string blockId, string inlineId, int start, int end)
+        => new()
+        {
+            AnchorBlockId = blockId,
+            AnchorInlineId = inlineId,
+            AnchorOffset = start,
+            FocusBlockId = blockId,
+            FocusInlineId = inlineId,
+            FocusOffset = end,
+            IsCollapsed = start == end
+        };
+
+    private static DocumentHeaderFooter AddHeaderFooter(
+        DocumentEditorDocument document,
+        DocumentHeaderFooterType type,
+        DocumentHeaderFooterScope scope,
+        string id,
+        string blockId,
+        string text)
+    {
+        var headerFooter = new DocumentHeaderFooter
+        {
+            Id = id,
+            Type = type,
+            Scope = scope,
+            SectionId = document.Sections[0].Id,
+            Blocks = [Paragraph(blockId, text)]
+        };
+        document.HeadersFooters.Add(headerFooter);
+        document.Sections[0].Properties.HeaderFooterReferences.Add(new DocumentHeaderFooterReference
+        {
+            HeaderFooterId = id,
+            Type = type,
+            Scope = scope
+        });
+        return headerFooter;
+    }
+
+    private static string GetHeaderFooterInlineText(DocumentHeaderFooter headerFooter, string blockId)
+    {
+        var block = headerFooter.Blocks.FirstOrDefault(b => b.Id == blockId);
+        var inlines = block?.Content switch
+        {
+            ParagraphBlockContent p => p.Inlines,
+            HeadingBlockContent h => h.Inlines,
+            ListBlockContent l => l.Inlines,
+            QuoteBlockContent q => q.Inlines,
+            _ => null
+        };
+        return string.Concat(inlines?.OfType<TextRun>().Select(t => t.Text) ?? Array.Empty<string>());
     }
 }
