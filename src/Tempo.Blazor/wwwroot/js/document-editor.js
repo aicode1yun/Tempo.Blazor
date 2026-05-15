@@ -48,6 +48,24 @@
     }
 
     window.tmDocumentEditor = {
+        downloadFile(fileName, contentType, base64Data) {
+            const binary = atob(base64Data || "");
+            const bytes = new Uint8Array(binary.length);
+            for (let i = 0; i < binary.length; i++) {
+                bytes[i] = binary.charCodeAt(i);
+            }
+
+            const blob = new Blob([bytes], { type: contentType || "application/octet-stream" });
+            const url = URL.createObjectURL(blob);
+            const anchor = document.createElement("a");
+            anchor.href = url;
+            anchor.download = fileName || "document";
+            document.body.appendChild(anchor);
+            anchor.click();
+            anchor.remove();
+            setTimeout(() => URL.revokeObjectURL(url), 0);
+        },
+
         offlineStore: {
             saveDraft(draft) {
                 return withDraftStore("readwrite", store => store.put(draft));

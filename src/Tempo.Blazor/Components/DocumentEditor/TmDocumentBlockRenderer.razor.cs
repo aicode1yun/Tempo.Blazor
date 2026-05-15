@@ -21,8 +21,15 @@ public partial class TmDocumentBlockRenderer : ComponentBase
     /// <summary>Optional resolver for provider-managed image assets.</summary>
     [Parameter] public IDocumentImageUrlResolver? ImageUrlResolver { get; set; }
 
+    /// <summary>Pending provider-backed suggestions to decorate near their block.</summary>
+    [Parameter] public IReadOnlyList<DocumentSuggestion> Suggestions { get; set; } = [];
+
     /// <summary>Raised when a rendered inline comment anchor is selected.</summary>
     [Parameter] public EventCallback<string> OnCommentSelected { get; set; }
+
+    private IEnumerable<DocumentSuggestion> BlockSuggestions => Suggestions
+        .Where(suggestion => suggestion.Status == DocumentSuggestionStatus.Pending)
+        .Where(suggestion => string.Equals(suggestion.Range.BlockId, Block?.Id, StringComparison.Ordinal));
 
     private string? ImageUrl
     {
@@ -122,7 +129,59 @@ public partial class TmDocumentBlockRenderer : ComponentBase
             _ => "center"
         };
 
-        return $"tm-document-block tm-document-image tm-document-image--{alignment}";
+        var classes = new List<string> { "tm-document-block", "tm-document-image", $"tm-document-image--{alignment}" };
+        if (image.FloatingLayout?.Inline == false)
+        {
+            classes.Add("tm-document-image--floating");
+            classes.Add($"tm-document-image--wrap-{ToCssToken(image.FloatingLayout.WrapMode)}");
+            classes.Add($"tm-document-image--relative-{ToCssToken(image.FloatingLayout.HorizontalRelativeTo)}");
+            classes.Add($"tm-document-image--vrelative-{ToCssToken(image.FloatingLayout.VerticalRelativeTo)}");
+        }
+
+        return string.Join(" ", classes);
+    }
+
+    private static string GetSuggestionClass(DocumentSuggestion suggestion)
+    {
+        var kind = suggestion.Type == DocumentSuggestionType.DeleteText ? "delete" : "insert";
+        return $"tm-document-suggestion tm-document-suggestion--{kind}";
+    }
+
+    private static string GetSuggestionTestId(DocumentSuggestion suggestion)
+        => suggestion.Type == DocumentSuggestionType.DeleteText
+            ? "document-suggestion-delete"
+            : "document-suggestion-insert";
+
+    private string GetSuggestionLabel(DocumentSuggestion suggestion)
+        => suggestion.Type == DocumentSuggestionType.DeleteText
+            ? Loc["TmDocumentEditor_SuggestionDeleteAria"]
+            : Loc["TmDocumentEditor_SuggestionInsertAria"];
+
+    private static string GetSuggestionPreview(DocumentSuggestion suggestion)
+        => suggestion.Type == DocumentSuggestionType.DeleteText
+            ? suggestion.OriginalText ?? string.Empty
+            : suggestion.SuggestedText ?? string.Empty;
+
+    private static string? GetImageFigureStyle(ImageBlockContent image)
+    {
+        var layout = image.FloatingLayout;
+        if (layout?.Inline != false)
+        {
+            return null;
+        }
+
+        var styles = new List<string>
+        {
+            FormattableString.Invariant($"left: {layout.X:0.##}px"),
+            FormattableString.Invariant($"top: {layout.Y:0.##}px")
+        };
+
+        if (layout.ZIndex != 0)
+        {
+            styles.Add(FormattableString.Invariant($"z-index: {layout.ZIndex}"));
+        }
+
+        return string.Join("; ", styles);
     }
 
     private static string? GetImageStyle(ImageBlockContent image)
@@ -139,6 +198,22 @@ public partial class TmDocumentBlockRenderer : ComponentBase
         }
 
         return styles.Count == 0 ? null : string.Join("; ", styles);
+    }
+
+    private static string ToCssToken(DocumentWrapMode value)
+    {
+        return value switch
+        {
+            DocumentWrapMode.TopBottom => "top-bottom",
+            DocumentWrapMode.BehindText => "behind-text",
+            DocumentWrapMode.InFrontOfText => "in-front-of-text",
+            _ => value.ToString().ToLowerInvariant()
+        };
+    }
+
+    private static string ToCssToken(DocumentRelativePosition value)
+    {
+        return value.ToString().ToLowerInvariant();
     }
 
     internal static bool IsSafeImageUrl(string? url)

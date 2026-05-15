@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Globalization;
 using System.Text;
 using System.Xml.Linq;
 using Tempo.Blazor.DocumentEditor.Models;
@@ -43,6 +44,9 @@ public sealed class OdtPackageWriter
     private static readonly XNamespace Text = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
     private static readonly XNamespace Table = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
     private static readonly XNamespace Draw = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+    private static readonly XNamespace Style = "urn:oasis:names:tc:opendocument:xmlns:style:1.0";
+    private static readonly XNamespace Svg = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
+    private static readonly XNamespace Tm = "urn:tempo-blazor:document-editor:1.0";
     private static readonly XNamespace XLink = "http://www.w3.org/1999/xlink";
 
     private readonly ZipArchive _archive;
@@ -78,6 +82,16 @@ public sealed class OdtPackageWriter
     {
         var body = new XElement(Office + "body", new XElement(Office + "text"));
         var textRoot = body.Element(Office + "text")!;
+        foreach (var headerFooter in _document.HeadersFooters)
+        {
+            textRoot.Add(WriteHeaderFooter(headerFooter));
+        }
+
+        foreach (var comment in _document.Comments)
+        {
+            textRoot.Add(WriteComment(comment));
+        }
+
         foreach (var block in _document.Blocks.OrderBy(block => block.Order))
         {
             foreach (var element in WriteBlock(block))
@@ -91,6 +105,9 @@ public sealed class OdtPackageWriter
             new XAttribute(XNamespace.Xmlns + "text", Text),
             new XAttribute(XNamespace.Xmlns + "table", Table),
             new XAttribute(XNamespace.Xmlns + "draw", Draw),
+            new XAttribute(XNamespace.Xmlns + "style", Style),
+            new XAttribute(XNamespace.Xmlns + "svg", Svg),
+            new XAttribute(XNamespace.Xmlns + "tm", Tm),
             new XAttribute(XNamespace.Xmlns + "xlink", XLink),
             new XAttribute(Office + "version", "1.3"),
             body));
@@ -115,26 +132,85 @@ public sealed class OdtPackageWriter
     {
         return new XElement(Table + "table",
             table.Rows.Select(row => new XElement(Table + "table-row",
-                row.Cells.Select(cell => new XElement(Table + "table-cell",
-                    cell.ColumnSpan > 1 ? new XAttribute(Table + "number-columns-spanned", cell.ColumnSpan) : null,
-                    cell.RowSpan > 1 ? new XAttribute(Table + "number-rows-spanned", cell.RowSpan) : null,
-                    cell.Blocks.Select(block => new XElement(Text + "p", DocumentModelText.GetBlockText(block))))))));
+                row.Cells.Select(WriteTableCell))));
+    }
+
+    private XElement WriteTableCell(TableCellContent cell)
+    {
+        if (!cell.Merge.IsOrigin)
+        {
+            return new XElement(Table + "covered-table-cell",
+                string.IsNullOrWhiteSpace(cell.Merge.OriginCellId) ? null : new XAttribute(Tm + "origin-cell-id", cell.Merge.OriginCellId));
+        }
+
+        return new XElement(Table + "table-cell",
+            cell.ColumnSpan > 1 ? new XAttribute(Table + "number-columns-spanned", cell.ColumnSpan) : null,
+            cell.RowSpan > 1 ? new XAttribute(Table + "number-rows-spanned", cell.RowSpan) : null,
+            cell.Blocks.Select(block => new XElement(Text + "p", DocumentModelText.GetBlockText(block))));
+    }
+
+    private XElement WriteHeaderFooter(DocumentHeaderFooter headerFooter)
+    {
+        return new XElement(Tm + "header-footer",
+            new XAttribute(Tm + "id", headerFooter.Id),
+            new XAttribute(Tm + "type", headerFooter.Type.ToString()),
+            new XAttribute(Tm + "scope", headerFooter.Scope.ToString()),
+            headerFooter.Blocks.Select(block => new XElement(Text + "p", DocumentModelText.GetBlockText(block))));
+    }
+
+    private XElement WriteComment(DocumentComment comment)
+    {
+        return new XElement(Tm + "comment",
+            new XAttribute(Tm + "id", comment.Id),
+            string.IsNullOrWhiteSpace(comment.SourceFormat) ? null : new XAttribute(Tm + "source-format", comment.SourceFormat),
+            string.IsNullOrWhiteSpace(comment.ExternalId) ? null : new XAttribute(Tm + "external-id", comment.ExternalId),
+            comment.Entries.Select(entry => new XElement(Tm + "entry",
+                new XAttribute(Tm + "author", entry.Author.DisplayName),
+                new XAttribute(Tm + "created-at", entry.CreatedAt.ToString("O", CultureInfo.InvariantCulture)),
+                entry.Text)));
     }
 
     private XElement WriteImageParagraph(ImageBlockContent image)
     {
         var path = $"Pictures/image{++_imageIndex}.png";
         _images.Add((path, image));
+        var layout = image.FloatingLayout;
         return new XElement(Text + "p",
             new XElement(Draw + "frame",
                 new XAttribute(Draw + "name", image.AltText ?? $"Image {_imageIndex}"),
-                new XAttribute(Text + "anchor-type", image.FloatingLayout?.Inline == false ? "page" : "as-char"),
+                new XAttribute(Text + "anchor-type", layout?.Inline == false ? "page" : "as-char"),
+                layout?.Inline == false ? new XAttribute(Svg + "x", FormatLength(layout.X)) : null,
+                layout?.Inline == false ? new XAttribute(Svg + "y", FormatLength(layout.Y)) : null,
+                image.Size.Width is > 0 ? new XAttribute(Svg + "width", FormatLength(image.Size.Width.Value)) : null,
+                image.Size.Height is > 0 ? new XAttribute(Svg + "height", FormatLength(image.Size.Height.Value)) : null,
+                layout?.Inline == false ? new XAttribute(Style + "wrap", ToOdtWrap(layout.WrapMode)) : null,
+                layout?.Inline == false ? new XAttribute(Draw + "z-index", layout.ZIndex) : null,
+                layout?.Inline == false ? new XAttribute(Tm + "wrap-mode", layout.WrapMode.ToString()) : null,
+                layout?.Inline == false ? new XAttribute(Tm + "horizontal-relative-to", layout.HorizontalRelativeTo.ToString()) : null,
+                layout?.Inline == false ? new XAttribute(Tm + "vertical-relative-to", layout.VerticalRelativeTo.ToString()) : null,
+                layout?.Inline == false ? new XAttribute(Tm + "lock-anchor", layout.LockAnchor ? "true" : "false") : null,
                 new XElement(Draw + "image",
                     new XAttribute(XLink + "href", path),
                     new XAttribute(XLink + "type", "simple"),
                     new XAttribute(XLink + "show", "embed"),
                     new XAttribute(XLink + "actuate", "onLoad"))),
             string.IsNullOrWhiteSpace(image.Caption) ? null : new XElement(Text + "span", image.Caption));
+    }
+
+    private static string FormatLength(double value)
+    {
+        return FormattableString.Invariant($"{value:0.##}pt");
+    }
+
+    private static string ToOdtWrap(DocumentWrapMode wrapMode)
+    {
+        return wrapMode switch
+        {
+            DocumentWrapMode.TopBottom => "none",
+            DocumentWrapMode.BehindText => "run-through",
+            DocumentWrapMode.InFrontOfText => "run-through",
+            _ => "parallel"
+        };
     }
 
     private IEnumerable<object> WriteInlines(IEnumerable<InlineContent> inlines)
@@ -152,9 +228,19 @@ public sealed class OdtPackageWriter
                 }
 
                 var style = GetStyleName(text.Marks);
-                yield return string.IsNullOrWhiteSpace(style)
-                    ? content
-                    : new XElement(Text + "span", new XAttribute(Text + "style-name", style), content);
+                var commentId = text.Marks
+                    .FirstOrDefault(mark => mark.Type == InlineMarkType.CommentAnchor && mark.CommentAnchor is not null)
+                    ?.CommentAnchor?.CommentId;
+                if (!string.IsNullOrWhiteSpace(style) || !string.IsNullOrWhiteSpace(commentId))
+                {
+                    yield return new XElement(Text + "span",
+                        string.IsNullOrWhiteSpace(style) ? null : new XAttribute(Text + "style-name", style),
+                        string.IsNullOrWhiteSpace(commentId) ? null : new XAttribute(Tm + "comment-id", commentId),
+                        content);
+                    continue;
+                }
+
+                yield return content;
             }
             else if (inline is TokenRun token)
             {

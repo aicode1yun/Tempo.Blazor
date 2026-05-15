@@ -143,6 +143,9 @@ public enum DocumentEditorAuditAction
     /// <summary>Import document.</summary>
     Import,
 
+    /// <summary>Compare document sources.</summary>
+    Compare,
+
     /// <summary>Create finalized rendition.</summary>
     CreateRendition,
 

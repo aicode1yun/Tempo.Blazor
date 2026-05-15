@@ -1,6 +1,6 @@
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Models;
-using Tempo.Blazor.DocumentFormats.Docx;
+using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.DocumentFormats.Odt;
 
 namespace Tempo.Blazor.Demo.Api.Endpoints;
@@ -12,6 +12,57 @@ public static class DocumentEditorEndpoints
     public static IEndpointRouteBuilder MapDocumentEditorEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/document-editor").WithTags("Document Editor");
+
+        group.MapGet("/compare", async (
+            string baseDocumentId,
+            string compareDocumentId,
+            DemoDocumentComparisonProvider comparisonProvider,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await comparisonProvider.CompareAsync(new DocumentCompareRequest
+                {
+                    DocumentId = baseDocumentId,
+                    BaseSource = new DocumentCompareSource
+                    {
+                        Kind = DocumentCompareSourceKind.DocumentId,
+                        DocumentId = baseDocumentId
+                    },
+                    CompareSource = new DocumentCompareSource
+                    {
+                        Kind = DocumentCompareSourceKind.DocumentId,
+                        DocumentId = compareDocumentId
+                    }
+                }, cancellationToken);
+
+                return Results.Ok(result);
+            }
+            catch
+            {
+                return Results.NotFound();
+            }
+        });
+
+        group.MapPost("/compare", async (
+            DocumentCompareRequest request,
+            DemoDocumentComparisonProvider comparisonProvider,
+            CancellationToken cancellationToken) =>
+        {
+            try
+            {
+                var result = await comparisonProvider.CompareAsync(request, cancellationToken);
+                return Results.Ok(result);
+            }
+            catch (Exception ex)
+            {
+                return Results.BadRequest(new DocumentCompareResult
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message
+                });
+            }
+        });
 
         group.MapGet("/{documentId}", async (
             string documentId,
@@ -65,16 +116,58 @@ public static class DocumentEditorEndpoints
             return result.Success ? Results.Ok(result) : Results.Conflict(result);
         });
 
-        group.MapPost("/import/docx", async (
+        group.MapPost("/formats/import", async (
             IFormFile file,
-            DemoDocumentEditorStore store,
+            DocumentFormatProviderKind format,
+            DemoDocumentFormatProvider formatProvider,
             CancellationToken cancellationToken) =>
         {
             await using var stream = file.OpenReadStream();
-            var imported = await new DocumentDocxImporter().ImportAsync(stream, new()
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory, cancellationToken);
+            var imported = await formatProvider.ImportAsync(new DocumentFormatImportProviderRequest
             {
-                FileName = file.FileName
+                DocumentId = Guid.NewGuid().ToString("N"),
+                Format = format,
+                FileName = file.FileName,
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+                Content = memory.ToArray()
             }, cancellationToken);
+
+            return imported.Success ? Results.Ok(imported) : Results.BadRequest(imported);
+        }).DisableAntiforgery();
+
+        group.MapPost("/formats/export", async (
+            DocumentFormatExportProviderRequest request,
+            DemoDocumentFormatProvider formatProvider,
+            CancellationToken cancellationToken) =>
+        {
+            var exported = await formatProvider.ExportAsync(request, cancellationToken);
+            return exported.Success ? Results.Ok(exported) : Results.BadRequest(exported);
+        });
+
+        group.MapPost("/import/docx", async (
+            IFormFile file,
+            DemoDocumentEditorStore store,
+            DemoDocumentFormatProvider formatProvider,
+            CancellationToken cancellationToken) =>
+        {
+            await using var stream = file.OpenReadStream();
+            using var memory = new MemoryStream();
+            await stream.CopyToAsync(memory, cancellationToken);
+            var imported = await formatProvider.ImportAsync(new DocumentFormatImportProviderRequest
+            {
+                DocumentId = Guid.NewGuid().ToString("N"),
+                Format = DocumentFormatProviderKind.Docx,
+                FileName = file.FileName,
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+                Content = memory.ToArray()
+            }, cancellationToken);
+            if (!imported.Success || imported.Document is null)
+            {
+                return Results.BadRequest(imported);
+            }
+
             var document = imported.Document;
             await store.SaveAsync(new DocumentEditorSaveRequest
             {
@@ -88,6 +181,7 @@ public static class DocumentEditorEndpoints
         group.MapGet("/{documentId}/export/docx", async (
             string documentId,
             DemoDocumentEditorStore store,
+            DemoDocumentFormatProvider formatProvider,
             CancellationToken cancellationToken) =>
         {
             var loaded = await store.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true }, cancellationToken);
@@ -96,8 +190,47 @@ public static class DocumentEditorEndpoints
                 return Results.NotFound();
             }
 
-            var exported = await new DocumentDocxExporter().ExportAsync(loaded.Document, cancellationToken: cancellationToken);
+            var exported = await formatProvider.ExportAsync(new DocumentFormatExportProviderRequest
+            {
+                DocumentId = documentId,
+                Format = DocumentFormatProviderKind.Docx,
+                Document = loaded.Document,
+                FileName = loaded.Document.Metadata.Title
+            }, cancellationToken);
             return Results.File(exported.Content, exported.ContentType, exported.FileName);
+        });
+
+        group.MapGet("/{documentId}/export/pdf", async (
+            string documentId,
+            DemoDocumentEditorStore store,
+            DemoDocumentPdfExportProvider pdfProvider,
+            CancellationToken cancellationToken) =>
+        {
+            var loaded = await store.LoadAsync(documentId, new DocumentEditorLoadOptions { IncludeDocument = true }, cancellationToken);
+            if (!loaded.Found || loaded.Document is null)
+            {
+                return Results.NotFound();
+            }
+
+            var exported = await pdfProvider.ExportPdfAsync(new DocumentPdfExportRequest
+            {
+                DocumentId = documentId,
+                Document = loaded.Document,
+                FileName = loaded.Document.Metadata.Title,
+                Options = CreatePdfExportOptions(loaded.Document)
+            }, cancellationToken);
+            return Results.File(exported.Content, exported.ContentType, exported.FileName);
+        });
+
+        group.MapPost("/{documentId}/export/pdf", async (
+            string documentId,
+            DocumentPdfExportRequest request,
+            DemoDocumentPdfExportProvider pdfProvider,
+            CancellationToken cancellationToken) =>
+        {
+            request.DocumentId = documentId;
+            var exported = await pdfProvider.ExportPdfAsync(request, cancellationToken);
+            return Results.Ok(exported);
         });
 
         group.MapPost("/import/odt", async (
@@ -133,6 +266,94 @@ public static class DocumentEditorEndpoints
 
             var exported = await new DocumentOdtExporter().ExportAsync(loaded.Document, cancellationToken: cancellationToken);
             return Results.File(exported.Content, exported.ContentType, exported.FileName);
+        });
+
+        group.MapPost("/collaboration/join", async (
+            DocumentCollaborationJoinRequest request,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            var session = await collaboration.JoinAsync(request, cancellationToken);
+            return Results.Ok(session);
+        });
+
+        group.MapPost("/collaboration/{sessionId}/leave", async (
+            string sessionId,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            await collaboration.LeaveAsync(sessionId, cancellationToken);
+            return Results.NoContent();
+        });
+
+        group.MapPost("/collaboration/{sessionId}/batches", async (
+            string sessionId,
+            DocumentOperationBatch batch,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            var broadcast = await collaboration.BroadcastOperationBatchAsync(sessionId, batch, cancellationToken);
+            return Results.Ok(broadcast);
+        });
+
+        group.MapGet("/collaboration/documents/{documentId}/batches", async (
+            string documentId,
+            long afterSequence,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            var batches = await collaboration.GetOperationBatchesAsync(documentId, afterSequence, cancellationToken);
+            return Results.Ok(batches);
+        });
+
+        group.MapPost("/collaboration/cursors", async (
+            DocumentCollaborationCursor cursor,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            await collaboration.BroadcastCursorAsync(cursor, cancellationToken);
+            return Results.Ok(cursor);
+        });
+
+        group.MapGet("/collaboration/documents/{documentId}/cursors", async (
+            string documentId,
+            InMemoryDocumentCollaborationProvider collaboration,
+            CancellationToken cancellationToken) =>
+        {
+            var cursors = await collaboration.GetCursorsAsync(documentId, cancellationToken);
+            return Results.Ok(cursors);
+        });
+
+        group.MapGet("/suggestions/documents/{documentId}", async (
+            string documentId,
+            DocumentSuggestionStatus? status,
+            InMemoryDocumentSuggestionProvider suggestions,
+            CancellationToken cancellationToken) =>
+        {
+            var items = await suggestions.GetSuggestionsAsync(new DocumentSuggestionQuery
+            {
+                DocumentId = documentId,
+                Status = status
+            }, cancellationToken);
+            return Results.Ok(items);
+        });
+
+        group.MapPost("/suggestions", async (
+            DocumentSuggestion suggestion,
+            InMemoryDocumentSuggestionProvider suggestions,
+            CancellationToken cancellationToken) =>
+        {
+            var created = await suggestions.CreateSuggestionAsync(suggestion, cancellationToken);
+            return Results.Created($"/api/document-editor/suggestions/{created.Id}", created);
+        });
+
+        group.MapPost("/suggestions/review", async (
+            DocumentSuggestionReviewRequest request,
+            InMemoryDocumentSuggestionProvider suggestions,
+            CancellationToken cancellationToken) =>
+        {
+            var reviewed = await suggestions.ReviewSuggestionAsync(request, cancellationToken);
+            return Results.Ok(reviewed);
         });
 
         group.MapPost("/images", async (
@@ -279,5 +500,23 @@ public static class DocumentEditorEndpoints
         });
 
         return app;
+    }
+
+    private static DocumentPdfExportOptions CreatePdfExportOptions(DocumentEditorDocument document)
+    {
+        var pageSettings = document.PageSettings ?? new DocumentPageSettings();
+        return new DocumentPdfExportOptions
+        {
+            IncludeComments = true,
+            IncludeSuggestions = true,
+            PageSetup = new DocumentPdfPageSetupOptions
+            {
+                PageSize = pageSettings.Size ?? DocumentPageSize.A4,
+                Orientation = pageSettings.Landscape
+                    ? DocumentPdfPageOrientation.Landscape
+                    : DocumentPdfPageOrientation.Portrait,
+                Margins = pageSettings.Margins ?? DocumentPageMargins.Default
+            }
+        };
     }
 }

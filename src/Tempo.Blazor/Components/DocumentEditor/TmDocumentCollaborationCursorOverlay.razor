@@ -3,7 +3,9 @@
 
 @if (Cursors.Count > 0)
 {
-    <div class="tm-document-cursors" data-testid="document-collaboration-cursors">
+    <div class="tm-document-cursors"
+         aria-label="@Loc["TmDocumentEditor_CollaborationCursorsLabel"]"
+         data-testid="document-collaboration-cursors">
         @foreach (var cursor in Cursors)
         {
             <span class="tm-document-cursor"

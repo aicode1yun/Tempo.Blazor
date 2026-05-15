@@ -46,20 +46,32 @@
     /// <summary>Whether side-by-side text panes should be shown.</summary>
     [Parameter] public bool SideBySide { get; set; } = true;
 
-    private string OldText => DocumentTextDiffHelper.ExtractPlainText(OldDocument);
+    /// <summary>Optional precomputed comparison result.</summary>
+    [Parameter] public DocumentCompareResult? ComparisonResult { get; set; }
 
-    private string NewText => DocumentTextDiffHelper.ExtractPlainText(NewDocument);
+    private DocumentEditorDocument? EffectiveOldDocument => ComparisonResult?.BaseDocument ?? OldDocument;
 
-    private DocumentTextDiffResult Diff => DocumentTextDiffHelper.Diff(OldText, NewText);
+    private DocumentEditorDocument? EffectiveNewDocument => ComparisonResult?.CompareDocument ?? NewDocument;
+
+    private string OldText => DocumentTextDiffHelper.ExtractPlainText(EffectiveOldDocument);
+
+    private string NewText => DocumentTextDiffHelper.ExtractPlainText(EffectiveNewDocument);
+
+    private DocumentTextDiffResult Diff => ComparisonResult?.TextDiff ?? DocumentTextDiffHelper.Diff(OldText, NewText);
 
     private string DiffSummary
     {
         get
         {
-            var added = Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Added);
-            var removed = Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Removed);
+            var added = ComparisonResult?.Summary.AddedBlocks
+                ?? Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Added);
+            var removed = ComparisonResult?.Summary.RemovedBlocks
+                ?? Diff.Segments.Count(segment => segment.Kind == DocumentTextDiffSegmentKind.Removed);
+            var changed = ComparisonResult?.Summary.ChangedBlocks ?? 0;
             return Diff.HasChanges
-                ? Loc["TmDocumentEditor_DiffSummary", added, removed]
+                ? ComparisonResult is null
+                    ? Loc["TmDocumentEditor_DiffSummary", added, removed]
+                    : Loc["TmDocumentEditor_CompareSummary", added, removed, changed]
                 : Loc["TmDocumentEditor_DiffNoChanges"];
         }
     }

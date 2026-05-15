@@ -1,4 +1,5 @@
 using System.IO.Compression;
+using System.Globalization;
 using System.Xml.Linq;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
@@ -28,6 +29,8 @@ public sealed class OdtPackageReader
     private static readonly XNamespace Text = "urn:oasis:names:tc:opendocument:xmlns:text:1.0";
     private static readonly XNamespace Table = "urn:oasis:names:tc:opendocument:xmlns:table:1.0";
     private static readonly XNamespace Draw = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+    private static readonly XNamespace Svg = "urn:oasis:names:tc:opendocument:xmlns:svg-compatible:1.0";
+    private static readonly XNamespace Tm = "urn:tempo-blazor:document-editor:1.0";
     private static readonly XNamespace XLink = "http://www.w3.org/1999/xlink";
 
     private readonly ZipArchive _archive;
@@ -108,6 +111,18 @@ public sealed class OdtPackageReader
     {
         if (element.Name == Text + "p")
         {
+            if (string.Equals((string?)element.Attribute(Text + "style-name"), "page-break", StringComparison.OrdinalIgnoreCase))
+            {
+                doc.Blocks.Add(new DocumentBlock
+                {
+                    Type = DocumentBlockType.PageBreak,
+                    Order = _order++,
+                    Content = new PageBreakBlockContent()
+                });
+                return;
+            }
+
+            var hasFrames = element.Descendants(Draw + "frame").Any();
             foreach (var frame in element.Descendants(Draw + "frame"))
             {
                 var image = await ReadImageAsync(frame, cancellationToken);
@@ -123,7 +138,7 @@ public sealed class OdtPackageReader
             }
 
             var inlines = await ReadInlinesAsync(element.Nodes(), cancellationToken);
-            if (inlines.Count > 0)
+            if (inlines.Count > 0 || !hasFrames)
             {
                 doc.Blocks.Add(new DocumentBlock
                 {
@@ -177,6 +192,14 @@ public sealed class OdtPackageReader
                 await ReadBodyElementAsync(doc, child, cancellationToken);
             }
         }
+        else if (element.Name == Tm + "header-footer")
+        {
+            doc.HeadersFooters.Add(await ReadHeaderFooterAsync(element, cancellationToken));
+        }
+        else if (element.Name == Tm + "comment")
+        {
+            doc.Comments.Add(ReadComment(element));
+        }
     }
 
     private async Task<DocumentBlock> ReadTableAsync(XElement table, CancellationToken cancellationToken)
@@ -203,7 +226,11 @@ public sealed class OdtPackageReader
                 {
                     ColumnSpan = Math.Max(1, columnSpan),
                     RowSpan = Math.Max(1, rowSpan),
-                    Merge = new TableCellMerge { IsOrigin = cell.Name != Table + "covered-table-cell" },
+                    Merge = new TableCellMerge
+                    {
+                        IsOrigin = cell.Name != Table + "covered-table-cell",
+                        OriginCellId = (string?)cell.Attribute(Tm + "origin-cell-id")
+                    },
                     Blocks = blocks.Count == 0 ? [DocumentModelText.Paragraph(string.Empty)] : blocks
                 });
             }
@@ -234,7 +261,18 @@ public sealed class OdtPackageReader
             {
                 if (element.Name == Text + "span")
                 {
-                    result.AddRange(await ReadInlinesAsync(element.Nodes(), cancellationToken, MergeMarks(marks, MarksFromStyle((string?)element.Attribute(Text + "style-name")))));
+                    var spanMarks = MarksFromStyle((string?)element.Attribute(Text + "style-name"));
+                    var commentId = (string?)element.Attribute(Tm + "comment-id");
+                    if (!string.IsNullOrWhiteSpace(commentId))
+                    {
+                        spanMarks.Add(new InlineMark
+                        {
+                            Type = InlineMarkType.CommentAnchor,
+                            CommentAnchor = new CommentAnchorMarkData { CommentId = commentId, AnchorId = commentId }
+                        });
+                    }
+
+                    result.AddRange(await ReadInlinesAsync(element.Nodes(), cancellationToken, MergeMarks(marks, spanMarks)));
                 }
                 else if (element.Name == Text + "a")
                 {
@@ -309,18 +347,114 @@ public sealed class OdtPackageReader
             }
         }
 
+        var floatingLayout = ReadFloatingLayout(frame);
+
         return new ImageBlockContent
         {
             Source = url is null ? DocumentImageSource.Asset : DocumentImageSource.Url,
             Url = url,
             AssetId = url is null ? assetId : null,
             AltText = (string?)frame.Attribute(Draw + "name"),
-            FloatingLayout = new DocumentFloatingLayout
+            Size = new DocumentImageSize
             {
-                Inline = ((string?)frame.Attribute(Text + "anchor-type")) != "page",
-                WrapMode = ((string?)frame.Attribute(Text + "anchor-type")) == "page" ? DocumentWrapMode.Square : DocumentWrapMode.Inline
-            }
+                Width = ParseLength((string?)frame.Attribute(Svg + "width")),
+                Height = ParseLength((string?)frame.Attribute(Svg + "height"))
+            },
+            FloatingLayout = floatingLayout
         };
+    }
+
+    private async Task<DocumentHeaderFooter> ReadHeaderFooterAsync(XElement element, CancellationToken cancellationToken)
+    {
+        var blocks = new List<DocumentBlock>();
+        var order = 0;
+        foreach (var paragraph in element.Elements(Text + "p"))
+        {
+            blocks.Add(new DocumentBlock
+            {
+                Type = DocumentBlockType.Paragraph,
+                Order = order++,
+                Content = new ParagraphBlockContent { Inlines = await ReadInlinesAsync(paragraph.Nodes(), cancellationToken) }
+            });
+        }
+
+        return new DocumentHeaderFooter
+        {
+            Id = (string?)element.Attribute(Tm + "id") ?? Guid.NewGuid().ToString("N"),
+            Type = ParseEnum((string?)element.Attribute(Tm + "type"), DocumentHeaderFooterType.Header),
+            Scope = ParseEnum((string?)element.Attribute(Tm + "scope"), DocumentHeaderFooterScope.Primary),
+            Blocks = blocks
+        };
+    }
+
+    private static DocumentComment ReadComment(XElement element)
+    {
+        return new DocumentComment
+        {
+            Id = (string?)element.Attribute(Tm + "id") ?? Guid.NewGuid().ToString("N"),
+            SourceFormat = (string?)element.Attribute(Tm + "source-format") ?? "odt",
+            ExternalId = (string?)element.Attribute(Tm + "external-id"),
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.ImportedOdt,
+                ExternalAnchorId = (string?)element.Attribute(Tm + "id")
+            },
+            Entries = element.Elements(Tm + "entry").Select(entry => new DocumentCommentEntry
+            {
+                Author = new DocumentEditorAuthor { DisplayName = (string?)entry.Attribute(Tm + "author") ?? string.Empty },
+                CreatedAt = DateTimeOffset.TryParse((string?)entry.Attribute(Tm + "created-at"), CultureInfo.InvariantCulture, DateTimeStyles.RoundtripKind, out var createdAt)
+                    ? createdAt
+                    : DateTimeOffset.UtcNow,
+                Text = entry.Value
+            }).ToList()
+        };
+    }
+
+    private static DocumentFloatingLayout ReadFloatingLayout(XElement frame)
+    {
+        var floating = ((string?)frame.Attribute(Text + "anchor-type")) == "page";
+        if (!floating)
+        {
+            return new DocumentFloatingLayout { Inline = true, WrapMode = DocumentWrapMode.Inline };
+        }
+
+        return new DocumentFloatingLayout
+        {
+            Inline = false,
+            HorizontalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "horizontal-relative-to"), DocumentRelativePosition.Page),
+            VerticalRelativeTo = ParseEnum((string?)frame.Attribute(Tm + "vertical-relative-to"), DocumentRelativePosition.Paragraph),
+            X = ParseLength((string?)frame.Attribute(Svg + "x")) ?? 0,
+            Y = ParseLength((string?)frame.Attribute(Svg + "y")) ?? 0,
+            WrapMode = ParseEnum((string?)frame.Attribute(Tm + "wrap-mode"), DocumentWrapMode.Square),
+            ZIndex = int.TryParse((string?)frame.Attribute(Draw + "z-index"), NumberStyles.Integer, CultureInfo.InvariantCulture, out var zIndex) ? zIndex : 0,
+            LockAnchor = string.Equals((string?)frame.Attribute(Tm + "lock-anchor"), "true", StringComparison.OrdinalIgnoreCase)
+        };
+    }
+
+    private static double? ParseLength(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        var numeric = value.Trim();
+        if (numeric.EndsWith("pt", StringComparison.OrdinalIgnoreCase)
+            || numeric.EndsWith("px", StringComparison.OrdinalIgnoreCase)
+            || numeric.EndsWith("cm", StringComparison.OrdinalIgnoreCase))
+        {
+            numeric = numeric[..^2];
+        }
+
+        return double.TryParse(numeric, NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
+    }
+
+    private static TEnum ParseEnum<TEnum>(string? value, TEnum fallback)
+        where TEnum : struct
+    {
+        return Enum.TryParse<TEnum>(value, ignoreCase: true, out var parsed) ? parsed : fallback;
     }
 
     private static List<InlineMark> MarksFromStyle(string? styleName)

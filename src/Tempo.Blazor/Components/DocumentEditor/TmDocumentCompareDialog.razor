@@ -1,0 +1,405 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.AspNetCore.Components.Forms
+@using Microsoft.AspNetCore.Components.Rendering
+@using Tempo.Blazor.Components.Files
+@using Tempo.Blazor.DocumentEditor.Interfaces
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+
+<section class="tm-document-version-dialog tm-document-compare-dialog" role="dialog" aria-modal="true" aria-label="@Loc["TmDocumentEditor_CompareDialogTitle"]" data-testid="document-compare-dialog">
+    <header class="tm-document-version-dialog__header">
+        <h3>@Loc["TmDocumentEditor_CompareDialogTitle"]</h3>
+        <button type="button"
+                class="tm-document-version-dialog__icon-button"
+                aria-label="@Loc["TmDocumentEditor_Close"]"
+                @onclick="OnClose"
+                data-testid="document-compare-close">
+            <TmIcon Name="x" Size="IconSize.Sm" />
+        </button>
+    </header>
+
+    <div class="tm-document-compare-dialog__sources">
+        @RenderSourceEditor(true)
+        @RenderSourceEditor(false)
+    </div>
+
+    @if (!string.IsNullOrWhiteSpace(_message))
+    {
+        <div class="tm-document-version-dialog__error" role="status" data-testid="document-compare-message">@_message</div>
+    }
+
+    @if (_isComparing)
+    {
+        <div class="tm-document-editor__state" aria-busy="true" data-testid="document-compare-loading">
+            @Loc["TmDocumentEditor_CompareLoading"]
+        </div>
+    }
+    else if (_result is not null)
+    {
+        <TmDocumentDiffViewer ComparisonResult="@_result"
+                              OldTitle="@GetSourceTitle(true)"
+                              NewTitle="@GetSourceTitle(false)" />
+    }
+    else
+    {
+        <div class="tm-document-editor__state" data-testid="document-compare-empty">
+            @Loc["TmDocumentEditor_CompareEmpty"]
+        </div>
+    }
+
+    <footer class="tm-document-version-dialog__actions">
+        <button type="button"
+                disabled="@_isComparing"
+                @onclick="RunCompareAsync"
+                data-testid="document-compare-run">
+            @Loc["TmDocumentEditor_CompareRun"]
+        </button>
+        <button type="button" @onclick="OnClose">@Loc["TmDocumentEditor_Cancel"]</button>
+    </footer>
+</section>
+
+@code {
+    private const long MaxCompareUploadSize = 20 * 1024 * 1024;
+    private readonly DocumentComparisonService _localComparison = new();
+    private DocumentCompareSourceKind _baseKind = DocumentCompareSourceKind.Current;
+    private DocumentCompareSourceKind _compareKind = DocumentCompareSourceKind.DocumentId;
+    private string? _baseDocumentId;
+    private string? _compareDocumentId;
+    private DocumentEditorDocument? _baseUploadedDocument;
+    private DocumentEditorDocument? _compareUploadedDocument;
+    private string? _baseUploadedName;
+    private string? _compareUploadedName;
+    private bool _isComparing;
+    private string? _message;
+    private DocumentCompareResult? _result;
+
+    /// <summary>Current editor document snapshot.</summary>
+    [Parameter] public DocumentEditorDocument? CurrentDocument { get; set; }
+
+    /// <summary>Provider used to resolve document id sources for local comparison.</summary>
+    [Parameter] public IDocumentEditorProvider? DocumentProvider { get; set; }
+
+    /// <summary>Optional external format provider used for DOCX upload comparison sources.</summary>
+    [Parameter] public IDocumentFormatProvider? FormatProvider { get; set; }
+
+    /// <summary>Optional provider-backed comparison boundary.</summary>
+    [Parameter] public IDocumentComparisonProvider? ComparisonProvider { get; set; }
+
+    /// <summary>Whether local comparison should be used when the provider fails.</summary>
+    [Parameter] public bool UseLocalComparisonFallback { get; set; } = true;
+
+    /// <summary>Author requesting the comparison.</summary>
+    [Parameter] public DocumentEditorAuthor? Author { get; set; }
+
+    /// <summary>Raised when comparison succeeds.</summary>
+    [Parameter] public EventCallback<DocumentCompareResult> OnCompared { get; set; }
+
+    /// <summary>Raised when comparison fails.</summary>
+    [Parameter] public EventCallback<string> OnCompareFailed { get; set; }
+
+    /// <summary>Raised when the dialog should close.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private RenderFragment RenderSourceEditor(bool isBase) => builder =>
+    {
+        var sequence = 0;
+        var kind = isBase ? _baseKind : _compareKind;
+        var titleKey = isBase ? "TmDocumentEditor_CompareBaseSource" : "TmDocumentEditor_CompareTargetSource";
+        var selectTestId = isBase ? "document-compare-base-source" : "document-compare-target-source";
+        var idTestId = isBase ? "document-compare-base-document-id" : "document-compare-target-document-id";
+        var uploadTestId = isBase ? "document-compare-base-upload" : "document-compare-target-upload";
+
+        builder.OpenElement(sequence++, "div");
+        builder.AddAttribute(sequence++, "class", "tm-document-compare-dialog__source");
+        builder.OpenElement(sequence++, "label");
+        builder.OpenElement(sequence++, "span");
+        builder.AddContent(sequence++, Loc[titleKey]);
+        builder.CloseElement();
+        builder.OpenElement(sequence++, "select");
+        builder.AddAttribute(sequence++, "value", kind.ToString());
+        builder.AddAttribute(sequence++, "aria-label", Loc[isBase ? "TmDocumentEditor_CompareBaseSourceAria" : "TmDocumentEditor_CompareTargetSourceAria"]);
+        builder.AddAttribute(sequence++, "data-testid", selectTestId);
+        builder.AddAttribute(sequence++, "onchange", EventCallback.Factory.Create<ChangeEventArgs>(this, args => ChangeSourceKind(isBase, args.Value?.ToString())));
+        RenderOption(builder, ref sequence, DocumentCompareSourceKind.Current, Loc["TmDocumentEditor_CompareSourceCurrent"]);
+        RenderOption(builder, ref sequence, DocumentCompareSourceKind.DocumentId, Loc["TmDocumentEditor_CompareSourceDocumentId"]);
+        RenderOption(builder, ref sequence, DocumentCompareSourceKind.JsonSnapshot, Loc["TmDocumentEditor_CompareSourceJsonSnapshot"]);
+        builder.CloseElement();
+        builder.CloseElement();
+
+        if (kind == DocumentCompareSourceKind.DocumentId)
+        {
+            builder.OpenElement(sequence++, "label");
+            builder.OpenElement(sequence++, "span");
+            builder.AddContent(sequence++, Loc["TmDocumentEditor_CompareDocumentId"]);
+            builder.CloseElement();
+            builder.OpenElement(sequence++, "input");
+            builder.AddAttribute(sequence++, "value", isBase ? _baseDocumentId : _compareDocumentId);
+            builder.AddAttribute(sequence++, "aria-label", Loc[isBase ? "TmDocumentEditor_CompareBaseDocumentIdAria" : "TmDocumentEditor_CompareTargetDocumentIdAria"]);
+            builder.AddAttribute(sequence++, "data-testid", idTestId);
+            builder.AddAttribute(sequence++, "oninput", EventCallback.Factory.Create<ChangeEventArgs>(this, args => ChangeDocumentId(isBase, args.Value?.ToString())));
+            builder.CloseElement();
+            builder.CloseElement();
+        }
+        else if (kind == DocumentCompareSourceKind.JsonSnapshot)
+        {
+            builder.OpenComponent<TmFileDropZone>(sequence++);
+            builder.AddAttribute(sequence++, "Multiple", false);
+            builder.AddAttribute(sequence++, "MaxFileCount", 1);
+            builder.AddAttribute(sequence++, "Accept", ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+            builder.AddAttribute(sequence++, "Disabled", _isComparing);
+            builder.AddAttribute(sequence++, "InputTestId", uploadTestId);
+            builder.AddAttribute(sequence++, "InputAriaLabel", Loc[isBase ? "TmDocumentEditor_CompareBaseUploadAria" : "TmDocumentEditor_CompareTargetUploadAria"]);
+            builder.AddAttribute(sequence++, "OnFilesSelected", EventCallback.Factory.Create<InputFileChangeEventArgs>(this, args => ImportCompareSourceAsync(isBase, args)));
+            builder.AddAttribute(sequence++, "ChildContent", (RenderFragment)(childBuilder =>
+            {
+                childBuilder.OpenElement(0, "div");
+                childBuilder.AddContent(1, Loc["TmDocumentEditor_CompareUploadDocx"]);
+                var uploadedName = isBase ? _baseUploadedName : _compareUploadedName;
+                if (!string.IsNullOrWhiteSpace(uploadedName))
+                {
+                    childBuilder.OpenElement(2, "span");
+                    childBuilder.AddContent(3, uploadedName);
+                    childBuilder.CloseElement();
+                }
+
+                childBuilder.CloseElement();
+            }));
+            builder.CloseComponent();
+        }
+
+        builder.CloseElement();
+    };
+
+    private static void RenderOption(RenderTreeBuilder builder, ref int sequence, DocumentCompareSourceKind kind, string label)
+    {
+        builder.OpenElement(sequence++, "option");
+        builder.AddAttribute(sequence++, "value", kind.ToString());
+        builder.AddContent(sequence++, label);
+        builder.CloseElement();
+    }
+
+    private void ChangeSourceKind(bool isBase, string? value)
+    {
+        if (!Enum.TryParse<DocumentCompareSourceKind>(value, out var kind))
+        {
+            return;
+        }
+
+        if (isBase)
+        {
+            _baseKind = kind;
+        }
+        else
+        {
+            _compareKind = kind;
+        }
+    }
+
+    private void ChangeDocumentId(bool isBase, string? value)
+    {
+        if (isBase)
+        {
+            _baseDocumentId = value;
+        }
+        else
+        {
+            _compareDocumentId = value;
+        }
+    }
+
+    private async Task ImportCompareSourceAsync(bool isBase, InputFileChangeEventArgs args)
+    {
+        if (FormatProvider is null)
+        {
+            _message = Loc["TmDocumentEditor_CompareProviderUnavailable"];
+            return;
+        }
+
+        var file = args.File;
+        try
+        {
+            using var memory = new MemoryStream();
+            await using (var stream = file.OpenReadStream(MaxCompareUploadSize))
+            {
+                await stream.CopyToAsync(memory);
+            }
+
+            var imported = await FormatProvider.ImportAsync(new DocumentFormatImportProviderRequest
+            {
+                DocumentId = CurrentDocument?.DocumentId ?? Guid.NewGuid().ToString("N"),
+                Format = DocumentFormatProviderKind.Docx,
+                FileName = file.Name,
+                ContentType = string.IsNullOrWhiteSpace(file.ContentType) ? "application/octet-stream" : file.ContentType,
+                Content = memory.ToArray(),
+                Author = Author
+            });
+
+            if (!imported.Success || imported.Document is null)
+            {
+                _message = string.IsNullOrWhiteSpace(imported.ErrorMessage)
+                    ? Loc["TmDocumentEditor_CompareImportFailed"]
+                    : imported.ErrorMessage;
+                return;
+            }
+
+            if (isBase)
+            {
+                _baseUploadedDocument = imported.Document;
+                _baseUploadedName = file.Name;
+            }
+            else
+            {
+                _compareUploadedDocument = imported.Document;
+                _compareUploadedName = file.Name;
+            }
+
+            _message = Loc["TmDocumentEditor_CompareImportComplete"];
+        }
+        catch
+        {
+            _message = Loc["TmDocumentEditor_CompareImportFailed"];
+        }
+    }
+
+    private async Task RunCompareAsync()
+    {
+        if (CurrentDocument is null)
+        {
+            _message = Loc["TmDocumentEditor_CompareError"];
+            await OnCompareFailed.InvokeAsync(_message);
+            return;
+        }
+
+        _isComparing = true;
+        _message = null;
+        _result = null;
+
+        try
+        {
+            var request = new DocumentCompareRequest
+            {
+                DocumentId = CurrentDocument.DocumentId,
+                CurrentDocument = CurrentDocument,
+                BaseSource = BuildSource(true),
+                CompareSource = BuildSource(false),
+                Author = Author
+            };
+
+            DocumentCompareResult result;
+            if (ComparisonProvider is not null)
+            {
+                try
+                {
+                    result = await ComparisonProvider.CompareAsync(request);
+                }
+                catch when (UseLocalComparisonFallback)
+                {
+                    result = await CompareLocallyAsync(request);
+                }
+            }
+            else
+            {
+                result = await CompareLocallyAsync(request);
+            }
+
+            if (!result.Success)
+            {
+                _message = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? Loc["TmDocumentEditor_CompareError"]
+                    : result.ErrorMessage;
+                await OnCompareFailed.InvokeAsync(_message);
+                return;
+            }
+
+            result.BaseDocument ??= await ResolveSourceAsync(request.BaseSource, CurrentDocument);
+            result.CompareDocument ??= await ResolveSourceAsync(request.CompareSource, CurrentDocument);
+            _result = result;
+            await OnCompared.InvokeAsync(result);
+        }
+        catch (Exception ex)
+        {
+            _message = string.IsNullOrWhiteSpace(ex.Message)
+                ? Loc["TmDocumentEditor_CompareError"]
+                : ex.Message;
+            await OnCompareFailed.InvokeAsync(_message);
+        }
+        finally
+        {
+            _isComparing = false;
+        }
+    }
+
+    private DocumentCompareSource BuildSource(bool isBase)
+    {
+        var kind = isBase ? _baseKind : _compareKind;
+        var document = isBase ? _baseUploadedDocument : _compareUploadedDocument;
+        var documentId = isBase ? _baseDocumentId : _compareDocumentId;
+        var label = isBase ? _baseUploadedName : _compareUploadedName;
+
+        if (kind == DocumentCompareSourceKind.Current)
+        {
+            document = CurrentDocument;
+            documentId = CurrentDocument?.DocumentId;
+            label = Loc["TmDocumentEditor_CompareSourceCurrent"];
+        }
+
+        return new DocumentCompareSource
+        {
+            Kind = kind,
+            DocumentId = documentId,
+            Document = document,
+            JsonSnapshot = document is null ? null : DocumentEditorJson.Serialize(document),
+            Label = label
+        };
+    }
+
+    private async Task<DocumentCompareResult> CompareLocallyAsync(DocumentCompareRequest request)
+    {
+        var baseDocument = await ResolveSourceAsync(request.BaseSource, request.CurrentDocument);
+        var compareDocument = await ResolveSourceAsync(request.CompareSource, request.CurrentDocument);
+        return _localComparison.Compare(baseDocument, compareDocument);
+    }
+
+    private async Task<DocumentEditorDocument> ResolveSourceAsync(DocumentCompareSource source, DocumentEditorDocument? currentDocument)
+    {
+        if (source.Kind == DocumentCompareSourceKind.Current)
+        {
+            return Clone(currentDocument ?? source.Document ?? DocumentEditorDocument.Empty());
+        }
+
+        if (source.Document is not null)
+        {
+            return Clone(source.Document);
+        }
+
+        if (!string.IsNullOrWhiteSpace(source.JsonSnapshot))
+        {
+            return DocumentEditorJson.Deserialize(source.JsonSnapshot);
+        }
+
+        if (source.Kind == DocumentCompareSourceKind.DocumentId && !string.IsNullOrWhiteSpace(source.DocumentId) && DocumentProvider is not null)
+        {
+            var loaded = await DocumentProvider.LoadAsync(source.DocumentId, new DocumentEditorLoadOptions { IncludeDocument = true });
+            if (loaded.Found && loaded.Document is not null)
+            {
+                return loaded.Document;
+            }
+        }
+
+        throw new InvalidOperationException(Loc["TmDocumentEditor_CompareError"]);
+    }
+
+    private string GetSourceTitle(bool isBase)
+    {
+        var source = isBase ? BuildSource(true) : BuildSource(false);
+        return source.Kind == DocumentCompareSourceKind.DocumentId
+            ? source.DocumentId ?? Loc["TmDocumentEditor_CompareSourceDocumentId"]
+            : source.Label ?? Loc[$"TmDocumentEditor_CompareSource{source.Kind}"];
+    }
+
+    private static T Clone<T>(T value)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+}

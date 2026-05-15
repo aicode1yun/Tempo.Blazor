@@ -64,6 +64,36 @@ public class DocumentEditorCommandTests
         document.Blocks.Select(TextOf).Should().NotContain(["Batch A", "Batch B"]);
     }
 
+    [Fact]
+    public async Task CommandStack_BatchCollectsMultipleCommandsAsOneUndo()
+    {
+        var document = CreateDocument(Paragraph("Start"));
+        var stack = new DocumentEditorCommandStack();
+
+        stack.BeginBatch("Typing");
+        await stack.PushAsync(new UpdateDocumentBlockCommand(
+            document,
+            document.Blocks[0].Id,
+            document.Blocks[0].Content,
+            new ParagraphBlockContent { Inlines = [new TextRun { Text = "A" }] }));
+        await stack.PushAsync(new UpdateDocumentBlockCommand(
+            document,
+            document.Blocks[0].Id,
+            document.Blocks[0].Content,
+            new ParagraphBlockContent { Inlines = [new TextRun { Text = "AB" }] }));
+        stack.CommitBatch();
+
+        stack.CanUndo.Should().BeTrue();
+        stack.CanRedo.Should().BeFalse();
+
+        await stack.UndoAsync();
+        TextOf(document.Blocks[0]).Should().Be("Start");
+        stack.CanRedo.Should().BeTrue();
+
+        await stack.RedoAsync();
+        TextOf(document.Blocks[0]).Should().Be("AB");
+    }
+
     private static DocumentEditorDocument CreateDocument(params DocumentBlock[] blocks)
     {
         var document = DocumentEditorDocument.Empty("doc-1");

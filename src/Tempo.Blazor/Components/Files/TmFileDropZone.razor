@@ -26,7 +26,9 @@
                    multiple="@Multiple"
                    accept="@Accept"
                    disabled="@Disabled"
-                   class="tm-file-drop-zone__input" />
+                   class="tm-file-drop-zone__input"
+                   aria-label="@InputAriaLabel"
+                   data-testid="@InputTestId" />
     </div>
 
     @if (_selectedFiles.Count > 0)
@@ -76,6 +78,12 @@
 
     /// <summary>Maximum number of files to accept from a single selection. Default 10.</summary>
     [Parameter] public int MaxFileCount { get; set; } = 10;
+
+    /// <summary>Optional test id passed to the internal file input.</summary>
+    [Parameter] public string? InputTestId { get; set; }
+
+    /// <summary>Optional aria-label passed to the internal file input.</summary>
+    [Parameter] public string? InputAriaLabel { get; set; }
 
     /// <summary>Additional CSS class for the root element.</summary>
     [Parameter] public string? Class { get; set; }

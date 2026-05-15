@@ -85,6 +85,22 @@ public sealed partial class DocumentHtmlImporter
         switch (name)
         {
             case "p":
+                var headingLevel = GetWordHeadingLevel(element);
+                if (headingLevel > 0)
+                {
+                    blocks.Add(new DocumentBlock
+                    {
+                        Type = DocumentBlockType.Heading,
+                        Order = order++,
+                        Content = new HeadingBlockContent
+                        {
+                            Level = headingLevel,
+                            Inlines = ReadInlines(element).ToList()
+                        }
+                    });
+                    break;
+                }
+
                 blocks.Add(new DocumentBlock
                 {
                     Type = DocumentBlockType.Paragraph,
@@ -195,12 +211,7 @@ public sealed partial class DocumentHtmlImporter
                 continue;
             }
 
-            var nextMarks = inheritedMarks.ToList();
-            var mark = CreateMark(child);
-            if (mark is not null)
-            {
-                nextMarks.Add(mark);
-            }
+            var nextMarks = inheritedMarks.Concat(CreateMarks(child)).ToList();
 
             foreach (var inline in ReadInlines(child, nextMarks))
             {
@@ -209,22 +220,38 @@ public sealed partial class DocumentHtmlImporter
         }
     }
 
-    private static InlineMark? CreateMark(XElement element)
+    private static IEnumerable<InlineMark> CreateMarks(XElement element)
     {
         var name = element.Name.LocalName.ToLowerInvariant();
-        return name switch
+        var style = GetAttribute(element, "style") ?? string.Empty;
+        if (name is "strong" or "b" || FontWeightRegex().IsMatch(style))
         {
-            "strong" or "b" => new InlineMark { Type = InlineMarkType.Bold },
-            "em" or "i" => new InlineMark { Type = InlineMarkType.Italic },
-            "u" => new InlineMark { Type = InlineMarkType.Underline },
-            "s" or "strike" or "del" => new InlineMark { Type = InlineMarkType.Strikethrough },
-            "a" when IsSafeUri(element.Attribute("href")?.Value) => new InlineMark
+            yield return new InlineMark { Type = InlineMarkType.Bold };
+        }
+
+        if (name is "em" or "i" || FontStyleRegex().IsMatch(style))
+        {
+            yield return new InlineMark { Type = InlineMarkType.Italic };
+        }
+
+        if (name == "u" || TextDecorationUnderlineRegex().IsMatch(style))
+        {
+            yield return new InlineMark { Type = InlineMarkType.Underline };
+        }
+
+        if (name is "s" or "strike" or "del" || TextDecorationStrikeRegex().IsMatch(style))
+        {
+            yield return new InlineMark { Type = InlineMarkType.Strikethrough };
+        }
+
+        if (name == "a" && IsSafeUri(GetAttribute(element, "href")))
+        {
+            yield return new InlineMark
             {
                 Type = InlineMarkType.Link,
-                Link = new LinkMarkData { Href = element.Attribute("href")!.Value }
-            },
-            _ => null
-        };
+                Link = new LinkMarkData { Href = GetAttribute(element, "href")! }
+            };
+        }
     }
 
     private static TableBlockContent ReadTable(XElement table)
@@ -259,15 +286,15 @@ public sealed partial class DocumentHtmlImporter
 
         return new TableCellContent
         {
-            ColumnSpan = int.TryParse(cell.Attribute("colspan")?.Value, out var columns) ? Math.Max(1, columns) : 1,
-            RowSpan = int.TryParse(cell.Attribute("rowspan")?.Value, out var rows) ? Math.Max(1, rows) : 1,
+            ColumnSpan = int.TryParse(GetAttribute(cell, "colspan"), out var columns) ? Math.Max(1, columns) : 1,
+            RowSpan = int.TryParse(GetAttribute(cell, "rowspan"), out var rows) ? Math.Max(1, rows) : 1,
             Blocks = blocks
         };
     }
 
     private static DocumentBlock ReadImage(XElement image, double order)
     {
-        var src = image.Attribute("src")?.Value;
+        var src = GetAttribute(image, "src");
         return new DocumentBlock
         {
             Type = DocumentBlockType.Image,
@@ -276,7 +303,7 @@ public sealed partial class DocumentHtmlImporter
             {
                 Source = DocumentImageSource.Url,
                 Url = IsSafeUri(src, allowImageDataUri: true) ? src : null,
-                AltText = image.Attribute("alt")?.Value
+                AltText = GetAttribute(image, "alt")
             }
         };
     }
@@ -311,6 +338,22 @@ public sealed partial class DocumentHtmlImporter
         return Regex.Replace(value, @"\s+", " ").Trim();
     }
 
+    private static string? GetAttribute(XElement element, string localName)
+    {
+        return element.Attributes()
+            .FirstOrDefault(attribute => attribute.Name.LocalName.Equals(localName, StringComparison.OrdinalIgnoreCase))
+            ?.Value;
+    }
+
+    private static int GetWordHeadingLevel(XElement element)
+    {
+        var text = string.Join(" ", GetAttribute(element, "class"), GetAttribute(element, "style"));
+        var match = WordHeadingRegex().Match(text);
+        return match.Success && int.TryParse(match.Groups[1].Value, out var level)
+            ? Math.Clamp(level, 1, 6)
+            : 0;
+    }
+
     private static bool IsSafeUri(string? value, bool allowImageDataUri = false)
     {
         if (string.IsNullOrWhiteSpace(value))
@@ -332,4 +375,19 @@ public sealed partial class DocumentHtmlImporter
 
     [GeneratedRegex("<(br|hr|img)([^>/]*?)>", RegexOptions.IgnoreCase)]
     private static partial Regex VoidElementRegex();
+
+    [GeneratedRegex("font-weight\\s*:\\s*(bold|[7-9]00)", RegexOptions.IgnoreCase)]
+    private static partial Regex FontWeightRegex();
+
+    [GeneratedRegex("font-style\\s*:\\s*italic", RegexOptions.IgnoreCase)]
+    private static partial Regex FontStyleRegex();
+
+    [GeneratedRegex("text-decoration[^;]*underline", RegexOptions.IgnoreCase)]
+    private static partial Regex TextDecorationUnderlineRegex();
+
+    [GeneratedRegex("text-decoration[^;]*line-through", RegexOptions.IgnoreCase)]
+    private static partial Regex TextDecorationStrikeRegex();
+
+    [GeneratedRegex("heading\\s*([1-6])", RegexOptions.IgnoreCase)]
+    private static partial Regex WordHeadingRegex();
 }

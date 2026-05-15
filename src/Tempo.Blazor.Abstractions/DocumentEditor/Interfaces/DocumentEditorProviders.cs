@@ -211,6 +211,33 @@ public interface IDocumentPdfExportProvider
         CancellationToken cancellationToken = default);
 }
 
+/// <summary>Provider boundary for comparing arbitrary document snapshots outside version history.</summary>
+public interface IDocumentComparisonProvider
+{
+    /// <summary>Compares two document sources.</summary>
+    Task<DocumentCompareResult> CompareAsync(
+        DocumentCompareRequest request,
+        CancellationToken cancellationToken = default);
+}
+
+/// <summary>Provider boundary for host-managed external document format import and export.</summary>
+public interface IDocumentFormatProvider
+{
+    /// <summary>Gets the external formats and operations supported by the provider.</summary>
+    Task<IReadOnlyList<DocumentFormatProviderCapability>> GetCapabilitiesAsync(
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Imports an external document package into the editor document model.</summary>
+    Task<DocumentFormatImportProviderResult> ImportAsync(
+        DocumentFormatImportProviderRequest request,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Exports an editor document snapshot to an external document package.</summary>
+    Task<DocumentFormatExportProviderResult> ExportAsync(
+        DocumentFormatExportProviderRequest request,
+        CancellationToken cancellationToken = default);
+}
+
 /// <summary>Provider boundary for review suggestions kept outside the core document model.</summary>
 public interface IDocumentSuggestionProvider
 {

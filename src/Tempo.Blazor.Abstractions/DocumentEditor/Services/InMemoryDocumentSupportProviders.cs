@@ -198,6 +198,71 @@ public class InMemoryDocumentSyncProvider : IDocumentSyncProvider
     }
 }
 
+/// <summary>In-memory suggestion provider for tests and demos.</summary>
+public class InMemoryDocumentSuggestionProvider : IDocumentSuggestionProvider
+{
+    private readonly Dictionary<string, DocumentSuggestion> _suggestions = [];
+
+    /// <inheritdoc />
+    public virtual Task<IReadOnlyList<DocumentSuggestion>> GetSuggestionsAsync(
+        DocumentSuggestionQuery query,
+        CancellationToken cancellationToken = default)
+    {
+        var suggestions = _suggestions.Values
+            .Where(suggestion => string.Equals(suggestion.DocumentId, query.DocumentId, StringComparison.Ordinal))
+            .Where(suggestion => query.Status is null || suggestion.Status == query.Status)
+            .OrderByDescending(suggestion => suggestion.CreatedAt)
+            .Select(Clone)
+            .ToList();
+
+        return Task.FromResult<IReadOnlyList<DocumentSuggestion>>(suggestions);
+    }
+
+    /// <inheritdoc />
+    public virtual Task<DocumentSuggestion> CreateSuggestionAsync(
+        DocumentSuggestion suggestion,
+        CancellationToken cancellationToken = default)
+    {
+        var stored = Clone(suggestion);
+        if (string.IsNullOrWhiteSpace(stored.Id))
+        {
+            stored.Id = Guid.NewGuid().ToString("N");
+        }
+
+        stored.Status = DocumentSuggestionStatus.Pending;
+        if (stored.CreatedAt == default)
+        {
+            stored.CreatedAt = DateTimeOffset.UtcNow;
+        }
+
+        _suggestions[stored.Id] = stored;
+        return Task.FromResult(Clone(stored));
+    }
+
+    /// <inheritdoc />
+    public virtual Task<DocumentSuggestion> ReviewSuggestionAsync(
+        DocumentSuggestionReviewRequest request,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_suggestions.TryGetValue(request.SuggestionId, out var suggestion)
+            || !string.Equals(suggestion.DocumentId, request.DocumentId, StringComparison.Ordinal))
+        {
+            throw new InvalidOperationException("Suggestion was not found.");
+        }
+
+        suggestion.Status = request.Status;
+        suggestion.Reviewer = Clone(request.Reviewer);
+        suggestion.ReviewedAt = DateTimeOffset.UtcNow;
+        return Task.FromResult(Clone(suggestion));
+    }
+
+    private static T Clone<T>(T value)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+}
+
 /// <summary>In-memory image provider for tests and demos.</summary>
 public class InMemoryDocumentImageProvider : IDocumentImageProvider, IDocumentImageUrlResolver
 {

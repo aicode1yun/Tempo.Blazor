@@ -43,4 +43,41 @@ public sealed class DocumentHtmlImporterTests
         paragraph.Inlines.OfType<TextRun>().Select(run => run.Text).Should().Contain(["Safe", "link"]);
         paragraph.Inlines.SelectMany(inline => inline.Marks).Should().NotContain(mark => mark.Type == InlineMarkType.Link);
     }
+
+    [Fact]
+    public void Import_WordHtml_MapsHeadingBoldItalicAndTable()
+    {
+        const string html = """
+            <body>
+              <p class="MsoHeading1">Word heading</p>
+              <p><span style="font-weight:700">Bold</span> <span style="font-style:italic">Italic</span></p>
+              <table><tr><td>Cell A</td><td>Cell B</td></tr></table>
+            </body>
+            """;
+
+        var document = new DocumentHtmlImporter().Import(html);
+
+        document.Blocks[0].Content.Should().BeOfType<HeadingBlockContent>().Which.Level.Should().Be(1);
+        var paragraph = document.Blocks[1].Content.Should().BeOfType<ParagraphBlockContent>().Subject;
+        paragraph.Inlines.OfType<TextRun>().Should().Contain(run => run.Text == "Bold" && run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
+        paragraph.Inlines.OfType<TextRun>().Should().Contain(run => run.Text == "Italic" && run.Marks.Any(mark => mark.Type == InlineMarkType.Italic));
+        document.Blocks[2].Content.Should().BeOfType<TableBlockContent>().Which.Rows[0].Cells.Should().HaveCount(2);
+    }
+
+    [Fact]
+    public void Import_ExcelHtml_MapsMergedTableCells()
+    {
+        const string html = """
+            <table>
+              <tr><td colspan="2" rowspan="2">Merged</td><td>Right</td></tr>
+              <tr><td>Bottom right</td></tr>
+            </table>
+            """;
+
+        var document = new DocumentHtmlImporter().Import(html);
+
+        var table = document.Blocks.Single().Content.Should().BeOfType<TableBlockContent>().Subject;
+        table.Rows[0].Cells[0].ColumnSpan.Should().Be(2);
+        table.Rows[0].Cells[0].RowSpan.Should().Be(2);
+    }
 }

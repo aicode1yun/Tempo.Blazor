@@ -88,6 +88,25 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
     }
 
     [Fact]
+    public async Task ExportPdf_ReturnsPdfFile()
+    {
+        var response = await _client.GetAsync("/api/document-editor/contract-demo/export/pdf");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        response.Content.Headers.ContentType?.MediaType.Should().Be("application/pdf");
+        var bytes = await response.Content.ReadAsByteArrayAsync();
+        bytes.Take(4).Should().Equal(0x25, 0x50, 0x44, 0x46);
+    }
+
+    [Fact]
+    public async Task ExportPdf_MissingDocument_ReturnsNotFound()
+    {
+        var response = await _client.GetAsync("/api/document-editor/missing-document/export/pdf");
+
+        response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+    }
+
+    [Fact]
     public async Task ImportDocx_SavesImportedDocument()
     {
         var exported = await new DocumentDocxExporter().ExportAsync(CreateImportDocument("Imported DOCX"));
@@ -100,6 +119,120 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
         var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportResult>();
         imported.Should().NotBeNull();
         imported!.Document.Metadata.Title.Should().Be("Imported DOCX");
+    }
+
+    [Fact]
+    public async Task ProviderStyleImportDocx_ReturnsProviderResult()
+    {
+        var exported = await new DocumentDocxExporter().ExportAsync(CreateImportDocument("Provider Imported DOCX"));
+        using var content = new MultipartFormDataContent();
+        content.Add(new ByteArrayContent(exported.Content), "file", "provider-warning.docx");
+
+        var response = await _client.PostAsync("/api/document-editor/formats/import?format=Docx", content);
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var imported = await response.Content.ReadFromJsonAsync<DocumentFormatImportProviderResult>();
+        imported.Should().NotBeNull();
+        imported!.Success.Should().BeTrue();
+        imported.Format.Should().Be(DocumentFormatProviderKind.Docx);
+        imported.Document!.Metadata.Title.Should().Be("Provider Imported DOCX");
+        imported.Warnings.Should().Contain(warning => warning.Code == "demo.approximation");
+    }
+
+    [Fact]
+    public async Task ProviderStyleExportDocx_ReturnsProviderResult()
+    {
+        var document = CreateImportDocument("Provider Exported DOCX");
+
+        var response = await _client.PostAsJsonAsync("/api/document-editor/formats/export", new DocumentFormatExportProviderRequest
+        {
+            DocumentId = document.DocumentId,
+            Format = DocumentFormatProviderKind.Docx,
+            Document = document,
+            FileName = "provider-export"
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var exported = await response.Content.ReadFromJsonAsync<DocumentFormatExportProviderResult>();
+        exported.Should().NotBeNull();
+        exported!.Success.Should().BeTrue();
+        exported.Content.Should().NotBeEmpty();
+        exported.ContentType.Should().Be("application/vnd.openxmlformats-officedocument.wordprocessingml.document");
+        exported.FileName.Should().EndWith(".docx");
+    }
+
+    [Fact]
+    public async Task ProviderStyleExportPdf_ReturnsProviderResult()
+    {
+        var document = CreateImportDocument("Provider Exported PDF");
+
+        var response = await _client.PostAsJsonAsync($"/api/document-editor/{document.DocumentId}/export/pdf", new DocumentPdfExportRequest
+        {
+            DocumentId = document.DocumentId,
+            Document = document,
+            FileName = "provider-export",
+            Options = new DocumentPdfExportOptions
+            {
+                IncludeComments = false,
+                IncludeSuggestions = false,
+                PageSetup = new DocumentPdfPageSetupOptions
+                {
+                    PageSize = DocumentPageSize.Letter,
+                    Orientation = DocumentPdfPageOrientation.Portrait,
+                    Margins = new DocumentPageMargins { Top = 36, Right = 36, Bottom = 36, Left = 36 }
+                }
+            }
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var exported = await response.Content.ReadFromJsonAsync<DocumentPdfExportResult>();
+        exported.Should().NotBeNull();
+        exported!.Content.Take(4).Should().Equal(0x25, 0x50, 0x44, 0x46);
+        exported.ContentType.Should().Be("application/pdf");
+        exported.FileName.Should().EndWith(".pdf");
+    }
+
+    [Fact]
+    public async Task CompareDocuments_ByDocumentIds_ReturnsComparisonResult()
+    {
+        var response = await _client.GetAsync("/api/document-editor/compare?baseDocumentId=contract-demo&compareDocumentId=filing-demo");
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<DocumentCompareResult>();
+        result.Should().NotBeNull();
+        result!.Summary.HasChanges.Should().BeTrue();
+        result.BaseDocument!.DocumentId.Should().Be("contract-demo");
+        result.CompareDocument!.DocumentId.Should().Be("filing-demo");
+    }
+
+    [Fact]
+    public async Task CompareDocuments_CurrentSnapshotVsStoredDocument_ReturnsComparisonResult()
+    {
+        var current = CreateImportDocument("Current Snapshot");
+        current.DocumentId = "current-snapshot";
+
+        var response = await _client.PostAsJsonAsync("/api/document-editor/compare", new DocumentCompareRequest
+        {
+            DocumentId = current.DocumentId,
+            CurrentDocument = current,
+            BaseSource = new DocumentCompareSource
+            {
+                Kind = DocumentCompareSourceKind.Current,
+                Document = current
+            },
+            CompareSource = new DocumentCompareSource
+            {
+                Kind = DocumentCompareSourceKind.DocumentId,
+                DocumentId = "contract-demo"
+            }
+        });
+
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        var result = await response.Content.ReadFromJsonAsync<DocumentCompareResult>();
+        result.Should().NotBeNull();
+        result!.Summary.HasChanges.Should().BeTrue();
+        result.BaseDocument!.DocumentId.Should().Be("current-snapshot");
+        result.CompareDocument!.DocumentId.Should().Be("contract-demo");
     }
 
     [Fact]
@@ -150,6 +283,122 @@ public class DocumentEditorFormatEndpointTests : IClassFixture<WebApplicationFac
 
         pages.Should().ContainSingle(page => page.PageNumber == 1);
         anchors.Should().Contain(anchor => anchor.Type == DocumentRenditionAnchorType.Token && anchor.Key == "client.name");
+    }
+
+    [Fact]
+    public async Task CollaborationEndpoints_JoinBroadcastBatchAndCursor()
+    {
+        var joinResponse = await _client.PostAsJsonAsync(
+            "/api/document-editor/collaboration/join",
+            new DocumentCollaborationJoinRequest
+            {
+                DocumentId = "contract-demo",
+                ClientId = "api-test",
+                Author = new DocumentEditorAuthor { Id = "api-test", DisplayName = "API Test" }
+            });
+
+        joinResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var session = await joinResponse.Content.ReadFromJsonAsync<DocumentCollaborationSession>();
+        session.Should().NotBeNull();
+
+        var batchResponse = await _client.PostAsJsonAsync(
+            $"/api/document-editor/collaboration/{session!.Id}/batches",
+            new DocumentOperationBatch
+            {
+                DocumentId = "contract-demo",
+                Operations =
+                [
+                    new DocumentOperation
+                    {
+                        Type = DocumentOperationType.SetBlockAttribute,
+                        Target = new DocumentOperationTarget { BlockId = "b-1" },
+                        AttributeName = "text",
+                        AttributeValueJson = "\"API collaboration\""
+                    }
+                ]
+            });
+        batchResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var batches = await _client.GetFromJsonAsync<IReadOnlyList<DocumentCollaborationOperationBatch>>(
+            "/api/document-editor/collaboration/documents/contract-demo/batches?afterSequence=0");
+        batches.Should().ContainSingle(batch => batch.SessionId == session.Id);
+
+        var cursorResponse = await _client.PostAsJsonAsync(
+            "/api/document-editor/collaboration/cursors",
+            new DocumentCollaborationCursor
+            {
+                DocumentId = "contract-demo",
+                SessionId = session.Id,
+                ClientId = "api-test",
+                DisplayName = "API Test",
+                BlockId = "b-1",
+                Offset = 2
+            });
+        cursorResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+
+        var cursors = await _client.GetFromJsonAsync<IReadOnlyList<DocumentCollaborationCursor>>(
+            "/api/document-editor/collaboration/documents/contract-demo/cursors");
+        cursors.Should().ContainSingle(cursor => cursor.DisplayName == "API Test");
+
+        var leaveResponse = await _client.PostAsync(
+            $"/api/document-editor/collaboration/{session.Id}/leave",
+            content: null);
+        leaveResponse.StatusCode.Should().Be(HttpStatusCode.NoContent);
+    }
+
+    [Fact]
+    public async Task SuggestionEndpoints_CreateListAndReviewSuggestion()
+    {
+        var suggestion = new DocumentSuggestion
+        {
+            DocumentId = "contract-demo",
+            Type = DocumentSuggestionType.ReplaceText,
+            Range = new DocumentRevisionRange { BlockId = "b-1" },
+            OriginalText = "Original",
+            SuggestedText = "Suggested through API",
+            Author = new DocumentEditorAuthor { Id = "api-author", DisplayName = "API Author" },
+            BaseSnapshotHash = new string('c', 64),
+            Operations =
+            [
+                new DocumentOperation
+                {
+                    Type = DocumentOperationType.SetBlockAttribute,
+                    Target = new DocumentOperationTarget { BlockId = "b-1" },
+                    AttributeName = "text",
+                    AttributeValueJson = "\"Suggested through API\""
+                }
+            ]
+        };
+
+        var createResponse = await _client.PostAsJsonAsync("/api/document-editor/suggestions", suggestion);
+        createResponse.StatusCode.Should().Be(HttpStatusCode.Created);
+        var created = await createResponse.Content.ReadFromJsonAsync<DocumentSuggestion>();
+        created.Should().NotBeNull();
+        created!.Status.Should().Be(DocumentSuggestionStatus.Pending);
+
+        var pending = await _client.GetFromJsonAsync<IReadOnlyList<DocumentSuggestion>>(
+            "/api/document-editor/suggestions/documents/contract-demo?status=Pending");
+        pending.Should().ContainSingle(item => item.Id == created.Id);
+
+        var reviewResponse = await _client.PostAsJsonAsync(
+            "/api/document-editor/suggestions/review",
+            new DocumentSuggestionReviewRequest
+            {
+                DocumentId = "contract-demo",
+                SuggestionId = created.Id,
+                Status = DocumentSuggestionStatus.Accepted,
+                Reviewer = new DocumentEditorAuthor { Id = "api-reviewer", DisplayName = "API Reviewer" }
+            });
+        reviewResponse.StatusCode.Should().Be(HttpStatusCode.OK);
+        var reviewed = await reviewResponse.Content.ReadFromJsonAsync<DocumentSuggestion>();
+        reviewed.Should().NotBeNull();
+        reviewed!.Status.Should().Be(DocumentSuggestionStatus.Accepted);
+        reviewed.Reviewer!.Id.Should().Be("api-reviewer");
+        reviewed.ReviewedAt.Should().NotBeNull();
+
+        var pendingAfterReview = await _client.GetFromJsonAsync<IReadOnlyList<DocumentSuggestion>>(
+            "/api/document-editor/suggestions/documents/contract-demo?status=Pending");
+        pendingAfterReview.Should().NotContain(item => item.Id == created.Id);
     }
 
     private static DocumentEditorDocument CreateImportDocument(string title)

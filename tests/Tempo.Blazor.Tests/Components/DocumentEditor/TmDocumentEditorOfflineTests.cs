@@ -14,7 +14,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     public async Task OfflineMode_DisabledKeepsEditorOnlineOnly()
     {
         var provider = new FailingSaveProvider();
-        provider.SeedContractDocument("doc-1");
+        var seeded = provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
@@ -22,8 +22,8 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             .Add(p => p.Provider, provider)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-paragraph-editor']").Should().NotBeNull());
-        cut.Find("[data-testid='document-paragraph-editor']").Input("Offline text");
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        await SimulateTextInsertAsync(cut, seeded, "Offline text ");
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-save-message']").TextContent.Should().Contain("Save failed"));
@@ -35,7 +35,7 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     public async Task OfflineMode_SaveFailureStoresDraftAndShowsStatus()
     {
         var provider = new FailingSaveProvider();
-        provider.SeedContractDocument("doc-1");
+        var seeded = provider.SeedContractDocument("doc-1");
         var store = new InMemoryDocumentOfflineStore();
 
         var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
@@ -44,8 +44,8 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-paragraph-editor']").Should().NotBeNull());
-        cut.Find("[data-testid='document-paragraph-editor']").Input("Offline text");
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        await SimulateTextInsertAsync(cut, seeded, "Offline text ");
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-offline-banner']").TextContent.Should().Contain("Saved as an offline draft"));
@@ -188,8 +188,15 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
             .Add(p => p.OfflineMode, DocumentEditorOfflineMode.Enabled)
             .Add(p => p.OfflineStore, store));
 
-        cut.WaitForAssertion(() => cut.Find("[data-testid='document-paragraph-editor']").Should().NotBeNull());
-        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentSurface>().Instance.OnClipboardImagePasted("image/png", "paste.png", 1, "AA=="));
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleImageUploadRequested(new WysiwygImagePayload
+        {
+            Source = DocumentImageSource.Clipboard,
+            FileName = "paste.png",
+            ContentType = "image/png",
+            SizeBytes = 1,
+            Base64Data = "AA=="
+        }));
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find("[data-testid='document-offline-banner']").Should().NotBeNull());
@@ -202,6 +209,27 @@ public class TmDocumentEditorOfflineTests : LocalizationTestBase
     {
         var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
         return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+
+    private static Task SimulateTextInsertAsync(
+        IRenderedComponent<TmDocumentEditor> cut,
+        DocumentEditorDocument document,
+        string text)
+    {
+        var paragraph = document.Blocks.First(block => block.Content is ParagraphBlockContent);
+        var inline = ((ParagraphBlockContent)paragraph.Content).Inlines.OfType<TextRun>().First();
+
+        return cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = text,
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorOffset = 0
+            }
+        }));
     }
 
     private sealed class FailingSaveProvider : InMemoryDocumentEditorProvider

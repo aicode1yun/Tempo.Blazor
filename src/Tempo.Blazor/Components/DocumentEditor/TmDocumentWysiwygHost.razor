@@ -1,0 +1,840 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Components.Activity
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Interfaces
+@using Microsoft.JSInterop
+@using System.Text.Json
+@implements IAsyncDisposable
+@inject IJSRuntime JSRuntime
+
+<div @ref="_rootElement"
+     class="tm-document-wysiwyg-host"
+     data-testid="document-wysiwyg-host"
+     data-surface-mode="wysiwyg"
+     data-instance-id="@_instanceId"
+     role="textbox"
+     aria-label="@Loc["TmDocumentEditor_WysiwygSurfaceLabel"]"
+     aria-describedby="@_accessibilityDescriptionId"
+     aria-multiline="true"
+     aria-readonly="@(ReadOnly ? "true" : "false")"
+     tabindex="@(_jsReady && !_jsFailed ? "0" : "-1")">
+    <span id="@_accessibilityDescriptionId"
+          class="tm-document-wysiwyg-host__sr-only"
+          data-testid="document-wysiwyg-accessibility-help">
+        @Loc["TmDocumentEditor_WysiwygScreenReaderHelp"]
+    </span>
+    @if (_jsFailed)
+    {
+        <div class="tm-document-wysiwyg-host__fallback" role="alert">
+            <TmAlert Severity="AlertSeverity.Warning"
+                     Title="@Loc["TmDocumentEditor_WysiwygFallbackTitle"]">
+                @Loc["TmDocumentEditor_WysiwygFallbackMessage"]
+            </TmAlert>
+        </div>
+    }
+    else if (!_jsReady)
+    {
+        <div class="tm-document-wysiwyg-host__loading" aria-busy="true">
+            <TmSkeleton Variant="SkeletonVariant.Rect" Height="40px" Width="100%" />
+            <TmSkeleton Variant="SkeletonVariant.Rect" Height="520px" Width="min(100%, 760px)" />
+            <span class="tm-document-wysiwyg-host__sr-only">@Loc["TmDocumentEditor_Loading"]</span>
+        </div>
+    }
+</div>
+
+@if (_imageDialogOpen && !ReadOnly)
+{
+    <section class="tm-document-image-dialog" data-testid="document-wysiwyg-image-dialog" @onclick:stopPropagation="true">
+        @if (!string.IsNullOrWhiteSpace(_imageError))
+        {
+            <div class="tm-document-paste-error" role="alert">@_imageError</div>
+        }
+        @if (_pendingImageUpload)
+        {
+            <div class="tm-document-paste-status">@Loc["TmDocumentEditor_ImageUploading"]</div>
+        }
+        <label>
+            <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
+            <input data-testid="document-wysiwyg-image-url-input"
+                   value="@_pendingImageUrl"
+                   @oninput="args => _pendingImageUrl = args.Value?.ToString()" />
+        </label>
+        <label>
+            <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
+            <input data-testid="document-wysiwyg-image-alt-input"
+                   value="@_pendingImageAltText"
+                   @oninput="args => _pendingImageAltText = args.Value?.ToString()" />
+        </label>
+        <button type="button"
+                data-testid="document-wysiwyg-insert-image-url"
+                @onclick="InsertImageUrlAsync">
+            @Loc["TmDocumentEditor_InsertImage"]
+        </button>
+        <button type="button"
+                data-testid="document-wysiwyg-upload-demo-image"
+                @onclick="InsertProviderImageAsync"
+                disabled="@(ImageProvider is null || _pendingImageUpload)">
+            @Loc["TmDocumentEditor_UploadImage"]
+        </button>
+    </section>
+}
+
+@if (_tokenMenuOpen && !ReadOnly)
+{
+    <section class="tm-document-token-popover" data-testid="document-wysiwyg-token-popover" @onclick:stopPropagation="true">
+        <div class="tm-document-token-popover__header">
+            <input class="tm-document-token-popover__search"
+                   data-testid="document-token-search"
+                   placeholder="@Loc["TmRichEditor_TokenSearch"]"
+                   aria-label="@Loc["TmRichEditor_TokenSearch"]"
+                   value="@_tokenQuery"
+                   @oninput="HandleTokenQueryInputAsync" />
+            <button type="button"
+                    class="tm-document-token-popover__close"
+                    data-testid="document-token-close"
+                    aria-label="@Loc["TmDocumentEditor_Close"]"
+                    @onclick="CloseTokenMenu">
+                <TmIcon Name="x" Size="IconSize.Sm" />
+            </button>
+        </div>
+        <TmDocumentTokenMenu IsVisible="true"
+                             Tokens="@_tokenItems"
+                             Query="@_tokenQuery"
+                             HighlightedIndex="@_tokenHighlightedIndex"
+                             IsLoading="@_tokenMenuLoading"
+                             OnTokenSelected="InsertTokenAsync"
+                             OnHighlightedIndexChanged="SetTokenHighlightedIndex" />
+    </section>
+}
+
+@code {
+    private ElementReference _rootElement;
+    private string _instanceId = Guid.NewGuid().ToString("N");
+    private string _accessibilityDescriptionId = $"tm-wysiwyg-a11y-{Guid.NewGuid():N}";
+    private bool _jsReady;
+    private bool _jsFailed;
+    private bool _disposed;
+    private DotNetObjectReference<TmDocumentWysiwygHost>? _dotNetRef;
+    private WysiwygSelectionSnapshot? _lastSelectionSnapshot;
+    private bool _imageDialogOpen;
+    private bool _pendingImageUpload;
+    private string? _imageError;
+    private string? _pendingImageUrl;
+    private string? _pendingImageAltText;
+    private string? _lastSentSnapshotJson;
+    private DocumentEditorDocument? _lastSnapshotDocument;
+    private IReadOnlyList<DocumentSuggestion>? _lastSnapshotSuggestions;
+    private bool _lastSnapshotReadOnly;
+    private bool _hasSentSnapshot;
+    private bool _tokenMenuOpen;
+    private bool _tokenMenuLoading;
+    private string _tokenQuery = string.Empty;
+    private int _tokenHighlightedIndex;
+    private List<TokenItem> _tokenItems = [];
+
+    /// <summary>Document snapshot to render in the WYSIWYG surface.</summary>
+    [Parameter] public DocumentEditorDocument? Document { get; set; }
+
+    /// <summary>Whether the surface is read-only.</summary>
+    [Parameter] public bool ReadOnly { get; set; }
+
+    /// <summary>Host-controlled permissions for the current user.</summary>
+    [Parameter] public DocumentEditorPermissions Permissions { get; set; } = new();
+
+    /// <summary>Optional image URL resolver for provider-managed assets.</summary>
+    [Parameter] public IDocumentImageUrlResolver? ImageUrlResolver { get; set; }
+
+    /// <summary>Optional image provider for upload and clipboard flows.</summary>
+    [Parameter] public IDocumentImageProvider? ImageProvider { get; set; }
+
+    /// <summary>Image validation options used by upload and clipboard image flows.</summary>
+    [Parameter] public DocumentImageValidationOptions ImageValidation { get; set; } = new();
+
+    /// <summary>Whether clipboard images can be kept as local draft assets when no image provider is available.</summary>
+    [Parameter] public bool AllowOfflineClipboardImages { get; set; }
+
+    /// <summary>Optional token provider for document token autocomplete.</summary>
+    [Parameter] public ITokenDataProvider? TokenProvider { get; set; }
+
+    /// <summary>Pending provider-backed suggestions to decorate in the WYSIWYG surface.</summary>
+    [Parameter] public IReadOnlyList<DocumentSuggestion> Suggestions { get; set; } = [];
+
+    /// <summary>Raised when the JS engine generates a patch that should be applied to the document.</summary>
+    [Parameter] public EventCallback<WysiwygPatch> DocumentPatchGenerated { get; set; }
+
+    /// <summary>Raised when the JS engine reports a new document snapshot (e.g. after explicit save or export).</summary>
+    [Parameter] public EventCallback<DocumentEditorDocument> DocumentSnapshotChanged { get; set; }
+
+    /// <summary>Raised when the JS engine reports selection change.</summary>
+    [Parameter] public EventCallback<WysiwygSelectionSnapshot?> DocumentSelectionChanged { get; set; }
+
+    /// <summary>Raised when a typing transaction is committed.</summary>
+    [Parameter] public EventCallback TransactionCommitted { get; set; }
+
+    /// <summary>Raised when the user requests undo via keyboard.</summary>
+    [Parameter] public EventCallback UndoRequested { get; set; }
+
+    /// <summary>Raised when the user requests redo via keyboard.</summary>
+    [Parameter] public EventCallback RedoRequested { get; set; }
+
+    /// <summary>Raised when the user requests save via keyboard.</summary>
+    [Parameter] public EventCallback SaveRequested { get; set; }
+
+    /// <inheritdoc />
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && !_disposed)
+        {
+            await InitializeJsEngineAsync();
+        }
+    }
+
+    private async Task InitializeJsEngineAsync()
+    {
+        try
+        {
+            _dotNetRef = DotNetObjectReference.Create(this);
+            var options = new WysiwygEditorOptions
+            {
+                InstanceId = _instanceId,
+                ReadOnly = ReadOnly,
+                ProtocolVersion = 1,
+                EnableMutationGuard = true,
+                TypingBatchMs = 500,
+                AccessibilityHelp = Loc["TmDocumentEditor_WysiwygScreenReaderHelp"],
+                PageLabel = Loc["TmDocumentEditor_WysiwygPageLabel"],
+                BodyLabel = Loc["TmDocumentEditor_WysiwygBodyLabel"],
+                HeaderLabel = Loc["TmDocumentEditor_WysiwygHeaderLabel"],
+                FooterLabel = Loc["TmDocumentEditor_WysiwygFooterLabel"],
+                ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
+                SuggestionInsertLabel = Loc["TmDocumentEditor_SuggestionInsertAria"],
+                SuggestionDeleteLabel = Loc["TmDocumentEditor_SuggestionDeleteAria"]
+            };
+
+            await JSRuntime.InvokeVoidAsync(
+                "tmDocumentWysiwyg.create",
+                _rootElement,
+                options,
+                _dotNetRef);
+        }
+        catch (JSException)
+        {
+            _jsFailed = true;
+            await InvokeAsync(StateHasChanged);
+        }
+        catch (InvalidOperationException)
+        {
+            // JS runtime not available (e.g. prerendering).
+            _jsFailed = true;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    /// <summary>Called by the JS engine when it is ready.</summary>
+    [JSInvokable]
+    public async Task HandleJsEngineReady(WysiwygEngineReadyEventArgs args)
+    {
+        _jsReady = true;
+        await InvokeAsync(StateHasChanged);
+        await SendSnapshotAsync(force: true);
+    }
+
+    /// <inheritdoc />
+    protected override async Task OnParametersSetAsync()
+    {
+        if (_jsReady && !_jsFailed && !_disposed && ShouldSendParameterSnapshot())
+        {
+            await SendSnapshotAsync();
+        }
+    }
+
+    /// <summary>Forces the current document parameters into the JS-owned WYSIWYG DOM.</summary>
+    public Task RefreshSnapshotAsync()
+    {
+        return SendSnapshotAsync(force: true);
+    }
+
+    private bool ShouldSendParameterSnapshot()
+    {
+        return !_hasSentSnapshot
+            || !ReferenceEquals(Document, _lastSnapshotDocument)
+            || !ReferenceEquals(Suggestions, _lastSnapshotSuggestions)
+            || ReadOnly != _lastSnapshotReadOnly;
+    }
+
+    private async Task SendSnapshotAsync(bool force = false)
+    {
+        if (_disposed || _jsFailed || Document is null) return;
+
+        try
+        {
+            var snapshot = new WysiwygDocumentSnapshot
+            {
+                ProtocolVersion = 1,
+                Document = Document,
+                Suggestions = Suggestions
+            };
+
+            var snapshotJson = JsonSerializer.Serialize(snapshot, DocumentEditorJson.Options);
+            if (!force && string.Equals(snapshotJson, _lastSentSnapshotJson, StringComparison.Ordinal))
+            {
+                RememberSentSnapshot(snapshotJson);
+                return;
+            }
+
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.applySnapshot", _instanceId, snapshot);
+            RememberSentSnapshot(snapshotJson);
+        }
+        catch (JSException)
+        {
+            // Best-effort; guard will catch divergence.
+        }
+    }
+
+    private void RememberSentSnapshot(string snapshotJson)
+    {
+        _lastSentSnapshotJson = snapshotJson;
+        _lastSnapshotDocument = Document;
+        _lastSnapshotSuggestions = Suggestions;
+        _lastSnapshotReadOnly = ReadOnly;
+        _hasSentSnapshot = true;
+    }
+
+    /// <summary>Captures the current text selection as a document comment anchor.</summary>
+    public async Task<DocumentCommentAnchor?> CaptureTextSelectionAnchorAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+        try
+        {
+            return await JSRuntime.InvokeAsync<DocumentCommentAnchor?>(
+                "tmDocumentWysiwyg.captureCommentAnchor", _instanceId);
+        }
+        catch { return null; }
+    }
+
+    /// <summary>Requests a snapshot of the current DOM state from the JS engine.</summary>
+    public async Task<DocumentEditorDocument?> RequestSnapshotAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            var json = await JSRuntime.InvokeAsync<string>("tmDocumentWysiwyg.getSnapshot", _instanceId);
+            if (string.IsNullOrWhiteSpace(json)) return null;
+
+            var options = new JsonSerializerOptions(DocumentEditorJson.Options)
+            {
+                PropertyNameCaseInsensitive = true
+            };
+            var snapshot = JsonSerializer.Deserialize<WysiwygDocumentSnapshot>(json, options);
+            return snapshot?.Document;
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Called by the JS engine when a patch is generated.</summary>
+    [JSInvokable]
+    public Task HandlePatchGenerated(WysiwygPatch patch)
+    {
+        return DocumentPatchGenerated.InvokeAsync(patch);
+    }
+
+    /// <summary>Called by the JS engine when selection changes.</summary>
+    [JSInvokable]
+    public Task HandleSelectionChanged(WysiwygSelectionSnapshot? snapshot)
+    {
+        _lastSelectionSnapshot = snapshot;
+        return DocumentSelectionChanged.InvokeAsync(snapshot);
+    }
+
+    /// <summary>Called by the JS engine when a transaction is committed.</summary>
+    [JSInvokable]
+    public Task HandleTransactionCommitted()
+    {
+        return TransactionCommitted.InvokeAsync();
+    }
+
+    /// <summary>Called by the JS engine when the user presses Ctrl+Z.</summary>
+    [JSInvokable]
+    public Task HandleUndoRequested()
+    {
+        return UndoRequested.InvokeAsync();
+    }
+
+    /// <summary>Called by the JS engine when the user presses Ctrl+Y or Ctrl+Shift+Z.</summary>
+    [JSInvokable]
+    public Task HandleRedoRequested()
+    {
+        return RedoRequested.InvokeAsync();
+    }
+
+    /// <summary>Called by the JS engine when the user presses Ctrl+S.</summary>
+    [JSInvokable]
+    public Task HandleSaveRequested()
+    {
+        return SaveRequested.InvokeAsync();
+    }
+
+    /// <summary>Called by the JS engine when a snapshot is applied.</summary>
+    [JSInvokable]
+    public Task HandleSnapshotApplied()
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Executes an editor command via the JS engine bridge (used by the Blazor ribbon).</summary>
+    public async Task ExecuteEditorCommandAsync(string command, object? payload = null)
+    {
+        if (_jsFailed || _disposed || !_jsReady) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.executeCommand", _instanceId, command, payload);
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
+    /// <summary>Opens the WYSIWYG image insert dialog.</summary>
+    public async Task OpenImageDialogAsync()
+    {
+        if (ReadOnly)
+        {
+            return;
+        }
+
+        _imageDialogOpen = true;
+        _imageError = null;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Opens the document token insert menu.</summary>
+    public async Task OpenTokenMenuAsync()
+    {
+        if (ReadOnly || TokenProvider is null)
+        {
+            return;
+        }
+
+        _tokenMenuOpen = true;
+        _tokenQuery = string.Empty;
+        _tokenHighlightedIndex = 0;
+        await LoadTokenItemsAsync(_tokenQuery);
+    }
+
+    private async Task HandleTokenQueryInputAsync(ChangeEventArgs args)
+    {
+        _tokenQuery = args.Value?.ToString() ?? string.Empty;
+        _tokenHighlightedIndex = 0;
+        await LoadTokenItemsAsync(_tokenQuery);
+    }
+
+    private async Task LoadTokenItemsAsync(string query)
+    {
+        if (TokenProvider is null)
+        {
+            _tokenItems = [];
+            return;
+        }
+
+        _tokenMenuLoading = true;
+        await InvokeAsync(StateHasChanged);
+        try
+        {
+            var tokens = await TokenProvider.SearchTokensAsync(query);
+            _tokenItems = tokens.Select(ToTokenItem).ToList();
+        }
+        finally
+        {
+            _tokenMenuLoading = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private Task SetTokenHighlightedIndex(int index)
+    {
+        _tokenHighlightedIndex = index;
+        return Task.CompletedTask;
+    }
+
+    private void CloseTokenMenu()
+    {
+        _tokenMenuOpen = false;
+        _tokenQuery = string.Empty;
+        _tokenItems = [];
+    }
+
+    private async Task InsertTokenAsync(TokenItem token)
+    {
+        if (ReadOnly)
+        {
+            return;
+        }
+
+        var tokenRun = new TokenRun
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Key = token.Key,
+            DisplayName = string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
+            Description = token.Description,
+            ColorClass = token.ColorClass,
+            TypeLabel = token.TypeLabel,
+            TokenType = NormalizeTokenType(token.TypeLabel)
+        };
+
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertInline",
+            Inline = tokenRun,
+            Selection = _lastSelectionSnapshot,
+            ProtocolVersion = 1
+        };
+
+        await DocumentPatchGenerated.InvokeAsync(patch);
+        CloseTokenMenu();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private static TokenItem ToTokenItem(Tempo.Blazor.Interfaces.IToken token)
+    {
+        return new TokenItem
+        {
+            Key = token.Key,
+            DisplayName = token.DisplayName,
+            Description = token.Description,
+            Category = token.Category,
+            Icon = token.Icon,
+            ColorClass = token.ColorClass,
+            TypeLabel = token.TypeLabel
+        };
+    }
+
+    private static string? NormalizeTokenType(string? typeLabel)
+    {
+        return string.IsNullOrWhiteSpace(typeLabel)
+            ? null
+            : typeLabel.Trim().ToLowerInvariant().Replace(' ', '-');
+    }
+
+    private async Task InsertImageUrlAsync()
+    {
+        if (string.IsNullOrWhiteSpace(_pendingImageUrl) || !IsSafeImageUrl(_pendingImageUrl))
+        {
+            _imageError = Loc["TmDocumentEditor_ImagePasteRejected"];
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var block = CreateImageBlock(new ImageBlockContent
+        {
+            Source = DocumentImageSource.Url,
+            Url = _pendingImageUrl,
+            AltText = _pendingImageAltText
+        });
+
+        await InsertImageBlockFromBlazorAsync(block, _lastSelectionSnapshot);
+        _imageDialogOpen = false;
+        _pendingImageUrl = null;
+        _pendingImageAltText = null;
+        _imageError = null;
+    }
+
+    private async Task InsertProviderImageAsync()
+    {
+        if (ImageProvider is null || Document is null)
+        {
+            _imageError = Loc["TmDocumentEditor_ImageProviderMissing"];
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var bytes = Convert.FromBase64String("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+/p9sAAAAASUVORK5CYII=");
+        var payload = await UploadImagePayloadAsync(new WysiwygImagePayload
+        {
+            Source = DocumentImageSource.Asset,
+            FileName = "demo-image.png",
+            ContentType = "image/png",
+            SizeBytes = bytes.Length,
+            Base64Data = Convert.ToBase64String(bytes),
+            AltText = _pendingImageAltText,
+            Selection = _lastSelectionSnapshot
+        });
+
+        if (payload is null)
+        {
+            return;
+        }
+
+        await InsertImageBlockFromBlazorAsync(CreateImageBlock(payload), _lastSelectionSnapshot);
+        _imageDialogOpen = false;
+        _pendingImageAltText = null;
+        _imageError = null;
+    }
+
+    /// <summary>Uploads an image requested by the JS engine and returns an image block for insertion.</summary>
+    [JSInvokable]
+    public async Task<DocumentBlock?> HandleImageUploadRequested(WysiwygImagePayload payload)
+    {
+        var uploaded = await UploadImagePayloadAsync(payload);
+        return uploaded is null ? null : CreateImageBlock(uploaded);
+    }
+
+    private async Task<WysiwygImagePayload?> UploadImagePayloadAsync(WysiwygImagePayload payload)
+    {
+        if (Document is null)
+        {
+            return null;
+        }
+
+        var sizeBytes = payload.SizeBytes;
+        var base64 = payload.Base64Data ?? string.Empty;
+        byte[] bytes;
+        try
+        {
+            bytes = Convert.FromBase64String(base64);
+            if (sizeBytes <= 0)
+            {
+                sizeBytes = bytes.Length;
+            }
+        }
+        catch
+        {
+            _imageError = Loc["TmDocumentEditor_ImagePasteRejected"];
+            await InvokeAsync(StateHasChanged);
+            return null;
+        }
+
+        if (!ImageValidation.IsAllowed(payload.ContentType, sizeBytes))
+        {
+            _imageError = Loc["TmDocumentEditor_ImagePasteRejected"];
+            await InvokeAsync(StateHasChanged);
+            return null;
+        }
+
+        var fileName = string.IsNullOrWhiteSpace(payload.FileName)
+            ? "clipboard-image"
+            : payload.FileName!;
+
+        if (ImageProvider is null)
+        {
+            if (AllowOfflineClipboardImages)
+            {
+                var assetId = Guid.NewGuid().ToString("N");
+                var dataUrl = $"data:{payload.ContentType};base64,{base64}";
+                Document.Assets.Add(new DocumentImageAsset
+                {
+                    Id = assetId,
+                    DocumentId = Document.DocumentId,
+                    Source = DocumentImageSource.Clipboard,
+                    Url = dataUrl,
+                    ContentType = payload.ContentType,
+                    FileName = fileName,
+                    SizeBytes = sizeBytes,
+                    AltText = payload.AltText ?? fileName,
+                    IsLocalDraft = true
+                });
+
+                return new WysiwygImagePayload
+                {
+                    Source = DocumentImageSource.Clipboard,
+                    AssetId = assetId,
+                    Url = dataUrl,
+                    AltText = payload.AltText ?? fileName,
+                    Caption = payload.Caption,
+                    FileName = fileName,
+                    ContentType = payload.ContentType,
+                    SizeBytes = sizeBytes,
+                    Selection = payload.Selection
+                };
+            }
+
+            _imageError = Loc["TmDocumentEditor_ImageProviderMissing"];
+            await InvokeAsync(StateHasChanged);
+            return null;
+        }
+
+        _pendingImageUpload = true;
+        _imageError = null;
+        await using var stream = new MemoryStream(bytes);
+        try
+        {
+            var result = await ImageProvider.UploadAsync(new DocumentImageUploadRequest
+            {
+                DocumentId = Document.DocumentId,
+                FileName = fileName,
+                ContentType = payload.ContentType,
+                SizeBytes = sizeBytes
+            }, stream);
+
+            if (!result.Success || string.IsNullOrWhiteSpace(result.AssetId))
+            {
+                _imageError = string.IsNullOrWhiteSpace(result.ErrorMessage)
+                    ? Loc["TmDocumentEditor_ImageUploadFailed"]
+                    : result.ErrorMessage;
+                return null;
+            }
+
+            return new WysiwygImagePayload
+            {
+                Source = DocumentImageSource.Asset,
+                AssetId = result.AssetId,
+                Url = result.Url,
+                AltText = payload.AltText ?? fileName,
+                Caption = payload.Caption,
+                FileName = fileName,
+                ContentType = payload.ContentType,
+                SizeBytes = sizeBytes,
+                Selection = payload.Selection
+            };
+        }
+        finally
+        {
+            _pendingImageUpload = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
+
+    private async Task InsertImageBlockFromBlazorAsync(DocumentBlock block, WysiwygSelectionSnapshot? selection)
+    {
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertBlock",
+            BlockType = "Image",
+            Block = block,
+            Selection = selection,
+            ProtocolVersion = 1
+        };
+
+        await DocumentPatchGenerated.InvokeAsync(patch);
+
+        if (_jsReady && !_jsFailed && !_disposed)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.insertImageNode", _instanceId, block, false);
+            }
+            catch (JSException)
+            {
+                // Best-effort; Blazor will send the updated snapshot after the patch is applied.
+            }
+        }
+    }
+
+    private static DocumentBlock CreateImageBlock(WysiwygImagePayload payload)
+    {
+        return CreateImageBlock(new ImageBlockContent
+        {
+            Source = payload.Source,
+            Url = payload.Url,
+            AssetId = payload.AssetId,
+            AltText = payload.AltText,
+            Caption = payload.Caption
+        });
+    }
+
+    private static DocumentBlock CreateImageBlock(ImageBlockContent content)
+    {
+        return new DocumentBlock
+        {
+            Id = Guid.NewGuid().ToString("N"),
+            Type = DocumentBlockType.Image,
+            Content = content
+        };
+    }
+
+    private static bool IsSafeImageUrl(string? url)
+    {
+        if (string.IsNullOrWhiteSpace(url))
+        {
+            return false;
+        }
+
+        if (url.StartsWith("/", StringComparison.Ordinal))
+        {
+            return true;
+        }
+
+        if (url.StartsWith("data:image/png;base64,", StringComparison.OrdinalIgnoreCase)
+            || url.StartsWith("data:image/jpeg;base64,", StringComparison.OrdinalIgnoreCase)
+            || url.StartsWith("data:image/webp;base64,", StringComparison.OrdinalIgnoreCase)
+            || url.StartsWith("data:image/gif;base64,", StringComparison.OrdinalIgnoreCase))
+        {
+            return true;
+        }
+
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri)
+            && (uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == Uri.UriSchemeHttp);
+    }
+
+    /// <summary>Restores the browser selection from a snapshot.</summary>
+    public async Task RestoreSelectionAsync(WysiwygSelectionSnapshot? snapshot)
+    {
+        if (_jsFailed || _disposed || snapshot is null) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.restoreSelection", _instanceId, snapshot);
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
+    /// <summary>Called by the JS engine when the mutation guard detects unexpected DOM changes.</summary>
+    [JSInvokable]
+    public Task HandleMutationGuardTriggered(List<WysiwygMutationRecord> mutations)
+    {
+        // Phase 18 will add conflict resolution and recovery logic.
+        return Task.CompletedTask;
+    }
+
+    /// <summary>Called by the JS engine for mark toggle commands from the ribbon.</summary>
+    [JSInvokable]
+    public Task HandleCommandToggleMark(WysiwygMarkPayload payload)
+    {
+        if (string.IsNullOrWhiteSpace(payload?.MarkType))
+        {
+            return Task.CompletedTask;
+        }
+
+        var patch = new WysiwygPatch
+        {
+            Type = "ToggleMark",
+            MarkType = payload.MarkType,
+            Selection = payload.Selection ?? _lastSelectionSnapshot,
+            ProtocolVersion = 1
+        };
+
+        return DocumentPatchGenerated.InvokeAsync(patch);
+    }
+
+    /// <summary>Called by the JS engine for block insert commands from the ribbon.</summary>
+    [JSInvokable]
+    public Task HandleCommandInsertBlock(WysiwygBlockPayload payload)
+    {
+        return Task.CompletedTask;
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (_disposed) return;
+        _disposed = true;
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.dispose", _instanceId);
+        }
+        catch
+        {
+            // Best-effort cleanup when the JS runtime is already gone.
+        }
+
+        _dotNetRef?.Dispose();
+        _dotNetRef = null;
+    }
+}
