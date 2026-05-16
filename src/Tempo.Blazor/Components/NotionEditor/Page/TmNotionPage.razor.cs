@@ -51,13 +51,13 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     public EventCallback<string> OnNavigateToPage { get; set; }
 
     /// <summary>
-    /// Raised when the user clicks "Create token" in the token dropdown.
-    /// The consuming app should show a dialog, create the token, then call
-    /// <see cref="ITokenDataProvider.Refresh"/> and re-open the dropdown if needed.
-    /// Arg = current search query typed by the user.
+    /// Called when the user clicks "Create token" in the token dropdown.
+    /// Arg = current search query (may be empty). Return the newly created
+    /// token (Key, DisplayName, ColorClass) so the editor can insert it
+    /// automatically, or <c>null</c> if the user cancelled.
     /// </summary>
     [Parameter]
-    public EventCallback<string> OnCreateTokenRequested { get; set; }
+    public Func<string, Task<(string Key, string DisplayName, string? ColorClass)?>?>? OnCreateTokenRequested { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -861,23 +861,36 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
 
     private async Task HandleTokenCreateRequestedAsync(string query)
     {
+        // Close dropdown visually but keep JS trigger/chip-edit state alive
+        // so we can insert the new token into the correct position afterwards.
         _tokenDropdownVisible = false;
         var wasEdit = _tokenIsEditMode;
-        _tokenCurrentKey = null;
         _tokenIsEditMode = false;
+        _tokenCurrentKey = null;
         StateHasChanged();
 
-        try
+        if (OnCreateTokenRequested is null)
         {
-            // Clear any in-progress chip-edit state in JS
-            if (wasEdit)
-                await JS.InvokeVoidAsync("tmNotionEditor.cancelChipEdit");
-            else
-                await JS.InvokeVoidAsync("tmNotionEditor.cancelTokenTrigger");
+            try { await JS.InvokeVoidAsync(wasEdit ? "tmNotionEditor.cancelChipEdit" : "tmNotionEditor.cancelTokenTrigger"); } catch { }
+            return;
         }
-        catch { }
 
-        await OnCreateTokenRequested.InvokeAsync(query);
+        (string Key, string DisplayName, string? ColorClass)? result = null;
+        try { result = await OnCreateTokenRequested(query); } catch { }
+
+        if (result.HasValue)
+        {
+            try
+            {
+                var jsMethod = wasEdit ? "tmNotionEditor.replaceNotionToken" : "tmNotionEditor.insertNotionToken";
+                await JS.InvokeVoidAsync(jsMethod, result.Value.Key, result.Value.DisplayName, result.Value.ColorClass);
+            }
+            catch { }
+        }
+        else
+        {
+            try { await JS.InvokeVoidAsync(wasEdit ? "tmNotionEditor.cancelChipEdit" : "tmNotionEditor.cancelTokenTrigger"); } catch { }
+        }
     }
 
     // ── Mention menu handlers ─────────────────────────────────────────────────

@@ -141,7 +141,7 @@
                            CurrentKey="_tokenCurrentKey"
                            OnItemSelected="HandleTokenItemSelectedAsync"
                            OnClosed="HandleTokenDropdownClosedAsync"
-                           OnCreateRequested="@(OnCreateTokenRequested.HasDelegate
+                           OnCreateRequested="@(OnCreateTokenRequested is not null
                                ? EventCallback.Factory.Create<string>(this, HandleTokenCreateRequestedAsync)
                                : default)" />
 }

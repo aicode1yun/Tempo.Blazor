@@ -40,15 +40,16 @@ public sealed class DemoNotionTokenProvider : ITokenDataProvider
 
     public void Refresh() { }
 
-    /// <summary>Adds a custom token to the in-memory list.</summary>
-    public void AddToken(string displayName, string? description = null)
+    /// <summary>Adds a custom token and returns its generated key.</summary>
+    public string AddToken(string displayName, string? description = null)
     {
         var key = "custom." + displayName.ToLowerInvariant()
             .Replace(' ', '_')
-            .Replace('.', '_');
-        // Deduplicate by key
-        if (_tokens.Any(t => t.Key == key)) return;
-        _tokens.Add(new(key, displayName, description, "Custom", "Text", "✨"));
+            .Replace('.', '_')
+            .Replace('-', '_');
+        if (!_tokens.Any(t => t.Key == key))
+            _tokens.Add(new(key, displayName, description, "Custom", "Text", "✨"));
+        return key;
     }
 
     private sealed record DemoNotionToken(

@@ -75,12 +75,12 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public EventCallback OnTrashRequested { get; set; }
 
     /// <summary>
-    /// Raised when the user clicks "Create token" in the token dropdown.
-    /// Arg = current search query typed by the user (may be empty).
-    /// The consuming app should show a create-token dialog, add the token to
-    /// its <see cref="ITokenDataProvider"/>, and optionally call Refresh().
+    /// Called when the user clicks "Create token" in the token dropdown.
+    /// Arg = current search query (may be empty). Return the newly created
+    /// token (Key, DisplayName, ColorClass) so the editor can insert it
+    /// automatically, or <c>null</c> if the user cancelled.
     /// </summary>
-    [Parameter] public EventCallback<string> OnCreateTokenRequested { get; set; }
+    [Parameter] public Func<string, Task<(string Key, string DisplayName, string? ColorClass)?>?>? OnCreateTokenRequested { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 

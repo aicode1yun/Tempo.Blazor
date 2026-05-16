@@ -83,7 +83,7 @@
                             TokenProvider="@TokenProvider"
                             InitialPageId="@_currentPage.Id.ToString()"
                             ShowSidebar="true"
-                            OnCreateTokenRequested="HandleCreateTokenRequestedAsync"
+                            OnCreateTokenRequested="@CreateTokenAsync"
                             Class="h-full" />
         </div>
 
@@ -631,12 +631,11 @@
 
     private async Task RefreshData() => await LoadEditorDataAsync();
 
-    private async Task HandleCreateTokenRequestedAsync(string query)
+    private async Task<(string Key, string DisplayName, string? ColorClass)?> CreateTokenAsync(string query)
     {
-        var name = await JS.InvokeAsync<string?>("prompt",
-            string.IsNullOrWhiteSpace(query) ? "New token name:" : $"New token name:",
-            query);
-        if (string.IsNullOrWhiteSpace(name)) return;
-        TokenProvider.AddToken(name.Trim());
+        var name = await JS.InvokeAsync<string?>("prompt", "New token name:", query);
+        if (string.IsNullOrWhiteSpace(name)) return null;
+        var key = TokenProvider.AddToken(name.Trim());
+        return (key, name.Trim(), null);
     }
 }
