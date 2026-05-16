@@ -323,6 +323,31 @@ public sealed class DocumentOperationEngineTests
     }
 
     [Fact]
+    public void OperationApplier_SetParagraphPropertiesMergesFormattingPatch()
+    {
+        var document = CreateDocument("doc-1", "a", "Alpha");
+        document.Blocks.Single().ParagraphProperties.LeftIndent = 18;
+
+        var result = new DocumentOperationApplier().Apply(document, Batch("doc-1", new DocumentOperation
+        {
+            Type = DocumentOperationType.SetBlockAttribute,
+            Target = new DocumentOperationTarget { BlockId = "a" },
+            AttributeName = "paragraphProperties",
+            AttributeValueJson = JsonSerializer.Serialize(new DocumentParagraphPropertiesPatch
+            {
+                Alignment = DocumentTextAlignment.Right,
+                LineSpacing = 1.5,
+                LeftIndentDelta = 18
+            }, DocumentEditorJson.Options)
+        }));
+
+        result.IsValid.Should().BeTrue();
+        document.Blocks.Single().ParagraphProperties.Alignment.Should().Be(DocumentTextAlignment.Right);
+        document.Blocks.Single().ParagraphProperties.LineSpacing.Should().Be(1.5);
+        document.Blocks.Single().ParagraphProperties.LeftIndent.Should().Be(36);
+    }
+
+    [Fact]
     public void OperationApplier_SetTableCellTextUpdatesTargetCellOnly()
     {
         var document = DocumentEditorDocument.Empty("doc-1");

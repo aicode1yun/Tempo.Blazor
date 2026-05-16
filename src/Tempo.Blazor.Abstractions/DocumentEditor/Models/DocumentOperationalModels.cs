@@ -362,6 +362,18 @@ public class DocumentOperationBatch
     /// <summary>Base version id.</summary>
     public string? BaseVersionId { get; set; }
 
+    /// <summary>Client id that created the local batch.</summary>
+    public string? ClientId { get; set; }
+
+    /// <summary>JS runtime transaction id that produced this batch.</summary>
+    public string? TransactionId { get; set; }
+
+    /// <summary>Monotonic client-local sequence assigned before broadcasting.</summary>
+    public long LocalSequence { get; set; }
+
+    /// <summary>Selection/cursor state after the transaction was applied locally.</summary>
+    public WysiwygSelectionSnapshot? SelectionAfter { get; set; }
+
     /// <summary>Operations in the batch.</summary>
     public List<DocumentOperation> Operations { get; set; } = [];
 }

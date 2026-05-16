@@ -68,6 +68,8 @@ window.tmDocumentWysiwyg = (function () {
             typingTimer: null,
             currentTransactionId: null,
             compositionActive: false,
+            compositionText: '',
+            compositionUpdateCount: 0,
             suppressInputUntil: 0,
             suppressInputType: null,
             acceptingNativeInput: false,
@@ -81,18 +83,67 @@ window.tmDocumentWysiwyg = (function () {
             pendingSelectionTimer: null,
             pendingLocalSnapshotSkips: 0,
             queuedRemoteBatches: [],
+            pendingCollaborationTransactions: [],
+            remoteCursorLayer: null,
+            remoteCursorElements: new Map(),
             lastSelectionSnapshot: null,
             lastInputType: null,
             lastInputDataLength: 0,
+            jsOwnedInputCount: 0,
+            nativeInputCount: 0,
+            lastInputOperationId: null,
             lastPatchType: null,
             lastPatchId: null,
             lastPatchTransactionId: null,
             lastPatchAt: null,
             measureCache: new Map(),
             measureStats: { count: 0, cacheHits: 0, invalidations: 0 },
-            renderStats: { snapshotApplies: 0, fullRenders: 0, remoteOperations: 0, remoteBatches: 0 },
+            renderStats: {
+                snapshotApplies: 0,
+                fullRenders: 0,
+                incrementalOperations: 0,
+                remoteOperations: 0,
+                remoteBatches: 0,
+                lastRenderReason: ''
+            },
+            inputStats: {
+                operationCount: 0,
+                longOperationCount: 0,
+                totalLatencyMs: 0,
+                totalOperationMs: 0,
+                maxLatencyMs: 0,
+                maxOperationMs: 0,
+                lastLatencyMs: 0,
+                lastOperationMs: 0,
+                lastInputType: '',
+                lastEventType: ''
+            },
+            runtimeDocument: null,
+            runtimeSelection: null,
+            renderPlan: null,
+            commandTransactionCounter: 0,
+            commandOperationCounter: 0,
+            commandUndoStack: [],
+            commandRedoStack: [],
+            lastCommandTransaction: null,
+            pendingUndoTransaction: null,
+            runtimeUndoEpoch: 0,
+            lastUndoState: null,
+            isDirty: false,
+            dirtyEpoch: 0,
+            savedEpoch: 0,
+            lastDirtyReason: '',
+            lastSavedMarker: null,
+            lastSavedAt: null,
+            lastDirtyState: null,
+            runtimeRevisions: [],
+            lastRevisionStateJson: '',
+            runtimeComments: [],
+            lastCommentStateJson: '',
+            lastCommittedHtml: '',
             virtualPages: [],
             virtualState: null,
+            virtualSelectionSnapshot: null,
             virtualizationScrollTimer: null,
             hasRenderedDocument: false,
             appliedOperationIds: new Set(),
@@ -194,14 +245,24 @@ window.tmDocumentWysiwyg = (function () {
         inst._handleInput = function (e) { _onInput(inst, e); };
         inst._handlePaste = function (e) { _onPaste(inst, e); };
         inst._handleCopy = function (e) { _onCopy(inst, e); };
-        inst._handleCompositionStart = function () { inst.compositionActive = true; };
+        inst._handleCompositionStart = function () {
+            inst.compositionActive = true;
+            inst.compositionText = '';
+            inst.compositionUpdateCount = 0;
+        };
+        inst._handleCompositionUpdate = function (e) {
+            inst.compositionText = e && e.data ? String(e.data) : '';
+            inst.compositionUpdateCount++;
+        };
         inst._handleCompositionEnd = function (e) {
             inst.compositionActive = false;
+            inst.compositionText = e && e.data ? String(e.data) : inst.compositionText;
             _onInput(inst, e);
             _scheduleRemoteQueueFlush(inst);
         };
         inst._handleSelectionChange = function () { _onSelectionChange(inst); };
         inst._handleKeyDown = function (e) { _onKeyDown(inst, e); };
+        inst._handleDocumentKeyDown = function (e) { _onDocumentKeyDown(inst, e); };
         inst._handlePointerDown = function (e) { _onFloatingImagePointerDown(inst, e); };
         inst._handleClick = function (e) { _onRootClick(inst, e); };
         inst._handleDoubleClick = function (e) { _onRootDoubleClick(inst, e); };
@@ -215,8 +276,10 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.addEventListener('paste', inst._handlePaste, true);
         inst.root.addEventListener('copy', inst._handleCopy, true);
         inst.root.addEventListener('compositionstart', inst._handleCompositionStart, true);
+        inst.root.addEventListener('compositionupdate', inst._handleCompositionUpdate, true);
         inst.root.addEventListener('compositionend', inst._handleCompositionEnd, true);
         document.addEventListener('selectionchange', inst._handleSelectionChange);
+        document.addEventListener('keydown', inst._handleDocumentKeyDown, true);
         inst.root.addEventListener('keydown', inst._handleKeyDown, true);
         inst.root.addEventListener('pointerdown', inst._handlePointerDown, true);
         inst.root.addEventListener('click', inst._handleClick, true);
@@ -243,11 +306,17 @@ window.tmDocumentWysiwyg = (function () {
         if (inst._handleCompositionStart) {
             inst.root.removeEventListener('compositionstart', inst._handleCompositionStart, true);
         }
+        if (inst._handleCompositionUpdate) {
+            inst.root.removeEventListener('compositionupdate', inst._handleCompositionUpdate, true);
+        }
         if (inst._handleCompositionEnd) {
             inst.root.removeEventListener('compositionend', inst._handleCompositionEnd, true);
         }
         if (inst._handleSelectionChange) {
             document.removeEventListener('selectionchange', inst._handleSelectionChange);
+        }
+        if (inst._handleDocumentKeyDown) {
+            document.removeEventListener('keydown', inst._handleDocumentKeyDown, true);
         }
         if (inst._handleKeyDown) {
             inst.root.removeEventListener('keydown', inst._handleKeyDown, true);
@@ -308,6 +377,11 @@ window.tmDocumentWysiwyg = (function () {
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
 
+        var bodyRegion = target.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
+        if (bodyRegion && inst.root.contains(bodyRegion)) {
+            _markActivePageRegion(inst, bodyRegion);
+        }
+
         var revision = target.closest('.tm-wysiwyg-revision[data-revision-id]');
         if (!revision || !inst.root.contains(revision)) {
             _hideInlineRevisionReview(inst);
@@ -328,12 +402,42 @@ window.tmDocumentWysiwyg = (function () {
         if (!headerFooter || !inst.root.contains(headerFooter)) return;
 
         event.preventDefault();
-        headerFooter.focus({ preventScroll: true });
-        _ensureEditableSelection(inst, headerFooter);
+        _activatePageRegion(inst, headerFooter);
+    }
+
+    function _activatePageRegion(inst, regionEl) {
+        if (!inst || !regionEl || !inst.root || !inst.root.contains(regionEl)) return;
+
+        _markActivePageRegion(inst, regionEl);
+        regionEl.focus({ preventScroll: true });
+        _ensureEditableSelection(inst, regionEl);
         var snapshot = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = snapshot;
         inst.pendingSelectionSnapshot = snapshot;
         _flushSelectionNotification(inst);
+    }
+
+    function _markActivePageRegion(inst, regionEl) {
+        if (!inst || !regionEl || !inst.root || !inst.root.contains(regionEl)) return;
+
+        inst.root.querySelectorAll('.tm-wysiwyg-region--active').forEach(function (active) {
+            active.classList.remove('tm-wysiwyg-region--active');
+            active.removeAttribute('data-region-active');
+        });
+
+        regionEl.classList.add('tm-wysiwyg-region--active');
+        regionEl.setAttribute('data-region-active', 'true');
+        inst.root.setAttribute('data-active-region', regionEl.getAttribute('data-region') || 'Body');
+    }
+
+    function _deactivatePageRegion(inst) {
+        if (!inst || !inst.root) return;
+
+        inst.root.querySelectorAll('.tm-wysiwyg-region--active').forEach(function (active) {
+            active.classList.remove('tm-wysiwyg-region--active');
+            active.removeAttribute('data-region-active');
+        });
+        inst.root.setAttribute('data-active-region', 'Body');
     }
 
     function _onRootContextMenu(inst, event) {
@@ -386,6 +490,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) return;
 
         inst.lastSelectionSnapshot = snapshot;
+        inst.virtualSelectionSnapshot = null;
         _scheduleSelectionNotification(inst, snapshot);
         var position = _placeFloatingElement(event.clientX, event.clientY, 240, 268);
         _invokeDotNet(inst, 'HandleTextContextMenuRequested', {
@@ -555,16 +660,20 @@ window.tmDocumentWysiwyg = (function () {
 
         var block = figure.closest('.tm-wysiwyg-block[data-block-id]');
         if (block) {
+            var blockId = block.getAttribute('data-block-id') || '';
             inst.lastSelectionSnapshot = {
                 Region: 'Image',
-                AnchorBlockId: block.getAttribute('data-block-id') || '',
-                FocusBlockId: block.getAttribute('data-block-id') || '',
+                AnchorBlockId: blockId,
+                FocusBlockId: blockId,
+                ActiveImageBlockId: blockId,
                 AnchorInlineId: '',
                 FocusInlineId: '',
                 AnchorOffset: 0,
                 FocusOffset: 0,
                 IsCollapsed: true
             };
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastSelectionSnapshot);
+            _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
         }
     }
 
@@ -575,6 +684,14 @@ window.tmDocumentWysiwyg = (function () {
             inst.selectedImageFigure.removeAttribute('aria-selected');
         }
         inst.selectedImageFigure = null;
+        if (inst.runtimeSelection && (inst.runtimeSelection.activeImageBlockId || inst.runtimeSelection.ActiveImageBlockId)) {
+            inst.runtimeSelection = Object.assign({}, inst.runtimeSelection, {
+                region: 'Body',
+                activeImageBlockId: null,
+                ActiveImageBlockId: null
+            });
+            inst.lastSelectionSnapshot = _createSelectionSnapshotFromRuntimeSelection(inst.runtimeSelection);
+        }
     }
 
     function _showImageContextMenu(inst, figure, clientX, clientY) {
@@ -773,64 +890,66 @@ window.tmDocumentWysiwyg = (function () {
     // ── Input pipeline ───────────────────────────────────────────────────────
 
     function _onBeforeInput(inst, event) {
-        if (inst.readOnly) {
+        var measure = _beginInputMeasure(inst, event, 'beforeinput');
+        try {
+            if (inst.readOnly) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            if (inst.compositionActive) return;
+            _hideMiniToolbar(inst);
+
+            var inputType = event.inputType;
+            inst.lastInputType = inputType || null;
+            inst.lastInputDataLength = event.data ? event.data.length : 0;
+            _ensureEditableSelection(inst, event.target);
+            var selection = _captureSelectionSnapshot(inst);
+            var allowedTypes = [
+                'insertText', 'insertParagraph', 'insertLineBreak',
+                'deleteContentBackward', 'deleteContentForward', 'deleteWordBackward', 'deleteWordForward',
+                'formatBold', 'formatItalic', 'formatUnderline'
+            ];
+
+            if (!allowedTypes.includes(inputType)) {
+                // Prevent unsupported input types; Blazor will apply them via patches.
+                event.preventDefault();
+                return;
+            }
+
+            if (inst.trackChangesEnabled && _handleTrackedBeforeInput(inst, event, inputType, selection)) {
+                return;
+            }
+
+            if (_handlePendingTypingBeforeInput(inst, event, inputType, selection)) {
+                return;
+            }
+
+            if (_handleStructuralBeforeInput(inst, event, inputType, selection, null)) {
+                return;
+            }
+
+            if (_handleJsOwnedTextBeforeInput(inst, event, inputType, selection)) {
+                return;
+            }
+
             event.preventDefault();
-            event.stopPropagation();
-            return;
+        } finally {
+            _endInputMeasure(measure);
         }
-
-        if (inst.compositionActive) return;
-        _hideMiniToolbar(inst);
-
-        var inputType = event.inputType;
-        inst.lastInputType = inputType || null;
-        inst.lastInputDataLength = event.data ? event.data.length : 0;
-        _ensureEditableSelection(inst, event.target);
-        var selection = _captureSelectionSnapshot(inst);
-        var allowedTypes = [
-            'insertText', 'insertParagraph', 'insertLineBreak',
-            'deleteContentBackward', 'deleteContentForward', 'deleteWordBackward', 'deleteWordForward',
-            'formatBold', 'formatItalic', 'formatUnderline'
-        ];
-
-        if (!allowedTypes.includes(inputType)) {
-            // Prevent unsupported input types; Blazor will apply them via patches.
-            event.preventDefault();
-            return;
-        }
-
-        if (inst.trackChangesEnabled && _handleTrackedBeforeInput(inst, event, inputType, selection)) {
-            return;
-        }
-
-        if (_handlePendingTypingBeforeInput(inst, event, inputType, selection)) {
-            return;
-        }
-
-        if (_handleStructuralBeforeInput(inst, event, inputType, selection, null)) {
-            return;
-        }
-
-        inst.pendingNativeInputSelection = selection;
-        inst.acceptingNativeInput = true;
-        if (inst.nativeInputTimer) {
-            clearTimeout(inst.nativeInputTimer);
-        }
-        inst.nativeInputTimer = setTimeout(function () {
-            inst.acceptingNativeInput = false;
-            inst.nativeInputTimer = null;
-            _scheduleRemoteQueueFlush(inst);
-        }, 250);
     }
 
     function _applyInsertText(inst, data) {
-        if (!data) return false;
+        if (!data) return null;
         inst._applyingOwnPatch = true;
         try {
             var sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return false;
+            if (!sel || sel.rangeCount === 0) return null;
             var range = sel.getRangeAt(0);
+            var replacedText = '';
             if (!sel.isCollapsed) {
+                replacedText = range.toString();
                 range.deleteContents();
             }
 
@@ -841,7 +960,7 @@ window.tmDocumentWysiwyg = (function () {
                 var current = textNode.textContent;
                 textNode.textContent = current.slice(0, offset) + data + current.slice(offset);
                 _setCaret(textNode, offset + data.length);
-                return true;
+                return { insertedText: data, replacedText: replacedText };
             } else if (textNode.nodeType === Node.ELEMENT_NODE) {
                 var inline = textNode.querySelector('[data-inline-id]') || textNode.closest('[data-inline-id]');
                 if (inline && inline.firstChild && inline.firstChild.nodeType === Node.TEXT_NODE) {
@@ -850,17 +969,17 @@ window.tmDocumentWysiwyg = (function () {
                     var clampedOffset = Math.max(0, Math.min(offset, currentText.length));
                     txt.textContent = currentText.slice(0, clampedOffset) + data + currentText.slice(clampedOffset);
                     _setCaret(txt, clampedOffset + data.length);
-                    return true;
+                    return { insertedText: data, replacedText: replacedText };
                 } else {
                     var newText = document.createTextNode(data);
                     inline = inline || textNode;
                     inline.appendChild(newText);
                     _setCaret(newText, data.length);
-                    return true;
+                    return { insertedText: data, replacedText: replacedText };
                 }
             }
 
-            return false;
+            return null;
         } finally {
             inst._applyingOwnPatch = false;
         }
@@ -870,10 +989,11 @@ window.tmDocumentWysiwyg = (function () {
         inst._applyingOwnPatch = true;
         try {
             var sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return false;
+            if (!sel || sel.rangeCount === 0) return null;
             if (!sel.isCollapsed) {
+                var selectedText = sel.toString();
                 sel.deleteFromDocument();
-                return true;
+                return { deletedText: selectedText, deletedRange: true };
             }
             var range = sel.getRangeAt(0);
             var textNode = range.startContainer;
@@ -883,13 +1003,14 @@ window.tmDocumentWysiwyg = (function () {
                 var current = textNode.textContent;
                 var delLen = unit === 'word' ? _wordBoundaryBackward(current, offset) : 1;
                 if (offset > 0) {
+                    var deletedText = current.slice(offset - delLen, offset);
                     textNode.textContent = current.slice(0, offset - delLen) + current.slice(offset);
                     _setCaret(textNode, offset - delLen);
-                    return true;
+                    return { deletedText: deletedText, deletedRange: false };
                 }
             }
 
-            return false;
+            return _mergeCurrentBlockWithPrevious(inst, range.startContainer);
         } finally {
             inst._applyingOwnPatch = false;
         }
@@ -899,10 +1020,11 @@ window.tmDocumentWysiwyg = (function () {
         inst._applyingOwnPatch = true;
         try {
             var sel = window.getSelection();
-            if (!sel || sel.rangeCount === 0) return false;
+            if (!sel || sel.rangeCount === 0) return null;
             if (!sel.isCollapsed) {
+                var selectedText = sel.toString();
                 sel.deleteFromDocument();
-                return true;
+                return { deletedText: selectedText, deletedRange: true };
             }
             var range = sel.getRangeAt(0);
             var textNode = range.startContainer;
@@ -911,15 +1033,45 @@ window.tmDocumentWysiwyg = (function () {
             if (textNode.nodeType === Node.TEXT_NODE) {
                 var current = textNode.textContent;
                 var delLen = unit === 'word' ? _wordBoundaryForward(current, offset) : 1;
+                var deletedText = current.slice(offset, offset + delLen);
                 textNode.textContent = current.slice(0, offset) + current.slice(offset + delLen);
                 _setCaret(textNode, offset);
-                return delLen > 0;
+                return delLen > 0 ? { deletedText: deletedText, deletedRange: false } : null;
             }
 
-            return false;
+            return null;
         } finally {
             inst._applyingOwnPatch = false;
         }
+    }
+
+    function _mergeCurrentBlockWithPrevious(inst, node) {
+        var block = _closestBlockElement(node);
+        if (!block) return null;
+
+        var body = block.parentElement;
+        if (!body) return null;
+
+        var siblings = Array.from(body.querySelectorAll(':scope > .tm-wysiwyg-block[data-block-id]'));
+        var index = siblings.indexOf(block);
+        if (index <= 0) return null;
+
+        var previous = siblings[index - 1];
+        if (!previous || previous.matches('figure, table, hr')) return null;
+
+        var caretNode = _lastDeepTextNode(previous) || _firstDeepTextNode(previous);
+        var caretOffset = caretNode ? (caretNode.textContent || '').length : 0;
+        while (block.firstChild) {
+            previous.appendChild(block.firstChild);
+        }
+        block.remove();
+
+        if (caretNode) {
+            _setCaret(caretNode, caretOffset);
+        }
+
+        _invalidateMeasureCache(inst);
+        return { deletedText: '', deletedRange: false, mergedBlock: true };
     }
 
     function _wordBoundaryBackward(text, offset) {
@@ -946,11 +1098,226 @@ window.tmDocumentWysiwyg = (function () {
         sel.addRange(range);
     }
 
+    function _performanceNow() {
+        return window.performance && typeof window.performance.now === 'function'
+            ? window.performance.now()
+            : Date.now();
+    }
+
+    function _beginInputMeasure(inst, event, eventType) {
+        if (!inst) return null;
+        return {
+            inst: inst,
+            event: event || null,
+            eventType: eventType || '',
+            start: _performanceNow()
+        };
+    }
+
+    function _endInputMeasure(measure) {
+        if (!measure || !measure.inst) return;
+        var inst = measure.inst;
+        if (!inst.inputStats) {
+            inst.inputStats = {
+                operationCount: 0,
+                longOperationCount: 0,
+                totalLatencyMs: 0,
+                totalOperationMs: 0,
+                maxLatencyMs: 0,
+                maxOperationMs: 0,
+                lastLatencyMs: 0,
+                lastOperationMs: 0,
+                lastInputType: '',
+                lastEventType: ''
+            };
+        }
+
+        var end = _performanceNow();
+        var operationMs = Math.max(0, end - measure.start);
+        var event = measure.event;
+        var latencyMs = operationMs;
+        if (event && typeof event.timeStamp === 'number') {
+            var candidate = end - event.timeStamp;
+            if (Number.isFinite(candidate) && candidate >= 0 && candidate < 60000) {
+                latencyMs = candidate;
+            }
+        }
+
+        var stats = inst.inputStats;
+        var threshold = _readNumberOption(inst, 'inputLongTaskThresholdMs', 'InputLongTaskThresholdMs', 24);
+        stats.operationCount++;
+        stats.totalLatencyMs += latencyMs;
+        stats.totalOperationMs += operationMs;
+        stats.maxLatencyMs = Math.max(stats.maxLatencyMs || 0, latencyMs);
+        stats.maxOperationMs = Math.max(stats.maxOperationMs || 0, operationMs);
+        stats.lastLatencyMs = latencyMs;
+        stats.lastOperationMs = operationMs;
+        stats.lastInputType = inst.lastInputType || (event && event.inputType) || '';
+        stats.lastEventType = measure.eventType || (event && event.type) || '';
+        if (operationMs > threshold) {
+            stats.longOperationCount++;
+        }
+    }
+
+    function _handleJsOwnedTextBeforeInput(inst, event, inputType, selection) {
+        if (inputType === 'insertText') {
+            var text = event.data || '';
+            if (!text) return false;
+
+            event.preventDefault();
+            event.stopPropagation();
+            _beginUndoTransaction(inst, 'typing', 'Type text', selection, false);
+            var replacingSelection = selection && !selection.isCollapsed && !selection.IsCollapsed;
+            var deleteSelection = replacingSelection ? _createDeleteRangePatchFromSelection(inst, selection) : null;
+            var insertSelection = deleteSelection
+                ? _collapseSelectionSnapshot(selection, deleteSelection.startOffset)
+                : selection;
+            var result = _applyInsertText(inst, text);
+            if (!result) return true;
+
+            _invalidateMeasureCache(inst);
+            var afterSelection = _captureSelectionSnapshot(inst);
+            inst.lastSelectionSnapshot = afterSelection;
+            _scheduleSelectionNotification(inst, afterSelection);
+            inst.jsOwnedInputCount++;
+            _markIncrementalRender(inst, 'insertText');
+
+            if (deleteSelection) {
+                _flushPendingInputPatch(inst);
+                _beginTypingTransaction(inst);
+                _dispatchPatch(inst, {
+                    type: 'DeleteRange',
+                    operationId: _nextRuntimeOperationId(inst),
+                    data: deleteSelection.deletedText,
+                    deleteLength: deleteSelection.deleteLength,
+                    selection: deleteSelection.selection,
+                    beforeSelection: selection,
+                    afterSelection: insertSelection,
+                    transactionId: inst.currentTransactionId,
+                    protocolVersion: inst.options.protocolVersion || 1
+                });
+            }
+
+            _dispatchInputPatch(inst, inputType, text, insertSelection, null, null, afterSelection);
+            return true;
+        }
+
+        if (inputType === 'deleteContentBackward'
+            || inputType === 'deleteWordBackward'
+            || inputType === 'deleteContentForward'
+            || inputType === 'deleteWordForward') {
+            event.preventDefault();
+            event.stopPropagation();
+            _beginUndoTransaction(inst, 'typing', 'Delete', selection, false);
+            var backward = inputType === 'deleteContentBackward' || inputType === 'deleteWordBackward';
+            var unit = inputType === 'deleteWordBackward' || inputType === 'deleteWordForward' ? 'word' : 'character';
+            var deleteRangePatch = selection && !(selection.isCollapsed ?? selection.IsCollapsed ?? true)
+                ? _createDeleteRangePatchFromSelection(inst, selection)
+                : null;
+            var deleteResult = backward
+                ? _applyDeleteBackward(inst, unit)
+                : _applyDeleteForward(inst, unit);
+            if (!deleteResult) return true;
+
+            _invalidateMeasureCache(inst);
+            var afterDeleteSelection = _captureSelectionSnapshot(inst);
+            inst.lastSelectionSnapshot = afterDeleteSelection;
+            _scheduleSelectionNotification(inst, afterDeleteSelection);
+            inst.jsOwnedInputCount++;
+            _markIncrementalRender(inst, inputType || 'deleteText');
+
+            if (deleteRangePatch) {
+                _flushPendingInputPatch(inst);
+                _beginTypingTransaction(inst);
+                _dispatchPatch(inst, {
+                    type: 'DeleteRange',
+                    operationId: _nextRuntimeOperationId(inst),
+                    data: deleteRangePatch.deletedText || deleteResult.deletedText || '',
+                    deleteLength: deleteRangePatch.deleteLength,
+                    selection: deleteRangePatch.selection,
+                    beforeSelection: selection,
+                    afterSelection: afterDeleteSelection,
+                    transactionId: inst.currentTransactionId,
+                    protocolVersion: inst.options.protocolVersion || 1
+                });
+                return true;
+            }
+
+            _dispatchInputPatch(inst, inputType, deleteResult.deletedText || null, selection, null, null, afterDeleteSelection);
+            return true;
+        }
+
+        return false;
+    }
+
+    function _createDeleteRangePatchFromSelection(inst, selection) {
+        if (!selection) return null;
+        var anchorBlockId = selection.anchorBlockId || selection.AnchorBlockId || '';
+        var focusBlockId = selection.focusBlockId || selection.FocusBlockId || anchorBlockId;
+        var anchorInlineId = selection.anchorInlineId || selection.AnchorInlineId || '';
+        var focusInlineId = selection.focusInlineId || selection.FocusInlineId || anchorInlineId;
+        if (anchorBlockId !== focusBlockId || anchorInlineId !== focusInlineId) {
+            return null;
+        }
+
+        var anchorOffset = selection.anchorOffset ?? selection.AnchorOffset ?? 0;
+        var focusOffset = selection.focusOffset ?? selection.FocusOffset ?? anchorOffset;
+        var start = Math.min(anchorOffset, focusOffset);
+        var end = Math.max(anchorOffset, focusOffset);
+        var anchorBlockOffset = selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? anchorOffset;
+        var focusBlockOffset = selection.focusBlockOffset ?? selection.FocusBlockOffset ?? focusOffset;
+        var blockStart = Math.min(anchorBlockOffset, focusBlockOffset);
+        if (end <= start) return null;
+
+        var collapsed = _collapseSelectionSnapshot(selection, start);
+        collapsed.anchorBlockOffset = blockStart;
+        collapsed.AnchorBlockOffset = blockStart;
+        collapsed.focusBlockOffset = blockStart;
+        collapsed.FocusBlockOffset = blockStart;
+        var deletedText = '';
+        var sel = window.getSelection();
+        if (sel && sel.rangeCount > 0) {
+            deletedText = sel.toString();
+        }
+
+        return {
+            selection: collapsed,
+            startOffset: start,
+            deleteLength: end - start,
+            deletedText: deletedText
+        };
+    }
+
+    function _collapseSelectionSnapshot(selection, offset) {
+        if (!selection) return null;
+        var clone = _cloneRuntimeJson(selection);
+        var blockId = clone.anchorBlockId || clone.AnchorBlockId || clone.focusBlockId || clone.FocusBlockId || null;
+        var inlineId = clone.anchorInlineId || clone.AnchorInlineId || clone.focusInlineId || clone.FocusInlineId || null;
+        clone.anchorBlockId = blockId;
+        clone.AnchorBlockId = blockId;
+        clone.focusBlockId = blockId;
+        clone.FocusBlockId = blockId;
+        clone.anchorInlineId = inlineId;
+        clone.AnchorInlineId = inlineId;
+        clone.focusInlineId = inlineId;
+        clone.FocusInlineId = inlineId;
+        clone.anchorOffset = offset;
+        clone.AnchorOffset = offset;
+        clone.focusOffset = offset;
+        clone.FocusOffset = offset;
+        clone.isCollapsed = true;
+        clone.IsCollapsed = true;
+        clone.direction = 'forward';
+        clone.Direction = 'forward';
+        return clone;
+    }
+
     function _handlePendingTypingBeforeInput(inst, event, inputType, selection) {
         if (inputType !== 'insertText' || !event.data || !_hasPendingTypingMarks(inst)) {
             return false;
         }
 
+        _beginUndoTransaction(inst, 'typing', 'Type text', selection, false);
         var result = _applyPendingTypingTextToDom(inst, event.data);
         if (!result) {
             return false;
@@ -958,6 +1325,7 @@ window.tmDocumentWysiwyg = (function () {
 
         event.preventDefault();
         _invalidateMeasureCache(inst);
+        _markIncrementalRender(inst, 'pendingTypingInsertText');
         var afterSelection = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
@@ -1195,6 +1563,7 @@ window.tmDocumentWysiwyg = (function () {
         var newBlock = document.createElement('p');
         newBlock.className = 'tm-wysiwyg-block';
         newBlock.setAttribute('data-block-id', blockId);
+        newBlock.style.cssText = block.style.cssText || '';
 
         var normalized = _normalizeToTextNode(range.startContainer, range.startOffset);
         var sourceInline = _findInlineElement(normalized.node);
@@ -1240,6 +1609,7 @@ window.tmDocumentWysiwyg = (function () {
             block: {
                 Id: blockId,
                 Type: 0,
+                ParagraphProperties: _serializeParagraphProperties(newBlock, null),
                 Content: {
                     $type: 'paragraph',
                     Inlines: [
@@ -1286,6 +1656,13 @@ window.tmDocumentWysiwyg = (function () {
             return false;
         }
 
+        _commitCurrentRuntimeTransaction(inst, true);
+        _beginUndoTransaction(
+            inst,
+            'structural',
+            inputType === 'insertParagraph' ? 'Insert paragraph' : 'Insert line break',
+            selection,
+            true);
         var result = inputType === 'insertParagraph'
             ? _applyParagraphBreakToDom(inst)
             : (_applySoftBreakToDom(inst) ? { block: null } : null);
@@ -1294,6 +1671,7 @@ window.tmDocumentWysiwyg = (function () {
         event.preventDefault();
         _flushPendingInputPatch(inst);
         _invalidateMeasureCache(inst);
+        _markIncrementalRender(inst, inputType === 'insertParagraph' ? 'splitParagraph' : 'insertSoftBreak');
         var afterSelection = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
@@ -1309,10 +1687,20 @@ window.tmDocumentWysiwyg = (function () {
             protocolVersion: inst.options.protocolVersion || 1
         };
         if (revisionType) {
+            var structuralRevisionId = _createRevisionId();
+            patch.revisionId = structuralRevisionId;
             patch.revisionType = revisionType;
+            _createRuntimeRevision(
+                inst,
+                structuralRevisionId,
+                'Structure',
+                inputType === 'insertParagraph' ? 'Paragraph break' : 'Line break',
+                selection,
+                afterSelection);
         }
 
         _dispatchPatch(inst, patch);
+        _commitCurrentRuntimeTransaction(inst, true);
         return true;
     }
 
@@ -1384,12 +1772,31 @@ window.tmDocumentWysiwyg = (function () {
         return 'block' + Date.now().toString(36) + Math.random().toString(36).slice(2);
     }
 
+    function _createTableCellId() {
+        return 'tc' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+    }
+
     function _ensureEditableSelection(inst, target) {
         var sel = window.getSelection();
+        var hasUsableTextSelection = false;
         if (sel
             && sel.rangeCount > 0
             && _nodeBelongsToRoot(sel.anchorNode, inst.root)
             && (!target || target.contains(sel.anchorNode))) {
+            var mapped = _mapNodeToBlockInline(sel.anchorNode, sel.anchorOffset, inst.root);
+            var region = _resolveSelectionRegion(sel.anchorNode, inst.root);
+            hasUsableTextSelection = !!(mapped
+                && mapped.blockId
+                && mapped.inlineId
+                && region
+                && region.region !== 'Image');
+        }
+
+        if (sel
+            && sel.rangeCount > 0
+            && _nodeBelongsToRoot(sel.anchorNode, inst.root)
+            && (!target || target.contains(sel.anchorNode))
+            && hasUsableTextSelection) {
             return;
         }
 
@@ -1399,7 +1806,8 @@ window.tmDocumentWysiwyg = (function () {
         }
         if (!editable) return;
 
-        var textNode = _firstDeepTextNode(editable);
+        var textRoot = _findEditableTextRoot(target, editable) || editable;
+        var textNode = _firstDeepTextNode(textRoot);
         if (textNode) {
             _setCaret(textNode, textNode.textContent.length);
             return;
@@ -1426,39 +1834,106 @@ window.tmDocumentWysiwyg = (function () {
         sel.addRange(range);
     }
 
+    function _findEditableTextRoot(target, editable) {
+        var element = target && target.nodeType === Node.ELEMENT_NODE
+            ? target
+            : target && target.parentElement;
+        var block = element && element.closest
+            ? element.closest('.tm-wysiwyg-block[data-block-id]:not(figure):not(table):not(hr)')
+            : null;
+        if (block && editable.contains(block) && block.querySelector('[data-inline-id]')) {
+            return block;
+        }
+
+        var blocks = editable.querySelectorAll('.tm-wysiwyg-block[data-block-id]:not(figure):not(table):not(hr)');
+        for (var i = 0; i < blocks.length; i++) {
+            if (blocks[i].querySelector('[data-inline-id]')) {
+                return blocks[i];
+            }
+        }
+
+        return null;
+    }
+
     function _onInput(inst, event) {
-        if (inst.readOnly) {
-            event.stopPropagation();
-            return;
+        var measure = _beginInputMeasure(inst, event, 'input');
+        try {
+            if (inst.readOnly) {
+                event.stopPropagation();
+                return;
+            }
+
+            if (inst.compositionActive) return;
+            if (_shouldSuppressBrowserInputEvent(inst, event.inputType)) {
+                return;
+            }
+            _invalidateMeasureCache(inst);
+            inst.nativeInputCount++;
+
+            const inputType = event.inputType;
+            const data = event.data || (!inputType && event.type === 'compositionend' ? inst.compositionText : null);
+            inst.lastInputType = inputType || null;
+            inst.lastInputDataLength = data ? data.length : 0;
+
+            if (!inputType && data) {
+                var selectionBeforeComposition = inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+                var afterCompositionSelection = _captureSelectionSnapshot(inst);
+                _markIncrementalRender(inst, 'compositionText');
+                _dispatchInputPatch(inst, 'insertText', data, selectionBeforeComposition, null, null, afterCompositionSelection);
+                return;
+            }
+
+            const selection = inst.pendingNativeInputSelection || _captureSelectionSnapshot(inst);
+            inst.pendingNativeInputSelection = null;
+            if (!inst.pendingUndoTransaction && data) {
+                _beginNativeUndoTransaction(inst, inputType || 'insertText', data, selection);
+            }
+            if (inst.nativeInputTimer) {
+                clearTimeout(inst.nativeInputTimer);
+            }
+            inst.nativeInputTimer = setTimeout(function () {
+                inst.acceptingNativeInput = false;
+                inst.nativeInputTimer = null;
+                _scheduleRemoteQueueFlush(inst);
+            }, 0);
+
+            const afterSelection = _captureSelectionSnapshot(inst);
+            inst.lastSelectionSnapshot = afterSelection;
+            _scheduleSelectionNotification(inst, afterSelection);
+
+            _markIncrementalRender(inst, inputType || 'nativeInput');
+            _dispatchInputPatch(inst, inputType, data, selection, null, null, afterSelection);
+        } finally {
+            _endInputMeasure(measure);
+        }
+    }
+
+    function _beginNativeUndoTransaction(inst, inputType, data, afterNativeSelection) {
+        if (!inst || inst.pendingUndoTransaction) return;
+        var beforeHtml = inst.lastCommittedHtml || inst.root.innerHTML;
+        var transactionId = inst.currentTransactionId || ('txn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
+        if (!inst.currentTransactionId) {
+            inst.currentTransactionId = transactionId;
         }
 
-        if (inst.compositionActive) return;
-        if (_shouldSuppressBrowserInputEvent(inst, event.inputType)) {
-            return;
-        }
-        _invalidateMeasureCache(inst);
-
-        const inputType = event.inputType;
-        const data = event.data;
-        inst.lastInputType = inputType || null;
-        inst.lastInputDataLength = data ? data.length : 0;
-
-        const selection = inst.pendingNativeInputSelection || _captureSelectionSnapshot(inst);
-        inst.pendingNativeInputSelection = null;
-        if (inst.nativeInputTimer) {
-            clearTimeout(inst.nativeInputTimer);
-        }
-        inst.nativeInputTimer = setTimeout(function () {
-            inst.acceptingNativeInput = false;
-            inst.nativeInputTimer = null;
-            _scheduleRemoteQueueFlush(inst);
-        }, 0);
-
-        const afterSelection = _captureSelectionSnapshot(inst);
-        inst.lastSelectionSnapshot = afterSelection;
-        _scheduleSelectionNotification(inst, afterSelection);
-
-        _dispatchInputPatch(inst, inputType, data, selection, null, null, afterSelection);
+        inst.pendingUndoTransaction = {
+            transactionId: transactionId,
+            source: 'native-input',
+            description: inputType && inputType.indexOf('delete') === 0 ? 'Delete' : 'Type text',
+            beforeHtml: beforeHtml,
+            afterHtml: null,
+            beforeSelection: _cloneRuntimeJson(inst.lastSelectionSnapshot || afterNativeSelection),
+            afterSelection: null,
+            operations: [{
+                operationId: transactionId + '-native',
+                type: inputType || 'insertText',
+                data: data || ''
+            }],
+            inverseOperations: [],
+            createdAt: new Date().toISOString(),
+            epoch: inst.runtimeUndoEpoch || 0
+        };
+        _notifyUndoStateChanged(inst);
     }
 
     function _handleTrackedBeforeInput(inst, event, inputType, selection) {
@@ -1466,14 +1941,21 @@ window.tmDocumentWysiwyg = (function () {
             var insertData = event.data || '';
             if (!insertData) return false;
 
+            _beginUndoTransaction(inst, 'typing', 'Type text', selection, false);
             var insertionRevisionId = _applyTrackedInsertionToDom(inst, insertData);
             if (!insertionRevisionId) return false;
 
             event.preventDefault();
             _invalidateMeasureCache(inst);
+            _markIncrementalRender(inst, 'trackedInsertText');
             var afterInsertSelection = _captureSelectionSnapshot(inst);
             inst.lastSelectionSnapshot = afterInsertSelection;
             _scheduleSelectionNotification(inst, afterInsertSelection);
+            if ((inst.runtimeRevisions || []).some(function (revision) { return revision.Id === insertionRevisionId; })) {
+                _appendRuntimeRevisionPayload(inst, insertionRevisionId, insertData);
+            } else {
+                _createRuntimeRevision(inst, insertionRevisionId, 'Insertion', insertData, selection, afterInsertSelection);
+            }
             _dispatchInputPatch(inst, inputType, insertData, selection, insertionRevisionId, 'Insertion', afterInsertSelection);
             return true;
         }
@@ -1482,14 +1964,17 @@ window.tmDocumentWysiwyg = (function () {
             || inputType === 'deleteContentForward'
             || inputType === 'deleteWordBackward'
             || inputType === 'deleteWordForward') {
+            _beginUndoTransaction(inst, 'typing', 'Delete', selection, false);
             var deletion = _applyTrackedDeletionToDom(inst, inputType);
             if (!deletion) return false;
 
             event.preventDefault();
             _invalidateMeasureCache(inst);
+            _markIncrementalRender(inst, inputType || 'trackedDeleteText');
             var afterDeleteSelection = _captureSelectionSnapshot(inst);
             inst.lastSelectionSnapshot = afterDeleteSelection;
             _scheduleSelectionNotification(inst, afterDeleteSelection);
+            _createRuntimeRevision(inst, deletion.revisionId, 'Deletion', deletion.text, selection, afterDeleteSelection);
             _dispatchInputPatch(inst, inputType, deletion.text, selection, deletion.revisionId, 'Deletion', afterDeleteSelection);
             return true;
         }
@@ -1503,8 +1988,12 @@ window.tmDocumentWysiwyg = (function () {
 
     function _dispatchInputPatch(inst, inputType, data, selection, revisionId, revisionType, afterSelection) {
         _beginTypingTransaction(inst);
+        var operationId = _nextRuntimeOperationId(inst);
+        inst.lastInputOperationId = operationId;
         var patch = {
             type: _mapInputTypeToPatchType(inputType),
+            operationId: operationId,
+            epoch: inst.runtimeUndoEpoch || 0,
             data: data,
             selection: selection,
             beforeSelection: selection,
@@ -1570,6 +2059,9 @@ window.tmDocumentWysiwyg = (function () {
         var patch = inst.pendingInputPatch;
         inst.pendingInputPatch = null;
         if (patch) {
+            if ((patch.epoch ?? patch.Epoch ?? 0) !== (inst.runtimeUndoEpoch || 0)) {
+                return;
+            }
             _dispatchPatch(inst, patch);
         }
     }
@@ -1618,7 +2110,15 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _dispatchPatch(inst, patch) {
+        if (patch && (patch.epoch ?? patch.Epoch) == null) {
+            patch.epoch = inst.runtimeUndoEpoch || 0;
+        }
+        if (patch && (patch.epoch ?? patch.Epoch ?? 0) !== (inst.runtimeUndoEpoch || 0)) {
+            return;
+        }
         _invalidateMeasureCache(inst);
+        _appendUndoOperation(inst, patch);
+        _transformRuntimeCommentAnchorsForPatch(inst, patch);
         inst.pendingLocalSnapshotSkips++;
         inst.lastPatchType = patch.type || patch.Type || null;
         inst.lastPatchId = patch.patchId || patch.PatchId || patch.operationId || patch.OperationId || null;
@@ -1643,6 +2143,35 @@ window.tmDocumentWysiwyg = (function () {
 
         const html = clipboardData.getData('text/html');
         const plain = clipboardData.getData('text/plain');
+        if ((!html || !html.trim()) && plain && !/[\r\n]/.test(plain)) {
+            if (inst.trackChangesEnabled) {
+                var trackedPasteSelection = _captureSelectionSnapshot(inst);
+                var trackedPasteEvent = {
+                    data: plain,
+                    inputType: 'insertText',
+                    preventDefault: function () { },
+                    stopPropagation: function () { }
+                };
+                if (_handleTrackedBeforeInput(inst, trackedPasteEvent, 'insertText', trackedPasteSelection)) {
+                    return;
+                }
+            }
+
+            _commitCurrentRuntimeTransaction(inst, true);
+            var beforeSelection = _captureSelectionSnapshot(inst);
+            _beginUndoTransaction(inst, 'paste', 'Paste', beforeSelection, true);
+            var result = _applyInsertText(inst, plain);
+            if (result) {
+                var afterSelection = _captureSelectionSnapshot(inst);
+                inst.lastSelectionSnapshot = afterSelection;
+                _scheduleSelectionNotification(inst, afterSelection);
+                inst.jsOwnedInputCount++;
+                _dispatchInputPatch(inst, 'insertText', plain, beforeSelection, null, null, afterSelection);
+                _commitCurrentRuntimeTransaction(inst, true);
+            }
+            return;
+        }
+
         const blocks = html && html.trim()
             ? _parseClipboardHtml(html)
             : _parsePlainTextPaste(plain);
@@ -1994,6 +2523,59 @@ window.tmDocumentWysiwyg = (function () {
         sel.addRange(range);
     }
 
+    function _placeCaretBeforeBlock(blockEl) {
+        if (!blockEl) return;
+        var sel = window.getSelection();
+        if (!sel) return;
+        var range = document.createRange();
+        range.setStartBefore(blockEl);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    function _moveCaretFromImageSelection(inst, before) {
+        var figure = _getSelectedImageFigure(inst);
+        if (!figure) return false;
+        var block = figure.closest('.tm-wysiwyg-block[data-block-id]');
+        if (!block) return false;
+
+        if (before) {
+            _placeCaretBeforeBlock(block);
+        } else {
+            _placeCaretAfterBlock(block);
+        }
+
+        _clearSelectedImage(inst);
+        _hideImageContextMenu(inst);
+        var snapshot = _captureSelectionSnapshot(inst);
+        if (!snapshot) {
+            var blockId = block.getAttribute('data-block-id') || '';
+            snapshot = {
+                region: 'Body',
+                anchorNodeId: blockId,
+                focusNodeId: blockId,
+                anchorBlockId: blockId,
+                focusBlockId: blockId,
+                anchorInlineId: '',
+                focusInlineId: '',
+                anchorOffset: 0,
+                focusOffset: 0,
+                isCollapsed: true,
+                direction: 'forward',
+                activeImageBlockId: null
+            };
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
+        }
+
+        if (snapshot) {
+            inst.lastSelectionSnapshot = snapshot;
+            _scheduleSelectionNotification(inst, snapshot);
+        }
+
+        return true;
+    }
+
     function _blockTypeName(type) {
         return type === 1 ? 'Heading'
             : type === 2 ? 'List'
@@ -2023,6 +2605,25 @@ window.tmDocumentWysiwyg = (function () {
 
         if (event.key && event.key.length === 1) {
             _hideMiniToolbar(inst);
+        }
+
+        if (inst.selectedImageFigure) {
+            var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
+                || event.key === 'ArrowLeft'
+                || event.key === 'ArrowUp';
+            var leaveAfterImage = (!event.shiftKey && event.key === 'Tab')
+                || event.key === 'ArrowRight'
+                || event.key === 'ArrowDown'
+                || event.key === 'Escape';
+            if (leaveBeforeImage || leaveAfterImage) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') {
+                    event.stopImmediatePropagation();
+                }
+                _moveCaretFromImageSelection(inst, leaveBeforeImage);
+                return;
+            }
         }
 
         if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey) {
@@ -2060,16 +2661,20 @@ window.tmDocumentWysiwyg = (function () {
         // or that we want to intercept for the command stack.
         if ((event.ctrlKey || event.metaKey) && event.key === 'z' && !event.shiftKey) {
             event.preventDefault();
-            _flushPendingInputPatch(inst);
-            _flushSelectionNotification(inst);
-            _invokeDotNet(inst, 'HandleUndoRequested');
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            undo(inst.id);
             return;
         }
         if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
             event.preventDefault();
-            _flushPendingInputPatch(inst);
-            _flushSelectionNotification(inst);
-            _invokeDotNet(inst, 'HandleRedoRequested');
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            redo(inst.id);
             return;
         }
         if ((event.ctrlKey || event.metaKey) && event.key === 's') {
@@ -2079,6 +2684,108 @@ window.tmDocumentWysiwyg = (function () {
             _invokeDotNet(inst, 'HandleSaveRequested');
             return;
         }
+
+        if (_handleJsOwnedKeyboardEvent(inst, event)) {
+            return;
+        }
+    }
+
+    function _onDocumentKeyDown(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly || event.defaultPrevented) return;
+        if (inst.selectedImageFigure) {
+            var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
+                || event.key === 'ArrowLeft'
+                || event.key === 'ArrowUp';
+            var leaveAfterImage = (!event.shiftKey && event.key === 'Tab')
+                || event.key === 'ArrowRight'
+                || event.key === 'ArrowDown'
+                || event.key === 'Escape';
+            if (leaveBeforeImage || leaveAfterImage) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (typeof event.stopImmediatePropagation === 'function') {
+                    event.stopImmediatePropagation();
+                }
+                _moveCaretFromImageSelection(inst, leaveBeforeImage);
+                return;
+            }
+        }
+
+        if (!_hasEditorSelectionOrFocus(inst)) return;
+        if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
+
+        var key = (event.key || '').toLowerCase();
+        if (key === 'z' && !event.shiftKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            undo(inst.id);
+            return;
+        }
+
+        if (key === 'y' || (key === 'z' && event.shiftKey)) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            redo(inst.id);
+        }
+    }
+
+    function _handleJsOwnedKeyboardEvent(inst, event) {
+        var measure = _beginInputMeasure(inst, event, 'keydown');
+        if (!event || event.defaultPrevented || inst.compositionActive) return false;
+        if (event.altKey || event.metaKey) return false;
+
+        var inputType = null;
+        var data = null;
+        if (event.key && event.key.length === 1 && !event.ctrlKey) {
+            inputType = 'insertText';
+            data = event.key;
+        } else if (event.key === 'Backspace') {
+            inputType = event.ctrlKey ? 'deleteWordBackward' : 'deleteContentBackward';
+        } else if (event.key === 'Delete') {
+            inputType = event.ctrlKey ? 'deleteWordForward' : 'deleteContentForward';
+        } else if (event.key === 'Enter' && !event.ctrlKey) {
+            inputType = event.shiftKey ? 'insertLineBreak' : 'insertParagraph';
+        } else {
+            return false;
+        }
+
+        _ensureEditableSelection(inst, event.target);
+        inst.lastInputType = inputType || null;
+        inst.lastInputDataLength = data ? data.length : 0;
+        var selection = _captureSelectionSnapshot(inst);
+        var synthetic = {
+            data: data,
+            inputType: inputType,
+            preventDefault: function () { },
+            stopPropagation: function () { }
+        };
+        var handled = false;
+
+        if (inst.trackChangesEnabled) {
+            handled = _handleTrackedBeforeInput(inst, synthetic, inputType, selection);
+        }
+
+        if (!handled) {
+            handled = _handlePendingTypingBeforeInput(inst, synthetic, inputType, selection)
+                || _handleStructuralBeforeInput(inst, synthetic, inputType, selection, null)
+                || _handleJsOwnedTextBeforeInput(inst, synthetic, inputType, selection);
+        }
+
+        if (!handled) return false;
+
+        event.preventDefault();
+        event.stopPropagation();
+        if (typeof event.stopImmediatePropagation === 'function') {
+            event.stopImmediatePropagation();
+        }
+        _endInputMeasure(measure);
+        return true;
     }
 
     function _shortcutMarkPayload(key) {
@@ -2117,7 +2824,7 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     /**
-     * Phase 13: Finds the current table cell from the active selection.
+     * Phase 12: Finds the current table cell from the active selection.
      */
     function _findCurrentTableCell(inst) {
         var sel = window.getSelection();
@@ -2130,7 +2837,7 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     /**
-     * Phase 13: Finds the next table cell (row-major order).
+     * Phase 12: Finds the next table cell (row-major order).
      */
     function _findNextTableCell(currentCell) {
         var row = currentCell.parentElement;
@@ -2146,7 +2853,7 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     /**
-     * Phase 13: Finds the previous table cell (row-major order).
+     * Phase 12: Finds the previous table cell (row-major order).
      */
     function _findPreviousTableCell(currentCell) {
         var row = currentCell.parentElement;
@@ -2162,7 +2869,7 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     /**
-     * Phase 13: Focuses a table cell by placing the caret at the start.
+     * Phase 12: Focuses a table cell by placing the caret at the start.
      */
     function _focusCell(cell) {
         var sel = window.getSelection();
@@ -2182,7 +2889,36 @@ window.tmDocumentWysiwyg = (function () {
         cell.closest('[contenteditable]')?.dispatchEvent(new Event('selectionchange'));
     }
 
-    // ── Phase 13: Table structural commands ──────────────────────────────────
+    function _beginTableTransaction(inst, description) {
+        var beforeSelection = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot;
+        _commitCurrentRuntimeTransaction(inst, false);
+        return {
+            beforeSelection: beforeSelection,
+            transaction: _beginUndoTransaction(inst, 'table', description || 'Table edit', beforeSelection, true)
+        };
+    }
+
+    function _commitTableTransaction(inst, tableEl, description, beforeSelection) {
+        var afterSelection = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot || beforeSelection;
+        if (inst.trackChangesEnabled) {
+            var revisionId = _createRevisionId();
+            _createRuntimeRevision(
+                inst,
+                revisionId,
+                'Table',
+                description || 'Table structure',
+                beforeSelection,
+                afterSelection);
+        }
+
+        if (tableEl && tableEl.isConnected) {
+            _dispatchTableUpdatePatch(inst, tableEl, beforeSelection, afterSelection);
+        }
+
+        _commitCurrentRuntimeTransaction(inst, true);
+    }
+
+    // ── Phase 12: Table structural commands ──────────────────────────────────
 
     /**
      * Inserts a new table (2×2) at the current selection.
@@ -2190,19 +2926,23 @@ window.tmDocumentWysiwyg = (function () {
     function _insertTable(inst) {
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
+        var tx = _beginTableTransaction(inst, 'Insert table');
+        var beforeSelection = tx.beforeSelection;
 
-        var tableBlockId = 'tbl-' + Date.now();
+        var tableBlockId = 'tbl-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
         var rows = [];
         var tableBlock = document.createElement('table');
         tableBlock.className = 'tm-wysiwyg-table tm-wysiwyg-block';
         tableBlock.setAttribute('data-block-id', tableBlockId);
+        _setRuntimeNodeAttributes(tableBlock, tableBlockId, 'block');
         for (var r = 0; r < 2; r++) {
             var tr = document.createElement('tr');
             var rowCells = [];
             for (var c = 0; c < 2; c++) {
-                var cellId = 'tc-' + Date.now() + '-' + r + '-' + c;
+                var cellId = _createTableCellId();
                 var td = document.createElement('td');
                 td.setAttribute('data-cell-id', cellId);
+                _setRuntimeNodeAttributes(td, cellId, 'table-cell');
                 var blockId = _createBlockId();
                 var inlineId = _createInlineId();
                 _appendEmptyTableCellParagraph(td, blockId, inlineId);
@@ -2236,10 +2976,15 @@ window.tmDocumentWysiwyg = (function () {
         range.setEndAfter(tableBlock);
         sel.removeAllRanges();
         sel.addRange(range);
+        var firstCell = tableBlock.querySelector('td[data-cell-id], th[data-cell-id]');
+        if (firstCell) {
+            _focusCell(firstCell);
+        }
+        var afterSelection = _captureSelectionSnapshot(inst) || beforeSelection;
 
-        // Notify Blazor about the new table block.
         _dispatchPatch(inst, {
             type: 'InsertBlock',
+            operationId: _nextRuntimeOperationId(inst),
             blockType: 'Table',
             block: {
                 Id: tableBlockId,
@@ -2247,13 +2992,21 @@ window.tmDocumentWysiwyg = (function () {
                 Order: 0,
                 Content: { $type: 'table', Rows: rows }
             },
-            selection: _captureSelectionSnapshot(inst),
+            selection: beforeSelection,
+            beforeSelection: beforeSelection,
+            afterSelection: afterSelection,
+            transactionId: inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
         });
+        if (inst.trackChangesEnabled) {
+            var revisionId = _createRevisionId();
+            _createRuntimeRevision(inst, revisionId, 'Table', 'Insert table', beforeSelection, afterSelection);
+        }
+        _commitCurrentRuntimeTransaction(inst, true);
     }
 
     /**
-     * Phase 13: Finds the parent table element that carries data-block-id.
+     * Phase 12: Finds the parent table element that carries data-block-id.
      */
     function _getTableBlockFromCell(cell) {
         if (!cell) return null;
@@ -2264,9 +3017,13 @@ window.tmDocumentWysiwyg = (function () {
     function _appendEmptyTableCellParagraph(td, blockId, inlineId) {
         var p = document.createElement('p');
         p.className = 'tm-wysiwyg-block';
-        p.setAttribute('data-block-id', blockId || _createBlockId());
+        var actualBlockId = blockId || _createBlockId();
+        p.setAttribute('data-block-id', actualBlockId);
+        _setRuntimeNodeAttributes(p, actualBlockId, 'block');
         var span = document.createElement('span');
-        span.setAttribute('data-inline-id', inlineId || _createInlineId());
+        var actualInlineId = inlineId || _createInlineId();
+        span.setAttribute('data-inline-id', actualInlineId);
+        _setRuntimeNodeAttributes(span, actualInlineId, 'inline');
         span.appendChild(document.createTextNode(''));
         p.appendChild(span);
         td.appendChild(p);
@@ -2290,22 +3047,27 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     /**
-     * Phase 13: Dispatches an UpdateBlock patch for the given table element.
+     * Phase 12: Dispatches an UpdateBlock patch for the given table element.
      */
-    function _dispatchTableUpdatePatch(inst, tableEl) {
+    function _dispatchTableUpdatePatch(inst, tableEl, beforeSelection, afterSelection) {
         if (!tableEl) return;
         var blockId = tableEl.getAttribute('data-block-id');
         if (!blockId) return;
+        _markIncrementalRender(inst, 'tableUpdate');
         var content = _serializeTable(tableEl);
         _dispatchPatch(inst, {
             type: 'UpdateBlock',
+            operationId: _nextRuntimeOperationId(inst),
             block: {
                 Id: blockId,
                 Type: 4,
                 Order: 0,
                 Content: content
             },
-            selection: _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot,
+            selection: beforeSelection || _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot,
+            beforeSelection: beforeSelection || inst.lastSelectionSnapshot,
+            afterSelection: afterSelection || _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot,
+            transactionId: inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
         });
     }
@@ -2316,6 +3078,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!blockEl) return;
         var blockId = blockEl.getAttribute('data-block-id');
         if (!blockId) return;
+        _markIncrementalRender(inst, 'imageUpdate');
         _dispatchPatch(inst, {
             type: 'UpdateBlock',
             block: {
@@ -2355,11 +3118,24 @@ window.tmDocumentWysiwyg = (function () {
         var initialY = parseFloat(figure.getAttribute('data-image-y') || '0') || 0;
         var initialWidth = img ? (parseFloat(img.style.width) || img.getBoundingClientRect().width || 120) : 120;
         var initialHeight = img ? (parseFloat(img.style.height) || img.getBoundingClientRect().height || 90) : 90;
+        var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '';
+        var imageSelection = {
+            Region: 'Image',
+            AnchorBlockId: blockId,
+            FocusBlockId: blockId,
+            ActiveImageBlockId: blockId,
+            AnchorOffset: 0,
+            FocusOffset: 0,
+            IsCollapsed: true
+        };
+        _commitCurrentRuntimeTransaction(inst, true);
+        var undoTransaction = _beginUndoTransaction(inst, 'image', handle ? 'Resize image' : 'Move image', imageSelection, true);
         figure.classList.add('tm-wysiwyg-image--dragging');
         figure.setAttribute('data-drag-feedback', handle ? 'resize' : 'move');
         inst.imageDragTransaction = {
-            blockId: figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '',
-            mode: handle ? 'resize' : 'move'
+            blockId: blockId,
+            mode: handle ? 'resize' : 'move',
+            transactionId: undoTransaction ? undoTransaction.transactionId : inst.currentTransactionId
         };
         if (typeof figure.setPointerCapture === 'function' && event.pointerId != null) {
             try { figure.setPointerCapture(event.pointerId); } catch { }
@@ -2388,11 +3164,12 @@ window.tmDocumentWysiwyg = (function () {
             document.removeEventListener('pointerup', onUp, true);
             figure.classList.remove('tm-wysiwyg-image--dragging');
             figure.removeAttribute('data-drag-feedback');
-            inst.imageDragTransaction = null;
             if (typeof figure.releasePointerCapture === 'function' && event.pointerId != null) {
                 try { figure.releasePointerCapture(event.pointerId); } catch { }
             }
             _dispatchImageUpdatePatch(inst, figure);
+            _commitCurrentRuntimeTransaction(inst, true);
+            inst.imageDragTransaction = null;
         }
 
         document.addEventListener('pointermove', onMove, true);
@@ -2411,9 +3188,22 @@ window.tmDocumentWysiwyg = (function () {
         marker.className = 'tm-wysiwyg-image-insertion-caret';
         marker.setAttribute('contenteditable', 'false');
         marker.setAttribute('data-testid', 'document-wysiwyg-image-insertion-caret');
+        var blockId = blockEl.getAttribute('data-block-id') || '';
+        var imageSelection = {
+            Region: 'Image',
+            AnchorBlockId: blockId,
+            FocusBlockId: blockId,
+            ActiveImageBlockId: blockId,
+            AnchorOffset: 0,
+            FocusOffset: 0,
+            IsCollapsed: true
+        };
+        _commitCurrentRuntimeTransaction(inst, true);
+        var undoTransaction = _beginUndoTransaction(inst, 'image', 'Move image', imageSelection, true);
         inst.imageDragTransaction = {
-            blockId: blockEl.getAttribute('data-block-id') || '',
-            mode: 'inline-move'
+            blockId: blockId,
+            mode: 'inline-move',
+            transactionId: undoTransaction ? undoTransaction.transactionId : inst.currentTransactionId
         };
 
         function beginDrag() {
@@ -2443,6 +3233,7 @@ window.tmDocumentWysiwyg = (function () {
                 try { figure.releasePointerCapture(event.pointerId); } catch { }
             }
             if (!dragging || !lastDrop || !lastDrop.body) {
+                _commitCurrentRuntimeTransaction(inst, true);
                 inst.imageDragTransaction = null;
                 return;
             }
@@ -2457,6 +3248,7 @@ window.tmDocumentWysiwyg = (function () {
             var order = _calculateInlineImageMoveOrder(lastDrop.body, blockEl);
             blockEl.setAttribute('data-block-order', String(order));
             _dispatchImageMovePatch(inst, figure, order);
+            _commitCurrentRuntimeTransaction(inst, true);
             inst.imageDragTransaction = null;
         }
 
@@ -2516,6 +3308,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!blockEl) return;
         var blockId = blockEl.getAttribute('data-block-id');
         if (!blockId) return;
+        _markIncrementalRender(inst, 'imageMove');
         _dispatchPatch(inst, {
             type: 'MoveBlock',
             block: {
@@ -2528,13 +3321,14 @@ window.tmDocumentWysiwyg = (function () {
                 Region: 'Image',
                 AnchorBlockId: blockId,
                 FocusBlockId: blockId,
+                ActiveImageBlockId: blockId,
                 AnchorOffset: 0,
                 FocusOffset: 0,
                 IsCollapsed: true
             },
             transactionId: inst.imageDragTransaction && inst.imageDragTransaction.blockId
-                ? 'image-move-' + inst.imageDragTransaction.blockId
-                : null,
+                ? inst.imageDragTransaction.transactionId || ('image-move-' + inst.imageDragTransaction.blockId)
+                : inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
         });
     }
@@ -2559,25 +3353,33 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
+    function _createTableCellElement() {
+        var td = document.createElement('td');
+        var cellId = _createTableCellId();
+        td.setAttribute('data-cell-id', cellId);
+        _setRuntimeNodeAttributes(td, cellId, 'table-cell');
+        _appendEmptyTableCellParagraph(td);
+        return td;
+    }
+
     /**
-     * Inserts a row after the current table cell's row.
+     * Inserts a row before or after the current table cell's row.
      */
-    function _insertTableRow(inst) {
+    function _insertTableRow(inst, before) {
         var cell = _findCurrentTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
-        var table = row.closest('table');
+        var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        var tx = _beginTableTransaction(inst, before ? 'Insert table row before' : 'Insert table row after');
         var cellsPerRow = row.children.length;
         var newRow = document.createElement('tr');
         for (var c = 0; c < cellsPerRow; c++) {
-            var td = document.createElement('td');
-            td.setAttribute('data-cell-id', 'tc-' + Date.now() + '-' + c);
-            _appendEmptyTableCellParagraph(td);
-            newRow.appendChild(td);
+            newRow.appendChild(_createTableCellElement());
         }
-        row.parentElement.insertBefore(newRow, row.nextSibling);
-        _dispatchTableUpdatePatch(inst, _getTableBlockFromCell(cell));
+        row.parentElement.insertBefore(newRow, before ? row : row.nextSibling);
+        _focusCell(newRow.querySelector('td[data-cell-id], th[data-cell-id]') || cell);
+        _commitTableTransaction(inst, table, before ? 'Insert table row before' : 'Insert table row after', tx.beforeSelection);
     }
 
     /**
@@ -2588,6 +3390,8 @@ window.tmDocumentWysiwyg = (function () {
         if (!cell) return;
         var row = cell.parentElement;
         var table = _getTableBlockFromCell(cell);
+        if (!row || !table) return;
+        var tx = _beginTableTransaction(inst, 'Delete table row');
         if (row.parentElement.children.length <= 1) {
             // Last row: remove the whole table.
             if (table) {
@@ -2596,41 +3400,52 @@ window.tmDocumentWysiwyg = (function () {
                 if (blockId) {
                     _dispatchPatch(inst, {
                         type: 'RemoveBlock',
-                        selection: { anchorBlockId: blockId },
+                        operationId: _nextRuntimeOperationId(inst),
+                        blockId: blockId,
+                        selection: tx.beforeSelection || { anchorBlockId: blockId },
+                        beforeSelection: tx.beforeSelection,
+                        afterSelection: _captureSelectionSnapshot(inst),
+                        transactionId: inst.currentTransactionId,
                         protocolVersion: inst.options.protocolVersion || 1
                     });
                 }
+                _commitCurrentRuntimeTransaction(inst, true);
             }
         } else {
+            var targetCell = row.nextElementSibling?.querySelector('td[data-cell-id], th[data-cell-id]')
+                || row.previousElementSibling?.querySelector('td[data-cell-id], th[data-cell-id]');
             row.remove();
-            _dispatchTableUpdatePatch(inst, table);
+            if (targetCell) _focusCell(targetCell);
+            _commitTableTransaction(inst, table, 'Delete table row', tx.beforeSelection);
         }
     }
 
     /**
-     * Inserts a column after the current table cell's column.
+     * Inserts a column before or after the current table cell's column.
      */
-    function _insertTableColumn(inst) {
+    function _insertTableColumn(inst, before) {
         var cell = _findCurrentTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
-        var table = row.closest('table');
+        var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        var tx = _beginTableTransaction(inst, before ? 'Insert table column before' : 'Insert table column after');
         var cellIndex = Array.from(row.children).indexOf(cell);
         var rows = table.querySelectorAll('tr');
+        var firstInserted = null;
         for (var r = 0; r < rows.length; r++) {
-            var td = document.createElement('td');
-            td.setAttribute('data-cell-id', 'tc-' + Date.now() + '-' + r);
-            _appendEmptyTableCellParagraph(td);
+            var td = _createTableCellElement();
+            if (!firstInserted) firstInserted = td;
             var targetRow = rows[r];
             var targetCell = targetRow.children[cellIndex];
             if (targetCell) {
-                targetRow.insertBefore(td, targetCell.nextSibling);
+                targetRow.insertBefore(td, before ? targetCell : targetCell.nextSibling);
             } else {
                 targetRow.appendChild(td);
             }
         }
-        _dispatchTableUpdatePatch(inst, _getTableBlockFromCell(cell));
+        if (firstInserted) _focusCell(firstInserted);
+        _commitTableTransaction(inst, table, before ? 'Insert table column before' : 'Insert table column after', tx.beforeSelection);
     }
 
     /**
@@ -2640,12 +3455,17 @@ window.tmDocumentWysiwyg = (function () {
         var cell = _findCurrentTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
-        var table = row.closest('table');
+        var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        var tx = _beginTableTransaction(inst, 'Delete table column');
         var cellIndex = Array.from(row.children).indexOf(cell);
         var rows = table.querySelectorAll('tr');
+        var focusTarget = null;
         for (var r = 0; r < rows.length; r++) {
             var targetCell = rows[r].children[cellIndex];
+            if (!focusTarget) {
+                focusTarget = rows[r].children[cellIndex + 1] || rows[r].children[cellIndex - 1] || null;
+            }
             if (targetCell) targetCell.remove();
         }
         // If all rows are empty, remove the table.
@@ -2657,13 +3477,20 @@ window.tmDocumentWysiwyg = (function () {
                 if (blockId) {
                     _dispatchPatch(inst, {
                         type: 'RemoveBlock',
-                        selection: { anchorBlockId: blockId },
+                        operationId: _nextRuntimeOperationId(inst),
+                        blockId: blockId,
+                        selection: tx.beforeSelection || { anchorBlockId: blockId },
+                        beforeSelection: tx.beforeSelection,
+                        afterSelection: _captureSelectionSnapshot(inst),
+                        transactionId: inst.currentTransactionId,
                         protocolVersion: inst.options.protocolVersion || 1
                     });
                 }
+                _commitCurrentRuntimeTransaction(inst, true);
             }
         } else {
-            _dispatchTableUpdatePatch(inst, _getTableBlockFromCell(cell));
+            if (focusTarget) _focusCell(focusTarget);
+            _commitTableTransaction(inst, table, 'Delete table column', tx.beforeSelection);
         }
     }
 
@@ -2676,6 +3503,7 @@ window.tmDocumentWysiwyg = (function () {
         var row = cell.parentElement;
         var nextCell = cell.nextElementSibling;
         if (!nextCell || nextCell.tagName !== 'TD') return;
+        var tx = _beginTableTransaction(inst, 'Merge table cells');
         var currentSpan = parseInt(cell.getAttribute('colspan') || '1', 10);
         var nextSpan = parseInt(nextCell.getAttribute('colspan') || '1', 10);
         cell.setAttribute('colspan', currentSpan + nextSpan);
@@ -2684,7 +3512,8 @@ window.tmDocumentWysiwyg = (function () {
             cell.appendChild(nextCell.firstChild);
         }
         nextCell.remove();
-        _dispatchTableUpdatePatch(inst, _getTableBlockFromCell(cell));
+        _focusCell(cell);
+        _commitTableTransaction(inst, _getTableBlockFromCell(cell), 'Merge table cells', tx.beforeSelection);
     }
 
     /**
@@ -2695,24 +3524,25 @@ window.tmDocumentWysiwyg = (function () {
         if (!cell) return;
         var span = parseInt(cell.getAttribute('colspan') || '1', 10);
         if (span <= 1) return;
+        var tx = _beginTableTransaction(inst, 'Split table cell');
         cell.removeAttribute('colspan');
         var row = cell.parentElement;
         for (var i = 1; i < span; i++) {
-            var newCell = document.createElement('td');
-            newCell.setAttribute('data-cell-id', 'tc-' + Date.now() + '-' + i);
-            var p = document.createElement('p');
-            p.className = 'tm-wysiwyg-block';
-            p.setAttribute('data-block-id', '');
-            p.innerHTML = '<br>';
-            newCell.appendChild(p);
+            var newCell = _createTableCellElement();
             row.insertBefore(newCell, cell.nextSibling);
         }
-        _dispatchTableUpdatePatch(inst, _getTableBlockFromCell(cell));
+        _focusCell(cell);
+        _commitTableTransaction(inst, _getTableBlockFromCell(cell), 'Split table cell', tx.beforeSelection);
     }
 
     function _onSelectionChange(inst) {
         if (inst.disposed) return;
         const snapshot = _captureSelectionSnapshot(inst);
+        if (!snapshot) {
+            _hideMiniToolbar(inst);
+            return;
+        }
+
         inst.lastSelectionSnapshot = snapshot;
         _scheduleSelectionNotification(inst, snapshot);
         if (snapshot && !snapshot.isCollapsed) {
@@ -2756,11 +3586,574 @@ window.tmDocumentWysiwyg = (function () {
         inst.typingTimer = setTimeout(function () {
             _flushPendingInputPatch(inst);
             _flushSelectionNotification(inst);
+            _commitUndoTransaction(inst, _captureSelectionSnapshot(inst));
             inst.currentTransactionId = null;
             inst.typingTimer = null;
             _invokeDotNet(inst, 'HandleTransactionCommitted');
             _scheduleRemoteQueueFlush(inst);
         }, inst.options.typingBatchMs || 500);
+    }
+
+    function _commitCurrentRuntimeTransaction(inst, notify) {
+        if (!inst || inst.disposed) return;
+        _flushPendingInputPatch(inst);
+        _flushSelectionNotification(inst);
+        _commitUndoTransaction(inst, _captureSelectionSnapshot(inst));
+        if (inst.typingTimer) {
+            clearTimeout(inst.typingTimer);
+            inst.typingTimer = null;
+        }
+        inst.currentTransactionId = null;
+        if (notify) {
+            _invokeDotNet(inst, 'HandleTransactionCommitted');
+        }
+    }
+
+    function _beginUndoTransaction(inst, source, description, beforeSelection, forceNew) {
+        if (!inst || inst.disposed) return null;
+        if (forceNew) {
+            _commitUndoTransaction(inst, beforeSelection || _captureSelectionSnapshot(inst));
+        }
+        if (inst.pendingUndoTransaction) {
+            _notifyUndoStateChanged(inst);
+            return inst.pendingUndoTransaction;
+        }
+
+        var transactionId = inst.currentTransactionId || ('txn-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7));
+        if (!inst.currentTransactionId) {
+            inst.currentTransactionId = transactionId;
+        }
+
+        inst.pendingUndoTransaction = {
+            transactionId: transactionId,
+            source: source || 'runtime',
+            description: description || 'Edit',
+            beforeHtml: inst.root.innerHTML,
+            afterHtml: null,
+            beforeSelection: _cloneRuntimeJson(beforeSelection || _captureSelectionSnapshot(inst)),
+            afterSelection: null,
+            operations: [],
+            inverseOperations: [],
+            createdAt: new Date().toISOString(),
+            epoch: inst.runtimeUndoEpoch || 0
+        };
+        _notifyUndoStateChanged(inst);
+        return inst.pendingUndoTransaction;
+    }
+
+    function _appendUndoOperation(inst, patch) {
+        if (!inst || !inst.pendingUndoTransaction || !patch) return;
+        inst.pendingUndoTransaction.operations.push(_cloneRuntimeJson(patch));
+    }
+
+    function _commitUndoTransaction(inst, afterSelection) {
+        if (!inst || !inst.pendingUndoTransaction) return null;
+        var transaction = inst.pendingUndoTransaction;
+        inst.pendingUndoTransaction = null;
+        transaction.afterHtml = inst.root.innerHTML;
+        transaction.afterSelection = _cloneRuntimeJson(afterSelection || _captureSelectionSnapshot(inst));
+        transaction.inverseOperations = [{
+            operationId: transaction.transactionId + '-inverse-restore',
+            type: 'RestoreHtmlSnapshot',
+            source: transaction.source,
+            html: transaction.beforeHtml,
+            selection: _cloneRuntimeJson(transaction.beforeSelection),
+            epoch: (inst.runtimeUndoEpoch || 0) + 1
+        }];
+        transaction.operations = transaction.operations && transaction.operations.length > 0
+            ? transaction.operations
+            : [{
+                operationId: transaction.transactionId + '-restore',
+                type: 'RestoreHtmlSnapshot',
+                source: transaction.source,
+                html: transaction.afterHtml,
+                selection: _cloneRuntimeJson(transaction.afterSelection),
+                epoch: inst.runtimeUndoEpoch || 0
+            }];
+        transaction.committedAt = new Date().toISOString();
+
+        if (transaction.beforeHtml !== transaction.afterHtml) {
+            inst.lastCommandTransaction = transaction;
+            inst.commandUndoStack.push(transaction);
+            inst.commandRedoStack = [];
+            inst.lastCommittedHtml = transaction.afterHtml;
+            _rememberPendingCollaborationTransaction(inst, transaction);
+            _markRuntimeDirty(inst, transaction.source || 'transaction');
+        }
+
+        _notifyUndoStateChanged(inst);
+        return transaction;
+    }
+
+    function _markRuntimeDirty(inst, reason) {
+        if (!inst || inst.disposed) return;
+        inst.isDirty = true;
+        inst.dirtyEpoch = (inst.dirtyEpoch || 0) + 1;
+        inst.lastDirtyReason = reason || 'edit';
+        _notifyDirtyStateChanged(inst);
+    }
+
+    function _markRuntimeSaved(inst, marker) {
+        if (!inst || inst.disposed) return;
+        inst.isDirty = false;
+        inst.savedEpoch = inst.dirtyEpoch || 0;
+        inst.lastSavedMarker = marker || null;
+        inst.lastSavedAt = new Date().toISOString();
+        _notifyDirtyStateChanged(inst);
+    }
+
+    function _getDirtyState(inst) {
+        return {
+            IsDirty: !!(inst && inst.isDirty),
+            DirtyEpoch: inst ? (inst.dirtyEpoch || 0) : 0,
+            SavedEpoch: inst ? (inst.savedEpoch || 0) : 0,
+            UndoEpoch: inst ? (inst.runtimeUndoEpoch || 0) : 0,
+            Reason: inst ? (inst.lastDirtyReason || '') : '',
+            LastSavedMarker: inst ? inst.lastSavedMarker : null,
+            LastSavedAt: inst ? inst.lastSavedAt : null
+        };
+    }
+
+    function _notifyDirtyStateChanged(inst) {
+        if (!inst || inst.disposed) return;
+        var state = _getDirtyState(inst);
+        var previous = inst.lastDirtyState || {};
+        inst.lastDirtyState = _cloneRuntimeJson(state);
+        if (previous.IsDirty === state.IsDirty
+            && previous.DirtyEpoch === state.DirtyEpoch
+            && previous.SavedEpoch === state.SavedEpoch
+            && previous.UndoEpoch === state.UndoEpoch
+            && previous.Reason === state.Reason
+            && previous.LastSavedMarker === state.LastSavedMarker) {
+            return;
+        }
+
+        _invokeDotNet(inst, 'HandleDirtyStateChanged', state);
+    }
+
+    function _revisionTypeToNumber(type) {
+        if (type === 0 || type === '0' || type === 'Insertion') return 0;
+        if (type === 1 || type === '1' || type === 'Deletion') return 1;
+        if (type === 2 || type === '2' || type === 'Formatting') return 2;
+        if (type === 3 || type === '3' || type === 'Move') return 3;
+        if (type === 4 || type === '4' || type === 'Structure' || type === 'Structural') return 4;
+        if (type === 5 || type === '5' || type === 'Image') return 5;
+        if (type === 6 || type === '6' || type === 'Table') return 6;
+        return 0;
+    }
+
+    function _revisionTypeToName(type) {
+        switch (_revisionTypeToNumber(type)) {
+            case 1: return 'Deletion';
+            case 2: return 'Formatting';
+            case 3: return 'Move';
+            case 4: return 'Structure';
+            case 5: return 'Image';
+            case 6: return 'Table';
+            default: return 'Insertion';
+        }
+    }
+
+    function _revisionActionToNumber(action) {
+        if (action === 1 || action === '1' || action === 'Accepted') return 1;
+        if (action === 2 || action === '2' || action === 'Rejected') return 2;
+        return 0;
+    }
+
+    function _getRuntimeAuthor(inst) {
+        var author = inst && inst.options ? (inst.options.author || inst.options.Author || {}) : {};
+        return {
+            Id: author.id || author.Id || '',
+            DisplayName: author.displayName || author.DisplayName || 'Unknown author'
+        };
+    }
+
+    function _normalizeRuntimeRevision(revision) {
+        if (!revision) return null;
+        var id = revision.id || revision.Id || '';
+        if (!id) return null;
+        var range = revision.range || revision.Range || {};
+        var author = revision.author || revision.Author || {};
+        return {
+            Id: id,
+            Type: _revisionTypeToNumber(revision.type ?? revision.Type),
+            Range: {
+                BlockId: range.blockId || range.BlockId || null,
+                SourceBlockId: range.sourceBlockId || range.SourceBlockId || null,
+                StartInlineIndex: range.startInlineIndex ?? range.StartInlineIndex ?? null,
+                StartOffset: range.startOffset ?? range.StartOffset ?? null,
+                EndInlineIndex: range.endInlineIndex ?? range.EndInlineIndex ?? null,
+                EndOffset: range.endOffset ?? range.EndOffset ?? null
+            },
+            Author: {
+                Id: author.id || author.Id || '',
+                DisplayName: author.displayName || author.DisplayName || 'Unknown author'
+            },
+            CreatedAt: revision.createdAt || revision.CreatedAt || new Date().toISOString(),
+            Action: _revisionActionToNumber(revision.action ?? revision.Action),
+            PayloadJson: revision.payloadJson ?? revision.PayloadJson ?? ''
+        };
+    }
+
+    function _loadRuntimeRevisionsFromSnapshot(inst, snapshot) {
+        var doc = snapshot && (snapshot.document || snapshot.Document) || {};
+        var revisions = doc.revisions || doc.Revisions || [];
+        inst.runtimeRevisions = revisions.map(_normalizeRuntimeRevision).filter(Boolean);
+        inst.lastRevisionStateJson = JSON.stringify(inst.runtimeRevisions);
+    }
+
+    function _upsertRuntimeRevision(inst, revision) {
+        if (!inst || !revision) return null;
+        var normalized = _normalizeRuntimeRevision(revision);
+        if (!normalized) return null;
+        var revisions = inst.runtimeRevisions || [];
+        var replaced = false;
+        for (var i = 0; i < revisions.length; i++) {
+            if (revisions[i].Id === normalized.Id) {
+                revisions[i] = Object.assign({}, revisions[i], normalized);
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) revisions.push(normalized);
+        inst.runtimeRevisions = revisions;
+        _syncRuntimeRevisionsToSnapshot(inst);
+        _notifyRuntimeRevisionsChanged(inst);
+        return normalized;
+    }
+
+    function _appendRuntimeRevisionPayload(inst, revisionId, text) {
+        if (!inst || !revisionId || !text) return;
+        var revisions = inst.runtimeRevisions || [];
+        for (var i = 0; i < revisions.length; i++) {
+            if (revisions[i].Id === revisionId) {
+                revisions[i].PayloadJson = (revisions[i].PayloadJson || '') + text;
+                _syncRuntimeRevisionsToSnapshot(inst);
+                _notifyRuntimeRevisionsChanged(inst);
+                return;
+            }
+        }
+    }
+
+    function _createRuntimeRevision(inst, revisionId, type, payload, selection, afterSelection) {
+        var start = selection || {};
+        var end = afterSelection || selection || {};
+        return _upsertRuntimeRevision(inst, {
+            Id: revisionId,
+            Type: _revisionTypeToNumber(type),
+            Range: {
+                BlockId: start.anchorBlockId || start.AnchorBlockId || start.focusBlockId || start.FocusBlockId || null,
+                StartOffset: start.anchorOffset ?? start.AnchorOffset ?? null,
+                EndOffset: end.anchorOffset ?? end.AnchorOffset ?? null
+            },
+            Author: _getRuntimeAuthor(inst),
+            CreatedAt: new Date().toISOString(),
+            Action: 0,
+            PayloadJson: payload || ''
+        });
+    }
+
+    function _setRuntimeRevisionAction(inst, revisionId, action) {
+        var revisions = inst.runtimeRevisions || [];
+        var actionValue = _revisionActionToNumber(action);
+        for (var i = 0; i < revisions.length; i++) {
+            if (revisions[i].Id === revisionId) {
+                revisions[i].Action = actionValue;
+                _syncRuntimeRevisionsToSnapshot(inst);
+                _notifyRuntimeRevisionsChanged(inst);
+                return;
+            }
+        }
+    }
+
+    function _syncRuntimeRevisionsToSnapshot(inst) {
+        if (!inst || !inst.snapshot) return;
+        var doc = inst.snapshot.document || inst.snapshot.Document;
+        if (!doc) return;
+        var revisions = (inst.runtimeRevisions || []).map(function (revision) { return _cloneRuntimeJson(revision); });
+        doc.Revisions = revisions;
+        doc.revisions = revisions;
+    }
+
+    function _notifyRuntimeRevisionsChanged(inst) {
+        if (!inst || inst.disposed) return;
+        var revisions = (inst.runtimeRevisions || []).map(function (revision) { return _cloneRuntimeJson(revision); });
+        var json = JSON.stringify(revisions);
+        if (json === inst.lastRevisionStateJson) return;
+        inst.lastRevisionStateJson = json;
+        _invokeDotNet(inst, 'HandleRevisionsChanged', revisions);
+    }
+
+    function _commentAnchorTypeToNumber(value) {
+        if (typeof value === 'number') return value;
+        var raw = String(value || '').toLowerCase();
+        if (raw === 'textrange' || raw === 'text-range') return 1;
+        if (raw === 'importeddocx') return 2;
+        if (raw === 'importedodt') return 3;
+        if (raw === 'page') return 4;
+        if (raw === 'rendition') return 5;
+        return 0;
+    }
+
+    function _commentStatusToNumber(value) {
+        if (typeof value === 'number') return value;
+        return String(value || '').toLowerCase() === 'resolved' ? 1 : 0;
+    }
+
+    function _normalizeRuntimeComment(comment) {
+        if (!comment) return null;
+        var id = comment.id || comment.Id || '';
+        if (!id) return null;
+        var anchor = comment.anchor || comment.Anchor || {};
+        return Object.assign({}, _cloneRuntimeJson(comment), {
+            Id: id,
+            Anchor: Object.assign({}, _cloneRuntimeJson(anchor), {
+                Type: _commentAnchorTypeToNumber(anchor.type ?? anchor.Type),
+                BlockId: anchor.blockId || anchor.BlockId || null,
+                StartInlineIndex: anchor.startInlineIndex ?? anchor.StartInlineIndex ?? null,
+                StartOffset: anchor.startOffset ?? anchor.StartOffset ?? null,
+                EndInlineIndex: anchor.endInlineIndex ?? anchor.EndInlineIndex ?? null,
+                EndOffset: anchor.endOffset ?? anchor.EndOffset ?? null,
+                IsOrphaned: !!(anchor.isOrphaned ?? anchor.IsOrphaned)
+            }),
+            Status: _commentStatusToNumber(comment.status ?? comment.Status)
+        });
+    }
+
+    function _loadRuntimeCommentsFromSnapshot(inst, snapshot) {
+        var doc = snapshot && (snapshot.document || snapshot.Document) || {};
+        var comments = doc.comments || doc.Comments || [];
+        inst.runtimeComments = comments.map(_normalizeRuntimeComment).filter(Boolean);
+        inst.lastCommentStateJson = JSON.stringify(inst.runtimeComments);
+        _syncRuntimeCommentsToSnapshot(inst);
+    }
+
+    function _syncRuntimeCommentsToSnapshot(inst) {
+        if (!inst || !inst.snapshot) return;
+        var doc = inst.snapshot.document || inst.snapshot.Document;
+        if (!doc) return;
+        var comments = (inst.runtimeComments || []).map(function (comment) { return _cloneRuntimeJson(comment); });
+        doc.Comments = comments;
+        doc.comments = comments;
+    }
+
+    function _upsertRuntimeComment(inst, comment, applyDecoration) {
+        if (!inst || !comment) return null;
+        var normalized = _normalizeRuntimeComment(comment);
+        if (!normalized) return null;
+        var comments = inst.runtimeComments || [];
+        var replaced = false;
+        for (var i = 0; i < comments.length; i++) {
+            if (comments[i].Id === normalized.Id) {
+                comments[i] = Object.assign({}, comments[i], normalized);
+                replaced = true;
+                break;
+            }
+        }
+        if (!replaced) comments.push(normalized);
+        inst.runtimeComments = comments;
+        _syncRuntimeCommentsToSnapshot(inst);
+        if (applyDecoration !== false) {
+            _applyCommentDecoration(inst, normalized);
+        }
+        _notifyRuntimeCommentsChanged(inst);
+        return normalized;
+    }
+
+    function _removeRuntimeComment(inst, commentId) {
+        if (!inst || !commentId) return;
+        _clearCommentDecorations(inst, commentId);
+        inst.runtimeComments = (inst.runtimeComments || []).filter(function (comment) { return comment.Id !== commentId; });
+        _syncRuntimeCommentsToSnapshot(inst);
+        _notifyRuntimeCommentsChanged(inst);
+    }
+
+    function _notifyRuntimeCommentsChanged(inst) {
+        if (!inst || inst.disposed) return;
+        var comments = (inst.runtimeComments || []).map(function (comment) { return _cloneRuntimeJson(comment); });
+        var json = JSON.stringify(comments);
+        if (json === inst.lastCommentStateJson) return;
+        inst.lastCommentStateJson = json;
+        _invokeDotNet(inst, 'HandleCommentsChanged', comments);
+    }
+
+    function _renderRuntimeCommentDecorations(inst) {
+        if (!inst || !inst.root) return;
+        _clearCommentDecorations(inst);
+        (inst.runtimeComments || []).forEach(function (comment) {
+            _applyCommentDecoration(inst, comment);
+        });
+    }
+
+    function _clearCommentDecorations(inst, commentId) {
+        if (!inst || !inst.root) return;
+        var selector = '.tm-document-inline--comment-anchor[data-comment-id]';
+        if (commentId) {
+            selector += '[data-comment-id="' + _cssEscape(String(commentId)) + '"]';
+        }
+
+        Array.from(inst.root.querySelectorAll(selector)).forEach(function (node) {
+            if (node.hasAttribute && node.hasAttribute('data-inline-id')) {
+                node.classList.remove(
+                    'tm-document-inline--comment-anchor',
+                    'tm-document-inline--comment-anchor--selected',
+                    'tm-document-inline--comment-anchor--resolved');
+                node.removeAttribute('data-comment-id');
+                if ((node.getAttribute('data-testid') || '') === 'document-comment-highlight') {
+                    node.removeAttribute('data-testid');
+                }
+                return;
+            }
+
+            _unwrapElement(node);
+        });
+    }
+
+    function _applyCommentDecoration(inst, comment) {
+        if (!inst || !inst.root || !comment) return false;
+        var anchor = comment.Anchor || comment.anchor || {};
+        if (_commentAnchorTypeToNumber(anchor.Type ?? anchor.type) !== 1 || anchor.IsOrphaned || anchor.isOrphaned) {
+            _clearCommentDecorations(inst, comment.Id || comment.id);
+            return false;
+        }
+
+        var blockId = anchor.BlockId || anchor.blockId || '';
+        var start = anchor.StartOffset ?? anchor.startOffset;
+        var end = anchor.EndOffset ?? anchor.endOffset;
+        if (!blockId || !Number.isFinite(start) || !Number.isFinite(end) || end <= start) return false;
+
+        _clearCommentDecorations(inst, comment.Id);
+        var block = inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]');
+        if (!block) return false;
+
+        var startPos = _resolveTextPosition(block, start);
+        var endPos = _resolveTextPosition(block, end);
+        if (!startPos || !endPos) return false;
+
+        var range = document.createRange();
+        try {
+            range.setStart(startPos.node, startPos.offset);
+            range.setEnd(endPos.node, endPos.offset);
+        } catch {
+            return false;
+        }
+
+        if (range.collapsed) return false;
+
+        var wrapper = document.createElement('span');
+        wrapper.className = 'tm-document-inline--comment-anchor';
+        if (_commentStatusToNumber(comment.Status ?? comment.status) === 1) {
+            wrapper.classList.add('tm-document-inline--comment-anchor--resolved');
+        }
+        wrapper.setAttribute('data-comment-id', comment.Id);
+        wrapper.setAttribute('data-testid', 'document-comment-highlight');
+
+        try {
+            wrapper.appendChild(range.extractContents());
+            range.insertNode(wrapper);
+        } catch {
+            return false;
+        }
+
+        return true;
+    }
+
+    function _transformRuntimeCommentAnchorsForTextChange(inst, blockId, offset, length, isDelete) {
+        if (!inst || !blockId || !Number.isFinite(offset) || !Number.isFinite(length) || length <= 0) return;
+        var changed = false;
+        (inst.runtimeComments || []).forEach(function (comment) {
+            var anchor = comment.Anchor || comment.anchor || {};
+            if (_commentAnchorTypeToNumber(anchor.Type ?? anchor.type) !== 1) return;
+            if ((anchor.BlockId || anchor.blockId || '') !== blockId) return;
+            if (anchor.IsOrphaned || anchor.isOrphaned) return;
+
+            var start = anchor.StartOffset ?? anchor.startOffset;
+            var end = anchor.EndOffset ?? anchor.endOffset;
+            if (!Number.isFinite(start) || !Number.isFinite(end)) return;
+
+            if (!isDelete) {
+                if (offset <= start) {
+                    start += length;
+                    end += length;
+                    changed = true;
+                } else if (offset < end) {
+                    end += length;
+                    changed = true;
+                }
+            } else {
+                var deleteEnd = offset + length;
+                if (deleteEnd <= start) {
+                    start -= length;
+                    end -= length;
+                    changed = true;
+                } else if (offset >= end) {
+                    return;
+                } else {
+                    var overlapStart = Math.max(start, offset);
+                    var overlapEnd = Math.min(end, deleteEnd);
+                    var removedInside = Math.max(0, overlapEnd - overlapStart);
+                    if (offset < start) {
+                        var shift = Math.min(length, start - offset);
+                        start -= shift;
+                        end -= shift;
+                    }
+                    end -= removedInside;
+                    if (end <= start) {
+                        anchor.IsOrphaned = true;
+                        anchor.isOrphaned = true;
+                    }
+                    changed = true;
+                }
+            }
+
+            anchor.StartOffset = Math.max(0, start);
+            anchor.startOffset = anchor.StartOffset;
+            anchor.EndOffset = Math.max(anchor.StartOffset, end);
+            anchor.endOffset = anchor.EndOffset;
+            comment.Anchor = anchor;
+            comment.anchor = anchor;
+        });
+
+        if (!changed) return;
+        _syncRuntimeCommentsToSnapshot(inst);
+        _notifyRuntimeCommentsChanged(inst);
+    }
+
+    function _getTextChangeFromPatch(patch) {
+        if (!patch) return null;
+        var type = patch.type || patch.Type || '';
+        var selection = patch.selection || patch.Selection || patch.beforeSelection || patch.BeforeSelection || {};
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || selection.focusBlockId || selection.FocusBlockId || '';
+        var offset = selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? selection.anchorOffset ?? selection.AnchorOffset;
+        var data = patch.data ?? patch.Data ?? '';
+
+        if (type === 'InsertText') {
+            var text = String(data || '');
+            return text ? { blockId: blockId, offset: offset || 0, length: text.length, isDelete: false } : null;
+        }
+
+        if (type === 'DeleteRange') {
+            var deleteLength = patch.deleteLength ?? patch.DeleteLength ?? String(data || '').length;
+            return deleteLength > 0 ? { blockId: blockId, offset: offset || 0, length: deleteLength, isDelete: true } : null;
+        }
+
+        if (type === 'DeleteContentBackward' || type === 'DeleteWordBackward') {
+            var backwardLength = String(data || '').length || 1;
+            return { blockId: blockId, offset: Math.max(0, (offset || 0) - backwardLength), length: backwardLength, isDelete: true };
+        }
+
+        if (type === 'DeleteContentForward' || type === 'DeleteWordForward') {
+            var forwardLength = String(data || '').length || 1;
+            return { blockId: blockId, offset: offset || 0, length: forwardLength, isDelete: true };
+        }
+
+        return null;
+    }
+
+    function _transformRuntimeCommentAnchorsForPatch(inst, patch) {
+        var change = _getTextChangeFromPatch(patch);
+        if (!change) return;
+        _transformRuntimeCommentAnchorsForTextChange(inst, change.blockId, change.offset, change.length, change.isDelete);
     }
 
     // ── MutationObserver guard ───────────────────────────────────────────────
@@ -2807,6 +4200,27 @@ window.tmDocumentWysiwyg = (function () {
      * range start/end so direction is preserved.
      */
     function _captureSelectionSnapshot(inst) {
+        var selectedFigure = _getSelectedImageFigure(inst);
+        if (selectedFigure) {
+            var imageBlock = selectedFigure.closest('.tm-wysiwyg-block[data-block-id]');
+            var imageBlockId = imageBlock ? (imageBlock.getAttribute('data-block-id') || '') : '';
+            if (imageBlockId) {
+                var imageSnapshot = {
+                    region: 'Image',
+                    anchorBlockId: imageBlockId,
+                    focusBlockId: imageBlockId,
+                    activeImageBlockId: imageBlockId,
+                    anchorInlineId: '',
+                    focusInlineId: '',
+                    anchorOffset: 0,
+                    focusOffset: 0,
+                    isCollapsed: true
+                };
+                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSnapshot);
+                return imageSnapshot;
+            }
+        }
+
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) {
             return null;
@@ -2823,11 +4237,12 @@ window.tmDocumentWysiwyg = (function () {
 
         var region = _resolveSelectionRegion(sel.anchorNode, inst.root);
         var activeTableCellId = _findTableCellId(sel.anchorNode);
-
-        return {
+        var snapshot = {
             region: region.region,
             pageIndex: region.pageIndex,
             headerFooterId: region.headerFooterId,
+            anchorNodeId: anchor.inlineId || anchor.blockId || null,
+            focusNodeId: focus.inlineId || focus.blockId || null,
             anchorBlockId: anchor.blockId,
             anchorInlineId: anchor.inlineId,
             anchorOffset: anchor.offset,
@@ -2841,6 +4256,61 @@ window.tmDocumentWysiwyg = (function () {
             activeTableCellId: activeTableCellId,
             tableCellPath: region.tableCellPath
         };
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
+        return snapshot;
+    }
+
+    function _createRuntimeSelectionFromSnapshot(snapshot) {
+        if (!snapshot) return null;
+        var anchorBlockId = snapshot.anchorBlockId || snapshot.AnchorBlockId || null;
+        var anchorInlineId = snapshot.anchorInlineId || snapshot.AnchorInlineId || null;
+        var focusBlockId = snapshot.focusBlockId || snapshot.FocusBlockId || anchorBlockId;
+        var focusInlineId = snapshot.focusInlineId || snapshot.FocusInlineId || anchorInlineId;
+        return {
+            version: 1,
+            region: snapshot.region || snapshot.Region || 'Body',
+            pageIndex: snapshot.pageIndex ?? snapshot.PageIndex ?? null,
+            headerFooterId: snapshot.headerFooterId || snapshot.HeaderFooterId || null,
+            anchorNodeId: snapshot.anchorNodeId || snapshot.AnchorNodeId || anchorInlineId || anchorBlockId,
+            focusNodeId: snapshot.focusNodeId || snapshot.FocusNodeId || focusInlineId || focusBlockId,
+            anchorBlockId: anchorBlockId,
+            anchorInlineId: anchorInlineId,
+            anchorOffset: snapshot.anchorOffset ?? snapshot.AnchorOffset ?? 0,
+            anchorBlockOffset: snapshot.anchorBlockOffset ?? snapshot.AnchorBlockOffset ?? 0,
+            focusBlockId: focusBlockId,
+            focusInlineId: focusInlineId,
+            focusOffset: snapshot.focusOffset ?? snapshot.FocusOffset ?? snapshot.anchorOffset ?? snapshot.AnchorOffset ?? 0,
+            focusBlockOffset: snapshot.focusBlockOffset ?? snapshot.FocusBlockOffset ?? snapshot.anchorBlockOffset ?? snapshot.AnchorBlockOffset ?? 0,
+            isCollapsed: snapshot.isCollapsed ?? snapshot.IsCollapsed ?? true,
+            direction: snapshot.direction || snapshot.Direction || 'forward',
+            activeTableCellId: snapshot.activeTableCellId || snapshot.ActiveTableCellId || null,
+            tableCellPath: snapshot.tableCellPath || snapshot.TableCellPath || null,
+            activeImageBlockId: snapshot.activeImageBlockId || snapshot.ActiveImageBlockId || null
+        };
+    }
+
+    function _createSelectionSnapshotFromRuntimeSelection(selection) {
+        if (!selection) return null;
+        return {
+            region: selection.region || selection.Region || 'Body',
+            pageIndex: selection.pageIndex ?? selection.PageIndex ?? null,
+            headerFooterId: selection.headerFooterId || selection.HeaderFooterId || null,
+            anchorNodeId: selection.anchorNodeId || selection.AnchorNodeId || selection.anchorInlineId || selection.AnchorInlineId || selection.anchorBlockId || selection.AnchorBlockId || null,
+            focusNodeId: selection.focusNodeId || selection.FocusNodeId || selection.focusInlineId || selection.FocusInlineId || selection.focusBlockId || selection.FocusBlockId || null,
+            anchorBlockId: selection.anchorBlockId || selection.AnchorBlockId || null,
+            anchorInlineId: selection.anchorInlineId || selection.AnchorInlineId || null,
+            anchorOffset: selection.anchorOffset ?? selection.AnchorOffset ?? 0,
+            anchorBlockOffset: selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? 0,
+            focusBlockId: selection.focusBlockId || selection.FocusBlockId || selection.anchorBlockId || selection.AnchorBlockId || null,
+            focusInlineId: selection.focusInlineId || selection.FocusInlineId || selection.anchorInlineId || selection.AnchorInlineId || null,
+            focusOffset: selection.focusOffset ?? selection.FocusOffset ?? selection.anchorOffset ?? selection.AnchorOffset ?? 0,
+            focusBlockOffset: selection.focusBlockOffset ?? selection.FocusBlockOffset ?? selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? 0,
+            isCollapsed: selection.isCollapsed ?? selection.IsCollapsed ?? true,
+            direction: selection.direction || selection.Direction || 'forward',
+            activeTableCellId: selection.activeTableCellId || selection.ActiveTableCellId || null,
+            tableCellPath: selection.tableCellPath || selection.TableCellPath || null,
+            activeImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null
+        };
     }
 
     function _resolveSelectionRegion(node, root) {
@@ -2852,6 +4322,29 @@ window.tmDocumentWysiwyg = (function () {
         var pageEl = el.closest('.tm-wysiwyg-page[data-page-index]');
         var pageIndex = pageEl ? parseInt(pageEl.getAttribute('data-page-index') || '0', 10) : null;
         if (!Number.isFinite(pageIndex)) pageIndex = null;
+
+        var caption = el.closest('figcaption');
+        if (caption) {
+            var captionFigure = caption.closest('figure.tm-wysiwyg-image, figure.tm-wysiwyg-image-block, figure[data-image-source]');
+            var captionBlock = captionFigure ? captionFigure.closest('[data-block-id]') : null;
+            return {
+                region: 'Caption',
+                pageIndex: pageIndex,
+                headerFooterId: null,
+                tableCellPath: null,
+                activeImageBlockId: captionBlock ? captionBlock.getAttribute('data-block-id') || null : null
+            };
+        }
+
+        var noteRegion = el.closest('.tm-wysiwyg-page__notes[data-region]');
+        if (noteRegion) {
+            return {
+                region: noteRegion.getAttribute('data-region') || 'Footnote',
+                pageIndex: pageIndex,
+                headerFooterId: null,
+                tableCellPath: null
+            };
+        }
 
         var cell = el.closest('td[data-cell-id], th[data-cell-id]');
         if (cell) {
@@ -3135,6 +4628,7 @@ window.tmDocumentWysiwyg = (function () {
      */
     function _restoreSelection(inst, snapshot) {
         if (!snapshot) return;
+        snapshot = _createSelectionSnapshotFromRuntimeSelection(snapshot);
         var root = inst.root;
 
         var anchorInfo = _resolveSnapshotPosition(
@@ -3162,6 +4656,7 @@ window.tmDocumentWysiwyg = (function () {
         range.setStart(anchorInfo.node, anchorInfo.offset);
         range.setEnd(focusInfo.node, focusInfo.offset);
         sel.addRange(range);
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
     }
 
     function _resolveSnapshotPosition(root, blockId, inlineId, offset, blockOffset, snapshot) {
@@ -3234,8 +4729,8 @@ window.tmDocumentWysiwyg = (function () {
             case 'insertLineBreak': return 'InsertSoftBreak';
             case 'deleteContentBackward': return 'DeleteContentBackward';
             case 'deleteContentForward': return 'DeleteContentForward';
-            case 'deleteWordBackward': return 'DeleteWordBackward';
-            case 'deleteWordForward': return 'DeleteWordForward';
+            case 'deleteWordBackward': return 'DeleteContentBackward';
+            case 'deleteWordForward': return 'DeleteContentForward';
             case 'formatBold': return 'ToggleMark';
             case 'formatItalic': return 'ToggleMark';
             case 'formatUnderline': return 'ToggleMark';
@@ -3245,19 +4740,232 @@ window.tmDocumentWysiwyg = (function () {
 
     // ── Render ───────────────────────────────────────────────────────────────
 
-    function _renderDocument(inst) {
-        const snapshot = inst.snapshot;
-        const doc = snapshot ? (snapshot.document || snapshot.Document) : null;
+    function _readModelValue(value, pascalKey, camelKey, fallback) {
+        if (value && Object.prototype.hasOwnProperty.call(value, pascalKey)) return value[pascalKey];
+        if (value && Object.prototype.hasOwnProperty.call(value, camelKey)) return value[camelKey];
+        return fallback;
+    }
+
+    function _renderNodeId(prefix, id, fallback) {
+        var value = id == null || id === '' ? fallback : id;
+        return prefix + '-' + String(value == null ? '0' : value).replace(/[^a-z0-9_-]+/gi, '-');
+    }
+
+    function _setRuntimeNodeAttributes(el, nodeId, nodeType) {
+        if (!el) return;
+        if (nodeId != null && nodeId !== '') {
+            el.setAttribute('data-node-id', String(nodeId));
+        }
+        if (nodeType) {
+            el.setAttribute('data-runtime-node-type', nodeType);
+        }
+    }
+
+    function _createRuntimeDocumentFromSnapshot(snapshot) {
+        var document = snapshot ? (snapshot.document || snapshot.Document) : null;
+        if (!document) return null;
+        return {
+            version: 1,
+            document: document,
+            source: 'canonicalSnapshot'
+        };
+    }
+
+    function _assignSnapshotDocument(snapshot, documentModel) {
+        if (!snapshot || !documentModel) return;
+        if (Object.prototype.hasOwnProperty.call(snapshot, 'document') && !Object.prototype.hasOwnProperty.call(snapshot, 'Document')) {
+            snapshot.document = documentModel;
+        } else {
+            snapshot.Document = documentModel;
+        }
+    }
+
+    function _resolveRuntimeDocument(inst) {
+        if (inst && inst.runtimeDocument && inst.runtimeDocument.document) {
+            return inst.runtimeDocument.document;
+        }
+
+        var snapshot = inst ? inst.snapshot : null;
+        return snapshot ? (snapshot.document || snapshot.Document) : null;
+    }
+
+    function _blockTypeName(block) {
+        var type = block ? (block.type ?? block.Type) : null;
+        switch (type) {
+            case 'Paragraph':
+            case 0: return 'paragraph';
+            case 'Heading':
+            case 1: return 'heading';
+            case 'List':
+            case 2: return 'list';
+            case 'Quote':
+            case 3: return 'quote';
+            case 'Table':
+            case 4: return 'table';
+            case 'Image':
+            case 5: return 'image';
+            case 'PageBreak':
+            case 6: return 'pageBreak';
+            default: return String(type || 'paragraph').toLowerCase();
+        }
+    }
+
+    function _inlineTypeName(inline) {
+        var type = inline ? (inline.$type || inline.type || inline.Type) : '';
+        var normalized = String(type || '').toLowerCase();
+        if (normalized === 'textrun') return 'text';
+        if (normalized === 'tokenrun') return 'token';
+        if (normalized === 'documentnotereferencerun') return 'noteReference';
+        return normalized || 'text';
+    }
+
+    function _createInlineRenderPlan(inline, index) {
+        var inlineId = inline ? (inline.id || inline.Id || _renderNodeId('inline', null, index)) : _renderNodeId('inline', null, index);
+        return {
+            id: inlineId,
+            type: _inlineTypeName(inline),
+            attributes: {
+                'data-inline-id': inlineId,
+                'data-node-id': inlineId,
+                'data-runtime-node-type': 'inline'
+            }
+        };
+    }
+
+    function _createBlockRenderPlan(block, index) {
+        var blockId = block ? (block.id || block.Id || _renderNodeId('block', null, index)) : _renderNodeId('block', null, index);
+        var content = block ? (block.content || block.Content || {}) : {};
+        var typeName = _blockTypeName(block);
+        var plan = {
+            id: blockId,
+            type: typeName,
+            attributes: {
+                'data-block-id': blockId,
+                'data-node-id': blockId,
+                'data-runtime-node-type': 'block'
+            },
+            inlines: []
+        };
+
+        if (typeName === 'table') {
+            var rows = (content && (content.rows || content.Rows)) || [];
+            plan.rows = rows.map(function (row, rowIndex) {
+                var cells = (row && (row.cells || row.Cells)) || [];
+                return {
+                    id: row ? (row.id || row.Id || _renderNodeId('row', null, rowIndex)) : _renderNodeId('row', null, rowIndex),
+                    cells: cells.map(function (cell, cellIndex) {
+                        var cellId = cell ? (cell.id || cell.Id || _renderNodeId('cell', null, rowIndex + '-' + cellIndex)) : _renderNodeId('cell', null, rowIndex + '-' + cellIndex);
+                        var cellBlocks = (cell && (cell.blocks || cell.Blocks)) || [];
+                        return {
+                            id: cellId,
+                            attributes: {
+                                'data-cell-id': cellId,
+                                'data-node-id': cellId,
+                                'data-runtime-node-type': 'table-cell'
+                            },
+                            blocks: cellBlocks.map(_createBlockRenderPlan)
+                        };
+                    })
+                };
+            });
+        } else if (typeName === 'image') {
+            plan.image = {
+                assetId: content ? (content.assetId || content.AssetId || '') : '',
+                url: content ? (content.url || content.Url || '') : ''
+            };
+        } else {
+            var inlines = (content && (content.inlines || content.Inlines)) || [];
+            plan.inlines = inlines.map(_createInlineRenderPlan);
+        }
+
+        return plan;
+    }
+
+    function _createHeaderFooterRenderPlan(headerFooter, index) {
+        var id = headerFooter ? (headerFooter.id || headerFooter.Id || _renderNodeId('header-footer', null, index)) : _renderNodeId('header-footer', null, index);
+        var blocks = (headerFooter && (headerFooter.blocks || headerFooter.Blocks)) || [];
+        return {
+            id: id,
+            attributes: {
+                'data-hf-id': id,
+                'data-node-id': id,
+                'data-runtime-node-type': 'header-footer'
+            },
+            blocks: blocks.map(_createBlockRenderPlan)
+        };
+    }
+
+    function _createRenderPlan(document) {
+        var doc = document || {};
+        var blocks = _readModelValue(doc, 'Blocks', 'blocks', []) || [];
+        var notes = _readModelValue(doc, 'Notes', 'notes', []) || [];
+        var pages = [{ index: 0, blocks: [], blockIds: [] }];
+        for (var i = 0; i < blocks.length; i++) {
+            var block = blocks[i];
+            var typeName = _blockTypeName(block);
+            if (typeName === 'pageBreak') {
+                pages.push({ index: pages.length, blocks: [], blockIds: [] });
+                continue;
+            }
+
+            var page = pages[pages.length - 1];
+            page.blocks.push(block);
+            var blockId = block ? (block.id || block.Id) : '';
+            if (blockId) page.blockIds.push(blockId);
+        }
+
+        var headersFooters = _readModelValue(doc, 'HeadersFooters', 'headersFooters', []) || [];
+        return {
+            source: 'runtimeDocument',
+            documentId: _readModelValue(doc, 'DocumentId', 'documentId', ''),
+            pages: pages,
+            blockPlans: blocks.map(_createBlockRenderPlan),
+            headerFooterPlans: headersFooters.map(_createHeaderFooterRenderPlan),
+            notePlans: notes.map(_createNoteRenderPlan)
+        };
+    }
+
+    function _createNoteRenderPlan(note, index) {
+        var id = note ? (note.id || note.Id || _renderNodeId('note', null, index)) : _renderNodeId('note', null, index);
+        var blocks = (note && (note.blocks || note.Blocks)) || [];
+        return {
+            id: id,
+            type: _normalizeNoteType(note ? (note.type ?? note.Type ?? note.noteType ?? note.NoteType) : null),
+            marker: note ? (note.marker || note.Marker || '') : '',
+            blocks: blocks.map(_createBlockRenderPlan)
+        };
+    }
+
+    function _normalizeNoteType(value) {
+        if (value === 1 || value === '1') return 'Endnote';
+        var raw = String(value == null ? '' : value).toLowerCase();
+        return raw === 'endnote' ? 'Endnote' : 'Footnote';
+    }
+
+    function _markFullRender(inst, reason) {
+        if (!inst || !inst.renderStats) return;
+        inst.renderStats.fullRenders++;
+        inst.renderStats.lastRenderReason = reason || 'full-render';
+    }
+
+    function _markIncrementalRender(inst, reason) {
+        if (!inst || !inst.renderStats) return;
+        inst.renderStats.incrementalOperations++;
+        inst.renderStats.lastRenderReason = reason || 'incremental-operation';
+    }
+
+    function _renderDocument(inst, reason) {
+        const doc = _resolveRuntimeDocument(inst);
         if (!doc) return;
 
-        if (inst.renderStats) inst.renderStats.fullRenders++;
+        _markFullRender(inst, reason || 'runtime-document');
         inst._applyingOwnPatch = true;
         inst.root.innerHTML = '';
         inst.root.removeAttribute('contenteditable');
         // Phase 11: enable paginated layout mode on the host root.
         inst.root.classList.add('tm-wysiwyg-host--paginated');
 
-        const blocks = doc.blocks || doc.Blocks || [];
+        const renderPlan = _createRenderPlan(doc);
         const pageSettings = _normalizePageSettings(doc.pageSettings || doc.PageSettings || {});
         _applyDocumentTheme(inst, doc.theme || doc.Theme || {});
         _applyPageMetrics(inst, pageSettings);
@@ -3279,32 +4987,33 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         var firstSection = sections.length > 0 ? sections[0] : null;
-        var pages = [{ index: 0, blocks: [], blockIds: [] }];
-        for (var i = 0; i < blocks.length; i++) {
-            var block = blocks[i];
-            var blockType = block.type || block.Type;
-            var isPageBreak = blockType === 'PageBreak' || blockType === 6;
-
-            if (isPageBreak) {
-                pages.push({ index: pages.length, blocks: [], blockIds: [] });
-            } else {
-                var page = pages[pages.length - 1];
-                page.blocks.push(block);
-                var blockId = block.id || block.Id;
-                if (blockId) page.blockIds.push(blockId);
-            }
-        }
-
-        inst.virtualPages = pages;
-        inst.virtualSettings = { pageSettings: pageSettings, firstSection: firstSection, hfMap: hfMap, sectionMap: sectionMap };
+        inst.renderPlan = renderPlan;
+        inst.virtualPages = renderPlan.pages;
+        inst.virtualSettings = { pageSettings: pageSettings, firstSection: firstSection, hfMap: hfMap, sectionMap: sectionMap, notes: doc.notes || doc.Notes || [] };
         _renderVirtualizedPages(inst, false);
+    }
+
+    function _executeSyncHeaderFooterLayoutCommand(inst, payload) {
+        var documentModel = payload && (payload.document || payload.Document);
+        if (!documentModel) return;
+
+        var snapshot = inst.snapshot || { ProtocolVersion: 1 };
+        _assignSnapshotDocument(snapshot, documentModel);
+        inst.snapshot = snapshot;
+        inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(snapshot);
+        _loadRuntimeRevisionsFromSnapshot(inst, snapshot);
+        _loadRuntimeCommentsFromSnapshot(inst, snapshot);
+        _renderDocument(inst, 'header-footer-layout-command');
+        inst.hasRenderedDocument = true;
+        _applyReviewDisplayMode(inst);
+        _renderRuntimeCommentDecorations(inst);
     }
 
     function _renderVirtualizedPages(inst, preserveSelection) {
         if (!inst.virtualPages || inst.virtualPages.length === 0 || !inst.virtualSettings) return;
 
         var selection = preserveSelection
-            ? (_captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot)
+            ? (inst.virtualSelectionSnapshot || _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot)
             : inst.lastSelectionSnapshot;
 
         if (preserveSelection) {
@@ -3350,7 +5059,13 @@ window.tmDocumentWysiwyg = (function () {
 
         if (selection) {
             inst.lastSelectionSnapshot = selection;
-            _restoreSelection(inst, selection);
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(selection);
+            if (_isVirtualSelectionInRange(inst, selection, range)) {
+                inst.virtualSelectionSnapshot = null;
+                _restoreSelection(inst, selection);
+            } else {
+                inst.virtualSelectionSnapshot = selection;
+            }
         }
     }
 
@@ -3358,6 +5073,7 @@ window.tmDocumentWysiwyg = (function () {
         var settings = inst.virtualSettings;
         var pageEl = _createPageElement(inst, settings.pageSettings);
         pageEl.setAttribute('data-page-index', pageData.index);
+        pageEl.setAttribute('data-node-id', _renderNodeId('page', null, pageData.index));
         pageEl.setAttribute('role', 'region');
         pageEl.setAttribute('aria-label', _formatA11yLabel(inst, 'pageLabel', 'PageLabel', 'Page {0}', pageData.index));
         var body = _createBodyElement(inst, pageData.index);
@@ -3369,6 +5085,7 @@ window.tmDocumentWysiwyg = (function () {
             if (blockEl) body.appendChild(blockEl);
         }
 
+        _renderNoteRegionsForPage(inst, pageEl, pageData.index);
         return pageEl;
     }
 
@@ -3376,6 +5093,7 @@ window.tmDocumentWysiwyg = (function () {
         var pageEl = _createPageElement(inst, inst.virtualSettings.pageSettings);
         pageEl.classList.add('tm-wysiwyg-page--virtual');
         pageEl.setAttribute('data-page-index', pageIndex);
+        pageEl.setAttribute('data-node-id', _renderNodeId('page', null, pageIndex));
         pageEl.setAttribute('aria-hidden', 'true');
         return pageEl;
     }
@@ -3396,13 +5114,13 @@ window.tmDocumentWysiwyg = (function () {
         var first = Math.max(0, Math.floor(scrollTop / pageExtent) - buffer);
         var last = Math.min(total - 1, Math.ceil((scrollTop + viewportHeight) / pageExtent) + buffer);
 
-        var selectedPage = _findVirtualPageIndexForSelection(inst, selection);
-        if (selectedPage >= 0) {
-            first = Math.min(first, selectedPage);
-            last = Math.max(last, selectedPage);
-        }
-
         return { enabled: true, first: first, last: last, pageExtent: pageExtent, scrollTop: scrollTop };
+    }
+
+    function _isVirtualSelectionInRange(inst, selection, range) {
+        if (!selection || !range || !range.enabled) return true;
+        var selectedPage = _findVirtualPageIndexForSelection(inst, selection);
+        return selectedPage < 0 || (selectedPage >= range.first && selectedPage <= range.last);
     }
 
     function _getVirtualViewport(inst) {
@@ -3594,6 +5312,7 @@ window.tmDocumentWysiwyg = (function () {
     function _createPageElement(inst, settings) {
         var page = document.createElement('div');
         page.className = 'tm-wysiwyg-page';
+        _setRuntimeNodeAttributes(page, _renderNodeId('page', null, 'pending'), 'page');
         page.style.width = settings.width;
         page.style.minHeight = settings.height;
         page.style.paddingTop = settings.marginTop;
@@ -3616,6 +5335,7 @@ window.tmDocumentWysiwyg = (function () {
         body.setAttribute('tabindex', inst && inst.readOnly ? '-1' : '0');
         body.setAttribute('contenteditable', inst && inst.readOnly ? 'false' : 'true');
         body.setAttribute('data-testid', 'document-wysiwyg-body');
+        _setRuntimeNodeAttributes(body, _renderNodeId('body', null, pageIndex || 0), 'body');
         return body;
     }
 
@@ -3717,8 +5437,9 @@ window.tmDocumentWysiwyg = (function () {
      */
     function _renderHeaderFooterRegion(inst, hf, type, pageIndex) {
         var el = document.createElement('div');
+        var headerFooterId = hf.id || hf.Id || '';
         el.className = 'tm-wysiwyg-page__' + type;
-        el.setAttribute('data-hf-id', hf.id || hf.Id || '');
+        el.setAttribute('data-hf-id', headerFooterId);
         el.setAttribute('data-hf-type', type);
         el.setAttribute('data-hf-scope', hf.scope || hf.Scope || 'Primary');
         el.setAttribute('data-region', type === 'header' ? 'Header' : 'Footer');
@@ -3737,6 +5458,7 @@ window.tmDocumentWysiwyg = (function () {
         el.setAttribute('tabindex', inst && inst.readOnly ? '-1' : '0');
         el.setAttribute('contenteditable', inst && inst.readOnly ? 'false' : 'true');
         el.setAttribute('data-testid', type === 'header' ? 'document-wysiwyg-header' : 'document-wysiwyg-footer');
+        _setRuntimeNodeAttributes(el, headerFooterId || _renderNodeId(type, null, pageIndex || 0), 'header-footer');
 
         var blocks = hf.blocks || hf.Blocks || [];
         for (var i = 0; i < blocks.length; i++) {
@@ -3748,6 +5470,70 @@ window.tmDocumentWysiwyg = (function () {
 
         if (blocks.length === 0 || !(el.textContent || '').trim()) {
             el.classList.add('tm-wysiwyg-page__' + type + '--empty');
+        }
+
+        return el;
+    }
+
+    function _renderNoteRegionsForPage(inst, pageEl, pageIndex) {
+        var notes = (inst.virtualSettings && inst.virtualSettings.notes) || [];
+        if (!notes || notes.length === 0 || pageIndex !== 0) return;
+
+        var footnotes = [];
+        var endnotes = [];
+        for (var i = 0; i < notes.length; i++) {
+            var note = notes[i];
+            if (_normalizeNoteType(note.type ?? note.Type ?? note.noteType ?? note.NoteType) === 'Endnote') {
+                endnotes.push(note);
+            } else {
+                footnotes.push(note);
+            }
+        }
+
+        if (footnotes.length > 0) {
+            pageEl.appendChild(_renderNoteRegion(inst, footnotes, 'Footnote', pageIndex));
+        }
+
+        if (endnotes.length > 0) {
+            pageEl.appendChild(_renderNoteRegion(inst, endnotes, 'Endnote', pageIndex));
+        }
+    }
+
+    function _renderNoteRegion(inst, notes, region, pageIndex) {
+        var el = document.createElement('div');
+        el.className = 'tm-wysiwyg-page__notes tm-wysiwyg-page__notes--' + region.toLowerCase();
+        el.setAttribute('data-region', region);
+        el.setAttribute('data-testid', region === 'Endnote' ? 'document-wysiwyg-endnotes' : 'document-wysiwyg-footnotes');
+        el.setAttribute('role', 'group');
+        el.setAttribute('aria-label', region === 'Endnote' ? 'Endnotes' : 'Footnotes');
+        el.setAttribute('tabindex', inst && inst.readOnly ? '-1' : '0');
+        el.setAttribute('contenteditable', inst && inst.readOnly ? 'false' : 'true');
+        _setRuntimeNodeAttributes(el, _renderNodeId(region.toLowerCase(), null, pageIndex || 0), region.toLowerCase());
+
+        for (var i = 0; i < notes.length; i++) {
+            var note = notes[i];
+            var item = document.createElement('section');
+            var noteId = note.id || note.Id || _renderNodeId('note', null, i);
+            item.className = 'tm-wysiwyg-note';
+            item.setAttribute('data-note-id', noteId);
+            item.setAttribute('data-node-id', noteId);
+            item.setAttribute('data-runtime-node-type', 'note');
+            var marker = note.marker || note.Marker || String(i + 1);
+            if (marker) {
+                var markerEl = document.createElement('span');
+                markerEl.className = 'tm-wysiwyg-note__marker';
+                markerEl.textContent = marker;
+                markerEl.setAttribute('contenteditable', 'false');
+                item.appendChild(markerEl);
+            }
+
+            var blocks = note.blocks || note.Blocks || [];
+            for (var bi = 0; bi < blocks.length; bi++) {
+                var blockEl = _renderBlock(blocks[bi], inst);
+                if (blockEl) item.appendChild(blockEl);
+            }
+
+            el.appendChild(item);
         }
 
         return el;
@@ -3871,7 +5657,7 @@ window.tmDocumentWysiwyg = (function () {
                 break;
             case 'Table':
             case 4:
-                el = _renderTable(content);
+                el = _renderTable(content, inst);
                 break;
             case 'Image':
             case 5:
@@ -3891,6 +5677,7 @@ window.tmDocumentWysiwyg = (function () {
         if (el) {
             el.setAttribute('data-block-id', id || '');
             var order = block.order ?? block.Order;
+            _setRuntimeNodeAttributes(el, id || _renderNodeId('block', null, order ?? 0), 'block');
             if (order != null) el.setAttribute('data-block-order', String(order));
             el.classList.add('tm-wysiwyg-block');
             _applyParagraphProperties(el, block.paragraphProperties || block.ParagraphProperties);
@@ -4065,12 +5852,14 @@ window.tmDocumentWysiwyg = (function () {
             if (inlineType === 'text' || inlineType === 'TextRun') {
                 var span = document.createElement('span');
                 span.setAttribute('data-inline-id', inlineId || '');
+                _setRuntimeNodeAttributes(span, inlineId || _renderNodeId('inline', null, i), 'inline');
                 _renderTextRunContent(span, inline.text || inline.Text || '');
                 _applyMarks(span, inline.marks || inline.Marks, inst);
                 container.appendChild(span);
             } else if (inlineType === 'token' || inlineType === 'TokenRun') {
                 var tokenSpan = document.createElement('span');
                 tokenSpan.setAttribute('data-inline-id', inlineId || '');
+                _setRuntimeNodeAttributes(tokenSpan, inlineId || _renderNodeId('inline', null, i), 'inline');
                 tokenSpan.setAttribute('data-inline-atomic', 'true');
                 tokenSpan.setAttribute('data-token-key', inline.key || inline.Key || '');
                 tokenSpan.setAttribute('data-token-type', inline.tokenType || inline.TokenType || '');
@@ -4082,6 +5871,7 @@ window.tmDocumentWysiwyg = (function () {
             } else if (inlineType === 'noteReference' || inlineType === 'DocumentNoteReferenceRun') {
                 var sup = document.createElement('sup');
                 sup.setAttribute('data-inline-id', inlineId || '');
+                _setRuntimeNodeAttributes(sup, inlineId || _renderNodeId('inline', null, i), 'inline');
                 sup.className = 'tm-wysiwyg-note-ref';
                 sup.textContent = inline.displayMarker || inline.DisplayMarker || inline.noteId || inline.NoteId || '';
                 container.appendChild(sup);
@@ -4142,6 +5932,8 @@ window.tmDocumentWysiwyg = (function () {
                     wrapper.style.color = 'var(--tm-color-primary)';
                     wrapper.style.textDecoration = 'underline';
                     wrapper.setAttribute('data-inline-id', el.getAttribute('data-inline-id'));
+                    wrapper.setAttribute('data-node-id', el.getAttribute('data-node-id') || el.getAttribute('data-inline-id') || '');
+                    wrapper.setAttribute('data-runtime-node-type', 'inline');
                     wrapper.setAttribute('data-link-href', href);
                     if (title) wrapper.setAttribute('data-link-title', title);
                     wrapper.textContent = el.textContent;
@@ -4193,7 +5985,7 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
-    function _renderTable(content) {
+    function _renderTable(content, inst) {
         var table = document.createElement('table');
         table.className = 'tm-wysiwyg-table';
         var rows = (content && (content.rows || content.Rows)) || [];
@@ -4203,17 +5995,20 @@ window.tmDocumentWysiwyg = (function () {
             for (var c = 0; c < cells.length; c++) {
                 var cell = cells[c];
                 var td = document.createElement('td');
-                td.setAttribute('data-cell-id', cell.id || cell.Id || '');
+                var cellId = cell.id || cell.Id || _renderNodeId('cell', null, r + '-' + c);
+                td.setAttribute('data-cell-id', cellId);
+                _setRuntimeNodeAttributes(td, cellId, 'table-cell');
 
                 // Phase 13: set colspan and rowspan for merged cells.
                 var cSpan = cell.columnSpan || cell.ColumnSpan || 1;
                 var rSpan = cell.rowSpan || cell.RowSpan || 1;
                 if (cSpan > 1) td.setAttribute('colspan', cSpan);
                 if (rSpan > 1) td.setAttribute('rowspan', rSpan);
+                _applyTableCellStyle(td, cell);
 
                 var cellBlocks = (cell && (cell.blocks || cell.Blocks)) || [];
                 for (var b = 0; b < cellBlocks.length; b++) {
-                    var cellBlockEl = _renderBlock(cellBlocks[b], null);
+                    var cellBlockEl = _renderBlock(cellBlocks[b], inst);
                     if (cellBlockEl) td.appendChild(cellBlockEl);
                 }
                 // Phase 13: ensure empty cells have an editable paragraph placeholder.
@@ -4225,6 +6020,34 @@ window.tmDocumentWysiwyg = (function () {
             table.appendChild(tr);
         }
         return table;
+    }
+
+    function _applyTableCellStyle(td, cell) {
+        if (!td || !cell) return;
+        var width = cell.width ?? cell.Width ?? null;
+        if (width != null && width !== '') {
+            td.style.width = String(width).match(/[a-z%]+$/i) ? String(width) : String(width) + 'px';
+            td.setAttribute('data-cell-width', String(width));
+        }
+
+        var background = _sanitizeColorValue(cell.backgroundColor || cell.BackgroundColor || '');
+        if (background) {
+            td.style.backgroundColor = background;
+            td.setAttribute('data-cell-background', background);
+        }
+
+        var borders = cell.borders || cell.Borders || {};
+        _applyTableCellBorder(td, 'Top', borders.top || borders.Top);
+        _applyTableCellBorder(td, 'Right', borders.right || borders.Right);
+        _applyTableCellBorder(td, 'Bottom', borders.bottom || borders.Bottom);
+        _applyTableCellBorder(td, 'Left', borders.left || borders.Left);
+    }
+
+    function _applyTableCellBorder(td, side, value) {
+        if (!td || !value) return;
+        var cssValue = String(value);
+        td.style['border' + side] = cssValue;
+        td.setAttribute('data-cell-border-' + side.toLowerCase(), cssValue);
     }
 
     function _renderImage(content, inst) {
@@ -4243,10 +6066,19 @@ window.tmDocumentWysiwyg = (function () {
         var assetId = content && (content.assetId || content.AssetId);
         figure.setAttribute('data-image-source', source == null ? '0' : String(source));
         if (assetId) figure.setAttribute('data-image-asset-id', assetId);
+        if (assetId) img.setAttribute('data-node-id', _renderNodeId('asset', assetId, 'image'));
+        img.setAttribute('data-runtime-node-type', 'image-asset');
         var size = content && (content.size || content.Size);
         if (size) {
             if (size.width || size.Width) img.style.width = (size.width || size.Width) + 'px';
             if (size.height || size.Height) img.style.height = (size.height || size.Height) + 'px';
+        }
+        var naturalSize = content && (content.naturalSize || content.NaturalSize);
+        if (naturalSize) {
+            var naturalWidth = naturalSize.width || naturalSize.Width;
+            var naturalHeight = naturalSize.height || naturalSize.Height;
+            if (naturalWidth) figure.setAttribute('data-image-natural-width', String(naturalWidth));
+            if (naturalHeight) figure.setAttribute('data-image-natural-height', String(naturalHeight));
         }
         figure.appendChild(img);
         var caption = content && (content.caption || content.Caption);
@@ -4273,8 +6105,12 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         figure.setAttribute('data-image-load-state', img.complete && img.naturalWidth > 0 ? 'loaded' : 'loading');
+        if (img.complete && img.naturalWidth > 0) {
+            _recordImageNaturalSize(figure, img);
+        }
         img.addEventListener('load', function () {
             figure.setAttribute('data-image-load-state', 'loaded');
+            _recordImageNaturalSize(figure, img);
             figure.querySelectorAll('.tm-wysiwyg-image__retry').forEach(function (retry) { retry.remove(); });
         }, { once: true });
         img.addEventListener('error', function () {
@@ -4304,6 +6140,12 @@ window.tmDocumentWysiwyg = (function () {
             }, 0);
         });
         figure.appendChild(retry);
+    }
+
+    function _recordImageNaturalSize(figure, img) {
+        if (!figure || !img || !img.naturalWidth || !img.naturalHeight) return;
+        figure.setAttribute('data-image-natural-width', String(img.naturalWidth));
+        figure.setAttribute('data-image-natural-height', String(img.naturalHeight));
     }
 
     function _imageRetryUrl(src) {
@@ -4507,17 +6349,24 @@ window.tmDocumentWysiwyg = (function () {
             && !forceRender
             && (editorHasFocus || hasPendingLocalSnapshot);
         inst.snapshot = snapshot;
+        inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(snapshot);
+        _loadRuntimeRevisionsFromSnapshot(inst, snapshot);
+        _loadRuntimeCommentsFromSnapshot(inst, snapshot);
         if (skipLocalRender) {
             if (inst.pendingLocalSnapshotSkips > 0) {
                 inst.pendingLocalSnapshotSkips--;
             }
+            if (inst.renderStats) inst.renderStats.lastRenderReason = 'snapshot-skip-active-editor';
             _invokeDotNet(inst, 'HandleSnapshotApplied');
             return;
         }
         _hideInlineRevisionReview(inst);
-        _renderDocument(inst);
+        _renderDocument(inst, forceRender ? 'forced-snapshot' : 'runtime-load');
         inst.hasRenderedDocument = true;
+        inst.lastCommittedHtml = inst.root.innerHTML;
+        _markRuntimeSaved(inst, 'snapshot-load');
         _applyReviewDisplayMode(inst);
+        _renderRuntimeCommentDecorations(inst);
         _invokeDotNet(inst, 'HandleSnapshotApplied');
     }
 
@@ -4537,46 +6386,169 @@ window.tmDocumentWysiwyg = (function () {
         return applied;
     }
 
+    function _operationTypeKey(type) {
+        switch (type) {
+            case 'InsertText':
+            case 0: return 'insertText';
+            case 'DeleteText':
+            case 1: return 'deleteText';
+            case 'AddInlineMark':
+            case 'AddMark':
+            case 2: return 'addInlineMark';
+            case 'RemoveInlineMark':
+            case 'RemoveMark':
+            case 3: return 'removeInlineMark';
+            case 'InsertBlock':
+            case 4: return 'insertBlock';
+            case 'DeleteBlock':
+            case 5: return 'deleteBlock';
+            case 'MoveBlock':
+            case 6: return 'moveBlock';
+            case 'SetBlockAttribute':
+            case 7: return 'setBlockAttribute';
+            case 'UpdateBlock':
+            case 8: return 'updateBlock';
+            case 'CreateRevision':
+            case 9: return 'createRevision';
+            case 'AcceptRevision':
+            case 10: return 'acceptRevision';
+            case 'RejectRevision':
+            case 11: return 'rejectRevision';
+            default: return String(type == null ? 'unknown' : type);
+        }
+    }
+
+    function _createOperationRendererRegistry() {
+        return {
+            insertText: function (inst, operation) { return _applyRemoteInsertText(inst, operation); },
+            deleteText: function (inst, operation) { return _applyRemoteDeleteText(inst, operation); },
+            addInlineMark: function (inst, operation) { return _applyRemoteInlineMark(inst, operation, true); },
+            removeInlineMark: function (inst, operation) { return _applyRemoteInlineMark(inst, operation, false); },
+            insertBlock: function (inst, operation) { return _applyRemoteInsertBlock(inst, operation); },
+            deleteBlock: function (inst, operation) { return _applyRemoteDeleteBlock(inst, operation); },
+            moveBlock: function (inst, operation) { return _applyRemoteMoveBlock(inst, operation); },
+            setBlockAttribute: function (inst, operation) { return _applyRemoteSetBlockAttribute(inst, operation); },
+            updateBlock: function (inst, operation) { return _applyRemoteUpdateBlock(inst, operation); },
+            createRevision: function (inst, operation) { return _applyRemoteCreateRevision(inst, operation); },
+            acceptRevision: function (inst, operation) { return _applyRemoteReviewRevision(inst, operation, 'Accepted'); },
+            rejectRevision: function (inst, operation) { return _applyRemoteReviewRevision(inst, operation, 'Rejected'); }
+        };
+    }
+
     function _applyRemoteOperationCore(inst, operation) {
-        var type = operation.type ?? operation.Type;
-        if (type === 'InsertText' || type === 0) {
-            return _applyRemoteInsertText(inst, operation);
-        }
-        if (type === 'DeleteText' || type === 1) {
-            return _applyRemoteDeleteText(inst, operation);
-        }
-        if (type === 'AddInlineMark' || type === 'AddMark' || type === 2) {
-            return _applyRemoteInlineMark(inst, operation, true);
-        }
-        if (type === 'RemoveInlineMark' || type === 'RemoveMark' || type === 3) {
-            return _applyRemoteInlineMark(inst, operation, false);
-        }
-        if (type === 'InsertBlock' || type === 4) {
-            return _applyRemoteInsertBlock(inst, operation);
-        }
-        if (type === 'DeleteBlock' || type === 5) {
-            return _applyRemoteDeleteBlock(inst, operation);
-        }
-        if (type === 'MoveBlock' || type === 6) {
-            return _applyRemoteMoveBlock(inst, operation);
-        }
-        if (type === 'SetBlockAttribute' || type === 7) {
-            return _applyRemoteSetBlockAttribute(inst, operation);
-        }
-        if (type === 'UpdateBlock' || type === 8) {
-            return _applyRemoteUpdateBlock(inst, operation);
-        }
-        if (type === 'CreateRevision' || type === 9) {
-            return _applyRemoteCreateRevision(inst, operation);
-        }
-        if (type === 'AcceptRevision' || type === 10) {
-            return _applyRemoteReviewRevision(inst, operation, 'Accepted');
-        }
-        if (type === 'RejectRevision' || type === 11) {
-            return _applyRemoteReviewRevision(inst, operation, 'Rejected');
+        var key = _operationTypeKey(operation.type ?? operation.Type);
+        var renderer = _createOperationRendererRegistry()[key];
+        if (!renderer) {
+            _renderDocument(inst, 'unsupported-operation:' + key);
+            return false;
         }
 
-        return false;
+        var applied = renderer(inst, operation);
+        if (applied) {
+            _markIncrementalRender(inst, key);
+        }
+        return applied;
+    }
+
+    function _rememberPendingCollaborationTransaction(inst, transaction) {
+        if (!inst || !transaction || !Array.isArray(transaction.operations) || transaction.operations.length === 0) {
+            return;
+        }
+
+        inst.pendingCollaborationTransactions.push({
+            transactionId: transaction.transactionId || transaction.TransactionId || '',
+            createdAtMs: Date.now(),
+            operations: _cloneRuntimeJson(transaction.operations)
+        });
+        _prunePendingCollaborationTransactions(inst);
+    }
+
+    function _prunePendingCollaborationTransactions(inst) {
+        if (!inst || !Array.isArray(inst.pendingCollaborationTransactions)) return;
+        var cutoff = Date.now() - 30000;
+        inst.pendingCollaborationTransactions = inst.pendingCollaborationTransactions
+            .filter(function (transaction) { return (transaction.createdAtMs || 0) >= cutoff; })
+            .slice(-50);
+    }
+
+    function _transformRemoteOperationsAgainstPendingTransactions(inst, operations) {
+        if (!inst || !Array.isArray(operations) || operations.length === 0) return operations || [];
+        _prunePendingCollaborationTransactions(inst);
+        if (!inst.pendingCollaborationTransactions || inst.pendingCollaborationTransactions.length === 0) {
+            return operations;
+        }
+
+        var transformed = _cloneRuntimeJson(operations);
+        var localChanges = [];
+        inst.pendingCollaborationTransactions.forEach(function (transaction) {
+            (transaction.operations || []).forEach(function (operation) {
+                var change = _localRuntimeTextChange(operation);
+                if (change) localChanges.push(change);
+            });
+        });
+
+        if (localChanges.length === 0) return transformed;
+
+        transformed.forEach(function (operation) {
+            var target = operation && (operation.target || operation.Target);
+            if (!target) return;
+            var offset = Number(target.offset ?? target.Offset);
+            if (!Number.isFinite(offset)) return;
+
+            localChanges.forEach(function (change) {
+                if (!_sameRemoteTextTarget(target, change)) return;
+                if (!change.isDelete) {
+                    if (offset >= change.offset) offset += change.length;
+                    return;
+                }
+
+                var end = change.offset + change.length;
+                if (offset <= change.offset) return;
+                offset = offset >= end ? offset - change.length : change.offset;
+            });
+
+            if ('offset' in target) target.offset = Math.max(0, offset);
+            target.Offset = Math.max(0, offset);
+        });
+
+        return transformed;
+    }
+
+    function _localRuntimeTextChange(operation) {
+        if (!operation) return null;
+        var type = operation.type || operation.Type || '';
+        var selection = operation.selection || operation.Selection || operation.beforeSelection || operation.BeforeSelection || {};
+        if (!selection) return null;
+
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || '';
+        var inlineId = selection.anchorInlineId || selection.AnchorInlineId || '';
+        var inlineIndex = selection.anchorInlineIndex ?? selection.AnchorInlineIndex ?? 0;
+        var offset = Number(selection.anchorOffset ?? selection.AnchorOffset ?? 0);
+        if (!blockId || !Number.isFinite(offset)) return null;
+
+        if (type === 'InsertText') {
+            var data = String(operation.data ?? operation.Data ?? '');
+            if (!data) return null;
+            return { blockId: blockId, inlineId: inlineId, inlineIndex: inlineIndex, offset: offset, length: data.length, isDelete: false };
+        }
+
+        if (type === 'DeleteRange' || type === 'DeleteContentForward' || type === 'DeleteContentBackward') {
+            var length = Number(operation.deleteLength ?? operation.DeleteLength ?? String(operation.data ?? operation.Data ?? '').length);
+            if (!Number.isFinite(length) || length <= 0) return null;
+            if (type === 'DeleteContentBackward') offset = Math.max(0, offset - length);
+            return { blockId: blockId, inlineId: inlineId, inlineIndex: inlineIndex, offset: offset, length: length, isDelete: true };
+        }
+
+        return null;
+    }
+
+    function _sameRemoteTextTarget(target, change) {
+        var blockId = target.blockId || target.BlockId || '';
+        var inlineId = target.inlineId || target.InlineId || '';
+        var inlineIndex = target.inlineIndex ?? target.InlineIndex ?? 0;
+        return blockId === change.blockId
+            && (!inlineId || !change.inlineId || inlineId === change.inlineId)
+            && (inlineId || change.inlineId || Number(inlineIndex) === Number(change.inlineIndex || 0));
     }
 
     function applyRemoteOperations(instanceId, operations) {
@@ -4623,7 +6595,8 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _applyRemoteOperationBatchCore(inst, operations) {
-        var ordered = _sortRemoteBatchOperations(operations);
+        var transformedOperations = _transformRemoteOperationsAgainstPendingTransactions(inst, operations);
+        var ordered = _sortRemoteBatchOperations(transformedOperations);
         _transformRemoteBatchInsertOffsets(ordered);
         var applied = 0;
         var skipped = 0;
@@ -4801,7 +6774,12 @@ window.tmDocumentWysiwyg = (function () {
         if (!text) return false;
 
         var inline = _findRemoteTargetInline(inst, target);
-        if (!inline) return false;
+        if (!inline) {
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var offset = Math.max(0, Math.min(target.offset ?? target.Offset ?? current.length, current.length));
+                return current.slice(0, offset) + text + current.slice(offset);
+            });
+        }
 
         var offset = Math.max(0, Math.min(target.offset ?? target.Offset ?? inline.textContent.length, inline.textContent.length));
         var selection = _captureRemoteSelectionSnapshot(inst);
@@ -4826,7 +6804,14 @@ window.tmDocumentWysiwyg = (function () {
     function _applyRemoteDeleteText(inst, operation) {
         var target = operation.target || operation.Target || {};
         var inline = _findRemoteTargetInline(inst, target);
-        if (!inline) return false;
+        if (!inline) {
+            return _updateSnapshotInlineText(inst, target, function (current) {
+                var offset = Math.max(0, Math.min(target.offset ?? target.Offset ?? 0, current.length));
+                var length = target.length ?? target.Length ?? ((operation.text ?? operation.Text ?? '').length || 0);
+                length = Math.max(0, Math.min(length, current.length - offset));
+                return current.slice(0, offset) + current.slice(offset + length);
+            });
+        }
 
         var text = inline.textContent || '';
         var offset = Math.max(0, Math.min(target.offset ?? target.Offset ?? 0, text.length));
@@ -5056,6 +7041,107 @@ window.tmDocumentWysiwyg = (function () {
         return transformed;
     }
 
+    function applyRemoteCursor(instanceId, cursor) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !inst.root || !cursor) return false;
+
+        var sessionId = cursor.sessionId || cursor.SessionId || '';
+        if (!sessionId) return false;
+        var shouldRemove = (cursor.offset ?? cursor.Offset ?? 0) < 0
+            || !String(cursor.displayName || cursor.DisplayName || '').trim();
+        if (shouldRemove) {
+            _removeRemoteCursor(inst, sessionId);
+            return true;
+        }
+
+        var transformed = _transformRemoteCursorAgainstPendingTransactions(inst, cursor);
+        return _renderRemoteCursor(inst, transformed);
+    }
+
+    function _transformRemoteCursorAgainstPendingTransactions(inst, cursor) {
+        var target = {
+            blockId: cursor.blockId || cursor.BlockId || '',
+            inlineIndex: cursor.inlineIndex ?? cursor.InlineIndex ?? 0,
+            offset: cursor.offset ?? cursor.Offset ?? 0
+        };
+        var operation = {
+            Target: target
+        };
+        _transformRemoteOperationsAgainstPendingTransactions(inst, [operation]);
+        var updated = _cloneRuntimeJson(cursor);
+        if ('offset' in updated) updated.offset = operation.Target.Offset;
+        updated.Offset = operation.Target.Offset;
+        return updated;
+    }
+
+    function _renderRemoteCursor(inst, cursor) {
+        var blockId = cursor.blockId || cursor.BlockId || '';
+        var inlineIndex = cursor.inlineIndex ?? cursor.InlineIndex ?? 0;
+        var offset = cursor.offset ?? cursor.Offset ?? 0;
+        var sessionId = cursor.sessionId || cursor.SessionId || '';
+        if (!blockId || !sessionId) return false;
+
+        var block = inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]');
+        if (!block) return false;
+        var inline = block.querySelectorAll('[data-inline-id]')[inlineIndex || 0] || block.querySelector('[data-inline-id]');
+        if (!inline) return false;
+
+        var position = _resolveTextPosition(inline, Math.max(0, Math.min(Number(offset) || 0, inline.textContent.length)));
+        if (!position) return false;
+
+        var range = document.createRange();
+        range.setStart(position.node, position.offset);
+        range.collapse(true);
+        var rect = _firstNonZeroClientRect(range) || inline.getBoundingClientRect();
+        var rootRect = inst.root.getBoundingClientRect();
+        var layer = _ensureRemoteCursorLayer(inst);
+        var item = inst.remoteCursorElements.get(sessionId);
+        if (!item) {
+            item = document.createElement('span');
+            item.className = 'tm-wysiwyg-remote-cursor';
+            item.setAttribute('data-testid', 'document-wysiwyg-remote-cursor');
+            item.setAttribute('data-session-id', sessionId);
+            item.innerHTML = '<span class="tm-wysiwyg-remote-cursor__bar"></span><span class="tm-wysiwyg-remote-cursor__label"></span>';
+            layer.appendChild(item);
+            inst.remoteCursorElements.set(sessionId, item);
+        }
+
+        var color = cursor.color || cursor.Color || 'var(--tm-color-primary)';
+        item.style.setProperty('--tm-wysiwyg-remote-cursor-color', color);
+        item.style.left = Math.round(rect.left - rootRect.left + inst.root.scrollLeft) + 'px';
+        item.style.top = Math.round(rect.top - rootRect.top + inst.root.scrollTop) + 'px';
+        item.querySelector('.tm-wysiwyg-remote-cursor__label').textContent = cursor.displayName || cursor.DisplayName || cursor.clientId || cursor.ClientId || 'Remote';
+        return true;
+    }
+
+    function _ensureRemoteCursorLayer(inst) {
+        if (inst.remoteCursorLayer && inst.remoteCursorLayer.isConnected) {
+            return inst.remoteCursorLayer;
+        }
+
+        if (getComputedStyle(inst.root).position === 'static') {
+            inst.root.style.position = 'relative';
+        }
+
+        var layer = document.createElement('div');
+        layer.className = 'tm-wysiwyg-remote-cursors';
+        layer.setAttribute('aria-hidden', 'true');
+        inst.root.appendChild(layer);
+        inst.remoteCursorLayer = layer;
+        return layer;
+    }
+
+    function _removeRemoteCursor(inst, sessionId) {
+        var item = inst.remoteCursorElements && inst.remoteCursorElements.get(sessionId);
+        if (item) item.remove();
+        if (inst.remoteCursorElements) inst.remoteCursorElements.delete(sessionId);
+    }
+
+    function _firstNonZeroClientRect(range) {
+        var rects = Array.from(range.getClientRects ? range.getClientRects() : []);
+        return rects.find(function (rect) { return rect.width > 0 || rect.height > 0; }) || null;
+    }
+
     function _updateSnapshotInlineText(inst, target, update) {
         var blockId = target.blockId || target.BlockId || '';
         var inlineId = target.inlineId || target.InlineId || '';
@@ -5063,7 +7149,7 @@ window.tmDocumentWysiwyg = (function () {
         var block = _findSnapshotBlock(inst, blockId);
         var content = block && (block.content || block.Content);
         var inlines = content && (content.inlines || content.Inlines);
-        if (!Array.isArray(inlines)) return;
+        if (!Array.isArray(inlines)) return false;
 
         var inline = null;
         for (var i = 0; i < inlines.length; i++) {
@@ -5073,12 +7159,13 @@ window.tmDocumentWysiwyg = (function () {
             }
         }
         if (!inline) inline = inlines[inlineIndex || 0];
-        if (!inline) return;
+        if (!inline) return false;
 
         var current = inline.text ?? inline.Text ?? '';
         var updated = update(String(current));
         if ('text' in inline) inline.text = updated;
         inline.Text = updated;
+        return true;
     }
 
     function _normalizeRemoteInlineDom(inline) {
@@ -5176,6 +7263,13 @@ window.tmDocumentWysiwyg = (function () {
             image.style.width = width ? width + 'px' : '';
             image.style.height = height ? height + 'px' : '';
         }
+        var naturalSize = content.naturalSize || content.NaturalSize;
+        if (naturalSize) {
+            var naturalWidth = naturalSize.width || naturalSize.Width;
+            var naturalHeight = naturalSize.height || naturalSize.Height;
+            if (naturalWidth) existing.setAttribute('data-image-natural-width', String(naturalWidth));
+            if (naturalHeight) existing.setAttribute('data-image-natural-height', String(naturalHeight));
+        }
 
         var caption = content.caption || content.Caption || '';
         var figcaption = existing.querySelector('figcaption');
@@ -5190,7 +7284,9 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         existing.className = 'tm-wysiwyg-image tm-wysiwyg-block';
+        _attachImageLoadState(existing, image, src, inst);
         _applyFloatingImageLayout(existing, content, inst);
+        _ensureImageResizeHandle(existing, inst);
     }
 
     function _applyRemoteMoveBlock(inst, operation) {
@@ -5401,6 +7497,7 @@ window.tmDocumentWysiwyg = (function () {
     function _upsertSnapshotRevision(inst, revision) {
         var revisions = _getSnapshotRevisions(inst);
         if (!revisions || !revision) return;
+        _upsertRuntimeRevision(inst, revision);
         var revisionId = revision.id || revision.Id;
         var updated = JSON.parse(JSON.stringify(revision));
         for (var i = 0; i < revisions.length; i++) {
@@ -5431,6 +7528,7 @@ window.tmDocumentWysiwyg = (function () {
     function _setSnapshotRevisionAction(inst, revisionId, action) {
         var revisions = _getSnapshotRevisions(inst) || [];
         var actionValue = action === 'Accepted' ? 1 : action === 'Rejected' ? 2 : 0;
+        _setRuntimeRevisionAction(inst, revisionId, action);
         for (var i = 0; i < revisions.length; i++) {
             if ((revisions[i].id || revisions[i].Id) === revisionId) {
                 revisions[i].Action = actionValue;
@@ -5781,26 +7879,79 @@ window.tmDocumentWysiwyg = (function () {
         return String(value).replace(/"/g, '\\"');
     }
 
-    function clearRevisionDecorations(instanceId, revisionId, removeContent) {
-        const inst = _instances.get(instanceId);
-        if (!inst || inst.disposed || !inst.root || !revisionId) return;
+    function _getRuntimeRevision(inst, revisionId) {
+        var revisions = inst && inst.runtimeRevisions || [];
+        for (var i = 0; i < revisions.length; i++) {
+            if (revisions[i].Id === revisionId || revisions[i].id === revisionId) return revisions[i];
+        }
+        return null;
+    }
+
+    function _reviewRevisionCore(inst, revisionId, action, removeContent) {
+        if (!inst || inst.disposed || !inst.root || !revisionId) return false;
 
         _hideInlineRevisionReview(inst);
-        var escaped = _cssEscape(String(revisionId));
-        var nodes = inst.root.querySelectorAll('[data-revision-id="' + escaped + '"]');
-        nodes.forEach(function (node) {
-            if (removeContent) {
-                node.remove();
-                return;
-            }
+        _commitCurrentRuntimeTransaction(inst, true);
+        var revision = _getRuntimeRevision(inst, revisionId);
+        var revisionType = revision ? _revisionTypeToName(revision.Type ?? revision.type) : '';
+        var payload = _parseOperationJsonValue(revision && (revision.PayloadJson ?? revision.payloadJson), null);
+        _beginUndoTransaction(
+            inst,
+            'revision-review',
+            action === 'Accepted' ? 'Accept revision' : action === 'Rejected' ? 'Reject revision' : 'Review revision',
+            _captureSelectionSnapshot(inst),
+            true);
 
-            node.classList.remove('tm-wysiwyg-revision', 'tm-wysiwyg-revision--insert', 'tm-wysiwyg-revision--delete', 'tm-wysiwyg-revision--format');
-            node.removeAttribute('data-revision-id');
-            node.removeAttribute('data-revision-type');
-            if ((node.getAttribute('data-testid') || '').indexOf('document-wysiwyg-revision-') === 0) {
-                node.removeAttribute('data-testid');
-            }
+        if (revisionType === 'Formatting' && action === 'Rejected' && payload && payload.BeforeHtml) {
+            inst.root.innerHTML = payload.BeforeHtml;
+            inst.lastCommittedHtml = inst.root.innerHTML;
+            _invalidateMeasureCache(inst);
+        } else {
+            var escaped = _cssEscape(String(revisionId));
+            var nodes = inst.root.querySelectorAll('[data-revision-id="' + escaped + '"]');
+            nodes.forEach(function (node) {
+                if (removeContent) {
+                    node.remove();
+                    return;
+                }
+
+                node.classList.remove('tm-wysiwyg-revision', 'tm-wysiwyg-revision--insert', 'tm-wysiwyg-revision--delete', 'tm-wysiwyg-revision--format');
+                node.removeAttribute('data-revision-id');
+                node.removeAttribute('data-revision-type');
+                if ((node.getAttribute('data-testid') || '').indexOf('document-wysiwyg-revision-') === 0) {
+                    node.removeAttribute('data-testid');
+                }
+            });
+        }
+
+        _setRuntimeRevisionAction(inst, revisionId, action);
+        _appendUndoOperation(inst, {
+            type: 'ReviewRevision',
+            revisionId: revisionId,
+            action: action,
+            removeContent: !!removeContent,
+            selection: _captureSelectionSnapshot(inst),
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1
         });
+        _commitCurrentRuntimeTransaction(inst, true);
+        return true;
+    }
+
+    function reviewRevision(instanceId, revisionId, action) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !revisionId) return false;
+        var normalizedAction = _revisionActionToNumber(action) === 2 ? 'Rejected' : 'Accepted';
+        var revision = _getRuntimeRevision(inst, revisionId);
+        var type = revision ? _revisionTypeToName(revision.Type ?? revision.type) : _revisionTypeToName(_findSnapshotRevisionType(inst, revisionId));
+        var removeContent = (normalizedAction === 'Rejected' && type === 'Insertion')
+            || (normalizedAction === 'Accepted' && type === 'Deletion');
+        return _reviewRevisionCore(inst, revisionId, normalizedAction, removeContent);
+    }
+
+    function clearRevisionDecorations(instanceId, revisionId, removeContent) {
+        const inst = _instances.get(instanceId);
+        return _reviewRevisionCore(inst, revisionId, removeContent ? 'Accepted' : 'Rejected', !!removeContent);
     }
 
     function scrollToRevision(instanceId, revisionId) {
@@ -5823,6 +7974,54 @@ window.tmDocumentWysiwyg = (function () {
         window.setTimeout(function () {
             if (node.isConnected) {
                 node.classList.remove('tm-wysiwyg-revision--selected');
+            }
+        }, 2200);
+
+        return true;
+    }
+
+    function upsertComment(instanceId, comment) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !comment) return false;
+        return !!_upsertRuntimeComment(inst, comment, true);
+    }
+
+    function removeComment(instanceId, commentId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !commentId) return false;
+        _removeRuntimeComment(inst, commentId);
+        return true;
+    }
+
+    function scrollToComment(instanceId, commentId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !inst.root || !commentId) return false;
+
+        var escaped = _cssEscape(String(commentId));
+        var node = inst.root.querySelector('[data-comment-id="' + escaped + '"]');
+        if (!node) {
+            var comment = (inst.runtimeComments || []).find(function (candidate) { return candidate.Id === commentId; });
+            var anchor = comment && (comment.Anchor || comment.anchor || {});
+            var blockId = anchor && (anchor.BlockId || anchor.blockId || '');
+            node = blockId ? inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]') : null;
+        }
+
+        if (!node) return false;
+
+        inst.root.querySelectorAll('.tm-document-inline--comment-anchor--selected').forEach(function (selected) {
+            selected.classList.remove('tm-document-inline--comment-anchor--selected');
+        });
+        if (node.classList && node.classList.contains('tm-document-inline--comment-anchor')) {
+            node.classList.add('tm-document-inline--comment-anchor--selected');
+        }
+
+        if (typeof node.scrollIntoView === 'function') {
+            node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
+        }
+
+        window.setTimeout(function () {
+            if (node.isConnected && node.classList) {
+                node.classList.remove('tm-document-inline--comment-anchor--selected');
             }
         }, 2200);
 
@@ -5978,14 +8177,55 @@ window.tmDocumentWysiwyg = (function () {
 
     function _focusEditorBody(inst) {
         if (!inst || !inst.root) return;
+        _deactivatePageRegion(inst);
         var body = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
         (body || inst.root).focus({ preventScroll: true });
+    }
+
+    function closeHeaderFooter(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+
+        _deactivatePageRegion(inst);
+        var bodySelection = inst.lastSelectionSnapshot
+            && String(inst.lastSelectionSnapshot.region || inst.lastSelectionSnapshot.Region || '').toLowerCase() === 'body'
+            ? inst.lastSelectionSnapshot
+            : null;
+
+        if (bodySelection) {
+            _restoreSelection(inst, bodySelection);
+        } else {
+            _focusEditorBody(inst);
+            var body = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"]');
+            if (body) _ensureEditableSelection(inst, body);
+        }
+
+        var snapshot = _captureSelectionSnapshot(inst);
+        inst.lastSelectionSnapshot = snapshot;
+        inst.pendingSelectionSnapshot = snapshot;
+        _flushSelectionNotification(inst);
+        return true;
     }
 
     function getSelectionSnapshot(instanceId) {
         const inst = _instances.get(instanceId);
         if (!inst || inst.disposed) return null;
-        return _toPascalSelection(_captureSelectionSnapshot(inst));
+        var snapshot = _captureSelectionSnapshot(inst);
+        return _toPascalSelection(snapshot);
+    }
+
+    function getRuntimeSelection(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return null;
+        var snapshot = _captureSelectionSnapshot(inst);
+        if (!snapshot && inst.runtimeSelection && (inst.runtimeSelection.activeImageBlockId || inst.runtimeSelection.ActiveImageBlockId) && !_getSelectedImageFigure(inst)) {
+            inst.runtimeSelection = Object.assign({}, inst.runtimeSelection, {
+                region: 'Body',
+                activeImageBlockId: null,
+                ActiveImageBlockId: null
+            });
+        }
+        return snapshot ? _createRuntimeSelectionFromSnapshot(snapshot) : inst.runtimeSelection;
     }
 
     /**
@@ -6011,6 +8251,408 @@ window.tmDocumentWysiwyg = (function () {
         return _getFormattingState(inst);
     }
 
+    function getLastCommandTransaction(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !inst.lastCommandTransaction) return null;
+        return _cloneRuntimeJson(inst.lastCommandTransaction);
+    }
+
+    function getUndoState(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) {
+            return {
+                CanUndo: false,
+                CanRedo: false,
+                UndoDepth: 0,
+                RedoDepth: 0,
+                NextUndoDescription: null,
+                NextRedoDescription: null,
+                Epoch: 0
+            };
+        }
+
+        return _getUndoState(inst);
+    }
+
+    function getDirtyState(instanceId) {
+        const inst = _instances.get(instanceId);
+        return _getDirtyState(inst);
+    }
+
+    function markSaved(instanceId, marker) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        _commitCurrentRuntimeTransaction(inst, true);
+        _markRuntimeSaved(inst, marker || null);
+        return true;
+    }
+
+    function getOfflineState(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return null;
+
+        return JSON.stringify({
+            version: 1,
+            dirtyState: _getDirtyState(inst),
+            undoState: _getUndoState(inst),
+            undoStack: _cloneRuntimeJson(inst.commandUndoStack || []),
+            redoStack: _cloneRuntimeJson(inst.commandRedoStack || []),
+            pendingTransaction: _cloneRuntimeJson(inst.pendingUndoTransaction || null),
+            runtimeUndoEpoch: inst.runtimeUndoEpoch || 0,
+            lastCommittedHtml: inst.lastCommittedHtml || ''
+        });
+    }
+
+    function applyOfflineState(instanceId, stateJson) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || !stateJson) return false;
+
+        var state;
+        try {
+            state = typeof stateJson === 'string' ? JSON.parse(stateJson) : stateJson;
+        } catch {
+            return false;
+        }
+
+        inst.commandUndoStack = Array.isArray(state.undoStack) ? _cloneRuntimeJson(state.undoStack) : [];
+        inst.commandRedoStack = Array.isArray(state.redoStack) ? _cloneRuntimeJson(state.redoStack) : [];
+        inst.pendingUndoTransaction = state.pendingTransaction ? _cloneRuntimeJson(state.pendingTransaction) : null;
+        inst.runtimeUndoEpoch = Number(state.runtimeUndoEpoch ?? state.undoState?.Epoch ?? state.dirtyState?.UndoEpoch ?? inst.runtimeUndoEpoch ?? 0);
+        if (state.lastCommittedHtml) {
+            inst.lastCommittedHtml = String(state.lastCommittedHtml);
+        }
+
+        var dirty = state.dirtyState || {};
+        inst.isDirty = !!(dirty.IsDirty ?? dirty.isDirty);
+        inst.dirtyEpoch = Number(dirty.DirtyEpoch ?? dirty.dirtyEpoch ?? inst.dirtyEpoch ?? 0);
+        inst.savedEpoch = Number(dirty.SavedEpoch ?? dirty.savedEpoch ?? inst.savedEpoch ?? 0);
+        inst.lastDirtyReason = String(dirty.Reason ?? dirty.reason ?? inst.lastDirtyReason ?? '');
+        inst.lastSavedMarker = dirty.LastSavedMarker ?? dirty.lastSavedMarker ?? inst.lastSavedMarker ?? null;
+        inst.lastSavedAt = dirty.LastSavedAt ?? dirty.lastSavedAt ?? inst.lastSavedAt ?? null;
+        _notifyUndoStateChanged(inst);
+        _notifyDirtyStateChanged(inst);
+        return true;
+    }
+
+    function getDebugUndoStack(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) {
+            return {
+                Undo: [],
+                Redo: [],
+                Pending: null,
+                LastApply: null
+            };
+        }
+
+        function summarize(transaction) {
+            if (!transaction) return null;
+            var operations = Array.isArray(transaction.operations) ? transaction.operations : [];
+            var plainBefore = '';
+            var plainAfter = '';
+            if (transaction.beforeHtml || transaction.afterHtml) {
+                var debugContainer = document.createElement('div');
+                debugContainer.innerHTML = transaction.beforeHtml || '';
+                plainBefore = debugContainer.textContent || '';
+                debugContainer.innerHTML = transaction.afterHtml || '';
+                plainAfter = debugContainer.textContent || '';
+            }
+            return {
+                TransactionId: transaction.transactionId || '',
+                Source: transaction.source || '',
+                Description: transaction.description || '',
+                OperationCount: operations.length,
+                Operations: operations.map(function (operation) {
+                    var selection = operation.selection || operation.Selection || operation.beforeSelection || operation.BeforeSelection || {};
+                    var afterSelection = operation.afterSelection || operation.AfterSelection || {};
+                    return {
+                        Type: operation.type || operation.Type || '',
+                        Data: operation.data || operation.Data || '',
+                        BlockId: selection.anchorBlockId || selection.AnchorBlockId || '',
+                        InlineId: selection.anchorInlineId || selection.AnchorInlineId || '',
+                        Offset: selection.anchorOffset ?? selection.AnchorOffset ?? null,
+                        AfterOffset: afterSelection.anchorOffset ?? afterSelection.AnchorOffset ?? null
+                    };
+                }),
+                BeforeContainsPhase7: transaction.beforeHtml ? transaction.beforeHtml.indexOf('phase7-') >= 0 : false,
+                AfterContainsPhase7: transaction.afterHtml ? transaction.afterHtml.indexOf('phase7-') >= 0 : false,
+                BeforeText: plainBefore.slice(0, 500),
+                AfterText: plainAfter.slice(0, 500)
+            };
+        }
+
+        return {
+            Undo: (inst.commandUndoStack || []).map(summarize),
+            Redo: (inst.commandRedoStack || []).map(summarize),
+            Pending: summarize(inst.pendingUndoTransaction),
+            LastApply: inst.lastUndoApplyResult || null
+        };
+    }
+
+    function undo(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || inst.readOnly) return false;
+        _commitCurrentRuntimeTransaction(inst, true);
+        var transaction = inst.commandUndoStack.pop();
+        if (!transaction) {
+            _notifyUndoStateChanged(inst);
+            return false;
+        }
+
+        _markTransactionOperationsAsLocallyHandled(inst, transaction);
+        inst.runtimeUndoEpoch = (inst.runtimeUndoEpoch || 0) + 1;
+        if (!_applyRuntimeTransactionOperations(inst, transaction, false)) {
+            _restoreRuntimeTransactionState(inst, transaction, false);
+        }
+        _syncRuntimeRevisionActionsAfterUndoRedo(inst, transaction, false);
+        inst.commandRedoStack.push(transaction);
+        inst.lastCommandTransaction = transaction;
+        _markRuntimeDirty(inst, 'undo');
+        _notifyUndoStateChanged(inst);
+        _scheduleRemoteQueueFlush(inst);
+        return true;
+    }
+
+    function redo(instanceId) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed || inst.readOnly) return false;
+        _commitCurrentRuntimeTransaction(inst, true);
+        var transaction = inst.commandRedoStack.pop();
+        if (!transaction) {
+            _notifyUndoStateChanged(inst);
+            return false;
+        }
+
+        inst.runtimeUndoEpoch = (inst.runtimeUndoEpoch || 0) + 1;
+        if (!_applyRuntimeTransactionOperations(inst, transaction, true)) {
+            _restoreRuntimeTransactionState(inst, transaction, true);
+        }
+        _syncRuntimeRevisionActionsAfterUndoRedo(inst, transaction, true);
+        inst.commandUndoStack.push(transaction);
+        inst.lastCommandTransaction = transaction;
+        _markRuntimeDirty(inst, 'redo');
+        _notifyUndoStateChanged(inst);
+        _scheduleRemoteQueueFlush(inst);
+        return true;
+    }
+
+    function _syncRuntimeRevisionActionsAfterUndoRedo(inst, transaction, forward) {
+        if (!inst || !transaction) return;
+        var operations = Array.isArray(transaction.operations) ? transaction.operations : [];
+        var changed = false;
+        operations.forEach(function (operation) {
+            var type = operation.type || operation.Type || '';
+            if (type !== 'ReviewRevision') return;
+            var revisionId = operation.revisionId || operation.RevisionId || '';
+            if (!revisionId) return;
+            _setRuntimeRevisionAction(inst, revisionId, forward ? (operation.action || operation.Action || 'Accepted') : 'Pending');
+            changed = true;
+        });
+
+        if (changed) {
+            _syncRuntimeRevisionsToSnapshot(inst);
+            _notifyRuntimeRevisionsChanged(inst);
+        }
+    }
+
+    function _markTransactionOperationsAsLocallyHandled(inst, transaction) {
+        if (!inst || !transaction || !inst.appliedOperationIds) return;
+        var operations = Array.isArray(transaction.operations) ? transaction.operations : [];
+        operations.forEach(function (operation) {
+            var operationId = operation.operationId || operation.OperationId || operation.id || operation.Id || '';
+            if (operationId) {
+                inst.appliedOperationIds.add(operationId);
+            }
+        });
+    }
+
+    function _restoreRuntimeTransactionState(inst, transaction, forward) {
+        var html = forward ? transaction.afterHtml : transaction.beforeHtml;
+        var selection = forward ? transaction.afterSelection : transaction.beforeSelection;
+        if (html == null) return;
+
+        inst._applyingOwnPatch = true;
+        try {
+            inst.root.innerHTML = html;
+            inst.lastCommittedHtml = html;
+        } finally {
+            inst._applyingOwnPatch = false;
+        }
+
+        _invalidateMeasureCache(inst);
+        if (inst.renderStats) {
+            inst.renderStats.incrementalOperations++;
+            inst.renderStats.lastRenderReason = forward ? 'redo' : 'undo';
+        }
+
+        _restoreSelection(inst, selection);
+        var restoredSelection = _captureSelectionSnapshot(inst) || selection;
+        inst.lastSelectionSnapshot = restoredSelection;
+        inst.runtimeSelection = restoredSelection ? _createRuntimeSelectionFromSnapshot(restoredSelection) : null;
+        _scheduleSelectionNotification(inst, restoredSelection);
+    }
+
+    function _applyRuntimeTransactionOperations(inst, transaction, forward) {
+        var operations = transaction && transaction.operations;
+        if (!Array.isArray(operations) || operations.length === 0) return false;
+        if (!operations.every(function (operation) { return (operation.type || operation.Type) === 'InsertText'; })) {
+            return false;
+        }
+
+        var ordered = forward ? operations : operations.slice().reverse();
+        inst._applyingOwnPatch = true;
+        try {
+            for (var i = 0; i < ordered.length; i++) {
+                var operation = ordered[i];
+                var text = operation.data || operation.Data || '';
+                var selection = operation.selection || operation.Selection || operation.beforeSelection || operation.BeforeSelection;
+                if (!text || !selection) return false;
+                var ok = forward
+                    ? _insertTextAtSnapshot(inst, selection, text)
+                    : _deleteInsertedTextForOperation(inst, operation, text.length);
+                if (!ok) return false;
+            }
+        } finally {
+            inst._applyingOwnPatch = false;
+        }
+
+        var targetSelection = forward ? transaction.afterSelection : transaction.beforeSelection;
+        _invalidateMeasureCache(inst);
+        if (inst.renderStats) {
+            inst.renderStats.incrementalOperations++;
+            inst.renderStats.lastRenderReason = forward ? 'redo-ops' : 'undo-ops';
+        }
+        inst.lastCommittedHtml = inst.root.innerHTML;
+        _restoreSelection(inst, targetSelection);
+        var restoredSelection = _captureSelectionSnapshot(inst) || targetSelection;
+        inst.lastSelectionSnapshot = restoredSelection;
+        inst.runtimeSelection = restoredSelection ? _createRuntimeSelectionFromSnapshot(restoredSelection) : null;
+        _scheduleSelectionNotification(inst, restoredSelection);
+        return true;
+    }
+
+    function _findTextNodeForSnapshot(inst, selection) {
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || '';
+        var inlineId = selection.anchorInlineId || selection.AnchorInlineId || '';
+        var block = blockId ? inst.root.querySelector('[data-block-id="' + CSS.escape(blockId) + '"]') : null;
+        if (!block) return null;
+        var inline = inlineId ? block.querySelector('[data-inline-id="' + CSS.escape(inlineId) + '"]') : null;
+        var node = inline ? _firstDeepTextNode(inline) : _firstDeepTextNode(block);
+        return node ? { node: node, block: block } : null;
+    }
+
+    function _insertTextAtSnapshot(inst, selection, text) {
+        var target = _findTextNodeForSnapshot(inst, selection);
+        if (!target || !target.node) return false;
+        var offset = Math.max(0, Math.min(selection.anchorOffset ?? selection.AnchorOffset ?? 0, target.node.textContent.length));
+        var current = target.node.textContent || '';
+        target.node.textContent = current.slice(0, offset) + text + current.slice(offset);
+        return true;
+    }
+
+    function _deleteTextAtSnapshot(inst, selection, length) {
+        var target = _findTextNodeForSnapshot(inst, selection);
+        if (!target || !target.node) return false;
+        var offset = Math.max(0, Math.min(selection.anchorOffset ?? selection.AnchorOffset ?? 0, target.node.textContent.length));
+        var current = target.node.textContent || '';
+        target.node.textContent = current.slice(0, offset) + current.slice(offset + length);
+        return true;
+    }
+
+    function _deleteInsertedTextForOperation(inst, operation, length) {
+        var beforeSelection = operation.selection || operation.Selection || operation.beforeSelection || operation.BeforeSelection;
+        var afterSelection = operation.afterSelection || operation.AfterSelection || null;
+        var selection = beforeSelection;
+        var offset = selection ? (selection.anchorOffset ?? selection.AnchorOffset ?? 0) : 0;
+        if (afterSelection) {
+            var afterOffset = afterSelection.anchorOffset ?? afterSelection.AnchorOffset;
+            if (Number.isFinite(afterOffset)) {
+                selection = _cloneRuntimeJson(afterSelection);
+                offset = Math.max(0, afterOffset - length);
+                selection.anchorOffset = offset;
+                selection.AnchorOffset = offset;
+                selection.focusOffset = offset;
+                selection.FocusOffset = offset;
+            }
+        }
+
+        if (_deleteTextAtSnapshot(inst, selection, length)) {
+            return true;
+        }
+
+        var text = operation.data || operation.Data || '';
+        var walker = document.createTreeWalker(inst.root, NodeFilter.SHOW_TEXT);
+        var node;
+        while ((node = walker.nextNode())) {
+            var current = node.textContent || '';
+            var index = current.indexOf(text);
+            if (index >= 0) {
+                node.textContent = current.slice(0, index) + current.slice(index + text.length);
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    function _getUndoState(inst) {
+        var pending = inst.pendingUndoTransaction;
+        var undoDepth = (inst.commandUndoStack ? inst.commandUndoStack.length : 0) + (pending ? 1 : 0);
+        var redoDepth = inst.commandRedoStack ? inst.commandRedoStack.length : 0;
+        var undoItem = pending || (inst.commandUndoStack && inst.commandUndoStack.length > 0
+            ? inst.commandUndoStack[inst.commandUndoStack.length - 1]
+            : null);
+        var redoItem = inst.commandRedoStack && inst.commandRedoStack.length > 0
+            ? inst.commandRedoStack[inst.commandRedoStack.length - 1]
+            : null;
+        return {
+            CanUndo: undoDepth > 0,
+            CanRedo: redoDepth > 0,
+            UndoDepth: undoDepth,
+            RedoDepth: redoDepth,
+            JsOwnedUndo: true,
+            NextUndoDescription: undoItem ? (undoItem.description || undoItem.command || 'Edit') : null,
+            NextRedoDescription: redoItem ? (redoItem.description || redoItem.command || 'Edit') : null,
+            Epoch: inst.runtimeUndoEpoch || 0,
+            PendingTransactionId: pending ? pending.transactionId : null,
+            LastTransactionId: inst.lastCommandTransaction ? inst.lastCommandTransaction.transactionId : null
+        };
+    }
+
+    function _notifyUndoStateChanged(inst) {
+        if (!inst || inst.disposed) return;
+        var state = _getUndoState(inst);
+        _applyUndoStateToToolbarDom(state);
+        var previous = inst.lastUndoState || {};
+        inst.lastUndoState = _cloneRuntimeJson(state);
+        if (previous.CanUndo === state.CanUndo
+            && previous.CanRedo === state.CanRedo
+            && previous.UndoDepth === state.UndoDepth
+            && previous.RedoDepth === state.RedoDepth
+            && previous.NextUndoDescription === state.NextUndoDescription
+            && previous.NextRedoDescription === state.NextRedoDescription
+            && previous.Epoch === state.Epoch) {
+            return;
+        }
+
+        _invokeDotNet(inst, 'HandleUndoStateChanged', state);
+    }
+
+    function _applyUndoStateToToolbarDom(state) {
+        var undoButton = document.querySelector('[data-testid="document-undo"]');
+        var redoButton = document.querySelector('[data-testid="document-redo"]');
+        if (undoButton) {
+            undoButton.disabled = !state.CanUndo;
+            undoButton.setAttribute('aria-disabled', state.CanUndo ? 'false' : 'true');
+            if (state.NextUndoDescription) undoButton.title = 'Undo: ' + state.NextUndoDescription;
+        }
+        if (redoButton) {
+            redoButton.disabled = !state.CanRedo;
+            redoButton.setAttribute('aria-disabled', state.CanRedo ? 'false' : 'true');
+            if (state.NextRedoDescription) redoButton.title = 'Redo: ' + state.NextRedoDescription;
+        }
+    }
+
     /**
      * Executes an editor command from the Blazor ribbon.
      * @param {string} instanceId
@@ -6020,24 +8662,60 @@ window.tmDocumentWysiwyg = (function () {
     function executeCommand(instanceId, command, payload) {
         const inst = _instances.get(instanceId);
         if (!inst || inst.disposed || inst.readOnly) return;
-        _flushPendingInputPatch(inst);
-        _flushSelectionNotification(inst);
+        _commitCurrentRuntimeTransaction(inst, true);
 
         switch (command) {
+            case 'toggleBold':
+                _executeToggleMarkCommand(inst, 'Bold', payload || {}, 'toggleBold');
+                break;
+            case 'toggleItalic':
+                _executeToggleMarkCommand(inst, 'Italic', payload || {}, 'toggleItalic');
+                break;
+            case 'toggleUnderline':
+                _executeToggleMarkCommand(inst, 'Underline', payload || {}, 'toggleUnderline');
+                break;
             case 'toggleMark':
                 payload = payload || {};
-                _executeToggleMarkCommand(inst, payload.markType || payload.MarkType || 'Bold', payload);
+                _executeToggleMarkCommand(inst, payload.markType || payload.MarkType || 'Bold', payload, 'toggleMark');
+                break;
+            case 'setFontFamily':
+                _executeToggleMarkCommand(inst, 'FontFamily', _withValuePayload(payload), 'setFontFamily');
+                break;
+            case 'setFontSize':
+                _executeToggleMarkCommand(inst, 'FontSize', _withValuePayload(payload), 'setFontSize');
+                break;
+            case 'setTextColor':
+                _executeToggleMarkCommand(inst, 'TextColor', _withValuePayload(payload), 'setTextColor');
+                break;
+            case 'setHighlightColor':
+                _executeToggleMarkCommand(inst, 'Highlight', _withValuePayload(payload), 'setHighlightColor');
                 break;
             case 'applyLink':
+            case 'insertLink':
                 payload = payload || {};
                 payload.markType = 'Link';
-                _executeToggleMarkCommand(inst, 'Link', payload);
+                _executeToggleMarkCommand(inst, 'Link', payload, 'insertLink');
+                break;
+            case 'removeLink':
+                _executeRemoveLinkCommand(inst, payload || {});
                 break;
             case 'clearFormatting':
-                _executeClearFormattingCommand(inst);
+                _executeClearFormattingCommand(inst, payload || {});
                 break;
             case 'setParagraphProperties':
-                _executeSetParagraphPropertiesCommand(inst, payload || {});
+                _executeSetParagraphPropertiesCommand(inst, payload || {}, 'setParagraphProperties');
+                break;
+            case 'setParagraphAlignment':
+                _executeSetParagraphPropertiesCommand(inst, { Alignment: (payload || {}).alignment ?? (payload || {}).Alignment }, 'setParagraphAlignment');
+                break;
+            case 'setLineSpacing':
+                _executeSetParagraphPropertiesCommand(inst, { LineSpacing: (payload || {}).lineSpacing ?? (payload || {}).LineSpacing }, 'setLineSpacing');
+                break;
+            case 'increaseIndent':
+                _executeSetParagraphPropertiesCommand(inst, { LeftIndentDelta: 36 }, 'increaseIndent');
+                break;
+            case 'decreaseIndent':
+                _executeSetParagraphPropertiesCommand(inst, { LeftIndentDelta: -36 }, 'decreaseIndent');
                 break;
             case 'insertBlock':
                 payload = payload || {};
@@ -6053,17 +8731,28 @@ window.tmDocumentWysiwyg = (function () {
             case 'setImageWrapMode':
                 _setSelectedImageWrapMode(inst, payload);
                 break;
-            // Phase 13: table structural commands.
+            case 'syncHeaderFooterLayout':
+                _executeSyncHeaderFooterLayoutCommand(inst, payload || {});
+                break;
+            // Phase 12: table structural commands.
             case 'insertTable':
                 _insertTable(inst);
                 break;
+            case 'insertTableRowBefore':
+                _insertTableRow(inst, true);
+                break;
             case 'insertTableRow':
+            case 'insertTableRowAfter':
                 _insertTableRow(inst);
                 break;
             case 'deleteTableRow':
                 _deleteTableRow(inst);
                 break;
+            case 'insertTableColumnBefore':
+                _insertTableColumn(inst, true);
+                break;
             case 'insertTableColumn':
+            case 'insertTableColumnAfter':
                 _insertTableColumn(inst);
                 break;
             case 'deleteTableColumn':
@@ -6075,22 +8764,27 @@ window.tmDocumentWysiwyg = (function () {
             case 'splitTableCell':
                 _splitTableCell(inst);
                 break;
+            case 'closeHeaderFooter':
+                closeHeaderFooter(instanceId);
+                break;
             case 'undo':
-                _flushPendingInputPatch(inst);
-                _flushSelectionNotification(inst);
-                _invokeDotNet(inst, 'HandleUndoRequested');
+                undo(instanceId);
                 break;
             case 'redo':
-                _flushPendingInputPatch(inst);
-                _flushSelectionNotification(inst);
-                _invokeDotNet(inst, 'HandleRedoRequested');
+                redo(instanceId);
                 break;
             default:
                 console.warn('tmDocumentWysiwyg: unknown command', command);
         }
     }
 
-    function _executeToggleMarkCommand(inst, markType, payload) {
+    function _withValuePayload(payload) {
+        payload = payload || {};
+        var value = payload.value ?? payload.Value ?? payload.data ?? payload.Data ?? '';
+        return Object.assign({}, payload, { value: value, Value: value, data: value, Data: value });
+    }
+
+    function _executeToggleMarkCommand(inst, markType, payload, commandName) {
         var normalizedMark = _normalizeMarkType(markType);
         if (!normalizedMark) return;
 
@@ -6101,6 +8795,8 @@ window.tmDocumentWysiwyg = (function () {
         }
         _ensureEditorSelection(inst);
         var beforeSelection = _captureSelectionSnapshot(inst);
+        var beforeFormatting = _getFormattingState(inst);
+        var beforeHtml = inst.root.innerHTML;
         var data = payload.href || payload.Href || payload.value || payload.Value || payload.data || payload.Data || '';
         var title = payload.title || payload.Title || payload.linkTitle || payload.LinkTitle || '';
         data = _sanitizeMarkData(normalizedMark, data, inst);
@@ -6113,6 +8809,7 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         var afterSelection = _captureSelectionSnapshot(inst);
+        var afterFormatting = _getFormattingState(inst);
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
 
@@ -6121,8 +8818,28 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         _beginTypingTransaction(inst);
-        _dispatchPatch(inst, {
+        var operationId = _nextRuntimeOperationId(inst);
+        var revisionId = null;
+        if (inst.trackChangesEnabled) {
+            revisionId = _createRevisionId();
+            _decorateFormattingRevision(inst, beforeSelection, revisionId);
+            _createRuntimeRevision(
+                inst,
+                revisionId,
+                'Formatting',
+                JSON.stringify({
+                    MarkType: normalizedMark,
+                    NewActive: true,
+                    BeforeHtml: beforeHtml,
+                    AfterHtml: inst.root.innerHTML
+                }),
+                beforeSelection,
+                afterSelection);
+        }
+
+        var patch = {
             type: normalizedMark === 'Link' || _isValueMark(normalizedMark) ? 'SetMarks' : 'ToggleMark',
+            operationId: operationId,
             markType: normalizedMark,
             data: normalizedMark === 'Link' || _isValueMark(normalizedMark) ? data : null,
             linkTitle: normalizedMark === 'Link' ? title || null : null,
@@ -6131,12 +8848,82 @@ window.tmDocumentWysiwyg = (function () {
             afterSelection: afterSelection,
             transactionId: inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
-        });
+        };
+        if (revisionId) {
+            patch.revisionId = revisionId;
+            patch.revisionType = 'Formatting';
+        }
+
+        _dispatchPatch(inst, patch);
+        _recordRuntimeCommandTransaction(inst, commandName || ('toggle' + normalizedMark), payload, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
     }
 
-    function _executeClearFormattingCommand(inst) {
+    function _decorateFormattingRevision(inst, selection, revisionId) {
+        if (!inst || !selection || !revisionId) return;
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || '';
+        var inlineId = selection.anchorInlineId || selection.AnchorInlineId || '';
+        var block = blockId ? inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]') : null;
+        var inline = block && inlineId ? block.querySelector('[data-inline-id="' + _cssEscape(inlineId) + '"]') : null;
+        var target = inline || block;
+        if (!target) return;
+        target.classList.add('tm-wysiwyg-revision', 'tm-wysiwyg-revision--format');
+        target.setAttribute('data-revision-id', revisionId);
+        target.setAttribute('data-revision-type', 'Formatting');
+        target.setAttribute('data-testid', 'document-wysiwyg-revision-format');
+    }
+
+    function _executeRemoveLinkCommand(inst, payload) {
+        payload = payload || {};
+        var explicitSelection = payload.selection || payload.Selection || null;
+        if (explicitSelection) {
+            _restoreSelection(inst, explicitSelection);
+        }
+
         _ensureEditorSelection(inst);
         var beforeSelection = _captureSelectionSnapshot(inst);
+        var beforeFormatting = _getFormattingState(inst);
+        var beforeHtml = inst.root.innerHTML;
+        var linkInfo = getLinkInfo(inst.id) || {};
+        var data = payload.href || payload.Href || payload.value || payload.Value || payload.data || payload.Data || linkInfo.Href || '';
+        var title = payload.title || payload.Title || payload.linkTitle || payload.LinkTitle || linkInfo.Title || '';
+        data = _sanitizeMarkData('Link', data, inst);
+        if (!data) return;
+
+        var result = _applyToggleMarkToDom(inst, 'Link', data, true, title);
+        if (!result) {
+            return;
+        }
+
+        var afterSelection = _captureSelectionSnapshot(inst);
+        var afterFormatting = _getFormattingState(inst);
+        inst.lastSelectionSnapshot = afterSelection;
+        _scheduleSelectionNotification(inst, afterSelection);
+        if (result.collapsed) {
+            return;
+        }
+
+        _beginTypingTransaction(inst);
+        var operationId = _nextRuntimeOperationId(inst);
+        _dispatchPatch(inst, {
+            type: 'ToggleMark',
+            operationId: operationId,
+            markType: 'Link',
+            data: data,
+            linkTitle: title || null,
+            selection: beforeSelection,
+            beforeSelection: beforeSelection,
+            afterSelection: afterSelection,
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1
+        });
+        _recordRuntimeCommandTransaction(inst, 'removeLink', payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
+    }
+
+    function _executeClearFormattingCommand(inst, payload) {
+        _ensureEditorSelection(inst);
+        var beforeSelection = _captureSelectionSnapshot(inst);
+        var beforeFormatting = _getFormattingState(inst);
+        var beforeHtml = inst.root.innerHTML;
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !inst.root.contains(sel.anchorNode)) {
             _restoreSelection(inst, inst.lastSelectionSnapshot);
@@ -6152,21 +8939,27 @@ window.tmDocumentWysiwyg = (function () {
             _applyToggleMarkToDom(inst, mark, '', true);
         });
         var afterSelection = _captureSelectionSnapshot(inst);
+        var afterFormatting = _getFormattingState(inst);
         _beginTypingTransaction(inst);
+        var operationId = _nextRuntimeOperationId(inst);
         _dispatchPatch(inst, {
             type: 'ClearFormatting',
+            operationId: operationId,
             selection: beforeSelection,
             beforeSelection: beforeSelection,
             afterSelection: afterSelection,
             transactionId: inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
         });
+        _recordRuntimeCommandTransaction(inst, 'clearFormatting', payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
     }
 
-    function _executeSetParagraphPropertiesCommand(inst, payload) {
+    function _executeSetParagraphPropertiesCommand(inst, payload, commandName) {
         _ensureEditorSelection(inst);
         var beforeSelection = _captureSelectionSnapshot(inst);
         if (!beforeSelection) return;
+        var beforeFormatting = _getFormattingState(inst);
+        var beforeHtml = inst.root.innerHTML;
 
         var patch = payload.paragraphProperties || payload.ParagraphProperties || payload;
         patch = _sanitizeParagraphPropertiesPatch(patch);
@@ -6185,8 +8978,11 @@ window.tmDocumentWysiwyg = (function () {
         _restoreSelection(inst, afterSelection);
         _scheduleSelectionNotification(inst, afterSelection);
         _beginTypingTransaction(inst);
+        var afterFormatting = _getFormattingState(inst);
+        var operationId = _nextRuntimeOperationId(inst);
         _dispatchPatch(inst, {
             type: 'SetParagraphProperties',
+            operationId: operationId,
             paragraphProperties: patch,
             selection: beforeSelection,
             beforeSelection: beforeSelection,
@@ -6194,6 +8990,133 @@ window.tmDocumentWysiwyg = (function () {
             transactionId: inst.currentTransactionId,
             protocolVersion: inst.options.protocolVersion || 1
         });
+        _recordRuntimeCommandTransaction(inst, commandName || 'setParagraphProperties', payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
+    }
+
+    function _nextRuntimeOperationId(inst) {
+        inst.commandOperationCounter = (inst.commandOperationCounter || 0) + 1;
+        return inst.id + '-op-' + inst.commandOperationCounter;
+    }
+
+    function _nextRuntimeTransactionId(inst) {
+        inst.commandTransactionCounter = (inst.commandTransactionCounter || 0) + 1;
+        return inst.currentTransactionId || (inst.id + '-cmd-' + inst.commandTransactionCounter);
+    }
+
+    function _recordRuntimeCommandTransaction(inst, command, payload, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, afterHtml) {
+        var transaction = _createRuntimeCommandTransaction(
+            inst,
+            command,
+            payload,
+            operationId,
+            beforeSelection,
+            afterSelection,
+            beforeFormatting,
+            afterFormatting,
+            beforeHtml,
+            afterHtml);
+
+        inst.lastCommandTransaction = transaction;
+        inst.commandUndoStack.push(transaction);
+        inst.commandRedoStack = [];
+        inst.lastCommittedHtml = transaction.afterHtml || inst.root.innerHTML;
+        _rememberPendingCollaborationTransaction(inst, transaction);
+        _markRuntimeDirty(inst, transaction.source || 'command');
+        _notifyUndoStateChanged(inst);
+        return transaction;
+    }
+
+    function _createRuntimeCommandTransaction(inst, command, payload, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, afterHtml) {
+        var transactionId = _nextRuntimeTransactionId(inst);
+        var operation = {
+            operationId: operationId || _nextRuntimeOperationId(inst),
+            type: 'command',
+            command: command,
+            payload: _cloneRuntimeJson(payload || {}),
+            beforeSelection: _cloneRuntimeJson(beforeSelection),
+            afterSelection: _cloneRuntimeJson(afterSelection)
+        };
+        var inverse = {
+            operationId: operation.operationId + '-inverse',
+            type: 'inverseCommand',
+            command: _getInverseRuntimeCommandName(command),
+            inverseOf: operation.operationId,
+            payload: {
+                originalCommand: command,
+                originalPayload: _cloneRuntimeJson(payload || {}),
+                beforeFormatting: _cloneRuntimeJson(beforeFormatting),
+                afterFormatting: _cloneRuntimeJson(afterFormatting)
+            },
+            beforeSelection: _cloneRuntimeJson(afterSelection),
+            afterSelection: _cloneRuntimeJson(beforeSelection)
+        };
+
+        return {
+            transactionId: transactionId,
+            source: 'ribbon',
+            command: command,
+            description: _describeRuntimeCommand(command),
+            beforeSelection: _cloneRuntimeJson(beforeSelection),
+            afterSelection: _cloneRuntimeJson(afterSelection),
+            beforeHtml: beforeHtml == null ? null : String(beforeHtml),
+            afterHtml: afterHtml == null ? null : String(afterHtml),
+            beforeFormatting: _cloneRuntimeJson(beforeFormatting),
+            afterFormatting: _cloneRuntimeJson(afterFormatting),
+            operations: [operation],
+            inverseOperations: [inverse],
+            createdAt: new Date().toISOString()
+        };
+    }
+
+    function _getInverseRuntimeCommandName(command) {
+        switch (command) {
+            case 'toggleBold':
+            case 'toggleItalic':
+            case 'toggleUnderline':
+            case 'toggleMark':
+                return command;
+            case 'setFontFamily':
+            case 'setFontSize':
+            case 'setTextColor':
+            case 'setHighlightColor':
+            case 'setParagraphAlignment':
+            case 'setLineSpacing':
+            case 'setParagraphProperties':
+            case 'increaseIndent':
+            case 'decreaseIndent':
+            case 'clearFormatting':
+            case 'insertLink':
+            case 'removeLink':
+                return 'restoreFormatting';
+            default:
+                return 'restoreRuntimeState';
+        }
+    }
+
+    function _describeRuntimeCommand(command) {
+        switch (command) {
+            case 'toggleBold': return 'Bold';
+            case 'toggleItalic': return 'Italic';
+            case 'toggleUnderline': return 'Underline';
+            case 'setFontFamily': return 'Font family';
+            case 'setFontSize': return 'Font size';
+            case 'setTextColor': return 'Text color';
+            case 'setHighlightColor': return 'Highlight';
+            case 'setParagraphAlignment': return 'Paragraph alignment';
+            case 'setLineSpacing': return 'Line spacing';
+            case 'setParagraphProperties': return 'Paragraph formatting';
+            case 'increaseIndent': return 'Increase indent';
+            case 'decreaseIndent': return 'Decrease indent';
+            case 'clearFormatting': return 'Clear formatting';
+            case 'insertLink': return 'Insert link';
+            case 'removeLink': return 'Remove link';
+            default: return command || 'Edit';
+        }
+    }
+
+    function _cloneRuntimeJson(value) {
+        if (value == null) return value;
+        return JSON.parse(JSON.stringify(value));
     }
 
     function _sanitizeParagraphPropertiesPatch(source) {
@@ -6471,7 +9394,21 @@ window.tmDocumentWysiwyg = (function () {
 
     function _sanitizeColorValue(value) {
         var raw = String(value || '').trim();
-        return /^#[0-9a-f]{6}$/i.test(raw) ? raw : '';
+        if (/^#[0-9a-f]{6}$/i.test(raw)) return raw;
+
+        var match = raw.match(/^rgba?\(\s*(\d{1,3})\s*,\s*(\d{1,3})\s*,\s*(\d{1,3})(?:\s*,\s*(0|1|0?\.\d+))?\s*\)$/i);
+        if (!match) return '';
+
+        var red = parseInt(match[1], 10);
+        var green = parseInt(match[2], 10);
+        var blue = parseInt(match[3], 10);
+        if (red > 255 || green > 255 || blue > 255) return '';
+
+        if (match[4] != null) {
+            return 'rgba(' + red + ', ' + green + ', ' + blue + ', ' + match[4] + ')';
+        }
+
+        return 'rgb(' + red + ', ' + green + ', ' + blue + ')';
     }
 
     function _applyMarkStyle(el, markType, data) {
@@ -6587,11 +9524,139 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _getFormattingState(inst) {
+        var selection = _captureSelectionSnapshot(inst) || _createSelectionSnapshotFromRuntimeSelection(inst.runtimeSelection);
+        var paragraphState = _getSelectionParagraphState(inst, selection);
+        var inlineState = _getSelectionInlineFormattingState(inst);
         return {
             Bold: _getSelectionMarkState(inst, 'Bold'),
             Italic: _getSelectionMarkState(inst, 'Italic'),
-            Underline: _getSelectionMarkState(inst, 'Underline')
+            Underline: _getSelectionMarkState(inst, 'Underline'),
+            ParagraphAlignment: paragraphState.alignment,
+            ParagraphAlignmentMixed: paragraphState.alignmentMixed,
+            FontFamily: inlineState.fontFamily.value,
+            FontFamilyMixed: inlineState.fontFamily.mixed,
+            FontSize: inlineState.fontSize.value,
+            FontSizeMixed: inlineState.fontSize.mixed,
+            TextColor: inlineState.textColor.value,
+            TextColorMixed: inlineState.textColor.mixed,
+            HighlightColor: inlineState.highlightColor.value,
+            HighlightColorMixed: inlineState.highlightColor.mixed,
+            LineSpacing: paragraphState.lineSpacing,
+            LineSpacingMixed: paragraphState.lineSpacingMixed,
+            ActiveRegion: selection ? (selection.region || selection.Region || 'Body') : 'Body',
+            CurrentSelection: _toPascalSelection(selection)
         };
+    }
+
+    function _getSelectionInlineFormattingState(inst) {
+        var elements = _collectSelectionInlineElements(inst);
+        return {
+            fontFamily: _getMixedInlineValue(elements, function (state) { return state.FontFamily || ''; }),
+            fontSize: _getMixedInlineValue(elements, function (state) { return state.FontSize || ''; }),
+            textColor: _getMixedInlineValue(elements, function (state) { return state.TextColor || ''; }),
+            highlightColor: _getMixedInlineValue(elements, function (state) { return state.Highlight || ''; })
+        };
+    }
+
+    function _getMixedInlineValue(elements, read) {
+        if (!elements || elements.length === 0) {
+            return { value: '', mixed: false };
+        }
+
+        var first = read(_getElementMarkState(elements[0])) || '';
+        var mixed = false;
+        for (var i = 1; i < elements.length; i++) {
+            var value = read(_getElementMarkState(elements[i])) || '';
+            if (value !== first) {
+                mixed = true;
+                break;
+            }
+        }
+        return { value: first, mixed: mixed };
+    }
+
+    function _collectSelectionInlineElements(inst) {
+        var sel = window.getSelection();
+        if (!sel || sel.rangeCount === 0 || !inst.root.contains(sel.anchorNode)) {
+            return [];
+        }
+
+        if (sel.isCollapsed) {
+            var collapsedEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
+            var inline = collapsedEl ? collapsedEl.closest('[data-inline-id]') : null;
+            return inline ? [inline] : [];
+        }
+
+        var range = sel.getRangeAt(0);
+        var all = Array.from(inst.root.querySelectorAll('[data-inline-id]'));
+        var result = [];
+        for (var i = 0; i < all.length; i++) {
+            try {
+                if (range.intersectsNode(all[i])) {
+                    result.push(all[i]);
+                }
+            } catch {
+                // Ignore detached or browser-internal nodes.
+            }
+        }
+        return result;
+    }
+
+    function _getSelectionParagraphState(inst, selection) {
+        var blocks = _collectSelectionBlocks(inst, selection);
+        if (blocks.length === 0) {
+            return { alignment: 0, alignmentMixed: false, lineSpacing: 1, lineSpacingMixed: false };
+        }
+
+        var firstAlignment = _readBlockAlignment(blocks[0]);
+        var firstLineSpacing = _readBlockLineSpacing(blocks[0]);
+        var alignmentMixed = false;
+        var lineSpacingMixed = false;
+        for (var i = 1; i < blocks.length; i++) {
+            if (_readBlockAlignment(blocks[i]) !== firstAlignment) alignmentMixed = true;
+            if (_readBlockLineSpacing(blocks[i]) !== firstLineSpacing) lineSpacingMixed = true;
+        }
+
+        return {
+            alignment: firstAlignment,
+            alignmentMixed: alignmentMixed,
+            lineSpacing: firstLineSpacing,
+            lineSpacingMixed: lineSpacingMixed
+        };
+    }
+
+    function _collectSelectionBlocks(inst, selection) {
+        if (!inst || !inst.root) return [];
+        if (!selection) {
+            var first = inst.root.querySelector('[data-block-id]');
+            return first ? [first] : [];
+        }
+
+        var anchorBlockId = selection.anchorBlockId || selection.AnchorBlockId || '';
+        var focusBlockId = selection.focusBlockId || selection.FocusBlockId || anchorBlockId;
+        var blocks = Array.from(inst.root.querySelectorAll('[data-block-id]'));
+        if (!anchorBlockId) return blocks.length > 0 ? [blocks[0]] : [];
+        var start = blocks.findIndex(function (block) { return block.getAttribute('data-block-id') === anchorBlockId; });
+        var end = blocks.findIndex(function (block) { return block.getAttribute('data-block-id') === focusBlockId; });
+        if (start < 0) return blocks.length > 0 ? [blocks[0]] : [];
+        if (end < 0) end = start;
+        var low = Math.min(start, end);
+        var high = Math.max(start, end);
+        return blocks.slice(low, high + 1);
+    }
+
+    function _readBlockAlignment(block) {
+        if (!block) return 0;
+        var style = block.style || {};
+        var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
+        return _cssAlignmentToNumber(style.textAlign || computed.textAlign || 'left');
+    }
+
+    function _readBlockLineSpacing(block) {
+        if (!block) return 1;
+        var style = block.style || {};
+        var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
+        return _sanitizeLineSpacing(style.lineHeight || computed.lineHeight || 1);
     }
 
     function getLinkInfo(instanceId) {
@@ -6711,7 +9776,7 @@ window.tmDocumentWysiwyg = (function () {
             if (selected && inst.root.contains(selected)) return selected;
         }
 
-        return inst.root.querySelector('figure.tm-wysiwyg-image');
+        return null;
     }
 
     /**
@@ -6758,9 +9823,9 @@ window.tmDocumentWysiwyg = (function () {
             type: 1, // TextRange
             blockId: anchor.blockId,
             startInlineIndex: Math.max(0, startInlineIndex),
-            startOffset: start.offset,
+            startOffset: start.blockOffset ?? start.offset,
             endInlineIndex: Math.max(0, endInlineIndex),
-            endOffset: end.offset
+            endOffset: end.blockOffset ?? end.offset
         };
     }
 
@@ -6945,10 +10010,14 @@ window.tmDocumentWysiwyg = (function () {
             PageSettings: baseDoc.pageSettings || baseDoc.PageSettings || {},
             Sections: baseDoc.sections || baseDoc.Sections || [],
             Blocks: blocks,
-            Comments: baseDoc.comments || baseDoc.Comments || [],
+            Comments: (inst.runtimeComments && inst.runtimeComments.length > 0)
+                ? inst.runtimeComments.map(function (comment) { return _cloneRuntimeJson(comment); })
+                : (baseDoc.comments || baseDoc.Comments || []),
             Notes: baseDoc.notes || baseDoc.Notes || [],
             HeadersFooters: headersFooters,
-            Revisions: baseDoc.revisions || baseDoc.Revisions || [],
+            Revisions: (inst.runtimeRevisions && inst.runtimeRevisions.length > 0)
+                ? inst.runtimeRevisions.map(function (revision) { return _cloneRuntimeJson(revision); })
+                : (baseDoc.revisions || baseDoc.Revisions || []),
             Assets: baseDoc.assets || baseDoc.Assets || [],
             Anchors: baseDoc.anchors || baseDoc.Anchors || []
         };
@@ -7357,16 +10426,43 @@ window.tmDocumentWysiwyg = (function () {
             for (var c = 0; c < tdEls.length; c++) {
                 var td = tdEls[c];
                 var cellId = td.getAttribute('data-cell-id') || '';
-                cells.push({
+                var serializedCell = {
                     Id: cellId,
                     ColumnSpan: parseInt(td.getAttribute('colspan') || '1', 10),
                     RowSpan: parseInt(td.getAttribute('rowspan') || '1', 10),
                     Blocks: _serializeBlocksFromContainer(td)
-                });
+                };
+                var width = td.getAttribute('data-cell-width') || td.style.width || '';
+                if (width) {
+                    var numericWidth = parseFloat(width);
+                    serializedCell.Width = isNaN(numericWidth) ? width : numericWidth;
+                }
+                var background = td.getAttribute('data-cell-background') || td.style.backgroundColor || '';
+                if (background) {
+                    serializedCell.BackgroundColor = background;
+                }
+                var borders = _serializeTableCellBorders(td);
+                if (borders) {
+                    serializedCell.Borders = borders;
+                }
+                cells.push(serializedCell);
             }
             rows.push({ Cells: cells });
         }
         return { $type: 'table', Rows: rows };
+    }
+
+    function _serializeTableCellBorders(td) {
+        var borders = {};
+        var top = td.getAttribute('data-cell-border-top') || td.style.borderTop || '';
+        var right = td.getAttribute('data-cell-border-right') || td.style.borderRight || '';
+        var bottom = td.getAttribute('data-cell-border-bottom') || td.style.borderBottom || '';
+        var left = td.getAttribute('data-cell-border-left') || td.style.borderLeft || '';
+        if (top) borders.Top = top;
+        if (right) borders.Right = right;
+        if (bottom) borders.Bottom = bottom;
+        if (left) borders.Left = left;
+        return Object.keys(borders).length > 0 ? borders : null;
     }
 
     function _serializeBlocksFromContainer(container) {
@@ -7468,6 +10564,13 @@ window.tmDocumentWysiwyg = (function () {
         };
         if (assetId) content.AssetId = assetId;
         if (Object.keys(size).length > 0) content.Size = size;
+        var naturalWidth = parseInt(figureEl.getAttribute('data-image-natural-width') || '0', 10) || 0;
+        var naturalHeight = parseInt(figureEl.getAttribute('data-image-natural-height') || '0', 10) || 0;
+        if (naturalWidth > 0 || naturalHeight > 0) {
+            content.NaturalSize = {};
+            if (naturalWidth > 0) content.NaturalSize.Width = naturalWidth;
+            if (naturalHeight > 0) content.NaturalSize.Height = naturalHeight;
+        }
         var inline = figureEl.getAttribute('data-floating-inline') !== 'false';
         var wrapMode = parseInt(figureEl.getAttribute('data-wrap-mode') || (inline ? '0' : '1'), 10);
         var horizontal = parseInt(figureEl.getAttribute('data-horizontal-relative-to') || '0', 10);
@@ -7523,6 +10626,22 @@ window.tmDocumentWysiwyg = (function () {
         return {
             SnapshotApplyCount: inst.renderStats ? inst.renderStats.snapshotApplies : 0,
             FullRenderCount: inst.renderStats ? inst.renderStats.fullRenders : 0,
+            IncrementalOperationCount: inst.renderStats ? inst.renderStats.incrementalOperations : 0,
+            LastRenderReason: inst.renderStats ? inst.renderStats.lastRenderReason : '',
+            InputOperationCount: inst.inputStats ? inst.inputStats.operationCount : 0,
+            InputLongOperationCount: inst.inputStats ? inst.inputStats.longOperationCount : 0,
+            LastInputLatencyMs: inst.inputStats ? inst.inputStats.lastLatencyMs : 0,
+            MaxInputLatencyMs: inst.inputStats ? inst.inputStats.maxLatencyMs : 0,
+            AverageInputLatencyMs: inst.inputStats && inst.inputStats.operationCount > 0
+                ? inst.inputStats.totalLatencyMs / inst.inputStats.operationCount
+                : 0,
+            LastInputOperationMs: inst.inputStats ? inst.inputStats.lastOperationMs : 0,
+            MaxInputOperationMs: inst.inputStats ? inst.inputStats.maxOperationMs : 0,
+            AverageInputOperationMs: inst.inputStats && inst.inputStats.operationCount > 0
+                ? inst.inputStats.totalOperationMs / inst.inputStats.operationCount
+                : 0,
+            LastInputMetricType: inst.inputStats ? inst.inputStats.lastInputType : '',
+            LastInputEventType: inst.inputStats ? inst.inputStats.lastEventType : '',
             RemoteOperationApplyCount: inst.renderStats ? inst.renderStats.remoteOperations : 0,
             RemoteOperationBatchCount: inst.renderStats ? inst.renderStats.remoteBatches : 0,
             MeasureCount: inst.measureStats.count,
@@ -7578,13 +10697,21 @@ window.tmDocumentWysiwyg = (function () {
             IsReadOnly: !!inst.readOnly,
             TrackChangesEnabled: !!inst.trackChangesEnabled,
             CompositionActive: !!inst.compositionActive,
+            CompositionText: inst.compositionText || '',
+            CompositionUpdateCount: inst.compositionUpdateCount || 0,
             AcceptingNativeInput: !!inst.acceptingNativeInput,
+            JsOwnedInputCount: inst.jsOwnedInputCount || 0,
+            NativeInputCount: inst.nativeInputCount || 0,
             CurrentTransactionId: inst.currentTransactionId || null,
             PendingTransactionId: pending ? (pending.transactionId || pending.TransactionId || null) : null,
             PendingPatchType: pending ? (pending.type || pending.Type || null) : null,
+            UndoDepth: inst.commandUndoStack ? inst.commandUndoStack.length : 0,
+            RedoDepth: inst.commandRedoStack ? inst.commandRedoStack.length : 0,
+            RuntimeUndoEpoch: inst.runtimeUndoEpoch || 0,
             QueuedRemoteBatchCount: inst.queuedRemoteBatches ? inst.queuedRemoteBatches.length : 0,
             LastInputType: inst.lastInputType || null,
             LastInputDataLength: inst.lastInputDataLength || 0,
+            LastInputOperationId: inst.lastInputOperationId || null,
             LastPatchType: inst.lastPatchType || null,
             LastPatchId: inst.lastPatchId || null,
             LastPatchTransactionId: inst.lastPatchTransactionId || null,
@@ -7623,7 +10750,10 @@ window.tmDocumentWysiwyg = (function () {
             IsCollapsed: selection.isCollapsed ?? selection.IsCollapsed ?? true,
             Direction: selection.direction || selection.Direction || 'forward',
             ActiveTableCellId: selection.activeTableCellId || selection.ActiveTableCellId || null,
-            TableCellPath: selection.tableCellPath || selection.TableCellPath || null
+            TableCellPath: selection.tableCellPath || selection.TableCellPath || null,
+            ActiveImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null,
+            AnchorNodeId: selection.anchorNodeId || selection.AnchorNodeId || selection.anchorInlineId || selection.AnchorInlineId || selection.anchorBlockId || selection.AnchorBlockId || null,
+            FocusNodeId: selection.focusNodeId || selection.FocusNodeId || selection.focusInlineId || selection.FocusInlineId || selection.focusBlockId || selection.FocusBlockId || null
         };
     }
 
@@ -7657,7 +10787,26 @@ window.tmDocumentWysiwyg = (function () {
         var inst = _instances.get(instanceId);
         if (!inst || inst.disposed) return;
         inst.measureStats = { count: 0, cacheHits: 0, invalidations: 0 };
-        inst.renderStats = { snapshotApplies: 0, fullRenders: 0, remoteOperations: 0, remoteBatches: 0 };
+        inst.renderStats = {
+            snapshotApplies: 0,
+            fullRenders: 0,
+            incrementalOperations: 0,
+            remoteOperations: 0,
+            remoteBatches: 0,
+            lastRenderReason: ''
+        };
+        inst.inputStats = {
+            operationCount: 0,
+            longOperationCount: 0,
+            totalLatencyMs: 0,
+            totalOperationMs: 0,
+            maxLatencyMs: 0,
+            maxOperationMs: 0,
+            lastLatencyMs: 0,
+            lastOperationMs: 0,
+            lastInputType: '',
+            lastEventType: ''
+        };
         inst.measureCache.clear();
     }
 
@@ -7677,16 +10826,32 @@ window.tmDocumentWysiwyg = (function () {
         applyRemoteOperation: applyRemoteOperation,
         applyRemoteOperationBatch: applyRemoteOperationBatch,
         applyRemoteOperations: applyRemoteOperations,
+        applyRemoteCursor: applyRemoteCursor,
         getSnapshot: getSnapshot,
         focus: focus,
+        closeHeaderFooter: closeHeaderFooter,
         getSelectionSnapshot: getSelectionSnapshot,
+        getRuntimeSelection: getRuntimeSelection,
         setTrackChangesEnabled: setTrackChangesEnabled,
         setReviewDisplayMode: setReviewDisplayMode,
         setReadOnly: setReadOnly,
         scrollToRevision: scrollToRevision,
+        reviewRevision: reviewRevision,
         clearRevisionDecorations: clearRevisionDecorations,
+        upsertComment: upsertComment,
+        removeComment: removeComment,
+        scrollToComment: scrollToComment,
         restoreSelection: restoreSelection,
         getFormattingState: getFormattingState,
+        getLastCommandTransaction: getLastCommandTransaction,
+        getUndoState: getUndoState,
+        getDebugUndoStack: getDebugUndoStack,
+        getDirtyState: getDirtyState,
+        markSaved: markSaved,
+        getOfflineState: getOfflineState,
+        applyOfflineState: applyOfflineState,
+        undo: undo,
+        redo: redo,
         getLinkInfo: getLinkInfo,
         executeCommand: executeCommand,
         measureBlockForDebug: measureBlockForDebug,
@@ -7705,6 +10870,44 @@ window.tmDocumentWysiwyg = (function () {
             },
             transformSelectionForTextChange: function (snapshot, target, changeOffset, changeLength, isDelete) {
                 return _transformSelectionForTextChange(snapshot, target, changeOffset, changeLength, isDelete);
+            },
+            createRenderPlan: function (document) {
+                return _createRenderPlan(document);
+            },
+            operationRendererKeys: function () {
+                return Object.keys(_createOperationRendererRegistry()).sort();
+            },
+            createRuntimeSelectionFromSnapshot: function (snapshot) {
+                return _createRuntimeSelectionFromSnapshot(snapshot);
+            },
+            createSelectionSnapshotFromRuntimeSelection: function (selection) {
+                return _createSelectionSnapshotFromRuntimeSelection(selection);
+            },
+            createRuntimeCommandTransaction: function (command, payload, beforeSelection, afterSelection, beforeFormatting, afterFormatting) {
+                var inst = {
+                    id: 'test',
+                    currentTransactionId: 'txn-test',
+                    commandOperationCounter: 0,
+                    commandTransactionCounter: 0
+                };
+                return _createRuntimeCommandTransaction(
+                    inst,
+                    command,
+                    payload,
+                    _nextRuntimeOperationId(inst),
+                    beforeSelection,
+                    afterSelection,
+                    beforeFormatting,
+                    afterFormatting);
+            },
+            transformRuntimeCommentAnchorsForTextChange: function (comments, blockId, offset, length, isDelete) {
+                var inst = {
+                    runtimeComments: JSON.parse(JSON.stringify(comments || [])),
+                    snapshot: { Document: { Comments: [] } },
+                    lastCommentStateJson: JSON.stringify(comments || [])
+                };
+                _transformRuntimeCommentAnchorsForTextChange(inst, blockId, offset, length, isDelete);
+                return inst.runtimeComments;
             }
         },
         insertImageNode: function (instanceId, block, dispatchPatch) {
@@ -7722,7 +10925,682 @@ window.tmDocumentWysiwyg = (function () {
             return payload;
         },
         captureCommentAnchor: captureCommentAnchor,
+        upsertComment: upsertComment,
+        removeComment: removeComment,
+        scrollToComment: scrollToComment,
     };
 })();
 
 window.tmDocumentEditorWysiwyg = window.tmDocumentWysiwyg;
+
+window.tmDocumentEditorRuntime = (function () {
+    var transactionCallbacks = new Map();
+    var selectionCallbacks = new Map();
+    var runtimeDocuments = new Map();
+
+    function _engine() {
+        return window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg || null;
+    }
+
+    function _call(methodName, args, fallback) {
+        var engine = _engine();
+        var method = engine ? engine[methodName] : null;
+        if (typeof method !== 'function') {
+            if (typeof fallback === 'function') return fallback();
+            return undefined;
+        }
+
+        return method.apply(engine, args || []);
+    }
+
+    function _hasOwn(value, key) {
+        return !!value && Object.prototype.hasOwnProperty.call(value, key);
+    }
+
+    function _cloneJson(value) {
+        if (value === undefined || value === null) return value;
+        return JSON.parse(JSON.stringify(value));
+    }
+
+    function _readPair(value, pascalKey, camelKey, fallback) {
+        if (_hasOwn(value, pascalKey)) return value[pascalKey];
+        if (_hasOwn(value, camelKey)) return value[camelKey];
+        return fallback;
+    }
+
+    function _writePair(value, pascalKey, camelKey, propertyValue) {
+        if (!value) return;
+        if (_hasOwn(value, camelKey) && !_hasOwn(value, pascalKey)) {
+            value[camelKey] = propertyValue;
+        } else {
+            value[pascalKey] = propertyValue;
+        }
+    }
+
+    function _ensureArray(value, pascalKey, camelKey) {
+        var current = _readPair(value, pascalKey, camelKey, []);
+        if (!Array.isArray(current)) current = [];
+        _writePair(value, pascalKey, camelKey, current);
+        return current;
+    }
+
+    function _ensureString(value, pascalKey, camelKey, fallback) {
+        var current = _readPair(value, pascalKey, camelKey, fallback || '');
+        if (current === undefined || current === null || current === '') current = fallback || '';
+        _writePair(value, pascalKey, camelKey, String(current));
+        return String(current);
+    }
+
+    function _sortObjectDeep(value) {
+        if (Array.isArray(value)) {
+            return value.map(_sortObjectDeep);
+        }
+
+        if (!value || typeof value !== 'object') return value;
+
+        var sorted = {};
+        Object.keys(value).sort().forEach(function (key) {
+            sorted[key] = _sortObjectDeep(value[key]);
+        });
+        return sorted;
+    }
+
+    function _stableNodeId(prefix, path) {
+        return 'rt-' + prefix + '-' + String(path || '0').replace(/[^a-z0-9_-]+/gi, '-');
+    }
+
+    function _getSnapshotDocument(snapshot) {
+        if (!snapshot) return {};
+        return snapshot.Document || snapshot.document || snapshot;
+    }
+
+    function _setSnapshotDocument(snapshot, document) {
+        if (!snapshot) return;
+        if (_hasOwn(snapshot, 'document') && !_hasOwn(snapshot, 'Document')) {
+            snapshot.document = document;
+        } else {
+            snapshot.Document = document;
+        }
+    }
+
+    function _looksLikeTextInline(inline) {
+        if (!inline) return false;
+        var type = String(inline.$type || inline.Type || inline.type || '').toLowerCase();
+        return type === 'text' || type === 'textrun' || type.indexOf('text') >= 0 || _hasOwn(inline, 'Text') || _hasOwn(inline, 'text');
+    }
+
+    function _readInlineText(inline) {
+        return String(_readPair(inline, 'Text', 'text', ''));
+    }
+
+    function _writeInlineText(inline, text) {
+        _writePair(inline, 'Text', 'text', text);
+    }
+
+    function _readInlineMarks(inline) {
+        var marks = _readPair(inline, 'Marks', 'marks', []);
+        return Array.isArray(marks) ? marks : [];
+    }
+
+    function _writeInlineMarks(inline, marks) {
+        _writePair(inline, 'Marks', 'marks', marks);
+    }
+
+    function _normalizeInline(inline, path) {
+        var result = inline ? _cloneJson(inline) : {};
+        _ensureString(result, 'Id', 'id', _stableNodeId('inline', path));
+        var marks = _readInlineMarks(result).map(function (mark) { return _sortObjectDeep(_cloneJson(mark)); });
+        _writeInlineMarks(result, marks);
+
+        if (_looksLikeTextInline(result)) {
+            if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+                result.$type = 'text';
+            }
+            _writeInlineText(result, _readInlineText(result));
+        }
+
+        return result;
+    }
+
+    function _inlineMergeKey(inline) {
+        var clone = _cloneJson(inline) || {};
+        delete clone.Id;
+        delete clone.id;
+        delete clone.Text;
+        delete clone.text;
+        return JSON.stringify(_sortObjectDeep(clone));
+    }
+
+    function _canMergeInlineRuns(previous, current) {
+        return _looksLikeTextInline(previous)
+            && _looksLikeTextInline(current)
+            && _inlineMergeKey(previous) === _inlineMergeKey(current);
+    }
+
+    function _createEmptyTextInline(path) {
+        return {
+            $type: 'text',
+            Id: _stableNodeId('inline', path),
+            Marks: [],
+            Text: ''
+        };
+    }
+
+    function _normalizeInlines(inlines, path) {
+        var source = Array.isArray(inlines) ? inlines : [];
+        var result = [];
+        for (var i = 0; i < source.length; i++) {
+            var normalized = _normalizeInline(source[i], path + '-' + i);
+            var previous = result.length > 0 ? result[result.length - 1] : null;
+            if (previous && _canMergeInlineRuns(previous, normalized)) {
+                _writeInlineText(previous, _readInlineText(previous) + _readInlineText(normalized));
+            } else {
+                result.push(normalized);
+            }
+        }
+
+        if (result.length === 0) {
+            result.push(_createEmptyTextInline(path + '-0'));
+        }
+
+        return result.map(_sortObjectDeep);
+    }
+
+    function _contentKind(content) {
+        if (!content) return '';
+        var raw = content.$type || content.Type || content.type || '';
+        return String(raw).toLowerCase();
+    }
+
+    function _looksLikeParagraphContent(content) {
+        return !!content
+            && (_contentKind(content).indexOf('paragraph') >= 0
+                || _hasOwn(content, 'Inlines')
+                || _hasOwn(content, 'inlines'));
+    }
+
+    function _looksLikeTableContent(content) {
+        return !!content
+            && (_contentKind(content).indexOf('table') >= 0
+                || _hasOwn(content, 'Rows')
+                || _hasOwn(content, 'rows'));
+    }
+
+    function _normalizeParagraphContent(content, path) {
+        var result = content ? _cloneJson(content) : {};
+        if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+            result.$type = 'paragraph';
+        }
+        var inlines = _ensureArray(result, 'Inlines', 'inlines');
+        _writePair(result, 'Inlines', 'inlines', _normalizeInlines(inlines, path + '-inline'));
+        return _sortObjectDeep(result);
+    }
+
+    function _normalizeTableContent(content, path) {
+        var result = content ? _cloneJson(content) : {};
+        var rows = _ensureArray(result, 'Rows', 'rows');
+        for (var r = 0; r < rows.length; r++) {
+            var row = rows[r] ? _cloneJson(rows[r]) : {};
+            _ensureString(row, 'Id', 'id', _stableNodeId('row', path + '-' + r));
+            var cells = _ensureArray(row, 'Cells', 'cells');
+            for (var c = 0; c < cells.length; c++) {
+                var cell = cells[c] ? _cloneJson(cells[c]) : {};
+                _ensureString(cell, 'Id', 'id', _stableNodeId('cell', path + '-' + r + '-' + c));
+                var blocks = _ensureArray(cell, 'Blocks', 'blocks');
+                _writePair(cell, 'Blocks', 'blocks', _normalizeBlocks(blocks, path + '-' + r + '-' + c + '-block'));
+                cells[c] = _sortObjectDeep(cell);
+            }
+            _writePair(row, 'Cells', 'cells', cells);
+            rows[r] = _sortObjectDeep(row);
+        }
+        _writePair(result, 'Rows', 'rows', rows);
+        return _sortObjectDeep(result);
+    }
+
+    function _normalizeBlockContent(content, path) {
+        if (!content) return _normalizeParagraphContent({}, path);
+        if (_looksLikeTableContent(content)) return _normalizeTableContent(content, path);
+        if (_looksLikeParagraphContent(content)) return _normalizeParagraphContent(content, path);
+        return _sortObjectDeep(_cloneJson(content));
+    }
+
+    function _normalizeBlock(block, path) {
+        var result = block ? _cloneJson(block) : {};
+        _ensureString(result, 'Id', 'id', _stableNodeId('block', path));
+        var content = _readPair(result, 'Content', 'content', null);
+        _writePair(result, 'Content', 'content', _normalizeBlockContent(content, path + '-content'));
+        return _sortObjectDeep(result);
+    }
+
+    function _normalizeBlocks(blocks, path) {
+        var source = Array.isArray(blocks) ? blocks : [];
+        return source.map(function (block, index) {
+            return _normalizeBlock(block, path + '-' + index);
+        });
+    }
+
+    function _normalizeHeaderFooter(headerFooter, path) {
+        var result = headerFooter ? _cloneJson(headerFooter) : {};
+        _ensureString(result, 'Id', 'id', _stableNodeId('header-footer', path));
+        var blocks = _ensureArray(result, 'Blocks', 'blocks');
+        _writePair(result, 'Blocks', 'blocks', _normalizeBlocks(blocks, path + '-block'));
+        return _sortObjectDeep(result);
+    }
+
+    function _normalizeDocument(document) {
+        var result = document ? _cloneJson(document) : {};
+        if (_hasOwn(result, 'document') || _hasOwn(result, 'Document')) {
+            result = _getSnapshotDocument(result);
+        }
+
+        _writePair(result, 'SchemaVersion', 'schemaVersion', _readPair(result, 'SchemaVersion', 'schemaVersion', 1) || 1);
+        _ensureString(result, 'DocumentId', 'documentId', 'document');
+        _writePair(result, 'Metadata', 'metadata', _readPair(result, 'Metadata', 'metadata', {}) || {});
+        _writePair(result, 'PageSettings', 'pageSettings', _readPair(result, 'PageSettings', 'pageSettings', {}) || {});
+
+        var sections = _ensureArray(result, 'Sections', 'sections');
+        _writePair(result, 'Sections', 'sections', sections.map(function (section, index) {
+            var normalized = section ? _cloneJson(section) : {};
+            _ensureString(normalized, 'Id', 'id', _stableNodeId('section', index));
+            return _sortObjectDeep(normalized);
+        }));
+
+        var blocks = _ensureArray(result, 'Blocks', 'blocks');
+        _writePair(result, 'Blocks', 'blocks', _normalizeBlocks(blocks, 'block'));
+
+        var comments = _ensureArray(result, 'Comments', 'comments');
+        _writePair(result, 'Comments', 'comments', comments.map(function (comment) { return _sortObjectDeep(_cloneJson(comment)); }));
+
+        var notes = _ensureArray(result, 'Notes', 'notes');
+        _writePair(result, 'Notes', 'notes', notes.map(function (note) { return _sortObjectDeep(_cloneJson(note)); }));
+
+        var headersFooters = _ensureArray(result, 'HeadersFooters', 'headersFooters');
+        _writePair(result, 'HeadersFooters', 'headersFooters', headersFooters.map(_normalizeHeaderFooter));
+
+        var revisions = _ensureArray(result, 'Revisions', 'revisions');
+        _writePair(result, 'Revisions', 'revisions', revisions.map(function (revision) { return _sortObjectDeep(_cloneJson(revision)); }));
+
+        var assets = _ensureArray(result, 'Assets', 'assets');
+        _writePair(result, 'Assets', 'assets', assets.map(function (asset) { return _sortObjectDeep(_cloneJson(asset)); }));
+
+        var anchors = _ensureArray(result, 'Anchors', 'anchors');
+        _writePair(result, 'Anchors', 'anchors', anchors.map(function (anchor) { return _sortObjectDeep(_cloneJson(anchor)); }));
+
+        return _sortObjectDeep(result);
+    }
+
+    function fromCanonicalDocument(document) {
+        return _sortObjectDeep({
+            version: 1,
+            document: _normalizeDocument(document)
+        });
+    }
+
+    function toCanonicalDocument(runtimeDocument) {
+        if (!runtimeDocument) return _normalizeDocument({});
+        var document = _hasOwn(runtimeDocument, 'document') || _hasOwn(runtimeDocument, 'Document')
+            ? _getSnapshotDocument(runtimeDocument)
+            : runtimeDocument;
+        return _normalizeDocument(document);
+    }
+
+    function _normalizeSnapshot(snapshot) {
+        var result = snapshot ? _cloneJson(snapshot) : {};
+        var document = _getSnapshotDocument(result);
+        _setSnapshotDocument(result, toCanonicalDocument(document));
+        if (!_hasOwn(result, 'ProtocolVersion') && !_hasOwn(result, 'protocolVersion')) {
+            result.ProtocolVersion = 1;
+        }
+        return _sortObjectDeep(result);
+    }
+
+    function _storeSnapshotRuntime(instanceId, snapshot) {
+        if (!instanceId || !snapshot) return;
+        runtimeDocuments.set(instanceId, fromCanonicalDocument(_getSnapshotDocument(snapshot)));
+    }
+
+    function _snapshotFromRuntime(instanceId) {
+        var runtimeDocument = runtimeDocuments.get(instanceId);
+        if (!runtimeDocument) return null;
+        return _sortObjectDeep({
+            ProtocolVersion: 1,
+            Document: toCanonicalDocument(runtimeDocument)
+        });
+    }
+
+    function _stripRuntimeFields(value) {
+        if (Array.isArray(value)) return value.map(_stripRuntimeFields);
+        if (!value || typeof value !== 'object') return value;
+
+        var result = {};
+        Object.keys(value).sort().forEach(function (key) {
+            if (key.indexOf('__runtime') === 0 || key.indexOf('_runtime') === 0) return;
+            result[key] = _stripRuntimeFields(value[key]);
+        });
+        return result;
+    }
+
+    function _findFirstDifference(expected, actual, path) {
+        if (expected === actual) return null;
+        if (typeof expected !== typeof actual) {
+            return { path: path || '$', expected: expected, actual: actual };
+        }
+        if (expected === null || actual === null || typeof expected !== 'object') {
+            return { path: path || '$', expected: expected, actual: actual };
+        }
+
+        var expectedKeys = Array.isArray(expected) ? expected.map(function (_, index) { return index; }) : Object.keys(expected).sort();
+        var actualKeys = Array.isArray(actual) ? actual.map(function (_, index) { return index; }) : Object.keys(actual).sort();
+        var keys = Array.from(new Set(expectedKeys.concat(actualKeys))).sort(function (a, b) {
+            return String(a).localeCompare(String(b), undefined, { numeric: true });
+        });
+
+        for (var i = 0; i < keys.length; i++) {
+            var key = keys[i];
+            if (!_hasOwn(expected, key) || !_hasOwn(actual, key)) {
+                return { path: (path || '$') + '.' + key, expected: expected[key], actual: actual[key] };
+            }
+            var diff = _findFirstDifference(expected[key], actual[key], (path || '$') + '.' + key);
+            if (diff) return diff;
+        }
+
+        return null;
+    }
+
+    function diffCanonicalDocuments(expected, actual) {
+        var left = _stripRuntimeFields(toCanonicalDocument(expected));
+        var right = _stripRuntimeFields(toCanonicalDocument(actual));
+        var diff = _findFirstDifference(left, right, '$');
+        return diff || { equal: true, path: '$', expected: left, actual: right };
+    }
+
+    function roundTripCanonicalDocument(document) {
+        return toCanonicalDocument(fromCanonicalDocument(document));
+    }
+
+    function create(root, options, dotNetRef) {
+        return _call('create', [root, options, dotNetRef]);
+    }
+
+    function loadDocument(instanceId, snapshot, forceRender) {
+        var normalizedSnapshot = _normalizeSnapshot(snapshot);
+        _storeSnapshotRuntime(instanceId, normalizedSnapshot);
+        return _call('applySnapshot', [instanceId, normalizedSnapshot, forceRender]);
+    }
+
+    function getDocument(instanceId) {
+        var engineSnapshot = _call('getSnapshot', [instanceId], function () { return null; });
+        if (engineSnapshot) {
+            try {
+                var parsed = typeof engineSnapshot === 'string' ? JSON.parse(engineSnapshot) : engineSnapshot;
+                var normalized = _normalizeSnapshot(parsed);
+                _storeSnapshotRuntime(instanceId, normalized);
+                return typeof engineSnapshot === 'string' ? JSON.stringify(normalized) : normalized;
+            } catch {
+                return engineSnapshot;
+            }
+        }
+
+        var runtimeSnapshot = _snapshotFromRuntime(instanceId);
+        return runtimeSnapshot ? JSON.stringify(runtimeSnapshot) : null;
+    }
+
+    function executeCommand(instanceId, command, payload) {
+        return _call('executeCommand', [instanceId, command, payload]);
+    }
+
+    function onTransactionCommitted(instanceId, callback) {
+        if (!transactionCallbacks.has(instanceId)) {
+            transactionCallbacks.set(instanceId, []);
+        }
+        transactionCallbacks.get(instanceId).push(callback);
+        return function () {
+            var callbacks = transactionCallbacks.get(instanceId) || [];
+            transactionCallbacks.set(instanceId, callbacks.filter(function (item) { return item !== callback; }));
+        };
+    }
+
+    function onSelectionStateChanged(instanceId, callback) {
+        if (!selectionCallbacks.has(instanceId)) {
+            selectionCallbacks.set(instanceId, []);
+        }
+        selectionCallbacks.get(instanceId).push(callback);
+        return function () {
+            var callbacks = selectionCallbacks.get(instanceId) || [];
+            selectionCallbacks.set(instanceId, callbacks.filter(function (item) { return item !== callback; }));
+        };
+    }
+
+    function dispose(instanceId) {
+        transactionCallbacks.delete(instanceId);
+        selectionCallbacks.delete(instanceId);
+        runtimeDocuments.delete(instanceId);
+        return _call('dispose', [instanceId]);
+    }
+
+    return {
+        create: create,
+        loadDocument: loadDocument,
+        getDocument: getDocument,
+        executeCommand: executeCommand,
+        onTransactionCommitted: onTransactionCommitted,
+        onSelectionStateChanged: onSelectionStateChanged,
+        dispose: dispose,
+        applyRemoteOperation: function (instanceId, operation) {
+            return _call('applyRemoteOperation', [instanceId, operation]);
+        },
+        applyRemoteOperationBatch: function (instanceId, batch) {
+            return _call('applyRemoteOperationBatch', [instanceId, batch]);
+        },
+        applyRemoteOperations: function (instanceId, operations) {
+            return _call('applyRemoteOperations', [instanceId, operations]);
+        },
+        applyRemoteCursor: function (instanceId, cursor) {
+            return _call('applyRemoteCursor', [instanceId, cursor], function () { return false; });
+        },
+        setTrackChangesEnabled: function (instanceId, enabled) {
+            return _call('setTrackChangesEnabled', [instanceId, enabled]);
+        },
+        setReviewDisplayMode: function (instanceId, mode) {
+            return _call('setReviewDisplayMode', [instanceId, mode]);
+        },
+        setReadOnly: function (instanceId, readOnly) {
+            return _call('setReadOnly', [instanceId, readOnly]);
+        },
+        scrollToRevision: function (instanceId, revisionId) {
+            return _call('scrollToRevision', [instanceId, revisionId]);
+        },
+        scrollToComment: function (instanceId, commentId) {
+            return _call('scrollToComment', [instanceId, commentId], function () { return false; });
+        },
+        upsertComment: function (instanceId, comment) {
+            return _call('upsertComment', [instanceId, comment], function () { return false; });
+        },
+        removeComment: function (instanceId, commentId) {
+            return _call('removeComment', [instanceId, commentId], function () { return false; });
+        },
+        reviewRevision: function (instanceId, revisionId, action) {
+            return _call('reviewRevision', [instanceId, revisionId, action], function () { return false; });
+        },
+        clearRevisionDecorations: function (instanceId, revisionId, removeContent) {
+            return _call('clearRevisionDecorations', [instanceId, revisionId, removeContent]);
+        },
+        restoreSelection: function (instanceId, snapshot) {
+            return _call('restoreSelection', [instanceId, snapshot]);
+        },
+        focus: function (instanceId) {
+            return _call('focus', [instanceId]);
+        },
+        closeHeaderFooter: function (instanceId) {
+            return _call('closeHeaderFooter', [instanceId], function () { return false; });
+        },
+        captureCommentAnchor: function (instanceId) {
+            return _call('captureCommentAnchor', [instanceId], function () { return null; });
+        },
+        getDebugSnapshot: function (instanceId) {
+            return _call('getDebugSnapshot', [instanceId], function () { return null; });
+        },
+        getFormattingState: function (instanceId) {
+            return _call('getFormattingState', [instanceId], function () { return null; });
+        },
+        getLastCommandTransaction: function (instanceId) {
+            return _call('getLastCommandTransaction', [instanceId], function () { return null; });
+        },
+        getUndoState: function (instanceId) {
+            return _call('getUndoState', [instanceId], function () { return null; });
+        },
+        getDebugUndoStack: function (instanceId) {
+            return _call('getDebugUndoStack', [instanceId], function () { return null; });
+        },
+        getDirtyState: function (instanceId) {
+            return _call('getDirtyState', [instanceId], function () { return null; });
+        },
+        markSaved: function (instanceId, marker) {
+            return _call('markSaved', [instanceId, marker], function () { return false; });
+        },
+        getOfflineState: function (instanceId) {
+            return _call('getOfflineState', [instanceId], function () { return null; });
+        },
+        applyOfflineState: function (instanceId, stateJson) {
+            return _call('applyOfflineState', [instanceId, stateJson], function () { return false; });
+        },
+        undo: function (instanceId) {
+            return _call('undo', [instanceId], function () { return false; });
+        },
+        redo: function (instanceId) {
+            return _call('redo', [instanceId], function () { return false; });
+        },
+        getRuntimeSelection: function (instanceId) {
+            return _call('getRuntimeSelection', [instanceId], function () { return null; });
+        },
+        getSelectionSnapshot: function (instanceId) {
+            return _call('getSelectionSnapshot', [instanceId], function () { return null; });
+        },
+        getLinkInfo: function (instanceId) {
+            return _call('getLinkInfo', [instanceId], function () { return null; });
+        },
+        insertImageNode: function (instanceId, block, dispatchPatch) {
+            return _call('insertImageNode', [instanceId, block, dispatchPatch]);
+        },
+        __testHooks: {
+            fromCanonicalDocument: fromCanonicalDocument,
+            toCanonicalDocument: toCanonicalDocument,
+            roundTripCanonicalDocument: roundTripCanonicalDocument,
+            diffCanonicalDocuments: diffCanonicalDocuments,
+            getRuntimeDocument: function (instanceId) {
+                return runtimeDocuments.has(instanceId) ? _cloneJson(runtimeDocuments.get(instanceId)) : null;
+            },
+            createRuntimeCommandTransaction: function (command, payload, beforeSelection, afterSelection, beforeFormatting, afterFormatting) {
+                return _engine().__testHooks.createRuntimeCommandTransaction(
+                    command,
+                    payload,
+                    beforeSelection,
+                    afterSelection,
+                    beforeFormatting,
+                    afterFormatting);
+            },
+            normalizeSnapshot: _normalizeSnapshot
+        }
+    };
+})();
+
+(function () {
+    function _resolveInstanceId(instanceId) {
+        if (instanceId) return instanceId;
+        var host = document.querySelector('[data-testid="document-wysiwyg-host"][data-instance-id]');
+        return host ? (host.getAttribute('data-instance-id') || '') : '';
+    }
+
+    function _editor() {
+        return window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg || null;
+    }
+
+    window.tmDocumentWysiwygDebug = {
+        getRuntimeState: function (instanceId) {
+            var id = _resolveInstanceId(instanceId);
+            var editor = _editor();
+            var snapshot = editor && editor.getDebugSnapshot
+                ? editor.getDebugSnapshot(id)
+                : { InstanceId: id, HasInstance: false, Error: 'getDebugSnapshot unavailable' };
+            var runtime = window.tmDocumentEditorRuntime;
+            var runtimeDocument = runtime && runtime.__testHooks && runtime.__testHooks.getRuntimeDocument
+                ? runtime.__testHooks.getRuntimeDocument(id)
+                : null;
+
+            return Object.assign({}, snapshot || {}, {
+                RuntimeAuthority: 'JsCanonicalBoundary',
+                JsOwnedRuntime: true,
+                JsOwnedRuntimePhase: 'CanonicalDocumentModel',
+                HasRuntimeDocument: !!runtimeDocument,
+                RuntimeDocumentId: runtimeDocument && runtimeDocument.document
+                    ? (runtimeDocument.document.DocumentId || runtimeDocument.document.documentId || '')
+                    : ''
+            });
+        },
+        getRenderStats: function (instanceId) {
+            var id = _resolveInstanceId(instanceId);
+            var editor = _editor();
+            var metrics = editor && editor.getDebugMetrics ? editor.getDebugMetrics(id) : null;
+            if (!metrics) {
+                return {
+                    InstanceId: id,
+                    HasInstance: false
+                };
+            }
+
+            return {
+                InstanceId: id,
+                HasInstance: true,
+                SnapshotApplyCount: metrics.SnapshotApplyCount || 0,
+                FullRenderCount: metrics.FullRenderCount || 0,
+                IncrementalOperationCount: metrics.IncrementalOperationCount || 0,
+                LastRenderReason: metrics.LastRenderReason || '',
+                InputOperationCount: metrics.InputOperationCount || 0,
+                InputLongOperationCount: metrics.InputLongOperationCount || 0,
+                LastInputLatencyMs: metrics.LastInputLatencyMs || 0,
+                MaxInputLatencyMs: metrics.MaxInputLatencyMs || 0,
+                AverageInputLatencyMs: metrics.AverageInputLatencyMs || 0,
+                LastInputOperationMs: metrics.LastInputOperationMs || 0,
+                MaxInputOperationMs: metrics.MaxInputOperationMs || 0,
+                AverageInputOperationMs: metrics.AverageInputOperationMs || 0,
+                LastInputMetricType: metrics.LastInputMetricType || '',
+                LastInputEventType: metrics.LastInputEventType || '',
+                RemoteOperationApplyCount: metrics.RemoteOperationApplyCount || 0,
+                RemoteOperationBatchCount: metrics.RemoteOperationBatchCount || 0,
+                MeasureCount: metrics.MeasureCount || 0,
+                MeasureCacheHits: metrics.MeasureCacheHits || 0,
+                MeasureInvalidations: metrics.MeasureInvalidations || 0,
+                VirtualizationEnabled: !!metrics.VirtualizationEnabled,
+                TotalPages: metrics.TotalPages || 0,
+                RenderedPages: metrics.RenderedPages || 0,
+                VirtualizedPages: metrics.VirtualizedPages || 0
+            };
+        },
+        getUndoStack: function (instanceId) {
+            var state = this.getRuntimeState(instanceId);
+            var id = state.InstanceId || _resolveInstanceId(instanceId);
+            var editor = _editor();
+            var undoState = editor && editor.getUndoState ? editor.getUndoState(id) : null;
+            var debugUndo = editor && editor.getDebugUndoStack ? editor.getDebugUndoStack(id) : null;
+            return {
+                InstanceId: id,
+                HasInstance: !!state.HasInstance,
+                JsOwnedUndo: !!(undoState && undoState.JsOwnedUndo),
+                CanUndo: !!(undoState && undoState.CanUndo),
+                CanRedo: !!(undoState && undoState.CanRedo),
+                UndoDepth: undoState ? undoState.UndoDepth : 0,
+                RedoDepth: undoState ? undoState.RedoDepth : 0,
+                NextUndoDescription: undoState ? undoState.NextUndoDescription : null,
+                NextRedoDescription: undoState ? undoState.NextRedoDescription : null,
+                Epoch: undoState ? undoState.Epoch : 0,
+                Items: debugUndo ? debugUndo.Undo : [],
+                RedoItems: debugUndo ? debugUndo.Redo : [],
+                PendingItem: debugUndo ? debugUndo.Pending : null,
+                LastApply: debugUndo ? debugUndo.LastApply : null,
+                CurrentTransactionId: state.CurrentTransactionId || null,
+                PendingTransactionId: state.PendingTransactionId || null,
+                PendingPatchType: state.PendingPatchType || null
+            };
+        }
+    };
+})();

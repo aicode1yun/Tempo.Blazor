@@ -1,0 +1,54 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+<footer class="tm-document-editor__status-bar"
+        role="status"
+        aria-live="polite"
+        aria-label="@Loc["TmDocumentEditor_StatusBarLabel"]"
+        data-testid="document-status-bar">
+    <div class="tm-document-editor__status-bar-group tm-document-editor__status-bar-group--save">
+        @if (IsDirty)
+        {
+            <span class="tm-document-editor__dirty" data-testid="document-dirty-status">@Loc["TmDocumentEditor_UnsavedChanges"]</span>
+        }
+        @if (!string.IsNullOrWhiteSpace(SaveMessage))
+        {
+            <span class="tm-document-editor__save-message" data-testid="document-save-message">@SaveMessage</span>
+        }
+        @if (LastSavedAt is not null)
+        {
+            <span class="tm-document-editor__last-saved" data-testid="document-last-saved">
+                @Loc["TmDocumentEditor_LastSavedAt", LastSavedAt.Value.ToLocalTime().ToString("HH:mm:ss")]
+            </span>
+        }
+    </div>
+
+    <div class="tm-document-editor__status-bar-group tm-document-editor__status-bar-group--metrics">
+        <span data-testid="document-status-word-count">@Loc["TmDocumentEditor_WordCount", WordCount]</span>
+        <span data-testid="document-status-page-count">@Loc["TmDocumentEditor_PageCount", PageCount]</span>
+        <span data-testid="document-status-region">@Loc["TmDocumentEditor_ActiveRegion", ActiveRegionLabel]</span>
+        <span data-testid="document-status-zoom">@Loc["TmDocumentEditor_ZoomStatus", ZoomLabel]</span>
+    </div>
+</footer>
+
+@code {
+    /// <summary>Whether the document has local unsaved changes.</summary>
+    [Parameter] public bool IsDirty { get; set; }
+
+    /// <summary>Optional save status message.</summary>
+    [Parameter] public string? SaveMessage { get; set; }
+
+    /// <summary>Timestamp of the latest successful save.</summary>
+    [Parameter] public DateTimeOffset? LastSavedAt { get; set; }
+
+    /// <summary>Current document word count.</summary>
+    [Parameter] public int WordCount { get; set; }
+
+    /// <summary>Current document page count.</summary>
+    [Parameter] public int PageCount { get; set; } = 1;
+
+    /// <summary>Label for the active editing region.</summary>
+    [Parameter] public string ActiveRegionLabel { get; set; } = string.Empty;
+
+    /// <summary>Current zoom label.</summary>
+    [Parameter] public string ZoomLabel { get; set; } = "100%";
+}

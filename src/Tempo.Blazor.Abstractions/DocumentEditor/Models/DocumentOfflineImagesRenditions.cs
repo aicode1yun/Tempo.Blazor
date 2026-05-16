@@ -18,6 +18,15 @@ public class DocumentOfflineDraft
     /// <summary>Pending operation batches.</summary>
     public List<DocumentOperationBatch> OperationBatches { get; set; } = [];
 
+    /// <summary>Serialized JS-owned runtime undo/dirty state used to restore an offline editing session.</summary>
+    public string? RuntimeStateJson { get; set; }
+
+    /// <summary>Runtime dirty epoch captured with this draft.</summary>
+    public int RuntimeDirtyEpoch { get; set; }
+
+    /// <summary>Runtime undo epoch captured with this draft.</summary>
+    public int RuntimeUndoEpoch { get; set; }
+
     /// <summary>Pending local image assets referenced by the offline draft.</summary>
     public List<DocumentImageAsset> PendingAssets { get; set; } = [];
 

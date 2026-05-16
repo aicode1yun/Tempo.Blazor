@@ -1,0 +1,189 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+@if (IsOpen)
+{
+    <aside class="tm-document-side-panel"
+           data-testid="document-side-panel"
+           aria-label="@Loc["TmDocumentEditor_SidePanelLabel"]">
+        <header class="tm-document-side-panel__header">
+            <div class="tm-document-side-panel__tabs"
+                 role="tablist"
+                 aria-label="@Loc["TmDocumentEditor_SidePanelTabsLabel"]">
+                @if (ShowComments)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Comments)"
+                            class="@GetTabClass(DocumentSidePanelTab.Comments)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Comments)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-comments"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Comments)">
+                        <TmIcon Name="message-square" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Comments"]</span>
+                        @if (CommentsCount > 0)
+                        {
+                            <span class="tm-document-side-panel__badge">@CommentsCount</span>
+                        }
+                    </button>
+                }
+                @if (ShowRevisions)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Revisions)"
+                            class="@GetTabClass(DocumentSidePanelTab.Revisions)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Revisions)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-revisions"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Revisions)">
+                        <TmIcon Name="file-diff" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Revisions"]</span>
+                        @if (RevisionsCount > 0)
+                        {
+                            <span class="tm-document-side-panel__badge">@RevisionsCount</span>
+                        }
+                    </button>
+                }
+                @if (ShowVersions)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Versions)"
+                            class="@GetTabClass(DocumentSidePanelTab.Versions)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Versions)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-versions"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Versions)">
+                        <TmIcon Name="clock" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Versions"]</span>
+                        @if (VersionsCount > 0)
+                        {
+                            <span class="tm-document-side-panel__badge">@VersionsCount</span>
+                        }
+                    </button>
+                }
+                @if (ShowProperties)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Properties)"
+                            class="@GetTabClass(DocumentSidePanelTab.Properties)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Properties)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-properties"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Properties)">
+                        <TmIcon Name="settings" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Properties"]</span>
+                    </button>
+                }
+            </div>
+            <button type="button"
+                    class="tm-document-side-panel__close"
+                    title="@Loc["TmDocumentEditor_CloseSidePanel"]"
+                    aria-label="@Loc["TmDocumentEditor_CloseSidePanel"]"
+                    data-testid="document-side-panel-close"
+                    @onclick="OnClose">
+                <TmIcon Name="x" Size="IconSize.Sm" />
+            </button>
+        </header>
+
+        <section id="@PanelId"
+                 class="tm-document-side-panel__body"
+                 role="tabpanel"
+                 aria-labelledby="@GetTabId(ActiveTab)"
+                 data-testid="document-side-panel-body">
+            @GetActiveContent()
+        </section>
+    </aside>
+}
+else if (ShowEdgeToggle)
+{
+    <button type="button"
+            class="tm-document-side-panel__edge-toggle"
+            title="@Loc["TmDocumentEditor_OpenSidePanel"]"
+            aria-label="@Loc["TmDocumentEditor_OpenSidePanel"]"
+            data-testid="document-side-panel-edge-toggle"
+            @onclick="OnOpen">
+        <TmIcon Name="sidebar" Size="IconSize.Sm" />
+    </button>
+}
+
+@code {
+    private const string PanelId = "document-side-panel-content";
+
+    /// <summary>Whether the side panel shell is open.</summary>
+    [Parameter] public bool IsOpen { get; set; } = true;
+
+    /// <summary>Currently active tab.</summary>
+    [Parameter] public DocumentSidePanelTab ActiveTab { get; set; } = DocumentSidePanelTab.Comments;
+
+    /// <summary>Raised when the active tab changes.</summary>
+    [Parameter] public EventCallback<DocumentSidePanelTab> ActiveTabChanged { get; set; }
+
+    /// <summary>Whether the comments tab is available.</summary>
+    [Parameter] public bool ShowComments { get; set; } = true;
+
+    /// <summary>Whether the revisions tab is available.</summary>
+    [Parameter] public bool ShowRevisions { get; set; } = true;
+
+    /// <summary>Whether the versions tab is available.</summary>
+    [Parameter] public bool ShowVersions { get; set; } = true;
+
+    /// <summary>Whether the properties tab is available.</summary>
+    [Parameter] public bool ShowProperties { get; set; } = true;
+
+    /// <summary>Whether to show the right-edge reopen button when closed.</summary>
+    [Parameter] public bool ShowEdgeToggle { get; set; } = true;
+
+    /// <summary>Number of comments shown in the tab badge.</summary>
+    [Parameter] public int CommentsCount { get; set; }
+
+    /// <summary>Number of pending revisions shown in the tab badge.</summary>
+    [Parameter] public int RevisionsCount { get; set; }
+
+    /// <summary>Number of versions shown in the tab badge.</summary>
+    [Parameter] public int VersionsCount { get; set; }
+
+    /// <summary>Content rendered for the comments tab.</summary>
+    [Parameter] public RenderFragment? CommentsContent { get; set; }
+
+    /// <summary>Content rendered for the revisions tab.</summary>
+    [Parameter] public RenderFragment? RevisionsContent { get; set; }
+
+    /// <summary>Content rendered for the versions tab.</summary>
+    [Parameter] public RenderFragment? VersionsContent { get; set; }
+
+    /// <summary>Content rendered for the properties tab.</summary>
+    [Parameter] public RenderFragment? PropertiesContent { get; set; }
+
+    /// <summary>Raised when the side panel should close.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    /// <summary>Raised when the side panel should reopen.</summary>
+    [Parameter] public EventCallback OnOpen { get; set; }
+
+    private Task SelectTabAsync(DocumentSidePanelTab tab)
+        => ActiveTabChanged.InvokeAsync(tab);
+
+    private RenderFragment? GetActiveContent()
+        => ActiveTab switch
+        {
+            DocumentSidePanelTab.Comments => CommentsContent,
+            DocumentSidePanelTab.Revisions => RevisionsContent,
+            DocumentSidePanelTab.Versions => VersionsContent,
+            DocumentSidePanelTab.Properties => PropertiesContent,
+            _ => PropertiesContent
+        };
+
+    private static string GetTabId(DocumentSidePanelTab tab)
+        => $"document-side-panel-tab-{tab.ToString().ToLowerInvariant()}";
+
+    private string GetTabClass(DocumentSidePanelTab tab)
+        => ActiveTab == tab
+            ? "tm-document-side-panel__tab tm-document-side-panel__tab--active"
+            : "tm-document-side-panel__tab";
+
+    private string GetTabSelected(DocumentSidePanelTab tab)
+        => ActiveTab == tab ? "true" : "false";
+}

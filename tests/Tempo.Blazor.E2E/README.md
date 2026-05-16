@@ -115,6 +115,12 @@ public class MyNewTests : ServerTestBase
 - `TakeScreenshotAsync(page, "name")` - Takes screenshot
 - `GetHeapSizeAsync(page)` - Gets JS heap size
 
+### Document Editor Tests
+
+Document editor WYSIWYG tests should exercise the real demo editor and the JS-owned runtime path. Open the page with `OpenDocumentEditorPageAsync`, wait for `[data-testid='document-wysiwyg-host']` plus `WaitForWysiwygBodyAsync`, and prefer DOM/provider assertions over Blazor render-count assertions for the editable surface.
+
+Use `window.tmDocumentEditorRuntime` and `window.tmDocumentWysiwygDebug` only for runtime invariants and diagnostics such as undo state, dirty state, snapshot reload counts, render stats, and selection snapshots. Keep coverage spread across typing, undo/redo, formatting, track changes, comments, images, tables, headers/footers, collaboration, save/reload, DOCX import/export, PDF export, and comparison. Additional runtime details are documented in `docs/document-editor-js-owned-runtime.md`.
+
 ## CI/CD Integration
 
 For CI/CD pipelines, use headless mode and ensure demo apps are running:

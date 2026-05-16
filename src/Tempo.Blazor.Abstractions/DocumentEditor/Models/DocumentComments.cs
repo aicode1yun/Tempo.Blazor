@@ -79,6 +79,9 @@ public class DocumentCommentAnchor
 
     /// <summary>Optional rendition anchor id for finalized outputs.</summary>
     public string? RenditionAnchorId { get; set; }
+
+    /// <summary>Whether the original text range no longer exists in the live runtime document.</summary>
+    public bool IsOrphaned { get; set; }
 }
 
 /// <summary>Document comment anchor type.</summary>

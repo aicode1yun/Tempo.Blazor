@@ -313,8 +313,16 @@ public interface IDocumentCollaborationRealtimeProvider : IDocumentCollaboration
     /// <summary>Raised when a remote operation batch is pushed by the transport.</summary>
     event Func<DocumentCollaborationOperationBatch, CancellationToken, Task>? RemoteOperationBatchReceived;
 
+    /// <summary>Raised when a remote cursor is pushed by the transport.</summary>
+    event Func<DocumentCollaborationCursor, CancellationToken, Task>? RemoteCursorReceived;
+
     /// <summary>Receives a remote operation batch from the realtime transport.</summary>
     Task ReceiveRemoteOperationBatchAsync(
         DocumentCollaborationOperationBatch batch,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>Receives a remote cursor from the realtime transport.</summary>
+    Task ReceiveRemoteCursorAsync(
+        DocumentCollaborationCursor cursor,
         CancellationToken cancellationToken = default);
 }

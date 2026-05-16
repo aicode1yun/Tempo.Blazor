@@ -4,9 +4,11 @@
 @using System.Text.Json
 @using Microsoft.AspNetCore.Components.Forms
 @using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+@inject NavigationManager NavigationManager
 @inject IHttpClientFactory HttpClientFactory
 @inject DemoDocumentEditorProvider DocumentProvider
-@inject DemoDocumentCollaborationProvider CollaborationProvider
+@inject SignalRDocumentCollaborationProvider CollaborationProvider
 @inject DemoDocumentSuggestionProvider SuggestionProvider
 @inject DemoDocumentFormatProvider FormatProvider
 @inject DemoDocumentPdfExportProvider PdfExportProvider
@@ -105,7 +107,7 @@
                   TokenProvider="@TokenProvider"
                   TokenValueProvider="@TokenProvider"
                   Author="@DemoAuthor"
-                  AutoSaveInterval="@TimeSpan.FromSeconds(30)"
+                  AutoSaveInterval="@DemoAutoSaveInterval"
                   OnDocumentLoaded="HandleDocumentLoaded"
                   data-testid="document-editor-demo" />
 
@@ -118,9 +120,36 @@
     private string? _formatMessage;
     private string? _signingMessage;
     private string? _signingDesignerUrl;
+    private TimeSpan DemoAutoSaveInterval => TimeSpan.FromMilliseconds(ReadQueryInt("autosaveMs", 30000, 250, 30000));
     private static DocumentEditorAuthor DemoAuthor => new() { Id = "demo-user", DisplayName = "Demo User" };
 
     private string ExportOdtUrl => $"https://localhost:5100/api/document-editor/{Uri.EscapeDataString(_documentId)}/export/odt";
+
+    private int ReadQueryInt(string key, int fallback, int min, int max)
+    {
+        var query = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query) || query.Length <= 1)
+        {
+            return fallback;
+        }
+
+        foreach (var pair in query[1..].Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = pair.IndexOf('=');
+            var name = separator >= 0 ? pair[..separator] : pair;
+            if (!string.Equals(Uri.UnescapeDataString(name), key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var value = separator >= 0 ? Uri.UnescapeDataString(pair[(separator + 1)..]) : string.Empty;
+            return int.TryParse(value, out var parsed)
+                ? Math.Clamp(parsed, min, max)
+                : fallback;
+        }
+
+        return fallback;
+    }
 
     private void SelectDocument(string documentId)
     {

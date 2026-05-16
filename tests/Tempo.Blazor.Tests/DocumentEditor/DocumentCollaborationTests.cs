@@ -165,9 +165,15 @@ public sealed class DocumentCollaborationTests
     {
         var provider = new SignalRDocumentCollaborationProvider(new InMemoryDocumentCollaborationProvider());
         var received = new List<DocumentCollaborationOperationBatch>();
+        var cursors = new List<DocumentCollaborationCursor>();
         provider.RemoteOperationBatchReceived += (batch, _) =>
         {
             received.Add(batch);
+            return Task.CompletedTask;
+        };
+        provider.RemoteCursorReceived += (cursor, _) =>
+        {
+            cursors.Add(cursor);
             return Task.CompletedTask;
         };
         var remote = new DocumentCollaborationOperationBatch
@@ -182,11 +188,20 @@ public sealed class DocumentCollaborationTests
         };
 
         await provider.ReceiveRemoteOperationBatchAsync(remote);
+        await provider.ReceiveRemoteCursorAsync(new DocumentCollaborationCursor
+        {
+            DocumentId = "doc-1",
+            SessionId = "remote-session",
+            DisplayName = "Remote",
+            BlockId = "a",
+            Offset = 1
+        });
 
         received.Should().ContainSingle(batch =>
             batch.Sequence == 2
             && batch.SessionId == "remote-session"
             && batch.Batch.Operations.Single().Text == "Remote ");
+        cursors.Should().ContainSingle(cursor => cursor.DisplayName == "Remote" && cursor.Offset == 1);
     }
 
     [Fact]
@@ -208,6 +223,25 @@ public sealed class DocumentCollaborationTests
         var cursors = await provider.GetCursorsAsync("doc-1");
 
         cursors.Should().ContainSingle(cursor => cursor.DisplayName == "User A" && cursor.Offset == 2);
+    }
+
+    [Fact]
+    public async Task Sync_RealtimeCursorUpdateDoesNotPollCursors()
+    {
+        var transport = new CountingCollaborationProvider();
+        var provider = new SignalRDocumentCollaborationProvider(transport);
+        var sync = new DocumentCollaborationSync(provider);
+        var document = DocumentOperationEngineTests.CreateDocument("doc-1", "a", "Alpha");
+        await sync.JoinAsync(document, "client-a", Author("client-a"));
+
+        await sync.UpdateCursorAsync(new DocumentCollaborationCursor
+        {
+            DisplayName = "Client A",
+            BlockId = "a",
+            Offset = 1
+        });
+
+        transport.GetCursorsCalls.Should().Be(0);
     }
 
     [Fact]
@@ -310,6 +344,64 @@ public sealed class DocumentCollaborationTests
         operation.Target.Length.Should().Be(1);
         operation.Metadata.TransactionId.Should().Be("tx-1");
         operation.Metadata.OriginSessionId.Should().Be(sync.Session!.Id);
+    }
+
+    [Fact]
+    public async Task Sync_CreateLocalPatchBatch_StampsBatchTransactionIdentityAndCursorAfter()
+    {
+        var provider = new InMemoryDocumentCollaborationProvider();
+        var sync = new DocumentCollaborationSync(provider);
+        var before = DocumentOperationEngineTests.CreateDocument("doc-1", "a", "Alpha");
+        ((ParagraphBlockContent)before.Blocks[0].Content).Inlines[0].Id = "inline-a";
+        await sync.JoinAsync(before, "client-a", Author("author-a"));
+
+        var first = sync.CreateLocalPatchBatch(before, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "!",
+            TransactionId = "tx-1",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "a",
+                AnchorInlineId = "inline-a",
+                AnchorOffset = 5,
+                FocusBlockId = "a",
+                FocusInlineId = "inline-a",
+                FocusOffset = 5,
+                IsCollapsed = true
+            },
+            AfterSelection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "a",
+                AnchorInlineId = "inline-a",
+                AnchorOffset = 6,
+                FocusBlockId = "a",
+                FocusInlineId = "inline-a",
+                FocusOffset = 6,
+                IsCollapsed = true
+            }
+        });
+        var second = sync.CreateLocalPatchBatch(before, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "?",
+            TransactionId = "tx-2",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "a",
+                AnchorInlineId = "inline-a",
+                AnchorOffset = 6,
+                IsCollapsed = true
+            }
+        });
+
+        first.ClientId.Should().Be("client-a");
+        first.TransactionId.Should().Be("tx-1");
+        first.LocalSequence.Should().Be(1);
+        first.SelectionAfter.Should().NotBeNull();
+        first.SelectionAfter!.AnchorOffset.Should().Be(6);
+        second.LocalSequence.Should().Be(2);
+        second.TransactionId.Should().Be("tx-2");
     }
 
     [Fact]
@@ -678,6 +770,19 @@ public sealed class DocumentCollaborationTests
     private static DocumentEditorAuthor Author(string id)
     {
         return new DocumentEditorAuthor { Id = id, DisplayName = id };
+    }
+
+    private sealed class CountingCollaborationProvider : InMemoryDocumentCollaborationProvider
+    {
+        public int GetCursorsCalls { get; private set; }
+
+        public override Task<IReadOnlyList<DocumentCollaborationCursor>> GetCursorsAsync(
+            string documentId,
+            CancellationToken cancellationToken = default)
+        {
+            GetCursorsCalls++;
+            return base.GetCursorsAsync(documentId, cancellationToken);
+        }
     }
 
     private static DocumentEditorDocument CreateImageDocument(string documentId, string blockId, string altText)

@@ -1,6 +1,7 @@
 using Tempo.Blazor.Configuration;
 using Tempo.Blazor.Demo.Services;
 using Tempo.Blazor.Demo.Validators;
+using Tempo.Blazor.DocumentEditor.Services;
 using Tempo.Blazor.FluentValidation;
 using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Services;
@@ -32,6 +33,11 @@ builder.Services.AddScoped<ImageHttpGalleryProvider>();
 builder.Services.AddScoped<ViewHttpProvider>();
 builder.Services.AddScoped<DemoDocumentEditorProvider>();
 builder.Services.AddScoped<DemoDocumentCollaborationProvider>();
+builder.Services.AddScoped(sp =>
+{
+    var baseUri = sp.GetRequiredService<IHttpClientFactory>().CreateClient("DemoApi").BaseAddress!.ToString().TrimEnd('/');
+    return new SignalRDocumentCollaborationProvider($"{baseUri}/hubs/document-editor-collaboration");
+});
 builder.Services.AddScoped<DemoDocumentSuggestionProvider>();
 builder.Services.AddScoped<DemoDocumentFormatProvider>();
 builder.Services.AddScoped<DemoDocumentPdfExportProvider>();

@@ -43,6 +43,10 @@ public class DocumentOperationLog
             DocumentId = batch.DocumentId,
             ProtocolVersion = batch.ProtocolVersion,
             BaseVersionId = batch.BaseVersionId,
+            ClientId = batch.ClientId,
+            TransactionId = batch.TransactionId,
+            LocalSequence = batch.LocalSequence,
+            SelectionAfter = Clone(batch.SelectionAfter),
             Operations = uniqueOperations
         });
 
@@ -97,7 +101,17 @@ public class DocumentOperationLog
 
     private static DocumentOperation Clone(DocumentOperation operation)
     {
-        var json = System.Text.Json.JsonSerializer.Serialize(operation, DocumentEditorJson.Options);
-        return System.Text.Json.JsonSerializer.Deserialize<DocumentOperation>(json, DocumentEditorJson.Options)!;
+        return CloneValue(operation);
+    }
+
+    private static T CloneValue<T>(T value)
+    {
+        var json = System.Text.Json.JsonSerializer.Serialize(value, DocumentEditorJson.Options);
+        return System.Text.Json.JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+
+    private static WysiwygSelectionSnapshot? Clone(WysiwygSelectionSnapshot? value)
+    {
+        return value is null ? null : CloneValue(value);
     }
 }

@@ -2749,6 +2749,7 @@
   <data name="TmDocumentEditor_GroupLayout"            xml:space="preserve"><value>Rozložení</value></data>
   <data name="TmDocumentEditor_GroupReferences"        xml:space="preserve"><value>Reference</value></data>
   <data name="TmDocumentEditor_GroupReview"            xml:space="preserve"><value>Revize</value></data>
+  <data name="TmDocumentEditor_GroupFile"              xml:space="preserve"><value>Soubor</value></data>
   <data name="TmDocumentEditor_CommandDisabledReadOnly" xml:space="preserve"><value>Dokument je jen pro čtení</value></data>
   <data name="TmDocumentEditor_CommandDisabledUnavailable" xml:space="preserve"><value>Příkaz není dostupný</value></data>
   <data name="TmDocumentEditor_CommandDisabledBusy"    xml:space="preserve"><value>Příkaz už běží</value></data>
@@ -2965,6 +2966,9 @@
   <data name="TmDocumentEditor_RegionBody"             xml:space="preserve"><value>obsah</value></data>
   <data name="TmDocumentEditor_RegionHeader"           xml:space="preserve"><value>hlavička</value></data>
   <data name="TmDocumentEditor_RegionFooter"           xml:space="preserve"><value>patička</value></data>
+  <data name="TmDocumentEditor_RegionCaption"          xml:space="preserve"><value>popisek</value></data>
+  <data name="TmDocumentEditor_RegionFootnote"         xml:space="preserve"><value>poznámka pod čarou</value></data>
+  <data name="TmDocumentEditor_RegionEndnote"          xml:space="preserve"><value>koncová poznámka</value></data>
   <data name="TmDocumentEditor_Insert"                 xml:space="preserve"><value>Vložit</value></data>
   <data name="TmDocumentEditor_TrackChanges"           xml:space="preserve"><value>Sledovat změny</value></data>
   <data name="TmDocumentEditor_ShowMarkup"             xml:space="preserve"><value>Zobrazit značky</value></data>
@@ -3011,6 +3015,7 @@
   <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Zápatí</value></data>
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Poznámky</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Poznámka pod čarou</value></data>
+  <data name="TmDocumentEditor_TableOfContents"        xml:space="preserve"><value>Obsah</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
   <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Přetáhněte DOCX soubor nebo vyberte</value></data>
@@ -3032,6 +3037,9 @@
   <data name="TmDocumentEditor_RevisionTypeDeletion"   xml:space="preserve"><value>Smazání</value></data>
   <data name="TmDocumentEditor_RevisionTypeFormatting" xml:space="preserve"><value>Formátování</value></data>
   <data name="TmDocumentEditor_RevisionTypeMove"       xml:space="preserve"><value>Přesun</value></data>
+  <data name="TmDocumentEditor_RevisionTypeStructure"  xml:space="preserve"><value>Struktura</value></data>
+  <data name="TmDocumentEditor_RevisionTypeImage"      xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmDocumentEditor_RevisionTypeTable"      xml:space="preserve"><value>Tabulka</value></data>
   <data name="TmDocumentEditor_RevisionPreviewUnavailable" xml:space="preserve"><value>Náhled není k dispozici</value></data>
   <data name="TmDocumentEditor_TrackChangesOn"         xml:space="preserve"><value>Sledování změn zapnuto</value></data>
   <data name="TmDocumentEditor_TrackChangesOff"        xml:space="preserve"><value>Sledování změn vypnuto</value></data>

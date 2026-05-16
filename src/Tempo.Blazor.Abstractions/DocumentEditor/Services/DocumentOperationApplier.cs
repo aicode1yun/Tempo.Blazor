@@ -545,6 +545,24 @@ public class DocumentOperationApplier
             return DocumentOperationValidationResult.Valid();
         }
 
+        if (string.Equals(operation.AttributeName, "paragraphProperties", StringComparison.OrdinalIgnoreCase))
+        {
+            var patch = ReadJsonValue<DocumentParagraphPropertiesPatch>(operation.AttributeValueJson);
+            if (patch is null)
+            {
+                return DocumentOperationValidationResult.Invalid("Paragraph properties payload is missing.");
+            }
+
+            ApplyParagraphPropertiesPatch(block.ParagraphProperties, patch);
+            return DocumentOperationValidationResult.Valid();
+        }
+
+        if (string.Equals(operation.AttributeName, "clearFormatting", StringComparison.OrdinalIgnoreCase))
+        {
+            ApplyClearFormattingRange(block, operation);
+            return DocumentOperationValidationResult.Valid();
+        }
+
         if (string.Equals(operation.AttributeName, "table.cell.text", StringComparison.OrdinalIgnoreCase))
         {
             if (string.IsNullOrWhiteSpace(operation.Target.TableCellId)
@@ -566,6 +584,117 @@ public class DocumentOperationApplier
         }
 
         return DocumentOperationValidationResult.Invalid($"Unsupported attribute '{operation.AttributeName}'.");
+    }
+
+    private static void ApplyParagraphPropertiesPatch(
+        DocumentParagraphProperties properties,
+        DocumentParagraphPropertiesPatch patch)
+    {
+        if (patch.Alignment is not null)
+        {
+            properties.Alignment = patch.Alignment.Value;
+        }
+
+        if (patch.LineSpacing is not null)
+        {
+            properties.LineSpacing = Math.Clamp(patch.LineSpacing.Value, 0.5, 4);
+        }
+
+        if (patch.SpacingBefore is not null)
+        {
+            properties.SpacingBefore = Math.Clamp(patch.SpacingBefore.Value, 0, 144);
+        }
+
+        if (patch.SpacingAfter is not null)
+        {
+            properties.SpacingAfter = Math.Clamp(patch.SpacingAfter.Value, 0, 144);
+        }
+
+        if (patch.LeftIndent is not null)
+        {
+            properties.LeftIndent = Math.Clamp(patch.LeftIndent.Value, 0, 432);
+        }
+
+        if (patch.RightIndent is not null)
+        {
+            properties.RightIndent = Math.Clamp(patch.RightIndent.Value, 0, 432);
+        }
+
+        if (patch.FirstLineIndent is not null)
+        {
+            properties.FirstLineIndent = Math.Clamp(patch.FirstLineIndent.Value, -216, 216);
+        }
+
+        if (patch.LeftIndentDelta is not null)
+        {
+            properties.LeftIndent = Math.Clamp(properties.LeftIndent + patch.LeftIndentDelta.Value, 0, 432);
+        }
+
+        if (patch.RightIndentDelta is not null)
+        {
+            properties.RightIndent = Math.Clamp(properties.RightIndent + patch.RightIndentDelta.Value, 0, 432);
+        }
+
+        if (patch.FirstLineIndentDelta is not null)
+        {
+            properties.FirstLineIndent = Math.Clamp(properties.FirstLineIndent + patch.FirstLineIndentDelta.Value, -216, 216);
+        }
+    }
+
+    private static void ApplyClearFormattingRange(DocumentBlock block, DocumentOperation operation)
+    {
+        var inlines = GetInlineList(block.Content);
+        var inlineIndex = inlines is null ? -1 : ResolveInlineIndex(inlines, operation.Target);
+        if (inlines is null || inlineIndex < 0 || inlineIndex >= inlines.Count)
+        {
+            return;
+        }
+
+        var range = ResolveMarkRange(inlines, operation, inlineIndex);
+        if (range is null)
+        {
+            return;
+        }
+
+        var (targetInlineIndex, rangeStart, rangeEnd) = range.Value;
+        var inline = inlines[targetInlineIndex];
+        var text = GetInlineText(inline);
+        if (rangeEnd <= rangeStart)
+        {
+            return;
+        }
+
+        var replacement = new List<InlineContent>();
+        if (rangeStart > 0)
+        {
+            replacement.Add(SplitInline(inline, 0, rangeStart));
+        }
+
+        var cleared = SplitInline(inline, rangeStart, rangeEnd);
+        cleared.Marks.RemoveAll(IsFormattingMark);
+        replacement.Add(cleared);
+
+        if (rangeEnd < text.Length)
+        {
+            replacement.Add(SplitInline(inline, rangeEnd, text.Length));
+        }
+
+        inlines.RemoveAt(targetInlineIndex);
+        inlines.InsertRange(targetInlineIndex, replacement);
+    }
+
+    private static bool IsFormattingMark(InlineMark mark)
+    {
+        return mark.Type is InlineMarkType.Bold
+            or InlineMarkType.Italic
+            or InlineMarkType.Underline
+            or InlineMarkType.Strikethrough
+            or InlineMarkType.Superscript
+            or InlineMarkType.Subscript
+            or InlineMarkType.Highlight
+            or InlineMarkType.TextColor
+            or InlineMarkType.FontFamily
+            or InlineMarkType.FontSize;
     }
 
     private static DocumentBlock? FindBlock(DocumentEditorDocument document, string? blockId)

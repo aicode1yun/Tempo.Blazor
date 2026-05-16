@@ -6,6 +6,9 @@ public sealed class WysiwygPatch
     /// <summary>Patch type: InsertText, InsertInline, DeleteRange, SetMarks, SetParagraphProperties, InsertBlock, SplitBlock, InsertSoftBreak, UpdateBlock, RemoveBlock, Paste.</summary>
     public string Type { get; set; } = string.Empty;
 
+    /// <summary>Stable JS runtime operation identifier for persistence, collaboration, and undo metadata.</summary>
+    public string? OperationId { get; set; }
+
     /// <summary>Input data (e.g. inserted text).</summary>
     public string? Data { get; set; }
 

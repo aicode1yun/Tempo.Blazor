@@ -347,6 +347,188 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Phase17_RibbonTabsExposeDistinctCommandGroups()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var toolbar = page.Locator("[data-testid='document-toolbar']");
+
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-save']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-bold']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator(".tm-document-editor__ribbon-status")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-ribbon-tab-insert']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-toolbar-table']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-toolbar-image']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-save']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-layout']").ClickAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-page-layout']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-different-first-page']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-toolbar-image']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-references']").ClickAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-insert-footnote']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-insert-endnote']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-insert-toc']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-export-pdf']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-bold']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-track-changes']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-open-comments']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-open-revisions']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-toggle-ruler']")).ToBeVisibleAsync();
+        await Assertions.Expect(toolbar.Locator("[data-testid='document-open-versions']")).ToBeVisibleAsync();
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase17_SidePanelsReopenFromRibbonWithoutOverlay()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 820, height: 900);
+
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToBeVisibleAsync();
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel']")).ToHaveCountAsync(0);
+
+        await page.Locator("[data-testid='document-ribbon-tab-review']").ClickAsync();
+        await page.Locator("[data-testid='document-open-comments']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-comments']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-comment-rail']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await page.Locator("[data-testid='document-open-revisions']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-revisions']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-panel']")).ToBeVisibleAsync();
+
+        await page.Locator("[data-testid='document-side-panel-close']").ClickAsync();
+        await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+        await page.Locator("[data-testid='document-open-versions']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-versions']")).ToHaveAttributeAsync("aria-selected", "true");
+        await Assertions.Expect(page.Locator("[data-testid='document-version-panel']")).ToBeVisibleAsync();
+
+        var layoutIssues = await page.EvaluateAsync<string[]>(
+            """
+            () => {
+                const issues = [];
+                const surface = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__surface');
+                const panel = document.querySelector('[data-testid="document-side-panel"]');
+                if (!surface || !panel) return ['missing shell regions'];
+                const surfaceRect = surface.getBoundingClientRect();
+                const panelRect = panel.getBoundingClientRect();
+                const overlaps = surfaceRect.right > panelRect.left + 1
+                    && surfaceRect.left < panelRect.right - 1
+                    && surfaceRect.bottom > panelRect.top + 1
+                    && surfaceRect.top < panelRect.bottom - 1;
+                if (overlaps) issues.push('side panel overlaps document surface');
+                if (document.documentElement.scrollWidth > window.innerWidth + 2) issues.push('horizontal viewport overflow');
+                return issues;
+            }
+            """);
+
+        Assert.AreEqual(0, layoutIssues.Length, string.Join("; ", layoutIssues));
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase17_DesktopVisualPolishBaselineIsStable()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var body = await WaitForWysiwygBodyAsync(host);
+        await body.ClickAsync();
+
+        var screenshot = await page.ScreenshotAsync(new() { FullPage = false });
+        screenshot.Length.Should().BeGreaterThan(10_000);
+
+        var visualIssues = await page.EvaluateAsync<string[]>(
+            """
+            () => {
+                const issues = [];
+                const toolbar = document.querySelector('[data-testid="document-toolbar"]');
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const pageEl = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)');
+                const ruler = document.querySelector('.tm-document-wysiwyg-host--ruler.tm-wysiwyg-host--paginated');
+                const activeRegion = document.querySelector('.tm-wysiwyg-region--active')
+                    || (host.getAttribute('data-active-region') === 'Body'
+                        ? host.querySelector('.tm-wysiwyg-page__body')
+                        : null);
+                const revision = document.querySelector('.tm-wysiwyg-revision--insert, .tm-wysiwyg-revision--delete, .tm-wysiwyg-revision--format');
+                if (!toolbar || !host || !pageEl) return ['missing visual shell'];
+                const toolbarRect = toolbar.getBoundingClientRect();
+                const pageRect = pageEl.getBoundingClientRect();
+                if (toolbarRect.height <= 0) issues.push('ribbon is not measurable');
+                if (pageRect.width < 520 || pageRect.height <= pageRect.width) issues.push('document page does not read as a page');
+                if (!activeRegion) issues.push('active editing region is not marked');
+                if (ruler) {
+                    const before = getComputedStyle(ruler, '::before');
+                    const rulerHeight = Number.parseFloat(before.height || '0');
+                    if (rulerHeight > 20) issues.push('ruler is visually too heavy');
+                }
+                if (revision) {
+                    const style = getComputedStyle(revision);
+                    if (style.backgroundColor === 'rgba(0, 0, 0, 0)' && style.textDecorationLine === 'none') {
+                        issues.push('revision styling is not visible');
+                    }
+                }
+                if (document.documentElement.scrollWidth > window.innerWidth + 2) issues.push('horizontal viewport overflow');
+                return issues;
+            }
+            """);
+
+        Assert.AreEqual(0, visualIssues.Length, string.Join("; ", visualIssues));
+
+        await page.EvaluateAsync("() => document.documentElement.setAttribute('data-theme', 'dark')");
+        var darkScreenshot = await page.ScreenshotAsync(new() { FullPage = false });
+        darkScreenshot.Length.Should().BeGreaterThan(10_000);
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase17_MobileAndTabletShellStayUsable()
+    {
+        (int Width, int Height)[] viewports = [(390, 840), (820, 900)];
+
+        foreach (var viewport in viewports)
+        {
+            var page = await OpenDocumentEditorPageAsync(width: viewport.Width, height: viewport.Height);
+            await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+            await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
+            await page.Locator("[data-testid='document-open-versions']").ClickAsync();
+
+            var screenshot = await page.ScreenshotAsync(new() { FullPage = false });
+            screenshot.Length.Should().BeGreaterThan(8_000);
+
+            var layoutIssues = await page.EvaluateAsync<string[]>(
+                """
+                () => {
+                    const issues = [];
+                    const editor = document.querySelector('[data-testid="document-editor-demo"]');
+                    const toolbar = document.querySelector('[data-testid="document-toolbar"]');
+                    const surface = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__surface');
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const panel = document.querySelector('[data-testid="document-side-panel"]');
+                    const status = document.querySelector('[data-testid="document-status-bar"]');
+                    if (!editor || !toolbar || !surface || !host || !panel || !status) return ['missing editor shell'];
+                    const surfaceRect = surface.getBoundingClientRect();
+                    const panelRect = panel.getBoundingClientRect();
+                    const overlaps = surfaceRect.right > panelRect.left + 1
+                        && surfaceRect.left < panelRect.right - 1
+                        && surfaceRect.bottom > panelRect.top + 1
+                        && surfaceRect.top < panelRect.bottom - 1;
+                    if (overlaps) issues.push('panel overlaps surface');
+                    if (document.documentElement.scrollWidth > window.innerWidth + 2) issues.push('horizontal viewport overflow');
+                    if (toolbar.getBoundingClientRect().width > window.innerWidth + 2) issues.push('ribbon exceeds viewport');
+                    if (host.getBoundingClientRect().width > editor.getBoundingClientRect().width + 2) issues.push('host exceeds editor');
+                    return issues;
+                }
+                """);
+
+            Assert.AreEqual(0, layoutIssues.Length, $"Viewport {viewport.Width}x{viewport.Height}: {string.Join("; ", layoutIssues)}");
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_DemoPage_CanSwitchDocumentsAndReadOnlyMode()
     {
         var page = await OpenDocumentEditorPageAsync();

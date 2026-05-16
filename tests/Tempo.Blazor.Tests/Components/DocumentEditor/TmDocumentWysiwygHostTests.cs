@@ -27,6 +27,27 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Host_DoesNotRenderDocumentContentInsideBlazorMarkup()
+    {
+        var document = CreateEmptyDocument();
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "blazor-boundary-block",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = "blazor-boundary-inline", Text = "JS owns this rendered text" }]
+            }
+        });
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters => parameters
+            .Add(p => p.Document, document));
+
+        cut.Markup.Should().NotContain("JS owns this rendered text");
+        cut.Markup.Should().Contain("data-testid=\"document-wysiwyg-host\"");
+    }
+
+    [Fact]
     public void Host_RendersRulerAndZoomStateOnRoot()
     {
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters => parameters
@@ -64,26 +85,29 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public void Host_Lifecycle_CallsJsCreate()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.create");
+            invocation.Identifier == "tmDocumentEditorRuntime.create");
+        JSInterop.Invocations.Should().NotContain(invocation =>
+            invocation.Identifier.StartsWith("tmDocumentWysiwyg.", StringComparison.Ordinal)
+            || invocation.Identifier.StartsWith("tmDocumentEditorWysiwyg.", StringComparison.Ordinal));
     }
 
     [Fact]
     public void Host_Lifecycle_PassesOptionsToJsCreate()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument())
                       .Add(p => p.ReadOnly, true));
 
-        var invocation = JSInterop.Invocations.FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.create");
+        var invocation = JSInterop.Invocations.FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.create");
         invocation.Should().NotBeNull();
         invocation.Arguments.Should().HaveCount(3);
 
@@ -106,8 +130,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_Lifecycle_SendsSuggestionsInSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var document = CreateEmptyDocument();
         document.Blocks.Add(new DocumentBlock
@@ -141,7 +165,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
         snapshot.Should().NotBeNull();
@@ -153,8 +177,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_Lifecycle_CallsJsDispose()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.dispose", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.dispose", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -162,7 +186,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.DisposeAsync();
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.dispose");
+            invocation.Identifier == "tmDocumentEditorRuntime.dispose");
     }
 
     [Fact]
@@ -258,9 +282,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ApplyRemoteOperationBatch_CallsJsBatchPatcher()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentWysiwyg.applyRemoteOperationBatch", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
             .SetResult(WysiwygRemoteOperationBatchApplyResult.Ok(applied: 1));
         var document = CreateEmptyDocument();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -285,16 +309,16 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         result.Success.Should().BeTrue();
         result.Applied.Should().Be(1);
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.applyRemoteOperationBatch");
+            invocation.Identifier == "tmDocumentEditorRuntime.applyRemoteOperationBatch");
     }
 
     [Fact]
     public async Task Host_ApplyRemoteOperationBatch_ReturnsQueuedTransactionState()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentWysiwyg.applyRemoteOperationBatch", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
             .SetResult(WysiwygRemoteOperationBatchApplyResult.Ok(queued: 2));
         var document = CreateEmptyDocument();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -331,9 +355,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ScrollToRevision_CallsJsRevisionNavigator()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.scrollToRevision", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.scrollToRevision", _ => true).SetVoidResult();
         var document = CreateEmptyDocument();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, document));
@@ -346,7 +370,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.ScrollToRevisionAsync("revision-1");
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.scrollToRevision"
+            invocation.Identifier == "tmDocumentEditorRuntime.scrollToRevision"
             && invocation.Arguments.Count == 2
             && object.Equals(invocation.Arguments[1], "revision-1"));
     }
@@ -372,9 +396,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ApplyRemoteOperationBatch_RemembersSnapshotAndDoesNotApplySnapshotOnParameterUpdate()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentWysiwyg.applyRemoteOperationBatch", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygRemoteOperationBatchApplyResult>("tmDocumentEditorRuntime.applyRemoteOperationBatch", _ => true)
             .SetResult(WysiwygRemoteOperationBatchApplyResult.Ok(applied: 1));
         var document = CreateEmptyDocument();
         document.Blocks.Add(CreateParagraphBlock("Original text"));
@@ -388,7 +412,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             ProtocolVersion = 1
         });
         var snapshotCallsBeforeRemote = JSInterop.Invocations.Count(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         var result = await cut.Instance.ApplyRemoteOperationBatchAsync(
             [
@@ -403,17 +427,17 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         cut.SetParametersAndRender(parameters => parameters.Add(p => p.Document, synchronized));
 
         result.Success.Should().BeTrue();
-        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentWysiwyg.applySnapshot")
+        JSInterop.Invocations.Count(invocation => invocation.Identifier == "tmDocumentEditorRuntime.loadDocument")
             .Should().Be(snapshotCallsBeforeRemote);
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.applyRemoteOperationBatch");
+            invocation.Identifier == "tmDocumentEditorRuntime.applyRemoteOperationBatch");
     }
 
     [Fact]
     public void Host_JsFailure_ShowsFallback()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true)
                  .SetException(new JSException("Engine not found"));
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -428,7 +452,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public void Host_JsFailure_DoesNotThrow()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true)
                  .SetException(new JSException("Engine not found"));
 
         var act = () => RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -441,7 +465,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public void Host_DefaultState_ShowsLoadingSkeleton()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>();
 
@@ -453,7 +477,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_JsReadyCallback_HidesLoadingSkeleton()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>();
 
@@ -470,11 +494,11 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_RequestSnapshotAsync_ReturnsDeserializedDocument()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var snapshotJson = @"{""ProtocolVersion"":1,""Document"":{""SchemaVersion"":1,""DocumentId"":""doc-1"",""Blocks"":[{""Id"":""b-1"",""Type"":0,""Order"":10,""Content"":{""$type"":""paragraph"",""Inlines"":[{""$type"":""text"",""Id"":""i-0"",""Text"":""Snapshot text""}]}}]}}";
-        JSInterop.Setup<string>("tmDocumentWysiwyg.getSnapshot", _ => true).SetResult(snapshotJson);
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -499,10 +523,37 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Host_RequestRuntimeDocumentAsync_UsesRuntimeFacade()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+
+        var snapshotJson = @"{""ProtocolVersion"":1,""Document"":{""SchemaVersion"":1,""DocumentId"":""runtime-doc"",""Blocks"":[]}}";
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true).SetResult(snapshotJson);
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var result = await cut.Instance.RequestRuntimeDocumentAsync();
+
+        result.Should().NotBeNull();
+        result!.DocumentId.Should().Be("runtime-doc");
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.getDocument");
+    }
+
+    [Fact]
     public async Task Host_RequestSnapshotAsync_ReturnsNullWhenJsNotReady()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -516,9 +567,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_RequestDebugSnapshotAsync_ReturnsJsDiagnostics()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygDebugSnapshot>("tmDocumentWysiwyg.getDebugSnapshot", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygDebugSnapshot>("tmDocumentEditorRuntime.getDebugSnapshot", _ => true)
             .SetResult(new WysiwygDebugSnapshot
             {
                 InstanceId = "test-instance",
@@ -556,14 +607,14 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         result.CurrentSelection.Should().NotBeNull();
         result.CurrentSelection!.AnchorOffset.Should().Be(3);
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.getDebugSnapshot");
+            invocation.Identifier == "tmDocumentEditorRuntime.getDebugSnapshot");
     }
 
     [Fact]
     public async Task Host_RequestDebugSnapshotAsync_ReturnsNullWhenJsNotReady()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -577,9 +628,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_RequestFormattingStateAsync_ReturnsJsSelectionFormattingState()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.Setup<WysiwygFormattingState>("tmDocumentWysiwyg.getFormattingState", _ => true)
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
             .SetResult(new WysiwygFormattingState
             {
                 Bold = WysiwygFormattingValue.Active,
@@ -603,14 +654,75 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         result.Italic.Should().Be(WysiwygFormattingValue.Mixed);
         result.Underline.Should().Be(WysiwygFormattingValue.Inactive);
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.getFormattingState");
+            invocation.Identifier == "tmDocumentEditorRuntime.getFormattingState");
+    }
+
+    [Fact]
+    public async Task Host_RequestRuntimeSelectionStateAsync_UsesRuntimeFacade()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygFormattingState>("tmDocumentEditorRuntime.getFormattingState", _ => true)
+            .SetResult(new WysiwygFormattingState { Bold = WysiwygFormattingValue.Active });
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var result = await cut.Instance.RequestRuntimeSelectionStateAsync();
+
+        result.Should().NotBeNull();
+        result!.Bold.Should().Be(WysiwygFormattingValue.Active);
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.getFormattingState");
+    }
+
+    [Fact]
+    public async Task Host_RequestRuntimeSelectionAsync_UsesRuntimeFacade()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<WysiwygSelectionSnapshot>("tmDocumentEditorRuntime.getRuntimeSelection", _ => true)
+            .SetResult(new WysiwygSelectionSnapshot
+            {
+                AnchorNodeId = "inline-1",
+                FocusNodeId = "inline-1",
+                AnchorBlockId = "block-1",
+                AnchorInlineId = "inline-1",
+                AnchorOffset = 4,
+                IsCollapsed = true
+            });
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var result = await cut.Instance.RequestRuntimeSelectionAsync();
+
+        result.Should().NotBeNull();
+        result!.AnchorNodeId.Should().Be("inline-1");
+        result.AnchorOffset.Should().Be(4);
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.getRuntimeSelection");
     }
 
     [Fact]
     public async Task Host_RequestFormattingStateAsync_ReturnsNullWhenJsNotReady()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -624,8 +736,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_CaptureTextSelectionAnchorAsync_ReturnsAnchorWhenTextSelected()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var anchor = new DocumentCommentAnchor
         {
@@ -636,7 +748,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             EndInlineIndex = 0,
             EndOffset = 10
         };
-        JSInterop.Setup<DocumentCommentAnchor?>("tmDocumentWysiwyg.captureCommentAnchor", _ => true).SetResult(anchor);
+        JSInterop.Setup<DocumentCommentAnchor?>("tmDocumentEditorRuntime.captureCommentAnchor", _ => true).SetResult(anchor);
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -660,13 +772,121 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_CaptureTextSelectionAnchorAsync_ReturnsNullWhenJsNotReady()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
 
         var result = await cut.Instance.CaptureTextSelectionAnchorAsync();
         result.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task Host_UpsertCommentAsync_ForwardsCommentToJsRuntime()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.upsertComment", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        var instanceId = JSInterop.Invocations
+            .First(i => i.Identifier == "tmDocumentEditorRuntime.create")
+            .Arguments[1]
+            .Should()
+            .BeOfType<WysiwygEditorOptions>()
+            .Subject
+            .InstanceId;
+
+        var comment = new DocumentComment
+        {
+            Id = "comment-1",
+            Anchor = new DocumentCommentAnchor
+            {
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "b-1",
+                StartOffset = 2,
+                EndOffset = 8
+            }
+        };
+
+        await cut.Instance.UpsertCommentAsync(comment);
+
+        var invocation = JSInterop.Invocations
+            .LastOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.upsertComment");
+        invocation.Should().NotBeNull();
+        invocation!.Arguments[0].Should().Be(instanceId);
+        invocation.Arguments[1].Should().BeSameAs(comment);
+    }
+
+    [Fact]
+    public async Task Host_RemoveCommentAsync_ForwardsCommentIdToJsRuntime()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.removeComment", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        var instanceId = JSInterop.Invocations
+            .First(i => i.Identifier == "tmDocumentEditorRuntime.create")
+            .Arguments[1]
+            .Should()
+            .BeOfType<WysiwygEditorOptions>()
+            .Subject
+            .InstanceId;
+
+        await cut.Instance.RemoveCommentAsync("comment-1");
+
+        var invocation = JSInterop.Invocations
+            .LastOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.removeComment");
+        invocation.Should().NotBeNull();
+        invocation!.Arguments[0].Should().Be(instanceId);
+        invocation.Arguments[1].Should().Be("comment-1");
+    }
+
+    [Fact]
+    public async Task Host_ScrollToCommentAsync_ForwardsCommentIdToJsRuntime()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.scrollToComment", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        var instanceId = JSInterop.Invocations
+            .First(i => i.Identifier == "tmDocumentEditorRuntime.create")
+            .Arguments[1]
+            .Should()
+            .BeOfType<WysiwygEditorOptions>()
+            .Subject
+            .InstanceId;
+
+        await cut.Instance.ScrollToCommentAsync("comment-1");
+
+        var invocation = JSInterop.Invocations
+            .LastOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.scrollToComment");
+        invocation.Should().NotBeNull();
+        invocation!.Arguments[0].Should().Be(instanceId);
+        invocation.Arguments[1].Should().Be("comment-1");
     }
 
     [Fact]
@@ -820,9 +1040,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_RestoreSelection_CallsJsRestoreSelection()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.restoreSelection", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.restoreSelection", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -847,7 +1067,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.RestoreSelectionAsync(snapshot);
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.restoreSelection");
+            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
     }
 
     [Fact]
@@ -890,9 +1110,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ExecuteEditorCommandAsync_CallsJsExecuteCommand()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.executeCommand", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
 
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument()));
@@ -906,7 +1126,30 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.ExecuteEditorCommandAsync("toggleMark", new WysiwygMarkPayload { MarkType = "Bold" });
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.executeCommand");
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand");
+    }
+
+    [Fact]
+    public async Task Host_ExecuteRuntimeCommandAsync_CallsRuntimeFacade()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        await cut.Instance.ExecuteRuntimeCommandAsync("toggleMark", new WysiwygMarkPayload { MarkType = "Bold" });
+
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand");
     }
 
     [Fact]
@@ -1090,8 +1333,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithProviderAssetImage_ResolvesDisplayUrlBeforeSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var provider = new CapturingImageProvider();
         var doc = CreateEmptyDocument();
@@ -1120,7 +1363,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
 
         provider.ResolveRequests.Should().ContainSingle(request => request.AssetId == "asset-1");
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1135,9 +1378,9 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_ProviderImageButton_UploadsAndSendsImageNodeToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.insertImageNode", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.insertImageNode", _ => true).SetVoidResult();
 
         var provider = new CapturingImageProvider();
         var patches = new List<WysiwygPatch>();
@@ -1157,7 +1400,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
 
         provider.UploadRequests.Should().ContainSingle();
         patches.Should().ContainSingle(patch => patch.BlockType == "Image");
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentWysiwyg.insertImageNode");
+        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.insertImageNode");
     }
 
     [Fact]
@@ -1206,8 +1449,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_JsReady_SendsSnapshotToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         doc.Metadata.Title = "Ready doc";
@@ -1221,15 +1464,15 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         JSInterop.Invocations.Should().Contain(invocation =>
-            invocation.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            invocation.Identifier == "tmDocumentEditorRuntime.loadDocument");
     }
 
     [Fact]
     public async Task Host_DocumentParameterChanged_SendsSnapshotToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
@@ -1247,7 +1490,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             parameters.Add(p => p.Document, newDoc));
 
         var applySnapshotCalls = JSInterop.Invocations
-            .Where(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot")
+            .Where(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument")
             .ToList();
 
         applySnapshotCalls.Should().HaveCountGreaterThanOrEqualTo(2);
@@ -1257,8 +1500,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_SameDocumentReferenceChanged_DoesNotRoundtripSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         var paragraph = CreateParagraphBlock("Hello");
@@ -1277,7 +1520,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             parameters.Add(p => p.Document, doc));
 
         var applySnapshotCalls = JSInterop.Invocations
-            .Where(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot")
+            .Where(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument")
             .ToList();
 
         applySnapshotCalls.Should().HaveCount(1);
@@ -1287,8 +1530,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_RefreshSnapshotAsync_ForcesSameReferenceSnapshot()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         var paragraph = CreateParagraphBlock("Hello");
@@ -1306,7 +1549,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         await cut.Instance.RefreshSnapshotAsync();
 
         var applySnapshotCalls = JSInterop.Invocations
-            .Where(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot")
+            .Where(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument")
             .ToList();
 
         applySnapshotCalls.Should().HaveCount(2);
@@ -1322,6 +1565,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
             if (File.Exists(candidate))
             {
                 File.ReadAllText(candidate).Should().Contain("window.tmDocumentWysiwyg");
+                File.ReadAllText(candidate).Should().Contain("window.tmDocumentEditorRuntime");
                 return;
             }
             current = current.Parent;
@@ -1338,6 +1582,28 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
         File.Exists(jsPath).Should().BeTrue($"JS file not found at {jsPath}");
         File.ReadAllText(jsPath).Should().Contain("window.tmDocumentWysiwyg");
+        File.ReadAllText(jsPath).Should().Contain("window.tmDocumentEditorRuntime");
+    }
+
+    [Fact]
+    public void JsFile_ContainsRuntimeFacadeFunctions()
+    {
+        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
+        {
+            repoRoot = repoRoot.Parent;
+        }
+
+        repoRoot.Should().NotBeNull("Could not locate repository root");
+        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        var jsText = File.ReadAllText(jsPath);
+
+        jsText.Should().Contain("window.tmDocumentEditorRuntime");
+        jsText.Should().Contain("function loadDocument");
+        jsText.Should().Contain("function getDocument");
+        jsText.Should().Contain("function executeCommand");
+        jsText.Should().Contain("function onTransactionCommitted");
+        jsText.Should().Contain("function onSelectionStateChanged");
     }
 
     [Fact]
@@ -1403,6 +1669,10 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         jsText.Should().Contain("QueuedRemoteBatchCount");
         jsText.Should().Contain("_updateImageBlockInPlace");
         jsText.Should().Contain("_removeRemoteInlineMarkRange");
+        jsText.Should().Contain("_transformRemoteOperationsAgainstPendingTransactions");
+        jsText.Should().Contain("pendingCollaborationTransactions");
+        jsText.Should().Contain("applyRemoteCursor");
+        jsText.Should().Contain("tm-wysiwyg-remote-cursor");
     }
 
     [Fact]
@@ -1460,10 +1730,14 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
         var jsText = File.ReadAllText(jsPath);
         jsText.Should().Contain("_handleStructuralBeforeInput");
+        jsText.Should().Contain("_handleJsOwnedTextBeforeInput");
         jsText.Should().Contain("_applyParagraphBreakToDom");
         jsText.Should().Contain("_applySoftBreakToDom");
+        jsText.Should().Contain("_mergeCurrentBlockWithPrevious");
         jsText.Should().Contain("SplitBlock");
         jsText.Should().Contain("InsertSoftBreak");
+        jsText.Should().Contain("JsOwnedInputCount");
+        jsText.Should().Contain("compositionupdate");
         jsText.Should().Contain("data-inline-break");
         jsText.Should().Contain("_serializeInlineText");
         jsText.Should().Contain("_positionAfterInlineBreak");
@@ -1524,8 +1798,12 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         jsText.Should().Contain("_resolveHeaderFooter");
         jsText.Should().Contain("_renderHeaderFooterRegion");
         jsText.Should().Contain("_serializeHeaderFooterRegions");
+        jsText.Should().Contain("_activatePageRegion");
+        jsText.Should().Contain("closeHeaderFooter");
+        jsText.Should().Contain("_renderNoteRegionsForPage");
         jsText.Should().Contain("tm-wysiwyg-page__header");
         jsText.Should().Contain("tm-wysiwyg-page__footer");
+        jsText.Should().Contain("tm-wysiwyg-page__notes");
     }
 
     [Fact]
@@ -1549,8 +1827,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithHeader_SendsHeaderBlocksToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateDocumentWithHeaderFooter();
 
@@ -1564,7 +1842,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1579,8 +1857,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithDifferentFirstPage_SendsSectionPropertiesToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateDocumentWithHeaderFooter(differentFirstPage: true);
 
@@ -1594,7 +1872,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1682,8 +1960,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithPageSettings_SendsPageSettingsToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         doc.PageSettings = new DocumentPageSettings
@@ -1703,7 +1981,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1718,8 +1996,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithPageBreak_SendsPageBreakBlockToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         doc.Blocks.Add(new DocumentBlock
@@ -1760,7 +2038,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1791,8 +2069,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithTable_SendsTableBlockToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         doc.Blocks.Add(new DocumentBlock
@@ -1858,7 +2136,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         applySnapshotCall.Should().NotBeNull();
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
@@ -1875,8 +2153,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     public async Task Host_DocumentWithTable_MergedCell_SendsColSpanAndRowSpan()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
-        JSInterop.SetupVoid("tmDocumentWysiwyg.create", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentWysiwyg.applySnapshot", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
 
         var doc = CreateEmptyDocument();
         doc.Blocks.Add(new DocumentBlock
@@ -1948,7 +2226,7 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         });
 
         var applySnapshotCall = JSInterop.Invocations
-            .FirstOrDefault(i => i.Identifier == "tmDocumentWysiwyg.applySnapshot");
+            .FirstOrDefault(i => i.Identifier == "tmDocumentEditorRuntime.loadDocument");
 
         var snapshot = applySnapshotCall!.Arguments[1] as WysiwygDocumentSnapshot;
         var table = snapshot!.Document.Blocks[0].Content as TableBlockContent;
@@ -1973,12 +2251,20 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         js.Should().Contain("_renderTable");
         js.Should().Contain("_serializeTable");
         js.Should().Contain("HandleTableContextMenuRequested");
+        js.Should().Contain("_beginTableTransaction");
+        js.Should().Contain("_commitTableTransaction");
+        js.Should().Contain("insertTableRowBefore");
         js.Should().Contain("insertTableRow");
+        js.Should().Contain("insertTableRowAfter");
+        js.Should().Contain("insertTableColumnBefore");
         js.Should().Contain("insertTableColumn");
+        js.Should().Contain("insertTableColumnAfter");
         js.Should().Contain("deleteTableRow");
         js.Should().Contain("deleteTableColumn");
         js.Should().Contain("mergeTableCells");
         js.Should().Contain("splitTableCell");
+        js.Should().Contain("_applyTableCellStyle");
+        js.Should().Contain("_serializeTableCellBorders");
     }
 
     [Fact]
@@ -2114,12 +2400,15 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
         var js = File.ReadAllText(jsPath);
         js.Should().Contain("_selectImageFigure");
+        js.Should().Contain("ActiveImageBlockId");
+        js.Should().Contain("_moveCaretFromImageSelection");
         js.Should().Contain("_showImageContextMenu");
         js.Should().Contain("document-wysiwyg-image-context-menu");
         js.Should().Contain("document-wysiwyg-image-delete");
         js.Should().Contain("_onRootDrop");
         js.Should().Contain("tm-document-wysiwyg-host--image-drop-target");
         js.Should().Contain("_attachImageLoadState");
+        js.Should().Contain("_recordImageNaturalSize");
         js.Should().Contain("document-wysiwyg-image-retry");
         js.Should().Contain("_beginInlineImageMoveDrag");
         js.Should().Contain("_dispatchImageMovePatch");
