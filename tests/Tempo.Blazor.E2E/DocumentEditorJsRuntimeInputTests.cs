@@ -96,6 +96,37 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
     }
 
     [TestMethod]
+    public async Task Phase6_ShiftEnterMovesCaretToVisibleSoftBreakLineImmediately()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await PlaceCaretInVisibleTextBlockAsync(page, 0, 100_000);
+        var before = await ReadCaretGeometryAsync(page);
+
+        await page.Keyboard.PressAsync("Shift+Enter");
+        var after = await ReadCaretGeometryAsync(page);
+
+        Assert.AreEqual(before.BlockId, after.BlockId, "Shift+Enter should keep the caret in the same paragraph block.");
+        Assert.IsTrue(after.InlineBreakCount > before.InlineBreakCount, "Shift+Enter should insert a soft break immediately.");
+        Assert.IsTrue(after.CaretPlaceholderCount > 0, "The empty soft-break line should have a temporary caret placeholder.");
+        Assert.IsTrue(after.CaretTop > before.CaretTop + 4, $"Caret should move to the next visual line immediately. Before: {before.CaretTop:0.##}, after: {after.CaretTop:0.##}.");
+    }
+
+    [TestMethod]
+    public async Task Phase6_EnterCreatesVisibleEmptyParagraphImmediately()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await PlaceCaretInVisibleTextBlockAsync(page, 0, 100_000);
+        var before = await ReadCaretGeometryAsync(page);
+
+        await page.Keyboard.PressAsync("Enter");
+        var after = await ReadCaretGeometryAsync(page);
+
+        Assert.AreNotEqual(before.BlockId, after.BlockId, "Enter should create and focus a new paragraph block immediately.");
+        Assert.IsTrue(after.CaretPlaceholderCount > 0, "The empty paragraph should have a temporary caret placeholder before the user starts typing.");
+        Assert.IsTrue(after.CaretTop > before.CaretTop + 4, $"Caret should move to the new paragraph immediately. Before: {before.CaretTop:0.##}, after: {after.CaretTop:0.##}.");
+    }
+
+    [TestMethod]
     public async Task Phase6_BackspaceAtParagraphStartMergesWithPreviousParagraph()
     {
         var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
@@ -184,6 +215,72 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
             """);
     }
 
+    private static Task<CaretGeometry> ReadCaretGeometryAsync(IPage page)
+    {
+        return page.EvaluateAsync<CaretGeometry>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtimeSelection = window.tmDocumentEditorRuntime?.getSelectionSnapshot?.(instanceId) || {};
+                const selection = window.getSelection();
+                if (!host || !selection || selection.rangeCount === 0) {
+                    return {
+                        blockId: String(runtimeSelection.AnchorBlockId || runtimeSelection.anchorBlockId || ''),
+                        offset: Number(runtimeSelection.AnchorOffset ?? runtimeSelection.anchorOffset ?? 0),
+                        caretTop: 0,
+                        caretHeight: 0,
+                        blockTop: 0,
+                        blockHeight: 0,
+                        inlineBreakCount: 0,
+                        caretPlaceholderCount: 0
+                    };
+                }
+
+                const range = selection.getRangeAt(0);
+                const originalRange = range.cloneRange();
+                const block = (range.startContainer.nodeType === Node.ELEMENT_NODE
+                        ? range.startContainer
+                        : range.startContainer.parentElement)
+                    ?.closest?.('[data-block-id]');
+
+                const readRect = () => {
+                    const direct = Array.from(range.getClientRects()).find(rect => rect.height > 0);
+                    if (direct) {
+                        return direct;
+                    }
+
+                    const marker = document.createElement('span');
+                    marker.textContent = '\u200b';
+                    marker.setAttribute('data-e2e-caret-marker', 'true');
+                    marker.style.cssText = 'display:inline-block;width:0;height:1em;overflow:hidden;padding:0;margin:0;border:0;';
+                    const measuringRange = originalRange.cloneRange();
+                    measuringRange.insertNode(marker);
+                    const markerRect = marker.getBoundingClientRect();
+                    marker.remove();
+                    selection.removeAllRanges();
+                    selection.addRange(originalRange);
+                    document.dispatchEvent(new Event('selectionchange'));
+                    return markerRect;
+                };
+
+                const caretRect = readRect();
+                const blockRect = block?.getBoundingClientRect?.() || { top: 0, height: 0 };
+                const scrollTop = Number(host.scrollTop || window.scrollY || window.pageYOffset || 0);
+                return {
+                    blockId: String(runtimeSelection.AnchorBlockId || runtimeSelection.anchorBlockId || block?.getAttribute('data-block-id') || ''),
+                    offset: Number(runtimeSelection.AnchorOffset ?? runtimeSelection.anchorOffset ?? 0),
+                    caretTop: Number((caretRect?.top || 0) + scrollTop),
+                    caretHeight: Number(caretRect?.height || 0),
+                    blockTop: Number((blockRect.top || 0) + scrollTop),
+                    blockHeight: Number(blockRect.height || 0),
+                    inlineBreakCount: Number(block?.querySelectorAll?.('br[data-inline-break]').length || 0),
+                    caretPlaceholderCount: Number(block?.querySelectorAll?.('br[data-caret-placeholder]').length || 0)
+                };
+            }
+            """);
+    }
+
     private static Task<int> CountVisibleTopLevelBlocksAsync(IPage page)
     {
         return page.EvaluateAsync<int>(
@@ -199,7 +296,7 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
         return page.EvaluateAsync(
             """
             ({ blockIndex, offset }) => {
-                const blocks = Array.from(document.querySelectorAll('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-block[data-block-id]'))
+                const blocks = Array.from(document.querySelectorAll('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual) .tm-wysiwyg-page__body > .tm-wysiwyg-block[data-block-id]'))
                     .filter(el => {
                         const rect = el.getBoundingClientRect();
                         const style = getComputedStyle(el);
@@ -323,5 +420,32 @@ public sealed class DocumentEditorJsRuntimeInputTests : DocumentEditorE2ETestBas
 
         [JsonPropertyName("offset")]
         public int Offset { get; set; }
+    }
+
+    private sealed class CaretGeometry
+    {
+        [JsonPropertyName("blockId")]
+        public string BlockId { get; set; } = string.Empty;
+
+        [JsonPropertyName("offset")]
+        public int Offset { get; set; }
+
+        [JsonPropertyName("caretTop")]
+        public double CaretTop { get; set; }
+
+        [JsonPropertyName("caretHeight")]
+        public double CaretHeight { get; set; }
+
+        [JsonPropertyName("blockTop")]
+        public double BlockTop { get; set; }
+
+        [JsonPropertyName("blockHeight")]
+        public double BlockHeight { get; set; }
+
+        [JsonPropertyName("inlineBreakCount")]
+        public int InlineBreakCount { get; set; }
+
+        [JsonPropertyName("caretPlaceholderCount")]
+        public int CaretPlaceholderCount { get; set; }
     }
 }

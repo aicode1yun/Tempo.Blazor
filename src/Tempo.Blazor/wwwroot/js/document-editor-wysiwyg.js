@@ -947,6 +947,7 @@ window.tmDocumentWysiwyg = (function () {
             var sel = window.getSelection();
             if (!sel || sel.rangeCount === 0) return null;
             var range = sel.getRangeAt(0);
+            _removeCaretPlaceholders(inst.root);
             var replacedText = '';
             if (!sel.isCollapsed) {
                 replacedText = range.toString();
@@ -983,6 +984,33 @@ window.tmDocumentWysiwyg = (function () {
         } finally {
             inst._applyingOwnPatch = false;
         }
+    }
+
+    function _createCaretPlaceholderBreak() {
+        var br = document.createElement('br');
+        br.setAttribute('data-caret-placeholder', 'true');
+        br.setAttribute('aria-hidden', 'true');
+        return br;
+    }
+
+    function _isCaretPlaceholderNode(node) {
+        return node
+            && node.nodeType === Node.ELEMENT_NODE
+            && node.tagName
+            && node.tagName.toLowerCase() === 'br'
+            && node.hasAttribute('data-caret-placeholder');
+    }
+
+    function _ensureCaretPlaceholder(inline) {
+        if (!inline || inline.querySelector('br[data-caret-placeholder]')) return;
+        inline.appendChild(_createCaretPlaceholderBreak());
+    }
+
+    function _removeCaretPlaceholders(root) {
+        if (!root || !root.querySelectorAll) return;
+        root.querySelectorAll('br[data-caret-placeholder]').forEach(function (node) {
+            node.remove();
+        });
     }
 
     function _applyDeleteBackward(inst, unit) {
@@ -1601,6 +1629,7 @@ window.tmDocumentWysiwyg = (function () {
             if (!textNode.parentNode) {
                 newInline.appendChild(textNode);
             }
+            _ensureCaretPlaceholder(newInline);
         }
 
         block.after(newBlock);
@@ -1647,6 +1676,9 @@ window.tmDocumentWysiwyg = (function () {
         var afterNode = document.createTextNode(afterText);
         normalized.node.parentNode.insertBefore(br, normalized.node.nextSibling);
         normalized.node.parentNode.insertBefore(afterNode, br.nextSibling);
+        if (!afterText) {
+            normalized.node.parentNode.insertBefore(_createCaretPlaceholderBreak(), afterNode.nextSibling);
+        }
         _setCaret(afterNode, 0);
         return true;
     }
@@ -7814,6 +7846,10 @@ window.tmDocumentWysiwyg = (function () {
                     continue;
                 }
 
+                if (_isCaretPlaceholderNode(child)) {
+                    continue;
+                }
+
                 if (_isAtomicInlineElement(child)) {
                     if (target <= current) {
                         resolved = _atomicBoundaryPosition(child, false);
@@ -10308,6 +10344,10 @@ window.tmDocumentWysiwyg = (function () {
 
                 if (_isInlineBreakNode(child)) {
                     text += '\n';
+                    continue;
+                }
+
+                if (_isCaretPlaceholderNode(child)) {
                     continue;
                 }
 
