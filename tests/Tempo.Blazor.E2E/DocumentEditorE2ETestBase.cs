@@ -1,5 +1,6 @@
 using System.Text.Json.Serialization;
 using Microsoft.Playwright;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace Tempo.Blazor.E2E;
 
@@ -8,6 +9,11 @@ namespace Tempo.Blazor.E2E;
 /// </summary>
 public abstract class DocumentEditorE2ETestBase : WasmTestBase
 {
+    /// <summary>Resets mutable demo data before each document editor runtime test.</summary>
+    [TestInitialize]
+    public Task ResetDocumentEditorDemoAsync()
+        => DocumentEditorE2EReset.ResetAsync();
+
     /// <summary>Opens the normal document editor demo route and waits until the WYSIWYG surface is ready.</summary>
     protected async Task<IPage> OpenDocumentEditorAsync(int width = 1280, int height = 720)
     {

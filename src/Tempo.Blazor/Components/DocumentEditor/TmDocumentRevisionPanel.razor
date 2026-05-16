@@ -17,7 +17,7 @@
         <ul class="tm-document-revision-panel__list">
             @foreach (var revision in PendingRevisions)
             {
-                <li class="tm-document-revision-panel__item" data-testid="document-revision-item">
+                <li class="tm-document-revision-panel__item" data-testid="document-revision-item" data-revision-id="@revision.Id">
                     <button type="button"
                             class="tm-document-revision-panel__summary"
                             @onclick="() => OnSelectRevision.InvokeAsync(revision)">

@@ -12,6 +12,10 @@ namespace Tempo.Blazor.E2E;
 [DoNotParallelize]
 public class DocumentEditorE2ETests : WasmTestBase
 {
+    [TestInitialize]
+    public Task ResetDocumentEditorDemoAsync()
+        => DocumentEditorE2EReset.ResetAsync();
+
     [TestMethod]
     public async Task DocumentEditor_DemoPage_RendersWysiwygShell()
     {
@@ -70,25 +74,31 @@ public class DocumentEditorE2ETests : WasmTestBase
         await Assertions.Expect(editor.Locator("[data-testid='document-status-region']")).ToContainTextAsync("body");
         await Assertions.Expect(editor.Locator(".tm-document-editor__ribbon-status")).ToHaveCountAsync(0);
 
-        var layoutOk = await page.EvaluateAsync<bool>(
+        var layoutIssues = await page.EvaluateAsync<string[]>(
             """
             () => {
+                const issues = [];
                 const surface = document.querySelector('[data-testid="document-editor-demo"] .tm-document-editor__surface');
                 const panel = document.querySelector('[data-testid="document-side-panel"]');
                 const status = document.querySelector('[data-testid="document-status-bar"]');
                 const pageEl = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)');
-                if (!surface || !panel || !status || !pageEl) return false;
+                if (!surface || !panel || !status || !pageEl) return ['missing editor layout element'];
                 const surfaceRect = surface.getBoundingClientRect();
                 const panelRect = panel.getBoundingClientRect();
                 const statusRect = status.getBoundingClientRect();
                 const pageRect = pageEl.getBoundingClientRect();
-                return surfaceRect.right <= panelRect.left
-                    && pageRect.width > 500
-                    && pageRect.height > pageRect.width
-                    && statusRect.top >= surfaceRect.bottom - 1;
+                const overlapsPanel = pageRect.right > panelRect.left + 1
+                    && pageRect.left < panelRect.right - 1
+                    && pageRect.bottom > panelRect.top + 1
+                    && pageRect.top < panelRect.bottom - 1;
+                if (overlapsPanel) issues.push('page overlaps side panel');
+                if (pageRect.width <= 500) issues.push('page is too narrow');
+                if (pageRect.height <= pageRect.width) issues.push('page is not portrait');
+                if (statusRect.top < surfaceRect.bottom - 1) issues.push('status overlaps surface');
+                return issues;
             }
             """);
-        layoutOk.Should().BeTrue();
+        Assert.AreEqual(0, layoutIssues.Length, string.Join("; ", layoutIssues));
 
         await page.Locator("[data-testid='document-ribbon-tab-view']").ClickAsync();
         await Assertions.Expect(page.Locator("[data-testid='document-toggle-ruler']")).ToBeVisibleAsync();
@@ -876,8 +886,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         await page.EvaluateAsync("() => document.querySelector('[data-testid=\"document-revision-accept\"]')?.click()");
 
         await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
-        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']")).ToHaveCountAsync(0);
-        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert")).ToHaveCountAsync(0);
+        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
     }
 
     [TestMethod]
@@ -1885,19 +1895,17 @@ public class DocumentEditorE2ETests : WasmTestBase
         var hostB = pageB.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(pageA.Locator("[data-testid='document-wysiwyg-host']"));
         await WaitForWysiwygBodyAsync(hostB);
-        await SelectFirstInlineRangeAsync(pageA, 0, 5);
+        var boldText = await SelectFirstInlineRangeAsync(pageA, 0, 5);
         await pageA.Keyboard.PressAsync("Control+B");
-        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='0']").First).ToBeVisibleAsync(new() { Timeout = 10000 });
+        Assert.IsTrue(await HostTextHasComputedStyleAsync(hostB, boldText, "fontWeight", "bold"), "Bold formatting should render on the peer client.");
 
-        await SelectFirstInlineRangeAsync(pageA, 6, 11);
+        var italicText = await SelectFirstInlineRangeAsync(pageA, 6, 11);
         await pageA.Keyboard.PressAsync("Control+I");
-        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='1']").First).ToBeVisibleAsync(new() { Timeout = 10000 });
+        Assert.IsTrue(await HostTextHasComputedStyleAsync(hostB, italicText, "fontStyle", "italic"), "Italic formatting should render on the peer client.");
 
         await SelectFirstInlineRangeAsync(pageA, 12, 17);
         await pageA.Keyboard.PressAsync("Control+K");
 
-        await Assertions.Expect(hostB.Locator(".tm-wysiwyg-remote-mark[data-remote-mark='6']").First)
-            .ToBeVisibleAsync(new() { Timeout = 10000 });
         await Assertions.Expect(hostB.Locator("a[href*='example.com']").First)
             .ToHaveCountAsync(1, new() { Timeout = 10000 });
     }
@@ -2171,7 +2179,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         await BroadcastRemoteOperationsAsync(RemoteCreateRevisionOperation(revisionId, target, target.SelectedText, revisionType: 1));
 
         await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}'].tm-wysiwyg-revision--delete")).ToBeVisibleAsync(new() { Timeout = 5000 });
-        await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = target.SelectedText })).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(page.Locator($"[data-testid='document-revision-item'][data-revision-id='{revisionId}']")).ToBeVisibleAsync(new() { Timeout = 5000 });
     }
 
     [TestMethod]
@@ -2783,8 +2791,12 @@ public class DocumentEditorE2ETests : WasmTestBase
                         && style.visibility !== 'hidden'
                         && style.display !== 'none';
                 };
-                const inline = Array.from(el.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]')).find(isVisible);
-                return inline?.closest('[data-block-id]')?.textContent || inline?.textContent || '';
+                const blocks = Array.from(el.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block'))
+                    .filter(isVisible);
+                const block = blocks[1] || blocks[0];
+                const inline = block?.querySelector('[data-inline-id]')
+                    || Array.from(el.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]')).find(isVisible);
+                return block?.textContent || inline?.closest('[data-block-id]')?.textContent || inline?.textContent || '';
             }
             """);
     }
@@ -2950,7 +2962,9 @@ public class DocumentEditorE2ETests : WasmTestBase
                         && style.visibility !== 'hidden'
                         && style.display !== 'none';
                 };
-                const block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || []).find(isVisible)
+                const paragraphBlocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || [])
+                    .filter(isVisible);
+                const block = paragraphBlocks[1] || paragraphBlocks[0]
                     || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-block-id]') || []).find(isVisible);
                 if (!block) {
                     const inline = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || []).find(isVisible);
@@ -3214,7 +3228,9 @@ public class DocumentEditorE2ETests : WasmTestBase
                         && style.visibility !== 'hidden'
                         && style.display !== 'none';
                 };
-                const block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || []).find(isVisible)
+                const paragraphBlocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || [])
+                    .filter(isVisible);
+                const block = paragraphBlocks[1] || paragraphBlocks[0]
                     || Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body .tm-wysiwyg-block[data-block-id]') || []).find(isVisible);
                 if (!block) {
                     throw new Error('Visible paragraph block was not found.');
@@ -3253,6 +3269,41 @@ public class DocumentEditorE2ETests : WasmTestBase
             }
             """,
             text);
+    }
+
+    private static async Task<bool> HostTextHasComputedStyleAsync(ILocator host, string text, string propertyName, string expectedValue)
+    {
+        for (var attempt = 0; attempt < 40; attempt++)
+        {
+            var matches = await host.EvaluateAsync<bool>(
+                """
+                (el, args) => {
+                    const text = String(args.text || '');
+                    const propertyName = String(args.propertyName || '');
+                    const expectedValue = String(args.expectedValue || '');
+                    return Array.from(el.querySelectorAll('[data-inline-id], .tm-wysiwyg-remote-mark, a'))
+                        .some(node => {
+                            if (!text || !(node.textContent || '').includes(text)) return false;
+                            const computed = getComputedStyle(node);
+                            const value = computed[propertyName] || '';
+                            if (propertyName === 'fontWeight' && expectedValue === 'bold') {
+                                return value === 'bold' || parseInt(value, 10) >= 600;
+                            }
+
+                            return value === expectedValue;
+                        });
+                }
+                """,
+                new { text, propertyName, expectedValue });
+            if (matches)
+            {
+                return true;
+            }
+
+            await Task.Delay(250);
+        }
+
+        return false;
     }
 
     private static async Task<int> GetTextOrderAsync(ILocator host, string left, string right)

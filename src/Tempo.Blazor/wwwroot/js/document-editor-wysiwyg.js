@@ -6498,7 +6498,7 @@ window.tmDocumentWysiwyg = (function () {
             localChanges.forEach(function (change) {
                 if (!_sameRemoteTextTarget(target, change)) return;
                 if (!change.isDelete) {
-                    if (offset >= change.offset) offset += change.length;
+                    if (offset > change.offset) offset += change.length;
                     return;
                 }
 
@@ -7631,11 +7631,6 @@ window.tmDocumentWysiwyg = (function () {
         var start = Math.max(0, Math.min(offset, text.length));
         var end = Math.max(start, Math.min(start + length, text.length));
         if (end <= start) return false;
-
-        if (start === 0 && end >= text.length) {
-            _applyMarks(inline, [mark]);
-            return true;
-        }
 
         var startPos = _resolveTextPosition(inline, start);
         var endPos = _resolveTextPosition(inline, end);

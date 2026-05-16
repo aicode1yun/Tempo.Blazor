@@ -15,6 +15,17 @@ public static class DocumentEditorEndpoints
     {
         var group = app.MapGroup("/api/document-editor").WithTags("Document Editor");
 
+        group.MapPost("/reset", (
+            DemoDocumentEditorStore store,
+            InMemoryDocumentCollaborationProvider collaborationProvider,
+            InMemoryDocumentSuggestionProvider suggestionProvider) =>
+        {
+            store.Reset();
+            collaborationProvider.Reset();
+            suggestionProvider.Reset();
+            return Results.NoContent();
+        });
+
         group.MapGet("/compare", async (
             string baseDocumentId,
             string compareDocumentId,

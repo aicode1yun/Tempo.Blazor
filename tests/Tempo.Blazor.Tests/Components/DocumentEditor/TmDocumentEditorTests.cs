@@ -324,7 +324,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-status-page-count']").TextContent.Should().Contain("2 pages");
         cut.Find("[data-testid='document-status-word-count']").TextContent.Should().Contain("words");
         cut.Find("[data-testid='document-status-region']").TextContent.Should().Contain("body");
-        cut.Find("[data-testid='document-status-zoom']").TextContent.Should().Contain("100%");
+        cut.Find("[data-testid='document-status-zoom']").TextContent.Should().Contain("Page width");
     }
 
     [Fact]
@@ -375,7 +375,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     [Fact]
     public async Task Editor_EscapeClosesSidePanelAndRequestsDocumentFocus()
     {
-        JSInterop.SetupVoid("tmDocumentWysiwyg.focus", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.focus", _ => true).SetVoidResult();
         var provider = new InMemoryDocumentEditorProvider();
         provider.SeedContractDocument("doc-1");
 
@@ -388,7 +388,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
 
         cut.FindAll("[data-testid='document-side-panel']").Should().BeEmpty();
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentWysiwyg.focus");
+        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.focus");
     }
 
     [Fact]
@@ -1295,7 +1295,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_InsertText_CreatesPendingInlineRevision()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
@@ -1333,7 +1333,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_InsertText_WithSameRevisionId_AppendsToSinglePendingRevision()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
         const string revisionId = "revision-live-insert";
 
@@ -1385,7 +1385,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_InsertBlock_DoesNotDropPendingInlineRevisions()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
@@ -1429,12 +1429,18 @@ public class TmDocumentEditorTests : LocalizationTestBase
         });
 
         cut.WaitForAssertion(() =>
-            cut.FindAll("[data-testid='document-revision-item']").Should().HaveCount(1));
+            cut.FindAll("[data-testid='document-revision-item']")
+                .Select(item => item.TextContent)
+                .Should()
+                .Contain(text => text.Contains("Insertion", StringComparison.Ordinal)));
         cut.Find("[data-testid='document-save']").Click();
 
         cut.WaitForAssertion(() => cut.Find(".tm-document-editor__save-message").TextContent.Should().Contain("Saved"));
         var saved = (await provider.LoadAsync("doc-1")).Document!;
-        saved.Revisions.Should().ContainSingle().Subject.PayloadJson.Should().Be("Draft ");
+        saved.Revisions.Should().Contain(revision =>
+            revision.Type == DocumentRevisionType.Insertion
+            && revision.PayloadJson == "Draft "
+            && revision.Action == DocumentRevisionAction.Pending);
         saved.Blocks.Should().Contain(block => block.Id == "tracked-enter-block");
         GetRevisionTextRuns(saved).Should().ContainSingle(run => run.Text == "Draft ");
     }
@@ -1443,7 +1449,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_AcceptInsertion_KeepsTextAndClearsRevisionMark()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
@@ -1478,7 +1484,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_RejectInsertion_RemovesTextAndClearsRevisionMark()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
@@ -1513,7 +1519,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_AcceptDeletion_RemovesDeletedText()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
         var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
@@ -1559,8 +1565,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_ToggleMark_CreatesFormattingRevision()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
+        var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
+        var selectedText = inline.Text[..4];
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
@@ -1595,7 +1602,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
         payload!.MarkType.Should().Be(InlineMarkType.Bold);
         payload.NewActive.Should().BeTrue();
         GetRevisionTextRuns(saved).Should().ContainSingle(run =>
-            run.Text == "This"
+            run.Text == selectedText
             && run.Marks.Any(mark => mark.Type == InlineMarkType.Bold)
             && run.Marks.Any(mark => mark.Type == InlineMarkType.Revision));
     }
@@ -1604,8 +1611,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
     public async Task TrackChanges_RejectFormatting_RevertsMarkAndClearsRevisionMark()
     {
         var provider = new InMemoryDocumentEditorProvider();
-        var seeded = provider.SeedContractDocument("doc-1");
-        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var seeded = await SeedContractDocumentWithoutSeedRevisionsAsync(provider, "doc-1");
+        var (paragraph, inline) = GetFirstPlainParagraphTextRun(seeded);
 
         var cut = RenderComponent<TmDocumentEditor>(parameters =>
             parameters.Add(p => p.DocumentId, "doc-1")
@@ -1636,8 +1643,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var saved = (await provider.LoadAsync("doc-1")).Document!;
         saved.Revisions.Should().ContainSingle().Subject.Action.Should().Be(DocumentRevisionAction.Rejected);
         GetRevisionTextRuns(saved).Should().BeEmpty();
-        var firstParagraph = saved.Blocks.Select(block => block.Content).OfType<ParagraphBlockContent>().First();
-        firstParagraph.Inlines.OfType<TextRun>().Should().NotContain(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
+        var targetParagraph = (ParagraphBlockContent)saved.Blocks.Single(block => block.Id == paragraph.Id).Content;
+        targetParagraph.Inlines.OfType<TextRun>().Should().NotContain(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
     }
 
     [Fact]
@@ -1918,6 +1925,22 @@ public class TmDocumentEditorTests : LocalizationTestBase
         return (paragraph, inline);
     }
 
+    private static (DocumentBlock Paragraph, TextRun Inline) GetFirstPlainParagraphTextRun(DocumentEditorDocument document)
+    {
+        foreach (var paragraph in document.Blocks.Where(block => block.Content is ParagraphBlockContent))
+        {
+            var inline = ((ParagraphBlockContent)paragraph.Content).Inlines
+                .OfType<TextRun>()
+                .FirstOrDefault(run => run.Text.Length >= 4 && !run.Marks.Any(mark => mark.Type == InlineMarkType.Bold));
+            if (inline is not null)
+            {
+                return (paragraph, inline);
+            }
+        }
+
+        throw new InvalidOperationException("The test document does not contain a plain paragraph text run.");
+    }
+
     private static T Clone<T>(T value)
     {
         var json = JsonSerializer.Serialize(value, DocumentEditorJson.Options);
@@ -1933,6 +1956,67 @@ public class TmDocumentEditorTests : LocalizationTestBase
             Document = document,
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         });
+    }
+
+    private static async Task<DocumentEditorDocument> SeedContractDocumentWithoutSeedRevisionsAsync(
+        InMemoryDocumentEditorProvider provider,
+        string documentId)
+    {
+        var document = provider.SeedContractDocument(documentId);
+        document.Revisions.Clear();
+        RemoveRevisionMarks(document.Blocks);
+        foreach (var headerFooter in document.HeadersFooters)
+        {
+            RemoveRevisionMarks(headerFooter.Blocks);
+        }
+
+        await provider.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = documentId,
+            Document = document,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        });
+
+        return document;
+    }
+
+    private static void RemoveRevisionMarks(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            switch (block.Content)
+            {
+                case ParagraphBlockContent paragraph:
+                    RemoveRevisionMarks(paragraph.Inlines);
+                    break;
+                case HeadingBlockContent heading:
+                    RemoveRevisionMarks(heading.Inlines);
+                    break;
+                case ListBlockContent list:
+                    RemoveRevisionMarks(list.Inlines);
+                    break;
+                case QuoteBlockContent quote:
+                    RemoveRevisionMarks(quote.Inlines);
+                    break;
+                case TableBlockContent table:
+                    foreach (var row in table.Rows)
+                    {
+                        foreach (var cell in row.Cells)
+                        {
+                            RemoveRevisionMarks(cell.Blocks);
+                        }
+                    }
+                    break;
+            }
+        }
+    }
+
+    private static void RemoveRevisionMarks(IEnumerable<InlineContent> inlines)
+    {
+        foreach (var inline in inlines)
+        {
+            inline.Marks.RemoveAll(mark => mark.Type == InlineMarkType.Revision);
+        }
     }
 
     private static DocumentEditorDocument CreatePhase17ProviderDocument()
@@ -2083,11 +2167,41 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
     private static IReadOnlyList<TextRun> GetRevisionTextRuns(DocumentEditorDocument document)
     {
-        var paragraph = document.Blocks.Select(block => block.Content).OfType<ParagraphBlockContent>().First();
-        return paragraph.Inlines
-            .OfType<TextRun>()
+        return GetTextRuns(document.Blocks)
             .Where(run => run.Marks.Any(mark => mark.Type == InlineMarkType.Revision))
             .ToList();
+    }
+
+    private static IEnumerable<TextRun> GetTextRuns(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            foreach (var run in GetTextRuns(block.Content))
+            {
+                yield return run;
+            }
+        }
+    }
+
+    private static IEnumerable<TextRun> GetTextRuns(DocumentBlockContent content)
+    {
+        switch (content)
+        {
+            case ParagraphBlockContent paragraph:
+                return paragraph.Inlines.OfType<TextRun>();
+            case HeadingBlockContent heading:
+                return heading.Inlines.OfType<TextRun>();
+            case ListBlockContent list:
+                return list.Inlines.OfType<TextRun>();
+            case QuoteBlockContent quote:
+                return quote.Inlines.OfType<TextRun>();
+            case TableBlockContent table:
+                return table.Rows
+                    .SelectMany(row => row.Cells)
+                    .SelectMany(cell => GetTextRuns(cell.Blocks));
+            default:
+                return [];
+        }
     }
 
     private static DocumentOperation CreateRemoteRevisionOperation(string revisionId, string blockId, string inlineId, string text)

@@ -202,6 +202,33 @@ public class DocumentOperationApplier
         var inline = inlines[inlineIndex];
         var text = GetInlineText(inline);
         var targetHasStableInlineId = !string.IsNullOrWhiteSpace(operation.Target.InlineId);
+        if (targetHasStableInlineId)
+        {
+            var matchingInlineIndexes = inlines
+                .Select((item, index) => new { Inline = item, Index = index })
+                .Where(item => string.Equals(item.Inline.Id, operation.Target.InlineId, StringComparison.Ordinal))
+                .Select(item => item.Index)
+                .ToList();
+            if (matchingInlineIndexes.Count > 1)
+            {
+                var matchingAbsoluteStart = Math.Max(0, startOffset);
+                var matchingCumulative = 0;
+                foreach (var candidateIndex in matchingInlineIndexes)
+                {
+                    var candidateText = GetInlineText(inlines[candidateIndex]);
+                    var candidateLength = candidateText.Length;
+                    if (matchingAbsoluteStart < matchingCumulative + candidateLength || candidateIndex == matchingInlineIndexes[^1])
+                    {
+                        var rangeStart = Math.Clamp(matchingAbsoluteStart - matchingCumulative, 0, candidateLength);
+                        var rangeEnd = Math.Clamp(rangeStart + length, rangeStart, candidateLength);
+                        return (candidateIndex, rangeStart, rangeEnd);
+                    }
+
+                    matchingCumulative += candidateLength;
+                }
+            }
+        }
+
         if (targetHasStableInlineId || inlineIndex != 0 || startOffset < text.Length || inlines.Count <= 1)
         {
             var rangeStart = Math.Clamp(startOffset, 0, text.Length);

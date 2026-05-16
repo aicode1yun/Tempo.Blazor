@@ -263,6 +263,12 @@ public class InMemoryDocumentSuggestionProvider : IDocumentSuggestionProvider
 {
     private readonly Dictionary<string, DocumentSuggestion> _suggestions = [];
 
+    /// <summary>Clears all in-memory suggestions.</summary>
+    public void Reset()
+    {
+        _suggestions.Clear();
+    }
+
     /// <inheritdoc />
     public virtual Task<IReadOnlyList<DocumentSuggestion>> GetSuggestionsAsync(
         DocumentSuggestionQuery query,

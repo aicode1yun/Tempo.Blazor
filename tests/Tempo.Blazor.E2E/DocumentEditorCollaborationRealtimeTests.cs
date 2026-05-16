@@ -8,6 +8,10 @@ namespace Tempo.Blazor.E2E;
 [DoNotParallelize]
 public sealed class DocumentEditorCollaborationRealtimeTests : WasmTestBase
 {
+    [TestInitialize]
+    public Task ResetDocumentEditorDemoAsync()
+        => DocumentEditorE2EReset.ResetAsync();
+
     [TestMethod]
     public async Task RealtimeProvider_DoesNotPollDocumentCollaborationEndpointsWhileIdle()
     {

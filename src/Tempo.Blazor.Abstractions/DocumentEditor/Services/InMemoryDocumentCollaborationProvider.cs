@@ -11,6 +11,15 @@ public class InMemoryDocumentCollaborationProvider : IDocumentCollaborationProvi
     private readonly Dictionary<string, DocumentCollaborationCursor> _cursors = [];
     private long _sequence;
 
+    /// <summary>Clears all in-memory collaboration sessions, operation batches, and cursors.</summary>
+    public void Reset()
+    {
+        _sessions.Clear();
+        _batches.Clear();
+        _cursors.Clear();
+        _sequence = 0;
+    }
+
     /// <inheritdoc />
     public virtual Task<DocumentCollaborationSession> JoinAsync(
         DocumentCollaborationJoinRequest request,
