@@ -7946,10 +7946,18 @@ window.tmDocumentWysiwyg = (function () {
                     return;
                 }
 
-                node.classList.remove('tm-wysiwyg-revision', 'tm-wysiwyg-revision--insert', 'tm-wysiwyg-revision--delete', 'tm-wysiwyg-revision--format');
+                node.classList.remove(
+                    'tm-wysiwyg-revision',
+                    'tm-wysiwyg-revision--insert',
+                    'tm-wysiwyg-revision--delete',
+                    'tm-wysiwyg-revision--format',
+                    'tm-document-inline--revision',
+                    'tm-document-inline--revision-insert',
+                    'tm-document-inline--revision-delete');
                 node.removeAttribute('data-revision-id');
                 node.removeAttribute('data-revision-type');
-                if ((node.getAttribute('data-testid') || '').indexOf('document-wysiwyg-revision-') === 0) {
+                var testId = node.getAttribute('data-testid') || '';
+                if (testId.indexOf('document-wysiwyg-revision-') === 0 || testId.indexOf('document-revision-') === 0) {
                     node.removeAttribute('data-testid');
                 }
             });

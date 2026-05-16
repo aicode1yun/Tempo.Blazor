@@ -888,6 +888,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
         await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
         await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator(".tm-document-inline--revision-insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator("[data-revision-id]").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
     }
 
     [TestMethod]
@@ -914,6 +916,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         await Assertions.Expect(host).ToContainTextAsync(uniqueText.Trim());
         await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
         await Assertions.Expect(host.Locator(".tm-wysiwyg-revision--insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator(".tm-document-inline--revision-insert").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
+        await Assertions.Expect(host.Locator("[data-revision-id]").Filter(new() { HasText = uniqueText.Trim() })).ToHaveCountAsync(0);
     }
 
     [TestMethod]
@@ -2198,6 +2202,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         await BroadcastRemoteOperationsAsync(RemoteReviewRevisionOperation(revisionId, target, text, operationType: 10, revisionType: 0));
 
         await Assertions.Expect(host.Locator($"[data-revision-id='{revisionId}']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+        await Assertions.Expect(host.Locator(".tm-document-inline--revision-insert").Filter(new() { HasText = text.Trim() })).ToHaveCountAsync(0, new() { Timeout = 5000 });
         await Assertions.Expect(host).ToContainTextAsync(text.Trim(), new() { Timeout = 5000 });
         await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = text.Trim() })).ToHaveCountAsync(0, new() { Timeout = 5000 });
     }
