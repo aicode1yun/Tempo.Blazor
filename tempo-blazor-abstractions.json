@@ -1125,52 +1125,51 @@
       "kind": "Interface",
       "category": "DataProviders",
       "namespace": "Tempo.Blazor.Interfaces",
-      "description": "Data provider for token/tag autocomplete functionality. Provides items based on user input for components like TmTagPicker.",
+      "description": "Data provider for the {{ token autocomplete in TmNotionEditor. Implement this interface to supply the list of available tokens (variables/fields) that users can insert by typing {{ in any text block.",
+      "properties": [
+        {
+          "name": "SupportsCreation",
+          "type": "bool",
+          "isRequired": false,
+          "description": "When true the dropdown will offer a 'Create new token' action for queries that return no results. Return false for read-only token sets."
+        }
+      ],
       "methods": [
         {
-          "name": "GetItemsAsync",
-          "returnType": "Task<IReadOnlyList<IToken>>",
-          "description": "Retrieves tokens matching the search text.",
+          "name": "SearchTokensAsync",
+          "returnType": "Task<IEnumerable<IToken>>",
+          "description": "Returns tokens whose Key, DisplayName, Description, or Category contain the query string. Called each time the user types after {{ . An empty query returns all tokens.",
           "parameters": [
             {
-              "name": "searchText",
+              "name": "query",
               "type": "string",
-              "description": "User's search input."
+              "description": "User's current search text (may be empty)."
             },
             {
               "name": "ct",
               "type": "CancellationToken",
-              "description": "Cancellation token.",
+              "description": "Cancellation token — cancelled if the user types another character before the search completes.",
               "defaultValue": "default"
             }
           ]
         },
         {
-          "name": "CreateTokenAsync",
-          "returnType": "Task<IToken?>",
-          "description": "Creates a new token from user input (for 'create new' functionality).",
-          "parameters": [
-            {
-              "name": "text",
-              "type": "string",
-              "description": "Text entered by user."
-            },
-            {
-              "name": "ct",
-              "type": "CancellationToken",
-              "description": "Cancellation token.",
-              "defaultValue": "default"
-            }
-          ]
+          "name": "Refresh",
+          "returnType": "void",
+          "description": "Invalidates any cached token data so the next search returns fresh results."
         }
       ],
       "usedInComponents": [
-        "TmTagPicker"
+        "TmNotionEditor"
       ],
       "examples": [
         {
-          "title": "Tag provider implementation",
-          "code": "public class TagTokenProvider : ITokenDataProvider\n{\n    private readonly ITagService _tagService;\n\n    public TagTokenProvider(ITagService tagService)\n    {\n        _tagService = tagService;\n    }\n\n    public async Task<IReadOnlyList<IToken>> GetItemsAsync(\n        string searchText, CancellationToken ct = default)\n    {\n        var tags = await _tagService.SearchAsync(searchText, ct);\n        return tags.Select(t => new Token { Id = t.Id, Name = t.Name }).ToList();\n    }\n\n    public async Task<IToken?> CreateTokenAsync(\n        string text, CancellationToken ct = default)\n    {\n        var tag = await _tagService.CreateAsync(text, ct);\n        return new Token { Id = tag.Id, Name = tag.Name };\n    }\n}"
+          "title": "Minimal token provider",
+          "code": "public class MyTokenProvider : ITokenDataProvider\n{\n    private static readonly IToken[] _tokens =\n    [\n        new MyToken(\"client.name\",  \"Client name\",  \"Full legal name\",  \"Client\"),\n        new MyToken(\"today\",        \"Today\",         \"Current date\",    \"System\"),\n    ];\n\n    public bool SupportsCreation => false;\n\n    public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)\n    {\n        IEnumerable<IToken> r = _tokens;\n        if (!string.IsNullOrWhiteSpace(query))\n            r = r.Where(t => t.DisplayName.Contains(query, StringComparison.OrdinalIgnoreCase));\n        return Task.FromResult(r);\n    }\n\n    public void Refresh() { }\n}"
+        },
+        {
+          "title": "Wiring to TmNotionEditor",
+          "code": "@inject MyTokenProvider TokenProvider\n\n<TmNotionEditor DataProvider=\"@DataProvider\"\n                BlockProvider=\"@BlockProvider\"\n                TokenProvider=\"@TokenProvider\" />"
         }
       ]
     },
@@ -1232,6 +1231,38 @@
         {
           "title": "Mutable class implementation with lazy-load support",
           "code": "public class FolderNode : ITreeNode<Guid>\n{\n    public Guid Id { get; init; }\n    public string Label { get; init; } = default!;\n    public string? Icon { get; init; }\n    public bool IsLeaf { get; set; }\n    public bool IsLoading { get; set; }\n\n    private readonly List<ITreeNode<Guid>> _children = [];\n    public IReadOnlyList<ITreeNode<Guid>> Children => _children;\n\n    public void AddChild(FolderNode child) => _children.Add(child);\n}\n\n// When OnNodeExpand fires, set IsLoading = true, load children, then set IsLoading = false."
+        }
+      ]
+    },
+    {
+      "itemName": "IWireframeComponentProvider",
+      "kind": "Interface",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "assembly": "Tempo.Blazor",
+      "description": "Provides a set of WireframeComponentDef entries to the WireframeComponentRegistry. Built-in Tempo.Blazor components are registered via BuiltInWireframeComponentProvider (priority 0). Custom components are added by implementing this interface and calling services.AddWireframeComponentProvider<T>() in Program.cs. When two providers register the same Type, the one with the higher Priority wins.",
+      "methods": [
+        {
+          "name": "ProviderId",
+          "returnType": "string",
+          "description": "Unique identifier for this provider (used in logging and override detection)."
+        },
+        {
+          "name": "Priority",
+          "returnType": "int",
+          "description": "Higher priority wins when multiple providers register the same component type. Built-in uses 0; set > 0 to override."
+        },
+        {
+          "name": "GetDefinitions",
+          "returnType": "IEnumerable<WireframeComponentDef>",
+          "description": "Returns all component definitions supplied by this provider."
+        }
+      ],
+      "registration": "services.AddWireframeComponentProvider<MyProvider>()",
+      "examples": [
+        {
+          "title": "Register a custom component",
+          "code": "// Program.cs\nbuilder.Services.AddTempoBlazor();\nbuilder.Services.AddWireframeComponentProvider<MarketingComponentProvider>();\n\n// MarketingComponentProvider.cs\npublic class MarketingComponentProvider : IWireframeComponentProvider\n{\n    public string ProviderId => \"Marketing\";\n    public int Priority => 10;\n\n    public IEnumerable<WireframeComponentDef> GetDefinitions()\n    {\n        yield return new WireframeComponentDef\n        {\n            Type        = \"HeroBanner\",\n            Category    = \"Marketing\",\n            DisplayName = \"Hero Banner\",\n            Icon        = \"image\",\n            DefaultWidth  = 800,\n            DefaultHeight = 200,\n            IsBuiltIn   = false,\n            RenderSvg   = (el, b) =>\n            {\n                var sb = new StringBuilder();\n                sb.Append($\"<rect width='{el.W}' height='{el.H}' fill='#1e293b' rx='8'/>\");\n                sb.Append($\"<text x='{el.W/2}' y='{el.H/2}' fill='white' text-anchor='middle' dominant-baseline='middle' font-size='18'>Hero Banner</text>\");\n                b.AddMarkupContent(0, sb.ToString());\n            },\n            Props = [\n                new PropDef { Name = \"headline\",  DisplayName = \"Headline\",  Type = PropType.String },\n                new PropDef { Name = \"subheadline\", DisplayName = \"Subheadline\", Type = PropType.String },\n            ]\n        };\n    }\n}"
         }
       ]
     },
@@ -1534,6 +1565,317 @@
         {
           "title": "Reparenting a node in response to OnNodeMove",
           "code": "private async Task HandleNodeMove(TreeNodeMoveEventArgs<string> args)\n{\n    // Reparent under new parent, or promote to root if NewParent is null\n    await _store.MoveSuiteAsync(args.MovedNode.Id, args.NewParent?.Id);\n\n    // Reload the tree so the new structure is reflected\n    _rootNodes = await _store.GetRootNodesAsync();\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeComponentDef",
+      "kind": "Model",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+      "assembly": "Tempo.Blazor",
+      "description": "Describes a single component that can be placed on the wireframe canvas. Each Tempo.Blazor component (TmButton, TmDataTable, …) has exactly one definition registered via IWireframeComponentProvider. The RenderSvg delegate produces the SVG markup shown on the canvas. SizePresets maps size prop values to canonical W×H so that changing 'size' in the Properties Panel automatically resizes the element.",
+      "properties": [
+        {
+          "name": "Type",
+          "type": "string (required)",
+          "description": "Unique type identifier matching WireframeElement.Type. E.g. 'TmButton'."
+        },
+        {
+          "name": "Category",
+          "type": "string (required)",
+          "description": "Toolbox group. E.g. 'Buttons', 'Inputs', 'Layout', 'Custom'."
+        },
+        {
+          "name": "DisplayName",
+          "type": "string (required)",
+          "description": "Human-readable name shown in the Toolbox and Properties Panel header."
+        },
+        {
+          "name": "Icon",
+          "type": "string?",
+          "description": "TmIcon name used in the Toolbox list item."
+        },
+        {
+          "name": "DefaultWidth",
+          "type": "double",
+          "defaultValue": "120",
+          "description": "Default element width when dropped from the Toolbox."
+        },
+        {
+          "name": "DefaultHeight",
+          "type": "double",
+          "defaultValue": "36",
+          "description": "Default element height when dropped from the Toolbox."
+        },
+        {
+          "name": "Props",
+          "type": "IReadOnlyList<PropDef>",
+          "defaultValue": "[]",
+          "description": "Property definitions that drive the Properties Panel UI."
+        },
+        {
+          "name": "RenderSvg",
+          "type": "Action<WireframeElement, RenderTreeBuilder> (required)",
+          "description": "Delegate that renders the component's SVG shape. Coordinates are relative to the element's top-left (0, 0). The outer <g> transform is applied by the canvas."
+        },
+        {
+          "name": "IsBuiltIn",
+          "type": "bool",
+          "defaultValue": "false",
+          "description": "True for built-in Tempo.Blazor components; false for custom/JSON-defined ones."
+        },
+        {
+          "name": "SizePresets",
+          "type": "IReadOnlyDictionary<string, (double W, double H)>?",
+          "description": "Optional map from a 'size' prop value to canonical element dimensions. When present and the user changes the size prop, the canvas element is automatically resized. Null for components where 'size' describes an internal sub-element (e.g. TmModal dialog scale)."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Minimal custom component definition",
+          "code": "new WireframeComponentDef\n{\n    Type        = \"StatusBadge\",\n    Category    = \"Custom\",\n    DisplayName = \"Status Badge\",\n    DefaultWidth  = 80,\n    DefaultHeight = 24,\n    RenderSvg   = (el, b) =>\n    {\n        var color = el.Props.GetString(\"color\", \"#22c55e\");\n        b.AddMarkupContent(0,\n            $\"<rect width='{el.W}' height='{el.H}' rx='{el.H/2}' fill='{color}' opacity='0.15' stroke='{color}' stroke-width='1'/>\"\n            + $\"<text x='{el.W/2}' y='{el.H/2}' fill='{color}' text-anchor='middle' dominant-baseline='middle' font-size='10'>Active</text>\");\n    },\n    Props = [\n        new PropDef { Name = \"color\", DisplayName = \"Color\", Type = PropType.Color, Default = \"#22c55e\", Category = \"Appearance\" }\n    ]\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeDocument",
+      "kind": "Model",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+      "assembly": "Tempo.Blazor.Abstractions",
+      "description": "Root model for a wireframe document. Contains the canvas dimensions, all placed elements, connectors, and metadata. Serialized to/from JSON via WireframeSerializer. Safe to use in API or service projects (no UI dependencies).",
+      "properties": [
+        {
+          "name": "Version",
+          "type": "string",
+          "defaultValue": "\"1.0\"",
+          "description": "Schema version. Used for forward-compatibility detection."
+        },
+        {
+          "name": "Title",
+          "type": "string",
+          "defaultValue": "\"Untitled wireframe\"",
+          "description": "Human-readable document title shown in the editor toolbar."
+        },
+        {
+          "name": "Width",
+          "type": "double",
+          "defaultValue": "1280",
+          "description": "Canvas width in pixels."
+        },
+        {
+          "name": "Height",
+          "type": "double",
+          "defaultValue": "800",
+          "description": "Canvas height in pixels."
+        },
+        {
+          "name": "Elements",
+          "type": "List<WireframeElement>",
+          "defaultValue": "[]",
+          "description": "All placed component elements. Rendered in ZIndex order."
+        },
+        {
+          "name": "Connectors",
+          "type": "List<WireframeConnector>",
+          "defaultValue": "[]",
+          "description": "Arrow/line connectors between elements."
+        },
+        {
+          "name": "CreatedAt",
+          "type": "DateTime",
+          "description": "UTC timestamp when the document was created."
+        },
+        {
+          "name": "ModifiedAt",
+          "type": "DateTime",
+          "description": "UTC timestamp of the last modification."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Create a document with one button element",
+          "code": "var doc = new WireframeDocument\n{\n    Title = \"Login page\",\n    Width = 1280,\n    Height = 800\n};\ndoc.Elements.Add(WireframeDocumentExtensions.NewElement(\"TmButton\", x: 40, y: 40, w: 120, h: 36));\nvar json = WireframeSerializer.Serialize(doc);"
+        },
+        {
+          "title": "Round-trip through JSON",
+          "code": "var json = WireframeSerializer.Serialize(doc);\nif (WireframeSerializer.TryDeserialize(json, out var restored))\n{\n    Console.WriteLine(restored!.Title);\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeElement",
+      "kind": "Model",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe.Models",
+      "assembly": "Tempo.Blazor.Abstractions",
+      "description": "A single component instance placed on the wireframe canvas. Stores position, size, component type, and a property bag (Props) that maps to the component's PropDef definitions. Props is a Dictionary<string, JsonElement> allowing any value type. Helper extension methods (GetString, GetInt, GetBool, etc.) on WirframeElementExtensions simplify prop access.",
+      "properties": [
+        {
+          "name": "Id",
+          "type": "string",
+          "description": "Unique element ID. Auto-generated as an 8-char hex string (Guid prefix)."
+        },
+        {
+          "name": "Type",
+          "type": "string",
+          "description": "Component type identifier matching a WireframeComponentDef.Type (e.g. 'TmButton', 'TmDataTable')."
+        },
+        {
+          "name": "X",
+          "type": "double",
+          "defaultValue": "0",
+          "description": "Left edge in document coordinates (pixels)."
+        },
+        {
+          "name": "Y",
+          "type": "double",
+          "defaultValue": "0",
+          "description": "Top edge in document coordinates (pixels)."
+        },
+        {
+          "name": "W",
+          "type": "double",
+          "defaultValue": "120",
+          "description": "Width in pixels."
+        },
+        {
+          "name": "H",
+          "type": "double",
+          "defaultValue": "36",
+          "description": "Height in pixels."
+        },
+        {
+          "name": "Props",
+          "type": "Dictionary<string, JsonElement>",
+          "description": "Component property bag. Keys are camelCase prop names matching PropDef.Name."
+        },
+        {
+          "name": "ZIndex",
+          "type": "int",
+          "defaultValue": "0",
+          "description": "Rendering order. Higher values render on top."
+        },
+        {
+          "name": "GroupId",
+          "type": "string?",
+          "description": "Optional group identifier. Null = not grouped. Omitted from JSON when null."
+        },
+        {
+          "name": "LockedBy",
+          "type": "string?",
+          "description": "Optional user identifier that has locked this element. Null = unlocked. Omitted from JSON when null."
+        }
+      ],
+      "examples": [
+        {
+          "title": "Create a button element with props",
+          "code": "var el = WireframeDocumentExtensions.NewElement(\"TmButton\", x: 40, y: 100, w: 120, h: 36);\nel.SetProp(\"label\", \"Save\");\nel.SetProp(\"variant\", \"primary\");\nel.SetProp(\"size\", \"lg\");"
+        },
+        {
+          "title": "Read props safely",
+          "code": "var label   = el.Props.GetString(\"label\", \"Button\");\nvar disabled = el.Props.GetBool(\"disabled\");\nvar opacity  = el.Props.GetDouble(\"opacity\", 1.0);"
+        }
+      ]
+    },
+    {
+      "itemName": "WireframeSerializer",
+      "kind": "StaticClass",
+      "category": "Wireframe",
+      "namespace": "Tempo.Blazor.Components.Wireframe",
+      "assembly": "Tempo.Blazor.Abstractions",
+      "description": "Serializes and deserializes WireframeDocument to/from JSON. Uses camelCase keys, indented output (for AI readability), and ignores null optional fields. Safe to use in API or service projects. The JSON format is the canonical interchange format for wireframe documents — suitable for storage, REST APIs, and AI prompt injection.",
+      "methods": [
+        {
+          "name": "Serialize",
+          "returnType": "string",
+          "description": "Serializes a WireframeDocument to indented camelCase JSON.",
+          "parameters": [
+            {
+              "name": "document",
+              "type": "WireframeDocument",
+              "description": "Document to serialize."
+            }
+          ]
+        },
+        {
+          "name": "Deserialize",
+          "returnType": "WireframeDocument",
+          "description": "Deserializes a WireframeDocument from JSON. Throws WireframeDeserializationException on failure.",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "JSON string to deserialize."
+            }
+          ]
+        },
+        {
+          "name": "TryDeserialize",
+          "returnType": "bool",
+          "description": "Attempts to deserialize a WireframeDocument from JSON. Returns false (and out null) on failure instead of throwing.",
+          "parameters": [
+            {
+              "name": "json",
+              "type": "string",
+              "description": "JSON string to deserialize."
+            },
+            {
+              "name": "document",
+              "type": "out WireframeDocument?",
+              "description": "Deserialized document, or null on failure."
+            }
+          ]
+        }
+      ],
+      "jsonFormat": {
+        "description": "Canonical wireframe JSON format",
+        "requiredFields": [
+          "version",
+          "title",
+          "elements"
+        ],
+        "optionalFields": [
+          "connectors",
+          "width",
+          "height",
+          "createdAt",
+          "modifiedAt"
+        ],
+        "elementRequiredFields": [
+          "id",
+          "type",
+          "x",
+          "y",
+          "w",
+          "h"
+        ],
+        "elementOptionalFields": [
+          "props",
+          "zIndex",
+          "groupId",
+          "lockedBy"
+        ],
+        "connectorRequiredFields": [
+          "id",
+          "fromId",
+          "toId"
+        ],
+        "notes": "Extra unknown fields are ignored (forward-compatible). All keys are camelCase."
+      },
+      "examples": [
+        {
+          "title": "Serialize and store",
+          "code": "var json = WireframeSerializer.Serialize(document);\nawait File.WriteAllTextAsync(\"layout.wireframe.json\", json);"
+        },
+        {
+          "title": "Safe deserialization from API response",
+          "code": "var json = await response.Content.ReadAsStringAsync();\nif (WireframeSerializer.TryDeserialize(json, out var doc))\n{\n    // use doc\n}\nelse\n{\n    logger.LogWarning(\"Invalid wireframe JSON received\");\n}"
+        },
+        {
+          "title": "Minimal AI-generated JSON that deserializes correctly",
+          "code": "var json = \"\"\"\n{\n  \"version\": \"1.0\",\n  \"title\": \"Contact form\",\n  \"elements\": [\n    { \"id\": \"f1a2b3c4\", \"type\": \"TmTextInput\", \"x\": 40, \"y\": 40, \"w\": 280, \"h\": 36,\n      \"props\": { \"label\": \"Name\", \"placeholder\": \"Your name\" } },\n    { \"id\": \"d5e6f7a8\", \"type\": \"TmButton\", \"x\": 40, \"y\": 100, \"w\": 120, \"h\": 36,\n      \"props\": { \"label\": \"Submit\", \"variant\": \"primary\" } }\n  ]\n}\n\"\"\";\nvar doc = WireframeSerializer.Deserialize(json);"
         }
       ]
     }

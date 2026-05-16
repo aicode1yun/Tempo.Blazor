@@ -1,22 +1,26 @@
 <Solution>
   <Folder Name="/src/">
     <Project Path="src/Tempo.Blazor.Abstractions/Tempo.Blazor.Abstractions.csproj" />
+    <Project Path="src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj" />
+    <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.Client/Tempo.Blazor.Demo.InteractiveAuto.Client.csproj" />
+    <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj" />
+    <Project Path="src/Tempo.Blazor.Demo.Server/Tempo.Blazor.Demo.Server.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.Shared/Tempo.Blazor.Demo.Shared.csproj" />
     <Project Path="src/Tempo.Blazor.Demo.SharedUI/Tempo.Blazor.Demo.SharedUI.csproj" />
     <Project Path="src/Tempo.Blazor.Demo/Tempo.Blazor.Demo.csproj" />
-    <Project Path="src/Tempo.Blazor.Demo.Server/Tempo.Blazor.Demo.Server.csproj" />
-    <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.csproj" />
-    <Project Path="src/Tempo.Blazor.Demo.InteractiveAuto/Tempo.Blazor.Demo.InteractiveAuto.Client/Tempo.Blazor.Demo.InteractiveAuto.Client.csproj" />
-    <Project Path="src/Tempo.Blazor.Demo.Api/Tempo.Blazor.Demo.Api.csproj" />
-    <Project Path="src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj" />
-    <Project Path="src/Tempo.Blazor/Tempo.Blazor.csproj" />
+    <Project Path="src/Tempo.Blazor.DocumentFormats/Tempo.Blazor.DocumentFormats.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
     <Project Path="src/Tempo.Blazor.FluentValidation/Tempo.Blazor.FluentValidation.csproj" />
+    <Project Path="src/Tempo.Blazor/Tempo.Blazor.csproj" />
   </Folder>
   <Folder Name="/tests/">
-    <Project Path="tests/Tempo.Blazor.E2E/Tempo.Blazor.E2E.csproj" />
-    <Project Path="tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj" />
     <Project Path="tests/Tempo.Blazor.Demo.Api.Tests/Tempo.Blazor.Demo.Api.Tests.csproj" />
-    <Project Path="tests/Tempo.Blazor.DocumentFormats.Tests/Tempo.Blazor.DocumentFormats.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.DocumentFormats.Tests/Tempo.Blazor.DocumentFormats.Tests.csproj">
+      <Build Solution="Debug|*" Project="false" />
+    </Project>
+    <Project Path="tests/Tempo.Blazor.E2E/Tempo.Blazor.E2E.csproj" />
     <Project Path="tests/Tempo.Blazor.FluentValidation.Tests/Tempo.Blazor.FluentValidation.Tests.csproj" />
+    <Project Path="tests/Tempo.Blazor.Tests/Tempo.Blazor.Tests.csproj" />
   </Folder>
 </Solution>

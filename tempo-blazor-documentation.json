@@ -11194,6 +11194,422 @@
       ]
     },
     {
+      "itemName": "TmWireframeDesignerCanvas",
+      "kind": "Component",
+      "category": "Wireframe",
+      "description": "SVG-based wireframe canvas. Renders WireframeDocument elements as scalable SVG shapes and handles pan, zoom, drag-move, resize (8-handle), rubber-band multi-select, element drop from toolbox, keyboard nudge, and context menu. Communicates with wireframe-designer.js for all mouse/touch interactions. All mutations go through the cascaded WireframeCommandStack when available. Typically used as a child of TmWireframeEditor rather than directly.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document to display and edit."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every mutation."
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Render grid lines on the canvas background."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "defaultValue": "8",
+          "description": "Snap-to-grid cell size in pixels. 0 = disabled."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "false",
+          "description": "Disables all editing interactions (drag, resize, drop). Pan via middle-mouse or Space+drag still works."
+        },
+        {
+          "name": "OnSelectionChanged",
+          "type": "EventCallback<string[]>",
+          "isRequired": false,
+          "description": "Raised when the user changes the selection. Payload is an array of selected element IDs."
+        },
+        {
+          "name": "OnToolModeChanged",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user switches tool mode via H/V keyboard shortcuts. Values: 'select' | 'pan'."
+        },
+        {
+          "name": "OnUndo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when Ctrl+Z is pressed and no CommandStack is cascaded."
+        },
+        {
+          "name": "OnRedo",
+          "type": "EventCallback",
+          "isRequired": false,
+          "description": "Raised when Ctrl+Y/Ctrl+Shift+Z is pressed and no CommandStack is cascaded."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the canvas wrapper div."
+        }
+      ],
+      "publicMethods": [
+        {
+          "name": "SetToolMode(string mode)",
+          "description": "Programmatically switches JS tool mode. Values: 'select' | 'pan'."
+        },
+        {
+          "name": "UpdateCanvasSize(double w, double h)",
+          "description": "Notifies JS of updated canvas dimensions after a ResizeCanvasCommand."
+        },
+        {
+          "name": "SelectElements(params string[] ids)",
+          "description": "Sets JS-side selection highlights without raising OnSelectionChanged."
+        },
+        {
+          "name": "ClearSelection()",
+          "description": "Clears all selection highlights."
+        },
+        {
+          "name": "ExportSvg()",
+          "description": "Returns the canvas as a clean SVG string with all selection handles stripped."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-canvas-wrap",
+        "tm-wd-canvas__svg"
+      ],
+      "examples": [
+        {
+          "title": "Standalone canvas (without full editor)",
+          "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"OnChanged\"\n                           OnSelectionChanged=\"OnSelect\" />\n\n@code {\n    private TmWireframeDesignerCanvas? _canvas;\n    private WireframeDocument _document = new();\n\n    private void OnSelect(string[] ids)\n    {\n        Console.WriteLine($\"Selected: {string.Join(\", \", ids)}\");\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeEditor",
+      "kind": "Component",
+      "category": "Wireframe",
+      "description": "Top-level wireframe editor component. Composes the canvas, toolbox, properties panel, minimap, and toolbar into a fully working editor. Creates and owns a WireframeCommandStack (undo/redo) and exposes it to all child components via CascadingValue. Supports JSON import/export, SVG export, zoom, grid, read-only mode, and collapsible panels. Tool mode (Select/Pan) can be switched via toolbar buttons or keyboard shortcuts V/H. Canvas size is editable from the toolbar.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited. Bind with @bind-Document. When null an empty document is created automatically."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every mutation so callers can persist the document."
+        },
+        {
+          "name": "ReadOnly",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "false",
+          "description": "Prevent all editing interactions (drag, resize, drop, prop changes)."
+        },
+        {
+          "name": "ShowToolbox",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Show the component toolbox panel on the left."
+        },
+        {
+          "name": "ShowPropertiesPanel",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Show the properties panel on the right."
+        },
+        {
+          "name": "ShowMinimap",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Show the minimap overlay in the bottom-right corner of the canvas."
+        },
+        {
+          "name": "ShowToolbar",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Show the top toolbar (title, tool mode, zoom, undo/redo, export/import, canvas size)."
+        },
+        {
+          "name": "ShowGrid",
+          "type": "bool",
+          "isRequired": false,
+          "defaultValue": "true",
+          "description": "Show grid lines on the canvas."
+        },
+        {
+          "name": "GridSize",
+          "type": "int",
+          "isRequired": false,
+          "defaultValue": "8",
+          "description": "Snap-to-grid cell size in pixels. Set to 0 to disable snapping."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the editor root element."
+        }
+      ],
+      "keyboardShortcuts": [
+        {
+          "key": "V",
+          "action": "Switch to Select tool"
+        },
+        {
+          "key": "H",
+          "action": "Switch to Pan tool"
+        },
+        {
+          "key": "Space + drag",
+          "action": "Temporary pan (any tool mode)"
+        },
+        {
+          "key": "Ctrl+Z",
+          "action": "Undo"
+        },
+        {
+          "key": "Ctrl+Y / Ctrl+Shift+Z",
+          "action": "Redo"
+        },
+        {
+          "key": "Ctrl+A",
+          "action": "Select all elements"
+        },
+        {
+          "key": "Ctrl+D",
+          "action": "Duplicate selected"
+        },
+        {
+          "key": "Delete / Backspace",
+          "action": "Delete selected elements"
+        },
+        {
+          "key": "Arrow keys",
+          "action": "Nudge selected elements by 1px (Shift = 10px)"
+        },
+        {
+          "key": "Scroll wheel",
+          "action": "Zoom in/out"
+        },
+        {
+          "key": "Middle mouse button + drag",
+          "action": "Pan canvas"
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-editor",
+        "tm-wd-editor__toolbar",
+        "tm-wd-editor__canvas-wrap",
+        "tm-wd-editor__toolbox-wrap",
+        "tm-wd-editor__props-wrap"
+      ],
+      "examples": [
+        {
+          "title": "Basic wireframe editor with two-way binding",
+          "code": "@page \"/wireframe\"\n@using Tempo.Blazor.Components.Wireframe\n@using Tempo.Blazor.Components.Wireframe.Models\n\n<TmWireframeEditor @bind-Document=\"_document\" />\n\n@code {\n    private WireframeDocument _document = new();\n}"
+        },
+        {
+          "title": "Read-only viewer (no toolbox/props)",
+          "code": "<TmWireframeEditor Document=\"_document\"\n                   ReadOnly=\"true\"\n                   ShowToolbox=\"false\"\n                   ShowPropertiesPanel=\"false\"\n                   ShowToolbar=\"false\" />"
+        },
+        {
+          "title": "Editor without grid, custom canvas size",
+          "code": "@code {\n    private WireframeDocument _document = new()\n    {\n        Width  = 1920,\n        Height = 1080,\n        Title  = \"Dashboard layout\"\n    };\n}\n\n<TmWireframeEditor @bind-Document=\"_document\"\n                   ShowGrid=\"false\"\n                   GridSize=\"0\" />"
+        },
+        {
+          "title": "Persist document to server on every change",
+          "code": "<TmWireframeEditor @bind-Document=\"_document\"\n                   DocumentChanged=\"SaveAsync\" />\n\n@code {\n    private WireframeDocument _document = new();\n\n    private async Task SaveAsync(WireframeDocument doc)\n    {\n        var json = WireframeSerializer.Serialize(doc);\n        await Http.PutAsJsonAsync(\"api/wireframes/my-doc\", json);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeMinimap",
+      "kind": "Component",
+      "category": "Wireframe",
+      "description": "SVG minimap overlay for the wireframe canvas. Renders a scaled-down thumbnail of the full document with a viewport indicator rectangle. Clicking or dragging on the minimap pans the main canvas. Selected elements are highlighted. Typically rendered as an overlay inside TmWireframeDesignerCanvas via TmWireframeEditor.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document whose elements are rendered in the minimap."
+        },
+        {
+          "name": "SelectedIds",
+          "type": "string[]",
+          "isRequired": false,
+          "defaultValue": "[]",
+          "description": "Currently selected element IDs – highlighted in the minimap."
+        },
+        {
+          "name": "Viewport",
+          "type": "MinimapViewport?",
+          "isRequired": false,
+          "description": "Current visible viewport region in document coordinates. Updated by the canvas on pan/zoom."
+        },
+        {
+          "name": "Width",
+          "type": "int",
+          "isRequired": false,
+          "defaultValue": "200",
+          "description": "Width of the minimap in pixels."
+        },
+        {
+          "name": "NavigateRequested",
+          "type": "EventCallback<MinimapNavigateArgs>",
+          "isRequired": false,
+          "description": "Raised when the user clicks/drags on the minimap. Parent should pan the canvas to the requested centre point."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the minimap wrapper."
+        }
+      ],
+      "relatedTypes": [
+        {
+          "name": "MinimapViewport",
+          "description": "Current viewport region: X, Y, Width, Height in document coordinates."
+        },
+        {
+          "name": "MinimapNavigateArgs",
+          "description": "Navigate-to request: CentreX, CentreY in document coordinates."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-minimap",
+        "tm-wd-minimap__svg",
+        "tm-wd-minimap__viewport"
+      ],
+      "examples": [
+        {
+          "title": "Minimap bound to canvas viewport",
+          "code": "<TmWireframeMinimap Document=\"_document\"\n                    SelectedIds=\"_selectedIds\"\n                    Viewport=\"_viewport\"\n                    Width=\"180\"\n                    NavigateRequested=\"OnMinimapNavigate\" />\n\n@code {\n    private MinimapViewport? _viewport;\n\n    private async Task OnMinimapNavigate(MinimapNavigateArgs args)\n    {\n        if (_canvas is not null)\n            await _canvas.ScrollTo(args.CentreX, args.CentreY);\n    }\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframePropertiesPanel",
+      "kind": "Component",
+      "category": "Wireframe",
+      "description": "Properties panel for the wireframe editor. Shows editable fields for the currently selected element(s). Supports single-select (all PropDef fields grouped by category, plus Layout X/Y/W/H and Element/ZIndex sections) and multi-select (intersection of common props, Mixed indicator when values differ). All mutations are routed through the cascaded WireframeCommandStack when available. Text and number inputs use per-field debounce (350 ms); dropdowns and checkboxes apply immediately. Changing a size prop with SizePresets defined automatically resizes the element.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "Document",
+          "type": "WireframeDocument?",
+          "isRequired": false,
+          "description": "Document being edited."
+        },
+        {
+          "name": "DocumentChanged",
+          "type": "EventCallback<WireframeDocument>",
+          "isRequired": false,
+          "description": "Raised after every property change."
+        },
+        {
+          "name": "SelectedIds",
+          "type": "string[]",
+          "isRequired": false,
+          "defaultValue": "[]",
+          "description": "IDs of the currently selected elements. Empty = no selection shown."
+        },
+        {
+          "name": "CommandStack",
+          "type": "WireframeCommandStack?",
+          "isRequired": false,
+          "description": "Cascaded from TmWireframeEditor. When present all mutations are recorded for undo/redo."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the panel wrapper."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-props",
+        "tm-wd-props__section",
+        "tm-wd-props__field",
+        "tm-wd-props__input",
+        "tm-wd-props__select",
+        "tm-wd-props__toggle"
+      ],
+      "examples": [
+        {
+          "title": "Properties panel bound to canvas selection",
+          "code": "<TmWireframeDesignerCanvas @ref=\"_canvas\"\n                           Document=\"_document\"\n                           DocumentChanged=\"d => _document = d\"\n                           OnSelectionChanged=\"ids => _selectedIds = ids\" />\n\n<TmWireframePropertiesPanel Document=\"_document\"\n                             DocumentChanged=\"d => _document = d\"\n                             SelectedIds=\"_selectedIds\" />\n\n@code {\n    private WireframeDocument _document = new();\n    private string[] _selectedIds = [];\n}"
+        }
+      ]
+    },
+    {
+      "itemName": "TmWireframeToolbox",
+      "kind": "Component",
+      "category": "Wireframe",
+      "description": "Draggable component palette for the wireframe editor. Displays all registered WireframeComponentDef entries grouped by category with a search filter. Items are draggable onto TmWireframeDesignerCanvas via HTML drag-and-drop (data-component-type attribute). Custom components registered via IWireframeComponentProvider appear in a separate 'Custom' tab. Typically used as a child of TmWireframeEditor rather than directly.",
+      "requiredImports": [
+        "@using Tempo.Blazor.Components.Wireframe"
+      ],
+      "parameters": [
+        {
+          "name": "OnComponentActivated",
+          "type": "EventCallback<string>",
+          "isRequired": false,
+          "description": "Raised when the user activates a component via keyboard (Enter/Space). Payload is the component type string (e.g. 'TmButton')."
+        },
+        {
+          "name": "Class",
+          "type": "string?",
+          "isRequired": false,
+          "description": "Additional CSS class applied to the toolbox wrapper."
+        }
+      ],
+      "cssClasses": [
+        "tm-wd-toolbox",
+        "tm-wd-toolbox__search",
+        "tm-wd-toolbox__item",
+        "tm-wd-toolbox__category"
+      ],
+      "examples": [
+        {
+          "title": "Toolbox inside a custom editor layout",
+          "code": "<TmWireframeToolbox OnComponentActivated=\"OnActivated\" />\n\n@code {\n    private void OnActivated(string type)\n    {\n        // Add element to canvas at default position\n        Console.WriteLine($\"Activated: {type}\");\n    }\n}"
+        }
+      ]
+    },
+    {
       "itemName": "TmWorkflowDesignerCanvas",
       "kind": "Component",
       "category": "Workflow",
