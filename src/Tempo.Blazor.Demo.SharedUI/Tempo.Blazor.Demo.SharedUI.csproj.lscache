@@ -84,6 +84,9 @@ Services/
  DemoNotionBlockProvider.cs
  DemoNotionDatabaseProvider.cs
  DemoNotionDataProvider.cs
+ DemoNotionFileProvider.cs
+ DemoNotionMediaLibraryProvider.cs
+ DemoNotionTokenProvider.cs
  DocumentMetadata.cs
  DropdownHttpProvider.cs
  ImageHttpGalleryProvider.cs
