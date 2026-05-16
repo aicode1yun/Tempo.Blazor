@@ -2,13 +2,14 @@
 @using Tempo.Blazor.Abstractions.Models
 @inject ITmLocalizer Loc
 
-<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @Class" @attributes="AdditionalAttributes">
+<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @(Disabled ? "tm-color-picker--disabled" : "") @Class" @attributes="AdditionalAttributes">
     <div class="tm-color-picker-trigger"
          @onclick="ToggleDropdown"
          role="button"
-         tabindex="0"
+         tabindex="@(Disabled ? "-1" : "0")"
          aria-haspopup="true"
-         aria-expanded="@_isOpen">
+         aria-expanded="@_isOpen"
+         aria-disabled="@(Disabled ? "true" : "false")">
         <div class="tm-color-picker-trigger-bg">
             <div class="tm-color-picker-trigger-color"
                  style="background: @(string.IsNullOrEmpty(Value) ? "transparent" : Value)"></div>
@@ -32,12 +33,21 @@
 
             @if (ShowApplyButton)
             {
-                <TmButton Variant="ButtonVariant.Primary"
-                          Block="true"
-                          Class="tm-color-picker-apply"
-                          OnClick="ApplyAsync">
-                    @Loc["Tm_Apply"]
-                </TmButton>
+                <div class="tm-color-picker-actions">
+                    @if (ShowCancelButton)
+                    {
+                        <TmButton Variant="ButtonVariant.Secondary"
+                                  Class="tm-color-picker-cancel"
+                                  OnClick="CancelAsync">
+                            @(CancelText ?? Loc["Tm_Cancel"])
+                        </TmButton>
+                    }
+                    <TmButton Variant="ButtonVariant.Primary"
+                              Class="tm-color-picker-apply"
+                              OnClick="ApplyAsync">
+                        @(ApplyText ?? Loc["Tm_Apply"])
+                    </TmButton>
+                </div>
             }
         </div>
     }

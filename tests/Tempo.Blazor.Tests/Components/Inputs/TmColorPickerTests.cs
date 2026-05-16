@@ -142,4 +142,39 @@ public class TmColorPickerTests : LocalizationTestBase
         cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
         changed.Should().NotBeNullOrEmpty();
     }
+
+    [Fact]
+    public void TmColorPicker_ShowCancelButton_ClosesDropdownWithoutFiringValueChanged()
+    {
+        string? changed = null;
+        var cut = RenderComponent<TmColorPicker>(parameters =>
+        {
+            parameters.Add(p => p.Value, "#112233");
+            parameters.Add(p => p.ShowApplyButton, true);
+            parameters.Add(p => p.ShowCancelButton, true);
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, v => changed = v));
+        });
+
+        cut.Find(".tm-color-picker-trigger").Click();
+        cut.Find(".tm-color-palette-swatch").Click();
+        cut.Find(".tm-color-picker-cancel").Click();
+
+        cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
+        changed.Should().BeNull();
+        cut.Find(".tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#112233");
+    }
+
+    [Fact]
+    public void TmColorPicker_Disabled_DoesNotOpen()
+    {
+        var cut = RenderComponent<TmColorPicker>(parameters =>
+        {
+            parameters.Add(p => p.Disabled, true);
+        });
+
+        cut.Find(".tm-color-picker-trigger").Click();
+
+        cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
+        cut.Find(".tm-color-picker-trigger").GetAttribute("aria-disabled").Should().Be("true");
+    }
 }

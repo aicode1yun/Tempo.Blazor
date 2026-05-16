@@ -171,6 +171,15 @@
   <data name="Tm_Apply" xml:space="preserve">
     <value>Appliquer</value>
   </data>
+  <data name="TmColorPicker_SelectColor" xml:space="preserve">
+    <value>Sélectionner une couleur</value>
+  </data>
+  <data name="TmColorPalette_SelectColor" xml:space="preserve">
+    <value>Sélectionner une couleur</value>
+  </data>
+  <data name="TmColorPalette_Clear" xml:space="preserve">
+    <value>Effacer</value>
+  </data>
   <data name="Tm_Reset" xml:space="preserve">
     <value>Réinitialiser</value>
   </data>
@@ -2372,6 +2381,8 @@
   <data name="TmDocumentEditor_LinkTitle"              xml:space="preserve"><value>Titre du lien</value></data>
   <data name="TmDocumentEditor_LinkInvalidUrl"         xml:space="preserve"><value>Saisissez une URL sûre : http, https, mailto, tel, /chemin ou #ancre.</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Appliquer le lien</value></data>
+  <data name="TmDocumentEditor_ApplyColor"             xml:space="preserve"><value>Appliquer la couleur</value></data>
+  <data name="TmDocumentEditor_CancelColor"            xml:space="preserve"><value>Annuler</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Annuler</value></data>
   <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Fermer</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Effacer la mise en forme</value></data>

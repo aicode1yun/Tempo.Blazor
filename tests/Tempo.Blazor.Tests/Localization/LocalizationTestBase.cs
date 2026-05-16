@@ -801,6 +801,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmTreeList_Collapse"] = "Collapse",
 
         // TmColorPalette
+        ["TmColorPicker_SelectColor"] = "Select color",
         ["TmColorPalette_SelectColor"] = "Select color",
         ["TmColorPalette_Clear"] = "Clear",
 
@@ -1289,6 +1290,8 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDocumentEditor_LinkTitle"] = "Link title",
         ["TmDocumentEditor_LinkInvalidUrl"] = "Enter a safe URL: http, https, mailto, tel, /path, or #anchor.",
         ["TmDocumentEditor_ApplyLink"] = "Apply link",
+        ["TmDocumentEditor_ApplyColor"] = "Apply color",
+        ["TmDocumentEditor_CancelColor"] = "Cancel",
         ["TmDocumentEditor_Cancel"] = "Cancel",
         ["TmDocumentEditor_Close"] = "Close",
         ["TmDocumentEditor_ClearFormatting"] = "Clear formatting",
@@ -2212,6 +2215,7 @@ public abstract class LocalizationTestBase : TestContext
         ["TmTreeList_Collapse"] = "Sbalit",
 
         // TmColorPalette
+        ["TmColorPicker_SelectColor"] = "Vybrat barvu",
         ["TmColorPalette_SelectColor"] = "Vybrat barvu",
         ["TmColorPalette_Clear"] = "Vymazat",
 
@@ -2700,6 +2704,8 @@ public abstract class LocalizationTestBase : TestContext
         ["TmDocumentEditor_LinkTitle"] = "Název odkazu",
         ["TmDocumentEditor_LinkInvalidUrl"] = "Zadejte bezpečnou URL: http, https, mailto, tel, /cesta nebo #kotva.",
         ["TmDocumentEditor_ApplyLink"] = "Použít odkaz",
+        ["TmDocumentEditor_ApplyColor"] = "Použít barvu",
+        ["TmDocumentEditor_CancelColor"] = "Storno",
         ["TmDocumentEditor_Cancel"] = "Zrušit",
         ["TmDocumentEditor_Close"] = "Zavřít",
         ["TmDocumentEditor_ClearFormatting"] = "Vymazat formátování",
