@@ -1200,9 +1200,9 @@ public class DocumentEditorE2ETests : WasmTestBase
         try
         {
             var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
-            await SetColorInputAsync(page, "[data-testid='document-font-color']", "#123456");
+            await SetTempoColorPickerAsync(page, "[data-testid='document-font-color-trigger']", "#123456");
             await SelectFirstInlineRangeAsync(page, 0, 5);
-            await SetColorInputAsync(page, "[data-testid='document-highlight-color']", "#fff59d");
+            await SetTempoColorPickerAsync(page, "[data-testid='document-highlight-color-trigger']", "#fff59d");
 
             var colored = await GetVisibleInlineStyleForTextAsync(page, selected);
             colored.Color.Should().Be("#123456");
@@ -3163,16 +3163,56 @@ public class DocumentEditorE2ETests : WasmTestBase
         return value;
     }
 
-    private static async Task SetColorInputAsync(IPage page, string selector, string value)
+    private static async Task SetTempoColorPickerAsync(IPage page, string selector, string value)
     {
-        await page.Locator(selector).EvaluateAsync(
+        var picker = page.Locator(selector);
+        await picker.Locator(".tm-color-picker-trigger").ClickAsync();
+        var pickerIssues = await picker.EvaluateAsync<string[]>(
+            """
+            picker => {
+                const issues = [];
+                const dropdown = picker.querySelector('.tm-color-picker-dropdown');
+                const apply = picker.querySelector('.tm-color-picker-apply');
+                const cancel = picker.querySelector('.tm-color-picker-cancel');
+                if (!dropdown || !apply || !cancel) return ['missing Tempo color picker dropdown'];
+
+                const rect = dropdown.getBoundingClientRect();
+                const probe = document.elementFromPoint(rect.left + rect.width / 2, rect.bottom - 8);
+                if (!probe || !dropdown.contains(probe)) issues.push('Tempo color picker is clipped or covered');
+                if (apply.getBoundingClientRect().height > 38) issues.push('Tempo color picker apply button wraps');
+                if (cancel.getBoundingClientRect().height > 38) issues.push('Tempo color picker cancel button wraps');
+                return issues;
+            }
+            """);
+        pickerIssues.Should().BeEmpty();
+
+        var rgb = HexToRgb(value);
+        var inputs = picker.Locator(".tm-color-gradient-input");
+        await SetNumberInputAsync(inputs.Nth(0), rgb.R);
+        await SetNumberInputAsync(inputs.Nth(1), rgb.G);
+        await SetNumberInputAsync(inputs.Nth(2), rgb.B);
+        await picker.Locator(".tm-color-picker-apply").ClickAsync();
+    }
+
+    private static async Task SetNumberInputAsync(ILocator input, int value)
+    {
+        await input.EvaluateAsync(
             """
             (input, value) => {
-                input.value = value;
+                input.value = String(value);
                 input.dispatchEvent(new Event('change', { bubbles: true }));
             }
             """,
             value);
+    }
+
+    private static (int R, int G, int B) HexToRgb(string value)
+    {
+        var hex = value.Trim().TrimStart('#');
+        return (
+            Convert.ToInt32(hex[..2], 16),
+            Convert.ToInt32(hex.Substring(2, 2), 16),
+            Convert.ToInt32(hex.Substring(4, 2), 16));
     }
 
     private static async Task<InlineStyleProbe> GetVisibleInlineStyleForTextAsync(IPage page, string text)

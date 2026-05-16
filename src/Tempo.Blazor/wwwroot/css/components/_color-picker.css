@@ -8,6 +8,11 @@
     z-index: var(--tm-z-dropdown);
 }
 
+.tm-color-picker--disabled {
+    opacity: 0.62;
+    pointer-events: none;
+}
+
 .tm-color-picker-trigger {
     display: flex;
     align-items: center;
@@ -64,6 +69,13 @@
     background: var(--tm-surface);
 }
 
-.tm-color-picker-apply {
-    margin: var(--tm-space-2) var(--tm-space-3) var(--tm-space-3);
+.tm-color-picker-actions {
+    display: flex;
+    justify-content: flex-end;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-2) var(--tm-space-3) var(--tm-space-3);
+}
+
+.tm-color-picker-actions .tm-btn {
+    white-space: nowrap;
 }

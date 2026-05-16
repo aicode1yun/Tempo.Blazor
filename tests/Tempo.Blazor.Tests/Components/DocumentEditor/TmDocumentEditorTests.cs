@@ -5,6 +5,7 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using System.Text.Json;
 using Tempo.Blazor.Components.DocumentEditor;
+using Tempo.Blazor.Components.Inputs;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -525,8 +526,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-font-family']").GetAttribute("value").Should().Be("Inter, sans-serif");
         cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("14");
-        cut.Find("[data-testid='document-font-color']").GetAttribute("value").Should().Be("#123456");
-        cut.Find("[data-testid='document-highlight-color']").GetAttribute("value").Should().Be("#abcdef");
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#123456");
+        cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#abcdef");
         cut.Find("[data-testid='document-line-spacing']").GetAttribute("value").Should().Be("1.5");
     }
 
@@ -583,8 +584,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-align-right']").GetAttribute("aria-pressed").Should().Be("true");
         cut.Find("[data-testid='document-font-family']").GetAttribute("value").Should().Be("Inter, sans-serif");
         cut.Find("[data-testid='document-font-size']").GetAttribute("value").Should().Be("14");
-        cut.Find("[data-testid='document-font-color']").GetAttribute("value").Should().Be("#123456");
-        cut.Find("[data-testid='document-highlight-color']").GetAttribute("value").Should().Be("#abcdef");
+        cut.Find("[data-testid='document-font-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#123456");
+        cut.Find("[data-testid='document-highlight-color-trigger'] .tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#abcdef");
         cut.Find("[data-testid='document-line-spacing']").GetAttribute("value").Should().Be("1.5");
     }
 
@@ -651,8 +652,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-font-family']").TextContent.Should().Contain("Georgia");
         cut.Find("[data-testid='document-font-size']").TextContent.Should().Contain("12");
-        cut.Find("[data-testid='document-font-color']").Should().NotBeNull();
-        cut.Find("[data-testid='document-highlight-color']").Should().NotBeNull();
+        cut.Find("[data-testid='document-font-color-trigger']").Should().NotBeNull();
+        cut.Find("[data-testid='document-highlight-color-trigger']").Should().NotBeNull();
     }
 
     [Fact]

@@ -2,6 +2,7 @@
 @using System.Globalization
 @using Microsoft.AspNetCore.Components.Forms
 @using Microsoft.AspNetCore.Components.Web
+@using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Components.Files
 @using Tempo.Blazor.DocumentEditor.Models
 
@@ -207,26 +208,44 @@
                     <TmIcon Name="eraser" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ClearFormatting"]</span>
                 </button>
-                <label class="tm-document-editor__ribbon-color" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontColor"]))">
-                    <TmIcon Name="palette" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_FontColor"]</span>
-                    <input type="color"
-                           value="@NormalizeColorValue(CurrentTextColor, "#111827")"
-                           disabled="@ReadOnly"
-                           aria-label="@Loc["TmDocumentEditor_FontColor"]"
-                           @onchange="HandleTextColorChangedAsync"
-                           data-testid="document-font-color" />
-                </label>
-                <label class="tm-document-editor__ribbon-color" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_HighlightColor"]))">
-                    <TmIcon Name="highlighter" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_HighlightColor"]</span>
-                    <input type="color"
-                           value="@NormalizeColorValue(CurrentHighlightColor, "#fff59d")"
-                           disabled="@ReadOnly"
-                           aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
-                           @onchange="HandleHighlightColorChangedAsync"
-                           data-testid="document-highlight-color" />
-                </label>
+                <div class="tm-document-editor__ribbon-color-picker"
+                     title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontColor"]))"
+                     @onpointerdown:preventDefault="true"
+                     @onmousedown:preventDefault="true">
+                    <TmColorPicker Value="@NormalizeColorValue(CurrentTextColor, "#111827")"
+                                   ValueChanged="HandleTextColorAppliedAsync"
+                                   Format="ColorFormat.Hex"
+                                   ShowAlpha="false"
+                                   ShowPalette="true"
+                                   ShowClearButton="false"
+                                   ShowApplyButton="true"
+                                   ShowCancelButton="true"
+                                   Disabled="@ReadOnly"
+                                   Placeholder="@Loc["TmDocumentEditor_FontColor"]"
+                                   ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
+                                   CancelText="@Loc["TmDocumentEditor_CancelColor"]"
+                                   Class="@GetTempoColorPickerClass(TextColorMixed)"
+                                   data-testid="document-font-color-trigger" />
+                </div>
+                <div class="tm-document-editor__ribbon-color-picker"
+                     title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_HighlightColor"]))"
+                     @onpointerdown:preventDefault="true"
+                     @onmousedown:preventDefault="true">
+                    <TmColorPicker Value="@NormalizeColorValue(CurrentHighlightColor, "#fff59d")"
+                                   ValueChanged="HandleHighlightColorAppliedAsync"
+                                   Format="ColorFormat.Hex"
+                                   ShowAlpha="false"
+                                   ShowPalette="true"
+                                   ShowClearButton="false"
+                                   ShowApplyButton="true"
+                                   ShowCancelButton="true"
+                                   Disabled="@ReadOnly"
+                                   Placeholder="@Loc["TmDocumentEditor_HighlightColor"]"
+                                   ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
+                                   CancelText="@Loc["TmDocumentEditor_CancelColor"]"
+                                   Class="@GetTempoColorPickerClass(HighlightColorMixed)"
+                                   data-testid="document-highlight-color-trigger" />
+                </div>
             </section>
 
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupParagraph"]">
@@ -1153,10 +1172,25 @@
         }
 
         var trimmed = value.Trim();
-        return trimmed.StartsWith('#') && (trimmed.Length == 7 || trimmed.Length == 4)
-            ? trimmed
+        if (!trimmed.StartsWith('#'))
+        {
+            trimmed = $"#{trimmed}";
+        }
+
+        if (trimmed.Length == 4 && trimmed.Skip(1).All(Uri.IsHexDigit))
+        {
+            return $"#{trimmed[1]}{trimmed[1]}{trimmed[2]}{trimmed[2]}{trimmed[3]}{trimmed[3]}".ToLowerInvariant();
+        }
+
+        return trimmed.Length == 7 && trimmed.Skip(1).All(Uri.IsHexDigit)
+            ? trimmed.ToLowerInvariant()
             : fallback;
     }
+
+    private static string GetTempoColorPickerClass(bool mixed)
+        => mixed
+            ? "tm-document-editor__ribbon-tempo-color-picker tm-document-editor__ribbon-tempo-color-picker--mixed"
+            : "tm-document-editor__ribbon-tempo-color-picker";
 
     private Task HandleReviewDisplayModeChanged(ChangeEventArgs args)
     {
@@ -1184,20 +1218,20 @@
             : Task.CompletedTask;
     }
 
-    private Task HandleTextColorChangedAsync(ChangeEventArgs args)
+    private Task HandleTextColorAppliedAsync(string? value)
     {
-        var value = args.Value?.ToString();
-        return string.IsNullOrWhiteSpace(value)
+        var normalized = NormalizeColorValue(value, string.Empty);
+        return string.IsNullOrWhiteSpace(normalized)
             ? Task.CompletedTask
-            : OnTextColorChanged.InvokeAsync(value);
+            : OnTextColorChanged.InvokeAsync(normalized);
     }
 
-    private Task HandleHighlightColorChangedAsync(ChangeEventArgs args)
+    private Task HandleHighlightColorAppliedAsync(string? value)
     {
-        var value = args.Value?.ToString();
-        return string.IsNullOrWhiteSpace(value)
+        var normalized = NormalizeColorValue(value, string.Empty);
+        return string.IsNullOrWhiteSpace(normalized)
             ? Task.CompletedTask
-            : OnHighlightColorChanged.InvokeAsync(value);
+            : OnHighlightColorChanged.InvokeAsync(normalized);
     }
 
     private Task HandleLineSpacingChangedAsync(ChangeEventArgs args)

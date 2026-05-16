@@ -52,6 +52,10 @@
   <data name="Tm_Yes" xml:space="preserve"><value>Yes</value></data>
   <data name="Tm_No" xml:space="preserve"><value>No</value></data>
 
+  <data name="TmColorPicker_SelectColor" xml:space="preserve"><value>Select color</value></data>
+  <data name="TmColorPalette_SelectColor" xml:space="preserve"><value>Select color</value></data>
+  <data name="TmColorPalette_Clear" xml:space="preserve"><value>Clear</value></data>
+
   <!-- ═══════════════ TmButton ═══════════════ -->
   <data name="TmButton_Loading" xml:space="preserve"><value>Loading</value></data>
 
@@ -2825,6 +2829,8 @@
   <data name="TmDocumentEditor_LinkTitle"              xml:space="preserve"><value>Link title</value></data>
   <data name="TmDocumentEditor_LinkInvalidUrl"         xml:space="preserve"><value>Enter a safe URL: http, https, mailto, tel, /path, or #anchor.</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Apply link</value></data>
+  <data name="TmDocumentEditor_ApplyColor"             xml:space="preserve"><value>Apply color</value></data>
+  <data name="TmDocumentEditor_CancelColor"            xml:space="preserve"><value>Cancel</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Cancel</value></data>
   <data name="TmDocumentEditor_Close"                  xml:space="preserve"><value>Close</value></data>
   <data name="TmDocumentEditor_ClearFormatting"        xml:space="preserve"><value>Clear formatting</value></data>

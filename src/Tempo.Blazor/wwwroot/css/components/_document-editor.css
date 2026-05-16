@@ -69,13 +69,15 @@
 }
 
 .tm-document-editor__ribbon {
+    position: relative;
+    z-index: 20;
     display: flex;
     flex-direction: column;
     gap: var(--tm-space-2);
     min-width: 0;
     max-width: 100%;
     padding: var(--tm-space-2) var(--tm-space-3);
-    overflow: hidden;
+    overflow: visible;
     background: var(--tm-color-surface);
     border-bottom: 1px solid var(--tm-color-border);
 }
@@ -117,8 +119,7 @@
     min-width: 0;
     max-width: 100%;
     min-height: 2.75rem;
-    overflow-x: auto;
-    overflow-y: hidden;
+    overflow: visible;
 }
 
 .tm-document-editor__ribbon-group {
