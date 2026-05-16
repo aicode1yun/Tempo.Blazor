@@ -44,8 +44,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj\Debug\net10.0\Tempo.Blazor.Demo.SharedUI.dll
-/refout:obj\Debug\net10.0\refint\Tempo.Blazor.Demo.SharedUI.dll
+/out:obj/Debug/net10.0/Tempo.Blazor.Demo.SharedUI.dll
+/refout:obj/Debug/net10.0/refint/Tempo.Blazor.Demo.SharedUI.dll
 /target:library
 /warnaserror-
 /utf8output
@@ -114,7 +114,7 @@ Validators/
  Tempo.Blazor.Demo.Shared/obj/Debug/net10.0/ref/Tempo.Blazor.Demo.Shared.dll
  Tempo.Blazor.FluentValidation/obj/Debug/net10.0/ref/Tempo.Blazor.FluentValidation.dll
  Tempo.Blazor/obj/Debug/net10.0/ref/Tempo.Blazor.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -322,18 +322,18 @@ Validators/
  zxing.net/0.16.10/lib/net9.0/zxing.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
  Microsoft.AspNetCore.Razor.Utilities.Shared.dll
  Microsoft.CodeAnalysis.Razor.Compiler.dll
  Microsoft.Extensions.ObjectPool.dll
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/
@@ -343,7 +343,7 @@ Validators/
  microsoft.extensions.validation/10.0.3/analyzers/dotnet/cs/Microsoft.Extensions.Validation.ValidationsGenerator.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.Demo.SharedUI.GeneratedMSBuildEditorConfig.editorconfig
 
 [additionalFiles]

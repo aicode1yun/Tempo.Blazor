@@ -44,8 +44,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj\Debug\net10.0\Tempo.Blazor.DocumentFormats.Tests.dll
-/refout:obj\Debug\net10.0\refint\Tempo.Blazor.DocumentFormats.Tests.dll
+/out:obj/Debug/net10.0/Tempo.Blazor.DocumentFormats.Tests.dll
+/refout:obj/Debug/net10.0/refint/Tempo.Blazor.DocumentFormats.Tests.dll
 /target:exe
 /warnaserror-
 /utf8output
@@ -55,6 +55,7 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 
 [sourceFiles]
 <NUGET>/microsoft.net.test.sdk/17.14.1/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
+ @folderNames=..,..,..,..,.nuget,packages,microsoft.net.test.sdk,17.14.1,build,net8.0
 DocumentDocxFormatTests.cs
 DocumentFormatTestData.cs
 DocumentHtmlExporterTests.cs
@@ -71,7 +72,7 @@ obj/Debug/net10.0/
 ../../src/
  Tempo.Blazor.Abstractions/obj/Debug/net10.0/ref/Tempo.Blazor.Abstractions.dll
  Tempo.Blazor.DocumentFormats/obj/Debug/net10.0/ref/Tempo.Blazor.DocumentFormats.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -262,14 +263,14 @@ obj/Debug/net10.0/
  xunit.extensibility.execution/2.9.3/lib/netstandard1.1/xunit.execution.dotnet.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/xunit.analyzers/1.18.0/analyzers/dotnet/cs/
@@ -277,5 +278,5 @@ obj/Debug/net10.0/
  xunit.analyzers.fixes.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.DocumentFormats.Tests.GeneratedMSBuildEditorConfig.editorconfig

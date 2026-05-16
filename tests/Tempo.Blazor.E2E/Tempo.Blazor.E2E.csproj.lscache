@@ -44,8 +44,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj\Debug\net10.0\Tempo.Blazor.E2E.dll
-/refout:obj\Debug\net10.0\refint\Tempo.Blazor.E2E.dll
+/out:obj/Debug/net10.0/Tempo.Blazor.E2E.dll
+/refout:obj/Debug/net10.0/refint/Tempo.Blazor.E2E.dll
 /target:exe
 /warnaserror-
 /utf8output
@@ -82,7 +82,6 @@ DocumentEditorJsRuntimeTableTests.cs
 DocumentEditorJsRuntimeUndoTests.cs
 DocumentEditorQualitySmokeTests.cs
 FormulaBuilderE2ETests.cs
-InteractiveAutoTests.cs
 NotionBlockEditingE2ETests.cs
 NotionBlockOpsE2ETests.cs
 NotionClipboardPasteE2ETests.cs
@@ -114,7 +113,6 @@ obj/Debug/net10.0/
 PdfTemplateDesignerE2ETests.cs
 PlaywrightTestBase.cs
 RecipientRoleEditorE2ETests.cs
-ServerRenderingTests.cs
 SignatureCaptureE2ETests.cs
 SigningDocumentCommentsE2ETests.cs
 SigningDocumentPageViewerE2ETests.cs
@@ -133,7 +131,7 @@ WireframeEditorE2ETests.cs
 ../../src/
  Tempo.Blazor.Abstractions/obj/Debug/net10.0/ref/Tempo.Blazor.Abstractions.dll
  Tempo.Blazor.DocumentFormats/obj/Debug/net10.0/ref/Tempo.Blazor.DocumentFormats.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -345,14 +343,14 @@ WireframeEditorE2ETests.cs
  system.io.packaging/8.0.1/lib/net8.0/System.IO.Packaging.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/mstest.analyzers/3.8.3/analyzers/dotnet/cs/
@@ -360,6 +358,6 @@ WireframeEditorE2ETests.cs
  MSTest.Analyzers.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 <NUGET>/mstest.analyzers/3.8.3/globalconfigs/mstest-default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.E2E.GeneratedMSBuildEditorConfig.editorconfig
