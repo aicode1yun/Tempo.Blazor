@@ -734,10 +734,10 @@ window.tmNotionEditor = (function () {
         const listeners = [];
 
         const onDrop = (e) => {
+            const files = Array.from(e.dataTransfer?.files || []);
+            if (files.length === 0) return; // block-reorder drag — let it bubble to container
             e.preventDefault();
             e.stopPropagation();
-            const files = Array.from(e.dataTransfer?.files || []);
-            if (files.length === 0) return;
             const file = files[0];
             const fr = new FileReader();
             fr.onload = () => dotNetRef.invokeMethodAsync(
@@ -811,6 +811,7 @@ window.tmNotionEditor = (function () {
             startW  = element.offsetWidth;
             document.body.style.cursor     = 'ew-resize';
             document.body.style.userSelect = 'none';
+            element.querySelectorAll('img').forEach(img => img.style.pointerEvents = 'none');
             disableIframes();
         };
         const onMove = (e) => {
@@ -821,6 +822,7 @@ window.tmNotionEditor = (function () {
             if (!isDown) return;
             isDown = false;
             document.body.style.cursor = document.body.style.userSelect = '';
+            element.querySelectorAll('img').forEach(img => img.style.pointerEvents = '');
             restoreIframes();
             dotNetRef.invokeMethodAsync('OnResize', element.offsetWidth, element.offsetHeight)
                      .catch(console.error);
@@ -838,6 +840,7 @@ window.tmNotionEditor = (function () {
                 handle.removeEventListener('mousedown', onDown);
                 document.removeEventListener('mousemove', onMove);
                 document.removeEventListener('mouseup',   onUp);
+                element.querySelectorAll('img').forEach(img => img.style.pointerEvents = '');
                 restoreIframes();
                 handle.parentNode?.removeChild(handle);
             }

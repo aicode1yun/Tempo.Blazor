@@ -214,6 +214,7 @@ Components/
  DocumentEditor/
   DocumentEditorEditRequests.cs
   DocumentEditorKeyboardManager.cs
+  DocumentSidePanelTab.cs
   TmDocumentBlockRenderer.razor.cs
   TmDocumentEditor.razor.cs
   TmDocumentInlineRenderer.razor.cs
@@ -911,6 +912,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor
@@ -1309,6 +1311,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor
@@ -1824,6 +1827,7 @@ Components/
  DocumentEditor/
   DocumentEditorEditRequests.cs
   DocumentEditorKeyboardManager.cs
+  DocumentSidePanelTab.cs
   TmDocumentBlockRenderer.razor.cs
   TmDocumentEditor.razor.cs
   TmDocumentInlineRenderer.razor.cs
@@ -2514,6 +2518,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor
@@ -2912,6 +2917,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor
@@ -3426,6 +3432,7 @@ Components/
  DocumentEditor/
   DocumentEditorEditRequests.cs
   DocumentEditorKeyboardManager.cs
+  DocumentSidePanelTab.cs
   TmDocumentBlockRenderer.razor.cs
   TmDocumentEditor.razor.cs
   TmDocumentInlineRenderer.razor.cs
@@ -4116,6 +4123,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor
@@ -4514,6 +4522,7 @@ Components/
   TmDocumentEditorStatusBar.razor
   TmDocumentEditorToolbar.razor
   TmDocumentInlineRenderer.razor
+  TmDocumentRevisionPanel.razor
   TmDocumentSidePanel.razor
   TmDocumentSuggestionPanel.razor
   TmDocumentTokenMenu.razor

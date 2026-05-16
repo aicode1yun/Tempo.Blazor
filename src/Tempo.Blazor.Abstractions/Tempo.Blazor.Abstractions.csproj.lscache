@@ -123,6 +123,7 @@ DocumentEditor/
   DocumentFonts.cs
   DocumentFormatProviderModels.cs
   DocumentInline.cs
+  DocumentLinkUtility.cs
   DocumentNotesHeadersRevisions.cs
   DocumentOfflineImagesRenditions.cs
   DocumentOperationalModels.cs
@@ -132,22 +133,28 @@ DocumentEditor/
   DocumentTextDiff.cs
   DocumentTokens.cs
   WysiwygBlockPayload.cs
+  WysiwygDebugSnapshot.cs
+  WysiwygDirtyState.cs
   WysiwygDocumentSnapshot.cs
   WysiwygEditorOptions.cs
   WysiwygEngineReadyEventArgs.cs
+  WysiwygFloatingUiModels.cs
+  WysiwygFormattingState.cs
   WysiwygImagePayload.cs
+  WysiwygLinkModels.cs
   WysiwygMarkPayload.cs
   WysiwygMutationRecord.cs
   WysiwygPatch.cs
+  WysiwygRemoteOperationBatchApplyResult.cs
+  WysiwygRevisionReviewRequest.cs
   WysiwygSelectionSnapshot.cs
-  WysiwygUiModels.cs
+  WysiwygUndoState.cs
  Services/
   DocumentAnchorMapBuilder.cs
   DocumentCollaborationSync.cs
   DocumentComparisonService.cs
   DocumentEditorNotionAdapter.cs
   DocumentHeaderFooterResolver.cs
-  DocumentLinkUtility.cs
   DocumentOperationApplier.cs
   DocumentOperationConflictResolver.cs
   DocumentOperationLog.cs
@@ -158,7 +165,6 @@ DocumentEditor/
   InMemoryDocumentCollaborationProvider.cs
   InMemoryDocumentEditorProvider.cs
   InMemoryDocumentSupportProviders.cs
-  SignalRDocumentCollaborationProvider.cs
   WysiwygPatchApplier.cs
 Interfaces/
  IBreadcrumbItem.cs
@@ -887,6 +893,7 @@ DocumentEditor/
   DocumentFonts.cs
   DocumentFormatProviderModels.cs
   DocumentInline.cs
+  DocumentLinkUtility.cs
   DocumentNotesHeadersRevisions.cs
   DocumentOfflineImagesRenditions.cs
   DocumentOperationalModels.cs
@@ -896,22 +903,28 @@ DocumentEditor/
   DocumentTextDiff.cs
   DocumentTokens.cs
   WysiwygBlockPayload.cs
+  WysiwygDebugSnapshot.cs
+  WysiwygDirtyState.cs
   WysiwygDocumentSnapshot.cs
   WysiwygEditorOptions.cs
   WysiwygEngineReadyEventArgs.cs
+  WysiwygFloatingUiModels.cs
+  WysiwygFormattingState.cs
   WysiwygImagePayload.cs
+  WysiwygLinkModels.cs
   WysiwygMarkPayload.cs
   WysiwygMutationRecord.cs
   WysiwygPatch.cs
+  WysiwygRemoteOperationBatchApplyResult.cs
+  WysiwygRevisionReviewRequest.cs
   WysiwygSelectionSnapshot.cs
-  WysiwygUiModels.cs
+  WysiwygUndoState.cs
  Services/
   DocumentAnchorMapBuilder.cs
   DocumentCollaborationSync.cs
   DocumentComparisonService.cs
   DocumentEditorNotionAdapter.cs
   DocumentHeaderFooterResolver.cs
-  DocumentLinkUtility.cs
   DocumentOperationApplier.cs
   DocumentOperationConflictResolver.cs
   DocumentOperationLog.cs
@@ -922,7 +935,6 @@ DocumentEditor/
   InMemoryDocumentCollaborationProvider.cs
   InMemoryDocumentEditorProvider.cs
   InMemoryDocumentSupportProviders.cs
-  SignalRDocumentCollaborationProvider.cs
   WysiwygPatchApplier.cs
 Interfaces/
  IBreadcrumbItem.cs
@@ -1646,6 +1658,7 @@ DocumentEditor/
   DocumentFonts.cs
   DocumentFormatProviderModels.cs
   DocumentInline.cs
+  DocumentLinkUtility.cs
   DocumentNotesHeadersRevisions.cs
   DocumentOfflineImagesRenditions.cs
   DocumentOperationalModels.cs
@@ -1655,22 +1668,28 @@ DocumentEditor/
   DocumentTextDiff.cs
   DocumentTokens.cs
   WysiwygBlockPayload.cs
+  WysiwygDebugSnapshot.cs
+  WysiwygDirtyState.cs
   WysiwygDocumentSnapshot.cs
   WysiwygEditorOptions.cs
   WysiwygEngineReadyEventArgs.cs
+  WysiwygFloatingUiModels.cs
+  WysiwygFormattingState.cs
   WysiwygImagePayload.cs
+  WysiwygLinkModels.cs
   WysiwygMarkPayload.cs
   WysiwygMutationRecord.cs
   WysiwygPatch.cs
+  WysiwygRemoteOperationBatchApplyResult.cs
+  WysiwygRevisionReviewRequest.cs
   WysiwygSelectionSnapshot.cs
-  WysiwygUiModels.cs
+  WysiwygUndoState.cs
  Services/
   DocumentAnchorMapBuilder.cs
   DocumentCollaborationSync.cs
   DocumentComparisonService.cs
   DocumentEditorNotionAdapter.cs
   DocumentHeaderFooterResolver.cs
-  DocumentLinkUtility.cs
   DocumentOperationApplier.cs
   DocumentOperationConflictResolver.cs
   DocumentOperationLog.cs
@@ -1681,7 +1700,6 @@ DocumentEditor/
   InMemoryDocumentCollaborationProvider.cs
   InMemoryDocumentEditorProvider.cs
   InMemoryDocumentSupportProviders.cs
-  SignalRDocumentCollaborationProvider.cs
   WysiwygPatchApplier.cs
 Interfaces/
  IBreadcrumbItem.cs
