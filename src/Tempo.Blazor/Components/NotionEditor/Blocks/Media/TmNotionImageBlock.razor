@@ -3,24 +3,45 @@
 @using Tempo.Blazor.NotionEditor.Enums
 @using Tempo.Blazor.Components.NotionEditor.UI
 
-<div class="tm-notion-image-block @_alignClass" @onfocus="HandleFocusAsync">
+<div class="tm-notion-image-block @_alignClass"
+     @ref="_blockRef"
+     tabindex="0"
+     @onfocus="HandleFocusAsync">
 
     @if (string.IsNullOrEmpty(Content?.Url))
     {
         @if (!ReadOnly)
         {
-            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--image"
-                    type="button"
-                    aria-label="@Loc["TmNotionImageBlock_AddImage"]"
-                    @onclick="OpenDialogAsync">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
-                    <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
-                    <path d="M3 16l5-5 4 4 3-3 4 4" stroke="currentColor" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span>@Loc["TmNotionImageBlock_AddImage"]</span>
-            </button>
+            <div class="tm-notion-drop-zone"
+                 data-testid="@(Context?.FileProvider != null ? "drop-zone" : null)"
+                 @ondragenter="HandleDragEnter"
+                 @ondragleave="HandleDragLeave"
+                 @ondragover:preventDefault
+                 @ondrop:preventDefault>
+
+                <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--image"
+                        type="button"
+                        aria-label="@Loc["TmNotionImageBlock_AddImage"]"
+                        @onclick="OpenDialogAsync">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <rect x="3" y="3" width="18" height="18" rx="2" stroke="currentColor" stroke-width="1.5"/>
+                        <circle cx="8.5" cy="8.5" r="1.5" fill="currentColor"/>
+                        <path d="M3 16l5-5 4 4 3-3 4 4" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>@Loc["TmNotionImageBlock_AddImage"]</span>
+                </button>
+
+                @if (Context?.FileProvider != null)
+                {
+                    <div class="tm-notion-drop-overlay @(_isDragging ? "tm-notion-drop-overlay--active" : "")"
+                         data-testid="drop-overlay"
+                         aria-hidden="true">
+                        <span>@Loc["TmNotionImageBlock_DropToUpload"]</span>
+                    </div>
+                }
+
+            </div>
 
             <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
                                        MediaType="image"

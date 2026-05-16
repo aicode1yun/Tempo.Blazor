@@ -3,10 +3,11 @@ using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
+using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.UI;
 
-public partial class TmNotionMediaUploadDialog : ComponentBase
+public partial class TmNotionMediaUploadDialog : ComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 
@@ -37,9 +38,23 @@ public partial class TmNotionMediaUploadDialog : ComponentBase
 
     private ElementReference _urlInputRef;
 
+    // ── Library state ─────────────────────────────────────────────────────────
+
+    private List<INotionMediaLibraryItem> _libraryItems     = [];
+    private string                        _libraryQuery     = string.Empty;
+    private bool                          _isLoadingLibrary;
+    private string?                       _libraryError;
+    private int                           _librarySkip;
+    private bool                          _libraryHasMore;
+    private bool                          _libraryLoaded;
+    private CancellationTokenSource?      _libraryCts;
+
+    private const int LibraryPageSize = 24;
+
     // ── Computed ─────────────────────────────────────────────────────────────
 
-    private bool CanUpload => Context?.FileProvider is not null;
+    private bool CanUpload         => Context?.FileProvider         is not null;
+    private bool CanBrowseLibrary  => Context?.MediaLibraryProvider is not null;
 
     private string _dialogTitle => MediaType switch
     {
@@ -59,15 +74,27 @@ public partial class TmNotionMediaUploadDialog : ComponentBase
         _       => "*/*"
     };
 
+    private string? _libraryMediaType => MediaType switch
+    {
+        "image" => "image",
+        "pdf"   => "pdf",
+        "file"  => "file",
+        _       => null
+    };
+
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
     protected override void OnParametersSet()
     {
-        if (!IsOpen) return;
-        _uploadError = null;
-        _embedUrl    = string.Empty;
-        _isDragging  = false;
-        _activeTab   = CanUpload ? "upload" : "embed";
+        if (!IsOpen)
+        {
+            ResetLibraryState();
+            return;
+        }
+        _uploadError  = null;
+        _embedUrl     = string.Empty;
+        _isDragging   = false;
+        _activeTab    = CanUpload ? "upload" : CanBrowseLibrary ? "library" : "embed";
     }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
@@ -77,9 +104,32 @@ public partial class TmNotionMediaUploadDialog : ComponentBase
             try { await JS.InvokeVoidAsync("tmNotionEditor.focus", _urlInputRef); }
             catch { }
         }
+
+        if (IsOpen && _activeTab == "library" && !_libraryLoaded && !_isLoadingLibrary)
+        {
+            await LoadLibraryAsync(reset: true);
+        }
     }
 
-    private void SetTab(string tab) => _activeTab = tab;
+    private void SetTab(string tab)
+    {
+        _activeTab = tab;
+        if (tab == "library" && !_libraryLoaded && !_isLoadingLibrary)
+            _ = LoadLibraryAsync(reset: true);
+    }
+
+    private void ResetLibraryState()
+    {
+        _libraryItems     = [];
+        _libraryQuery     = string.Empty;
+        _librarySkip      = 0;
+        _libraryHasMore   = false;
+        _libraryLoaded    = false;
+        _libraryError     = null;
+        _libraryCts?.Cancel();
+        _libraryCts?.Dispose();
+        _libraryCts = null;
+    }
 
     // ── Upload ────────────────────────────────────────────────────────────────
 
@@ -124,4 +174,73 @@ public partial class TmNotionMediaUploadDialog : ComponentBase
     }
 
     private async Task HandleCancelAsync() => await OnCancelled.InvokeAsync();
+
+    // ── Library ───────────────────────────────────────────────────────────────
+
+    private async Task OnLibrarySearchChangedAsync(ChangeEventArgs e)
+    {
+        _libraryQuery = e.Value?.ToString() ?? string.Empty;
+        await LoadLibraryAsync(reset: true);
+    }
+
+    private async Task LoadLibraryAsync(bool reset)
+    {
+        if (Context?.MediaLibraryProvider is null) return;
+
+        _libraryCts?.Cancel();
+        _libraryCts?.Dispose();
+        _libraryCts = new CancellationTokenSource();
+        var ct = _libraryCts.Token;
+
+        if (reset)
+        {
+            _libraryItems   = [];
+            _librarySkip    = 0;
+            _libraryHasMore = false;
+        }
+
+        _isLoadingLibrary = true;
+        _libraryError     = null;
+        StateHasChanged();
+
+        try
+        {
+            if (reset)
+                await Task.Delay(300, ct); // debounce on search change
+
+            var items = await Context.MediaLibraryProvider.SearchAsync(
+                _libraryQuery, _libraryMediaType, _librarySkip, LibraryPageSize, ct);
+
+            var list = items.ToList();
+            _libraryItems.AddRange(list);
+            _librarySkip   += list.Count;
+            _libraryHasMore = list.Count == LibraryPageSize;
+            _libraryLoaded  = true;
+        }
+        catch (OperationCanceledException) { return; }
+        catch
+        {
+            _libraryError = Loc["TmNotionMediaUploadDialog_LibraryError"];
+        }
+        finally
+        {
+            if (!ct.IsCancellationRequested)
+            {
+                _isLoadingLibrary = false;
+                StateHasChanged();
+            }
+        }
+    }
+
+    private async Task HandleLibraryItemSelectedAsync(INotionMediaLibraryItem item)
+        => await OnConfirmed.InvokeAsync((item.Id, item.Url));
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
+
+    public ValueTask DisposeAsync()
+    {
+        _libraryCts?.Cancel();
+        _libraryCts?.Dispose();
+        return ValueTask.CompletedTask;
+    }
 }

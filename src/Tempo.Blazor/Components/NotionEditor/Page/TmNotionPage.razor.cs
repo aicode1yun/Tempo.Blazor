@@ -105,6 +105,13 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private double _slashMenuLeft;
     private string _slashBlockId = string.Empty;
 
+    // ── Token dropdown state ──────────────────────────────────────────────────
+
+    private bool   _tokenDropdownVisible;
+    private double _tokenDropdownTop;
+    private double _tokenDropdownLeft;
+    private string _tokenBlockId = string.Empty;
+
     // ── Mention menu state ────────────────────────────────────────────────────
 
     private bool   _mentionMenuVisible;
@@ -775,6 +782,40 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _slashBlockId     = string.Empty;
         StateHasChanged();
         return Task.CompletedTask;
+    }
+
+    // ── Token dropdown handlers ────────────────────────────────────────────────
+
+    private Task HandleTokenMenuOpenedAsync((string BlockId, double Top, double Left) args)
+    {
+        _tokenBlockId          = args.BlockId;
+        _tokenDropdownTop      = args.Top;
+        _tokenDropdownLeft     = args.Left;
+        _tokenDropdownVisible  = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    private async Task HandleTokenItemSelectedAsync((string Key, string DisplayName, string? ColorClass) args)
+    {
+        _tokenDropdownVisible = false;
+        _tokenBlockId         = string.Empty;
+        StateHasChanged();
+
+        try
+        {
+            await JS.InvokeVoidAsync("tmNotionEditor.insertNotionToken", args.Key, args.DisplayName, args.ColorClass);
+        }
+        catch { }
+    }
+
+    private async Task HandleTokenDropdownClosedAsync()
+    {
+        _tokenDropdownVisible = false;
+        _tokenBlockId         = string.Empty;
+        StateHasChanged();
+
+        try { await JS.InvokeVoidAsync("tmNotionEditor.cancelTokenTrigger"); } catch { }
     }
 
     // ── Mention menu handlers ─────────────────────────────────────────────────

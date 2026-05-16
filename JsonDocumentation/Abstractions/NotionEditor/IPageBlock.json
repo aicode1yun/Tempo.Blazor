@@ -1,0 +1,28 @@
+{
+  "itemName": "IPageBlock",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Read-only view of a single content block within a page. Returned by INotionBlockProvider. The concrete type is PageBlock from Tempo.Blazor.NotionEditor.Models, which you can use directly or subclass.",
+  "properties": [
+    { "name": "Id",             "type": "Guid",          "isRequired": true,  "description": "Unique block identifier." },
+    { "name": "PageId",         "type": "Guid",          "isRequired": true,  "description": "ID of the page that owns this block." },
+    { "name": "ParentBlockId",  "type": "Guid?",         "isRequired": false, "description": "ID of the parent block for nested blocks (toggle children, column children). Null for top-level blocks." },
+    { "name": "Type",           "type": "BlockType",     "isRequired": true,  "description": "Block type enum (Paragraph, Heading1–3, BulletList, NumberedList, TodoItem, Toggle, Quote, Callout, Code, Image, Video, Audio, Pdf, File, Bookmark, Embed, Equation, ColumnList, Column, Database, Diagram, Wireframe, Spreadsheet, SyncedBlock, Divider, TableOfContents)." },
+    { "name": "Order",          "type": "int",           "isRequired": true,  "description": "Zero-based display order within the parent (page or container block)." },
+    { "name": "Content",        "type": "IBlockContent", "isRequired": true,  "description": "Typed content payload. Cast to the concrete content type matching the block's Type (e.g. TextBlockContent, ImageBlockContent, CodeBlockContent)." },
+    { "name": "CreatedAt",      "type": "DateTime",      "isRequired": true,  "description": "UTC creation timestamp." },
+    { "name": "LastEditedAt",   "type": "DateTime",      "isRequired": true,  "description": "UTC last-edit timestamp." }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "Creating a Paragraph block",
+      "code": "using Tempo.Blazor.NotionEditor.Models;\nusing Tempo.Blazor.NotionEditor.Enums;\n\nvar block = new PageBlock\n{\n    Id            = Guid.NewGuid(),\n    PageId        = pageId,\n    ParentBlockId = null,\n    Type          = BlockType.Paragraph,\n    Order         = 0,\n    Content       = new TextBlockContent { Html = \"Hello <strong>world</strong>\" },\n    CreatedAt     = DateTime.UtcNow,\n    LastEditedAt  = DateTime.UtcNow\n};"
+    },
+    {
+      "title": "Accessing typed content",
+      "code": "if (block.Type == BlockType.Image && block.Content is ImageBlockContent img)\n{\n    Console.WriteLine(img.Url);\n}\nelse if (block.Type is BlockType.Heading1 or BlockType.Heading2 or BlockType.Heading3\n         && block.Content is HeadingBlockContent h)\n{\n    Console.WriteLine($\"H{h.Level}: {h.Html}\");\n}"
+    }
+  ]
+}

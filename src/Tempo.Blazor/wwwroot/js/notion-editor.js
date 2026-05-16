@@ -8,7 +8,7 @@
  *   26.4  Slash menu           — getCaretCoords / getTextBeforeCaret
  *   26.5  Keyboard handler     — initKeyboardHandler  (Enter / Backspace / Tab / markdown)
  *   26.6  Inline math          — renderEquation / renderInlineMath  (KaTeX or fallback)
- *   26.7  Clipboard            — handlePaste / copyBlocksToClipboard
+ *   26.7  Clipboard            — handlePaste / copyBlocksToClipboard / initBlockPaste / destroyBlockPaste
  *   26.8  Resize handle        — initResizeHandle / destroyResizeHandle
  *   26.9  Scroll / nav         — scrollToBlock / initSmoothScrollSpy / destroyScrollSpy
  *   30.1  Cover drag           — startCoverDrag
@@ -34,6 +34,11 @@ window.tmNotionEditor = (function () {
     let _mentionAnchorNode = null; // text node position just before the trigger
     let _mentionAnchorOff  = 0;
     let _mentionTriggerLen = 1;    // 1 for '@', 2 for '[['
+
+    // ── Token menu state ────────────────────────────────────────────────────────
+    let _tokenElement    = null; // contenteditable that triggered the token menu
+    let _tokenAnchorNode = null; // text node position just before '{{'
+    let _tokenAnchorOff  = 0;
 
     // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -586,6 +591,15 @@ window.tmNotionEditor = (function () {
                 }
                 const c = getCaretCoords();
                 dotNetRef.invokeMethodAsync('OnPageLinkTriggered', c.top, c.left).catch(console.error);
+            } else if (text.endsWith('{{')) {
+                _tokenElement    = element;
+                const r3 = _range();
+                if (r3) {
+                    _tokenAnchorNode = r3.startContainer;
+                    _tokenAnchorOff  = Math.max(0, r3.startOffset - 2);
+                }
+                const c = getCaretCoords();
+                dotNetRef.invokeMethodAsync('OnTokenTriggered', c.top, c.left).catch(console.error);
             }
         };
 
@@ -672,6 +686,75 @@ window.tmNotionEditor = (function () {
         };
 
         state.listeners.push(_on(element, 'paste', onPaste));
+    }
+
+    // ── Paste on media blocks (image/pdf/file empty-state wrapper) ────────────
+
+    const _pasteBlocks = new WeakMap(); // element → { listeners: [] }
+
+    function initBlockPaste(element, dotNetRef) {
+        if (!element) return;
+        destroyBlockPaste(element);
+        const listeners = [];
+
+        const onPaste = (e) => {
+            const cd = e.clipboardData || window.clipboardData;
+            const imgItem = Array.from(cd.items || []).find(i => i.type.startsWith('image/'));
+            if (!imgItem) return;
+
+            e.preventDefault();
+            const file = imgItem.getAsFile();
+            if (!file) return;
+
+            const fr = new FileReader();
+            fr.onload = () => dotNetRef.invokeMethodAsync(
+                'OnImagePasted', fr.result, file.type, file.name || 'pasted-image'
+            ).catch(console.error);
+            fr.readAsDataURL(file);
+        };
+
+        listeners.push(_on(element, 'paste', onPaste));
+        _pasteBlocks.set(element, { listeners });
+    }
+
+    function destroyBlockPaste(element) {
+        const state = _pasteBlocks.get(element);
+        if (!state) return;
+        _offAll(state.listeners);
+        _pasteBlocks.delete(element);
+    }
+
+    // ── File drop on media blocks (image/pdf/file empty-state wrapper) ─────────
+
+    const _dropBlocks = new WeakMap(); // element → { listeners: [] }
+
+    function initBlockDropZone(element, dotNetRef) {
+        if (!element) return;
+        destroyBlockDropZone(element);
+        const listeners = [];
+
+        const onDrop = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            const files = Array.from(e.dataTransfer?.files || []);
+            if (files.length === 0) return;
+            const file = files[0];
+            const fr = new FileReader();
+            fr.onload = () => dotNetRef.invokeMethodAsync(
+                'OnFileDropped', fr.result, file.type, file.name || 'dropped-file'
+            ).catch(console.error);
+            fr.readAsDataURL(file);
+        };
+
+        listeners.push(_on(element, 'drop', onDrop));
+        _dropBlocks.set(element, { listeners });
+    }
+
+    function destroyBlockDropZone(element) {
+        const state = _dropBlocks.get(element);
+        if (!state) return;
+        _offAll(state.listeners);
+        _dropBlocks.delete(element);
     }
 
     function copyBlocksToClipboard(blocksJson) {
@@ -1093,6 +1176,63 @@ window.tmNotionEditor = (function () {
         _mentionAnchorNode = null;
         _mentionAnchorOff  = 0;
         _mentionTriggerLen = 1;
+    }
+
+    // ── Token insertion ────────────────────────────────────────────────────────
+
+    function insertNotionToken(key, displayName, colorClass) {
+        if (!_tokenElement) return;
+        try {
+            _tokenElement.focus();
+
+            const sel   = window.getSelection();
+            const range = document.createRange();
+            if (_tokenAnchorNode && _tokenElement.contains(_tokenAnchorNode)) {
+                range.setStart(_tokenAnchorNode, _tokenAnchorOff);
+            } else {
+                range.selectNodeContents(_tokenElement);
+                range.setStart(_tokenElement, 0);
+            }
+            const endRange = document.createRange();
+            endRange.selectNodeContents(_tokenElement);
+            range.setEnd(endRange.endContainer, endRange.endOffset);
+
+            sel.removeAllRanges();
+            sel.addRange(range);
+            document.execCommand('delete');
+
+            const chip = document.createElement('span');
+            chip.contentEditable = 'false';
+            chip.className = 'tm-notion-token' + (colorClass ? ' ' + colorClass : '');
+            chip.dataset.key = key;
+            chip.textContent  = displayName;
+
+            const curSel   = window.getSelection();
+            const curRange = curSel.getRangeAt(0);
+            curRange.insertNode(chip);
+            curRange.setStartAfter(chip);
+            curRange.collapse(true);
+            curSel.removeAllRanges();
+            curSel.addRange(curRange);
+
+            document.execCommand('insertText', false, ' ');
+
+            _tokenElement.dispatchEvent(new Event('input', { bubbles: true }));
+        } catch { /* ignore edge cases */ }
+
+        _tokenElement    = null;
+        _tokenAnchorNode = null;
+        _tokenAnchorOff  = 0;
+    }
+
+    function cancelTokenTrigger() {
+        if (_tokenElement) {
+            _tokenElement.focus();
+            _setCursorAtEnd(_tokenElement);
+        }
+        _tokenElement    = null;
+        _tokenAnchorNode = null;
+        _tokenAnchorOff  = 0;
     }
 
     // ═══════════════════════════════════════════════════════════════════════════
@@ -1726,6 +1866,8 @@ window.tmNotionEditor = (function () {
         renderEquation, renderInlineMath,
         // 26.7
         handlePaste, copyBlocksToClipboard,
+        initBlockPaste, destroyBlockPaste,
+        initBlockDropZone, destroyBlockDropZone,
         // 26.8
         initResizeHandle, destroyResizeHandle,
         // 54.0
@@ -1751,6 +1893,7 @@ window.tmNotionEditor = (function () {
         getRecentSlashItems, addRecentSlashItem,
         clearSlashQuery, refocusSlashElement,
         insertMentionChip, cancelMentionTrigger,
+        insertNotionToken, cancelTokenTrigger,
         adjustSlashMenuPosition, scrollSlashItemIntoView,
         // 44.1
         initSelectionWatcher, destroySelectionWatcher,

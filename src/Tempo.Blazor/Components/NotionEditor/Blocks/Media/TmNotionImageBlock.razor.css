@@ -39,6 +39,36 @@
     color:           var(--tm-text-tertiary, #ccc);
 }
 
+/* ── Drop zone ────────────────────────────────────────────────── */
+
+.tm-notion-drop-zone {
+    position: relative;
+    width:    100%;
+}
+
+.tm-notion-drop-overlay {
+    position:        absolute;
+    inset:           0;
+    display:         flex;
+    align-items:     center;
+    justify-content: center;
+    border-radius:   var(--tm-radius-md, 6px);
+    border:          2px dashed var(--tm-color-primary, #0072f5);
+    background:      rgba(0, 114, 245, 0.06);
+    color:           var(--tm-color-primary, #0072f5);
+    font-size:       13px;
+    font-weight:     500;
+    pointer-events:  none;
+    opacity:         0;
+    transition:      opacity var(--tm-notion-anim-fast, 120ms);
+    z-index:         10;
+}
+
+.tm-notion-drop-overlay--active {
+    opacity:        1;
+    pointer-events: none;
+}
+
 /* ── Alignment variants ───────────────────────────────────────── */
 
 .tm-notion-image-block--center .tm-notion-image-block__figure,

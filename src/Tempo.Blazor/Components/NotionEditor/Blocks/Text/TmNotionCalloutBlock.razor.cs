@@ -51,6 +51,9 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' page-link syntax is typed. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     /// <summary>
     /// Fired when the emoji icon is changed or removed.
     /// Arg = new emoji string, or null when the user removes the icon.
@@ -203,6 +206,10 @@ public partial class TmNotionCalloutBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

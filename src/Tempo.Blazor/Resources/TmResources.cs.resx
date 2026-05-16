@@ -1188,6 +1188,13 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Nahrávání…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Nahrávání selhalo. Zkuste to znovu.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>Nahrávání souborů není nakonfigurováno.</value></data>
+  <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Knihovna</value></data>
+  <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Hledat v médiích…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryEmpty"       xml:space="preserve"><value>Žádná média nenalezena.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryError"       xml:space="preserve"><value>Načtení médií selhalo. Zkuste to znovu.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoadMore"    xml:space="preserve"><value>Načíst více</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryGridLabel"   xml:space="preserve"><value>Knihovna médií</value></data>
   <!-- Phase 52: Image Block -->
   <data name="TmNotionImageBlock_AddImage"                   xml:space="preserve"><value>Přidat obrázek</value></data>
   <data name="TmNotionImageBlock_ReplaceImage"               xml:space="preserve"><value>Nahradit</value></data>
@@ -1196,6 +1203,7 @@
   <data name="TmNotionImageBlock_AlignCenter"                xml:space="preserve"><value>Na střed</value></data>
   <data name="TmNotionImageBlock_AlignFull"                  xml:space="preserve"><value>Plná šířka</value></data>
   <data name="TmNotionImageBlock_AlignmentLabel"             xml:space="preserve"><value>Zarovnání obrázku</value></data>
+  <data name="TmNotionImageBlock_DropToUpload"               xml:space="preserve"><value>Přetáhněte pro nahrání</value></data>
   <!-- Phase 52: Video Block -->
   <data name="TmNotionVideoBlock_AddVideo"                   xml:space="preserve"><value>Přidat video</value></data>
   <data name="TmNotionVideoBlock_Replace"                    xml:space="preserve"><value>Nahradit</value></data>
@@ -1209,8 +1217,10 @@
   <data name="TmNotionFileBlock_Replace"                     xml:space="preserve"><value>Nahradit</value></data>
   <data name="TmNotionFileBlock_Download"                    xml:space="preserve"><value>Stáhnout</value></data>
   <data name="TmNotionFileBlock_CaptionPlaceholder"          xml:space="preserve"><value>Přidat popisek…</value></data>
+  <data name="TmNotionFileBlock_DropToUpload"                xml:space="preserve"><value>Přetáhněte pro nahrání</value></data>
   <!-- Phase 52: PDF Block -->
   <data name="TmNotionPdfBlock_AddPdf"                       xml:space="preserve"><value>Přidat PDF</value></data>
+  <data name="TmNotionPdfBlock_DropToUpload"                 xml:space="preserve"><value>Přetáhněte pro nahrání</value></data>
   <data name="TmNotionPdfBlock_CaptionPlaceholder"           xml:space="preserve"><value>Přidat popisek…</value></data>
   <data name="TmNotionPdfBlock_Open"                         xml:space="preserve"><value>Otevřít</value></data>
   <data name="TmNotionPdfBlock_Download"                     xml:space="preserve"><value>Stáhnout</value></data>
@@ -3056,5 +3066,11 @@
   <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>WYSIWYG editor není dostupný</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>WYSIWYG editační engine se nepodařilo načíst. Použijte prosím blokový editor nebo obnovte stránku.</value></data>
   <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Dokument se nepodařilo aktualizovat. Zkuste to znovu nebo obnovte stránku.</value></data>
+
+  <!-- Phase 4: Token Dropdown -->
+  <data name="TmNotionTokenDropdown_Label"              xml:space="preserve"><value>Vložit token</value></data>
+  <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Hledat tokeny…</value></data>
+  <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>Žádné tokeny nenalezeny</value></data>
+  <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Načítání…</value></data>
 
 </root>

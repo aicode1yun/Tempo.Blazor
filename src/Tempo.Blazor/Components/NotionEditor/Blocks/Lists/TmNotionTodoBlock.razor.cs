@@ -55,6 +55,9 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' is typed. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                             _editableRef;
@@ -191,6 +194,10 @@ public partial class TmNotionTodoBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

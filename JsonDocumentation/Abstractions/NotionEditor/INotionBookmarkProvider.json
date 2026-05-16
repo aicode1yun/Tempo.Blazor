@@ -1,0 +1,22 @@
+{
+  "itemName": "INotionBookmarkProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables Bookmark blocks in TmNotionEditor. When the user pastes a URL into a bookmark block, the editor calls this provider to fetch Open Graph metadata (title, description, image). Without this provider the bookmark block shows a plain URL link.",
+  "methods": [
+    {
+      "name": "ResolveBookmarkAsync",
+      "returnType": "Task<IBookmarkBlockContent>",
+      "description": "Fetches Open Graph / meta tags for the given URL and returns the resolved metadata.",
+      "parameters": [{ "name": "url", "type": "string", "description": "The URL to resolve." }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "Simple server-side OG resolver",
+      "code": "public class OgBookmarkProvider : INotionBookmarkProvider\n{\n    private readonly HttpClient _http;\n\n    public OgBookmarkProvider(HttpClient http) => _http = http;\n\n    public async Task<IBookmarkBlockContent> ResolveBookmarkAsync(string url)\n    {\n        // Call your backend proxy that fetches OG tags\n        var result = await _http.GetFromJsonAsync<BookmarkDto>($\"/api/og?url={Uri.EscapeDataString(url)}\");\n        return new BookmarkBlockContent\n        {\n            Url         = url,\n            Title       = result?.Title,\n            Description = result?.Description,\n            ImageUrl    = result?.Image,\n            FaviconUrl  = result?.Favicon\n        };\n    }\n}"
+    }
+  ]
+}

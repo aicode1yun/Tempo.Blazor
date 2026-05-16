@@ -1,14 +1,19 @@
 using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Blocks.Media;
 
-public partial class TmNotionPdfBlock : ComponentBase
+public partial class TmNotionPdfBlock : ComponentBase, IAsyncDisposable
 {
     // ── DI ───────────────────────────────────────────────────────────────────
 
     [Inject] private IJSRuntime JS { get; set; } = default!;
+
+    // ── Cascading ─────────────────────────────────────────────────────────────
+
+    [CascadingParameter] private NotionEditorContext? Context { get; set; }
 
     // ── Parameters ───────────────────────────────────────────────────────────
 
@@ -22,14 +27,18 @@ public partial class TmNotionPdfBlock : ComponentBase
 
     // ── State ────────────────────────────────────────────────────────────────
 
-    private ElementReference  _captionRef;
-    private bool              _captionInitialized;
-    private bool              _captionDirty;
-    private int               _currentPage = 1;
-    private double            _scale        = 1.0;
-    private int               _height       = 600;
-    private IPdfBlockContent? _lastContent;
-    private bool              _dialogOpen;
+    private ElementReference                         _blockRef;
+    private ElementReference                         _captionRef;
+    private DotNetObjectReference<TmNotionPdfBlock>? _dotNetRef;
+    private bool                                     _dropZoneInitialized;
+    private bool                                     _captionInitialized;
+    private bool                                     _captionDirty;
+    private int                                      _currentPage = 1;
+    private double                                   _scale        = 1.0;
+    private int                                      _height       = 600;
+    private IPdfBlockContent?                        _lastContent;
+    private bool                                     _dialogOpen;
+    private bool                                     _isDragging;
 
     // ── Lifecycle ────────────────────────────────────────────────────────────
 
@@ -45,6 +54,18 @@ public partial class TmNotionPdfBlock : ComponentBase
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
+        if (!ReadOnly)
+        {
+            _dotNetRef ??= DotNetObjectReference.Create(this);
+
+            if (!_dropZoneInitialized && Context?.FileProvider != null)
+            {
+                _dropZoneInitialized = true;
+                try { await JS.InvokeVoidAsync("tmNotionEditor.initBlockDropZone", _blockRef, _dotNetRef); }
+                catch { }
+            }
+        }
+
         if (string.IsNullOrEmpty(Content?.Url)) return;
 
         if (!_captionInitialized)
@@ -57,6 +78,28 @@ public partial class TmNotionPdfBlock : ComponentBase
             }
         }
     }
+
+    // ── JS callbacks ──────────────────────────────────────────────────────────
+
+    [JSInvokable]
+    public async Task OnFileDropped(string dataUrl, string mimeType, string fileName)
+    {
+        if (ReadOnly || Context?.FileProvider == null) return;
+
+        var base64 = dataUrl[(dataUrl.IndexOf(',') + 1)..];
+        var bytes  = Convert.FromBase64String(base64);
+        using var stream = new MemoryStream(bytes);
+
+        var fileId = await Context.FileProvider.UploadFileAsync(stream, fileName, mimeType);
+        var url    = await Context.FileProvider.GetFileUrlAsync(fileId);
+        await OnMediaSet.InvokeAsync((fileId, url));
+        await InvokeAsync(StateHasChanged);
+    }
+
+    // ── Drag and drop ────────────────────────────────────────────────────────
+
+    private void HandleDragEnter() { if (Context?.FileProvider == null) return; _isDragging = true; }
+    private void HandleDragLeave() { _isDragging = false; }
 
     // ── Caption ───────────────────────────────────────────────────────────────
 
@@ -86,4 +129,16 @@ public partial class TmNotionPdfBlock : ComponentBase
     // ── Focus ─────────────────────────────────────────────────────────────────
 
     private async Task HandleFocusAsync() => await OnFocused.InvokeAsync();
+
+    // ── Dispose ───────────────────────────────────────────────────────────────
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_dropZoneInitialized)
+        {
+            try { await JS.InvokeVoidAsync("tmNotionEditor.destroyBlockDropZone", _blockRef); }
+            catch { }
+        }
+        _dotNetRef?.Dispose();
+    }
 }

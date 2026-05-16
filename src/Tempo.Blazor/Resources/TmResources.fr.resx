@@ -1614,6 +1614,13 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Téléversement…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Échec du téléversement. Veuillez réessayer.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>Le téléversement de fichiers n'est pas configuré.</value></data>
+  <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Bibliothèque</value></data>
+  <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Rechercher des médias…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryEmpty"       xml:space="preserve"><value>Aucun média trouvé.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryError"       xml:space="preserve"><value>Échec du chargement des médias. Veuillez réessayer.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoadMore"    xml:space="preserve"><value>Charger plus</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryGridLabel"   xml:space="preserve"><value>Bibliothèque de médias</value></data>
   <!-- Phase 52: Image Block -->
   <data name="TmNotionImageBlock_AddImage"                   xml:space="preserve"><value>Ajouter une image</value></data>
   <data name="TmNotionImageBlock_ReplaceImage"               xml:space="preserve"><value>Remplacer</value></data>
@@ -1622,6 +1629,7 @@
   <data name="TmNotionImageBlock_AlignCenter"                xml:space="preserve"><value>Centrer</value></data>
   <data name="TmNotionImageBlock_AlignFull"                  xml:space="preserve"><value>Pleine largeur</value></data>
   <data name="TmNotionImageBlock_AlignmentLabel"             xml:space="preserve"><value>Alignement de l'image</value></data>
+  <data name="TmNotionImageBlock_DropToUpload"               xml:space="preserve"><value>Déposer pour téléverser</value></data>
   <!-- Phase 52: Video Block -->
   <data name="TmNotionVideoBlock_AddVideo"                   xml:space="preserve"><value>Ajouter une vidéo</value></data>
   <data name="TmNotionVideoBlock_Replace"                    xml:space="preserve"><value>Remplacer</value></data>
@@ -1635,8 +1643,10 @@
   <data name="TmNotionFileBlock_Replace"                     xml:space="preserve"><value>Remplacer</value></data>
   <data name="TmNotionFileBlock_Download"                    xml:space="preserve"><value>Télécharger</value></data>
   <data name="TmNotionFileBlock_CaptionPlaceholder"          xml:space="preserve"><value>Ajouter une légende…</value></data>
+  <data name="TmNotionFileBlock_DropToUpload"                xml:space="preserve"><value>Déposer pour téléverser</value></data>
   <!-- Phase 52: PDF Block -->
   <data name="TmNotionPdfBlock_AddPdf"                       xml:space="preserve"><value>Ajouter un PDF</value></data>
+  <data name="TmNotionPdfBlock_DropToUpload"                 xml:space="preserve"><value>Déposer pour téléverser</value></data>
   <data name="TmNotionPdfBlock_CaptionPlaceholder"           xml:space="preserve"><value>Ajouter une légende…</value></data>
   <data name="TmNotionPdfBlock_Open"                         xml:space="preserve"><value>Ouvrir</value></data>
   <data name="TmNotionPdfBlock_Download"                     xml:space="preserve"><value>Télécharger</value></data>
@@ -2646,5 +2656,11 @@
   <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>Éditeur WYSIWYG indisponible</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>Le moteur d'édition WYSIWYG n'a pas pu être chargé. Veuillez utiliser l'éditeur par blocs ou recharger la page.</value></data>
   <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Le document n'a pas pu être mis à jour. Veuillez réessayer ou recharger la page.</value></data>
+
+  <!-- Phase 4: Token Dropdown -->
+  <data name="TmNotionTokenDropdown_Label"              xml:space="preserve"><value>Insérer un jeton</value></data>
+  <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Rechercher des jetons…</value></data>
+  <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>Aucun jeton trouvé</value></data>
+  <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Chargement…</value></data>
 
 </root>

@@ -62,6 +62,9 @@ public partial class TmNotionBlockList : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' page-link syntax is typed in a block (blockId, top, left).</summary>
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed in a block (blockId, top, left).</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu { get; set; }
+
     /// <summary>Fired when a template button block inserts its template blocks after itself.</summary>
     [Parameter] public EventCallback<(string AfterBlockId, IReadOnlyList<IPageBlock> Blocks)> OnInsertTemplateBlocksAfter { get; set; }
 

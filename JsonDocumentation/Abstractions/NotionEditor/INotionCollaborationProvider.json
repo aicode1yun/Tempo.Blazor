@@ -1,0 +1,60 @@
+{
+  "itemName": "INotionCollaborationProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables real-time collaboration in TmNotionEditor — live cursor presence indicators and block change broadcasting. Typically implemented over SignalR. Collaboration features are hidden when this provider is not supplied.",
+  "properties": [
+    {
+      "name": "OnBlockChanged",
+      "type": "IObservable<BlockChange>",
+      "isRequired": true,
+      "description": "Observable stream of remote block changes broadcast by other collaborators. The editor subscribes to this and reloads affected blocks when an event arrives."
+    },
+    {
+      "name": "OnCursorMoved",
+      "type": "IObservable<CollaboratorCursor>",
+      "isRequired": true,
+      "description": "Observable stream of cursor position updates from other collaborators. Used to render live cursor overlays."
+    }
+  ],
+  "methods": [
+    {
+      "name": "JoinPageAsync",
+      "returnType": "Task",
+      "description": "Registers the current user as an active collaborator on the page. Called when the editor navigates to a page.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "userId", "type": "string" }
+      ]
+    },
+    {
+      "name": "LeavePageAsync",
+      "returnType": "Task",
+      "description": "Removes the current user from the active collaborators list. Called on page navigation away and component disposal.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "userId", "type": "string" }
+      ]
+    },
+    {
+      "name": "BroadcastBlockChangeAsync",
+      "returnType": "Task",
+      "description": "Broadcasts a block mutation to all other collaborators on the page.",
+      "parameters": [{ "name": "change", "type": "BlockChange", "description": "Describes which block changed and how." }]
+    },
+    {
+      "name": "BroadcastCursorAsync",
+      "returnType": "Task",
+      "description": "Broadcasts the current user's caret position to other collaborators.",
+      "parameters": [{ "name": "cursor", "type": "CollaboratorCursor" }]
+    },
+    {
+      "name": "GetActiveCollaboratorsAsync",
+      "returnType": "Task<IEnumerable<CollaboratorCursor>>",
+      "description": "Returns the current cursor positions of all other active collaborators on the page. Called on initial join.",
+      "parameters": [{ "name": "pageId", "type": "string" }]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

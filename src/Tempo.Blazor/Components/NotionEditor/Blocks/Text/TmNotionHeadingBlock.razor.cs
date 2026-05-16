@@ -52,6 +52,9 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' page-link is triggered. Args = (top, left) caret coords.</summary>
     [Parameter] public EventCallback<(double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(double Top, double Left)> OnTokenMenu       { get; set; }
+
     /// <summary>Fired when the toggle arrow is clicked. Bool = new isOpen state.</summary>
     [Parameter] public EventCallback<bool>                      OnToggleChanged   { get; set; }
 
@@ -186,6 +189,10 @@ public partial class TmNotionHeadingBlock : ComponentBase, IAsyncDisposable
     [JSInvokable]
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((top, left));
+
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((top, left));
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

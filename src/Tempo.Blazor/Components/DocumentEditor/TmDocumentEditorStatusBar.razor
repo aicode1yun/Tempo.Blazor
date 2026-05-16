@@ -1,0 +1,65 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Localization
+@inject ITmLocalizer Loc
+
+<div class="tm-document-editor__status-bar"
+     data-testid="document-status-bar"
+     aria-label="@Loc["TmDocumentEditor_StatusBarLabel"]"
+     role="status">
+
+    @if (IsDirty)
+    {
+        <span class="tm-document-editor__status-dirty" data-testid="document-dirty-status">
+            @Loc["TmDocumentEditor_UnsavedChanges"]
+        </span>
+    }
+
+    @if (!string.IsNullOrEmpty(SaveMessage))
+    {
+        <span class="tm-document-editor__status-save" data-testid="document-save-message">
+            @SaveMessage
+        </span>
+    }
+
+    @if (WordCount.HasValue)
+    {
+        <span class="tm-document-editor__status-words" data-testid="document-status-word-count">
+            @Loc["TmDocumentEditor_WordCount", WordCount.Value]
+        </span>
+    }
+
+    @if (PageCount.HasValue)
+    {
+        <span class="tm-document-editor__status-pages" data-testid="document-status-page-count">
+            @Loc["TmDocumentEditor_PageCount", PageCount.Value]
+        </span>
+    }
+
+    @if (!string.IsNullOrEmpty(ActiveRegionLabel))
+    {
+        <span class="tm-document-editor__status-region" data-testid="document-status-region">
+            @Loc["TmDocumentEditor_ActiveRegion", ActiveRegionLabel]
+        </span>
+    }
+
+    @if (!string.IsNullOrEmpty(ZoomLabel))
+    {
+        <span class="tm-document-editor__status-zoom" data-testid="document-status-zoom">
+            @ZoomLabel
+        </span>
+    }
+</div>
+
+@code {
+    [Parameter] public bool IsDirty { get; set; }
+    [Parameter] public string? SaveMessage { get; set; }
+    [Parameter] public DateTimeOffset? LastSavedAt { get; set; }
+    [Parameter] public int? WordCount { get; set; }
+    [Parameter] public int? PageCount { get; set; }
+    [Parameter] public string? ActiveRegionLabel { get; set; }
+    [Parameter] public string? ZoomLabel { get; set; }
+    [Parameter] public int? ZoomPercent { get; set; }
+    [Parameter] public bool ZoomPageWidth { get; set; }
+    [Parameter] public EventCallback<int> ZoomPercentChanged { get; set; }
+    [Parameter] public EventCallback<bool> ZoomPageWidthChanged { get; set; }
+}

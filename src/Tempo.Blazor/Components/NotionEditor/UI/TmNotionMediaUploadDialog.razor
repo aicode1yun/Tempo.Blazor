@@ -34,6 +34,17 @@
                         @Loc["TmNotionMediaUploadDialog_TabUpload"]
                     </button>
                 }
+                @if (CanBrowseLibrary)
+                {
+                    <button class="tm-media-dialog__tab @(_activeTab == "library" ? "tm-media-dialog__tab--active" : "")"
+                            role="tab"
+                            aria-selected="@(_activeTab == "library").ToString().ToLower()"
+                            type="button"
+                            data-tab="library"
+                            @onclick='() => SetTab("library")'>
+                        @Loc["TmNotionMediaUploadDialog_TabLibrary"]
+                    </button>
+                }
                 <button class="tm-media-dialog__tab @(_activeTab == "embed" ? "tm-media-dialog__tab--active" : "")"
                         role="tab"
                         aria-selected="@(_activeTab == "embed").ToString().ToLower()"
@@ -79,6 +90,87 @@
                     {
                         <div class="tm-media-dialog__error" role="alert">@_uploadError</div>
                     }
+                }
+                else if (_activeTab == "library")
+                {
+                    <div class="tm-media-library">
+                        <div class="tm-media-library__search">
+                            <input class="tm-media-library__search-input"
+                                   type="search"
+                                   placeholder="@Loc["TmNotionMediaUploadDialog_LibrarySearch"]"
+                                   value="@_libraryQuery"
+                                   @oninput="OnLibrarySearchChangedAsync"
+                                   aria-label="@Loc["TmNotionMediaUploadDialog_LibrarySearch"]" />
+                        </div>
+
+                        @if (_isLoadingLibrary && !_libraryItems.Any())
+                        {
+                            <div class="tm-media-dialog__status tm-media-library__status">
+                                <span class="tm-media-dialog__spinner" aria-hidden="true"></span>
+                                <span>@Loc["TmNotionMediaUploadDialog_LibraryLoading"]</span>
+                            </div>
+                        }
+                        else if (!string.IsNullOrEmpty(_libraryError))
+                        {
+                            <div class="tm-media-dialog__error" role="alert">@_libraryError</div>
+                        }
+                        else if (_libraryLoaded && !_libraryItems.Any())
+                        {
+                            <div class="tm-media-library__empty">@Loc["TmNotionMediaUploadDialog_LibraryEmpty"]</div>
+                        }
+                        else
+                        {
+                            <div class="tm-media-library__grid" role="grid"
+                                 aria-label="@Loc["TmNotionMediaUploadDialog_LibraryGridLabel"]">
+                                @foreach (var item in _libraryItems)
+                                {
+                                    <button class="tm-media-library__item"
+                                            type="button"
+                                            role="gridcell"
+                                            title="@item.Name"
+                                            @onclick="() => HandleLibraryItemSelectedAsync(item)">
+                                        @if (!string.IsNullOrEmpty(item.ThumbnailUrl))
+                                        {
+                                            <img src="@item.ThumbnailUrl"
+                                                 alt="@item.Name"
+                                                 class="tm-media-library__item-thumb"
+                                                 loading="lazy"
+                                                 draggable="false" />
+                                        }
+                                        else
+                                        {
+                                            <div class="tm-media-library__item-icon" aria-hidden="true">
+                                                <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
+                                                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
+                                                          stroke="currentColor" stroke-width="1.5"
+                                                          stroke-linecap="round" stroke-linejoin="round"/>
+                                                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
+                                                          stroke-linecap="round"/>
+                                                </svg>
+                                            </div>
+                                        }
+                                        <span class="tm-media-library__item-name">@item.Name</span>
+                                    </button>
+                                }
+                            </div>
+
+                            @if (_libraryHasMore)
+                            {
+                                <div class="tm-media-library__more">
+                                    <button class="tm-media-library__more-btn"
+                                            type="button"
+                                            disabled="@_isLoadingLibrary"
+                                            @onclick="() => LoadLibraryAsync(reset: false)">
+                                        @if (_isLoadingLibrary)
+                                        {
+                                            <span class="tm-media-dialog__spinner" aria-hidden="true"></span>
+                                        }
+                                        @Loc["TmNotionMediaUploadDialog_LibraryLoadMore"]
+                                    </button>
+                                </div>
+                            }
+                        }
+                    </div>
                 }
                 else
                 {

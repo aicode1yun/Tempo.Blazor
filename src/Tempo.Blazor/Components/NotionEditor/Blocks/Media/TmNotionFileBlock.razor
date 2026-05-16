@@ -2,25 +2,46 @@
 @using Tempo.Blazor.NotionEditor.Models
 @using Tempo.Blazor.Components.NotionEditor.UI
 
-<div class="tm-notion-file-block" @onfocus="HandleFocusAsync">
+<div class="tm-notion-file-block"
+     @ref="_blockRef"
+     tabindex="0"
+     @onfocus="HandleFocusAsync">
 
     @if (string.IsNullOrEmpty(Content?.Url))
     {
         @if (!ReadOnly)
         {
-            <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--file"
-                    type="button"
-                    aria-label="@Loc["TmNotionFileBlock_AddFile"]"
-                    @onclick="OpenDialogAsync">
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-                    <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
-                          stroke="currentColor" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                    <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
-                          stroke-linecap="round" stroke-linejoin="round"/>
-                </svg>
-                <span>@Loc["TmNotionFileBlock_AddFile"]</span>
-            </button>
+            <div class="tm-notion-drop-zone"
+                 data-testid="@(Context?.FileProvider != null ? "drop-zone" : null)"
+                 @ondragenter="HandleDragEnter"
+                 @ondragleave="HandleDragLeave"
+                 @ondragover:preventDefault
+                 @ondrop:preventDefault>
+
+                <button class="tm-notion-media-upload-zone tm-notion-media-upload-zone--file"
+                        type="button"
+                        aria-label="@Loc["TmNotionFileBlock_AddFile"]"
+                        @onclick="OpenDialogAsync">
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8L14 2z"
+                              stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                        <path d="M14 2v6h6" stroke="currentColor" stroke-width="1.5"
+                              stroke-linecap="round" stroke-linejoin="round"/>
+                    </svg>
+                    <span>@Loc["TmNotionFileBlock_AddFile"]</span>
+                </button>
+
+                @if (Context?.FileProvider != null)
+                {
+                    <div class="tm-notion-drop-overlay @(_isDragging ? "tm-notion-drop-overlay--active" : "")"
+                         data-testid="drop-overlay"
+                         aria-hidden="true">
+                        <span>@Loc["TmNotionFileBlock_DropToUpload"]</span>
+                    </div>
+                }
+
+            </div>
 
             <TmNotionMediaUploadDialog IsOpen="_dialogOpen"
                                        MediaType="file"

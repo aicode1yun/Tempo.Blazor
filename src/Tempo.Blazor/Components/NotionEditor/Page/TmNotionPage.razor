@@ -93,6 +93,7 @@
                                        OnSlashMenu="HandleSlashMenuOpenedAsync"
                                        OnMentionMenu="HandleMentionMenuOpenedAsync"
                                        OnPageLinkMenu="HandlePageLinkMenuOpenedAsync"
+                                       OnTokenMenu="HandleTokenMenuOpenedAsync"
                                        OnComment="HandleBlockCommentAsync"
                                        OnNewThread="HandleBlockNewThreadAsync" />
                 </CascadingValue>
@@ -130,6 +131,16 @@
                      PagesOnly="_mentionPagesOnly"
                      OnItemSelected="HandleMentionItemSelectedAsync"
                      OnClosed="HandleMentionMenuClosedAsync" />
+
+@* ── Token dropdown (portal — position:fixed, outside scroll) *@
+@if (Context.TokenProvider is not null)
+{
+    <TmNotionTokenDropdown Visible="_tokenDropdownVisible"
+                           Top="_tokenDropdownTop"
+                           Left="_tokenDropdownLeft"
+                           OnItemSelected="HandleTokenItemSelectedAsync"
+                           OnClosed="HandleTokenDropdownClosedAsync" />
+}
 
 @* ── Page history panel (portal — position:fixed) *@
 <TmNotionPageHistory Visible="_historyVisible"

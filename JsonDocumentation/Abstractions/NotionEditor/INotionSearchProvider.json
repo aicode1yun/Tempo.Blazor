@@ -1,0 +1,44 @@
+{
+  "itemName": "INotionSearchProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables the Ctrl+P full-screen page search dialog in TmNotionEditor. Implement to search across pages and block content. All three methods are called depending on the search context.",
+  "methods": [
+    {
+      "name": "SearchPagesAsync",
+      "returnType": "Task<IEnumerable<INotionPage>>",
+      "description": "Searches pages by title. Called when the user types in the search dialog.",
+      "parameters": [
+        { "name": "query", "type": "string", "description": "User's search text." },
+        { "name": "filter", "type": "NotionSearchFilter?", "description": "Optional filter restricting which pages to include." }
+      ]
+    },
+    {
+      "name": "SearchBlocksAsync",
+      "returnType": "Task<IEnumerable<NotionSearchResult>>",
+      "description": "Searches block content (full-text). Returns results with context snippets.",
+      "parameters": [
+        { "name": "query", "type": "string" },
+        { "name": "filter", "type": "NotionSearchFilter?" }
+      ]
+    },
+    {
+      "name": "SearchAllAsync",
+      "returnType": "Task<(IEnumerable<INotionPage> Pages, IEnumerable<NotionSearchResult> Blocks)>",
+      "description": "Combined page + block search in a single call. Used to populate the main search results panel.",
+      "parameters": [
+        { "name": "query", "type": "string" },
+        { "name": "filter", "type": "NotionSearchFilter?" },
+        { "name": "maxResults", "type": "int", "description": "Maximum total results to return." }
+      ]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"],
+  "examples": [
+    {
+      "title": "Simple in-memory page search",
+      "code": "public class SimpleSearchProvider : INotionSearchProvider\n{\n    private readonly INotionDataProvider _data;\n\n    public SimpleSearchProvider(INotionDataProvider data) => _data = data;\n\n    public async Task<IEnumerable<INotionPage>> SearchPagesAsync(\n        string query, NotionSearchFilter? filter)\n    {\n        var all = await _data.GetChildPagesAsync(null);\n        return all.Where(p => p.Title.Contains(query, StringComparison.OrdinalIgnoreCase));\n    }\n\n    public Task<IEnumerable<NotionSearchResult>> SearchBlocksAsync(\n        string query, NotionSearchFilter? filter)\n        => Task.FromResult(Enumerable.Empty<NotionSearchResult>());\n\n    public async Task<(IEnumerable<INotionPage>, IEnumerable<NotionSearchResult>)> SearchAllAsync(\n        string query, NotionSearchFilter? filter, int maxResults)\n    {\n        var pages = await SearchPagesAsync(query, filter);\n        return (pages.Take(maxResults), []);\n    }\n}"
+    }
+  ]
+}

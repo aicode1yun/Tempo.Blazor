@@ -65,6 +65,9 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     /// <summary>Fired when '[[' is typed. Args = (blockId, top, left) caret coords.</summary>
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu    { get; set; }
 
+    /// <summary>Fired when '{{' token syntax is typed. Args = (blockId, top, left) caret coords.</summary>
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu       { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private ElementReference                              _editableRef;
@@ -253,6 +256,10 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
     public async Task OnPageLinkTriggered(double top, double left) =>
         await OnPageLinkMenu.InvokeAsync((Block.Id.ToString(), top, left));
 
+    [JSInvokable]
+    public async Task OnTokenTriggered(double top, double left) =>
+        await OnTokenMenu.InvokeAsync((Block.Id.ToString(), top, left));
+
     // ── Child block handlers ──────────────────────────────────────────────────
 
     private async Task HandleChildReorderAsync((int source, int target) args)
@@ -407,6 +414,9 @@ public partial class TmNotionToggleBlock : ComponentBase, IAsyncDisposable
 
     private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
         OnPageLinkMenu.InvokeAsync(args);
+
+    private Task HandleChildTokenAsync((string BlockId, double Top, double Left) args) =>
+        OnTokenMenu.InvokeAsync(args);
 
     // ── Dispose ───────────────────────────────────────────────────────────────
 

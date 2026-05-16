@@ -339,4 +339,119 @@ public class NotionMediaBlocksE2ETests : WasmTestBase
 
         await TakeScreenshotAsync(page, "audio_block_player");
     }
+
+    // ══════════════════════════════════════════════════════════════════════════
+    //  Media Library tab
+    // ══════════════════════════════════════════════════════════════════════════
+
+    [TestMethod]
+    [Description("Upload dialog shows Library tab when MediaLibraryProvider is registered")]
+    public async Task MediaLibrary_LibraryTab_IsVisible()
+    {
+        var page = await OpenNotionEditorAsync();
+        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+
+        var lastBlock = page.Locator("[data-block-type='Image']").Last;
+        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        await uploadZone.ClickAsync();
+
+        var dialog = page.Locator(".tm-media-dialog");
+        await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var libraryTab = dialog.Locator("[data-tab='library']");
+        await libraryTab.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 3000 });
+
+        await TakeScreenshotAsync(page, "media_library_tab_visible");
+    }
+
+    [TestMethod]
+    [Description("Library tab shows grid of images from DemoNotionMediaLibraryProvider")]
+    public async Task MediaLibrary_LibraryTab_ShowsItems()
+    {
+        var page = await OpenNotionEditorAsync();
+        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+
+        var lastBlock = page.Locator("[data-block-type='Image']").Last;
+        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        await uploadZone.ClickAsync();
+
+        var dialog = page.Locator(".tm-media-dialog");
+        await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var libraryTab = dialog.Locator("[data-tab='library']");
+        await libraryTab.ClickAsync();
+        await page.WaitForTimeoutAsync(600);
+
+        var items = dialog.Locator(".tm-media-library__item");
+        var count = await items.CountAsync();
+        Assert.IsTrue(count > 0, "Library grid should contain at least one item");
+
+        await TakeScreenshotAsync(page, "media_library_items");
+    }
+
+    [TestMethod]
+    [Description("Clicking a library item closes the dialog and sets the image on the block")]
+    public async Task MediaLibrary_SelectItem_SetsImageOnBlock()
+    {
+        var page = await OpenNotionEditorAsync();
+        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+
+        var lastBlock = page.Locator("[data-block-type='Image']").Last;
+        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        await uploadZone.ClickAsync();
+
+        var dialog = page.Locator(".tm-media-dialog");
+        await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var libraryTab = dialog.Locator("[data-tab='library']");
+        await libraryTab.ClickAsync();
+        await page.WaitForTimeoutAsync(600);
+
+        var firstItem = dialog.Locator(".tm-media-library__item").First;
+        await firstItem.WaitForAsync(new LocatorWaitForOptions { Timeout = 5000 });
+        await firstItem.ClickAsync();
+        await page.WaitForTimeoutAsync(1000);
+
+        // Dialog should close and image should appear on block
+        var dialogAfter = page.Locator(".tm-media-dialog");
+        var dialogVisible = await dialogAfter.IsVisibleAsync();
+        Assert.IsFalse(dialogVisible, "Dialog should close after selecting a library item");
+
+        var img = lastBlock.Locator(".tm-notion-image-block__img");
+        await img.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        await TakeScreenshotAsync(page, "media_library_image_set");
+    }
+
+    [TestMethod]
+    [Description("Library search input filters items")]
+    public async Task MediaLibrary_Search_FiltersItems()
+    {
+        var page = await OpenNotionEditorAsync();
+        await InsertBlockViaSlashMenuAsync(page, "image", "Image");
+
+        var lastBlock = page.Locator("[data-block-type='Image']").Last;
+        var uploadZone = lastBlock.Locator(".tm-notion-media-upload-zone").First;
+        await uploadZone.ClickAsync();
+
+        var dialog = page.Locator(".tm-media-dialog");
+        await dialog.WaitForAsync(new LocatorWaitForOptions { State = WaitForSelectorState.Visible, Timeout = 5000 });
+
+        var libraryTab = dialog.Locator("[data-tab='library']");
+        await libraryTab.ClickAsync();
+        await page.WaitForTimeoutAsync(600);
+
+        var countBefore = await dialog.Locator(".tm-media-library__item").CountAsync();
+
+        // Type a very specific query that matches only one item
+        var searchInput = dialog.Locator(".tm-media-library__search-input");
+        await searchInput.FillAsync("Mountain");
+        await page.WaitForTimeoutAsync(500);
+
+        var countAfter = await dialog.Locator(".tm-media-library__item").CountAsync();
+        Assert.IsTrue(countAfter < countBefore, "Search should reduce the number of visible items");
+        Assert.IsTrue(countAfter > 0, "At least one item should match 'Mountain'");
+
+        await TakeScreenshotAsync(page, "media_library_search");
+    }
 }

@@ -30,6 +30,7 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnSlashMenu { get; set; }
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnMentionMenu { get; set; }
     [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnPageLinkMenu { get; set; }
+    [Parameter] public EventCallback<(string BlockId, double Top, double Left)> OnTokenMenu { get; set; }
 
     // ── State ────────────────────────────────────────────────────────────────
 
@@ -263,6 +264,8 @@ public partial class TmNotionColumnBlock : ComponentBase, IDisposable
         OnMentionMenu.InvokeAsync(args);
     private Task HandleChildPageLinkAsync((string BlockId, double Top, double Left) args) =>
         OnPageLinkMenu.InvokeAsync(args);
+    private Task HandleChildTokenAsync((string BlockId, double Top, double Left) args) =>
+        OnTokenMenu.InvokeAsync(args);
 
     public void Dispose()
     {

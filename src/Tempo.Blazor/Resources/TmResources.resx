@@ -1191,6 +1191,13 @@
   <data name="TmNotionMediaUploadDialog_Uploading"           xml:space="preserve"><value>Uploading…</value></data>
   <data name="TmNotionMediaUploadDialog_UploadError"         xml:space="preserve"><value>Upload failed. Please try again.</value></data>
   <data name="TmNotionMediaUploadDialog_NoProvider"          xml:space="preserve"><value>File upload is not configured.</value></data>
+  <data name="TmNotionMediaUploadDialog_TabLibrary"         xml:space="preserve"><value>Library</value></data>
+  <data name="TmNotionMediaUploadDialog_LibrarySearch"      xml:space="preserve"><value>Search media…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoading"     xml:space="preserve"><value>Loading…</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryEmpty"       xml:space="preserve"><value>No media found.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryError"       xml:space="preserve"><value>Failed to load media. Please try again.</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryLoadMore"    xml:space="preserve"><value>Load more</value></data>
+  <data name="TmNotionMediaUploadDialog_LibraryGridLabel"   xml:space="preserve"><value>Media library</value></data>
 
   <!-- Phase 52: Image Block -->
   <data name="TmNotionImageBlock_AddImage"                   xml:space="preserve"><value>Add an image</value></data>
@@ -1200,6 +1207,7 @@
   <data name="TmNotionImageBlock_AlignCenter"                xml:space="preserve"><value>Center</value></data>
   <data name="TmNotionImageBlock_AlignFull"                  xml:space="preserve"><value>Full width</value></data>
   <data name="TmNotionImageBlock_AlignmentLabel"             xml:space="preserve"><value>Image alignment</value></data>
+  <data name="TmNotionImageBlock_DropToUpload"               xml:space="preserve"><value>Drop to upload</value></data>
 
   <!-- Phase 52: Video Block -->
   <data name="TmNotionVideoBlock_AddVideo"                   xml:space="preserve"><value>Add a video</value></data>
@@ -1216,9 +1224,11 @@
   <data name="TmNotionFileBlock_Replace"                     xml:space="preserve"><value>Replace</value></data>
   <data name="TmNotionFileBlock_Download"                    xml:space="preserve"><value>Download</value></data>
   <data name="TmNotionFileBlock_CaptionPlaceholder"          xml:space="preserve"><value>Add caption…</value></data>
+  <data name="TmNotionFileBlock_DropToUpload"                xml:space="preserve"><value>Drop to upload</value></data>
 
   <!-- Phase 52: PDF Block -->
   <data name="TmNotionPdfBlock_AddPdf"                       xml:space="preserve"><value>Add a PDF</value></data>
+  <data name="TmNotionPdfBlock_DropToUpload"                 xml:space="preserve"><value>Drop to upload</value></data>
   <data name="TmNotionPdfBlock_CaptionPlaceholder"           xml:space="preserve"><value>Add caption…</value></data>
   <data name="TmNotionPdfBlock_Open"                         xml:space="preserve"><value>Open</value></data>
   <data name="TmNotionPdfBlock_Download"                     xml:space="preserve"><value>Download</value></data>
@@ -3099,5 +3109,11 @@
   <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>WYSIWYG editor unavailable</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>The WYSIWYG editing engine could not be loaded. Please use the block editor or reload the page.</value></data>
   <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>The document could not be updated. Please try again or reload the page.</value></data>
+
+  <!-- Phase 4: Token Dropdown -->
+  <data name="TmNotionTokenDropdown_Label"              xml:space="preserve"><value>Insert token</value></data>
+  <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Search tokens…</value></data>
+  <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>No tokens found</value></data>
+  <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Loading…</value></data>
 
 </root>

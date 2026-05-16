@@ -1,0 +1,38 @@
+{
+  "itemName": "INotionImportExportProvider",
+  "kind": "Interface",
+  "category": "NotionEditor",
+  "namespace": "Tempo.Blazor.NotionEditor.Interfaces",
+  "description": "Enables Markdown and HTML import/export in TmNotionEditor's Page Settings panel. Export triggers a file download; import uploads a file and creates a new page. Both options are hidden when this provider is not supplied.",
+  "methods": [
+    {
+      "name": "ExportPageAsync",
+      "returnType": "Task<Stream>",
+      "description": "Exports a single page's content as a Markdown or HTML file stream.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "format", "type": "NotionExportFormat", "description": "NotionExportFormat.Markdown or NotionExportFormat.Html." }
+      ]
+    },
+    {
+      "name": "ExportPageWithSubpagesAsync",
+      "returnType": "Task<Stream>",
+      "description": "Exports a page and all its sub-pages as a ZIP stream.",
+      "parameters": [
+        { "name": "pageId", "type": "string" },
+        { "name": "format", "type": "NotionExportFormat" }
+      ]
+    },
+    {
+      "name": "ImportAsync",
+      "returnType": "Task<INotionPage>",
+      "description": "Parses an uploaded file and creates a new page from its content. Returns the newly created page.",
+      "parameters": [
+        { "name": "content", "type": "Stream", "description": "Uploaded file content." },
+        { "name": "format", "type": "NotionImportFormat", "description": "NotionImportFormat.Markdown or NotionImportFormat.Html." },
+        { "name": "targetParentPageId", "type": "string?", "description": "Parent page for the imported page, or null for root." }
+      ]
+    }
+  ],
+  "usedInComponents": ["TmNotionEditor"]
+}

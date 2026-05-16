@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.JSInterop;
 using Tempo.Blazor.Components.NotionEditor.Services;
 using Tempo.Blazor.Components.Notifications;
+using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
 using Tempo.Blazor.NotionEditor.Models;
@@ -44,6 +45,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     [Parameter] public IWireframeDocumentProvider?   WireframeDocumentProvider   { get; set; }
     [Parameter] public ISpreadsheetDocumentProvider? SpreadsheetDocumentProvider { get; set; }
     [Parameter] public INotionSyncedBlockProvider?   SyncedBlockProvider         { get; set; }
+    [Parameter] public INotionMediaLibraryProvider?  MediaLibraryProvider        { get; set; }
+    [Parameter] public ITokenDataProvider?           TokenProvider               { get; set; }
 
     /// <summary>
     /// When non-null, restricts the slash menu and Turn Into menu to only these block types.
@@ -250,6 +253,8 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
         WireframeDocumentProvider   = WireframeDocumentProvider,
         SpreadsheetDocumentProvider = SpreadsheetDocumentProvider,
         SyncedBlockProvider         = SyncedBlockProvider,
+        MediaLibraryProvider        = MediaLibraryProvider,
+        TokenProvider               = TokenProvider,
         AllowedBlockTypes           = AllowedBlockTypes,
         NavigateTo                = pageId => NavigateToPageAsync(pageId)
     };

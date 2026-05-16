@@ -1,5 +1,7 @@
+using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.NotionEditor.Enums;
 using Tempo.Blazor.NotionEditor.Interfaces;
+using Tempo.Blazor.NotionEditor.Models;
 
 namespace Tempo.Blazor.Components.NotionEditor.Services;
 
@@ -25,6 +27,8 @@ public sealed class NotionEditorContext
     public IWireframeDocumentProvider?    WireframeDocumentProvider  { get; init; }
     public ISpreadsheetDocumentProvider?  SpreadsheetDocumentProvider{ get; init; }
     public INotionSyncedBlockProvider?    SyncedBlockProvider        { get; init; }
+    public INotionMediaLibraryProvider?   MediaLibraryProvider       { get; init; }
+    public ITokenDataProvider?            TokenProvider              { get; init; }
 
     /// <summary>Active collaboration sync service (null when CollaborationProvider is absent).</summary>
     public NotionCollaborationSync?        CollaborationSync         { get; init; }
