@@ -42,6 +42,9 @@ public sealed class WysiwygEditorOptions
     /// <summary>Font families allowed for font family marks.</summary>
     public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
 
+    /// <summary>Current editing author used by JS-owned runtime revisions.</summary>
+    public DocumentEditorAuthor? Author { get; set; }
+
     /// <summary>Accessible label used for insertion suggestion decorations.</summary>
     public string SuggestionInsertLabel { get; set; } = "Suggested insertion";
 

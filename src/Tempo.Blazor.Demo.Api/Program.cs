@@ -73,6 +73,7 @@ app.MapDiagramHistoryEndpoints();
 app.MapNotionEditorEndpoints();
 app.MapDatabaseEndpoints();
 app.MapDocumentEditorEndpoints();
+app.MapHub<DocumentEditorCollaborationHub>("/hubs/document-editor-collaboration");
 app.MapHub<NotionCollaborationHub>("/hubs/notion-collaboration");
 
 using (var scope = app.Services.CreateScope())

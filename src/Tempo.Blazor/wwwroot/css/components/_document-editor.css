@@ -4,7 +4,8 @@
     min-height: 100%;
     max-width: 100%;
     color: var(--tm-color-text);
-    background: color-mix(in srgb, var(--tm-color-surface-secondary) 86%, var(--tm-color-gray-100));
+    background:
+        linear-gradient(180deg, var(--tm-color-surface) 0, var(--tm-color-surface-secondary) 100%);
     border: 1px solid var(--tm-color-border);
     border-radius: var(--tm-radius-sm);
     overflow: hidden;
@@ -161,15 +162,15 @@
 .tm-document-editor__workspace {
     position: relative;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 23rem);
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, clamp(20rem, 25vw, 24rem));
+    align-items: start;
     gap: var(--tm-space-4);
     min-height: 34rem;
     padding: var(--tm-space-4) var(--tm-space-4) var(--tm-space-3);
     overflow: hidden;
     background:
-        linear-gradient(90deg, color-mix(in srgb, var(--tm-color-gray-50) 70%, transparent) 0 1px, transparent 1px 100%),
-        var(--tm-color-surface-secondary);
-    background-size: 3rem 3rem;
+        radial-gradient(circle at 50% 0, color-mix(in srgb, var(--tm-color-primary) 5%, transparent), transparent 22rem),
+        linear-gradient(180deg, var(--tm-color-surface-secondary), color-mix(in srgb, var(--tm-color-surface-secondary) 88%, var(--tm-color-gray-100)));
 }
 
 .tm-document-editor__workspace > * {
@@ -595,6 +596,7 @@
     display: grid;
     grid-template-rows: auto minmax(0, 1fr);
     min-width: 0;
+    width: 100%;
     height: min(100%, calc(100vh - 10rem));
     max-height: calc(100vh - 10rem);
     overflow: hidden;
@@ -1410,7 +1412,8 @@
 
 [data-theme="dark"] .tm-document-editor,
 .tm-dark .tm-document-editor {
-    background: var(--tm-color-surface);
+    background:
+        linear-gradient(180deg, var(--tm-color-surface), color-mix(in srgb, var(--tm-color-surface) 82%, var(--tm-color-gray-900)));
     border-color: var(--tm-color-border-subtle);
 }
 
@@ -1440,13 +1443,14 @@
 @media (max-width: 80rem) {
     .tm-document-editor__workspace {
         grid-template-columns: minmax(0, 1fr);
+        gap: var(--tm-space-3);
         overflow: hidden;
     }
 
     .tm-document-side-panel {
         order: 2;
         height: auto;
-        max-height: 24rem;
+        max-height: min(24rem, 42vh);
     }
 
     .tm-document-editor__comment-rail,
@@ -1570,6 +1574,43 @@
     box-shadow: 0 0 0 2px var(--tm-color-primary);
 }
 
+.tm-wysiwyg-remote-cursors {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 35;
+}
+
+.tm-wysiwyg-remote-cursor {
+    position: absolute;
+    display: inline-flex;
+    align-items: flex-start;
+    min-height: 1.25rem;
+    color: var(--tm-wysiwyg-remote-cursor-color, var(--tm-color-primary));
+    transform: translateY(-1px);
+}
+
+.tm-wysiwyg-remote-cursor__bar {
+    width: 2px;
+    height: 1.25rem;
+    background: currentColor;
+    box-shadow: 0 0 0 1px var(--tm-color-surface);
+}
+
+.tm-wysiwyg-remote-cursor__label {
+    margin-left: var(--tm-space-1);
+    padding: 0 var(--tm-space-1);
+    max-width: 10rem;
+    overflow: hidden;
+    color: var(--tm-color-on-primary);
+    background: var(--tm-wysiwyg-remote-cursor-color, var(--tm-color-primary));
+    border-radius: var(--tm-radius-xs);
+    font-size: var(--tm-font-size-xs);
+    line-height: 1.25rem;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
 /* Phase 11: Pagination mode - grey background with white A4 pages */
 .tm-document-wysiwyg-host.tm-wysiwyg-host--paginated {
     gap: var(--tm-space-6);
@@ -1578,7 +1619,7 @@
     overflow: auto;
     overscroll-behavior: contain;
     background:
-        linear-gradient(180deg, color-mix(in srgb, var(--tm-color-gray-50) 82%, var(--tm-color-surface)), var(--tm-color-gray-100));
+        linear-gradient(180deg, color-mix(in srgb, var(--tm-color-surface) 68%, var(--tm-color-gray-100)), var(--tm-color-surface-secondary));
     border: 1px solid var(--tm-color-border-subtle);
     box-shadow: inset 0 1px 0 var(--tm-color-surface);
     container-type: inline-size;
@@ -1616,27 +1657,27 @@
     z-index: 2;
     flex: 0 0 auto;
     width: min(var(--tm-document-page-width, 210mm), calc(100% - (2 * var(--tm-space-6))));
-    height: 1.5rem;
-    border: 1px solid var(--tm-color-border);
+    height: 1rem;
+    border: 1px solid color-mix(in srgb, var(--tm-color-border) 70%, transparent);
     border-radius: var(--tm-radius-xs);
     background:
         linear-gradient(
             90deg,
             transparent 0,
             transparent var(--tm-document-page-margin-left, 25.4mm),
-            color-mix(in srgb, var(--tm-color-primary) 16%, transparent) var(--tm-document-page-margin-left, 25.4mm),
-            color-mix(in srgb, var(--tm-color-primary) 16%, transparent) calc(100% - var(--tm-document-page-margin-right, 25.4mm)),
+            color-mix(in srgb, var(--tm-color-primary) 8%, transparent) var(--tm-document-page-margin-left, 25.4mm),
+            color-mix(in srgb, var(--tm-color-primary) 8%, transparent) calc(100% - var(--tm-document-page-margin-right, 25.4mm)),
             transparent calc(100% - var(--tm-document-page-margin-right, 25.4mm))
         ),
         repeating-linear-gradient(
             90deg,
-            var(--tm-color-border) 0 1px,
+            color-mix(in srgb, var(--tm-color-border) 65%, transparent) 0 1px,
             transparent 1px 12px,
-            var(--tm-color-border-subtle) 12px 13px,
+            color-mix(in srgb, var(--tm-color-border-subtle) 70%, transparent) 12px 13px,
             transparent 13px 24px
         ),
-        var(--tm-color-surface);
-    box-shadow: var(--tm-shadow-sm);
+        color-mix(in srgb, var(--tm-color-surface) 92%, transparent);
+    box-shadow: 0 0.15rem 0.35rem color-mix(in srgb, var(--tm-color-gray-900) 5%, transparent);
 }
 
 [data-theme="dark"] .tm-wysiwyg-page,
@@ -1735,6 +1776,23 @@
 .tm-wysiwyg-page__body[contenteditable="false"] {
     cursor: default;
     opacity: 0.7;
+}
+
+.tm-document-wysiwyg-host ::selection {
+    color: var(--tm-color-primary-text, var(--tm-color-text));
+    background: color-mix(in srgb, var(--tm-color-primary) 28%, transparent);
+}
+
+.tm-wysiwyg-region--active {
+    outline: 2px solid color-mix(in srgb, var(--tm-color-primary) 58%, transparent);
+    outline-offset: 4px;
+}
+
+.tm-document-wysiwyg-host[data-active-region="Body"] .tm-wysiwyg-page__body:focus,
+.tm-document-wysiwyg-host[data-active-region="Body"] .tm-wysiwyg-page__body:focus-within,
+.tm-wysiwyg-page__body.tm-wysiwyg-region--active {
+    outline: 2px solid color-mix(in srgb, var(--tm-color-primary) 58%, transparent);
+    outline-offset: 8px;
 }
 
 /* Dark mode */

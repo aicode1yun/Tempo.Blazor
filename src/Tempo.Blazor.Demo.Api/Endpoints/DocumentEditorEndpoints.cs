@@ -1,3 +1,5 @@
+using Microsoft.AspNetCore.SignalR;
+using Tempo.Blazor.Demo.Api.Hubs;
 using Tempo.Blazor.Demo.Api.Services;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -12,6 +14,17 @@ public static class DocumentEditorEndpoints
     public static IEndpointRouteBuilder MapDocumentEditorEndpoints(this IEndpointRouteBuilder app)
     {
         var group = app.MapGroup("/api/document-editor").WithTags("Document Editor");
+
+        group.MapPost("/reset", (
+            DemoDocumentEditorStore store,
+            InMemoryDocumentCollaborationProvider collaborationProvider,
+            InMemoryDocumentSuggestionProvider suggestionProvider) =>
+        {
+            store.Reset();
+            collaborationProvider.Reset();
+            suggestionProvider.Reset();
+            return Results.NoContent();
+        });
 
         group.MapGet("/compare", async (
             string baseDocumentId,
@@ -290,9 +303,12 @@ public static class DocumentEditorEndpoints
             string sessionId,
             DocumentOperationBatch batch,
             InMemoryDocumentCollaborationProvider collaboration,
+            IHubContext<DocumentEditorCollaborationHub> hubContext,
             CancellationToken cancellationToken) =>
         {
             var broadcast = await collaboration.BroadcastOperationBatchAsync(sessionId, batch, cancellationToken);
+            await hubContext.Clients.Group(DocumentEditorCollaborationHub.DocumentGroup(broadcast.Batch.DocumentId))
+                .SendAsync(SignalRDocumentCollaborationProvider.HubMethods.RemoteOperationBatchReceived, broadcast, cancellationToken);
             return Results.Ok(broadcast);
         });
 
@@ -309,9 +325,12 @@ public static class DocumentEditorEndpoints
         group.MapPost("/collaboration/cursors", async (
             DocumentCollaborationCursor cursor,
             InMemoryDocumentCollaborationProvider collaboration,
+            IHubContext<DocumentEditorCollaborationHub> hubContext,
             CancellationToken cancellationToken) =>
         {
             await collaboration.BroadcastCursorAsync(cursor, cancellationToken);
+            await hubContext.Clients.Group(DocumentEditorCollaborationHub.DocumentGroup(cursor.DocumentId))
+                .SendAsync(SignalRDocumentCollaborationProvider.HubMethods.RemoteCursorReceived, cursor, cancellationToken);
             return Results.Ok(cursor);
         });
 

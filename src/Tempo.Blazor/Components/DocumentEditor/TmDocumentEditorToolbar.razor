@@ -123,6 +123,7 @@
                     <TmIcon Name="type" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_FontFamily"]</span>
                     <select disabled="@ReadOnly"
+                            value="@CurrentFontFamily"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))"
                             aria-label="@Loc["TmDocumentEditor_FontFamily"]"
                             @onchange="HandleFontFamilyChangedAsync"
@@ -137,6 +138,7 @@
                 <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))">
                     <span>@Loc["TmDocumentEditor_FontSize"]</span>
                     <select disabled="@ReadOnly"
+                            value="@NormalizeFontSizeValue(CurrentFontSize)"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             @onchange="HandleFontSizeChangedAsync"
@@ -209,7 +211,7 @@
                     <TmIcon Name="palette" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_FontColor"]</span>
                     <input type="color"
-                           value="#111827"
+                           value="@NormalizeColorValue(CurrentTextColor, "#111827")"
                            disabled="@ReadOnly"
                            aria-label="@Loc["TmDocumentEditor_FontColor"]"
                            @onchange="HandleTextColorChangedAsync"
@@ -219,7 +221,7 @@
                     <TmIcon Name="highlighter" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_HighlightColor"]</span>
                     <input type="color"
-                           value="#fff59d"
+                           value="@NormalizeColorValue(CurrentHighlightColor, "#fff59d")"
                            disabled="@ReadOnly"
                            aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
                            @onchange="HandleHighlightColorChangedAsync"
@@ -272,6 +274,7 @@
                     <TmIcon Name="pilcrow" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_LineSpacing"]</span>
                     <select disabled="@ReadOnly"
+                            value="@NormalizeLineSpacingValue(CurrentLineSpacing)"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_LineSpacing"]))"
                             aria-label="@Loc["TmDocumentEditor_LineSpacing"]"
                             @onchange="HandleLineSpacingChangedAsync"
@@ -365,7 +368,11 @@
         else if (_activeRibbonTab == DocumentRibbonTab.Layout)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupLayout"]">
-                <button class="tm-document-editor__ribbon-button" type="button" disabled="@ReadOnly" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_PageLayout"]))">
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_PageLayout"]))"
+                        data-testid="document-page-layout">
                     <TmIcon Name="panel-top" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_PageLayout"]</span>
                 </button>
@@ -394,10 +401,33 @@
         else if (_activeRibbonTab == DocumentRibbonTab.References)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReferences"]">
-                <button class="tm-document-editor__ribbon-button" type="button" disabled="@ReadOnly" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertFootnote"]))">
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertFootnote"]))"
+                        data-testid="document-insert-footnote">
                     <TmIcon Name="pilcrow" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_InsertFootnote"]</span>
                 </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertEndnote"]))"
+                        data-testid="document-insert-endnote">
+                    <TmIcon Name="pilcrow" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_InsertEndnote"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TableOfContents"]))"
+                        data-testid="document-insert-toc">
+                    <TmIcon Name="list" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_TableOfContents"]</span>
+                </button>
+            </section>
+
+            <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupFile"]">
                 <button class="tm-document-editor__ribbon-button"
                     type="button"
                     disabled="@(!CanExportPdf || IsExportingPdf)"
@@ -737,6 +767,36 @@
     /// <summary>Whether selected paragraphs have mixed alignment.</summary>
     [Parameter] public bool ParagraphAlignmentMixed { get; set; }
 
+    /// <summary>Current font family reported by the JS selection runtime.</summary>
+    [Parameter] public string? CurrentFontFamily { get; set; }
+
+    /// <summary>Whether selected text has mixed font families.</summary>
+    [Parameter] public bool FontFamilyMixed { get; set; }
+
+    /// <summary>Current font size reported by the JS selection runtime.</summary>
+    [Parameter] public string? CurrentFontSize { get; set; }
+
+    /// <summary>Whether selected text has mixed font sizes.</summary>
+    [Parameter] public bool FontSizeMixed { get; set; }
+
+    /// <summary>Current text color reported by the JS selection runtime.</summary>
+    [Parameter] public string? CurrentTextColor { get; set; }
+
+    /// <summary>Whether selected text has mixed text colors.</summary>
+    [Parameter] public bool TextColorMixed { get; set; }
+
+    /// <summary>Current highlight color reported by the JS selection runtime.</summary>
+    [Parameter] public string? CurrentHighlightColor { get; set; }
+
+    /// <summary>Whether selected text has mixed highlight colors.</summary>
+    [Parameter] public bool HighlightColorMixed { get; set; }
+
+    /// <summary>Current line spacing reported by the JS selection runtime.</summary>
+    [Parameter] public double CurrentLineSpacing { get; set; } = 1;
+
+    /// <summary>Whether selected paragraphs have mixed line spacing.</summary>
+    [Parameter] public bool LineSpacingMixed { get; set; }
+
     /// <summary>Font families available in the font selector.</summary>
     [Parameter] public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
 
@@ -1065,6 +1125,37 @@
         }
 
         return ParagraphAlignment == alignment ? "true" : "false";
+    }
+
+    private static string NormalizeFontSizeValue(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return "11";
+        }
+
+        var normalized = value.Trim().Replace("pt", string.Empty, StringComparison.OrdinalIgnoreCase);
+        return double.TryParse(normalized, NumberStyles.Number, CultureInfo.InvariantCulture, out var size)
+            ? size.ToString("0.##", CultureInfo.InvariantCulture)
+            : "11";
+    }
+
+    private static string NormalizeLineSpacingValue(double value)
+        => value <= 0
+            ? "1"
+            : value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string NormalizeColorValue(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        var trimmed = value.Trim();
+        return trimmed.StartsWith('#') && (trimmed.Length == 7 || trimmed.Length == 4)
+            ? trimmed
+            : fallback;
     }
 
     private Task HandleReviewDisplayModeChanged(ChangeEventArgs args)

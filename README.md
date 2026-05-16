@@ -122,9 +122,11 @@ Toast.ShowInfo("Record updated");
 
 `TmDocumentEditor` can synchronize live WYSIWYG edits through `IDocumentCollaborationProvider`. The provider boundary exchanges append-only `DocumentOperationBatch` payloads, not rendered HTML. Each batch carries a protocol version, a document id, stable operation ids, operation metadata, and one or more structured operations such as `InsertText`, `DeleteText`, `AddInlineMark`, `RemoveInlineMark`, `InsertBlock`, `UpdateBlock`, `DeleteBlock`, `CreateRevision`, `AcceptRevision`, and `RejectRevision`.
 
-The live editor surface is owned by the JavaScript WYSIWYG engine while the user is editing. Remote batches are applied through the JS patcher as DOM operations and then mirrored into the C# document model for persistence, export, suggestions, revision panels, and provider replay. Blazor does not re-render the live editor surface for successful remote operations.
+The live editor surface is owned by the JavaScript WYSIWYG runtime while the user is editing. Remote batches are applied through the JS runtime as DOM operations and then mirrored into the C# document model for persistence, export, suggestions, revision panels, and provider replay. Blazor does not re-render the live editor surface for successful remote operations.
 
 `SetBlockAttribute("text")` is kept only as a legacy/import compatibility fallback. Rich text, formatting, images, tables, and other object changes use structured operations, most commonly `UpdateBlock` when a whole block payload is the safest representation. If a remote DOM patch fails, the component falls back to a full snapshot refresh so the browser DOM and the C# document model converge again.
+
+See [Document Editor JS-Owned Runtime](docs/document-editor-js-owned-runtime.md) for the runtime boundary, provider flow, undo/redo transaction rules, track changes model, and E2E test guidance.
 
 ## Components
 

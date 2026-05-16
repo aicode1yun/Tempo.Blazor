@@ -2802,6 +2802,7 @@
   <data name="TmDocumentEditor_GroupLayout"            xml:space="preserve"><value>Layout</value></data>
   <data name="TmDocumentEditor_GroupReferences"        xml:space="preserve"><value>References</value></data>
   <data name="TmDocumentEditor_GroupReview"            xml:space="preserve"><value>Review</value></data>
+  <data name="TmDocumentEditor_GroupFile"              xml:space="preserve"><value>File</value></data>
   <data name="TmDocumentEditor_CommandDisabledReadOnly" xml:space="preserve"><value>Read-only document</value></data>
   <data name="TmDocumentEditor_CommandDisabledUnavailable" xml:space="preserve"><value>Command is unavailable</value></data>
   <data name="TmDocumentEditor_CommandDisabledBusy"    xml:space="preserve"><value>Command is already running</value></data>
@@ -3018,6 +3019,9 @@
   <data name="TmDocumentEditor_RegionBody"             xml:space="preserve"><value>body</value></data>
   <data name="TmDocumentEditor_RegionHeader"           xml:space="preserve"><value>header</value></data>
   <data name="TmDocumentEditor_RegionFooter"           xml:space="preserve"><value>footer</value></data>
+  <data name="TmDocumentEditor_RegionCaption"          xml:space="preserve"><value>caption</value></data>
+  <data name="TmDocumentEditor_RegionFootnote"         xml:space="preserve"><value>footnote</value></data>
+  <data name="TmDocumentEditor_RegionEndnote"          xml:space="preserve"><value>endnote</value></data>
   <data name="TmDocumentEditor_Insert"                 xml:space="preserve"><value>Insert</value></data>
   <data name="TmDocumentEditor_TrackChanges"           xml:space="preserve"><value>Track changes</value></data>
   <data name="TmDocumentEditor_ShowMarkup"             xml:space="preserve"><value>Show markup</value></data>
@@ -3064,6 +3068,7 @@
   <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Footer</value></data>
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Notes</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Footnote</value></data>
+  <data name="TmDocumentEditor_TableOfContents"        xml:space="preserve"><value>Table of contents</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
   <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Drop a DOCX file or browse</value></data>
@@ -3085,6 +3090,9 @@
   <data name="TmDocumentEditor_RevisionTypeDeletion"   xml:space="preserve"><value>Deletion</value></data>
   <data name="TmDocumentEditor_RevisionTypeFormatting" xml:space="preserve"><value>Formatting</value></data>
   <data name="TmDocumentEditor_RevisionTypeMove"       xml:space="preserve"><value>Move</value></data>
+  <data name="TmDocumentEditor_RevisionTypeStructure"  xml:space="preserve"><value>Structure</value></data>
+  <data name="TmDocumentEditor_RevisionTypeImage"      xml:space="preserve"><value>Image</value></data>
+  <data name="TmDocumentEditor_RevisionTypeTable"      xml:space="preserve"><value>Table</value></data>
   <data name="TmDocumentEditor_RevisionPreviewUnavailable" xml:space="preserve"><value>No preview available</value></data>
   <data name="TmDocumentEditor_TrackChangesOn"         xml:space="preserve"><value>Track changes on</value></data>
   <data name="TmDocumentEditor_TrackChangesOff"        xml:space="preserve"><value>Track changes off</value></data>

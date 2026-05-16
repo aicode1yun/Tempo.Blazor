@@ -138,7 +138,16 @@ public enum DocumentRevisionType
     Formatting,
 
     /// <summary>Moved content.</summary>
-    Move
+    Move,
+
+    /// <summary>Structural change such as paragraph split or soft break.</summary>
+    Structure,
+
+    /// <summary>Image object change.</summary>
+    Image,
+
+    /// <summary>Table object change.</summary>
+    Table
 }
 
 /// <summary>Range affected by a tracked revision.</summary>

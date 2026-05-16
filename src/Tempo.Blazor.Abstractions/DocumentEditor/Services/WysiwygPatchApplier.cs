@@ -1737,7 +1737,10 @@ public sealed class WysiwygPatchApplier
         return new WysiwygPatch
         {
             Type = patch.Type,
+            OperationId = patch.OperationId,
             Data = patch.Data,
+            LinkTitle = patch.LinkTitle,
+            Inline = patch.Inline,
             Selection = patch.Selection,
             BeforeSelection = patch.BeforeSelection,
             AfterSelection = patch.AfterSelection,
@@ -1749,6 +1752,7 @@ public sealed class WysiwygPatchApplier
             MarkType = patch.MarkType,
             BlockType = patch.BlockType,
             Block = patch.Block,
+            ParagraphProperties = patch.ParagraphProperties,
             DeleteLength = patch.DeleteLength,
             HeadingLevel = patch.HeadingLevel,
             RevisionId = patch.RevisionId,

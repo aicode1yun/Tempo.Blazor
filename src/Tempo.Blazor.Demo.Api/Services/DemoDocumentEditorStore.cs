@@ -16,6 +16,19 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
     public DemoDocumentEditorStore()
     {
         _renditionProvider = new InMemoryDocumentRenditionProvider(this, this);
+        SeedDemoDocuments();
+    }
+
+    /// <summary>Resets the demo store back to its seeded documents.</summary>
+    public void Reset()
+    {
+        ClearStore();
+        _images.Clear();
+        SeedDemoDocuments();
+    }
+
+    private void SeedDemoDocuments()
+    {
         var contract = SeedContractDocument("contract-demo");
         var filing = SeedFilingDocument("filing-demo");
         var exhibits = CreateExhibitsDocument("exhibits-demo");

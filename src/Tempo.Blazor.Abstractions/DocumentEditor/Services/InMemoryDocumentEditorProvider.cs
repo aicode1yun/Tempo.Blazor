@@ -14,6 +14,14 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
     /// <summary>Recorded audit events.</summary>
     public IReadOnlyList<DocumentEditorAuditEvent> AuditEvents => _auditEvents;
 
+    /// <summary>Clears all in-memory documents, versions, and audit events.</summary>
+    protected void ClearStore()
+    {
+        _documents.Clear();
+        _versions.Clear();
+        _auditEvents.Clear();
+    }
+
     /// <summary>Seeds a new empty document.</summary>
     public DocumentEditorDocument SeedEmptyDocument(string documentId = "empty-document")
     {

@@ -17,6 +17,7 @@
      data-ruler-visible="@ShowRuler.ToString().ToLowerInvariant()"
      data-zoom-percent="@ZoomPercent"
      data-zoom-mode="@(ZoomPageWidth ? "page-width" : "percent")"
+     data-active-region="Body"
      role="textbox"
      aria-label="@Loc["TmDocumentEditor_WysiwygSurfaceLabel"]"
      aria-describedby="@_accessibilityDescriptionId"
@@ -133,6 +134,7 @@
     private bool _lastTrackChangesEnabled;
     private DocumentReviewDisplayMode _lastReviewDisplayMode = DocumentReviewDisplayMode.AllMarkup;
     private bool _hasSentSnapshot;
+    private string? _lastAppliedRuntimeDraftStateJson;
     private bool _tokenMenuOpen;
     private bool _tokenMenuLoading;
     private string _tokenQuery = string.Empty;
@@ -162,6 +164,9 @@
 
     /// <summary>Optional token provider for document token autocomplete.</summary>
     [Parameter] public ITokenDataProvider? TokenProvider { get; set; }
+
+    /// <summary>Current editing author used for JS-owned runtime revisions.</summary>
+    [Parameter] public DocumentEditorAuthor? Author { get; set; }
 
     /// <summary>Font families allowed by the host editor.</summary>
     [Parameter] public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
@@ -205,8 +210,23 @@
     /// <summary>Raised when the JS-owned inline revision UI requests accept or reject.</summary>
     [Parameter] public EventCallback<WysiwygRevisionReviewRequest> RevisionReviewRequested { get; set; }
 
+    /// <summary>Raised when the JS-owned runtime revision list changes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<DocumentRevision>> RevisionsChanged { get; set; }
+
+    /// <summary>Raised when the JS-owned runtime comment list changes.</summary>
+    [Parameter] public EventCallback<IReadOnlyList<DocumentComment>> CommentsChanged { get; set; }
+
     /// <summary>Raised when a typing transaction is committed.</summary>
     [Parameter] public EventCallback TransactionCommitted { get; set; }
+
+    /// <summary>Raised when the JS-owned undo/redo stack state changes.</summary>
+    [Parameter] public EventCallback<WysiwygUndoState> UndoStateChanged { get; set; }
+
+    /// <summary>Raised when the JS-owned dirty/save state changes.</summary>
+    [Parameter] public EventCallback<WysiwygDirtyState> DirtyStateChanged { get; set; }
+
+    /// <summary>Serialized JS-owned offline runtime state to restore after loading an offline draft.</summary>
+    [Parameter] public string? RuntimeDraftStateJson { get; set; }
 
     /// <summary>Raised when the user requests undo via keyboard.</summary>
     [Parameter] public EventCallback UndoRequested { get; set; }
@@ -274,6 +294,7 @@
                 ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
                 ImageRetryLabel = Loc["TmDocumentEditor_Retry"],
                 FontFamilies = FontFamilies,
+                Author = Author,
                 SuggestionInsertLabel = Loc["TmDocumentEditor_SuggestionInsertAria"],
                 SuggestionDeleteLabel = Loc["TmDocumentEditor_SuggestionDeleteAria"],
                 TrackChangesEnabled = TrackChangesEnabled,
@@ -281,7 +302,7 @@
             };
 
             await JSRuntime.InvokeVoidAsync(
-                "tmDocumentWysiwyg.create",
+                "tmDocumentEditorRuntime.create",
                 _rootElement,
                 options,
                 _dotNetRef);
@@ -306,6 +327,7 @@
         _jsReady = true;
         await InvokeAsync(StateHasChanged);
         await SendSnapshotAsync(force: true);
+        await ApplyRuntimeDraftStateIfNeededAsync(force: true);
     }
 
     /// <inheritdoc />
@@ -336,15 +358,25 @@
         {
             await SendSnapshotAsync(force: readOnlyChanged);
         }
+
+        await ApplyRuntimeDraftStateIfNeededAsync();
     }
 
-    /// <summary>Forces the current document parameters into the JS-owned WYSIWYG DOM.</summary>
+    /// <summary>
+    /// Forces the current document parameters into the JS-owned WYSIWYG DOM.
+    /// Use only for load, import, external provider synchronization, or recovery after failed granular operations.
+    /// Local editing commands should go through <see cref="ExecuteRuntimeCommandAsync"/>.
+    /// </summary>
     public Task RefreshSnapshotAsync()
     {
         return SendSnapshotAsync(force: true);
     }
 
-    /// <summary>Forces a synchronized document into the JS-owned WYSIWYG DOM.</summary>
+    /// <summary>
+    /// Forces a synchronized document into the JS-owned WYSIWYG DOM.
+    /// Use only for load, import, external provider synchronization, or recovery after failed granular operations.
+    /// Local editing commands should go through <see cref="ExecuteRuntimeCommandAsync"/>.
+    /// </summary>
     public Task RefreshSnapshotAsync(DocumentEditorDocument synchronizedDocument)
     {
         return SendSnapshotAsync(force: true, documentOverride: synchronizedDocument);
@@ -369,7 +401,7 @@
         try
         {
             var result = await JSRuntime.InvokeAsync<WysiwygRemoteOperationBatchApplyResult>(
-                "tmDocumentWysiwyg.applyRemoteOperationBatch",
+                "tmDocumentEditorRuntime.applyRemoteOperationBatch",
                 _instanceId,
                 new { Operations = operations });
 
@@ -401,11 +433,32 @@
         return result.Success && (result.Applied > 0 || result.Skipped > 0 || operations.Count == 0);
     }
 
+    /// <summary>Applies a pushed remote collaboration cursor directly in the JS-owned overlay.</summary>
+    public async Task<bool> ApplyRemoteCursorAsync(DocumentCollaborationCursor cursor)
+    {
+        if (_jsFailed || _disposed || !_jsReady)
+        {
+            return false;
+        }
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>(
+                "tmDocumentEditorRuntime.applyRemoteCursor",
+                _instanceId,
+                cursor);
+        }
+        catch (JSException)
+        {
+            return false;
+        }
+    }
+
     private async Task SetTrackChangesEnabledAsync(bool enabled)
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setTrackChangesEnabled", _instanceId, enabled);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setTrackChangesEnabled", _instanceId, enabled);
             _lastTrackChangesEnabled = enabled;
         }
         catch (JSException)
@@ -419,7 +472,7 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setReviewDisplayMode", _instanceId, mode.ToString());
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setReviewDisplayMode", _instanceId, mode.ToString());
             _lastReviewDisplayMode = mode;
         }
         catch (JSException)
@@ -438,7 +491,7 @@
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToRevision", _instanceId, revisionId);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.scrollToRevision", _instanceId, revisionId);
         }
         catch (JSException)
         {
@@ -450,7 +503,7 @@
     {
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setReadOnly", _instanceId, readOnly);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.setReadOnly", _instanceId, readOnly);
         }
         catch (JSException)
         {
@@ -468,11 +521,83 @@
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.clearRevisionDecorations", _instanceId, revisionId, removeContent);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.clearRevisionDecorations", _instanceId, revisionId, removeContent);
         }
         catch (JSException)
         {
             // Best-effort; the next snapshot render will reconcile the DOM.
+        }
+    }
+
+    /// <summary>Applies a JS-owned revision review action to the live DOM.</summary>
+    public async Task ReviewRevisionAsync(string revisionId, DocumentRevisionAction action)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(revisionId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.reviewRevision", _instanceId, revisionId, action.ToString());
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next snapshot render will reconcile the DOM.
+        }
+    }
+
+    /// <summary>Upserts a comment anchor in the JS-owned DOM.</summary>
+    public async Task UpsertCommentAsync(DocumentComment comment)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(comment.Id))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.upsertComment", _instanceId, comment);
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next runtime snapshot will reconcile comments.
+        }
+    }
+
+    /// <summary>Removes a comment anchor from the JS-owned DOM.</summary>
+    public async Task RemoveCommentAsync(string commentId)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(commentId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.removeComment", _instanceId, commentId);
+        }
+        catch (JSException)
+        {
+            // Best-effort; the next runtime snapshot will reconcile comments.
+        }
+    }
+
+    /// <summary>Scrolls to a comment anchor in the JS-owned DOM.</summary>
+    public async Task ScrollToCommentAsync(string commentId)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(commentId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.scrollToComment", _instanceId, commentId);
+        }
+        catch (JSException)
+        {
+            // Best-effort; side panel selection still reflects the chosen comment.
         }
     }
 
@@ -506,7 +631,7 @@
                 return;
             }
 
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.applySnapshot", _instanceId, snapshot, force);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.loadDocument", _instanceId, snapshot, force);
             RememberSentSnapshot(snapshotJson, document);
         }
         catch (JSException)
@@ -631,6 +756,35 @@
         _hasSentSnapshot = true;
     }
 
+    private async Task ApplyRuntimeDraftStateIfNeededAsync(bool force = false)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(RuntimeDraftStateJson))
+        {
+            return;
+        }
+
+        if (!force && string.Equals(RuntimeDraftStateJson, _lastAppliedRuntimeDraftStateJson, StringComparison.Ordinal))
+        {
+            return;
+        }
+
+        try
+        {
+            var applied = await JSRuntime.InvokeAsync<bool>(
+                "tmDocumentEditorRuntime.applyOfflineState",
+                _instanceId,
+                RuntimeDraftStateJson);
+            if (applied)
+            {
+                _lastAppliedRuntimeDraftStateJson = RuntimeDraftStateJson;
+            }
+        }
+        catch (JSException)
+        {
+            // Best-effort; the document snapshot has already restored the draft content.
+        }
+    }
+
     /// <summary>Captures the current text selection as a document comment anchor.</summary>
     public async Task<DocumentCommentAnchor?> CaptureTextSelectionAnchorAsync()
     {
@@ -638,19 +792,19 @@
         try
         {
             return await JSRuntime.InvokeAsync<DocumentCommentAnchor?>(
-                "tmDocumentWysiwyg.captureCommentAnchor", _instanceId);
+                "tmDocumentEditorRuntime.captureCommentAnchor", _instanceId);
         }
         catch { return null; }
     }
 
-    /// <summary>Requests a snapshot of the current DOM state from the JS engine.</summary>
-    public async Task<DocumentEditorDocument?> RequestSnapshotAsync()
+    /// <summary>Requests the current canonical document from the JS runtime facade.</summary>
+    public async Task<DocumentEditorDocument?> RequestRuntimeDocumentAsync()
     {
         if (_jsFailed || _disposed || !_jsReady) return null;
 
         try
         {
-            var json = await JSRuntime.InvokeAsync<string>("tmDocumentWysiwyg.getSnapshot", _instanceId);
+            var json = await JSRuntime.InvokeAsync<string>("tmDocumentEditorRuntime.getDocument", _instanceId);
             if (string.IsNullOrWhiteSpace(json)) return null;
 
             var options = new JsonSerializerOptions(DocumentEditorJson.Options)
@@ -666,6 +820,12 @@
         }
     }
 
+    /// <summary>Requests a snapshot of the current DOM state from the JS engine.</summary>
+    public Task<DocumentEditorDocument?> RequestSnapshotAsync()
+    {
+        return RequestRuntimeDocumentAsync();
+    }
+
     /// <summary>Requests a diagnostic snapshot of the live JS editor state.</summary>
     public async Task<WysiwygDebugSnapshot?> RequestDebugSnapshotAsync()
     {
@@ -674,7 +834,76 @@
         try
         {
             return await JSRuntime.InvokeAsync<WysiwygDebugSnapshot?>(
-                "tmDocumentWysiwyg.getDebugSnapshot",
+                "tmDocumentEditorRuntime.getDebugSnapshot",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests the current JS-owned dirty/save state.</summary>
+    public async Task<WysiwygDirtyState?> RequestDirtyStateAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygDirtyState?>(
+                "tmDocumentEditorRuntime.getDirtyState",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests serialized JS-owned offline state for draft persistence.</summary>
+    public async Task<string?> RequestOfflineStateJsonAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<string?>(
+                "tmDocumentEditorRuntime.getOfflineState",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Marks the JS-owned runtime state as saved.</summary>
+    public async Task<bool> MarkSavedAsync(string? marker = null)
+    {
+        if (_jsFailed || _disposed || !_jsReady) return false;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>(
+                "tmDocumentEditorRuntime.markSaved",
+                _instanceId,
+                marker);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Requests the current toolbar selection state from the JS runtime facade.</summary>
+    public async Task<WysiwygFormattingState?> RequestRuntimeSelectionStateAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygFormattingState?>(
+                "tmDocumentEditorRuntime.getFormattingState",
                 _instanceId);
         }
         catch
@@ -684,14 +913,20 @@
     }
 
     /// <summary>Requests the current selection formatting state from the JS engine.</summary>
-    public async Task<WysiwygFormattingState?> RequestFormattingStateAsync()
+    public Task<WysiwygFormattingState?> RequestFormattingStateAsync()
+    {
+        return RequestRuntimeSelectionStateAsync();
+    }
+
+    /// <summary>Requests the current runtime-owned selection model from the JS engine.</summary>
+    public async Task<WysiwygSelectionSnapshot?> RequestRuntimeSelectionAsync()
     {
         if (_jsFailed || _disposed || !_jsReady) return null;
 
         try
         {
-            return await JSRuntime.InvokeAsync<WysiwygFormattingState?>(
-                "tmDocumentWysiwyg.getFormattingState",
+            return await JSRuntime.InvokeAsync<WysiwygSelectionSnapshot?>(
+                "tmDocumentEditorRuntime.getRuntimeSelection",
                 _instanceId);
         }
         catch
@@ -708,7 +943,7 @@
         try
         {
             return await JSRuntime.InvokeAsync<WysiwygSelectionSnapshot?>(
-                "tmDocumentWysiwyg.getSelectionSnapshot",
+                "tmDocumentEditorRuntime.getSelectionSnapshot",
                 _instanceId);
         }
         catch
@@ -725,7 +960,24 @@
         try
         {
             return await JSRuntime.InvokeAsync<WysiwygLinkInfo?>(
-                "tmDocumentWysiwyg.getLinkInfo",
+                "tmDocumentEditorRuntime.getLinkInfo",
+                _instanceId);
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    /// <summary>Requests the current JS-owned undo/redo state.</summary>
+    public async Task<WysiwygUndoState?> RequestUndoStateAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return null;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<WysiwygUndoState?>(
+                "tmDocumentEditorRuntime.getUndoState",
                 _instanceId);
         }
         catch
@@ -793,11 +1045,39 @@
         });
     }
 
+    /// <summary>Called by the JS engine when runtime revisions change.</summary>
+    [JSInvokable]
+    public Task HandleRevisionsChanged(List<DocumentRevision>? revisions)
+    {
+        return RevisionsChanged.InvokeAsync(revisions ?? []);
+    }
+
+    /// <summary>Called by the JS engine when runtime comments change.</summary>
+    [JSInvokable]
+    public Task HandleCommentsChanged(List<DocumentComment>? comments)
+    {
+        return CommentsChanged.InvokeAsync(comments ?? []);
+    }
+
     /// <summary>Called by the JS engine when a transaction is committed.</summary>
     [JSInvokable]
     public Task HandleTransactionCommitted()
     {
         return TransactionCommitted.InvokeAsync();
+    }
+
+    /// <summary>Called by the JS engine when the undo/redo stack state changes.</summary>
+    [JSInvokable]
+    public Task HandleUndoStateChanged(WysiwygUndoState state)
+    {
+        return UndoStateChanged.InvokeAsync(state);
+    }
+
+    /// <summary>Called by the JS engine when the dirty/save state changes.</summary>
+    [JSInvokable]
+    public Task HandleDirtyStateChanged(WysiwygDirtyState state)
+    {
+        return DirtyStateChanged.InvokeAsync(state);
     }
 
     /// <summary>Called by the JS engine when the user presses Ctrl+Z.</summary>
@@ -828,17 +1108,53 @@
         return Task.CompletedTask;
     }
 
-    /// <summary>Executes an editor command via the JS engine bridge (used by the Blazor ribbon).</summary>
-    public async Task ExecuteEditorCommandAsync(string command, object? payload = null)
+    /// <summary>Executes an editor command via the JS runtime facade.</summary>
+    public async Task ExecuteRuntimeCommandAsync(string command, object? payload = null)
     {
         if (_jsFailed || _disposed || !_jsReady) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.executeCommand", _instanceId, command, payload);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.executeCommand", _instanceId, command, payload);
         }
         catch (JSException)
         {
             // Best-effort.
+        }
+    }
+
+    /// <summary>Executes an editor command via the JS engine bridge (used by the Blazor ribbon).</summary>
+    public Task ExecuteEditorCommandAsync(string command, object? payload = null)
+    {
+        return ExecuteRuntimeCommandAsync(command, payload);
+    }
+
+    /// <summary>Runs undo in the JS-owned WYSIWYG runtime.</summary>
+    public async Task<bool> UndoRuntimeAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return false;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>("tmDocumentEditorRuntime.undo", _instanceId);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>Runs redo in the JS-owned WYSIWYG runtime.</summary>
+    public async Task<bool> RedoRuntimeAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady) return false;
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>("tmDocumentEditorRuntime.redo", _instanceId);
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -1158,7 +1474,7 @@
         {
             try
             {
-                await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.insertImageNode", _instanceId, block, false);
+                await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.insertImageNode", _instanceId, block, false);
             }
             catch (JSException)
             {
@@ -1219,7 +1535,7 @@
         if (_jsFailed || _disposed || snapshot is null) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.restoreSelection", _instanceId, snapshot);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.restoreSelection", _instanceId, snapshot);
         }
         catch (JSException)
         {
@@ -1233,7 +1549,21 @@
         if (_jsFailed || _disposed) return;
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.focus", _instanceId);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.focus", _instanceId);
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
+    /// <summary>Closes the active header/footer editing region and returns focus to the body.</summary>
+    public async Task CloseHeaderFooterAsync()
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.closeHeaderFooter", _instanceId);
         }
         catch (JSException)
         {
@@ -1288,7 +1618,7 @@
 
         try
         {
-            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.dispose", _instanceId);
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.dispose", _instanceId);
         }
         catch
         {

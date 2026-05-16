@@ -206,8 +206,33 @@ public class TableCellContent
     /// <summary>Merge metadata.</summary>
     public TableCellMerge Merge { get; set; } = new();
 
+    /// <summary>Optional cell width in points or pixels, depending on renderer context.</summary>
+    public double? Width { get; set; }
+
+    /// <summary>Optional cell background color.</summary>
+    public string? BackgroundColor { get; set; }
+
+    /// <summary>Cell border styles.</summary>
+    public TableCellBorders Borders { get; set; } = new();
+
     /// <summary>Blocks nested in the table cell.</summary>
     public List<DocumentBlock> Blocks { get; set; } = [];
+}
+
+/// <summary>CSS-like border styles for a table cell.</summary>
+public class TableCellBorders
+{
+    /// <summary>Top border style.</summary>
+    public string? Top { get; set; }
+
+    /// <summary>Right border style.</summary>
+    public string? Right { get; set; }
+
+    /// <summary>Bottom border style.</summary>
+    public string? Bottom { get; set; }
+
+    /// <summary>Left border style.</summary>
+    public string? Left { get; set; }
 }
 
 /// <summary>Metadata describing how a table cell participates in a merge.</summary>
@@ -250,6 +275,9 @@ public class ImageBlockContent : DocumentBlockContent
 
     /// <summary>Image size.</summary>
     public DocumentImageSize Size { get; set; } = new();
+
+    /// <summary>Intrinsic image size reported by the image asset once loaded.</summary>
+    public DocumentImageSize NaturalSize { get; set; } = new();
 
     /// <summary>Image alignment.</summary>
     public DocumentImageAlignment Alignment { get; set; } = DocumentImageAlignment.Center;

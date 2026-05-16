@@ -13,6 +13,7 @@ public class DocumentCollaborationSync
     private readonly DocumentWysiwygOperationMapper _wysiwygOperationMapper;
     private readonly DocumentOperationLog _operationLog = new();
     private DocumentCollaborationSession? _session;
+    private long _localSequence;
 
     /// <summary>Creates a sync coordinator.</summary>
     public DocumentCollaborationSync(
@@ -143,11 +144,13 @@ public class DocumentCollaborationSync
             });
         }
 
-        return new DocumentOperationBatch
+        var batch = new DocumentOperationBatch
         {
             DocumentId = after.DocumentId,
             Operations = operations
         };
+        EnsureLocalBatchIdentity(batch);
+        return batch;
     }
 
     private IEnumerable<DocumentOperation> CreateRevisionOperations(DocumentEditorDocument before, DocumentEditorDocument after)
@@ -203,7 +206,12 @@ public class DocumentCollaborationSync
     /// <summary>Creates an operation batch from a local WYSIWYG patch.</summary>
     public DocumentOperationBatch CreateLocalPatchBatch(DocumentEditorDocument before, WysiwygPatch patch)
     {
-        return _wysiwygOperationMapper.CreateBatch(before, patch, CreateMetadata(patch));
+        var batch = _wysiwygOperationMapper.CreateBatch(before, patch, CreateMetadata(patch));
+        EnsureLocalBatchIdentity(
+            batch,
+            patch.TransactionId,
+            patch.AfterSelection ?? patch.Selection);
+        return batch;
     }
 
     /// <summary>Applies and broadcasts local operations optimistically.</summary>
@@ -216,6 +224,7 @@ public class DocumentCollaborationSync
             return DocumentOperationValidationResult.Invalid("Collaboration session is not joined.");
         }
 
+        EnsureLocalBatchIdentity(batch);
         EnsureLocalOperationIdentity(batch);
         var resolved = _resolver.Resolve(batch.Operations);
         batch.Operations = resolved.ToList();
@@ -305,7 +314,7 @@ public class DocumentCollaborationSync
         return DocumentOperationValidationResult.Valid();
     }
 
-    /// <summary>Broadcasts a local cursor and refreshes remote cursors.</summary>
+    /// <summary>Broadcasts a local cursor and refreshes remote cursors when the provider is pull-based.</summary>
     public async Task UpdateCursorAsync(DocumentCollaborationCursor cursor, CancellationToken cancellationToken = default)
     {
         if (_session is null)
@@ -317,6 +326,11 @@ public class DocumentCollaborationSync
         cursor.SessionId = _session.Id;
         cursor.ClientId = _session.ClientId;
         await _provider.BroadcastCursorAsync(cursor, cancellationToken);
+        if (_provider is IDocumentCollaborationRealtimeProvider)
+        {
+            return;
+        }
+
         RemoteCursors = (await _provider.GetCursorsAsync(Document.DocumentId, cancellationToken))
             .Where(item => item.SessionId != _session.Id)
             .ToList();
@@ -334,6 +348,40 @@ public class DocumentCollaborationSync
             RevisionId = patch?.RevisionId,
             RevisionType = patch?.RevisionType
         };
+    }
+
+    private void EnsureLocalBatchIdentity(
+        DocumentOperationBatch batch,
+        string? transactionId = null,
+        WysiwygSelectionSnapshot? selectionAfter = null)
+    {
+        if (string.IsNullOrWhiteSpace(batch.ClientId))
+        {
+            batch.ClientId = _session?.ClientId;
+        }
+
+        if (string.IsNullOrWhiteSpace(batch.TransactionId))
+        {
+            batch.TransactionId = !string.IsNullOrWhiteSpace(transactionId)
+                ? transactionId
+                : batch.Operations
+                    .Select(operation => operation.Metadata?.TransactionId)
+                    .FirstOrDefault(value => !string.IsNullOrWhiteSpace(value));
+        }
+
+        if (batch.LocalSequence <= 0)
+        {
+            batch.LocalSequence = ++_localSequence;
+        }
+        else
+        {
+            _localSequence = Math.Max(_localSequence, batch.LocalSequence);
+        }
+
+        if (batch.SelectionAfter is null && selectionAfter is not null)
+        {
+            batch.SelectionAfter = Clone(selectionAfter);
+        }
     }
 
     private void EnsureLocalOperationIdentity(DocumentOperationBatch batch)

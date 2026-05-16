@@ -3,7 +3,7 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 /// <summary>Selection state snapshot produced by the WYSIWYG JS engine.</summary>
 public sealed class WysiwygSelectionSnapshot
 {
-    /// <summary>Logical editor region: Body, Header, Footer, Image, or TableCell.</summary>
+    /// <summary>Logical editor region: Body, Header, Footer, Caption, Footnote, Endnote, Image, or TableCell.</summary>
     public string Region { get; set; } = "Body";
 
     /// <summary>Zero-based rendered page index when the region can be resolved.</summary>
@@ -11,6 +11,12 @@ public sealed class WysiwygSelectionSnapshot
 
     /// <summary>Header/footer definition id when the selection is inside a header or footer region.</summary>
     public string? HeaderFooterId { get; set; }
+
+    /// <summary>Runtime node id for the anchor position, usually the inline id.</summary>
+    public string? AnchorNodeId { get; set; }
+
+    /// <summary>Runtime node id for the focus position, usually the inline id.</summary>
+    public string? FocusNodeId { get; set; }
 
     /// <summary>Block id of the anchor (start) position.</summary>
     public string? AnchorBlockId { get; set; }
@@ -47,4 +53,7 @@ public sealed class WysiwygSelectionSnapshot
 
     /// <summary>Stable table cell path when the selection is inside a table cell.</summary>
     public string? TableCellPath { get; set; }
+
+    /// <summary>Selected image block id when the active region is an image object.</summary>
+    public string? ActiveImageBlockId { get; set; }
 }
