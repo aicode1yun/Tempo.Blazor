@@ -50,6 +50,15 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     [Parameter]
     public EventCallback<string> OnNavigateToPage { get; set; }
 
+    /// <summary>
+    /// Raised when the user clicks "Create token" in the token dropdown.
+    /// The consuming app should show a dialog, create the token, then call
+    /// <see cref="ITokenDataProvider.Refresh"/> and re-open the dropdown if needed.
+    /// Arg = current search query typed by the user.
+    /// </summary>
+    [Parameter]
+    public EventCallback<string> OnCreateTokenRequested { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private List<IPageBlock> _blocks          = [];
@@ -110,7 +119,9 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private bool   _tokenDropdownVisible;
     private double _tokenDropdownTop;
     private double _tokenDropdownLeft;
-    private string _tokenBlockId = string.Empty;
+    private string _tokenBlockId    = string.Empty;
+    private string? _tokenCurrentKey;          // key of chip being replaced (null = insert mode)
+    private bool   _tokenIsEditMode;           // true when dropdown was opened by clicking an existing chip
 
     // ── Mention menu state ────────────────────────────────────────────────────
 
@@ -791,7 +802,21 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
         _tokenBlockId          = args.BlockId;
         _tokenDropdownTop      = args.Top;
         _tokenDropdownLeft     = args.Left;
+        _tokenCurrentKey       = null;
+        _tokenIsEditMode       = false;
         _tokenDropdownVisible  = true;
+        StateHasChanged();
+        return Task.CompletedTask;
+    }
+
+    [JSInvokable]
+    public Task OnTokenChipClicked(string key, double top, double left)
+    {
+        _tokenCurrentKey      = key;
+        _tokenIsEditMode      = true;
+        _tokenDropdownTop     = top;
+        _tokenDropdownLeft    = left;
+        _tokenDropdownVisible = true;
         StateHasChanged();
         return Task.CompletedTask;
     }
@@ -799,12 +824,18 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private async Task HandleTokenItemSelectedAsync((string Key, string DisplayName, string? ColorClass) args)
     {
         _tokenDropdownVisible = false;
-        _tokenBlockId         = string.Empty;
+        var wasEdit = _tokenIsEditMode;
+        _tokenBlockId    = string.Empty;
+        _tokenCurrentKey = null;
+        _tokenIsEditMode = false;
         StateHasChanged();
 
         try
         {
-            await JS.InvokeVoidAsync("tmNotionEditor.insertNotionToken", args.Key, args.DisplayName, args.ColorClass);
+            if (wasEdit)
+                await JS.InvokeVoidAsync("tmNotionEditor.replaceNotionToken", args.Key, args.DisplayName, args.ColorClass);
+            else
+                await JS.InvokeVoidAsync("tmNotionEditor.insertNotionToken", args.Key, args.DisplayName, args.ColorClass);
         }
         catch { }
     }
@@ -812,10 +843,41 @@ public partial class TmNotionPage : ComponentBase, IAsyncDisposable
     private async Task HandleTokenDropdownClosedAsync()
     {
         _tokenDropdownVisible = false;
-        _tokenBlockId         = string.Empty;
+        var wasEdit = _tokenIsEditMode;
+        _tokenBlockId    = string.Empty;
+        _tokenCurrentKey = null;
+        _tokenIsEditMode = false;
         StateHasChanged();
 
-        try { await JS.InvokeVoidAsync("tmNotionEditor.cancelTokenTrigger"); } catch { }
+        try
+        {
+            if (wasEdit)
+                await JS.InvokeVoidAsync("tmNotionEditor.cancelChipEdit");
+            else
+                await JS.InvokeVoidAsync("tmNotionEditor.cancelTokenTrigger");
+        }
+        catch { }
+    }
+
+    private async Task HandleTokenCreateRequestedAsync(string query)
+    {
+        _tokenDropdownVisible = false;
+        var wasEdit = _tokenIsEditMode;
+        _tokenCurrentKey = null;
+        _tokenIsEditMode = false;
+        StateHasChanged();
+
+        try
+        {
+            // Clear any in-progress chip-edit state in JS
+            if (wasEdit)
+                await JS.InvokeVoidAsync("tmNotionEditor.cancelChipEdit");
+            else
+                await JS.InvokeVoidAsync("tmNotionEditor.cancelTokenTrigger");
+        }
+        catch { }
+
+        await OnCreateTokenRequested.InvokeAsync(query);
     }
 
     // ── Mention menu handlers ─────────────────────────────────────────────────

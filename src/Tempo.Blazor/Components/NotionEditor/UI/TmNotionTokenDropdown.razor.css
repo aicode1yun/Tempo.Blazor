@@ -135,18 +135,92 @@
 /* ── Token chip (rendered inside contenteditable) ─────────────────────────── */
 
 .tm-notion-token {
-    display: inline-flex;
-    align-items: center;
-    padding: 1px 6px;
-    border-radius: 4px;
-    background: var(--tm-color-primary-subtle, #eff6ff);
-    color: var(--tm-color-primary, #0072f5);
-    border: 1px solid var(--tm-color-primary-border, #bfdbfe);
-    font-size: 0.875em;
-    font-weight: 500;
-    font-family: var(--tm-font-mono, ui-monospace, monospace);
-    white-space: nowrap;
-    cursor: default;
-    user-select: none;
-    vertical-align: baseline;
+    display:        inline-flex;
+    align-items:    center;
+    gap:            3px;
+    padding:        2px 5px 2px 7px;
+    border-radius:  5px;
+    background:     var(--tm-token-bg, #4f46e5);
+    color:          var(--tm-token-color, #fff);
+    border:         none;
+    font-size:      0.82em;
+    font-weight:    500;
+    font-family:    var(--tm-font-mono, ui-monospace, monospace);
+    white-space:    nowrap;
+    cursor:         pointer;
+    user-select:    none;
+    vertical-align: middle;
+    line-height:    1.5;
+    transition:     background 120ms, opacity 120ms;
+}
+
+.tm-notion-token:hover {
+    background: var(--tm-token-bg-hover, #4338ca);
+}
+
+.tm-notion-token__text {
+    letter-spacing: -0.01em;
+}
+
+.tm-notion-token__delete {
+    display:         inline-flex;
+    align-items:     center;
+    justify-content: center;
+    width:           14px;
+    height:          14px;
+    border-radius:   3px;
+    font-size:       13px;
+    line-height:     1;
+    opacity:         0;
+    transition:      opacity 120ms, background 120ms;
+    flex-shrink:     0;
+    color:           rgba(255, 255, 255, 0.7);
+}
+
+.tm-notion-token:hover .tm-notion-token__delete {
+    opacity: 1;
+}
+
+.tm-notion-token__delete:hover {
+    background: rgba(255, 255, 255, 0.25);
+    color:      #fff;
+}
+
+/* ── Dropdown footer (create token) ──────────────────────────────────────── */
+
+.tm-notion-token-dropdown__footer {
+    border-top: 1px solid var(--tm-border-default, #e8e8e8);
+    padding:    4px;
+}
+
+.tm-notion-token-dropdown__create-btn {
+    display:        flex;
+    align-items:    center;
+    gap:            7px;
+    width:          100%;
+    padding:        6px 8px;
+    border:         none;
+    background:     transparent;
+    border-radius:  var(--tm-radius-sm, 4px);
+    color:          var(--tm-text-secondary, #555);
+    font-size:      12px;
+    font-family:    inherit;
+    cursor:         pointer;
+    text-align:     left;
+    transition:     background 120ms;
+}
+
+.tm-notion-token-dropdown__create-btn:hover {
+    background: var(--tm-notion-bg-block-hover, rgba(0,0,0,.04));
+    color:      var(--tm-text-primary, #111);
+}
+
+.tm-notion-token-dropdown__create-btn svg {
+    flex-shrink: 0;
+    color:       var(--tm-color-primary, #0072f5);
+}
+
+.tm-notion-token-dropdown__create-query {
+    font-weight: 600;
+    color:       var(--tm-color-primary, #0072f5);
 }

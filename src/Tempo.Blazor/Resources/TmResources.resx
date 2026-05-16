@@ -3123,5 +3123,7 @@
   <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Search tokens…</value></data>
   <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>No tokens found</value></data>
   <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Loading…</value></data>
+  <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Create token</value></data>
+  <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Create token "{0}"</value></data>
 
 </root>

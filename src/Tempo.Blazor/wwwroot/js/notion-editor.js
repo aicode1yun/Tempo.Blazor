@@ -39,6 +39,7 @@ window.tmNotionEditor = (function () {
     let _tokenElement    = null; // contenteditable that triggered the token menu
     let _tokenAnchorNode = null; // text node position just before '{{'
     let _tokenAnchorOff  = 0;
+    let _chipBeingEdited = null; // chip span being replaced via click-to-edit
 
     // ── Shared helpers ─────────────────────────────────────────────────────────
 
@@ -325,6 +326,38 @@ window.tmNotionEditor = (function () {
             const left      = rect.left + window.scrollX;
             _pageDotNetRef.invokeMethodAsync('OnTextCommentMarkClicked', commentId, blockId, top, left)
                 .catch(() => {});
+        });
+    })();
+
+    // Token chip interactions — delete (×) and click-to-edit
+    (function _initTokenChipInteraction() {
+        document.addEventListener('mousedown', (e) => {
+            // × delete button
+            const del = e.target.closest('.tm-notion-token__delete');
+            if (del) {
+                e.preventDefault();
+                e.stopPropagation();
+                const chip = del.closest('.tm-notion-token');
+                if (!chip) return;
+                const inputEl = chip.closest('[contenteditable="true"]');
+                chip.remove();
+                if (inputEl) inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+                return;
+            }
+
+            // Chip body click → open dropdown for replacement
+            const chip = e.target.closest('.tm-notion-token');
+            if (!chip || !_pageDotNetRef) return;
+            if (!chip.closest('[contenteditable="true"]')) return;
+            e.preventDefault();
+            _chipBeingEdited = chip;
+            const rect = chip.getBoundingClientRect();
+            _pageDotNetRef.invokeMethodAsync(
+                'OnTokenChipClicked',
+                chip.dataset.key || '',
+                rect.bottom + 4,
+                rect.left
+            ).catch(console.error);
         });
     })();
 
@@ -1183,6 +1216,27 @@ window.tmNotionEditor = (function () {
 
     // ── Token insertion ────────────────────────────────────────────────────────
 
+    function _createTokenChip(key, displayName, colorClass) {
+        const chip = document.createElement('span');
+        chip.contentEditable = 'false';
+        chip.className = 'tm-notion-token' + (colorClass ? ' ' + colorClass : '');
+        chip.dataset.key = key;
+
+        const text = document.createElement('span');
+        text.className = 'tm-notion-token__text';
+        text.textContent = '{{ ' + displayName + ' }}';
+
+        const del = document.createElement('span');
+        del.className = 'tm-notion-token__delete';
+        del.setAttribute('aria-label', 'Remove token');
+        del.setAttribute('role', 'button');
+        del.textContent = '×';
+
+        chip.appendChild(text);
+        chip.appendChild(del);
+        return chip;
+    }
+
     function insertNotionToken(key, displayName, colorClass) {
         if (!_tokenElement) return;
         try {
@@ -1204,11 +1258,7 @@ window.tmNotionEditor = (function () {
             sel.addRange(range);
             document.execCommand('delete');
 
-            const chip = document.createElement('span');
-            chip.contentEditable = 'false';
-            chip.className = 'tm-notion-token' + (colorClass ? ' ' + colorClass : '');
-            chip.dataset.key = key;
-            chip.textContent  = displayName;
+            const chip = _createTokenChip(key, displayName, colorClass);
 
             const curSel   = window.getSelection();
             const curRange = curSel.getRangeAt(0);
@@ -1226,6 +1276,20 @@ window.tmNotionEditor = (function () {
         _tokenElement    = null;
         _tokenAnchorNode = null;
         _tokenAnchorOff  = 0;
+    }
+
+    function replaceNotionToken(key, displayName, colorClass) {
+        if (!_chipBeingEdited) return;
+        const old = _chipBeingEdited;
+        _chipBeingEdited = null;
+        const chip = _createTokenChip(key, displayName, colorClass);
+        old.parentNode?.replaceChild(chip, old);
+        const inputEl = chip.closest('[contenteditable="true"]');
+        if (inputEl) inputEl.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+
+    function cancelChipEdit() {
+        _chipBeingEdited = null;
     }
 
     function cancelTokenTrigger() {
@@ -1896,7 +1960,7 @@ window.tmNotionEditor = (function () {
         getRecentSlashItems, addRecentSlashItem,
         clearSlashQuery, refocusSlashElement,
         insertMentionChip, cancelMentionTrigger,
-        insertNotionToken, cancelTokenTrigger,
+        insertNotionToken, replaceNotionToken, cancelTokenTrigger, cancelChipEdit,
         adjustSlashMenuPosition, scrollSlashItemIntoView,
         // 44.1
         initSelectionWatcher, destroySelectionWatcher,

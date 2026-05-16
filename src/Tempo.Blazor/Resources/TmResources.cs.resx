@@ -3080,5 +3080,7 @@
   <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Hledat tokeny…</value></data>
   <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>Žádné tokeny nenalezeny</value></data>
   <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Načítání…</value></data>
+  <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Vytvořit token</value></data>
+  <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Vytvořit token „{0}"</value></data>
 
 </root>

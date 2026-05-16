@@ -4,7 +4,7 @@ namespace Tempo.Blazor.Demo.Services;
 
 public sealed class DemoNotionTokenProvider : ITokenDataProvider
 {
-    private static readonly IReadOnlyList<DemoNotionToken> Tokens =
+    private readonly List<DemoNotionToken> _tokens =
     [
         new("client.name",         "Client name",         "Full legal name of the client or counterparty.",   "Client",  "Text",   "👤"),
         new("client.email",        "Client email",        "Primary contact e-mail address.",                  "Client",  "Text",   "📧"),
@@ -22,11 +22,11 @@ public sealed class DemoNotionTokenProvider : ITokenDataProvider
         new("page.title",          "Page title",          "Title of the current page or document.",           "System",  "Text",   "📄"),
     ];
 
-    public bool SupportsCreation => false;
+    public bool SupportsCreation => true;
 
     public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)
     {
-        IEnumerable<IToken> result = Tokens;
+        IEnumerable<IToken> result = _tokens;
         if (!string.IsNullOrWhiteSpace(query))
         {
             result = result.Where(t =>
@@ -39,6 +39,17 @@ public sealed class DemoNotionTokenProvider : ITokenDataProvider
     }
 
     public void Refresh() { }
+
+    /// <summary>Adds a custom token to the in-memory list.</summary>
+    public void AddToken(string displayName, string? description = null)
+    {
+        var key = "custom." + displayName.ToLowerInvariant()
+            .Replace(' ', '_')
+            .Replace('.', '_');
+        // Deduplicate by key
+        if (_tokens.Any(t => t.Key == key)) return;
+        _tokens.Add(new(key, displayName, description, "Custom", "Text", "✨"));
+    }
 
     private sealed record DemoNotionToken(
         string  Key,

@@ -29,6 +29,12 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
     /// <summary>Raised when the user dismisses the dropdown (Escape / backdrop click).</summary>
     [Parameter] public EventCallback OnClosed { get; set; }
 
+    /// <summary>Raised when the user clicks "Create token" (optional). Arg = current search query.</summary>
+    [Parameter] public EventCallback<string> OnCreateRequested { get; set; }
+
+    /// <summary>Pre-selects the item matching this key when the dropdown opens.</summary>
+    [Parameter] public string? CurrentKey { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private string           _query         = string.Empty;
@@ -95,9 +101,17 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
             var results = await Context.TokenProvider.SearchTokensAsync(query, token);
             if (!token.IsCancellationRequested)
             {
-                _items         = results.ToList();
-                _selectedIndex = 0;
-                _isLoading     = false;
+                _items = results.ToList();
+                if (!string.IsNullOrEmpty(CurrentKey))
+                {
+                    var ki = _items.FindIndex(t => t.Key == CurrentKey);
+                    _selectedIndex = ki >= 0 ? ki : 0;
+                }
+                else
+                {
+                    _selectedIndex = 0;
+                }
+                _isLoading = false;
                 StateHasChanged();
             }
         }
@@ -161,6 +175,10 @@ public partial class TmNotionTokenDropdown : ComponentBase, IDisposable
     {
         await OnItemSelected.InvokeAsync((token.Key, token.DisplayName, token.ColorClass));
     }
+
+    // ── Create ────────────────────────────────────────────────────────────────
+
+    private async Task HandleCreateAsync() => await OnCreateRequested.InvokeAsync(_query);
 
     // ── Backdrop ──────────────────────────────────────────────────────────────
 

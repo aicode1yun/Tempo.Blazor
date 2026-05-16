@@ -2670,5 +2670,7 @@
   <data name="TmNotionTokenDropdown_SearchPlaceholder"  xml:space="preserve"><value>Rechercher des jetons…</value></data>
   <data name="TmNotionTokenDropdown_NoResults"          xml:space="preserve"><value>Aucun jeton trouvé</value></data>
   <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Chargement…</value></data>
+  <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Créer un jeton</value></data>
+  <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Créer le jeton « {0} »</value></data>
 
 </root>

@@ -74,6 +74,14 @@ public partial class TmNotionEditor : ComponentBase, IAsyncDisposable
     /// <summary>Raised when the user requests to open the trash panel from the sidebar.</summary>
     [Parameter] public EventCallback OnTrashRequested { get; set; }
 
+    /// <summary>
+    /// Raised when the user clicks "Create token" in the token dropdown.
+    /// Arg = current search query typed by the user (may be empty).
+    /// The consuming app should show a create-token dialog, add the token to
+    /// its <see cref="ITokenDataProvider"/>, and optionally call Refresh().
+    /// </summary>
+    [Parameter] public EventCallback<string> OnCreateTokenRequested { get; set; }
+
     // ── State ────────────────────────────────────────────────────────────────
 
     private INotionPage?               _currentPage;

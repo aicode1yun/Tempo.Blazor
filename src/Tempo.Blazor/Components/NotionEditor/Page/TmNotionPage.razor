@@ -138,8 +138,12 @@
     <TmNotionTokenDropdown Visible="_tokenDropdownVisible"
                            Top="_tokenDropdownTop"
                            Left="_tokenDropdownLeft"
+                           CurrentKey="_tokenCurrentKey"
                            OnItemSelected="HandleTokenItemSelectedAsync"
-                           OnClosed="HandleTokenDropdownClosedAsync" />
+                           OnClosed="HandleTokenDropdownClosedAsync"
+                           OnCreateRequested="@(OnCreateTokenRequested.HasDelegate
+                               ? EventCallback.Factory.Create<string>(this, HandleTokenCreateRequestedAsync)
+                               : default)" />
 }
 
 @* ── Page history panel (portal — position:fixed) *@
