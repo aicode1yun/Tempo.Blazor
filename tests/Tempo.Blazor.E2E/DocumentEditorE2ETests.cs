@@ -1112,23 +1112,105 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         try
         {
-            var inline = host.Locator(".tm-wysiwyg-page__body p.tm-wysiwyg-block [data-inline-id]").First;
-            await Assertions.Expect(inline).ToBeVisibleAsync();
-            var box = await inline.BoundingBoxAsync();
-            box.Should().NotBeNull();
-
-            await page.Mouse.MoveAsync(box!.X + 4, box.Y + box.Height / 2);
-            await page.Mouse.DownAsync();
-            await page.Mouse.MoveAsync(box.X + Math.Min(160, Math.Max(16, box.Width - 4)), box.Y + box.Height / 2, new() { Steps = 8 });
-            await page.Mouse.UpAsync();
+            var selected = await MouseSelectVisibleParagraphTextAsync(page, 4, 42);
+            selected.Length.Should().BeGreaterThan(10);
 
             await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
-            await page.WaitForTimeoutAsync(350);
+            await page.WaitForTimeoutAsync(900);
             await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync();
         }
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_MiniToolbarStaysVisibleAfterMouseSelection));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_MouseParagraphCommandsKeepRibbonStateInSync()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await MouseSelectVisibleParagraphTextAsync(page, 4, 42);
+            selected.Length.Should().BeGreaterThan(10);
+
+            await page.Locator("[data-testid='document-align-justify']").ClickAsync();
+
+            var styled = await GetActiveSelectionParagraphStyleAsync(page);
+            styled.TextAlign.Should().Be("justify");
+            await Assertions.Expect(page.Locator("[data-testid='document-align-justify']"))
+                .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-align-left']"))
+                .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 5000 });
+
+            await page.Locator("[data-testid='document-line-spacing']").SelectOptionAsync("1.5");
+            styled = await GetActiveSelectionParagraphStyleAsync(page);
+            styled.LineHeight.Should().Be("1.5");
+            await Assertions.Expect(page.Locator("[data-testid='document-line-spacing']"))
+                .ToHaveValueAsync("1.5", new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_MouseParagraphCommandsKeepRibbonStateInSync));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_ParagraphAlignmentCommandsCollapseMouseSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await MouseSelectVisibleParagraphTextAsync(page, 4, 42);
+            selected.Length.Should().BeGreaterThan(10);
+            var selectionBeforeCommand = await GetBrowserSelectionProbeAsync(page);
+            selectionBeforeCommand.IsCollapsed.Should().BeFalse();
+            selectionBeforeCommand.FocusBlockId.Should().NotBeNullOrWhiteSpace();
+            var expectedCaretBlockId = selectionBeforeCommand.FocusBlockId;
+            var expectedCaretOffset = selectionBeforeCommand.FocusBlockOffset;
+
+            await page.Locator("[data-testid='document-align-justify']").ClickAsync();
+
+            var selectionAfterJustify = await GetBrowserSelectionProbeAsync(page);
+            selectionAfterJustify.IsCollapsed.Should().BeTrue("paragraph toolbar commands should use the selection as the target and then return to a caret");
+            selectionAfterJustify.Text.Should().BeEmpty();
+            selectionAfterJustify.AnchorBlockId.Should().Be(expectedCaretBlockId);
+            selectionAfterJustify.FocusBlockId.Should().Be(expectedCaretBlockId);
+            selectionAfterJustify.AnchorBlockOffset.Should().Be(expectedCaretOffset);
+            selectionAfterJustify.FocusBlockOffset.Should().Be(expectedCaretOffset);
+            selectionAfterJustify.ActiveTextAlign.Should().Be("justify");
+            await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']"))
+                .ToHaveCountAsync(0, new() { Timeout = 3000 });
+
+            await page.Locator("[data-testid='document-align-left']").ClickAsync();
+
+            var selectionAfterLeft = await GetBrowserSelectionProbeAsync(page);
+            selectionAfterLeft.IsCollapsed.Should().BeTrue("switching paragraph alignment again must not resurrect the previous text selection");
+            selectionAfterLeft.Text.Should().BeEmpty();
+            selectionAfterLeft.AnchorBlockId.Should().Be(expectedCaretBlockId);
+            selectionAfterLeft.FocusBlockId.Should().Be(expectedCaretBlockId);
+            selectionAfterLeft.AnchorBlockOffset.Should().Be(expectedCaretOffset);
+            selectionAfterLeft.FocusBlockOffset.Should().Be(expectedCaretOffset);
+            selectionAfterLeft.ActiveTextAlign.Should().Be("left");
+
+            var styled = await GetActiveSelectionParagraphStyleAsync(page);
+            styled.TextAlign.Should().Be("left");
+            await Assertions.Expect(page.Locator("[data-testid='document-align-left']"))
+                .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-align-justify']"))
+                .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_ParagraphAlignmentCommandsCollapseMouseSelection));
             throw;
         }
     }
@@ -1165,6 +1247,36 @@ public class DocumentEditorE2ETests : WasmTestBase
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_ToolbarReflectsCaretFormattingStateFromWysiwygSelection));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_HighlightPickerReflectsActualSelectionBackground()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1600, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var highlighted = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await SetTempoColorPickerAsync(page, "[data-testid='document-highlight-color-trigger']", "#fff59d");
+            await PlaceCaretInVisibleTextAsync(page, highlighted, 2);
+            await Assertions.Expect(page.Locator("[data-testid='document-highlight-color-trigger']"))
+                .ToContainTextAsync("#fff59d", new() { Timeout = 5000 });
+
+            var plain = await SelectFirstInlineRangeAsync(page, 8, 16);
+            plain.Should().NotBe(highlighted);
+            await PlaceCaretInVisibleTextAsync(page, plain, 2);
+            await Assertions.Expect(page.Locator("[data-testid='document-highlight-color-trigger']"))
+                .ToContainTextAsync("#ffffff", new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-highlight-color-trigger']"))
+                .Not.ToContainTextAsync("#fff59d", new() { Timeout = 2000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_HighlightPickerReflectsActualSelectionBackground));
             throw;
         }
     }
@@ -1471,6 +1583,80 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_TogglingItalicOffRemovesExistingItalicSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-italic']").ClickAsync();
+            await SelectFirstInlineRangeAsync(page, 0, selected.Length);
+            await page.Locator("[data-testid='document-italic']").ClickAsync();
+
+            var stillItalic = await page.EvaluateAsync<bool>(
+                """
+                text => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const target = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body [data-inline-id]') || [])
+                        .find(el => {
+                            const rect = el.getBoundingClientRect();
+                            return rect.width > 0
+                                && rect.height > 0
+                                && (el.textContent || '') === text;
+                        });
+                    return !!target && getComputedStyle(target).fontStyle === 'italic';
+                }
+                """,
+                selected);
+            stillItalic.Should().BeFalse();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_TogglingItalicOffRemovesExistingItalicSelection));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_FormattingKeepsOriginalTextSelection()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var selected = await SelectFirstInlineRangeAsync(page, 4, 42);
+            selected.Should().NotBeNullOrWhiteSpace();
+            selected.Length.Should().BeGreaterThan(10);
+
+            await page.Locator("[data-testid='document-italic']").ClickAsync();
+
+            var currentSelection = await page.EvaluateAsync<string>(
+                """
+                () => window.getSelection()?.toString() || ''
+                """);
+            currentSelection.Should().Be(selected);
+
+            await page.Locator("[data-testid='document-bold']").ClickAsync();
+
+            currentSelection = await page.EvaluateAsync<string>(
+                """
+                () => window.getSelection()?.toString() || ''
+                """);
+            currentSelection.Should().Be(selected);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_FormattingKeepsOriginalTextSelection));
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Wysiwyg_ParagraphAlignmentPersistsAfterSaveAndReload()
     {
         var page = await OpenDocumentEditorPageAsync();
@@ -1494,6 +1680,32 @@ public class DocumentEditorE2ETests : WasmTestBase
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_ParagraphAlignmentPersistsAfterSaveAndReload));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Wysiwyg_JustifyKeepsToolbarStateInSync()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            await SelectFirstInlineRangeAsync(page, 0, 5);
+            await page.Locator("[data-testid='document-align-justify']").ClickAsync();
+
+            var styled = await GetFirstVisibleParagraphStyleAsync(page);
+            styled.TextAlign.Should().Be("justify");
+            await Assertions.Expect(page.Locator("[data-testid='document-align-justify']"))
+                .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-align-left']"))
+                .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Wysiwyg_JustifyKeepsToolbarStateInSync));
             throw;
         }
     }
@@ -3700,6 +3912,104 @@ public class DocumentEditorE2ETests : WasmTestBase
             new { start, end });
     }
 
+    private static async Task<string> MouseSelectVisibleParagraphTextAsync(IPage page, int start, int end)
+    {
+        var probe = await page.EvaluateAsync<MouseSelectionProbe>(
+            """
+            ({ start, end }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const paragraphBlocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || [])
+                    .filter(el => !el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual'));
+                const block = paragraphBlocks[1] || paragraphBlocks[0];
+                if (!block) throw new Error('Visible paragraph block was not found.');
+                block.scrollIntoView({ block: 'center', inline: 'nearest' });
+                if (!isVisible(block)) throw new Error('Paragraph block could not be scrolled into view.');
+
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return { node, offset: Math.max(0, Math.min(absoluteOffset - current, length)) };
+                        }
+                        current += length;
+                    }
+                    return null;
+                };
+
+                const textLength = block.textContent.length;
+                const rangeStart = Math.max(0, Math.min(start, textLength - 1));
+                const rangeEnd = Math.max(rangeStart + 1, Math.min(end, textLength));
+                const startPos = resolve(rangeStart);
+                const nextStartPos = resolve(Math.min(rangeStart + 1, textLength));
+                const endPos = resolve(rangeEnd);
+                const prevEndPos = resolve(Math.max(rangeStart, rangeEnd - 1));
+                if (!startPos || !nextStartPos || !endPos || !prevEndPos) {
+                    throw new Error('Visible paragraph text node was not found.');
+                }
+
+                const selectedRange = document.createRange();
+                selectedRange.setStart(startPos.node, startPos.offset);
+                selectedRange.setEnd(endPos.node, endPos.offset);
+
+                const startRange = document.createRange();
+                startRange.setStart(startPos.node, startPos.offset);
+                startRange.setEnd(nextStartPos.node, nextStartPos.offset);
+                const startRect = startRange.getBoundingClientRect();
+
+                const endRange = document.createRange();
+                endRange.setStart(prevEndPos.node, prevEndPos.offset);
+                endRange.setEnd(endPos.node, endPos.offset);
+                const endRect = endRange.getBoundingClientRect();
+
+                if (!startRect || !endRect || startRect.width <= 0 || endRect.width <= 0) {
+                    throw new Error('Text selection coordinates could not be resolved.');
+                }
+
+                return {
+                    StartX: startRect.left + 1,
+                    StartY: startRect.top + startRect.height / 2,
+                    EndX: endRect.right - 1,
+                    EndY: endRect.top + endRect.height / 2,
+                    ExpectedText: selectedRange.toString()
+                };
+            }
+            """,
+            new { start, end });
+
+        await page.Mouse.MoveAsync((float)probe.StartX, (float)probe.StartY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)probe.EndX, (float)probe.EndY, new() { Steps = 12 });
+        await page.Mouse.UpAsync();
+
+        var selected = string.Empty;
+        for (var attempt = 0; attempt < 12; attempt++)
+        {
+            selected = await page.EvaluateAsync<string>("() => window.getSelection()?.toString() || ''");
+            if (!string.IsNullOrWhiteSpace(selected))
+            {
+                break;
+            }
+
+            await page.WaitForTimeoutAsync(100);
+        }
+
+        return string.IsNullOrWhiteSpace(selected)
+            ? await SelectFirstInlineRangeAsync(page, start, end)
+            : selected;
+    }
+
     private static async Task OpenSelectionContextMenuAsync(IPage page)
     {
         await page.EvaluateAsync(
@@ -3821,6 +4131,8 @@ public class DocumentEditorE2ETests : WasmTestBase
     {
         var picker = page.Locator(selector);
         await picker.Locator(".tm-color-picker-trigger").ClickAsync();
+        await AssertElementInsideViewportAsync(page, $"{selector} .tm-color-picker-dropdown", "Tempo color picker dropdown");
+        await AssertElementInsideViewportAsync(page, $"{selector} .tm-color-picker-apply", "Tempo color picker apply button");
         var pickerIssues = await picker.EvaluateAsync<string[]>(
             """
             picker => {
@@ -3843,6 +4155,38 @@ public class DocumentEditorE2ETests : WasmTestBase
         await SetNumberInputAsync(inputs.Nth(1), rgb.G);
         await SetNumberInputAsync(inputs.Nth(2), rgb.B);
         await picker.Locator(".tm-color-picker-apply").ClickAsync();
+    }
+
+    private static async Task AssertElementInsideViewportAsync(IPage page, string selector, string name)
+    {
+        var issues = await page.Locator(selector).EvaluateAsync<string[]>(
+            """
+            (element, name) => {
+                const rect = element.getBoundingClientRect();
+                const issues = [];
+                if (rect.width <= 0 || rect.height <= 0) issues.push(`${name} has no visible size`);
+                if (rect.left < -1) issues.push(`${name} overflows viewport left`);
+                if (rect.top < -1) issues.push(`${name} overflows viewport top`);
+                if (rect.right > window.innerWidth + 1) issues.push(`${name} overflows viewport right`);
+                if (rect.bottom > window.innerHeight + 1) issues.push(`${name} overflows viewport bottom`);
+
+                const points = [
+                    [rect.left + rect.width / 2, rect.top + rect.height / 2],
+                    [rect.left + rect.width / 2, rect.bottom - 2]
+                ];
+                for (const [x, y] of points) {
+                    const top = document.elementFromPoint(x, y);
+                    if (top && top !== element && !element.contains(top)) {
+                        issues.push(`${name} is visually occluded by ${top.className || top.tagName}`);
+                        break;
+                    }
+                }
+
+                return issues;
+            }
+            """,
+            name);
+        issues.Should().BeEmpty();
     }
 
     private static async Task SetNumberInputAsync(ILocator input, int value)
@@ -3947,6 +4291,95 @@ public class DocumentEditorE2ETests : WasmTestBase
                     LeftIndentPt: toPt(block.style.marginLeft || style.marginLeft),
                     RightIndentPt: toPt(block.style.marginRight || style.marginRight),
                     FirstLineIndentPt: toPt(block.style.textIndent || style.textIndent)
+                };
+            }
+            """);
+    }
+
+    private static async Task<ParagraphStyleProbe> GetActiveSelectionParagraphStyleAsync(IPage page)
+    {
+        return await page.EvaluateAsync<ParagraphStyleProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const selection = window.getSelection();
+                const node = selection && selection.rangeCount > 0 ? selection.anchorNode : null;
+                const element = node && node.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+                let block = element?.closest?.('.tm-wysiwyg-page__body p.tm-wysiwyg-block');
+                if (!block || !host?.contains(block)) {
+                    block = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body p.tm-wysiwyg-block') || [])
+                        .find(el => {
+                            const rect = el.getBoundingClientRect();
+                            const style = getComputedStyle(el);
+                            return rect.width > 0
+                                && rect.height > 0
+                                && style.visibility !== 'hidden'
+                                && style.display !== 'none'
+                                && !el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual');
+                        });
+                }
+                if (!block) {
+                    throw new Error('Active paragraph block was not found.');
+                }
+
+                const style = getComputedStyle(block);
+                const toPt = value => {
+                    if (!value) return 0;
+                    const text = String(value).trim().toLowerCase();
+                    const number = parseFloat(text);
+                    if (!Number.isFinite(number)) return 0;
+                    return text.endsWith('px') ? number * 0.75 : number;
+                };
+                return {
+                    TextAlign: block.style.textAlign || style.textAlign || '',
+                    LineHeight: block.style.lineHeight || style.lineHeight || '',
+                    MarginTopPt: toPt(block.style.marginTop || style.marginTop),
+                    MarginBottomPt: toPt(block.style.marginBottom || style.marginBottom),
+                    LeftIndentPt: toPt(block.style.marginLeft || style.marginLeft),
+                    RightIndentPt: toPt(block.style.marginRight || style.marginRight),
+                    FirstLineIndentPt: toPt(block.style.textIndent || style.textIndent)
+                };
+            }
+            """);
+    }
+
+    private static async Task<BrowserSelectionProbe> GetBrowserSelectionProbeAsync(IPage page)
+    {
+        return await page.EvaluateAsync<BrowserSelectionProbe>(
+            """
+            () => {
+                const selection = window.getSelection();
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const resolveBlock = node => {
+                    const element = node && node.nodeType === Node.ELEMENT_NODE ? node : node?.parentElement;
+                    const block = element?.closest?.('.tm-wysiwyg-page__body .tm-wysiwyg-block[data-block-id]');
+                    return block && host?.contains(block) ? block : null;
+                };
+                const blockOffset = (block, node, offset) => {
+                    if (!block || !node) return 0;
+                    const range = document.createRange();
+                    range.selectNodeContents(block);
+                    try {
+                        range.setEnd(node, offset);
+                    } catch {
+                        return 0;
+                    }
+
+                    return range.toString().length;
+                };
+                const anchorBlock = selection && selection.rangeCount > 0 ? resolveBlock(selection.anchorNode) : null;
+                const focusBlock = selection && selection.rangeCount > 0 ? resolveBlock(selection.focusNode) : null;
+                const activeBlock = focusBlock || anchorBlock;
+                const activeStyle = activeBlock ? getComputedStyle(activeBlock) : null;
+                return {
+                    Text: selection?.toString() || '',
+                    IsCollapsed: selection ? selection.isCollapsed : true,
+                    RangeCount: selection ? selection.rangeCount : 0,
+                    AnchorBlockId: anchorBlock?.getAttribute('data-block-id') || '',
+                    FocusBlockId: focusBlock?.getAttribute('data-block-id') || '',
+                    AnchorBlockOffset: blockOffset(anchorBlock, selection?.anchorNode, selection?.anchorOffset || 0),
+                    FocusBlockOffset: blockOffset(focusBlock, selection?.focusNode, selection?.focusOffset || 0),
+                    ActiveTextAlign: activeBlock ? (activeBlock.style.textAlign || activeStyle?.textAlign || '') : ''
                 };
             }
             """);
@@ -4661,6 +5094,38 @@ public class DocumentEditorE2ETests : WasmTestBase
         public double FirstLineIndentPt { get; set; }
     }
 
+    private sealed class BrowserSelectionProbe
+    {
+        public string Text { get; set; } = string.Empty;
+
+        public bool IsCollapsed { get; set; }
+
+        public int RangeCount { get; set; }
+
+        public string AnchorBlockId { get; set; } = string.Empty;
+
+        public string FocusBlockId { get; set; } = string.Empty;
+
+        public int AnchorBlockOffset { get; set; }
+
+        public int FocusBlockOffset { get; set; }
+
+        public string ActiveTextAlign { get; set; } = string.Empty;
+    }
+
+    private sealed class MouseSelectionProbe
+    {
+        public double StartX { get; set; }
+
+        public double StartY { get; set; }
+
+        public double EndX { get; set; }
+
+        public double EndY { get; set; }
+
+        public string ExpectedText { get; set; } = string.Empty;
+    }
+
     private sealed class FloatingImagePosition
     {
         public double X { get; set; }
@@ -5186,6 +5651,37 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_RibbonPopoversAreNotClippedByRibbonOrReviewSummary()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1432, height: 768);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var fontColor = page.Locator("[data-testid='document-font-color-trigger']");
+            await fontColor.Locator(".tm-color-picker-trigger").ClickAsync();
+            await AssertElementInsideViewportAsync(page, "[data-testid='document-font-color-trigger'] .tm-color-picker-dropdown", "font color dropdown");
+            await AssertElementInsideViewportAsync(page, "[data-testid='document-font-color-trigger'] .tm-color-picker-apply", "font color apply button");
+
+            await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+            await page.Locator("[data-testid='document-toolbar-table']").ClickAsync();
+            await AssertElementInsideViewportAsync(page, "[data-testid='document-table-grid-picker']", "table grid picker");
+
+            await page.Locator("[data-testid='document-toolbar-table']").ClickAsync();
+            await page.Locator("[data-testid='document-toolbar-image']").ClickAsync();
+            await AssertElementInsideViewportAsync(page, ".tm-document-image-insert-menu", "image insert menu");
+            await Assertions.Expect(page.Locator("[data-testid='document-image-insert-url']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-insert-upload']")).ToBeVisibleAsync();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_RibbonPopoversAreNotClippedByRibbonOrReviewSummary));
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Phase8_TableGridPicker_ClosesOnSecondClick()
     {
         var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
@@ -5663,6 +6159,35 @@ public class DocumentEditorE2ETests : WasmTestBase
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_ImageInspectorStaysInsideEditorViewportAwayFromSidePanel));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_ImageReplaceShowsSourceChoicesInsteadOfOpeningUploadImmediately()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var figure = host.Locator("figure.tm-wysiwyg-image").First;
+            await Assertions.Expect(figure).ToBeVisibleAsync();
+            await figure.ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']"))
+                .ToBeVisibleAsync(new() { Timeout = 5000 });
+
+            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-replace']").ClickAsync();
+
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-menu']"))
+                .ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-url']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-upload']")).ToBeVisibleAsync();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_ImageReplaceShowsSourceChoicesInsteadOfOpeningUploadImmediately));
             throw;
         }
     }

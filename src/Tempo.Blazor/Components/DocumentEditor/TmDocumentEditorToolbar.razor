@@ -250,7 +250,7 @@
                 </div>
                 <div class="tm-document-editor__ribbon-color-picker"
                      title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_HighlightColor"]))">
-                    <TmColorPicker Value="@NormalizeColorValue(CurrentHighlightColor, "#fff59d")"
+                    <TmColorPicker Value="@NormalizeColorValue(CurrentHighlightColor, "#ffffff")"
                                    ValueChanged="HandleHighlightColorAppliedAsync"
                                    Format="ColorFormat.Hex"
                                    ShowAlpha="false"
@@ -273,7 +273,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignLeft"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Left)"
-                        @onclick="() => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Left)"
+                        @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Left)"
                         data-command="alignLeft"
                         data-testid="document-align-left">
                     <TmIcon Name="align-left" Size="IconSize.Sm" />
@@ -284,7 +284,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignCenter"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Center)"
-                        @onclick="() => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Center)"
+                        @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Center)"
                         data-command="alignCenter"
                         data-testid="document-align-center">
                     <TmIcon Name="align-center" Size="IconSize.Sm" />
@@ -295,7 +295,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignRight"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Right)"
-                        @onclick="() => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Right)"
+                        @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Right)"
                         data-command="alignRight"
                         data-testid="document-align-right">
                     <TmIcon Name="align-right" Size="IconSize.Sm" />
@@ -306,7 +306,7 @@
                         disabled="@(!IsCommandEnabled("paragraphAlignment"))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_AlignJustify"]))"
                         aria-pressed="@GetAlignmentAriaPressed(DocumentTextAlignment.Justify)"
-                        @onclick="() => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Justify)"
+                        @onclick="() => HandleParagraphAlignmentClickedAsync(DocumentTextAlignment.Justify)"
                         data-command="alignJustify"
                         data-testid="document-align-justify">
                     <TmIcon Name="align-justify" Size="IconSize.Sm" />
@@ -316,7 +316,7 @@
                     <TmIcon Name="pilcrow" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_LineSpacing"]</span>
                     <select disabled="@(!IsCommandEnabled("lineSpacing"))"
-                            value="@NormalizeLineSpacingValue(CurrentLineSpacing)"
+                            value="@NormalizeLineSpacingValue(GetEffectiveLineSpacing())"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_LineSpacing"]))"
                             aria-label="@Loc["TmDocumentEditor_LineSpacing"]"
                             @onchange="HandleLineSpacingChangedAsync"
@@ -900,6 +900,10 @@
     private bool _keyboardMode;
     private ElementReference _ribbonGroupsRef;
     private DotNetObjectReference<TmDocumentEditorToolbar>? _dotNetRef;
+    private DocumentTextAlignment? _optimisticParagraphAlignment;
+    private DateTimeOffset _optimisticParagraphAlignmentExpiresAt;
+    private double? _optimisticLineSpacing;
+    private DateTimeOffset _optimisticLineSpacingExpiresAt;
     private bool _isOverflowing;
     private bool _overflowMenuOpen;
     private string? _overflowSearchQuery;
@@ -1722,24 +1726,50 @@
 
     private string GetAlignmentButtonClass(DocumentTextAlignment alignment)
     {
-        if (ParagraphAlignmentMixed)
+        var effectiveAlignment = GetEffectiveParagraphAlignment();
+        if (_optimisticParagraphAlignment is null && ParagraphAlignmentMixed)
         {
             return "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--mixed";
         }
 
-        return ParagraphAlignment == alignment
+        return effectiveAlignment == alignment
             ? "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--active"
             : "tm-document-editor__ribbon-button";
     }
 
     private string GetAlignmentAriaPressed(DocumentTextAlignment alignment)
     {
-        if (ParagraphAlignmentMixed)
+        var effectiveAlignment = GetEffectiveParagraphAlignment();
+        if (_optimisticParagraphAlignment is null && ParagraphAlignmentMixed)
         {
             return "mixed";
         }
 
-        return ParagraphAlignment == alignment ? "true" : "false";
+        return effectiveAlignment == alignment ? "true" : "false";
+    }
+
+    private DocumentTextAlignment GetEffectiveParagraphAlignment()
+    {
+        if (_optimisticParagraphAlignment is not null
+            && DateTimeOffset.UtcNow <= _optimisticParagraphAlignmentExpiresAt)
+        {
+            return _optimisticParagraphAlignment.Value;
+        }
+
+        _optimisticParagraphAlignment = null;
+        return ParagraphAlignment;
+    }
+
+    private double GetEffectiveLineSpacing()
+    {
+        if (_optimisticLineSpacing is not null
+            && DateTimeOffset.UtcNow <= _optimisticLineSpacingExpiresAt)
+        {
+            return _optimisticLineSpacing.Value;
+        }
+
+        _optimisticLineSpacing = null;
+        return CurrentLineSpacing;
     }
 
     private static string NormalizeFontSizeValue(string? value)
@@ -1830,11 +1860,23 @@
             : OnHighlightColorChanged.InvokeAsync(normalized);
     }
 
+    private Task HandleParagraphAlignmentClickedAsync(DocumentTextAlignment alignment)
+    {
+        _optimisticParagraphAlignment = alignment;
+        _optimisticParagraphAlignmentExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+        return OnParagraphAlignmentChanged.InvokeAsync(alignment);
+    }
+
     private Task HandleLineSpacingChangedAsync(ChangeEventArgs args)
     {
-        return double.TryParse(args.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var spacing)
-            ? OnLineSpacingChanged.InvokeAsync(spacing)
-            : Task.CompletedTask;
+        if (!double.TryParse(args.Value?.ToString(), NumberStyles.Number, CultureInfo.InvariantCulture, out var spacing))
+        {
+            return Task.CompletedTask;
+        }
+
+        _optimisticLineSpacing = spacing;
+        _optimisticLineSpacingExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+        return OnLineSpacingChanged.InvokeAsync(spacing);
     }
 
     private Task HandleSpacingBeforeChangedAsync(ChangeEventArgs args)

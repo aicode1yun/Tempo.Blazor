@@ -2790,7 +2790,8 @@
     pointer-events: none;
 }
 
-.tm-wysiwyg-image-context-menu {
+.tm-wysiwyg-image-context-menu,
+.tm-wysiwyg-image-replace-menu {
     position: absolute;
     z-index: var(--tm-z-popover, 1000);
     display: grid;
@@ -2802,7 +2803,8 @@
     box-shadow: var(--tm-shadow-lg);
 }
 
-.tm-wysiwyg-image-context-menu button {
+.tm-wysiwyg-image-context-menu button,
+.tm-wysiwyg-image-replace-menu button {
     display: flex;
     align-items: center;
     min-height: 2rem;
@@ -2817,7 +2819,9 @@
 }
 
 .tm-wysiwyg-image-context-menu button:hover,
-.tm-wysiwyg-image-context-menu button:focus-visible {
+.tm-wysiwyg-image-context-menu button:focus-visible,
+.tm-wysiwyg-image-replace-menu button:hover,
+.tm-wysiwyg-image-replace-menu button:focus-visible {
     background: var(--tm-color-primary-subtle);
     outline: none;
 }

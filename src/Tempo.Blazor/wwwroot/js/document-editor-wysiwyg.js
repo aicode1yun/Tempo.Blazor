@@ -88,6 +88,8 @@ window.tmDocumentWysiwyg = (function () {
             remoteCursorElements: new Map(),
             markerStore: new Map(),
             lastSelectionSnapshot: null,
+            lastTextSelectionSnapshot: null,
+            miniToolbarSuppressHideUntil: 0,
             lastInputType: null,
             lastInputDataLength: 0,
             jsOwnedInputCount: 0,
@@ -279,6 +281,7 @@ window.tmDocumentWysiwyg = (function () {
         inst._handleSelectionChange = function () { _onSelectionChange(inst); };
         inst._handleKeyDown = function (e) { _onKeyDown(inst, e); };
         inst._handleDocumentKeyDown = function (e) { _onDocumentKeyDown(inst, e); };
+        inst._handleDocumentPointerDown = function (e) { _onDocumentPointerDown(inst, e); };
         inst._handlePointerDown = function (e) { _onFloatingImagePointerDown(inst, e); };
         inst._handlePointerUp = function (e) { _onRootPointerUp(inst, e); };
         inst._handleClick = function (e) { _onRootClick(inst, e); };
@@ -297,6 +300,7 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.addEventListener('compositionend', inst._handleCompositionEnd, true);
         document.addEventListener('selectionchange', inst._handleSelectionChange);
         document.addEventListener('keydown', inst._handleDocumentKeyDown, true);
+        document.addEventListener('pointerdown', inst._handleDocumentPointerDown, true);
         inst.root.addEventListener('keydown', inst._handleKeyDown, true);
         inst.root.addEventListener('pointerdown', inst._handlePointerDown, true);
         inst.root.addEventListener('pointerup', inst._handlePointerUp, true);
@@ -335,6 +339,9 @@ window.tmDocumentWysiwyg = (function () {
         }
         if (inst._handleDocumentKeyDown) {
             document.removeEventListener('keydown', inst._handleDocumentKeyDown, true);
+        }
+        if (inst._handleDocumentPointerDown) {
+            document.removeEventListener('pointerdown', inst._handleDocumentPointerDown, true);
         }
         if (inst._handleKeyDown) {
             inst.root.removeEventListener('keydown', inst._handleKeyDown, true);
@@ -413,6 +420,7 @@ window.tmDocumentWysiwyg = (function () {
 
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
 
         var bodyRegion = target.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
         if (bodyRegion && inst.root.contains(bodyRegion)) {
@@ -428,6 +436,26 @@ window.tmDocumentWysiwyg = (function () {
         _showInlineRevisionReview(inst, revision);
     }
 
+    function _onDocumentPointerDown(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly) return;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (!target) return;
+
+        if (inst.root.contains(target)) {
+            return;
+        }
+
+        if (target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar, .tm-document-editor__mini-toolbar')) {
+            return;
+        }
+
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+        _hideMiniToolbar(inst, true);
+    }
+
     function _onRootPointerUp(inst, event) {
         if (!inst || inst.disposed || inst.readOnly || event.button !== 0) return;
 
@@ -437,6 +465,8 @@ window.tmDocumentWysiwyg = (function () {
             if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) return;
 
             inst.lastSelectionSnapshot = snapshot;
+            inst.lastTextSelectionSnapshot = snapshot;
+            inst.miniToolbarSuppressHideUntil = Date.now() + 700;
             _scheduleSelectionNotification(inst, snapshot);
             _scheduleMiniToolbar(inst, snapshot);
         };
@@ -783,6 +813,7 @@ window.tmDocumentWysiwyg = (function () {
 
         if (inst.miniToolbarVisible && inst.miniToolbarRequestKey === key) return;
         inst.miniToolbarVisible = true;
+        inst.lastTextSelectionSnapshot = snapshot;
         inst.miniToolbarRequestKey = key;
         _invokeDotNet(inst, 'HandleMiniToolbarChanged', {
             IsVisible: true,
@@ -805,6 +836,10 @@ window.tmDocumentWysiwyg = (function () {
         if (!inst || (!force && !inst.miniToolbarVisible)) return;
         inst.miniToolbarVisible = false;
         inst.miniToolbarRequestKey = null;
+        if (force) {
+            inst.miniToolbarSuppressHideUntil = 0;
+            inst.lastTextSelectionSnapshot = null;
+        }
         _hideNativeMiniToolbarFallback(inst);
         _invokeDotNet(inst, 'HandleMiniToolbarChanged', null);
     }
@@ -969,7 +1004,7 @@ window.tmDocumentWysiwyg = (function () {
         menu.setAttribute('data-testid', 'document-wysiwyg-image-context-menu');
 
         var actions = [
-            { text: 'Replace image', testId: 'document-wysiwyg-image-replace', action: function () { _replaceSelectedImage(inst); } },
+            { text: 'Replace image', testId: 'document-wysiwyg-image-replace', action: function () { _showImageReplaceMenu(inst, figure, clientX, clientY); } },
             { text: 'Alt text', testId: 'document-wysiwyg-image-alt-text', action: function () { _editSelectedImageAltText(inst); } },
             { text: 'Caption', testId: 'document-wysiwyg-image-caption', action: function () { _editSelectedImageCaption(inst); } },
             { text: 'Wrap text: Inline', testId: 'document-wysiwyg-image-wrap-inline', action: function () { _setSelectedImageInline(inst); } },
@@ -1013,6 +1048,58 @@ window.tmDocumentWysiwyg = (function () {
         inst.imageContextMenu = null;
     }
 
+    function _showImageReplaceMenu(inst, figure, clientX, clientY) {
+        figure = figure || _getSelectedImageFigure(inst);
+        if (!inst || !figure) return;
+        inst.selectedImageFigure = figure;
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+
+        var menu = document.createElement('div');
+        menu.className = 'tm-wysiwyg-image-replace-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('contenteditable', 'false');
+        menu.setAttribute('data-testid', 'document-wysiwyg-image-replace-menu');
+
+        var actions = [
+            { text: 'Replace from URL', testId: 'document-wysiwyg-image-replace-url', action: function () { _replaceSelectedImageFromUrl(inst); } },
+            { text: 'Upload file', testId: 'document-wysiwyg-image-replace-upload', action: function () { _replaceSelectedImageFromUpload(inst, figure); } }
+        ];
+
+        actions.forEach(function (item) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = item.text;
+            button.setAttribute('role', 'menuitem');
+            button.setAttribute('data-testid', item.testId);
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                item.action();
+                _hideImageReplaceMenu(inst);
+            });
+            menu.appendChild(button);
+        });
+
+        inst.root.appendChild(menu);
+        var rootRect = inst.root.getBoundingClientRect();
+        var figRect = figure.getBoundingClientRect();
+        var menuWidth = 220;
+        var x = Number.isFinite(clientX) ? clientX - rootRect.left + inst.root.scrollLeft : figRect.left - rootRect.left + inst.root.scrollLeft;
+        var y = Number.isFinite(clientY) ? clientY - rootRect.top + inst.root.scrollTop : figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
+        menu.style.left = Math.min(Math.max(8, x), Math.max(8, inst.root.clientWidth - menuWidth - 8)) + 'px';
+        menu.style.top = Math.max(8, y) + 'px';
+        inst.imageReplaceMenu = menu;
+    }
+
+    function _hideImageReplaceMenu(inst) {
+        if (!inst || !inst.imageReplaceMenu) return;
+        if (inst.imageReplaceMenu.parentNode) {
+            inst.imageReplaceMenu.parentNode.removeChild(inst.imageReplaceMenu);
+        }
+        inst.imageReplaceMenu = null;
+    }
+
     // Phase 9.1: floating mini-toolbar shown when image is selected.
     function _showImageSelectionToolbar(inst, figure) {
         _hideImageSelectionToolbar(inst);
@@ -1028,7 +1115,7 @@ window.tmDocumentWysiwyg = (function () {
         var buttons = [
             { label: 'Alt text', testId: 'document-wysiwyg-image-toolbar-alt', action: function () { _beginEditImageAltText(inst, figure); } },
             { label: 'Caption', testId: 'document-wysiwyg-image-toolbar-caption', action: function () { _toggleImageCaption(inst); } },
-            { label: 'Replace', testId: 'document-wysiwyg-image-toolbar-replace', action: function () { _replaceSelectedImage(inst); } },
+            { label: 'Replace', testId: 'document-wysiwyg-image-toolbar-replace', action: function () { _showImageReplaceMenu(inst, figure); } },
             { label: 'Delete', testId: 'document-wysiwyg-image-toolbar-delete', action: function () { _deleteSelectedImage(inst); } }
         ];
 
@@ -1105,7 +1192,7 @@ window.tmDocumentWysiwyg = (function () {
             var figcaption = document.createElement('figcaption');
             figcaption.setAttribute('contenteditable', 'true');
             figcaption.setAttribute('data-testid', 'document-wysiwyg-image-caption-text');
-            figcaption.textContent = '';
+            figcaption.textContent = 'Caption';
             var handle = figure.querySelector('.tm-wysiwyg-image__resize-handle');
             if (handle) {
                 figure.insertBefore(figcaption, handle);
@@ -1113,6 +1200,13 @@ window.tmDocumentWysiwyg = (function () {
                 figure.appendChild(figcaption);
             }
             figcaption.focus();
+            var selection = window.getSelection && window.getSelection();
+            if (selection) {
+                var range = document.createRange();
+                range.selectNodeContents(figcaption);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
         }
         _ensureImageResizeHandle(figure, inst);
         _dispatchImageUpdatePatch(inst, figure);
@@ -1146,7 +1240,21 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _replaceSelectedImage(inst) {
+        _showImageReplaceMenu(inst, _getSelectedImageFigure(inst));
+    }
+
+    function _replaceSelectedImageFromUrl(inst) {
         var figure = _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        var current = img ? (img.getAttribute('src') || '') : '';
+        var next = window.prompt('Image URL', current);
+        if (next == null) return;
+        _setImageUrl(inst, next);
+    }
+
+    function _replaceSelectedImageFromUpload(inst, figure) {
+        figure = figure || _getSelectedImageFigure(inst);
         if (!figure) return;
 
         var input = document.createElement('input');
@@ -1219,6 +1327,7 @@ window.tmDocumentWysiwyg = (function () {
         block.remove();
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
         _dispatchPatch(inst, {
             type: 'RemoveBlock',
             blockId: blockId,
@@ -5767,17 +5876,34 @@ window.tmDocumentWysiwyg = (function () {
         if (inst.disposed) return;
         const snapshot = _captureSelectionSnapshot(inst);
         if (!snapshot) {
-            _hideMiniToolbar(inst);
+            if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
+                _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+            } else {
+                _hideMiniToolbar(inst);
+            }
             return;
         }
 
         inst.lastSelectionSnapshot = snapshot;
         _scheduleSelectionNotification(inst, snapshot);
         if (snapshot && !snapshot.isCollapsed) {
+            inst.lastTextSelectionSnapshot = snapshot;
+            inst.miniToolbarSuppressHideUntil = Date.now() + 1200;
             _scheduleMiniToolbar(inst, snapshot);
         } else {
-            _hideMiniToolbar(inst);
+            if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
+                _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+            } else {
+                _hideMiniToolbar(inst);
+            }
         }
+    }
+
+    function _shouldKeepMiniToolbarDuringSelectionSettle(inst) {
+        return !!(inst
+            && inst.lastTextSelectionSnapshot
+            && inst.miniToolbarVisible
+            && Date.now() < (inst.miniToolbarSuppressHideUntil || 0));
     }
 
     function _scheduleSelectionNotification(inst, snapshot) {
@@ -6717,6 +6843,33 @@ window.tmDocumentWysiwyg = (function () {
             tableCellPath: selection.tableCellPath || selection.TableCellPath || null,
             activeImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null
         };
+    }
+
+    function _collapseSelectionSnapshotToFocus(selection) {
+        var snapshot = _createSelectionSnapshotFromRuntimeSelection(selection);
+        if (!snapshot) return null;
+
+        var focusBlockId = snapshot.focusBlockId || snapshot.anchorBlockId || null;
+        var focusInlineId = snapshot.focusInlineId || snapshot.anchorInlineId || null;
+        var focusOffset = snapshot.focusOffset ?? snapshot.anchorOffset ?? 0;
+        var focusBlockOffset = snapshot.focusBlockOffset ?? snapshot.anchorBlockOffset ?? 0;
+        var focusNodeId = snapshot.focusNodeId || focusInlineId || focusBlockId || null;
+
+        return Object.assign({}, snapshot, {
+            anchorNodeId: focusNodeId,
+            focusNodeId: focusNodeId,
+            anchorBlockId: focusBlockId,
+            focusBlockId: focusBlockId,
+            anchorInlineId: focusInlineId,
+            focusInlineId: focusInlineId,
+            anchorOffset: focusOffset,
+            focusOffset: focusOffset,
+            anchorBlockOffset: focusBlockOffset,
+            focusBlockOffset: focusBlockOffset,
+            isCollapsed: true,
+            direction: 'forward',
+            activeImageBlockId: null
+        });
     }
 
     function _resolveSelectionRegion(node, root) {
@@ -11962,10 +12115,11 @@ window.tmDocumentWysiwyg = (function () {
             _applyParagraphPropertiesPatch(block, patch);
         });
 
-        var afterSelection = _captureSelectionSnapshot(inst) || beforeSelection;
+        var afterSelection = _collapseSelectionSnapshotToFocus(beforeSelection) || beforeSelection;
         inst.lastSelectionSnapshot = afterSelection;
         _focusEditorBody(inst);
         _restoreSelection(inst, afterSelection);
+        _hideMiniToolbar(inst, true);
         _scheduleSelectionNotification(inst, afterSelection);
         _beginTypingTransaction(inst);
         var afterFormatting = _getFormattingState(inst);
@@ -12208,11 +12362,17 @@ window.tmDocumentWysiwyg = (function () {
             return { collapsed: true };
         }
 
+        var originalSelectionSnapshot = _captureSelectionSnapshot(inst);
         var range = sel.getRangeAt(0);
+        var removeForToggle = forceRemove || (!_isValueMark(markType) && _getSelectionMarkState(inst, markType) === 1);
         var startInfo = _mapNodeToBlockInline(range.startContainer, range.startOffset, inst.root);
         var endInfo = _mapNodeToBlockInline(range.endContainer, range.endOffset, inst.root);
         if (!startInfo || !endInfo || startInfo.blockId !== endInfo.blockId || startInfo.inlineId !== endInfo.inlineId) {
-            return _wrapSelectionWithMark(range, markType, data, forceRemove, title);
+            var acrossResult = _applyMarkAcrossSelection(inst, range, markType, data, removeForToggle, title);
+            if (originalSelectionSnapshot) {
+                _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
+            }
+            return acrossResult;
         }
 
         var block = inst.root.querySelector('[data-block-id="' + _cssEscape(startInfo.blockId || '') + '"]');
@@ -12221,10 +12381,23 @@ window.tmDocumentWysiwyg = (function () {
 
         var start = Math.min(startInfo.offset, endInfo.offset);
         var end = Math.max(startInfo.offset, endInfo.offset);
-        var removed = forceRemove || (!_isValueMark(markType) && _rangeHasDomMark(inline, start, end, markType));
+        var removed = removeForToggle || (!_isValueMark(markType) && _rangeHasDomMark(inline, start, end, markType));
         _splitInlineForMark(inline, start, end, markType, data, removed, title);
+        if (originalSelectionSnapshot) {
+            _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
+        }
 
         return { collapsed: false };
+    }
+
+    function _restoreSelectionByBlockOffsets(inst, snapshot) {
+        if (!snapshot) return;
+        _restoreSelection(inst, Object.assign({}, snapshot, {
+            anchorNodeId: snapshot.anchorBlockId || snapshot.AnchorBlockId || null,
+            focusNodeId: snapshot.focusBlockId || snapshot.FocusBlockId || snapshot.anchorBlockId || snapshot.AnchorBlockId || null,
+            anchorInlineId: null,
+            focusInlineId: null
+        }));
     }
 
     function _wrapSelectionWithMark(range, markType, data, forceRemove, title) {
@@ -12237,6 +12410,99 @@ window.tmDocumentWysiwyg = (function () {
         wrapper.appendChild(range.extractContents());
         range.insertNode(wrapper);
         return { collapsed: false };
+    }
+
+    function _applyMarkAcrossSelection(inst, range, markType, data, remove, title) {
+        var segments = _collectRangeInlineSegments(inst, range);
+        if (!segments.length) {
+            return _wrapSelectionWithMark(range, markType, data, remove, title);
+        }
+
+        segments.forEach(function (segment) {
+            if (!segment.inline || !segment.inline.isConnected || segment.end <= segment.start) return;
+            _splitInlineForMark(segment.inline, segment.start, segment.end, markType, data, remove, title);
+        });
+
+        return { collapsed: false };
+    }
+
+    function _collectRangeInlineSegments(inst, range) {
+        var root = inst && inst.root;
+        if (!root || !range) return [];
+
+        var walkerRoot = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer
+            : range.commonAncestorContainer.parentElement;
+        if (!walkerRoot || !root.contains(walkerRoot)) {
+            walkerRoot = root;
+        }
+
+        var byInline = new Map();
+        var walker = document.createTreeWalker(walkerRoot, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                if (!root.contains(node) || !(node.textContent || '').length) return NodeFilter.FILTER_REJECT;
+                try {
+                    return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                } catch {
+                    return NodeFilter.FILTER_REJECT;
+                }
+            }
+        });
+
+        var node;
+        while ((node = walker.nextNode())) {
+            var element = node.parentElement;
+            var block = element && element.closest('[data-block-id]');
+            if (!block || !root.contains(block)) continue;
+            var inline = _findSemanticInlineElement(element, block);
+            if (!inline || !block.contains(inline)) continue;
+
+            var start = 0;
+            var end = _textLength(inline);
+            if (inline.contains(range.startContainer)) {
+                start = _textOffsetWithin(inline, range.startContainer, range.startOffset);
+            }
+            if (inline.contains(range.endContainer)) {
+                end = _textOffsetWithin(inline, range.endContainer, range.endOffset);
+            }
+
+            var existing = byInline.get(inline);
+            if (existing) {
+                existing.start = Math.min(existing.start, start);
+                existing.end = Math.max(existing.end, end);
+            } else {
+                byInline.set(inline, { inline: inline, start: start, end: end });
+            }
+        }
+
+        return Array.from(byInline.values()).sort(function (a, b) {
+            if (a.inline === b.inline) return 0;
+            return a.inline.compareDocumentPosition(b.inline) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1;
+        });
+    }
+
+    function _textOffsetWithin(root, node, offset) {
+        if (node === root && node.nodeType === Node.ELEMENT_NODE) {
+            var current = 0;
+            var max = Math.max(0, Math.min(offset || 0, node.childNodes.length));
+            for (var i = 0; i < max; i++) {
+                current += _textLength(node.childNodes[i]);
+            }
+            return current;
+        }
+
+        return _absoluteTextOffset(root, node, offset);
+    }
+
+    function _textLength(node) {
+        if (!node) return 0;
+        if (node.nodeType === Node.TEXT_NODE) return (node.textContent || '').length;
+        if (_isInlineBreakNode(node)) return 1;
+        var total = 0;
+        for (var i = 0; i < node.childNodes.length; i++) {
+            total += _textLength(node.childNodes[i]);
+        }
+        return total;
     }
 
     function _splitInlineForMark(inline, start, end, markType, data, remove, title) {
@@ -12285,6 +12551,8 @@ window.tmDocumentWysiwyg = (function () {
             sel.removeAllRanges();
             sel.addRange(range);
         }
+
+        return markedInline;
     }
 
     function _rangeHasDomMark(inline, start, end, markType) {
@@ -12848,6 +13116,10 @@ window.tmDocumentWysiwyg = (function () {
         };
         layout.Inline = false;
         layout.HorizontalPosition = hPos.value;
+        var currentWrap = _normalizeWrapMode(layout.wrapMode ?? layout.WrapMode);
+        if (currentWrap.value === 0 && (hPos.css === 'left' || hPos.css === 'right')) {
+            layout.WrapMode = 1;
+        }
         _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
         _dispatchImageUpdatePatch(inst, figure);

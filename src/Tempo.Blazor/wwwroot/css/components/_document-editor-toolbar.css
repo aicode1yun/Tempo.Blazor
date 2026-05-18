@@ -221,7 +221,7 @@
 }
 
 .tm-document-editor__ribbon-tempo-color-picker.tm-color-picker--open {
-    z-index: 120;
+    z-index: var(--tm-z-popover, 1000);
 }
 
 .tm-document-editor__ribbon-tempo-color-picker .tm-color-picker-trigger {
@@ -270,13 +270,14 @@
 
 .tm-document-editor__ribbon-tempo-color-picker .tm-color-picker-dropdown {
     top: calc(100% + var(--tm-space-2));
+    bottom: auto;
     right: 0;
     left: auto;
     display: flex;
     flex-direction: column;
     width: 16rem;
     max-width: calc(100vw - 2rem);
-    max-height: min(28rem, calc(100vh - 12rem));
+    max-height: min(13rem, calc(100vh - 8rem));
     overflow: auto;
     background: var(--tm-color-surface-elevated);
     border: 1px solid var(--tm-color-border);
@@ -323,7 +324,7 @@
     position: relative;
     display: flex;
     align-items: stretch;
-    overflow: hidden;
+    overflow: visible;
 }
 
 .tm-document-editor__ribbon-more {

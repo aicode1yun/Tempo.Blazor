@@ -194,6 +194,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private bool _runtimeFailed;
     private WysiwygRuntimeRecoveryDetail? _lastRuntimeRecoveryDetail;
     private WysiwygFormattingState _formattingState = new();
+    private DocumentTextAlignment? _pendingParagraphAlignment;
+    private string? _pendingParagraphAlignmentBlockId;
+    private DateTimeOffset _pendingParagraphAlignmentExpiresAt;
+    private double? _pendingLineSpacing;
+    private string? _pendingLineSpacingBlockId;
+    private DateTimeOffset _pendingLineSpacingExpiresAt;
     private string? _concurrencyToken;
     private DateTimeOffset? _lastSavedAt;
     private DocumentEditorDocument? _currentDocument;
@@ -1795,8 +1801,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         _formattingState = await ResolveRuntimeFormattingStateAsync(snapshot);
+        ApplyPendingParagraphFormattingOverride(snapshot);
         await RefreshCommandRegistryAsync();
         await BroadcastCollaborationCursorAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private static bool SelectionTargetsDocumentContent(WysiwygSelectionSnapshot snapshot) =>
@@ -1856,6 +1864,43 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         fallback.CurrentSelection = snapshot;
         fallback.ActiveRegion = _activeWysiwygRegion;
         return fallback;
+    }
+
+    private void ApplyPendingParagraphFormattingOverride(WysiwygSelectionSnapshot snapshot)
+    {
+        var blockId = snapshot.AnchorBlockId;
+
+        if (_pendingParagraphAlignment is not null)
+        {
+            if (DateTimeOffset.UtcNow > _pendingParagraphAlignmentExpiresAt
+                || (!string.IsNullOrWhiteSpace(_pendingParagraphAlignmentBlockId)
+                    && !string.Equals(_pendingParagraphAlignmentBlockId, blockId, StringComparison.Ordinal)))
+            {
+                _pendingParagraphAlignment = null;
+                _pendingParagraphAlignmentBlockId = null;
+            }
+            else
+            {
+                _formattingState.ParagraphAlignment = _pendingParagraphAlignment.Value;
+                _formattingState.ParagraphAlignmentMixed = false;
+            }
+        }
+
+        if (_pendingLineSpacing is not null)
+        {
+            if (DateTimeOffset.UtcNow > _pendingLineSpacingExpiresAt
+                || (!string.IsNullOrWhiteSpace(_pendingLineSpacingBlockId)
+                    && !string.Equals(_pendingLineSpacingBlockId, blockId, StringComparison.Ordinal)))
+            {
+                _pendingLineSpacing = null;
+                _pendingLineSpacingBlockId = null;
+            }
+            else
+            {
+                _formattingState.LineSpacing = _pendingLineSpacing.Value;
+                _formattingState.LineSpacingMixed = false;
+            }
+        }
     }
 
     private Task HandleTextContextMenuRequestedAsync(WysiwygTextContextMenuRequest request)
@@ -3892,19 +3937,37 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         return ApplyColorMarkAsync(InlineMarkType.Highlight, color);
     }
 
-    private Task ApplyParagraphAlignmentAsync(DocumentTextAlignment alignment)
+    private async Task ApplyParagraphAlignmentAsync(DocumentTextAlignment alignment)
     {
-        return ExecuteParagraphCommandAsync("setParagraphAlignment", new { Alignment = alignment });
+        var selection = ResolveParagraphCommandSelection();
+        _pendingParagraphAlignment = alignment;
+        _pendingParagraphAlignmentBlockId = selection?.AnchorBlockId;
+        _pendingParagraphAlignmentExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+
+        await ExecuteParagraphCommandAsync("setParagraphAlignment", new { Alignment = alignment });
+        _formattingState.ParagraphAlignment = alignment;
+        _formattingState.ParagraphAlignmentMixed = false;
+        await RefreshCommandRegistryAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
-    private Task ApplyLineSpacingAsync(double lineSpacing)
+    private async Task ApplyLineSpacingAsync(double lineSpacing)
     {
         if (lineSpacing is < 0.8 or > 3)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        return ExecuteParagraphCommandAsync("setLineSpacing", new { LineSpacing = lineSpacing });
+        var selection = ResolveParagraphCommandSelection();
+        _pendingLineSpacing = lineSpacing;
+        _pendingLineSpacingBlockId = selection?.AnchorBlockId;
+        _pendingLineSpacingExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+
+        await ExecuteParagraphCommandAsync("setLineSpacing", new { LineSpacing = lineSpacing });
+        _formattingState.LineSpacing = lineSpacing;
+        _formattingState.LineSpacingMixed = false;
+        await RefreshCommandRegistryAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private Task ApplySpacingBeforeAsync(double spacingBefore)
@@ -3957,8 +4020,29 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             return;
         }
 
+        var selection = ResolveParagraphCommandSelection();
+        if (selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
+
         await _wysiwygHost.ExecuteEditorCommandAsync(command, payload);
     }
+
+    private WysiwygSelectionSnapshot? ResolveParagraphCommandSelection()
+    {
+        var current = _formattingState.CurrentSelection;
+        if (current is not null && IsBodySelection(current))
+        {
+            return current;
+        }
+
+        return _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot ?? current;
+    }
+
+    private static bool IsBodySelection(WysiwygSelectionSnapshot snapshot)
+        => string.Equals(snapshot.Region, "Body", StringComparison.OrdinalIgnoreCase)
+            || string.IsNullOrWhiteSpace(snapshot.Region);
 
     private async Task ApplyColorMarkAsync(InlineMarkType markType, string color)
     {
