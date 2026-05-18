@@ -128,6 +128,105 @@ public class DocumentEditorAdvancedFormatTests
         preservedTight.PreservedWrapMode.Should().Be("tight");
     }
 
+    // ─── Phase 7: HorizontalPosition + Distance ───────────────────────────────
+
+    [Fact]
+    public void FloatingLayout_HorizontalPosition_DefaultsToNull_BackwardCompat()
+    {
+        var layout = new DocumentFloatingLayout
+        {
+            Inline = false,
+            WrapMode = DocumentWrapMode.Square
+        };
+
+        layout.HorizontalPosition.Should().BeNull();
+        layout.DistanceLeft.Should().Be(0);
+        layout.DistanceRight.Should().Be(0);
+        layout.DistanceTop.Should().Be(0);
+        layout.DistanceBottom.Should().Be(0);
+    }
+
+    [Theory]
+    [InlineData(DocumentImageHorizontalPosition.Left)]
+    [InlineData(DocumentImageHorizontalPosition.Center)]
+    [InlineData(DocumentImageHorizontalPosition.Right)]
+    public void FloatingLayout_HorizontalPosition_RoundTrips(DocumentImageHorizontalPosition pos)
+    {
+        var layout = new DocumentFloatingLayout
+        {
+            Inline = false,
+            WrapMode = DocumentWrapMode.Square,
+            HorizontalPosition = pos
+        };
+
+        layout.HorizontalPosition.Should().Be(pos);
+    }
+
+    [Fact]
+    public void FloatingLayout_Distance_StoresAllSides()
+    {
+        var layout = new DocumentFloatingLayout
+        {
+            DistanceLeft = 8,
+            DistanceRight = 8,
+            DistanceTop = 4,
+            DistanceBottom = 4
+        };
+
+        layout.DistanceLeft.Should().Be(8);
+        layout.DistanceRight.Should().Be(8);
+        layout.DistanceTop.Should().Be(4);
+        layout.DistanceBottom.Should().Be(4);
+    }
+
+    [Fact]
+    public void FloatingLayout_ImageBlock_AcceptsHorizontalPositionAndDistance()
+    {
+        var imageContent = new ImageBlockContent
+        {
+            Url = "/img/test.png",
+            FloatingLayout = new DocumentFloatingLayout
+            {
+                Inline = false,
+                WrapMode = DocumentWrapMode.Square,
+                HorizontalPosition = DocumentImageHorizontalPosition.Right,
+                DistanceLeft = 12,
+                DistanceRight = 0,
+                DistanceTop = 4,
+                DistanceBottom = 4
+            }
+        };
+
+        imageContent.FloatingLayout!.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
+        imageContent.FloatingLayout.DistanceLeft.Should().Be(12);
+    }
+
+    // ─── Phase 7.8: CSS float cross-page characterization ─────────────────────
+    // CSS `float` does not cross page boundaries in paginated print/PDF output.
+    // An image near the bottom of a page may render below the break instead of
+    // staying anchored. This is a known limitation; an exclusion-zone model
+    // is required for multi-page correctness (planned for a later phase).
+
+    [Fact]
+    public void FloatingLayout_CssFloat_KnownLimitation_CrossPageWrapNotSupported()
+    {
+        // Characterization: documents the design decision, not a runtime assertion.
+        // The model stores the Y position faithfully; the CSS float rendering
+        // limitation is in JS/CSS only — the anchor may shift across a page break.
+
+        var layout = new DocumentFloatingLayout
+        {
+            Inline = false,
+            WrapMode = DocumentWrapMode.Square,
+            HorizontalPosition = DocumentImageHorizontalPosition.Right,
+            Y = 950
+        };
+
+        layout.WrapMode.Should().Be(DocumentWrapMode.Square);
+        layout.Y.Should().Be(950);
+        layout.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
+    }
+
     private static DocumentRevision NewRevision(DocumentRevisionType type, DocumentRevisionAction action)
     {
         return new DocumentRevision

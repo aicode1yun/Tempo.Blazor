@@ -1,0 +1,178 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.AspNetCore.Components.Web
+
+<button type="button"
+        class="tm-document-editor__ribbon-more"
+        hidden="@(!IsOverflowing)"
+        aria-haspopup="true"
+        aria-expanded="@IsOpen.ToString().ToLowerInvariant()"
+        aria-label="@MoreCommandsLabel"
+        title="@MoreCommandsLabel"
+        @onclick="OnToggle"
+        @onkeydown="OnMoreKeyDown"
+        data-testid="document-toolbar-more">
+    <TmIcon Name="ellipsis" Size="IconSize.Sm" />
+    <span>@MoreLabel</span>
+</button>
+
+@if (IsOpen && Groups.Count > 0)
+{
+    var itemIndex = 0;
+    <button type="button"
+            class="tm-document-editor__overflow-backdrop"
+            aria-label="@MoreCommandsLabel"
+            tabindex="-1"
+            @onclick="OnToggle"
+            data-testid="document-toolbar-more-backdrop"></button>
+    <div class="tm-document-editor__overflow-menu"
+         role="menu"
+         aria-label="@MoreCommandsLabel"
+         data-testid="document-toolbar-more-menu">
+        @if (ShowSearch)
+        {
+            <label class="tm-document-editor__overflow-search">
+                <span class="tm-document-editor__sr-only">@SearchLabel</span>
+                <input value="@SearchQuery"
+                       placeholder="@SearchLabel"
+                       aria-label="@SearchLabel"
+                       @oninput="OnSearchInput"
+                       data-testid="document-toolbar-more-search" />
+            </label>
+        }
+        @foreach (var group in Groups)
+        {
+            <div class="tm-document-editor__overflow-menu-group"
+                 role="presentation"
+                 data-testid="document-toolbar-more-group"
+                 data-group="@group.GroupId">
+                @group.Label
+            </div>
+            @foreach (var item in group.Items)
+            {
+                var localCommand = item.CommandName;
+                var localIndex = itemIndex++;
+                <button type="button"
+                        role="menuitem"
+                        class="@GetMenuItemClass(localIndex)"
+                        disabled="@(!item.IsEnabled)"
+                        tabindex="@GetMenuItemTabIndex(localIndex)"
+                        data-command="@localCommand"
+                        @onclick="() => OnCommandRequested.InvokeAsync(localCommand)"
+                        @onfocus="() => SetActiveIndex(localIndex)"
+                        @onkeydown="HandleMenuItemKeyDownAsync">
+                    @item.Label
+                </button>
+            }
+        }
+    </div>
+}
+
+@code {
+    private int _activeIndex;
+
+    /// <summary>Whether the toolbar currently has overflowed commands.</summary>
+    [Parameter] public bool IsOverflowing { get; set; }
+
+    /// <summary>Whether the overflow menu is open.</summary>
+    [Parameter] public bool IsOpen { get; set; }
+
+    /// <summary>Whether the search box should be shown.</summary>
+    [Parameter] public bool ShowSearch { get; set; }
+
+    /// <summary>Current overflow search query.</summary>
+    [Parameter] public string? SearchQuery { get; set; }
+
+    /// <summary>Grouped overflow menu items.</summary>
+    [Parameter] public IReadOnlyList<DocumentToolbarOverflowMenuGroup> Groups { get; set; } = [];
+
+    /// <summary>Visible text for the More button.</summary>
+    [Parameter] public string MoreLabel { get; set; } = string.Empty;
+
+    /// <summary>Accessible label for the More commands menu.</summary>
+    [Parameter] public string MoreCommandsLabel { get; set; } = string.Empty;
+
+    /// <summary>Accessible label and placeholder for the search input.</summary>
+    [Parameter] public string SearchLabel { get; set; } = string.Empty;
+
+    /// <summary>Raised when the More button is clicked.</summary>
+    [Parameter] public EventCallback OnToggle { get; set; }
+
+    /// <summary>Raised when the More button receives a keydown event.</summary>
+    [Parameter] public EventCallback<KeyboardEventArgs> OnMoreKeyDown { get; set; }
+
+    /// <summary>Raised when the search input changes.</summary>
+    [Parameter] public EventCallback<ChangeEventArgs> OnSearchInput { get; set; }
+
+    /// <summary>Raised when a command is selected from the menu.</summary>
+    [Parameter] public EventCallback<string> OnCommandRequested { get; set; }
+
+    /// <summary>Raised when an overflow menu item receives a keydown event.</summary>
+    [Parameter] public EventCallback<KeyboardEventArgs> OnMenuItemKeyDown { get; set; }
+
+    private IReadOnlyList<DocumentToolbarOverflowMenuItem> MenuItems =>
+        Groups.SelectMany(group => group.Items).ToArray();
+
+    private string GetMenuItemTabIndex(int index) => index == ActiveIndex ? "0" : "-1";
+
+    private string GetMenuItemClass(int index) =>
+        "tm-document-editor__overflow-menu-item"
+        + (index == ActiveIndex ? " tm-document-editor__overflow-menu-item--active" : string.Empty);
+
+    private int ActiveIndex => MenuItems.Count == 0
+        ? -1
+        : Math.Clamp(_activeIndex, 0, MenuItems.Count - 1);
+
+    private void SetActiveIndex(int index)
+    {
+        _activeIndex = index;
+    }
+
+    private async Task HandleMenuItemKeyDownAsync(KeyboardEventArgs args)
+    {
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                MoveActive(1);
+                break;
+            case "ArrowUp":
+                MoveActive(-1);
+                break;
+            case "Home":
+                MoveActiveToStart();
+                break;
+            case "End":
+                MoveActiveToEnd();
+                break;
+            case "Enter":
+            case " ":
+                var active = MenuItems.ElementAtOrDefault(ActiveIndex);
+                if (active?.IsEnabled == true)
+                {
+                    await OnCommandRequested.InvokeAsync(active.CommandName);
+                }
+                break;
+        }
+
+        await OnMenuItemKeyDown.InvokeAsync(args);
+    }
+
+    private void MoveActive(int delta)
+    {
+        if (MenuItems.Count == 0)
+        {
+            return;
+        }
+
+        _activeIndex = Math.Clamp(ActiveIndex + delta, 0, MenuItems.Count - 1);
+    }
+
+    private void MoveActiveToStart()
+    {
+        _activeIndex = MenuItems.Count == 0 ? -1 : 0;
+    }
+
+    private void MoveActiveToEnd()
+    {
+        _activeIndex = MenuItems.Count - 1;
+    }
+}

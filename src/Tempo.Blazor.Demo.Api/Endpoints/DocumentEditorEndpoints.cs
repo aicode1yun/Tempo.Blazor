@@ -528,6 +528,7 @@ public static class DocumentEditorEndpoints
         {
             IncludeComments = true,
             IncludeSuggestions = true,
+            ReviewDisplayMode = DocumentReviewDisplayMode.AllMarkup,
             PageSetup = new DocumentPdfPageSetupOptions
             {
                 PageSize = pageSettings.Size ?? DocumentPageSize.A4,

@@ -94,6 +94,9 @@ public class DocumentEditorSaveResult
     /// <summary>Error message when save failed.</summary>
     public string? ErrorMessage { get; set; }
 
+    /// <summary>Error classification used by autosave retry policy and UI.</summary>
+    public DocumentEditorSaveErrorKind ErrorKind { get; set; } = DocumentEditorSaveErrorKind.None;
+
     /// <summary>Creates a successful save result.</summary>
     public static DocumentEditorSaveResult Saved(DocumentEditorDocument document, string jsonSnapshot, string concurrencyToken)
     {
@@ -114,9 +117,32 @@ public class DocumentEditorSaveResult
             Success = false,
             Conflict = true,
             ConcurrencyToken = currentConcurrencyToken,
+            ErrorKind = DocumentEditorSaveErrorKind.Conflict,
             ErrorMessage = "The document was changed by another writer."
         };
     }
+}
+
+/// <summary>Classifies a failed document editor save.</summary>
+public enum DocumentEditorSaveErrorKind
+{
+    /// <summary>No explicit classification was supplied.</summary>
+    None,
+
+    /// <summary>The failure is expected to succeed if retried later.</summary>
+    Recoverable,
+
+    /// <summary>The failure is caused by an optimistic concurrency conflict.</summary>
+    Conflict,
+
+    /// <summary>The submitted document failed provider validation.</summary>
+    Validation,
+
+    /// <summary>The current user is not authorized to save.</summary>
+    Unauthorized,
+
+    /// <summary>The failure should not be retried automatically.</summary>
+    NonRecoverable
 }
 
 /// <summary>Optimistic concurrency mode for document saves.</summary>
@@ -369,6 +395,7 @@ public static class DocumentEditorJson
         document.Revisions ??= [];
         document.Assets ??= [];
         document.Anchors ??= [];
+        document.RestrictedMarkers ??= [];
 
         if (document.Sections.Count == 0)
         {

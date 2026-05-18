@@ -109,6 +109,55 @@
     white-space: nowrap;
 }
 
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-tabs {
+    min-height: 2rem;
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-tab {
+    min-height: 2rem;
+    min-width: 3.5rem;
+    padding: 0 var(--tm-space-2);
+    font-size: var(--tm-font-size-xs);
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-groups {
+    min-height: 3rem;
+    padding: var(--tm-space-1) var(--tm-space-2);
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-group {
+    min-height: 2.75rem;
+    padding: 0 var(--tm-space-1);
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-group::after {
+    display: none;
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-button {
+    inline-size: 2.5rem;
+    min-width: 2.5rem;
+    min-height: 2.5rem;
+    max-height: 2.5rem;
+    padding: 0;
+}
+
+.tm-document-editor__ribbon--compact .tm-document-editor__ribbon-button span {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0 0 0 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.tm-document-editor__ribbon--distraction-free {
+    display: none;
+}
+
 .tm-document-editor__ribbon-button--active {
     color: var(--tm-color-primary);
     background: var(--tm-color-primary-subtle);
@@ -227,8 +276,8 @@
     flex-direction: column;
     width: 16rem;
     max-width: calc(100vw - 2rem);
-    max-height: min(32rem, max(18rem, calc(100vh - 27rem)));
-    overflow: hidden;
+    max-height: min(28rem, calc(100vh - 12rem));
+    overflow: auto;
     background: var(--tm-color-surface-elevated);
     border: 1px solid var(--tm-color-border);
     box-shadow: 0 1rem 2.5rem color-mix(in srgb, var(--tm-color-gray-900) 18%, transparent);
@@ -270,8 +319,169 @@
     background: var(--tm-color-surface-secondary);
 }
 
+.tm-document-editor__ribbon-commands-wrapper {
+    position: relative;
+    display: flex;
+    align-items: stretch;
+    overflow: hidden;
+}
+
+.tm-document-editor__ribbon-more {
+    flex: 0 0 auto;
+    align-self: center;
+    min-height: 2rem;
+    padding: 0 var(--tm-space-3);
+    border-left: 1px solid var(--tm-color-border-subtle);
+    background: var(--tm-color-surface-elevated);
+    font-size: var(--tm-font-size-xs);
+    white-space: nowrap;
+    gap: var(--tm-space-1);
+}
+
+.tm-document-editor__ribbon-more:focus-visible {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 2px;
+}
+
+.tm-document-editor__overflow-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 59;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: default;
+}
+
+.tm-document-editor__overflow-menu {
+    position: absolute;
+    top: calc(100% + 2px);
+    right: 0;
+    z-index: 60;
+    min-width: 13rem;
+    max-width: min(22rem, calc(100vw - var(--tm-space-4)));
+    max-height: min(26rem, calc(100vh - 8rem));
+    padding: var(--tm-space-1);
+    overflow: auto;
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    box-shadow: 0 0.5rem 1.5rem color-mix(in srgb, var(--tm-color-gray-900) 14%, transparent);
+}
+
+.tm-document-editor__overflow-search {
+    display: block;
+    padding: var(--tm-space-1);
+}
+
+.tm-document-editor__overflow-search input {
+    width: 100%;
+    min-height: 2rem;
+    padding: 0 var(--tm-space-2);
+    color: var(--tm-color-text);
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-sm);
+    font-size: var(--tm-font-size-sm);
+}
+
+.tm-document-editor__overflow-search input:focus-visible {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: 1px;
+}
+
+.tm-document-editor__overflow-menu-group {
+    padding: var(--tm-space-2) var(--tm-space-3) var(--tm-space-1);
+    color: var(--tm-color-text-muted);
+    font-size: var(--tm-font-size-xs);
+    font-weight: var(--tm-font-weight-semibold);
+    text-transform: uppercase;
+}
+
+.tm-document-editor__overflow-menu-item {
+    display: flex;
+    width: 100%;
+    padding: var(--tm-space-2) var(--tm-space-3);
+    border-radius: var(--tm-radius-xs);
+    font-size: var(--tm-font-size-sm);
+    text-align: left;
+    white-space: nowrap;
+}
+
+.tm-document-editor__overflow-menu-item:hover:not(:disabled),
+.tm-document-editor__overflow-menu-item--active:not(:disabled) {
+    background: var(--tm-color-surface-hover);
+}
+
+.tm-document-editor__overflow-menu-item:focus-visible {
+    outline: 2px solid var(--tm-color-primary);
+    outline-offset: -2px;
+}
+
+.tm-document-editor__overflow-menu-item:disabled {
+    color: var(--tm-color-text-disabled);
+    cursor: not-allowed;
+}
+
 .tm-document-editor__link-dialog {
     box-shadow: inset 0 1px 0 var(--tm-color-border);
+}
+
+/* ─── Table grid picker ─────────────────────────────────────────────────────── */
+
+.tm-document-table-grid-picker-wrapper {
+    position: relative;
+    display: inline-flex;
+}
+
+.tm-document-table-grid-picker {
+    position: absolute;
+    top: calc(100% + var(--tm-space-1));
+    left: 50%;
+    translate: -50%;
+    z-index: var(--tm-z-popover, 1000);
+    display: grid;
+    gap: var(--tm-space-2);
+    padding: var(--tm-space-2);
+    background: var(--tm-color-surface-elevated);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-md);
+    box-shadow: var(--tm-shadow-lg);
+    user-select: none;
+}
+
+.tm-document-table-grid-picker__grid {
+    display: grid;
+    gap: 2px;
+}
+
+.tm-document-table-grid-picker__row {
+    display: flex;
+    gap: 2px;
+}
+
+.tm-document-table-grid-picker__cell {
+    width: 1.5rem;
+    height: 1.5rem;
+    padding: 0;
+    background: var(--tm-color-surface);
+    border: 1px solid var(--tm-color-border);
+    border-radius: var(--tm-radius-xs);
+    cursor: pointer;
+    transition: background 60ms, border-color 60ms;
+}
+
+.tm-document-table-grid-picker__cell--highlighted,
+.tm-document-table-grid-picker__cell--focus {
+    background: var(--tm-color-primary-subtle);
+    border-color: var(--tm-color-primary);
+}
+
+.tm-document-table-grid-picker__dims {
+    font-size: var(--tm-font-size-sm);
+    color: var(--tm-color-text-muted);
+    text-align: center;
+    min-height: 1.25rem;
 }
 
 @media (max-width: 64rem) {

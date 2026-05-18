@@ -119,8 +119,36 @@ public class DocumentFloatingLayout
     /// <summary>Whether the object must keep its current paragraph anchor when moved.</summary>
     public bool LockAnchor { get; set; }
 
+    /// <summary>Explicit horizontal alignment preset (Left/Center/Right). When set, overrides X-based positioning for CSS float rendering.</summary>
+    public DocumentImageHorizontalPosition? HorizontalPosition { get; set; }
+
+    /// <summary>Distance from image to surrounding text on the left side (in pixels).</summary>
+    public double DistanceLeft { get; set; }
+
+    /// <summary>Distance from image to surrounding text on the right side (in pixels).</summary>
+    public double DistanceRight { get; set; }
+
+    /// <summary>Distance from image to surrounding text on the top (in pixels).</summary>
+    public double DistanceTop { get; set; }
+
+    /// <summary>Distance from image to surrounding text on the bottom (in pixels).</summary>
+    public double DistanceBottom { get; set; }
+
     /// <summary>Optional original wrap mode when an importer normalizes an unsupported mode.</summary>
     public string? PreservedWrapMode { get; set; }
+}
+
+/// <summary>Horizontal alignment preset for a floating image — used for CSS float rendering.</summary>
+public enum DocumentImageHorizontalPosition
+{
+    /// <summary>Float to the left; text wraps on the right.</summary>
+    Left,
+
+    /// <summary>Centered; used with TopBottom wrap only.</summary>
+    Center,
+
+    /// <summary>Float to the right; text wraps on the left.</summary>
+    Right
 }
 
 /// <summary>Text wrapping mode for anchored objects.</summary>

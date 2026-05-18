@@ -6,19 +6,47 @@
         aria-label="@Loc["TmDocumentEditor_StatusBarLabel"]"
         data-testid="document-status-bar">
     <div class="tm-document-editor__status-bar-group tm-document-editor__status-bar-group--save">
-        @if (IsDirty)
+        @if (PendingCount > 0)
+        {
+            <span class="tm-document-editor__pending" data-testid="document-pending-status" aria-live="polite">
+                @if (!string.IsNullOrWhiteSpace(PendingMessage))
+                {
+                    @PendingMessage
+                }
+                else
+                {
+                    @Loc["TmDocumentEditor_PendingActions", PendingCount]
+                }
+            </span>
+        }
+        else if (IsDirty)
         {
             <span class="tm-document-editor__dirty" data-testid="document-dirty-status">@Loc["TmDocumentEditor_UnsavedChanges"]</span>
         }
         @if (!string.IsNullOrWhiteSpace(SaveMessage))
         {
             <span class="tm-document-editor__save-message" data-testid="document-save-message">@SaveMessage</span>
+            @if (CanRetrySave)
+            {
+                <button type="button"
+                        class="tm-document-editor__save-retry"
+                        data-testid="document-save-retry"
+                        @onclick="OnRetrySave">
+                    @Loc["TmDocumentEditor_Retry"]
+                </button>
+            }
         }
         @if (LastSavedAt is not null)
         {
             <span class="tm-document-editor__last-saved" data-testid="document-last-saved">
                 @Loc["TmDocumentEditor_LastSavedAt", LastSavedAt.Value.ToLocalTime().ToString("HH:mm:ss")]
             </span>
+        }
+        @if (!string.IsNullOrWhiteSpace(RuntimeMessage))
+        {
+            <span class="tm-document-editor__runtime-message @(RuntimeFailed ? "tm-document-editor__runtime-message--failed" : "tm-document-editor__runtime-message--recovered")"
+                  data-testid="document-runtime-message"
+                  role="alert">@RuntimeMessage</span>
         }
     </div>
 
@@ -34,8 +62,20 @@
     /// <summary>Whether the document has local unsaved changes.</summary>
     [Parameter] public bool IsDirty { get; set; }
 
+    /// <summary>Number of currently pending async operations.</summary>
+    [Parameter] public int PendingCount { get; set; }
+
+    /// <summary>Message of the first pending operation, or <c>null</c> when none.</summary>
+    [Parameter] public string? PendingMessage { get; set; }
+
     /// <summary>Optional save status message.</summary>
     [Parameter] public string? SaveMessage { get; set; }
+
+    /// <summary>Whether the latest save failure can be retried.</summary>
+    [Parameter] public bool CanRetrySave { get; set; }
+
+    /// <summary>Raised when the user requests retry after a recoverable save failure.</summary>
+    [Parameter] public EventCallback OnRetrySave { get; set; }
 
     /// <summary>Timestamp of the latest successful save.</summary>
     [Parameter] public DateTimeOffset? LastSavedAt { get; set; }
@@ -51,4 +91,10 @@
 
     /// <summary>Current zoom label.</summary>
     [Parameter] public string ZoomLabel { get; set; } = "100%";
+
+    /// <summary>Message shown after a JS runtime recovery event, or <c>null</c> when none.</summary>
+    [Parameter] public string? RuntimeMessage { get; set; }
+
+    /// <summary>When <c>true</c>, <see cref="RuntimeMessage"/> describes a recovery failure.</summary>
+    [Parameter] public bool RuntimeFailed { get; set; }
 }

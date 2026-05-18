@@ -1,11 +1,13 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
 using System.Text.Json;
 using Tempo.Blazor.Components.DocumentEditor;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.Interfaces;
 using Tempo.Blazor.Tests.Localization;
 
 namespace Tempo.Blazor.Tests.Components.DocumentEditor;
@@ -390,6 +392,122 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         received.Should().NotBeNull();
         received!.RevisionId.Should().Be("revision-1");
         received.Action.Should().Be(DocumentRevisionAction.Accepted);
+    }
+
+    // ─── HandleClipboardPasteRequested ───────────────────────────────────────
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_PlainHtml_ReturnsBlocksJson()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested("<p>Hello world</p>", "Hello world");
+
+        json.Should().NotBeNullOrEmpty();
+        var blocks = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Length.Should().BeGreaterThanOrEqualTo(1);
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_EmptyHtmlWithPlainText_ReturnsBlocksJson()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested("", "Line one\nLine two");
+
+        var blocks = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Length.Should().Be(2);
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_GoogleSheetsHtml_ReturnsTableBlock()
+    {
+        const string html = "<google-sheets-html-origin><table><tr><td>A</td><td>B</td></tr></table></google-sheets-html-origin>";
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested(html, "A\tB");
+
+        var blocks = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Length.Should().Be(1);
+        blocks[0].GetProperty("Type").GetInt32().Should().Be(4); // DocumentBlockType.Table = 4
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_UrlPlainText_ReturnsBlockWithLinkMark()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested("", "https://example.com");
+
+        var blocks = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Length.Should().Be(1);
+        blocks[0].GetProperty("Type").GetInt32().Should().Be(0); // Paragraph
+        var content = blocks[0].GetProperty("Content");
+        var inlines = content.GetProperty("Inlines");
+        inlines.GetArrayLength().Should().Be(1);
+        var marks = inlines[0].GetProperty("Marks");
+        marks.GetArrayLength().Should().Be(1);
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_EmptyInput_ReturnsEmptyArray()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested("", "");
+
+        var blocks = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Length.Should().Be(0);
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_TableIntoTableCell_UsesSchemaFallback()
+    {
+        const string html = "<table><tr><td><p>Cell text</p></td></tr></table>";
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+        await cut.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot { Region = "TableCell", ActiveTableCellId = "cell-1" });
+
+        var json = await cut.Instance.HandleClipboardPasteRequested(html, "Cell text");
+
+        var blocks = JsonSerializer.Deserialize<JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Should().ContainSingle();
+        blocks[0].GetProperty("Type").GetInt32().Should().Be(0);
+        cut.Find("[data-testid='document-paste-report']").TextContent.Should().Contain("Paste adjusted");
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_UnsafeHtml_ShowsPasteReport()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        var json = await cut.Instance.HandleClipboardPasteRequested("<p>Safe</p><script>alert(1)</script>", "Safe");
+
+        var blocks = JsonSerializer.Deserialize<JsonElement[]>(json);
+        blocks.Should().NotBeNull();
+        blocks!.Should().ContainSingle();
+        cut.Find("[data-testid='document-paste-report']").TextContent.Should().Contain("Paste adjusted");
+        cut.Find("[data-testid='document-paste-report-toggle']").Click();
+        cut.Find("[data-testid='document-paste-report-details']").TextContent.Should().Contain("stripped-element");
+    }
+
+    [Fact]
+    public async Task Host_HandleClipboardPasteRequested_CapturesDeveloperDebugSnapshot()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>();
+
+        await cut.Instance.HandleClipboardPasteRequested("<p>Phase 18</p><script>alert(1)</script>", "Phase 18");
+
+        var snapshot = cut.Instance.GetClipboardDebugSnapshot();
+        snapshot.RawHtml.Should().Contain("Phase 18");
+        snapshot.PlainText.Should().Be("Phase 18");
+        snapshot.NormalizedJson.Should().Contain("Phase 18");
+        snapshot.Warnings.Should().Contain(warning => warning.Code == "stripped-element");
     }
 
     [Fact]
@@ -1107,6 +1225,50 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Host_RuntimeRecovered_ForwardsToEventCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.RuntimeRecovered, EventCallback.Factory.Create(this, () => called = true)));
+
+        await cut.Instance.HandleRuntimeRecovered();
+
+        called.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Host_RuntimeRecoveryFailed_ForwardsToEventCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.RuntimeRecoveryFailed, EventCallback.Factory.Create(this, () => called = true)));
+
+        await cut.Instance.HandleRuntimeRecoveryFailed();
+
+        called.Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Host_RuntimeRecoveryDetail_ForwardsTypedTelemetry()
+    {
+        WysiwygRuntimeRecoveryDetail? captured = null;
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.RuntimeRecoveryDetailChanged, detail => captured = detail));
+
+        await cut.Instance.HandleRuntimeRecovered(new WysiwygRuntimeRecoveryDetail
+        {
+            Event = "runtimeRecovered",
+            Source = "command",
+            Attempt = 1,
+            BackoffMs = 100
+        });
+
+        captured.Should().NotBeNull();
+        captured!.Source.Should().Be("command");
+        captured.Attempt.Should().Be(1);
+    }
+
+    [Fact]
     public async Task Host_ExecuteEditorCommandAsync_CallsJsExecuteCommand()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
@@ -1283,6 +1445,124 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Host_ImageDialog_RendersThroughFloatingPortalRoot()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.OpenImageDialogAsync();
+
+        var portal = cut.Find("[data-testid='document-wysiwyg-floating-root']");
+        portal.ClassList.Should().Contain("tm-document-editor__floating-root");
+        portal.QuerySelector("[data-testid='document-wysiwyg-image-dialog']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Host_TokenPopover_RendersThroughFloatingPortalRoot()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument())
+                      .Add(p => p.TokenProvider, new TestTokenProvider()));
+
+        await cut.Instance.OpenTokenMenuAsync();
+
+        var portal = cut.Find("[data-testid='document-wysiwyg-floating-root']");
+        portal.ClassList.Should().Contain("tm-document-editor__floating-root");
+        portal.QuerySelector("[data-testid='document-wysiwyg-token-popover']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public async Task Host_TokenPopover_EscapeClosesPopover()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument())
+                      .Add(p => p.TokenProvider, new TestTokenProvider()));
+
+        await cut.Instance.OpenTokenMenuAsync();
+
+        await cut.Find("[data-testid='document-wysiwyg-token-popover']")
+            .KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        cut.FindAll("[data-testid='document-wysiwyg-token-popover']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Host_TokenPopover_EnterInsertsHighlightedTokenAndClosesPopover()
+    {
+        var patches = new List<WysiwygPatch>();
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument())
+                      .Add(p => p.TokenProvider, new TestTokenProvider())
+                      .Add(p => p.DocumentPatchGenerated, EventCallback.Factory.Create<WysiwygPatch>(this, p => patches.Add(p))));
+
+        await cut.Instance.OpenTokenMenuAsync();
+
+        await cut.Find("[data-testid='document-wysiwyg-token-popover']")
+            .KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        patches.Should().ContainSingle();
+        patches[0].Inline.Should().BeOfType<TokenRun>()
+            .Which.Key.Should().Be("client.name");
+        cut.FindAll("[data-testid='document-wysiwyg-token-popover']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public async Task Host_MentionAutocomplete_EnterInsertsMentionText()
+    {
+        var patches = new List<WysiwygPatch>();
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument())
+                      .Add(p => p.MentionProvider, new TestMentionProvider())
+                      .Add(p => p.DocumentPatchGenerated, EventCallback.Factory.Create<WysiwygPatch>(this, p => patches.Add(p))));
+
+        await cut.Instance.OpenMentionMenuAsync();
+
+        cut.Find("[data-testid='document-wysiwyg-autocomplete-popover']").Should().NotBeNull();
+        await cut.Find("[data-testid='document-wysiwyg-autocomplete-popover']")
+            .KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        patches.Should().ContainSingle();
+        patches[0].Type.Should().Be("InsertText");
+        patches[0].Data.Should().Be("@alex");
+    }
+
+    [Fact]
+    public async Task Host_SlashAutocomplete_ShowsCoreInsertCommands()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.OpenSlashCommandMenuAsync();
+
+        var popover = cut.Find("[data-testid='document-wysiwyg-autocomplete-popover']");
+        popover.TextContent.Should().Contain("Table");
+        popover.TextContent.Should().Contain("Image");
+        popover.TextContent.Should().Contain("Page break");
+    }
+
+    [Fact]
+    public async Task Host_SlashAutocomplete_TableCommandExecutesRuntimeInsertTable()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+        await cut.Instance.OpenSlashCommandMenuAsync();
+        cut.Find("[data-testid='document-autocomplete-search']").Input("table");
+
+        await cut.Find("[data-testid='document-wysiwyg-autocomplete-popover']")
+            .KeyDownAsync(new KeyboardEventArgs { Key = "Enter" });
+
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments.Any(argument => argument != null && argument.ToString() == "insertTable"));
+    }
+
+    [Fact]
     public async Task Host_ImageUrlDialog_RejectsUnsafeUrl()
     {
         var patches = new List<WysiwygPatch>();
@@ -1327,6 +1607,28 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         image.AssetId.Should().Be("asset-1");
         image.Url.Should().Be("https://cdn.example.test/asset-1.png");
         image.AltText.Should().Be("Pasted");
+    }
+
+    [Fact]
+    public async Task Host_ImageUploadRequested_ClipboardImageWithoutProviderShowsPasteReportWarning()
+    {
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        var block = await cut.Instance.HandleImageUploadRequested(new WysiwygImagePayload
+        {
+            Source = DocumentImageSource.Clipboard,
+            FileName = "paste.png",
+            ContentType = "image/png",
+            SizeBytes = 1,
+            Base64Data = "AA==",
+            AltText = "Pasted"
+        });
+
+        block.Should().BeNull();
+        cut.Find("[data-testid='document-paste-report']").TextContent.Should().Contain("Paste adjusted");
+        cut.Find("[data-testid='document-paste-report-toggle']").Click();
+        cut.Find("[data-testid='document-paste-report-details']").TextContent.Should().Contain("image-provider-missing");
     }
 
     [Fact]
@@ -1375,19 +1677,17 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task Host_ProviderImageButton_UploadsAndSendsImageNodeToJs()
+    public async Task Host_ProviderImageButton_UploadsAndSendsImageInsertCommandToJs()
     {
         JSInterop.Mode = JSRuntimeMode.Strict;
         JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
         JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
-        JSInterop.SetupVoid("tmDocumentEditorRuntime.insertImageNode", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
 
         var provider = new CapturingImageProvider();
-        var patches = new List<WysiwygPatch>();
         var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
             parameters.Add(p => p.Document, CreateEmptyDocument())
-                      .Add(p => p.ImageProvider, provider)
-                      .Add(p => p.DocumentPatchGenerated, EventCallback.Factory.Create<WysiwygPatch>(this, p => patches.Add(p))));
+                      .Add(p => p.ImageProvider, provider));
 
         await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
         {
@@ -1399,8 +1699,40 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         cut.Find("[data-testid='document-wysiwyg-upload-demo-image']").Click();
 
         provider.UploadRequests.Should().ContainSingle();
-        patches.Should().ContainSingle(patch => patch.BlockType == "Image");
-        JSInterop.Invocations.Should().Contain(invocation => invocation.Identifier == "tmDocumentEditorRuntime.insertImageNode");
+        JSInterop.Invocations.Any(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments.Any(argument => argument is not null && string.Equals(argument.ToString(), "insertImageBlock", StringComparison.Ordinal)))
+            .Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task Host_ImageSelection_DoesNotRenderLargeImageInspectorOverlay()
+    {
+        var doc = CreateEmptyDocument();
+        doc.Blocks.Add(new DocumentBlock
+        {
+            Id = "img-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Url = "https://example.test/image.png",
+                AltText = "Diagram"
+            }
+        });
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, doc));
+
+        await cut.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        {
+            AnchorBlockId = "img-1",
+            FocusBlockId = "img-1",
+            ActiveImageBlockId = "img-1",
+            Region = "Image",
+            IsCollapsed = true
+        });
+
+        cut.FindAll("[data-testid='document-image-inspector']").Should().BeEmpty();
     }
 
     [Fact]
@@ -2265,6 +2597,10 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         js.Should().Contain("splitTableCell");
         js.Should().Contain("_applyTableCellStyle");
         js.Should().Contain("_serializeTableCellBorders");
+        js.Should().Contain("setTableProperties");
+        js.Should().Contain("setCellProperties");
+        js.Should().Contain("resizeTableColumn");
+        js.Should().Contain("_renderTableHandles");
     }
 
     [Fact]
@@ -2314,6 +2650,10 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         js.Should().Contain("_getClipboardImageFile");
         js.Should().Contain("HandleImageUploadRequested");
         js.Should().Contain("_isSafeImageUrl");
+        js.Should().Contain("replaceImage");
+        js.Should().Contain("setImageSize");
+        js.Should().Contain("_insertImageUploadPlaceholder");
+        js.Should().Contain("document-wysiwyg-image-upload-placeholder");
     }
 
     [Fact]
@@ -2513,6 +2853,205 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         css.Should().Contain(".tm-wysiwyg-image-insertion-caret");
     }
 
+    // ── Phase 16.1 – New JSInterop calls ────────────────────────────────────
+
+    [Fact]
+    public void JsFile_ContainsShowBlocksAndProtectionAndBodyHtml()
+    {
+        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
+        {
+            repoRoot = repoRoot.Parent;
+        }
+        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
+        var jsPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        var js = File.ReadAllText(jsPath);
+        js.Should().Contain("setShowBlocks");
+        js.Should().Contain("setProtectionMode");
+        js.Should().Contain("_isInsideProtectedEditableRegion");
+        js.Should().Contain("getBodyHtml");
+        js.Should().Contain("tm-wysiwyg--show-blocks");
+    }
+
+    [Fact]
+    public void CssFile_ContainsShowBlocksStyles()
+    {
+        var repoRoot = new DirectoryInfo(AppContext.BaseDirectory);
+        while (repoRoot is not null && !Directory.Exists(Path.Combine(repoRoot.FullName, ".git")))
+        {
+            repoRoot = repoRoot.Parent;
+        }
+        repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
+        var cssPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css");
+        var css = File.ReadAllText(cssPath);
+        css.Should().Contain(".tm-wysiwyg--show-blocks .tm-wysiwyg-block");
+        css.Should().Contain("attr(data-block-type)");
+    }
+
+    [Fact]
+    public async Task Host_SetShowBlocksAsync_CallsJsSetShowBlocks()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentWysiwyg.setShowBlocks", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        await cut.Instance.SetShowBlocksAsync(true);
+
+        JSInterop.Invocations.Should().Contain(i =>
+            i.Identifier == "tmDocumentWysiwyg.setShowBlocks"
+            && i.Arguments.OfType<bool>().Contains(true));
+    }
+
+    [Fact]
+    public async Task Host_SetProtectionModeAsync_CallsJsSetProtectionMode()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentWysiwyg.setProtectionMode", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        await cut.Instance.SetProtectionModeAsync(true, []);
+
+        JSInterop.Invocations.Should().Contain(i =>
+            i.Identifier == "tmDocumentWysiwyg.setProtectionMode");
+    }
+
+    [Fact]
+    public async Task Phase7_Host_SetSearchMarkersAsync_CallsRuntimeMarkerBridge()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentWysiwyg.setSearchMarkers", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        await cut.Instance.SetSearchMarkersAsync(["block-1"], [3], [5]);
+
+        var invocation = JSInterop.Invocations.Should().ContainSingle(i =>
+            i.Identifier == "tmDocumentWysiwyg.setSearchMarkers").Subject;
+        invocation.Arguments[0].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
+        invocation.Arguments[1].Should().BeEquivalentTo(new[] { "block-1" });
+        invocation.Arguments[2].Should().BeEquivalentTo(new[] { 3 });
+        invocation.Arguments[3].Should().BeEquivalentTo(new[] { 5 });
+    }
+
+    [Fact]
+    public async Task Phase7_Host_ScrollToSearchResultAsync_ActivatesRuntimeSearchMarker()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentWysiwyg.scrollToSearchResult", _ => true).SetVoidResult();
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        await cut.Instance.ScrollToSearchResultAsync("block-1", 3, 5);
+
+        var invocation = JSInterop.Invocations.Should().ContainSingle(i =>
+            i.Identifier == "tmDocumentWysiwyg.scrollToSearchResult").Subject;
+        invocation.Arguments[0].Should().BeOfType<string>().Which.Should().NotBeNullOrWhiteSpace();
+        invocation.Arguments.Should().ContainInOrder("block-1", 3, 5);
+    }
+
+    [Fact]
+    public async Task Host_GetBodyHtmlAsync_CallsJsGetBodyHtmlAndReturnsResult()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.Setup<string>("tmDocumentWysiwyg.getBodyHtml", _ => true)
+            .SetResult("<p>Hello</p>");
+
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters =>
+            parameters.Add(p => p.Document, CreateEmptyDocument()));
+
+        await cut.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        });
+
+        var html = await cut.Instance.GetBodyHtmlAsync();
+
+        html.Should().Be("<p>Hello</p>");
+    }
+
+    [Fact]
+    public async Task Host_TableSelection_RendersTableToolbar()
+    {
+        var document = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "table-1",
+                    Type = DocumentBlockType.Table,
+                    Content = new TableBlockContent
+                    {
+                        Rows =
+                        [
+                            new TableRowContent
+                            {
+                                Cells =
+                                [
+                                    new TableCellContent { Id = "cell-1", Blocks = [] },
+                                    new TableCellContent { Id = "cell-2", Blocks = [] }
+                                ]
+                            }
+                        ]
+                    }
+                }
+            ]
+        };
+        var cut = RenderComponent<TmDocumentWysiwygHost>(parameters => parameters
+            .Add(p => p.Document, document));
+
+        await cut.Instance.HandleSelectionChanged(new WysiwygSelectionSnapshot
+        {
+            Region = "TableCell",
+            ActiveTableCellId = "cell-1"
+        });
+
+        cut.Find("[data-testid='document-table-toolbar']").Should().NotBeNull();
+        cut.Find("[data-testid='document-table-toolbar-insert-row-after']").Should().NotBeNull();
+        cut.Find("[data-testid='document-table-toolbar-table-properties']").Should().NotBeNull();
+    }
+
     private static DocumentEditorDocument CreateEmptyDocument()
     {
         return DocumentEditorDocument.Empty("wysiwyg-test-1");
@@ -2522,6 +3061,79 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
     {
         var json = JsonSerializer.Serialize(value, DocumentEditorJson.Options);
         return JsonSerializer.Deserialize<T>(json, DocumentEditorJson.Options)!;
+    }
+
+    private sealed class TestTokenProvider : ITokenDataProvider
+    {
+        public bool SupportsCreation => false;
+
+        public void Refresh()
+        {
+        }
+
+        public Task<IEnumerable<IToken>> SearchTokensAsync(string query, CancellationToken ct = default)
+        {
+            IEnumerable<IToken> tokens =
+            [
+                new TestToken
+                {
+                    Key = "client.name",
+                    DisplayName = "Client name",
+                    Description = "Client display name",
+                    Category = "Client",
+                    TypeLabel = "Text"
+                }
+            ];
+
+            return Task.FromResult(tokens);
+        }
+    }
+
+    private sealed class TestMentionProvider : IMentionDataProvider
+    {
+        public Task<IEnumerable<IMentionUser>> SearchUsersAsync(string query, CancellationToken ct = default)
+        {
+            IEnumerable<IMentionUser> users =
+            [
+                new TestMentionUser
+                {
+                    Id = "user-1",
+                    UserName = "alex",
+                    DisplayName = "Alex Johnson",
+                    AvatarUrl = null
+                }
+            ];
+
+            return Task.FromResult(users);
+        }
+    }
+
+    private sealed class TestToken : IToken
+    {
+        public string Key { get; init; } = string.Empty;
+
+        public string DisplayName { get; init; } = string.Empty;
+
+        public string? Description { get; init; }
+
+        public string? Category { get; init; }
+
+        public string? Icon { get; init; }
+
+        public string? ColorClass { get; init; }
+
+        public string? TypeLabel { get; init; }
+    }
+
+    private sealed class TestMentionUser : IMentionUser
+    {
+        public string Id { get; init; } = string.Empty;
+
+        public string UserName { get; init; } = string.Empty;
+
+        public string DisplayName { get; init; } = string.Empty;
+
+        public string? AvatarUrl { get; init; }
     }
 
     private sealed class CapturingImageProvider : IDocumentImageProvider

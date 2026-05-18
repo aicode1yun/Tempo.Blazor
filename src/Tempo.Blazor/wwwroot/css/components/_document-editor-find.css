@@ -1,0 +1,182 @@
+/* ── Show-blocks overlay ── */
+.tm-wysiwyg--show-blocks [data-block-id] {
+    outline: 1px dashed #90caf9;
+    position: relative;
+}
+
+.tm-wysiwyg--show-blocks [data-block-id]::before {
+    content: attr(data-block-type);
+    position: absolute;
+    top: -1px;
+    left: -1px;
+    font-size: 9px;
+    line-height: 1;
+    background: #90caf9;
+    color: #0d47a1;
+    padding: 1px 3px;
+    border-radius: 2px 0 2px 0;
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* ── Fullscreen mode ── */
+body.tm-document-editor--fullscreen .tm-document-editor {
+    position: fixed;
+    inset: 0;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+/* ── Search result highlights ── */
+.tm-wysiwyg-search-match {
+    background-color: #fff176;
+    border-radius: 2px;
+}
+
+.tm-wysiwyg-search-match--active {
+    background-color: #ff9800;
+    color: #fff;
+    border-radius: 2px;
+}
+
+/* ── Find / Replace panel ── */
+.tm-document-find-panel {
+    position: absolute;
+    top: 0;
+    right: 0;
+    z-index: 200;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding: 8px 12px;
+    min-width: 320px;
+    background: var(--tm-surface, #fff);
+    border: 1px solid var(--tm-border, #e0e0e0);
+    border-top: none;
+    border-radius: 0 0 6px 6px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, .12);
+}
+
+.tm-document-find-panel__row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.tm-document-find-panel__input {
+    flex: 1;
+    padding: 4px 8px;
+    border: 1px solid var(--tm-border, #e0e0e0);
+    border-radius: 4px;
+    font-size: 13px;
+    line-height: 1.4;
+    outline: none;
+}
+
+.tm-document-find-panel__input:focus {
+    border-color: var(--tm-primary, #1976d2);
+    box-shadow: 0 0 0 2px rgba(25, 118, 210, .2);
+}
+
+.tm-document-find-panel__count {
+    font-size: 12px;
+    color: var(--tm-text-secondary, #757575);
+    white-space: nowrap;
+    min-width: 60px;
+    text-align: right;
+}
+
+.tm-document-find-panel__btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    padding: 0;
+    border: 1px solid var(--tm-border, #e0e0e0);
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    font-size: 14px;
+    color: var(--tm-text, #212121);
+    transition: background .15s;
+}
+
+.tm-document-find-panel__btn:hover {
+    background: var(--tm-hover, #f5f5f5);
+}
+
+.tm-document-find-panel__btn:disabled {
+    opacity: .4;
+    cursor: default;
+}
+
+.tm-document-find-panel__btn--close {
+    margin-left: auto;
+}
+
+.tm-document-find-panel__options {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    font-size: 12px;
+    color: var(--tm-text-secondary, #757575);
+}
+
+.tm-document-find-panel__options label {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    cursor: pointer;
+    user-select: none;
+}
+
+.tm-document-find-panel__scope {
+    min-height: 26px;
+    border: 1px solid var(--tm-border-color, #d0d0d0);
+    border-radius: var(--tm-radius-sm, 4px);
+    background: var(--tm-bg-surface, #fff);
+    color: var(--tm-text-primary, #212121);
+    font: inherit;
+}
+
+.tm-document-find-panel__results {
+    display: grid;
+    gap: 2px;
+    max-height: 132px;
+    margin: 6px 0 0;
+    padding: 0;
+    overflow: auto;
+    list-style: none;
+}
+
+.tm-document-find-panel__result {
+    display: grid;
+    grid-template-columns: 24px minmax(0, 1fr);
+    width: 100%;
+    padding: 4px 6px;
+    border: 0;
+    border-radius: var(--tm-radius-sm, 4px);
+    background: transparent;
+    color: var(--tm-text-primary, #212121);
+    font: inherit;
+    text-align: left;
+    cursor: pointer;
+}
+
+.tm-document-find-panel__result span:last-child {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.tm-document-find-panel__result:hover,
+.tm-document-find-panel__result--active {
+    background: var(--tm-color-primary-subtle, #e8f0fe);
+}
+
+.tm-document-find-panel__replace-row {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}

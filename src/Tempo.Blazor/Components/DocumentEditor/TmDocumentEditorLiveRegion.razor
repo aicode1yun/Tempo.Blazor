@@ -1,0 +1,17 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+<div class="tm-document-editor__live-region"
+     role="status"
+     aria-live="@AriaLive"
+     aria-atomic="true"
+     data-testid="document-editor-live-region">
+    @Message
+</div>
+
+@code {
+    /// <summary>Message announced to assistive technologies.</summary>
+    [Parameter] public string? Message { get; set; }
+
+    /// <summary>Aria-live politeness level. Defaults to polite.</summary>
+    [Parameter] public string AriaLive { get; set; } = "polite";
+}

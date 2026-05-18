@@ -77,6 +77,34 @@
                         <span>@Loc["TmDocumentEditor_Properties"]</span>
                     </button>
                 }
+                @if (ShowOutline)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Outline)"
+                            class="@GetTabClass(DocumentSidePanelTab.Outline)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Outline)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-outline"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Outline)">
+                        <TmIcon Name="list" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Outline"]</span>
+                    </button>
+                }
+                @if (ShowPages)
+                {
+                    <button type="button"
+                            id="@GetTabId(DocumentSidePanelTab.Pages)"
+                            class="@GetTabClass(DocumentSidePanelTab.Pages)"
+                            role="tab"
+                            aria-selected="@GetTabSelected(DocumentSidePanelTab.Pages)"
+                            aria-controls="@PanelId"
+                            data-testid="document-side-panel-tab-pages"
+                            @onclick="() => SelectTabAsync(DocumentSidePanelTab.Pages)">
+                        <TmIcon Name="files" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Pages"]</span>
+                    </button>
+                }
             </div>
             <button type="button"
                     class="tm-document-side-panel__close"
@@ -133,6 +161,12 @@ else if (ShowEdgeToggle)
     /// <summary>Whether the properties tab is available.</summary>
     [Parameter] public bool ShowProperties { get; set; } = true;
 
+    /// <summary>Whether the outline tab is available.</summary>
+    [Parameter] public bool ShowOutline { get; set; }
+
+    /// <summary>Whether the page navigator tab is available.</summary>
+    [Parameter] public bool ShowPages { get; set; }
+
     /// <summary>Whether to show the right-edge reopen button when closed.</summary>
     [Parameter] public bool ShowEdgeToggle { get; set; } = true;
 
@@ -157,6 +191,12 @@ else if (ShowEdgeToggle)
     /// <summary>Content rendered for the properties tab.</summary>
     [Parameter] public RenderFragment? PropertiesContent { get; set; }
 
+    /// <summary>Content rendered for the outline tab.</summary>
+    [Parameter] public RenderFragment? OutlineContent { get; set; }
+
+    /// <summary>Content rendered for the pages tab.</summary>
+    [Parameter] public RenderFragment? PagesContent { get; set; }
+
     /// <summary>Raised when the side panel should close.</summary>
     [Parameter] public EventCallback OnClose { get; set; }
 
@@ -173,6 +213,8 @@ else if (ShowEdgeToggle)
             DocumentSidePanelTab.Revisions => RevisionsContent,
             DocumentSidePanelTab.Versions => VersionsContent,
             DocumentSidePanelTab.Properties => PropertiesContent,
+            DocumentSidePanelTab.Pages => PagesContent,
+            DocumentSidePanelTab.Outline => OutlineContent,
             _ => PropertiesContent
         };
 

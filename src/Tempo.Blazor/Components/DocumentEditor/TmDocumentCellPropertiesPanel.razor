@@ -1,0 +1,146 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using System.Globalization
+@using Tempo.Blazor.DocumentEditor.Models
+
+<section class="tm-document-cell-properties"
+         role="region"
+         aria-label="@Loc["TmDocumentEditor_CellProperties"]"
+         data-testid="document-cell-properties-panel">
+    <header>
+        <TmIcon Name="square" Size="IconSize.Sm" />
+        <span>@Loc["TmDocumentEditor_CellProperties"]</span>
+    </header>
+
+    <div class="tm-document-cell-properties__segmented" role="group" aria-label="@Loc["TmDocumentEditor_CellVerticalAlign"]">
+        @foreach (var alignment in VerticalAlignments)
+        {
+            <button type="button"
+                    class="@SegmentClass(alignment)"
+                    aria-pressed="@(CurrentVerticalAlignment == alignment)"
+                    data-testid="@($"document-cell-properties-valign-{alignment.ToString().ToLowerInvariant()}")"
+                    @onclick="() => HandleVerticalAlignmentChangedAsync(alignment)">
+                @Loc[$"TmDocumentEditor_CellAlign{alignment}"]
+            </button>
+        }
+    </div>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_CellBackground"]</span>
+        <input type="color"
+               value="@BackgroundValue"
+               data-testid="document-cell-properties-background"
+               @onchange="HandleBackgroundChangedAsync" />
+    </label>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_CellPadding"]</span>
+        <input type="number"
+               min="0"
+               step="1"
+               value="@PaddingValue"
+               data-testid="document-cell-properties-padding"
+               @onchange="HandlePaddingChangedAsync" />
+    </label>
+
+    <label>
+        <span>@Loc["TmDocumentEditor_CellBorder"]</span>
+        <select value="@BorderValue"
+                data-testid="document-cell-properties-border"
+                @onchange="HandleBorderChangedAsync">
+            <option value="">@Loc["TmDocumentEditor_None"]</option>
+            <option value="1px solid var(--tm-color-border)">@Loc["TmDocumentEditor_TableBorderDefault"]</option>
+            <option value="2px solid var(--tm-color-primary)">@Loc["TmDocumentEditor_TableBorderStrong"]</option>
+        </select>
+    </label>
+
+    <dl class="tm-document-cell-properties__meta" data-testid="document-cell-properties-span-info">
+        <div>
+            <dt>@Loc["TmDocumentEditor_ColumnSpan"]</dt>
+            <dd>@(Cell?.ColumnSpan ?? 1)</dd>
+        </div>
+        <div>
+            <dt>@Loc["TmDocumentEditor_RowSpan"]</dt>
+            <dd>@(Cell?.RowSpan ?? 1)</dd>
+        </div>
+    </dl>
+</section>
+
+@code {
+    private static readonly TableCellVerticalAlignment[] VerticalAlignments =
+    [
+        TableCellVerticalAlignment.Top,
+        TableCellVerticalAlignment.Middle,
+        TableCellVerticalAlignment.Bottom
+    ];
+
+    /// <summary>Current cell content.</summary>
+    [Parameter] public TableCellContent? Cell { get; set; }
+
+    /// <summary>Raised when cell properties change.</summary>
+    [Parameter] public EventCallback<TableCellContent> CellChanged { get; set; }
+
+    private TableCellVerticalAlignment CurrentVerticalAlignment => Cell?.VerticalAlignment ?? TableCellVerticalAlignment.Top;
+
+    private string BackgroundValue => string.IsNullOrWhiteSpace(Cell?.BackgroundColor) ? "#ffffff" : Cell!.BackgroundColor!;
+
+    private string PaddingValue => Cell?.Padding?.ToString(CultureInfo.InvariantCulture) ?? string.Empty;
+
+    private string BorderValue => Cell?.Borders.Top ?? string.Empty;
+
+    private string SegmentClass(TableCellVerticalAlignment alignment) =>
+        "tm-document-cell-properties__segment" + (CurrentVerticalAlignment == alignment ? " tm-document-cell-properties__segment--active" : string.Empty);
+
+    private Task HandleVerticalAlignmentChangedAsync(TableCellVerticalAlignment alignment)
+    {
+        var next = CloneCell();
+        next.VerticalAlignment = alignment;
+        return CellChanged.InvokeAsync(next);
+    }
+
+    private Task HandleBackgroundChangedAsync(ChangeEventArgs args)
+    {
+        var next = CloneCell();
+        next.BackgroundColor = args.Value?.ToString();
+        return CellChanged.InvokeAsync(next);
+    }
+
+    private Task HandlePaddingChangedAsync(ChangeEventArgs args)
+    {
+        var next = CloneCell();
+        next.Padding = ParseNonNegative(args.Value);
+        return CellChanged.InvokeAsync(next);
+    }
+
+    private Task HandleBorderChangedAsync(ChangeEventArgs args)
+    {
+        var next = CloneCell();
+        var border = args.Value?.ToString();
+        next.Borders = new TableCellBorders { Top = border, Right = border, Bottom = border, Left = border };
+        return CellChanged.InvokeAsync(next);
+    }
+
+    private TableCellContent CloneCell() =>
+        new()
+        {
+            Id = Cell?.Id ?? string.Empty,
+            ColumnSpan = Cell?.ColumnSpan ?? 1,
+            RowSpan = Cell?.RowSpan ?? 1,
+            IsHeader = Cell?.IsHeader ?? false,
+            Width = Cell?.Width,
+            BackgroundColor = Cell?.BackgroundColor,
+            Padding = Cell?.Padding,
+            VerticalAlignment = CurrentVerticalAlignment,
+            Borders = new TableCellBorders
+            {
+                Top = Cell?.Borders.Top,
+                Right = Cell?.Borders.Right,
+                Bottom = Cell?.Borders.Bottom,
+                Left = Cell?.Borders.Left
+            }
+        };
+
+    private static double? ParseNonNegative(object? value) =>
+        double.TryParse(value?.ToString(), NumberStyles.Float, CultureInfo.InvariantCulture, out var parsed) && parsed >= 0
+            ? parsed
+            : null;
+}

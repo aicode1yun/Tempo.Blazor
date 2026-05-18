@@ -33,6 +33,12 @@ public sealed class WysiwygTextContextMenuRequest : WysiwygFloatingUiPosition
 
     /// <summary>Selection snapshot to restore before a context menu command runs.</summary>
     public WysiwygSelectionSnapshot? Selection { get; set; }
+
+    /// <summary>Optional block id when the menu targets a structural block such as a page break.</summary>
+    public string? BlockId { get; set; }
+
+    /// <summary>Optional block type when the menu targets a structural block.</summary>
+    public string? BlockType { get; set; }
 }
 
 /// <summary>Request to show the table context menu for the current table cell.</summary>

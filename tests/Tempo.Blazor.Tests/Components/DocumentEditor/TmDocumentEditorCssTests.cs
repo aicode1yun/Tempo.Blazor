@@ -65,12 +65,42 @@ public class TmDocumentEditorCssTests
         css.Should().Contain("content: attr(aria-label)");
         css.Should().Contain(".tm-document-revision-panel__item");
         css.Should().Contain("box-shadow: 0 0.75rem 2rem");
+        css.Should().Contain(".tm-wysiwyg-image--wrap-square");
+        css.Should().Contain(".tm-wysiwyg-image--wrap-square.tm-wysiwyg-image--position-right");
+        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-restricted-editable");
 
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__page-surface");
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-editor__ribbon");
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-comment-thread");
         css.Should().Contain("[data-theme=\"dark\"] .tm-document-diff__pane pre");
         css.Should().Contain("outline-color: var(--tm-color-primary)");
+    }
+
+    [Fact]
+    public void CssFiles_ContainImageWrappingResponsiveFallback()
+    {
+        var root = FindRepositoryRoot();
+        var css = File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css"));
+
+        css.Should().Contain(".tm-wysiwyg-image--wrap-square");
+        css.Should().Contain("float: left;");
+        css.Should().Contain(".tm-wysiwyg-image--wrap-square.tm-wysiwyg-image--position-right");
+        css.Should().Contain("float: right;");
+        css.Should().Contain("@media (max-width: 40rem)");
+        css.Should().Contain("float: none;");
+        css.Should().Contain("clear: both;");
+    }
+
+    [Fact]
+    public void CssFiles_ContainRestrictedEditingMarkers()
+    {
+        var root = FindRepositoryRoot();
+        var css = File.ReadAllText(Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css"));
+
+        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-block");
+        css.Should().Contain(".tm-wysiwyg--protected .tm-wysiwyg-restricted-editable");
+        css.Should().Contain("cursor: not-allowed;");
+        css.Should().Contain("cursor: text;");
     }
 
     private static string FindRepositoryRoot()

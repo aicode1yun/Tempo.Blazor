@@ -1,0 +1,59 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+@if (IsOpen)
+{
+    <div class="tm-document-json-debug-modal" data-testid="document-clipboard-html-debug-modal" role="dialog">
+        <div class="tm-document-json-debug-modal__backdrop" @onclick="OnClose"></div>
+        <div class="tm-document-json-debug-modal__content">
+            <header class="tm-document-json-debug-modal__header">
+                <span class="tm-document-json-debug-modal__title">@Loc["TmDocumentEditor_DebugClipboardHtmlTitle"]</span>
+                <button type="button"
+                        class="tm-document-json-debug-modal__close"
+                        data-testid="document-clipboard-html-debug-close"
+                        title="@Loc["TmDocumentEditor_Close"]"
+                        aria-label="@Loc["TmDocumentEditor_Close"]"
+                        @onclick="OnClose">
+                    <TmIcon Name="x" Size="IconSize.Sm" />
+                </button>
+            </header>
+            <section class="tm-document-json-debug-modal__section"
+                     data-testid="document-clipboard-raw-debug">
+                <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardRawHtml"]</h3>
+                <pre class="tm-document-json-debug-modal__json"
+                     data-testid="document-clipboard-html-debug-content">@(RawHtml ?? Html)</pre>
+            </section>
+            <section class="tm-document-json-debug-modal__section"
+                     data-testid="document-clipboard-normalized-debug">
+                <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardNormalized"]</h3>
+                <pre class="tm-document-json-debug-modal__json"
+                     data-testid="document-clipboard-normalized-debug-content">@NormalizedJson</pre>
+            </section>
+            <section class="tm-document-json-debug-modal__section"
+                     data-testid="document-clipboard-warnings-debug">
+                <h3 class="tm-document-json-debug-modal__section-title">@Loc["TmDocumentEditor_DebugClipboardWarnings"]</h3>
+                <pre class="tm-document-json-debug-modal__json"
+                     data-testid="document-clipboard-warnings-debug-content">@WarningsJson</pre>
+            </section>
+        </div>
+    </div>
+}
+
+@code {
+    /// <summary>Whether the modal is open.</summary>
+    [Parameter] public bool IsOpen { get; set; }
+
+    /// <summary>Legacy HTML content to display when no raw clipboard HTML is provided.</summary>
+    [Parameter] public string? Html { get; set; }
+
+    /// <summary>Raw HTML captured from the last clipboard paste.</summary>
+    [Parameter] public string? RawHtml { get; set; }
+
+    /// <summary>Normalized Tempo block JSON from the last clipboard paste.</summary>
+    [Parameter] public string? NormalizedJson { get; set; }
+
+    /// <summary>Clipboard pipeline warnings from the last clipboard paste.</summary>
+    [Parameter] public string? WarningsJson { get; set; }
+
+    /// <summary>Raised when the modal should close.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+}

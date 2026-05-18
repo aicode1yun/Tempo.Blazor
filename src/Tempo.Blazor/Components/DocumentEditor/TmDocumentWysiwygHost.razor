@@ -2,6 +2,8 @@
 @using Tempo.Blazor.Components.Activity
 @using Tempo.Blazor.DocumentEditor.Models
 @using Tempo.Blazor.DocumentEditor.Interfaces
+@using Tempo.Blazor.DocumentEditor.Services
+@using Microsoft.AspNetCore.Components.Web
 @using Microsoft.JSInterop
 @using System.Globalization
 @using System.Text.Json
@@ -48,69 +50,117 @@
     }
 </div>
 
-@if (_imageDialogOpen && !ReadOnly)
+@if (_pasteReportWarnings.Count > 0)
 {
-    <section class="tm-document-image-dialog" data-testid="document-wysiwyg-image-dialog" @onclick:stopPropagation="true">
-        @if (!string.IsNullOrWhiteSpace(_imageError))
-        {
-            <div class="tm-document-paste-error" role="alert">@_imageError</div>
-        }
-        @if (_pendingImageUpload)
-        {
-            <div class="tm-document-paste-status">@Loc["TmDocumentEditor_ImageUploading"]</div>
-        }
-        <label>
-            <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
-            <input data-testid="document-wysiwyg-image-url-input"
-                   value="@_pendingImageUrl"
-                   @oninput="args => _pendingImageUrl = args.Value?.ToString()" />
-        </label>
-        <label>
-            <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
-            <input data-testid="document-wysiwyg-image-alt-input"
-                   value="@_pendingImageAltText"
-                   @oninput="args => _pendingImageAltText = args.Value?.ToString()" />
-        </label>
-        <button type="button"
-                data-testid="document-wysiwyg-insert-image-url"
-                @onclick="InsertImageUrlAsync">
-            @Loc["TmDocumentEditor_InsertImage"]
-        </button>
-        <button type="button"
-                data-testid="document-wysiwyg-upload-demo-image"
-                @onclick="InsertProviderImageAsync"
-                disabled="@(ImageProvider is null || _pendingImageUpload)">
-            @Loc["TmDocumentEditor_UploadImage"]
-        </button>
-    </section>
+    <TmDocumentPasteReport Warnings="@_pasteReportWarnings"
+                           OnClose="ClosePasteReportAsync" />
 }
 
-@if (_tokenMenuOpen && !ReadOnly)
+@if (!ReadOnly && (_imageDialogOpen || _autocompleteMenuOpen || ActiveTableCell is not null))
 {
-    <section class="tm-document-token-popover" data-testid="document-wysiwyg-token-popover" @onclick:stopPropagation="true">
-        <div class="tm-document-token-popover__header">
-            <input class="tm-document-token-popover__search"
-                   data-testid="document-token-search"
-                   placeholder="@Loc["TmRichEditor_TokenSearch"]"
-                   aria-label="@Loc["TmRichEditor_TokenSearch"]"
-                   value="@_tokenQuery"
-                   @oninput="HandleTokenQueryInputAsync" />
-            <button type="button"
-                    class="tm-document-token-popover__close"
-                    data-testid="document-token-close"
-                    aria-label="@Loc["TmDocumentEditor_Close"]"
-                    @onclick="CloseTokenMenu">
-                <TmIcon Name="x" Size="IconSize.Sm" />
-            </button>
-        </div>
-        <TmDocumentTokenMenu IsVisible="true"
-                             Tokens="@_tokenItems"
-                             Query="@_tokenQuery"
-                             HighlightedIndex="@_tokenHighlightedIndex"
-                             IsLoading="@_tokenMenuLoading"
-                             OnTokenSelected="InsertTokenAsync"
-                             OnHighlightedIndexChanged="SetTokenHighlightedIndex" />
-    </section>
+    <div class="tm-document-editor__floating-root tm-document-editor__floating-root--wysiwyg"
+         data-testid="document-wysiwyg-floating-root"
+         @onclick:stopPropagation="true">
+        @if (ActiveTableCell is { } activeCell)
+        {
+            <TmDocumentTableToolbar InsertRowBefore="InsertActiveTableRowBeforeAsync"
+                                    InsertRowAfter="InsertActiveTableRowAfterAsync"
+                                    InsertColumnBefore="InsertActiveTableColumnBeforeAsync"
+                                    InsertColumnAfter="InsertActiveTableColumnAfterAsync"
+                                    DeleteRow="DeleteActiveTableRowAsync"
+                                    DeleteColumn="DeleteActiveTableColumnAsync"
+                                    MergeCells="MergeActiveTableCellsAsync"
+                                    SplitCell="SplitActiveTableCellAsync"
+                                    TableProperties="OpenTablePropertiesPanel"
+                                    CellProperties="OpenCellPropertiesPanel" />
+
+            @if (_tablePropertiesPanelOpen && ActiveTableContent is { } activeTable)
+            {
+                <TmDocumentTablePropertiesPanel Layout="activeTable.Layout"
+                                                LayoutChanged="SetActiveTablePropertiesAsync" />
+            }
+
+            @if (_cellPropertiesPanelOpen)
+            {
+                <TmDocumentCellPropertiesPanel Cell="activeCell"
+                                               CellChanged="SetActiveCellPropertiesAsync" />
+            }
+        }
+
+        @if (_imageDialogOpen)
+        {
+            <section class="tm-document-image-dialog" data-testid="document-wysiwyg-image-dialog">
+                @if (!string.IsNullOrWhiteSpace(_imageError))
+                {
+                    <div class="tm-document-paste-error" role="alert">@_imageError</div>
+                }
+                @if (_pendingImageUpload)
+                {
+                    <div class="tm-document-paste-status">@Loc["TmDocumentEditor_ImageUploading"]</div>
+                }
+                <label>
+                    <span>@Loc["TmDocumentEditor_ImageUrl"]</span>
+                    <input data-testid="document-wysiwyg-image-url-input"
+                           value="@_pendingImageUrl"
+                           @oninput="args => _pendingImageUrl = args.Value?.ToString()" />
+                </label>
+                <label>
+                    <span>@Loc["TmDocumentEditor_ImageAltText"]</span>
+                    <input data-testid="document-wysiwyg-image-alt-input"
+                           value="@_pendingImageAltText"
+                           @oninput="args => _pendingImageAltText = args.Value?.ToString()" />
+                </label>
+                <button type="button"
+                        data-testid="document-wysiwyg-insert-image-url"
+                        @onclick="InsertImageUrlAsync">
+                    @Loc["TmDocumentEditor_InsertImage"]
+                </button>
+                <button type="button"
+                        data-testid="document-wysiwyg-upload-demo-image"
+                        @onclick="InsertProviderImageAsync"
+                        disabled="@(ImageProvider is null || _pendingImageUpload)">
+                    @Loc["TmDocumentEditor_UploadImage"]
+                </button>
+            </section>
+        }
+
+        @if (_autocompleteMenuOpen)
+        {
+            <section class="tm-document-token-popover"
+                     data-autocomplete-kind="@_autocompleteTrigger?.Kind.ToString().ToLowerInvariant()"
+                     data-testid="@AutocompletePopoverTestId"
+                     @onkeydown="HandleAutocompletePopoverKeyDownAsync"
+                     @onkeydown:stopPropagation="true">
+                <div class="tm-document-token-popover__header">
+                    <input class="tm-document-token-popover__search"
+                           @ref="_autocompleteSearchInput"
+                           data-testid="@AutocompleteSearchTestId"
+                           placeholder="@AutocompleteSearchPlaceholder"
+                           aria-label="@AutocompleteSearchPlaceholder"
+                           value="@_autocompleteQuery"
+                           @oninput="HandleAutocompleteQueryInputAsync" />
+                    <button type="button"
+                            class="tm-document-token-popover__close"
+                            data-testid="@AutocompleteCloseTestId"
+                            aria-label="@Loc["TmDocumentEditor_Close"]"
+                            @onclick="CloseAutocompleteMenu">
+                        <TmIcon Name="x" Size="IconSize.Sm" />
+                    </button>
+                </div>
+                <TmDocumentAutocompleteMenu IsVisible="true"
+                                            Items="@FilteredAutocompleteItems"
+                                            Query="@_autocompleteQuery"
+                                            Trigger="@_autocompleteTrigger"
+                                            HighlightedIndex="@_autocompleteHighlightedIndex"
+                                            IsLoading="@_autocompleteMenuLoading"
+                                            ErrorMessage="@_autocompleteWarning"
+                                            LoadingText="@Loc["TmDocumentEditor_AutocompleteLoading"]"
+                                            EmptyText="@Loc["TmDocumentEditor_AutocompleteEmpty"]"
+                                            OnItemSelected="InsertAutocompleteItemAsync"
+                                            OnHighlightedIndexChanged="SetAutocompleteHighlightedIndex" />
+            </section>
+        }
+    </div>
 }
 
 @code {
@@ -135,11 +185,20 @@
     private DocumentReviewDisplayMode _lastReviewDisplayMode = DocumentReviewDisplayMode.AllMarkup;
     private bool _hasSentSnapshot;
     private string? _lastAppliedRuntimeDraftStateJson;
-    private bool _tokenMenuOpen;
-    private bool _tokenMenuLoading;
-    private string _tokenQuery = string.Empty;
-    private int _tokenHighlightedIndex;
-    private List<TokenItem> _tokenItems = [];
+    private bool _autocompleteMenuOpen;
+    private bool _autocompleteMenuLoading;
+    private bool _tablePropertiesPanelOpen;
+    private bool _cellPropertiesPanelOpen;
+    private bool _focusAutocompleteSearchOnRender;
+    private string _autocompleteQuery = string.Empty;
+    private string? _autocompleteWarning;
+    private int _autocompleteHighlightedIndex;
+    private List<DocumentAutocompleteItem> _autocompleteItems = [];
+    private DocumentAutocompleteTrigger? _autocompleteTrigger;
+    private readonly DocumentAutocompleteProviderRunner _autocompleteRunner = new();
+    private IReadOnlyList<Clipboard.DocumentClipboardWarning> _pasteReportWarnings = [];
+    private Clipboard.DocumentClipboardDebugSnapshot _lastClipboardDebugSnapshot = new();
+    private ElementReference _autocompleteSearchInput;
 
     /// <summary>Document snapshot to render in the WYSIWYG surface.</summary>
     [Parameter] public DocumentEditorDocument? Document { get; set; }
@@ -164,6 +223,9 @@
 
     /// <summary>Optional token provider for document token autocomplete.</summary>
     [Parameter] public ITokenDataProvider? TokenProvider { get; set; }
+
+    /// <summary>Optional mention provider for document mention autocomplete.</summary>
+    [Parameter] public IMentionDataProvider? MentionProvider { get; set; }
 
     /// <summary>Current editing author used for JS-owned runtime revisions.</summary>
     [Parameter] public DocumentEditorAuthor? Author { get; set; }
@@ -216,6 +278,9 @@
     /// <summary>Raised when the JS-owned runtime comment list changes.</summary>
     [Parameter] public EventCallback<IReadOnlyList<DocumentComment>> CommentsChanged { get; set; }
 
+    /// <summary>Raised when the user selects a comment anchor inside the JS-owned surface.</summary>
+    [Parameter] public EventCallback<string> CommentSelected { get; set; }
+
     /// <summary>Raised when a typing transaction is committed.</summary>
     [Parameter] public EventCallback TransactionCommitted { get; set; }
 
@@ -236,6 +301,24 @@
 
     /// <summary>Raised when the user requests save via keyboard.</summary>
     [Parameter] public EventCallback SaveRequested { get; set; }
+
+    /// <summary>Fired when an image upload starts (<c>true</c>) or finishes (<c>false</c>).</summary>
+    [Parameter] public EventCallback<bool> ImageUploadStateChanged { get; set; }
+
+    /// <summary>Fired when the JS watchdog successfully recovers the runtime after an error.</summary>
+    [Parameter] public EventCallback RuntimeRecovered { get; set; }
+
+    /// <summary>Fired when the JS watchdog fails to recover the runtime after an error.</summary>
+    [Parameter] public EventCallback RuntimeRecoveryFailed { get; set; }
+
+    /// <summary>Fired when the JS watchdog reports recovery telemetry or debug detail.</summary>
+    [Parameter] public EventCallback<WysiwygRuntimeRecoveryDetail> RuntimeRecoveryDetailChanged { get; set; }
+
+    /// <summary>Fired when the WYSIWYG runtime reports page metrics.</summary>
+    [Parameter] public EventCallback<WysiwygPageMetrics> PageMetricsChanged { get; set; }
+
+    /// <summary>Fired when the WYSIWYG runtime detects a new active heading during scroll.</summary>
+    [Parameter] public EventCallback<string?> ActiveHeadingChanged { get; set; }
 
     private string RootClass
     {
@@ -265,12 +348,74 @@
         }
     }
 
+    private DocumentBlock? ActiveImageBlock =>
+        string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveImageBlockId)
+            ? null
+            : Document?.Blocks.FirstOrDefault(block =>
+                string.Equals(block.Id, _lastSelectionSnapshot.ActiveImageBlockId, StringComparison.Ordinal)
+                && block.Content is ImageBlockContent);
+
+    private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
+
+    private TableBlockContent? ActiveTableContent => FindActiveTableCell().Table;
+
+    private TableCellContent? ActiveTableCell => FindActiveTableCell().Cell;
+
+    private (TableBlockContent? Table, TableCellContent? Cell) FindActiveTableCell()
+    {
+        var cellId = _lastSelectionSnapshot?.ActiveTableCellId;
+        if (string.IsNullOrWhiteSpace(cellId) || Document is null)
+        {
+            return (null, null);
+        }
+
+        foreach (var table in EnumerateTables(Document.Blocks))
+        {
+            var cell = table.Rows.SelectMany(row => row.Cells)
+                .FirstOrDefault(candidate => string.Equals(candidate.Id, cellId, StringComparison.Ordinal));
+            if (cell is not null)
+            {
+                return (table, cell);
+            }
+        }
+
+        return (null, null);
+    }
+
+    private static IEnumerable<TableBlockContent> EnumerateTables(IEnumerable<DocumentBlock> blocks)
+    {
+        foreach (var block in blocks)
+        {
+            if (block.Content is TableBlockContent table)
+            {
+                yield return table;
+                foreach (var nested in table.Rows.SelectMany(row => row.Cells).SelectMany(cell => EnumerateTables(cell.Blocks)))
+                {
+                    yield return nested;
+                }
+            }
+        }
+    }
+
     /// <inheritdoc />
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
         if (firstRender && !_disposed)
         {
             await InitializeJsEngineAsync();
+        }
+
+        if (_focusAutocompleteSearchOnRender)
+        {
+            _focusAutocompleteSearchOnRender = false;
+            try
+            {
+                await _autocompleteSearchInput.FocusAsync(preventScroll: true);
+            }
+            catch
+            {
+                // Element focus can fail during prerender or if the popover closed before render.
+            }
         }
     }
 
@@ -291,6 +436,12 @@
                 BodyLabel = Loc["TmDocumentEditor_WysiwygBodyLabel"],
                 HeaderLabel = Loc["TmDocumentEditor_WysiwygHeaderLabel"],
                 FooterLabel = Loc["TmDocumentEditor_WysiwygFooterLabel"],
+                BodyPlaceholder = Loc["TmDocumentEditor_WysiwygBodyPlaceholder"],
+                HeaderPlaceholder = Loc["TmDocumentEditor_WysiwygHeaderPlaceholder"],
+                FooterPlaceholder = Loc["TmDocumentEditor_WysiwygFooterPlaceholder"],
+                TableCellPlaceholder = Loc["TmDocumentEditor_WysiwygTableCellPlaceholder"],
+                PageOverflowWarning = Loc["TmDocumentEditor_WysiwygPageOverflowWarning"],
+                InsertPageBreakLabel = Loc["TmDocumentEditor_InsertPageBreak"],
                 ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
                 ImageRetryLabel = Loc["TmDocumentEditor_Retry"],
                 FontFamilies = FontFamilies,
@@ -995,10 +1146,16 @@
 
     /// <summary>Called by the JS engine when selection changes.</summary>
     [JSInvokable]
-    public Task HandleSelectionChanged(WysiwygSelectionSnapshot? snapshot)
+    public async Task HandleSelectionChanged(WysiwygSelectionSnapshot? snapshot)
     {
         _lastSelectionSnapshot = snapshot;
-        return DocumentSelectionChanged.InvokeAsync(snapshot);
+        if (string.IsNullOrWhiteSpace(snapshot?.ActiveTableCellId))
+        {
+            _tablePropertiesPanelOpen = false;
+            _cellPropertiesPanelOpen = false;
+        }
+        await DocumentSelectionChanged.InvokeAsync(snapshot);
+        await InvokeAsync(StateHasChanged);
     }
 
     /// <summary>Called by the JS engine when the text context menu should open.</summary>
@@ -1059,6 +1216,15 @@
         return CommentsChanged.InvokeAsync(comments ?? []);
     }
 
+    /// <summary>Called by the JS engine when a comment anchor is selected.</summary>
+    [JSInvokable]
+    public Task HandleCommentSelected(string commentId)
+    {
+        return string.IsNullOrWhiteSpace(commentId)
+            ? Task.CompletedTask
+            : CommentSelected.InvokeAsync(commentId);
+    }
+
     /// <summary>Called by the JS engine when a transaction is committed.</summary>
     [JSInvokable]
     public Task HandleTransactionCommitted()
@@ -1108,6 +1274,42 @@
         return Task.CompletedTask;
     }
 
+    /// <summary>Called by the JS engine when page metrics change.</summary>
+    [JSInvokable]
+    public Task HandlePageMetricsChanged(WysiwygPageMetrics metrics)
+    {
+        return PageMetricsChanged.InvokeAsync(metrics);
+    }
+
+    /// <summary>Called by the JS engine when the active heading changes.</summary>
+    [JSInvokable]
+    public Task HandleActiveHeadingChanged(string? blockId)
+    {
+        return ActiveHeadingChanged.InvokeAsync(blockId);
+    }
+
+    /// <summary>Called by the JS watchdog when the runtime is successfully recovered after an error.</summary>
+    [JSInvokable]
+    public async Task HandleRuntimeRecovered(WysiwygRuntimeRecoveryDetail? detail = null)
+    {
+        await RuntimeRecovered.InvokeAsync();
+        if (detail is not null)
+        {
+            await RuntimeRecoveryDetailChanged.InvokeAsync(detail);
+        }
+    }
+
+    /// <summary>Called by the JS watchdog when runtime recovery fails.</summary>
+    [JSInvokable]
+    public async Task HandleRuntimeRecoveryFailed(WysiwygRuntimeRecoveryDetail? detail = null)
+    {
+        await RuntimeRecoveryFailed.InvokeAsync();
+        if (detail is not null)
+        {
+            await RuntimeRecoveryDetailChanged.InvokeAsync(detail);
+        }
+    }
+
     /// <summary>Executes an editor command via the JS runtime facade.</summary>
     public async Task ExecuteRuntimeCommandAsync(string command, object? payload = null)
     {
@@ -1127,6 +1329,89 @@
     {
         return ExecuteRuntimeCommandAsync(command, payload);
     }
+
+    private Task SetActiveImageAltTextAsync(string altText) =>
+        ExecuteRuntimeCommandAsync("setImageAltText", new { AltText = altText });
+
+    private Task ToggleActiveImageCaptionAsync() =>
+        ExecuteRuntimeCommandAsync("toggleImageCaption");
+
+    private Task SetActiveImageLinkAsync(string? linkUrl) =>
+        ExecuteRuntimeCommandAsync("setImageLink", new { Url = linkUrl });
+
+    private Task SetActiveImageWrapModeAsync(DocumentWrapMode wrapMode) =>
+        ExecuteRuntimeCommandAsync("setImageWrapMode", new { WrapMode = wrapMode.ToString() });
+
+    private Task SetActiveImageAlignmentAsync(DocumentImageAlignment alignment) =>
+        ExecuteRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = ToHorizontalPosition(alignment).ToString() });
+
+    private Task SetActiveImageSizeAsync(DocumentImageSize size) =>
+        ExecuteRuntimeCommandAsync("setImageSize", new
+        {
+            Width = size.Width,
+            Height = size.Height,
+            LockAspectRatio = size.LockAspectRatio
+        });
+
+    private Task InsertActiveTableRowBeforeAsync() => ExecuteRuntimeCommandAsync("insertTableRowBefore");
+
+    private Task InsertActiveTableRowAfterAsync() => ExecuteRuntimeCommandAsync("insertTableRowAfter");
+
+    private Task InsertActiveTableColumnBeforeAsync() => ExecuteRuntimeCommandAsync("insertTableColumnBefore");
+
+    private Task InsertActiveTableColumnAfterAsync() => ExecuteRuntimeCommandAsync("insertTableColumnAfter");
+
+    private Task DeleteActiveTableRowAsync() => ExecuteRuntimeCommandAsync("deleteTableRow");
+
+    private Task DeleteActiveTableColumnAsync() => ExecuteRuntimeCommandAsync("deleteTableColumn");
+
+    private Task MergeActiveTableCellsAsync() => ExecuteRuntimeCommandAsync("mergeTableCells");
+
+    private Task SplitActiveTableCellAsync() => ExecuteRuntimeCommandAsync("splitTableCell");
+
+    private Task OpenTablePropertiesPanel()
+    {
+        _tablePropertiesPanelOpen = true;
+        _cellPropertiesPanelOpen = false;
+        return Task.CompletedTask;
+    }
+
+    private Task OpenCellPropertiesPanel()
+    {
+        _cellPropertiesPanelOpen = true;
+        _tablePropertiesPanelOpen = false;
+        return Task.CompletedTask;
+    }
+
+    private Task SetActiveTablePropertiesAsync(TableLayoutContent layout) =>
+        ExecuteRuntimeCommandAsync("setTableProperties", new
+        {
+            CellId = _lastSelectionSnapshot?.ActiveTableCellId,
+            layout.Width,
+            Alignment = layout.Alignment.ToString(),
+            layout.CellPadding,
+            layout.BackgroundColor,
+            layout.Borders
+        });
+
+    private Task SetActiveCellPropertiesAsync(TableCellContent cell) =>
+        ExecuteRuntimeCommandAsync("setCellProperties", new
+        {
+            CellId = _lastSelectionSnapshot?.ActiveTableCellId,
+            cell.Width,
+            cell.BackgroundColor,
+            VerticalAlignment = cell.VerticalAlignment.ToString(),
+            cell.Padding,
+            cell.Borders
+        });
+
+    private static DocumentImageHorizontalPosition ToHorizontalPosition(DocumentImageAlignment alignment) =>
+        alignment switch
+        {
+            DocumentImageAlignment.Start => DocumentImageHorizontalPosition.Left,
+            DocumentImageAlignment.End => DocumentImageHorizontalPosition.Right,
+            _ => DocumentImageHorizontalPosition.Center
+        };
 
     /// <summary>Runs undo in the JS-owned WYSIWYG runtime.</summary>
     public async Task<bool> UndoRuntimeAsync()
@@ -1174,75 +1459,226 @@
     /// <summary>Opens the document token insert menu.</summary>
     public async Task OpenTokenMenuAsync()
     {
-        if (ReadOnly || TokenProvider is null)
+        await OpenAutocompleteMenuAsync(DocumentAutocompleteTrigger.Token());
+    }
+
+    /// <summary>Opens the document mention autocomplete menu.</summary>
+    public async Task OpenMentionMenuAsync()
+    {
+        await OpenAutocompleteMenuAsync(DocumentAutocompleteTrigger.Mention());
+    }
+
+    /// <summary>Opens the document slash command autocomplete menu.</summary>
+    public async Task OpenSlashCommandMenuAsync()
+    {
+        await OpenAutocompleteMenuAsync(DocumentAutocompleteTrigger.SlashCommand());
+    }
+
+    /// <summary>Called by the JS runtime when a typed trigger opens or updates autocomplete.</summary>
+    [JSInvokable]
+    public async Task HandleAutocompleteTriggerRequested(DocumentAutocompleteTriggerRequest request)
+    {
+        if (request is null)
         {
             return;
         }
 
-        _tokenMenuOpen = true;
-        _tokenQuery = string.Empty;
-        _tokenHighlightedIndex = 0;
-        await LoadTokenItemsAsync(_tokenQuery);
-    }
-
-    private async Task HandleTokenQueryInputAsync(ChangeEventArgs args)
-    {
-        _tokenQuery = args.Value?.ToString() ?? string.Empty;
-        _tokenHighlightedIndex = 0;
-        await LoadTokenItemsAsync(_tokenQuery);
-    }
-
-    private async Task LoadTokenItemsAsync(string query)
-    {
-        if (TokenProvider is null)
+        var trigger = ResolveAutocompleteTrigger(request.TriggerId, request.Marker);
+        if (trigger is null)
         {
-            _tokenItems = [];
-            return;
-        }
-
-        _tokenMenuLoading = true;
-        await InvokeAsync(StateHasChanged);
-        try
-        {
-            var tokens = await TokenProvider.SearchTokensAsync(query);
-            _tokenItems = tokens.Select(ToTokenItem).ToList();
-        }
-        finally
-        {
-            _tokenMenuLoading = false;
+            CloseAutocompleteMenu();
             await InvokeAsync(StateHasChanged);
+            return;
         }
+
+        await OpenAutocompleteMenuAsync(trigger, request.Query ?? string.Empty, focusSearch: false);
     }
 
-    private Task SetTokenHighlightedIndex(int index)
+    /// <summary>Called by the JS runtime when a typed autocomplete query should close.</summary>
+    [JSInvokable]
+    public Task HandleAutocompleteClosed()
     {
-        _tokenHighlightedIndex = index;
+        CloseAutocompleteMenu();
+        return InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Called by the JS runtime when the active autocomplete query receives a keyboard command.</summary>
+    [JSInvokable]
+    public Task HandleAutocompleteKeyRequested(string key)
+    {
+        return HandleAutocompletePopoverKeyDownAsync(new KeyboardEventArgs { Key = key });
+    }
+
+    private async Task OpenAutocompleteMenuAsync(
+        DocumentAutocompleteTrigger trigger,
+        string query = "",
+        bool focusSearch = true)
+    {
+        if (ReadOnly || !CanServeAutocomplete(trigger))
+        {
+            return;
+        }
+
+        _autocompleteMenuOpen = true;
+        _autocompleteTrigger = trigger;
+        _autocompleteQuery = query;
+        _autocompleteHighlightedIndex = 0;
+        _autocompleteWarning = null;
+        await LoadAutocompleteItemsAsync(query);
+        _focusAutocompleteSearchOnRender = focusSearch;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task HandleAutocompleteQueryInputAsync(ChangeEventArgs args)
+    {
+        _autocompleteQuery = args.Value?.ToString() ?? string.Empty;
+        _autocompleteHighlightedIndex = 0;
+        await LoadAutocompleteItemsAsync(_autocompleteQuery);
+    }
+
+    private async Task LoadAutocompleteItemsAsync(string query)
+    {
+        if (_autocompleteTrigger is null || !CanServeAutocomplete(_autocompleteTrigger))
+        {
+            _autocompleteItems = [];
+            return;
+        }
+
+        if (!_autocompleteTrigger.CanSearch(query))
+        {
+            _autocompleteItems = [];
+            return;
+        }
+
+        var provider = CreateAutocompleteProvider(_autocompleteTrigger);
+        if (provider is null)
+        {
+            _autocompleteItems = [];
+            return;
+        }
+
+        _autocompleteMenuLoading = true;
+        _autocompleteWarning = null;
+        await InvokeAsync(StateHasChanged);
+
+        var result = await _autocompleteRunner.SearchAsync(
+            provider,
+            new DocumentAutocompleteRequest
+            {
+                Trigger = _autocompleteTrigger,
+                Query = query,
+                Limit = _autocompleteTrigger.Limit
+            },
+            Loc["TmDocumentEditor_AutocompleteProviderError"]);
+
+        if (result.IsStale || result.IsCanceled)
+        {
+            return;
+        }
+
+        _autocompleteItems = result.Items.ToList();
+        _autocompleteWarning = result.WarningMessage;
+        _autocompleteMenuLoading = false;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetAutocompleteHighlightedIndex(int index)
+    {
+        _autocompleteHighlightedIndex = index;
         return Task.CompletedTask;
     }
 
-    private void CloseTokenMenu()
+    private void CloseAutocompleteMenu()
     {
-        _tokenMenuOpen = false;
-        _tokenQuery = string.Empty;
-        _tokenItems = [];
+        _autocompleteRunner.Cancel();
+        _autocompleteMenuOpen = false;
+        _focusAutocompleteSearchOnRender = false;
+        _autocompleteQuery = string.Empty;
+        _autocompleteItems = [];
+        _autocompleteWarning = null;
+        _autocompleteTrigger = null;
+        _autocompleteMenuLoading = false;
     }
 
-    private async Task InsertTokenAsync(TokenItem token)
+    private async Task HandleAutocompletePopoverKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (!_autocompleteMenuOpen)
+        {
+            return;
+        }
+
+        switch (args.Key)
+        {
+            case "Escape":
+                await CloseRuntimeAutocompleteQueryAsync();
+                CloseAutocompleteMenu();
+                await InvokeAsync(StateHasChanged);
+                break;
+            case "ArrowDown":
+                _autocompleteHighlightedIndex = Math.Min(
+                    _autocompleteHighlightedIndex + 1,
+                    Math.Max(FilteredAutocompleteItems.Count - 1, 0));
+                await InvokeAsync(StateHasChanged);
+                break;
+            case "ArrowUp":
+                _autocompleteHighlightedIndex = Math.Max(_autocompleteHighlightedIndex - 1, 0);
+                await InvokeAsync(StateHasChanged);
+                break;
+            case "Enter":
+                var item = FilteredAutocompleteItems.ElementAtOrDefault(_autocompleteHighlightedIndex);
+                if (item is not null)
+                {
+                    await InsertAutocompleteItemAsync(item);
+                }
+                break;
+        }
+    }
+
+    private IReadOnlyList<DocumentAutocompleteItem> FilteredAutocompleteItems
+        => string.IsNullOrWhiteSpace(_autocompleteQuery)
+            ? _autocompleteItems
+            : _autocompleteItems
+                .Where(item =>
+                    item.Label.Contains(_autocompleteQuery, StringComparison.OrdinalIgnoreCase) ||
+                    item.Id.Contains(_autocompleteQuery, StringComparison.OrdinalIgnoreCase) ||
+                    (item.Description?.Contains(_autocompleteQuery, StringComparison.OrdinalIgnoreCase) ?? false))
+                .ToList();
+
+    private async Task InsertAutocompleteItemAsync(DocumentAutocompleteItem item)
     {
         if (ReadOnly)
         {
             return;
         }
 
+        switch (item.Kind)
+        {
+            case DocumentAutocompleteKind.Token:
+                await InsertTokenItemAsync(item);
+                break;
+            case DocumentAutocompleteKind.Mention:
+                await InsertMentionItemAsync(item);
+                break;
+            case DocumentAutocompleteKind.SlashCommand:
+                await ExecuteSlashCommandItemAsync(item);
+                break;
+        }
+    }
+
+    private async Task InsertTokenItemAsync(DocumentAutocompleteItem item)
+    {
+        var key = item.Metadata.GetValueOrDefault("key") ?? item.Value ?? item.Id;
+        var displayName = item.Metadata.GetValueOrDefault("displayName") ?? item.Label;
+        var typeLabel = item.Metadata.GetValueOrDefault("typeLabel");
         var tokenRun = new TokenRun
         {
             Id = Guid.NewGuid().ToString("N"),
-            Key = token.Key,
-            DisplayName = string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
-            Description = token.Description,
-            ColorClass = token.ColorClass,
-            TypeLabel = token.TypeLabel,
-            TokenType = NormalizeTokenType(token.TypeLabel)
+            Key = key,
+            DisplayName = string.IsNullOrWhiteSpace(displayName) ? key : displayName,
+            Description = item.Metadata.GetValueOrDefault("description") ?? item.Description,
+            ColorClass = item.Metadata.GetValueOrDefault("colorClass"),
+            TypeLabel = typeLabel,
+            TokenType = NormalizeTokenType(typeLabel)
         };
 
         var patch = new WysiwygPatch
@@ -1253,23 +1689,211 @@
             ProtocolVersion = 1
         };
 
+        await RemoveRuntimeAutocompleteQueryAsync();
         await DocumentPatchGenerated.InvokeAsync(patch);
-        CloseTokenMenu();
+        CloseAutocompleteMenu();
         await InvokeAsync(StateHasChanged);
     }
 
-    private static TokenItem ToTokenItem(Tempo.Blazor.Interfaces.IToken token)
+    private async Task InsertMentionItemAsync(DocumentAutocompleteItem item)
     {
-        return new TokenItem
+        var userName = item.Metadata.GetValueOrDefault("userName");
+        var label = string.IsNullOrWhiteSpace(userName) ? item.Label : userName;
+        var mentionText = label.StartsWith('@') ? label : "@" + label;
+        await RemoveRuntimeAutocompleteQueryAsync();
+        if (await InsertRuntimeAutocompleteTextAsync(mentionText))
         {
-            Key = token.Key,
-            DisplayName = token.DisplayName,
-            Description = token.Description,
-            Category = token.Category,
-            Icon = token.Icon,
-            ColorClass = token.ColorClass,
-            TypeLabel = token.TypeLabel
+            CloseAutocompleteMenu();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = mentionText,
+            Selection = _lastSelectionSnapshot,
+            ProtocolVersion = 1
         };
+
+        await DocumentPatchGenerated.InvokeAsync(patch);
+        CloseAutocompleteMenu();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ExecuteSlashCommandItemAsync(DocumentAutocompleteItem item)
+    {
+        var command = item.Metadata.GetValueOrDefault("command");
+        if (string.IsNullOrWhiteSpace(command))
+        {
+            return;
+        }
+
+        await RemoveRuntimeAutocompleteQueryAsync();
+        CloseAutocompleteMenu();
+
+        switch (command)
+        {
+            case "insertTable":
+                await ExecuteRuntimeCommandAsync("insertTable", new { Rows = 2, Columns = 2 });
+                break;
+            case "insertImage":
+                await OpenImageDialogAsync();
+                break;
+            case "insertPageBreak":
+                await ExecuteRuntimeCommandAsync("insertPageBreak");
+                break;
+        }
+
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private string AutocompletePopoverTestId =>
+        _autocompleteTrigger?.Kind == DocumentAutocompleteKind.Token
+            ? "document-wysiwyg-token-popover"
+            : "document-wysiwyg-autocomplete-popover";
+
+    private string AutocompleteSearchTestId =>
+        _autocompleteTrigger?.Kind == DocumentAutocompleteKind.Token
+            ? "document-token-search"
+            : "document-autocomplete-search";
+
+    private string AutocompleteCloseTestId =>
+        _autocompleteTrigger?.Kind == DocumentAutocompleteKind.Token
+            ? "document-token-close"
+            : "document-autocomplete-close";
+
+    private string AutocompleteSearchPlaceholder => _autocompleteTrigger?.Kind switch
+    {
+        DocumentAutocompleteKind.Token => Loc["TmRichEditor_TokenSearch"],
+        DocumentAutocompleteKind.Mention => Loc["TmDocumentEditor_MentionSearch"],
+        DocumentAutocompleteKind.Tag => Loc["TmDocumentEditor_TagSearch"],
+        DocumentAutocompleteKind.SlashCommand => Loc["TmDocumentEditor_CommandSearch"],
+        _ => Loc["TmDocumentEditor_AutocompleteSearch"]
+    };
+
+    private bool CanServeAutocomplete(DocumentAutocompleteTrigger trigger)
+    {
+        return trigger.Kind switch
+        {
+            DocumentAutocompleteKind.Token => TokenProvider is not null,
+            DocumentAutocompleteKind.Mention => MentionProvider is not null,
+            DocumentAutocompleteKind.SlashCommand => true,
+            DocumentAutocompleteKind.Tag => false,
+            _ => false
+        };
+    }
+
+    private IDocumentAutocompleteProvider? CreateAutocompleteProvider(DocumentAutocompleteTrigger trigger)
+    {
+        return trigger.Kind switch
+        {
+            DocumentAutocompleteKind.Token when TokenProvider is not null => new TokenDocumentAutocompleteProvider(TokenProvider),
+            DocumentAutocompleteKind.Mention when MentionProvider is not null => new MentionDocumentAutocompleteProvider(MentionProvider),
+            DocumentAutocompleteKind.SlashCommand => new DocumentSlashCommandAutocompleteProvider(CreateSlashCommandItems()),
+            _ => null
+        };
+    }
+
+    private IReadOnlyList<DocumentAutocompleteItem> CreateSlashCommandItems()
+    {
+        return
+        [
+            new DocumentAutocompleteItem
+            {
+                Id = "insertTable",
+                Label = Loc["TmDocumentEditor_InsertTable"],
+                Description = Loc["TmDocumentEditor_SlashInsertTableDescription"],
+                Kind = DocumentAutocompleteKind.SlashCommand,
+                Icon = "table",
+                RendererKey = "command",
+                Metadata = { ["command"] = "insertTable" }
+            },
+            new DocumentAutocompleteItem
+            {
+                Id = "insertImage",
+                Label = Loc["TmDocumentEditor_InsertImage"],
+                Description = Loc["TmDocumentEditor_SlashInsertImageDescription"],
+                Kind = DocumentAutocompleteKind.SlashCommand,
+                Icon = "image",
+                RendererKey = "command",
+                Metadata = { ["command"] = "insertImage" }
+            },
+            new DocumentAutocompleteItem
+            {
+                Id = "insertPageBreak",
+                Label = Loc["TmDocumentEditor_PageBreak"],
+                Description = Loc["TmDocumentEditor_SlashInsertPageBreakDescription"],
+                Kind = DocumentAutocompleteKind.SlashCommand,
+                Icon = "separator-horizontal",
+                RendererKey = "command",
+                Metadata = { ["command"] = "insertPageBreak" }
+            }
+        ];
+    }
+
+    private static DocumentAutocompleteTrigger? ResolveAutocompleteTrigger(string? triggerId, string? marker)
+    {
+        var key = (triggerId ?? marker ?? string.Empty).Trim().ToLowerInvariant();
+        return key switch
+        {
+            "token" or "{{" => DocumentAutocompleteTrigger.Token(),
+            "mention" or "@" => DocumentAutocompleteTrigger.Mention(),
+            "tag" or "#" => DocumentAutocompleteTrigger.Tag(),
+            "slash" or "/" => DocumentAutocompleteTrigger.SlashCommand(),
+            _ => null
+        };
+    }
+
+    private async Task CloseRuntimeAutocompleteQueryAsync()
+    {
+        await ExecuteRuntimeCommandAsync("closeAutocompleteQuery");
+    }
+
+    private async Task RemoveRuntimeAutocompleteQueryAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady)
+        {
+            return;
+        }
+
+        try
+        {
+            var selection = await JSRuntime.InvokeAsync<WysiwygSelectionSnapshot?>(
+                "tmDocumentEditorRuntime.executeCommand",
+                _instanceId,
+                "removeAutocompleteQuery",
+                null);
+            if (selection is not null)
+            {
+                _lastSelectionSnapshot = selection;
+            }
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
+    private async Task<bool> InsertRuntimeAutocompleteTextAsync(string text)
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrEmpty(text))
+        {
+            return false;
+        }
+
+        try
+        {
+            return await JSRuntime.InvokeAsync<bool>(
+                "tmDocumentEditorRuntime.executeCommand",
+                _instanceId,
+                "insertAutocompleteText",
+                new { Text = text });
+        }
+        catch (JSException)
+        {
+            return false;
+        }
     }
 
     private static string? NormalizeTokenType(string? typeLabel)
@@ -1301,6 +1925,9 @@
         _pendingImageAltText = null;
         _imageError = null;
     }
+
+    /// <summary>Uploads a small provider-backed demo image and inserts it at the active selection.</summary>
+    public Task UploadDemoImageAsync() => InsertProviderImageAsync();
 
     private async Task InsertProviderImageAsync()
     {
@@ -1412,12 +2039,22 @@
             }
 
             _imageError = Loc["TmDocumentEditor_ImageProviderMissing"];
+            _pasteReportWarnings =
+            [
+                new Clipboard.DocumentClipboardWarning
+                {
+                    Code = "image-provider-missing",
+                    Message = _imageError
+                }
+            ];
+            _ = AutoHidePasteReportAsync();
             await InvokeAsync(StateHasChanged);
             return null;
         }
 
         _pendingImageUpload = true;
         _imageError = null;
+        await ImageUploadStateChanged.InvokeAsync(true);
         await using var stream = new MemoryStream(bytes);
         try
         {
@@ -1453,12 +2090,30 @@
         finally
         {
             _pendingImageUpload = false;
+            await ImageUploadStateChanged.InvokeAsync(false);
             await InvokeAsync(StateHasChanged);
         }
     }
 
     private async Task InsertImageBlockFromBlazorAsync(DocumentBlock block, WysiwygSelectionSnapshot? selection)
     {
+        if (_jsReady && !_jsFailed && !_disposed)
+        {
+            try
+            {
+                await JSRuntime.InvokeVoidAsync(
+                    "tmDocumentEditorRuntime.executeCommand",
+                    _instanceId,
+                    "insertImageBlock",
+                    new { Block = block, Selection = selection });
+                return;
+            }
+            catch (JSException)
+            {
+                // Fall back to a Blazor patch when the runtime bridge is temporarily unavailable.
+            }
+        }
+
         var patch = new WysiwygPatch
         {
             Type = "InsertBlock",
@@ -1470,17 +2125,16 @@
 
         await DocumentPatchGenerated.InvokeAsync(patch);
 
-        if (_jsReady && !_jsFailed && !_disposed)
+        var imageSelection = new WysiwygSelectionSnapshot
         {
-            try
-            {
-                await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.insertImageNode", _instanceId, block, false);
-            }
-            catch (JSException)
-            {
-                // Best-effort; Blazor will send the updated snapshot after the patch is applied.
-            }
-        }
+            Region = "Image",
+            AnchorBlockId = block.Id,
+            FocusBlockId = block.Id,
+            ActiveImageBlockId = block.Id,
+            IsCollapsed = true
+        };
+        _lastSelectionSnapshot = imageSelection;
+        await DocumentSelectionChanged.InvokeAsync(imageSelection);
     }
 
     private static DocumentBlock CreateImageBlock(WysiwygImagePayload payload)
@@ -1557,6 +2211,135 @@
         }
     }
 
+    public async Task SetSearchMarkersAsync(string[] blockIds, int[] offsets, int[] lengths)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setSearchMarkers", _instanceId, blockIds, offsets, lengths);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task ClearSearchMarkersAsync()
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.clearSearchMarkers", _instanceId);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task ScrollToSearchResultAsync(string blockId, int offset, int length)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToSearchResult", _instanceId, blockId, offset, length);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task SetShowBlocksAsync(bool show)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setShowBlocks", _instanceId, show);
+        }
+        catch (JSException) { }
+    }
+
+    /// <summary>Shows or hides non-printing character marks in the WYSIWYG runtime.</summary>
+    public async Task SetShowNonPrintingCharactersAsync(bool show)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setShowNonPrintingCharacters", _instanceId, show);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task SetProtectionModeAsync(bool isProtected, IEnumerable<object> markers)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.setProtectionMode", _instanceId, isProtected, markers);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task<string> GetBodyHtmlAsync()
+    {
+        if (_jsFailed || _disposed) return string.Empty;
+        try
+        {
+            return await JSRuntime.InvokeAsync<string>("tmDocumentWysiwyg.getBodyHtml", _instanceId) ?? string.Empty;
+        }
+        catch (JSException) { return string.Empty; }
+    }
+
+    /// <summary>Returns the latest developer-only clipboard pipeline snapshot.</summary>
+    public Clipboard.DocumentClipboardDebugSnapshot GetClipboardDebugSnapshot()
+    {
+        return _lastClipboardDebugSnapshot;
+    }
+
+    /// <summary>Returns the current JS runtime debug snapshot as formatted JSON.</summary>
+    public async Task<string> GetRuntimeDebugSnapshotJsonAsync()
+    {
+        if (_jsFailed || _disposed) return string.Empty;
+        try
+        {
+            return await JSRuntime.InvokeAsync<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _instanceId) ?? string.Empty;
+        }
+        catch (JSException) { return string.Empty; }
+    }
+
+    public async Task SetFullscreenAsync(bool fullscreen)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditor.setFullscreen", fullscreen);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task ScrollToBlockAsync(string blockId)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToBlock", _instanceId, blockId);
+        }
+        catch (JSException) { }
+    }
+
+    /// <summary>Scrolls the WYSIWYG surface to a zero-based page index.</summary>
+    public async Task ScrollToPageAsync(int pageIndex)
+    {
+        if (_jsFailed || _disposed) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentWysiwyg.scrollToPage", _instanceId, pageIndex);
+        }
+        catch (JSException) { }
+    }
+
+    public async Task<string> GetSelectedTextAsync()
+    {
+        if (_jsFailed || _disposed) return string.Empty;
+        try
+        {
+            return await JSRuntime.InvokeAsync<string>("tmDocumentEditorRuntime.getSelectedText", _instanceId) ?? string.Empty;
+        }
+        catch (JSException) { return string.Empty; }
+    }
+
     /// <summary>Closes the active header/footer editing region and returns focus to the body.</summary>
     public async Task CloseHeaderFooterAsync()
     {
@@ -1610,6 +2393,60 @@
         return Task.CompletedTask;
     }
 
+    /// <summary>Called by the JS engine with raw clipboard HTML and plain text.
+    /// Runs the C# clipboard pipeline for normalization and returns processed blocks as JSON.</summary>
+    [JSInvokable]
+    public async Task<string> HandleClipboardPasteRequested(string html, string plain)
+    {
+        var pipeline = new Clipboard.DocumentClipboardPipeline([
+            new Clipboard.Normalizers.WordClipboardNormalizer(),
+            new Clipboard.Normalizers.GoogleDocsClipboardNormalizer(),
+            new Clipboard.Normalizers.GoogleSheetsClipboardNormalizer(),
+            new Clipboard.Normalizers.UrlClipboardNormalizer(),
+            new Clipboard.Normalizers.RawHtmlClipboardNormalizer()
+        ]);
+
+        var region = DocumentEditorSchemaNames.ParseRegion(_lastSelectionSnapshot?.Region);
+        var raw = new Clipboard.DocumentClipboardRawInput { Html = html, PlainText = plain };
+        var result = pipeline.ProcessForInsertion(raw, region);
+
+        _pasteReportWarnings = result.Warnings;
+        _lastClipboardDebugSnapshot = new Clipboard.DocumentClipboardDebugSnapshot
+        {
+            RawHtml = html,
+            PlainText = plain,
+            Source = result.Source,
+            Region = result.Region,
+            NormalizedJson = JsonSerializer.Serialize(result.Blocks, new JsonSerializerOptions(DocumentEditorJson.Options)
+            {
+                WriteIndented = true
+            }),
+            Warnings = result.Warnings,
+            CapturedAt = DateTimeOffset.UtcNow
+        };
+        if (_pasteReportWarnings.Count > 0)
+        {
+            _ = AutoHidePasteReportAsync();
+        }
+
+        await InvokeAsync(StateHasChanged);
+        return JsonSerializer.Serialize(result.Blocks);
+    }
+
+    private Task ClosePasteReportAsync()
+    {
+        _pasteReportWarnings = [];
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task AutoHidePasteReportAsync()
+    {
+        await Task.Delay(TimeSpan.FromSeconds(8));
+        if (_disposed) return;
+        _pasteReportWarnings = [];
+        await InvokeAsync(StateHasChanged);
+    }
+
     /// <inheritdoc />
     public async ValueTask DisposeAsync()
     {
@@ -1627,5 +2464,6 @@
 
         _dotNetRef?.Dispose();
         _dotNetRef = null;
+        _autocompleteRunner.Dispose();
     }
 }

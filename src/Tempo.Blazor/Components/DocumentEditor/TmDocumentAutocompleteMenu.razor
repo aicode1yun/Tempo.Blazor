@@ -1,0 +1,171 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+@using Microsoft.AspNetCore.Components.Web
+
+@if (IsVisible)
+{
+    <div class="tm-document-autocomplete-menu"
+         data-testid="document-autocomplete-menu"
+         role="listbox"
+         aria-busy="@IsLoading.ToString().ToLowerInvariant()"
+         @onkeydown="HandleKeyDownAsync">
+        @if (!string.IsNullOrWhiteSpace(ErrorMessage))
+        {
+            <div class="tm-document-autocomplete-menu__message tm-document-autocomplete-menu__message--error"
+                 data-testid="document-autocomplete-error"
+                 role="alert">
+                @ErrorMessage
+            </div>
+        }
+        else if (IsLoading)
+        {
+            <div class="tm-document-autocomplete-menu__message"
+                 data-testid="document-autocomplete-loading">
+                @ResolvedLoadingText
+            </div>
+        }
+        else if (Items.Count == 0)
+        {
+            <div class="tm-document-autocomplete-menu__message"
+                 data-testid="document-autocomplete-empty">
+                @ResolvedEmptyText
+            </div>
+        }
+        else
+        {
+            @for (var i = 0; i < Items.Count; i++)
+            {
+                var index = i;
+                var item = Items[index];
+                var selected = index == HighlightedIndex;
+                <button type="button"
+                        class="@ItemClass(selected, item)"
+                        data-testid="document-autocomplete-item"
+                        role="option"
+                        aria-selected="@selected.ToString().ToLowerInvariant()"
+                        @onclick="() => SelectItemAsync(item)">
+                    @if (ItemTemplate is not null)
+                    {
+                        @ItemTemplate(item)
+                    }
+                    else
+                    {
+                        <span class="tm-document-autocomplete-menu__icon" aria-hidden="true">
+                            @if (!string.IsNullOrWhiteSpace(item.Icon))
+                            {
+                                <TmIcon Name="@item.Icon" Size="IconSize.Sm" />
+                            }
+                            else
+                            {
+                                @DefaultGlyph(item.Kind)
+                            }
+                        </span>
+                        <span class="tm-document-autocomplete-menu__body">
+                            <span class="tm-document-autocomplete-menu__label">@item.Label</span>
+                            @if (!string.IsNullOrWhiteSpace(item.Description))
+                            {
+                                <span class="tm-document-autocomplete-menu__description">@item.Description</span>
+                            }
+                        </span>
+                        @if (!string.IsNullOrWhiteSpace(item.Group))
+                        {
+                            <span class="tm-document-autocomplete-menu__group">@item.Group</span>
+                        }
+                    }
+                </button>
+            }
+        }
+    </div>
+}
+
+@code {
+    /// <summary>Whether the autocomplete menu is visible.</summary>
+    [Parameter] public bool IsVisible { get; set; }
+
+    /// <summary>Items displayed in the autocomplete menu.</summary>
+    [Parameter] public IReadOnlyList<DocumentAutocompleteItem> Items { get; set; } = [];
+
+    /// <summary>Current query text without the trigger marker.</summary>
+    [Parameter] public string Query { get; set; } = string.Empty;
+
+    /// <summary>Trigger that opened the menu.</summary>
+    [Parameter] public DocumentAutocompleteTrigger? Trigger { get; set; }
+
+    /// <summary>Highlighted item index.</summary>
+    [Parameter] public int HighlightedIndex { get; set; }
+
+    /// <summary>Whether the menu is loading provider results.</summary>
+    [Parameter] public bool IsLoading { get; set; }
+
+    /// <summary>Optional provider error message.</summary>
+    [Parameter] public string? ErrorMessage { get; set; }
+
+    /// <summary>Text displayed while loading.</summary>
+    [Parameter] public string? LoadingText { get; set; }
+
+    /// <summary>Text displayed when no results match.</summary>
+    [Parameter] public string? EmptyText { get; set; }
+
+    /// <summary>Optional custom item template.</summary>
+    [Parameter] public RenderFragment<DocumentAutocompleteItem>? ItemTemplate { get; set; }
+
+    /// <summary>Raised when an item is selected.</summary>
+    [Parameter] public EventCallback<DocumentAutocompleteItem> OnItemSelected { get; set; }
+
+    /// <summary>Raised when the highlighted index changes.</summary>
+    [Parameter] public EventCallback<int> OnHighlightedIndexChanged { get; set; }
+
+    private string ResolvedLoadingText => string.IsNullOrWhiteSpace(LoadingText)
+        ? Loc["TmDocumentEditor_AutocompleteLoading"]
+        : LoadingText;
+
+    private string ResolvedEmptyText => string.IsNullOrWhiteSpace(EmptyText)
+        ? Loc["TmDocumentEditor_AutocompleteEmpty"]
+        : EmptyText;
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (Items.Count == 0)
+        {
+            return;
+        }
+
+        switch (args.Key)
+        {
+            case "ArrowDown":
+                await OnHighlightedIndexChanged.InvokeAsync(Math.Min(HighlightedIndex + 1, Items.Count - 1));
+                break;
+            case "ArrowUp":
+                await OnHighlightedIndexChanged.InvokeAsync(Math.Max(HighlightedIndex - 1, 0));
+                break;
+            case "Enter":
+                await SelectItemAsync(Items[Math.Clamp(HighlightedIndex, 0, Items.Count - 1)]);
+                break;
+        }
+    }
+
+    private Task SelectItemAsync(DocumentAutocompleteItem item)
+    {
+        return OnItemSelected.InvokeAsync(item);
+    }
+
+    private static string ItemClass(bool selected, DocumentAutocompleteItem item)
+    {
+        var classes = $"tm-document-autocomplete-menu__item tm-document-autocomplete-menu__item--{item.Kind.ToString().ToLowerInvariant()}";
+        if (selected)
+        {
+            classes += " tm-document-autocomplete-menu__item--highlighted";
+        }
+
+        return classes;
+    }
+
+    private static string DefaultGlyph(DocumentAutocompleteKind kind) => kind switch
+    {
+        DocumentAutocompleteKind.Token => "{{",
+        DocumentAutocompleteKind.Mention => "@",
+        DocumentAutocompleteKind.Tag => "#",
+        DocumentAutocompleteKind.SlashCommand => "/",
+        _ => "•"
+    };
+}

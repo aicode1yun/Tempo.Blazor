@@ -13,5 +13,11 @@ public enum DocumentSidePanelTab
     Versions,
 
     /// <summary>Document and selection properties.</summary>
-    Properties
+    Properties,
+
+    /// <summary>Document page thumbnails and page navigation.</summary>
+    Pages,
+
+    /// <summary>Document heading outline for navigation.</summary>
+    Outline
 }

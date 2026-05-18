@@ -47,6 +47,12 @@ public class DocumentEditorDocument
     /// <summary>Named anchors used by tokens, placeholders, and signing-ready renditions.</summary>
     public List<DocumentAnchor> Anchors { get; set; } = [];
 
+    /// <summary>Whether the document is protected (only editable within <see cref="RestrictedMarkers"/>).</summary>
+    public bool IsProtected { get; set; }
+
+    /// <summary>Editable regions within a protected document. Empty means the whole document is locked.</summary>
+    public List<DocumentRestrictedMarker> RestrictedMarkers { get; set; } = [];
+
     /// <summary>Creates a new empty document with one default section.</summary>
     public static DocumentEditorDocument Empty(string? documentId = null)
     {

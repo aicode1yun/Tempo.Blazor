@@ -131,3 +131,88 @@ public enum DocumentCommentVisibility
     /// <summary>Public comment included in shared outputs.</summary>
     Public
 }
+
+/// <summary>Comment rail filter mode.</summary>
+public enum DocumentCommentFilter
+{
+    /// <summary>Show every comment thread.</summary>
+    All,
+
+    /// <summary>Show only open comment threads.</summary>
+    Open,
+
+    /// <summary>Show only resolved comment threads.</summary>
+    Resolved,
+
+    /// <summary>Show only threads authored by the current user.</summary>
+    Mine
+}
+
+/// <summary>Comment rail sort mode.</summary>
+public enum DocumentCommentSortMode
+{
+    /// <summary>Sort by document anchor position.</summary>
+    Position,
+
+    /// <summary>Sort by most recent activity first.</summary>
+    Time
+}
+
+/// <summary>Helpers for filtering and ordering document comments.</summary>
+public static class DocumentCommentComparer
+{
+    /// <summary>Filters and sorts comment threads for the review rail.</summary>
+    public static IReadOnlyList<DocumentComment> Apply(
+        IEnumerable<DocumentComment> comments,
+        DocumentCommentFilter filter,
+        DocumentCommentSortMode sortMode,
+        string? currentAuthorId = null)
+    {
+        var filtered = comments.Where(comment => MatchesFilter(comment, filter, currentAuthorId));
+        return (sortMode == DocumentCommentSortMode.Time
+                ? filtered
+                    .OrderBy(comment => comment.Status == DocumentCommentStatus.Resolved)
+                    .ThenByDescending(GetLastActivity)
+                    .ThenBy(comment => comment.Id, StringComparer.Ordinal)
+                : filtered
+                    .OrderBy(comment => comment.Status == DocumentCommentStatus.Resolved)
+                    .ThenBy(GetAnchorBlockKey, StringComparer.Ordinal)
+                    .ThenBy(GetAnchorStart)
+                    .ThenBy(GetFirstActivity)
+                    .ThenBy(comment => comment.Id, StringComparer.Ordinal))
+            .ToList();
+    }
+
+    private static bool MatchesFilter(DocumentComment comment, DocumentCommentFilter filter, string? currentAuthorId)
+        => filter switch
+        {
+            DocumentCommentFilter.Open => comment.Status == DocumentCommentStatus.Open,
+            DocumentCommentFilter.Resolved => comment.Status == DocumentCommentStatus.Resolved,
+            DocumentCommentFilter.Mine => IsMine(comment, currentAuthorId),
+            _ => true
+        };
+
+    private static bool IsMine(DocumentComment comment, string? currentAuthorId)
+        => !string.IsNullOrWhiteSpace(currentAuthorId)
+        && comment.Entries.Any(entry => string.Equals(entry.Author.Id, currentAuthorId, StringComparison.Ordinal));
+
+    private static string GetAnchorBlockKey(DocumentComment comment)
+        => comment.Anchor.BlockId
+        ?? comment.Anchor.ExternalAnchorId
+        ?? comment.Anchor.RenditionAnchorId
+        ?? string.Empty;
+
+    private static int GetAnchorStart(DocumentComment comment)
+        => comment.Anchor.StartOffset
+        ?? comment.Anchor.StartInlineIndex
+        ?? 0;
+
+    private static DateTimeOffset GetFirstActivity(DocumentComment comment)
+        => comment.Entries.OrderBy(entry => entry.CreatedAt).FirstOrDefault()?.CreatedAt
+        ?? DateTimeOffset.MinValue;
+
+    private static DateTimeOffset GetLastActivity(DocumentComment comment)
+        => comment.Entries.OrderByDescending(entry => entry.ModifiedAt ?? entry.CreatedAt).FirstOrDefault()?.ModifiedAt
+        ?? comment.Entries.OrderByDescending(entry => entry.CreatedAt).FirstOrDefault()?.CreatedAt
+        ?? DateTimeOffset.MinValue;
+}

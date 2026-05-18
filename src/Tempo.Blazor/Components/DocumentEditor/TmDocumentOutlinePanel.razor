@@ -1,0 +1,70 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Services
+
+<aside class="tm-document-outline-panel" data-testid="document-outline-panel" aria-label="@Loc["TmDocumentEditor_Outline"]">
+    @if (Outline is null || Outline.Count == 0)
+    {
+        <p class="tm-document-outline-panel__empty" data-testid="document-outline-empty">
+            @Loc["TmDocumentEditor_OutlineEmpty"]
+        </p>
+    }
+    else
+    {
+        <div class="tm-document-outline-panel__minimap"
+             data-testid="document-outline-minimap"
+             aria-label="@Loc["TmDocumentEditor_Outline"]">
+            @foreach (var item in Outline)
+            {
+                <button type="button"
+                        class="@GetMinimapMarkerClass(item)"
+                        data-testid="document-outline-minimap-marker"
+                        data-block-id="@item.BlockId"
+                        aria-current="@(IsActive(item) ? "location" : null)"
+                        @onclick="() => OnNavigateToBlock.InvokeAsync(item.BlockId)">
+                </button>
+            }
+        </div>
+        <ul class="tm-document-outline-panel__list">
+            @foreach (var item in Outline)
+            {
+                <li class="tm-document-outline-panel__item tm-document-outline-panel__item--level-@item.Level"
+                    data-testid="document-outline-item"
+                    data-level="@item.Level"
+                    data-block-id="@item.BlockId"
+                    data-active="@IsActive(item).ToString().ToLowerInvariant()">
+                    <button type="button"
+                            class="@GetLinkClass(item)"
+                            aria-current="@(IsActive(item) ? "location" : null)"
+                            @onclick="() => OnNavigateToBlock.InvokeAsync(item.BlockId)">
+                        @item.Text
+                    </button>
+                </li>
+            }
+        </ul>
+    }
+</aside>
+
+@code {
+    /// <summary>Document heading outline to display.</summary>
+    [Parameter] public IReadOnlyList<DocumentOutlineItem>? Outline { get; set; }
+
+    /// <summary>Currently active heading block id reported by the WYSIWYG runtime.</summary>
+    [Parameter] public string? ActiveBlockId { get; set; }
+
+    /// <summary>Raised when the user clicks a heading to navigate to it.</summary>
+    [Parameter] public EventCallback<string> OnNavigateToBlock { get; set; }
+
+    private bool IsActive(DocumentOutlineItem item)
+        => !string.IsNullOrWhiteSpace(ActiveBlockId)
+           && string.Equals(item.BlockId, ActiveBlockId, StringComparison.Ordinal);
+
+    private string GetLinkClass(DocumentOutlineItem item)
+        => IsActive(item)
+            ? "tm-document-outline-panel__link tm-document-outline-panel__link--active"
+            : "tm-document-outline-panel__link";
+
+    private string GetMinimapMarkerClass(DocumentOutlineItem item)
+        => IsActive(item)
+            ? $"tm-document-outline-panel__minimap-marker tm-document-outline-panel__minimap-marker--level-{item.Level} tm-document-outline-panel__minimap-marker--active"
+            : $"tm-document-outline-panel__minimap-marker tm-document-outline-panel__minimap-marker--level-{item.Level}";
+}

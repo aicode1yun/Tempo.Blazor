@@ -17,6 +17,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         var contract = SeedContractDocument("contract-demo");
         var filing = SeedFilingDocument("filing-demo");
         var exhibits = CreateExhibitsDocument("exhibits-demo");
+        var table = CreateTablePropertiesDocument("table-demo");
 
         contract.Blocks.Add(new DocumentBlock
         {
@@ -69,12 +70,23 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             ConcurrencyMode = DocumentEditorConcurrencyMode.Force
         }).GetAwaiter().GetResult();
 
+        _ = base.SaveAsync(new DocumentEditorSaveRequest
+        {
+            DocumentId = table.DocumentId,
+            Document = table,
+            ConcurrencyMode = DocumentEditorConcurrencyMode.Force
+        }).GetAwaiter().GetResult();
+
         _ = base.CreateCommentAsync(contract.DocumentId, new DocumentComment
         {
             Anchor = new DocumentCommentAnchor
             {
-                Type = DocumentCommentAnchorType.Block,
-                BlockId = contract.Blocks.FirstOrDefault()?.Id
+                Type = DocumentCommentAnchorType.TextRange,
+                BlockId = "contract-intro",
+                StartInlineIndex = 1,
+                EndInlineIndex = 1,
+                StartOffset = "This agreement is made with ".Length,
+                EndOffset = "This agreement is made with Client name".Length
             },
             Visibility = DocumentCommentVisibility.Internal,
             Entries =
@@ -96,6 +108,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Author = DemoAuthor
         }).GetAwaiter().GetResult();
     }
+
+    /// <summary>Forces demo saves to return a recoverable provider error.</summary>
+    public bool FailDemoSaves { get; set; }
 
     /// <inheritdoc />
     public override async Task<DocumentEditorLoadResult> LoadAsync(
@@ -130,6 +145,16 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
         DocumentEditorSaveRequest request,
         CancellationToken cancellationToken = default)
     {
+        if (FailDemoSaves)
+        {
+            return new DocumentEditorSaveResult
+            {
+                Success = false,
+                ErrorKind = DocumentEditorSaveErrorKind.Recoverable,
+                ErrorMessage = "Demo autosave provider failed."
+            };
+        }
+
         if (_http is not null)
         {
             try
@@ -466,5 +491,104 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             }
         });
         return document;
+    }
+
+    private static DocumentEditorDocument CreateTablePropertiesDocument(string documentId)
+    {
+        var document = DocumentEditorDocument.Empty(documentId);
+        document.Metadata.Title = "Table properties demo";
+        document.Blocks.Add(new DocumentBlock
+        {
+            Type = DocumentBlockType.Heading,
+            Order = 10,
+            Content = new HeadingBlockContent
+            {
+                Level = 1,
+                Inlines = [new TextRun { Text = "Table properties demo" }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Type = DocumentBlockType.Paragraph,
+            Order = 20,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Text = "Select a table cell to open row, column, table, and cell property controls." }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Type = DocumentBlockType.Table,
+            Order = 30,
+            Content = new TableBlockContent
+            {
+                Layout = new TableLayoutContent
+                {
+                    Width = 640,
+                    Alignment = TableHorizontalAlignment.Center,
+                    CellPadding = 8,
+                    BackgroundColor = "#f8fafc",
+                    Borders = new TableCellBorders
+                    {
+                        Top = "1px solid #94a3b8",
+                        Right = "1px solid #94a3b8",
+                        Bottom = "1px solid #94a3b8",
+                        Left = "1px solid #94a3b8"
+                    }
+                },
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateTableCell("Feature", isHeader: true, backgroundColor: "#e2e8f0"),
+                            CreateTableCell("Demo value", isHeader: true, backgroundColor: "#e2e8f0"),
+                            CreateTableCell("UX check", isHeader: true, backgroundColor: "#e2e8f0")
+                        ]
+                    },
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateTableCell("Width"),
+                            CreateTableCell("640 px"),
+                            CreateTableCell("Resize from the properties panel")
+                        ]
+                    },
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            CreateTableCell("Alignment"),
+                            CreateTableCell("Centered"),
+                            CreateTableCell("Switch left, center, or right")
+                        ]
+                    }
+                ]
+            }
+        });
+        return document;
+    }
+
+    private static TableCellContent CreateTableCell(string text, bool isHeader = false, string? backgroundColor = null)
+    {
+        return new TableCellContent
+        {
+            IsHeader = isHeader,
+            BackgroundColor = backgroundColor,
+            Padding = 8,
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Type = DocumentBlockType.Paragraph,
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = text }]
+                    }
+                }
+            ]
+        };
     }
 }

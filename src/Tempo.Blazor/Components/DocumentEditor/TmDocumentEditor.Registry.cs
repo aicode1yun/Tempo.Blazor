@@ -1,0 +1,579 @@
+using Microsoft.AspNetCore.Components.Forms;
+using Tempo.Blazor.Components.DocumentEditor.Features;
+using Tempo.Blazor.Components.DocumentEditor.Registry;
+using Tempo.Blazor.DocumentEditor.Models;
+
+namespace Tempo.Blazor.Components.DocumentEditor;
+
+public partial class TmDocumentEditor
+{
+    private readonly DocumentEditorCommandRegistry _commandRegistry = new();
+
+    private void InitializeCommandRegistry()
+    {
+        // ── Formatting ──────────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "bold", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingValueToString(ctx.FormattingState.Bold),
+            execute: (_, _) => ToggleInlineMarkAsync(InlineMarkType.Bold),
+            descriptionKey: "TmDocumentEditor_Bold",
+            tooltipKey: "TmDocumentEditor_Bold",
+            category: "Formatting",
+            defaultShortcut: "Ctrl+B",
+            icon: "bold"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "italic", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingValueToString(ctx.FormattingState.Italic),
+            execute: (_, _) => ToggleInlineMarkAsync(InlineMarkType.Italic),
+            descriptionKey: "TmDocumentEditor_Italic",
+            tooltipKey: "TmDocumentEditor_Italic",
+            category: "Formatting",
+            defaultShortcut: "Ctrl+I",
+            icon: "italic"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "underline", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingValueToString(ctx.FormattingState.Underline),
+            execute: (_, _) => ToggleInlineMarkAsync(InlineMarkType.Underline),
+            descriptionKey: "TmDocumentEditor_Underline",
+            tooltipKey: "TmDocumentEditor_Underline",
+            category: "Formatting",
+            defaultShortcut: "Ctrl+U",
+            icon: "underline"));
+
+        // ── Document lifecycle ───────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "save", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && Provider is not null && !ctx.IsSaving,
+            execute: (_, _) => SaveAsync(),
+            descriptionKey: "TmDocumentEditor_Save",
+            tooltipKey: "TmDocumentEditor_Save",
+            category: "File",
+            defaultShortcut: "Ctrl+S",
+            icon: "save",
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledBusy"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "undo", affectsData: true,
+            computeEnabled: ctx => ctx.UndoState.CanUndo,
+            execute: (_, _) => UndoAsync(),
+            computeValue: ctx => ctx.UndoState.NextUndoDescription,
+            descriptionKey: "TmDocumentEditor_Undo",
+            tooltipKey: "TmDocumentEditor_Undo",
+            category: "Edit",
+            defaultShortcut: "Ctrl+Z",
+            icon: "undo-2"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "redo", affectsData: true,
+            computeEnabled: ctx => ctx.UndoState.CanRedo,
+            execute: (_, _) => RedoAsync(),
+            computeValue: ctx => ctx.UndoState.NextRedoDescription,
+            descriptionKey: "TmDocumentEditor_Redo",
+            tooltipKey: "TmDocumentEditor_Redo",
+            category: "Edit",
+            defaultShortcut: "Ctrl+Y",
+            icon: "redo-2"));
+
+        // ── Insert ───────────────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "link", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) =>
+            {
+                if (payload is WysiwygLinkPayload linkPayload)
+                {
+                    return ApplyLinkAsync(linkPayload);
+                }
+
+                return ApplyLinkAsync("https://example.com");
+            },
+            descriptionKey: "TmDocumentEditor_Link",
+            tooltipKey: "TmDocumentEditor_Link",
+            category: "Insert",
+            defaultShortcut: "Ctrl+K",
+            icon: "link"));
+
+        if (IsFeatureEnabled(DocumentEditorFeatureNames.Table))
+        {
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "insertTable", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument,
+                execute: (_, _) => InsertTableAsync(2, 2),
+                descriptionKey: "TmDocumentEditor_InsertTable",
+                tooltipKey: "TmDocumentEditor_InsertTable",
+                category: "Insert",
+                icon: "table"));
+
+            RegisterTableRuntimeCommand("insertTableRowBefore", "TmDocumentEditor_InsertRowBefore", "panel-top-open");
+            RegisterTableRuntimeCommand("insertTableRowAfter", "TmDocumentEditor_InsertRow", "panel-bottom-open");
+            RegisterTableRuntimeCommand("insertTableColumnBefore", "TmDocumentEditor_InsertColumnBefore", "panel-left-open");
+            RegisterTableRuntimeCommand("insertTableColumnAfter", "TmDocumentEditor_InsertColumn", "panel-right-open");
+            RegisterTableRuntimeCommand("deleteTableRow", "TmDocumentEditor_DeleteRow", "delete");
+            RegisterTableRuntimeCommand("deleteTableColumn", "TmDocumentEditor_DeleteColumn", "delete");
+            RegisterTableRuntimeCommand("mergeTableCells", "TmDocumentEditor_MergeCells", "combine");
+            RegisterTableRuntimeCommand("splitTableCell", "TmDocumentEditor_SplitCell", "split-square-horizontal");
+            RegisterTableRuntimeCommand("tableProperties", "TmDocumentEditor_TableProperties", "table-properties", affectsData: false);
+            RegisterTableRuntimeCommand("cellProperties", "TmDocumentEditor_CellProperties", "square", affectsData: false);
+        }
+
+        if (IsFeatureEnabled(DocumentEditorFeatureNames.Image))
+        {
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "insertImage", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument,
+                execute: (_, _) => OpenImageDialogAsync(),
+                descriptionKey: "TmDocumentEditor_InsertImage",
+                tooltipKey: "TmDocumentEditor_InsertImage",
+                category: "Insert",
+                icon: "image"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "replaceImage", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, _) => ExecuteImageRuntimeCommandAsync("replaceImage"),
+                descriptionKey: "TmDocumentEditor_ReplaceImage",
+                tooltipKey: "TmDocumentEditor_ReplaceImage",
+                category: "Image",
+                icon: "image-up"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "setImageAltText", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageAltText", payload),
+                descriptionKey: "TmDocumentEditor_ImageAltText",
+                tooltipKey: "TmDocumentEditor_ImageAltText",
+                category: "Image",
+                icon: "text-cursor-input"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "toggleImageCaption", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, _) => ExecuteImageRuntimeCommandAsync("toggleImageCaption"),
+                descriptionKey: "TmDocumentEditor_ImageCaption",
+                tooltipKey: "TmDocumentEditor_ImageCaption",
+                category: "Image",
+                icon: "captions"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "setImageLink", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageLink", payload),
+                descriptionKey: "TmDocumentEditor_ImageLink",
+                tooltipKey: "TmDocumentEditor_ImageLink",
+                category: "Image",
+                icon: "link"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "setImageWrapMode", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageWrapMode", payload),
+                descriptionKey: "TmDocumentEditor_ImageWrapMode",
+                tooltipKey: "TmDocumentEditor_ImageWrapMode",
+                category: "Image",
+                icon: "wrap-text"));
+
+            _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+                "setImageSize", affectsData: true,
+                computeEnabled: ctx => ctx.HasDocument && HasActiveImage(ctx),
+                execute: (_, payload) => ExecuteImageRuntimeCommandAsync("setImageSize", payload),
+                descriptionKey: "TmDocumentEditor_ImageSize",
+                tooltipKey: "TmDocumentEditor_ImageSize",
+                category: "Image",
+                icon: "move-diagonal"));
+        }
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertPageBreak", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && string.Equals(ctx.ActiveRegion, "Body", StringComparison.OrdinalIgnoreCase),
+            execute: (_, _) => InsertPageBreakAsync(),
+            descriptionKey: "TmDocumentEditor_PageBreak",
+            tooltipKey: "TmDocumentEditor_PageBreak",
+            category: "Insert",
+            icon: "separator-horizontal",
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertFootnote", affectsData: true,
+            computeEnabled: _ => false,
+            execute: (_, _) => Task.CompletedTask,
+            computeVisible: _ => false,
+            descriptionKey: "TmDocumentEditor_InsertFootnote",
+            tooltipKey: "TmDocumentEditor_InsertFootnote",
+            category: "References",
+            icon: "pilcrow"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertEndnote", affectsData: true,
+            computeEnabled: _ => false,
+            execute: (_, _) => Task.CompletedTask,
+            computeVisible: _ => false,
+            descriptionKey: "TmDocumentEditor_InsertEndnote",
+            tooltipKey: "TmDocumentEditor_InsertEndnote",
+            category: "References",
+            icon: "pilcrow"));
+
+        // ── Format providers ─────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "exportPdf", affectsData: false,
+            computeEnabled: ctx => ctx.CanExportPdf,
+            execute: (_, _) => ExportPdfAsync(),
+            descriptionKey: "TmDocumentEditor_ExportPdf",
+            tooltipKey: "TmDocumentEditor_ExportPdf",
+            category: "File",
+            icon: "file-down"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "importDocx", affectsData: true,
+            computeEnabled: ctx => ctx.CanImportDocx,
+            execute: (_, payload) => payload is InputFileChangeEventArgs args
+                ? ImportDocxAsync(args)
+                : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_ImportDocx",
+            tooltipKey: "TmDocumentEditor_ImportDocx",
+            category: "File",
+            icon: "upload"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "exportDocx", affectsData: false,
+            computeEnabled: ctx => ctx.CanExportDocx,
+            execute: (_, _) => ExportDocxAsync(),
+            descriptionKey: "TmDocumentEditor_ExportDocx",
+            tooltipKey: "TmDocumentEditor_ExportDocx",
+            category: "File",
+            icon: "file-down"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "trackChanges", affectsData: true,
+            computeEnabled: ctx => ctx.CanTrackChanges,
+            execute: (_, _) => { ToggleTrackChanges(); return Task.CompletedTask; },
+            descriptionKey: "TmDocumentEditor_TrackChanges",
+            tooltipKey: "TmDocumentEditor_TrackChanges",
+            category: "Review",
+            icon: "list-checks"));
+
+        // ── Home tab – formatting ────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "fontFamily", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is string family ? ApplyFontFamilyAsync(family) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_FontFamily",
+            tooltipKey: "TmDocumentEditor_FontFamily",
+            category: "Formatting",
+            icon: "type"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "fontSize", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is double size ? ApplyFontSizeAsync(size) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_FontSize",
+            tooltipKey: "TmDocumentEditor_FontSize",
+            category: "Formatting",
+            icon: "case-sensitive"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "paragraphAlignment", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is DocumentTextAlignment alignment
+                ? ApplyParagraphAlignmentAsync(alignment)
+                : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_GroupParagraph",
+            tooltipKey: "TmDocumentEditor_GroupParagraph",
+            category: "Paragraph",
+            icon: "align-left"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "clearFormatting", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => ClearInlineFormattingAsync(),
+            descriptionKey: "TmDocumentEditor_ClearFormatting",
+            tooltipKey: "TmDocumentEditor_ClearFormatting",
+            category: "Formatting",
+            icon: "eraser"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "textColor", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is string color ? ApplyTextColorAsync(color) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_FontColor",
+            tooltipKey: "TmDocumentEditor_FontColor",
+            category: "Formatting",
+            icon: "palette"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "highlightColor", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is string color ? ApplyHighlightColorAsync(color) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_HighlightColor",
+            tooltipKey: "TmDocumentEditor_HighlightColor",
+            category: "Formatting",
+            icon: "highlighter"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "lineSpacing", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, payload) => payload is double spacing ? ApplyLineSpacingAsync(spacing) : Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_LineSpacing",
+            tooltipKey: "TmDocumentEditor_LineSpacing",
+            category: "Paragraph",
+            icon: "list"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "increaseIndent", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => IncreaseParagraphIndentAsync(),
+            descriptionKey: "TmDocumentEditor_IncreaseIndent",
+            tooltipKey: "TmDocumentEditor_IncreaseIndent",
+            category: "Paragraph",
+            icon: "indent-increase"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "decreaseIndent", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => DecreaseParagraphIndentAsync(),
+            descriptionKey: "TmDocumentEditor_DecreaseIndent",
+            tooltipKey: "TmDocumentEditor_DecreaseIndent",
+            category: "Paragraph",
+            icon: "indent-decrease"));
+
+        // ── Insert tab ───────────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "insertMenu", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => ToggleInsertPanelAsync(),
+            descriptionKey: "TmDocumentEditor_Insert",
+            tooltipKey: "TmDocumentEditor_Insert",
+            category: "Insert",
+            icon: "plus"));
+
+        // ── Review tab ───────────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "protectDocument", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => ctx.IsProtected ? "active" : "inactive",
+            execute: (_, _) => ToggleDocumentProtectionAsync(),
+            descriptionKey: "TmDocumentEditor_ProtectDocument",
+            tooltipKey: "TmDocumentEditor_ProtectDocument",
+            category: "Review",
+            icon: "lock"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "markEditableRegion", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument && ctx.IsProtected,
+            execute: (_, _) => MarkEditableRegionAsync(),
+            descriptionKey: "TmDocumentEditor_MarkEditableRegion",
+            tooltipKey: "TmDocumentEditor_MarkEditableRegion",
+            category: "Review",
+            icon: "pencil"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "reviewDisplayMode", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => Task.CompletedTask,
+            descriptionKey: "TmDocumentEditor_ShowMarkup",
+            tooltipKey: "TmDocumentEditor_ShowMarkup",
+            category: "Review",
+            icon: "eye"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "addComment", affectsData: false,
+            computeEnabled: ctx => ctx.CanAddComment,
+            execute: (_, _) => BeginCommentFromToolbarAsync(),
+            descriptionKey: "TmDocumentEditor_AddComment",
+            tooltipKey: "TmDocumentEditor_AddComment",
+            category: "Review",
+            icon: "message-square"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "compareDocuments", affectsData: false,
+            computeEnabled: ctx => ctx.CanCompareDocuments,
+            execute: (_, _) => OpenCompareDialogAsync(),
+            descriptionKey: "TmDocumentEditor_CompareDocuments",
+            tooltipKey: "TmDocumentEditor_CompareDocuments",
+            category: "Review",
+            icon: "git-compare"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "openComments", affectsData: false,
+            computeEnabled: _ => ShowComments,
+            execute: (_, _) => OpenCommentsPanelAsync(),
+            descriptionKey: "TmDocumentEditor_OpenComments",
+            tooltipKey: "TmDocumentEditor_OpenComments",
+            category: "Review",
+            icon: "message-square"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "openRevisions", affectsData: false,
+            computeEnabled: _ => true,
+            execute: (_, _) => OpenRevisionsPanelAsync(),
+            descriptionKey: "TmDocumentEditor_OpenRevisions",
+            tooltipKey: "TmDocumentEditor_OpenRevisions",
+            category: "Review",
+            icon: "file-diff"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "acceptAllRevisions", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && CanReviewRevisions && HasPendingRevisions,
+            execute: (_, _) => AcceptAllRevisionsAsync(new DocumentRevisionFilter()),
+            descriptionKey: "TmDocumentEditor_AcceptAllRevisions",
+            tooltipKey: "TmDocumentEditor_AcceptAllRevisions",
+            category: "Review",
+            icon: "check-check"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "rejectAllRevisions", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && CanReviewRevisions && HasPendingRevisions,
+            execute: (_, _) => RejectAllRevisionsAsync(new DocumentRevisionFilter()),
+            descriptionKey: "TmDocumentEditor_RejectAllRevisions",
+            tooltipKey: "TmDocumentEditor_RejectAllRevisions",
+            category: "Review",
+            icon: "x"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "openVersions", affectsData: false,
+            computeEnabled: _ => ShowVersionHistory,
+            execute: (_, _) => OpenVersionsPanelAsync(),
+            descriptionKey: "TmDocumentEditor_OpenVersions",
+            tooltipKey: "TmDocumentEditor_OpenVersions",
+            category: "View",
+            defaultShortcut: "Ctrl+Alt+V",
+            icon: "clock"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "find", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => OpenFindPanelAsync(replaceMode: false),
+            descriptionKey: "TmDocumentEditor_FindPlaceholder",
+            tooltipKey: "TmDocumentEditor_FindPanelLabel",
+            category: "Edit",
+            defaultShortcut: "Ctrl+F",
+            icon: "search"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "replace", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => OpenFindPanelAsync(replaceMode: true),
+            descriptionKey: "TmDocumentEditor_FindPanelLabel",
+            tooltipKey: "TmDocumentEditor_FindPanelLabel",
+            category: "Edit",
+            defaultShortcut: "Ctrl+H",
+            icon: "replace"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "replaceAll", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => OpenFindPanelAsync(replaceMode: true),
+            descriptionKey: "TmDocumentEditor_FindReplaceAll",
+            tooltipKey: "TmDocumentEditor_FindReplaceAll",
+            category: "Edit",
+            icon: "replace"));
+
+        // ── View tab ─────────────────────────────────────────────────────────
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "showBlocks", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => _showBlocks ? "active" : "inactive",
+            execute: (_, _) => ToggleShowBlocksAsync(),
+            descriptionKey: "TmDocumentEditor_ShowBlocks",
+            tooltipKey: "TmDocumentEditor_ShowBlocks",
+            category: "View",
+            icon: "layout-panel-top"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "toggleNonPrintingCharacters", affectsData: false,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: _ => _showNonPrintingCharacters ? "active" : "inactive",
+            execute: (_, _) => ToggleNonPrintingCharactersAsync(),
+            descriptionKey: "TmDocumentEditor_NonPrintingCharacters",
+            tooltipKey: "TmDocumentEditor_NonPrintingCharacters",
+            category: "View",
+            icon: "pilcrow"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "fullscreen", affectsData: false,
+            computeEnabled: _ => true,
+            computeValue: _ => _isFullscreen ? "active" : "inactive",
+            execute: (_, _) => ToggleFullscreenAsync(),
+            descriptionKey: "TmDocumentEditor_Fullscreen",
+            tooltipKey: "TmDocumentEditor_Fullscreen",
+            category: "View",
+            icon: "maximize"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "viewDocumentJson", affectsData: false,
+            computeEnabled: ctx => ShowDebugTools && ctx.HasDocument,
+            computeValue: _ => null,
+            execute: (_, _) => ViewDocumentJsonAsync(),
+            descriptionKey: "TmDocumentEditor_ViewDocumentJson",
+            tooltipKey: "TmDocumentEditor_ViewDocumentJson",
+            category: "Debug",
+            icon: "code"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "viewClipboardHtml", affectsData: false,
+            computeEnabled: ctx => ShowDebugTools && ctx.HasDocument,
+            computeValue: _ => null,
+            execute: (_, _) => ViewClipboardHtmlAsync(),
+            descriptionKey: "TmDocumentEditor_ViewClipboardHtml",
+            tooltipKey: "TmDocumentEditor_ViewClipboardHtml",
+            category: "Debug",
+            icon: "clipboard"));
+    }
+
+    private DocumentEditorCommandContext BuildCommandContext() =>
+        new()
+        {
+            IsReadOnly = EffectiveReadOnly,
+            Permissions = EffectivePermissions,
+            ActiveRegion = _activeWysiwygRegion,
+            SelectionSnapshot = _lastBodySelectionSnapshot,
+            FormattingState = _formattingState,
+            UndoState = _wysiwygUndoState,
+            HasDocument = _document is not null,
+            CanExportPdf = CanExportPdf,
+            CanImportDocx = CanImportDocx,
+            CanExportDocx = CanExportDocx,
+            IsSaving = _isSaving,
+            CanTrackChanges = CanEditDocument && !IsVersionPreview && !IsTemplatePreview,
+            CanAddComment = CanStartComment,
+            CanCompareDocuments = CanCompareDocuments,
+            IsProtected = _isDocumentProtected,
+            IsInEditableRegion = _isCaretInEditableRegion
+        };
+
+    private Task RefreshCommandRegistryAsync() =>
+        _commandRegistry.RefreshAllAsync(BuildCommandContext());
+
+    private bool HasActiveImage(DocumentEditorCommandContext context) =>
+        !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveImageBlockId)
+        || !string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId);
+
+    private void RegisterTableRuntimeCommand(string name, string key, string icon, bool affectsData = true)
+    {
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            name,
+            affectsData,
+            computeEnabled: ctx => ctx.HasDocument && HasActiveTable(ctx),
+            execute: (_, payload) => ExecuteTableRuntimeCommandAsync(name, payload),
+            descriptionKey: key,
+            tooltipKey: key,
+            category: "Table",
+            icon: icon));
+    }
+
+    private bool HasActiveTable(DocumentEditorCommandContext context) =>
+        !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveTableCellId)
+        || !string.IsNullOrWhiteSpace(_selection.ActiveTableCellId);
+
+    private static string FormattingValueToString(WysiwygFormattingValue value) =>
+        value switch
+        {
+            WysiwygFormattingValue.Active => "active",
+            WysiwygFormattingValue.Mixed => "mixed",
+            _ => "inactive"
+        };
+}

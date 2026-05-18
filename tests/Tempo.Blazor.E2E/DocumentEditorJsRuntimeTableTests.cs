@@ -70,6 +70,87 @@ public sealed class DocumentEditorJsRuntimeTableTests : DocumentEditorE2ETestBas
     }
 
     [TestMethod]
+    public async Task Phase12_GridPickerKeyboardInsertsFourByFiveTable()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        await WaitForWysiwygBodyAsync(page);
+        await PlaceCaretInBodyAsync(page);
+
+        await page.Locator("[data-testid='document-ribbon-tab-insert']").ClickAsync();
+        await page.Locator("[data-testid='document-toolbar-table']").ClickAsync();
+        var picker = page.Locator("[data-testid='document-table-grid-picker']");
+        await Assertions.Expect(picker).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await picker.PressAsync("ArrowRight");
+        await picker.PressAsync("ArrowRight");
+        await picker.PressAsync("ArrowRight");
+        await picker.PressAsync("ArrowDown");
+        await picker.PressAsync("ArrowDown");
+        await picker.PressAsync("Enter");
+
+        var table = page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-table").Last;
+        await Assertions.Expect(table.Locator("tr")).ToHaveCountAsync(4, new() { Timeout = 10000 });
+        await Assertions.Expect(table.Locator("tr").First.Locator("td, th")).ToHaveCountAsync(5);
+    }
+
+    [TestMethod]
+    public async Task Phase12_ContextualToolbarInsertsRow()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var tableId = await InsertTableThroughRuntimeAsync(page);
+        await PlaceCaretInTableCellAsync(page, tableId, rowIndex: 0, cellIndex: 0);
+
+        await Assertions.Expect(page.Locator("[data-testid='document-table-toolbar']")).ToBeVisibleAsync(new() { Timeout = 10000 });
+        await page.Locator("[data-testid='document-table-toolbar-insert-row-after']").ClickAsync();
+
+        await Assertions.Expect(page.Locator($"[data-testid='document-wysiwyg-host'] .tm-wysiwyg-table[data-block-id='{tableId}'] tr"))
+            .ToHaveCountAsync(3);
+    }
+
+    [TestMethod]
+    public async Task Phase12_TableAndCellPropertiesPersistAfterSaveReload()
+    {
+        var original = await LoadDemoDocumentAsync("contract-demo");
+        Assert.IsNotNull(original?.Document);
+
+        try
+        {
+            var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+            var marker = $"phase12-props-{DateTimeOffset.UtcNow:HHmmssfff}";
+
+            var tableId = await InsertTableThroughRuntimeAsync(page);
+            await page.Keyboard.InsertTextAsync(marker);
+            await PlaceCaretInTableCellAsync(page, tableId, rowIndex: 0, cellIndex: 0);
+            await ApplyTableAndCellPropertiesAsync(page, tableId);
+            var editedTable = page.Locator($"[data-testid='document-wysiwyg-host'] .tm-wysiwyg-table[data-block-id='{tableId}']");
+            var editedCell = editedTable.Locator("td[data-cell-id], th[data-cell-id]").First;
+            await Assertions.Expect(editedTable).ToHaveAttributeAsync("data-table-width", "480");
+            await Assertions.Expect(editedTable).ToHaveAttributeAsync("data-table-alignment", "center");
+            await Assertions.Expect(editedCell).ToHaveAttributeAsync("data-cell-vertical-align", "middle");
+
+            await WaitForDirtyStateAsync(page, expectedDirty: true);
+            await page.WaitForTimeoutAsync(500);
+            await page.GetByTestId("document-save").ClickAsync();
+            await Assertions.Expect(page.GetByTestId("document-save-message")).ToContainTextAsync("Saved", new() { Timeout = 10000 });
+            await WaitForDirtyStateAsync(page, expectedDirty: false);
+
+            await page.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded });
+            await WaitForDocumentEditorReadyAsync(page);
+
+            var table = page.Locator($"[data-testid='document-wysiwyg-host'] .tm-wysiwyg-table[data-block-id='{tableId}']");
+            var firstCell = table.Locator("td[data-cell-id], th[data-cell-id]").First;
+            await Assertions.Expect(firstCell).ToContainTextAsync(marker);
+            await Assertions.Expect(firstCell).ToHaveAttributeAsync("data-cell-background", "#ff0000");
+        }
+        finally
+        {
+            if (original?.Document is not null)
+            {
+                await SaveDemoDocumentAsync(original.Document);
+            }
+        }
+    }
+
+    [TestMethod]
     public async Task Phase12_SaveReloadKeepsTableContentAndCellMetadata()
     {
         var original = await LoadDemoDocumentAsync("contract-demo");
@@ -158,6 +239,40 @@ public sealed class DocumentEditorJsRuntimeTableTests : DocumentEditorE2ETestBas
         return tableId;
     }
 
+    private static Task PlaceCaretInBodyAsync(IPage page)
+    {
+        return page.EvaluateAsync(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const body = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body[contenteditable]') || [])
+                    .find(element => {
+                        const rect = element.getBoundingClientRect();
+                        const style = getComputedStyle(element);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && !element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual');
+                    });
+                const anchor = Array.from(body?.querySelectorAll('.tm-wysiwyg-block[data-block-id]:not(table):not(figure):not(hr)') || [])
+                    .find(element => {
+                        const rect = element.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0;
+                    });
+                if (!body || !anchor) throw new Error('Editable document body was not found.');
+                body.focus();
+                const range = document.createRange();
+                range.selectNodeContents(anchor);
+                range.collapse(false);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """);
+    }
+
     private static Task PlaceCaretInTableCellAsync(IPage page, string tableId, int rowIndex, int cellIndex)
     {
         return page.EvaluateAsync(
@@ -205,6 +320,19 @@ public sealed class DocumentEditorJsRuntimeTableTests : DocumentEditorE2ETestBas
             command);
     }
 
+    private static Task ExecuteRuntimeCommandAsync(IPage page, string command, object payload)
+    {
+        return page.EvaluateAsync(
+            """
+            ({ command, payload }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                window.tmDocumentEditorRuntime?.executeCommand?.(instanceId, command, payload);
+            }
+            """,
+            new { command, payload });
+    }
+
     private static Task ExecuteRuntimeUndoAsync(IPage page)
     {
         return page.EvaluateAsync(
@@ -233,6 +361,38 @@ public sealed class DocumentEditorJsRuntimeTableTests : DocumentEditorE2ETestBas
                 cell.setAttribute('data-cell-background', 'rgb(255, 242, 204)');
                 cell.style.borderTop = '2px solid rgb(191, 144, 0)';
                 cell.setAttribute('data-cell-border-top', '2px solid rgb(191, 144, 0)');
+                window.tmDocumentEditorRuntime?.executeCommand?.(instanceId, 'insertTableColumnAfter');
+                window.tmDocumentEditorRuntime?.executeCommand?.(instanceId, 'deleteTableColumn');
+            }
+            """,
+            tableId);
+    }
+
+    private static Task ApplyTableAndCellPropertiesAsync(IPage page, string tableId)
+    {
+        return page.EvaluateAsync(
+            """
+            tableId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const table = host?.querySelector(`.tm-wysiwyg-table[data-block-id="${CSS.escape(tableId)}"]`);
+                const cell = table?.querySelector('td[data-cell-id], th[data-cell-id]');
+                if (!table || !cell) throw new Error('Table cell was not found.');
+                table.style.width = '480px';
+                table.setAttribute('data-table-width', '480');
+                table.setAttribute('data-table-alignment', 'center');
+                table.style.marginLeft = 'auto';
+                table.style.marginRight = 'auto';
+                table.setAttribute('data-table-cell-padding', '14');
+                table.style.setProperty('--tm-document-table-cell-padding', '14px');
+                table.style.backgroundColor = '#f7fafc';
+                table.setAttribute('data-table-background', '#f7fafc');
+                cell.style.backgroundColor = '#ff0000';
+                cell.setAttribute('data-cell-background', '#ff0000');
+                cell.style.verticalAlign = 'middle';
+                cell.setAttribute('data-cell-vertical-align', 'middle');
+                cell.style.padding = '12px';
+                cell.setAttribute('data-cell-padding', '12');
                 window.tmDocumentEditorRuntime?.executeCommand?.(instanceId, 'insertTableColumnAfter');
                 window.tmDocumentEditorRuntime?.executeCommand?.(instanceId, 'deleteTableColumn');
             }

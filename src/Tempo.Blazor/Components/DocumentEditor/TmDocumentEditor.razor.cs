@@ -4,7 +4,9 @@ using Microsoft.AspNetCore.Components;
 using Microsoft.AspNetCore.Components.Forms;
 using Microsoft.AspNetCore.Components.Web;
 using Microsoft.JSInterop;
+using Tempo.Blazor.Components.DocumentEditor.Clipboard;
 using Tempo.Blazor.Components.DocumentEditor.Commands;
+using Tempo.Blazor.Components.DocumentEditor.Features;
 using Tempo.Blazor.DocumentEditor.Interfaces;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentEditor.Services;
@@ -13,10 +15,16 @@ using Tempo.Blazor.Interfaces;
 namespace Tempo.Blazor.Components.DocumentEditor;
 
 /// <summary>Word-like document editor shell backed by the document editor JSON provider contracts.</summary>
-public partial class TmDocumentEditor : ComponentBase, IDisposable
+public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDisposable
 {
     private readonly DocumentEditorCommandStack _commandStack = new();
     private readonly DocumentEditorKeyboardManager _keyboardManager = new();
+    private readonly DocumentFloatingLayerStack _floatingLayerStack = new();
+    private readonly DocumentEditorFocusManager _focusManager = new();
+    private readonly DocumentEditorAnnouncer _announcer = new();
+    private readonly DocumentPendingActionService _pendingActions = new();
+    private readonly DocumentAutosaveStateMachine _autosave = new();
+    private readonly DocumentEditorFeatureRegistry _featureRegistry = DocumentEditorBuiltInFeatures.CreateDefaultRegistry();
     private const long MaxDocumentFormatImportSize = 20 * 1024 * 1024;
     private Timer? _autoSaveTimer;
     private Timer? _collaborationTimer;
@@ -41,11 +49,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     /// <summary>Whether the Word-like toolbar/ribbon is displayed.</summary>
     [Parameter] public bool ShowToolbar { get; set; } = true;
 
+    /// <summary>Visual mode used by the document editor toolbar.</summary>
+    [Parameter] public DocumentToolbarMode ToolbarMode { get; set; } = DocumentToolbarMode.Ribbon;
+
     /// <summary>Whether the comments rail is displayed.</summary>
     [Parameter] public bool ShowComments { get; set; } = true;
 
     /// <summary>Whether the version history panel is displayed.</summary>
     [Parameter] public bool ShowVersionHistory { get; set; } = true;
+
+    /// <summary>Whether debug tools (View JSON etc.) are shown in the toolbar. Intended for development only.</summary>
+    [Parameter] public bool ShowDebugTools { get; set; }
+
+    /// <summary>Feature names that should be disabled for this editor instance.</summary>
+    [Parameter] public IReadOnlyCollection<string>? DisabledFeatures { get; set; }
 
     /// <summary>Optional resolver for provider-managed document image assets.</summary>
     [Parameter] public IDocumentImageUrlResolver? ImageUrlResolver { get; set; }
@@ -165,6 +182,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private TmDocumentEditorToolbar? _toolbar;
     private TmDocumentWysiwygHost? _wysiwygHost;
     private DocumentEditorSelectionState _selection = new();
+    private string? _activeImageInspectorBlockId;
     private string? _errorMessage;
     private string? _saveMessage;
     private string? _versionMessage;
@@ -172,6 +190,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private string? _suggestionMessage;
     private string? _revisionMessage;
     private string? _templatePreviewMessage;
+    private string? _runtimeMessage;
+    private bool _runtimeFailed;
+    private WysiwygRuntimeRecoveryDetail? _lastRuntimeRecoveryDetail;
     private WysiwygFormattingState _formattingState = new();
     private string? _concurrencyToken;
     private DateTimeOffset? _lastSavedAt;
@@ -186,6 +207,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private DocumentCommentAnchor? _draftCommentAnchor;
     private bool _isLoading;
     private bool _isSaving;
+    private bool _saveAgainRequested;
+    private bool _canRetrySave;
+    private DocumentEditorSaveTrigger _lastFailedSaveTrigger = DocumentEditorSaveTrigger.Explicit;
     private bool _isCreatingVersion;
     private bool _isExportingPdf;
     private bool _isImportingDocx;
@@ -206,6 +230,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private DocumentSidePanelTab _activeSidePanelTab = DocumentSidePanelTab.Versions;
     private bool _commentComposerOpen;
     private string? _selectedCommentId;
+    private DocumentCommentFilter _commentFilter = DocumentCommentFilter.All;
+    private DocumentCommentSortMode _commentSortMode = DocumentCommentSortMode.Position;
     private string? _loadedDocumentId;
     private IDocumentEditorProvider? _loadedProvider;
     private DocumentOfflineDraft? _offlineDraft;
@@ -242,17 +268,40 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private int _zoomPercent = 100;
     private bool _zoomPageWidth = true;
     private bool _ribbonKeyboardMode;
+    private bool _findPanelOpen;
+    private bool _findReplaceMode;
+    private bool _commandPaletteOpen;
+    private TmDocumentFindPanel? _findPanel;
     private WysiwygTextContextMenuRequest? _textContextMenu;
     private WysiwygTableContextMenuRequest? _tableContextMenu;
     private WysiwygMiniToolbarRequest? _miniToolbar;
     private WysiwygUndoState _wysiwygUndoState = new();
     private WysiwygDirtyState _wysiwygDirtyState = new();
     private string? _runtimeDraftStateJson;
+    private bool _isDocumentProtected;
+    private bool _isCaretInEditableRegion;
+    private bool _showBlocks;
+    private bool _showNonPrintingCharacters;
+    private bool _isFullscreen;
+    private IReadOnlyList<DocumentOutlineItem> _documentOutline = [];
+    private WysiwygPageMetrics _pageMetrics = new() { TotalPages = 1, RenderedPages = 1, Pages = [new WysiwygPageMetric { PageIndex = 0, PageNumber = 1 }] };
+    private int _activePageIndex;
+    private string? _activeHeadingBlockId;
+    private readonly DocumentOutlineService _outlineService = new();
+    private bool _jsonDebugModalOpen;
+    private bool _clipboardHtmlModalOpen;
+    private string? _clipboardHtmlSnapshot;
+    private string? _runtimeDebugJson;
+    private string? _clipboardDebugRawHtml;
+    private string? _clipboardDebugNormalizedJson;
+    private string? _clipboardDebugWarningsJson;
     private int _blazorRenderCount;
     private bool _suppressNextWysiwygStateRender;
     private string? _lastCollapsedSelectionRenderKey;
 
     private int NextBlazorRenderCount => ++_blazorRenderCount;
+
+    private string? LiveRegionMessage => _announcer.CurrentMessage;
 
     /// <inheritdoc />
     protected override bool ShouldRender()
@@ -270,6 +319,19 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     protected override void OnInitialized()
     {
         _commandStack.OnStackChanged += HandleCommandStackChanged;
+        _focusManager.Register(new DocumentEditorFocusTarget
+        {
+            Id = "surface",
+            Kind = DocumentEditorFocusTargetKind.Surface,
+            Selector = "[data-testid='document-wysiwyg-host']"
+        });
+        _focusManager.Register(new DocumentEditorFocusTarget
+        {
+            Id = "toolbar",
+            Kind = DocumentEditorFocusTargetKind.Toolbar,
+            Selector = "[data-testid='document-toolbar']"
+        });
+        InitializeCommandRegistry();
     }
 
     private string RootClass
@@ -308,6 +370,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         ? _templatePreviewDocument ?? _document
         : _document;
 
+    private DocumentBlock? ActiveImageBlock =>
+        string.IsNullOrWhiteSpace(ActiveImageInspectorBlockId)
+            ? null
+            : DisplayedDocument?.Blocks.FirstOrDefault(block =>
+                string.Equals(block.Id, ActiveImageInspectorBlockId, StringComparison.Ordinal)
+                && block.Content is ImageBlockContent);
+
+    private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
+
+    private string? ActiveImageInspectorBlockId =>
+        !string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId)
+            ? _selection.ActiveImageBlockId
+            : _activeImageInspectorBlockId;
+
     private bool IsTemplatePreview => _templatePreviewEnabled;
 
     private DocumentEditorPermissions EffectivePermissions => Permissions ?? new DocumentEditorPermissions();
@@ -317,6 +393,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private bool CanEditDocument => EffectivePermissions.CanEdit && !ReadOnly && !IsVersionPreview && !IsTemplatePreview;
 
     private bool EffectiveReadOnly => !CanEditDocument;
+
+    private IReadOnlyCollection<string> EffectiveDisabledFeatures => DisabledFeatures ?? [];
+
+    private bool IsFeatureEnabled(string featureName) =>
+        _featureRegistry.TryGet(featureName, out _)
+        && (DisabledFeatures is null
+            || !DisabledFeatures.Any(disabledFeature => string.Equals(disabledFeature, featureName, StringComparison.OrdinalIgnoreCase)));
+
+    private bool IsCommandEnabled(string commandName, bool fallback = true) =>
+        _commandRegistry.GetState(commandName)?.IsEnabled ?? fallback;
 
     private bool CanCreateVersion => EffectivePermissions.CanCreateVersion
         && Provider is not null
@@ -393,6 +479,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private bool HasPendingRevisions => _document?.Revisions.Any(revision => revision.Action == DocumentRevisionAction.Pending) == true;
 
     private int PendingRevisionCount => _document?.Revisions.Count(revision => revision.Action == DocumentRevisionAction.Pending) ?? 0;
+
+    private int OpenCommentCount => _comments.Count(comment => comment.Status == DocumentCommentStatus.Open);
 
     private string WorkspaceClass => _sidePanelOpen
         ? "tm-document-editor__workspace tm-document-editor__workspace--side-panel-open"
@@ -644,10 +732,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             }
 
             _document = result.Document;
+            _documentOutline = _outlineService.GetOutline(_document);
             DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(_document);
             _currentDocument = _document;
             _concurrencyToken = result.ConcurrencyToken;
             _selection = new DocumentEditorSelectionState();
+            _activeImageInspectorBlockId = null;
             _activeWysiwygRegion = "Body";
             _lastBodySelectionSnapshot = null;
             _lastBodyRangeSelectionSnapshot = null;
@@ -694,6 +784,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             _loadedSuggestionProvider = SuggestionProvider;
             _suggestionSnapshot = Clone(_document);
             await EnsureCollaborationStartedAsync();
+            await RefreshCommandRegistryAsync();
             await RecordOpenAuditAsync(_document.DocumentId, DocumentEditorAuditResult.Success, null);
             await OnDocumentLoaded.InvokeAsync(_document);
         }
@@ -717,6 +808,31 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task SaveAsync(DocumentEditorSaveTrigger trigger)
     {
+        if (_isSaving)
+        {
+            if (_isDirty)
+            {
+                _saveAgainRequested = true;
+                _autosave.RegisterLocalChange();
+                SyncAutosavePendingAction();
+                await UpdateBeforeUnloadGuardAsync();
+            }
+
+            return;
+        }
+
+        var currentTrigger = trigger;
+        do
+        {
+            _saveAgainRequested = false;
+            await SaveCoreAsync(currentTrigger);
+            currentTrigger = DocumentEditorSaveTrigger.AutoSave;
+        }
+        while (!_disposed && _saveAgainRequested && _isDirty);
+    }
+
+    private async Task SaveCoreAsync(DocumentEditorSaveTrigger trigger)
+    {
         if (Provider is null || _document is null || !CanEditDocument || _isSaving)
         {
             return;
@@ -734,9 +850,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         _isSaving = true;
         _saveMessage = null;
+        _canRetrySave = false;
+        _autosave.DebounceElapsed();
+        _pendingActions.Remove(PendingActionId.AutosaveWaiting);
+        _pendingActions.Add(PendingActionId.Save, Loc["TmDocumentEditor_Saving"]);
+        await UpdateBeforeUnloadGuardAsync();
 
         var documentToSave = _currentDocument ?? _document;
         var saveUndoEpoch = _wysiwygUndoState.Epoch;
+        var saveDirtyEpoch = _wysiwygDirtyState.DirtyEpoch;
 
         if (_wysiwygHost is not null)
         {
@@ -745,6 +867,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             {
                 _wysiwygUndoState = undoState;
                 saveUndoEpoch = undoState.Epoch;
+            }
+
+            var dirtyState = await _wysiwygHost.RequestDirtyStateAsync();
+            if (dirtyState is not null)
+            {
+                _wysiwygDirtyState = dirtyState;
+                _isDirty = dirtyState.IsDirty;
+                saveDirtyEpoch = dirtyState.DirtyEpoch;
             }
 
             var jsSnapshot = await _wysiwygHost.RequestSnapshotAsync();
@@ -789,6 +919,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                         saveIsCurrent = undoState.Epoch == saveUndoEpoch;
                     }
 
+                    var dirtyState = await _wysiwygHost.RequestDirtyStateAsync();
+                    if (dirtyState is not null)
+                    {
+                        _wysiwygDirtyState = dirtyState;
+                        saveIsCurrent = saveIsCurrent && dirtyState.DirtyEpoch == saveDirtyEpoch;
+                    }
+
                     if (!saveIsCurrent)
                     {
                         currentRuntimeDocument = await _wysiwygHost.RequestSnapshotAsync();
@@ -801,6 +938,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 _currentDocument = _document;
                 _concurrencyToken = result.ConcurrencyToken;
                 _isDirty = !saveIsCurrent;
+                if (!saveIsCurrent)
+                {
+                    _saveAgainRequested = true;
+                    _autosave.RegisterLocalChange();
+                }
+
                 _lastSavedAt = DateTimeOffset.Now;
                 if (saveIsCurrent && _wysiwygHost is not null)
                 {
@@ -816,6 +959,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 _saveMessage = trigger == DocumentEditorSaveTrigger.AutoSave
                     ? Loc["TmDocumentEditor_AutoSaveComplete"]
                     : Loc["TmDocumentEditor_SaveComplete"];
+                if (!_isDirty)
+                {
+                    _autosave.SaveSucceeded();
+                }
+
+                Announce(_saveMessage);
                 if (_offlineDraft is not null && OfflineStore is not null)
                 {
                     await OfflineStore.DeleteDraftAsync(_offlineDraft.Id);
@@ -853,6 +1002,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     await SaveOfflineDraftAsync(documentToSave);
                 }
 
+                _lastFailedSaveTrigger = trigger;
+                _canRetrySave = IsRecoverableSaveFailure(result);
+                _autosave.SaveFailed(_saveMessage, _canRetrySave);
+                Announce(_saveMessage, DocumentEditorAnnouncementPoliteness.Assertive);
                 await RecordSaveAuditAsync(trigger, DocumentEditorAuditResult.Failure, _saveMessage);
             }
         }
@@ -860,17 +1013,41 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         {
             _saveMessage = Loc["TmDocumentEditor_SaveFailed"];
             await SaveOfflineDraftAsync(documentToSave);
+            _lastFailedSaveTrigger = trigger;
+            _canRetrySave = true;
+            _autosave.SaveFailed(_saveMessage, recoverable: true);
+            Announce(_saveMessage, DocumentEditorAnnouncementPoliteness.Assertive);
             await RecordSaveAuditAsync(trigger, DocumentEditorAuditResult.Failure, ex.Message);
         }
         finally
         {
             _isSaving = false;
+            _pendingActions.Remove(PendingActionId.Save);
+            SyncAutosavePendingAction();
+            await UpdateBeforeUnloadGuardAsync();
         }
 
         if (!_disposed)
         {
             await InvokeAsync(StateHasChanged);
         }
+    }
+
+    private Task RetrySaveAsync()
+    {
+        _autosave.Retry();
+        _canRetrySave = false;
+        return SaveAsync(_lastFailedSaveTrigger);
+    }
+
+    private static bool IsRecoverableSaveFailure(DocumentEditorSaveResult result)
+    {
+        if (result.Success || result.Conflict)
+        {
+            return false;
+        }
+
+        return result.ErrorKind is DocumentEditorSaveErrorKind.None or DocumentEditorSaveErrorKind.Recoverable;
     }
 
     private async Task ToggleInsertPanelAsync()
@@ -891,12 +1068,25 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         var documentToCompare = await GetCurrentDocumentForProviderExportAsync();
         _compareDocumentSnapshot = CloneForEditor(documentToCompare);
         _compareDialogOpen = true;
+        _floatingLayerStack.Push(new DocumentFloatingLayerState
+        {
+            LayerId = FloatingLayerId.CompareDialog,
+            Kind = DocumentFloatingLayerKind.CompareDialog,
+            ZIndex = 50,
+            CloseAsync = () =>
+            {
+                _compareDialogOpen = false;
+                _compareDocumentSnapshot = null;
+                return Task.CompletedTask;
+            }
+        });
     }
 
     private void CloseCompareDialog()
     {
         _compareDialogOpen = false;
         _compareDocumentSnapshot = null;
+        _floatingLayerStack.Remove(FloatingLayerId.CompareDialog);
     }
 
     private async Task HandleDocumentComparedAsync(DocumentCompareResult result)
@@ -917,6 +1107,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         _isExportingPdf = true;
         _saveMessage = null;
+        _pendingActions.Add(PendingActionId.ExportPdf, Loc["TmDocumentEditor_ExportingPdf"]);
         try
         {
             var documentToExport = await GetCurrentDocumentForProviderExportAsync();
@@ -928,7 +1119,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                     ? documentToExport.DocumentId
                     : documentToExport.Metadata.Title,
                 Author = Author,
-                Options = CreatePdfExportOptions(documentToExport)
+                Options = CreatePdfExportOptions(documentToExport, _reviewDisplayMode)
             });
 
             if (result.Content.Length == 0)
@@ -951,6 +1142,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         finally
         {
             _isExportingPdf = false;
+            _pendingActions.Remove(PendingActionId.ExportPdf);
         }
 
         if (!_disposed)
@@ -969,6 +1161,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _isImportingDocx = true;
         _formatMessage = null;
         _formatWarnings = [];
+        _pendingActions.Add(PendingActionId.ImportDocx, Loc["TmDocumentEditor_ImportingDocx"]);
         var file = args.File;
 
         try
@@ -1004,9 +1197,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             var imported = result.Document;
             imported.DocumentId = _document.DocumentId;
             DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(imported);
+            new DocumentEditorPostFixer().Fix(imported);
             _document = imported;
+            _documentOutline = _outlineService.GetOutline(_document);
             _currentDocument = imported;
             _selection = new DocumentEditorSelectionState();
+            _activeImageInspectorBlockId = null;
             _activeWysiwygRegion = "Body";
             _lastBodySelectionSnapshot = null;
             _lastBodyRangeSelectionSnapshot = null;
@@ -1045,6 +1241,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         finally
         {
             _isImportingDocx = false;
+            _pendingActions.Remove(PendingActionId.ImportDocx);
         }
 
         if (!_disposed)
@@ -1063,6 +1260,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _isExportingDocx = true;
         _formatMessage = null;
         _formatWarnings = [];
+        _pendingActions.Add(PendingActionId.ExportDocx, Loc["TmDocumentEditor_ExportingDocx"]);
 
         try
         {
@@ -1102,6 +1300,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         finally
         {
             _isExportingDocx = false;
+            _pendingActions.Remove(PendingActionId.ExportDocx);
         }
 
         if (!_disposed)
@@ -1157,6 +1356,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
 
         DocumentHeaderFooterResolver.EnsurePrimaryHeadersFooters(snapshot);
+        new DocumentEditorPostFixer().Fix(snapshot);
         RemoveTransientDisplayData(snapshot);
         return snapshot;
     }
@@ -1230,13 +1430,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             Convert.ToBase64String(content)).AsTask();
     }
 
-    private static DocumentPdfExportOptions CreatePdfExportOptions(DocumentEditorDocument document)
+    private static DocumentPdfExportOptions CreatePdfExportOptions(
+        DocumentEditorDocument document,
+        DocumentReviewDisplayMode reviewDisplayMode = DocumentReviewDisplayMode.AllMarkup)
     {
         var pageSettings = document.PageSettings ?? new DocumentPageSettings();
         return new DocumentPdfExportOptions
         {
             IncludeComments = true,
-            IncludeSuggestions = true,
+            IncludeSuggestions = reviewDisplayMode is DocumentReviewDisplayMode.AllMarkup or DocumentReviewDisplayMode.SimpleMarkup,
+            ReviewDisplayMode = reviewDisplayMode,
             PageSetup = new DocumentPdfPageSetupOptions
             {
                 PageSize = CloneForEditor(pageSettings.Size ?? DocumentPageSize.A4),
@@ -1250,17 +1453,111 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task OpenImageDialogAsync()
     {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Image))
+        {
+            return;
+        }
+
         if (_wysiwygHost is not null)
         {
             await _wysiwygHost.OpenImageDialogAsync();
         }
     }
 
-    private async Task InsertTableAsync()
+    private async Task ExecuteImageRuntimeCommandAsync(string command, object? payload = null)
     {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Image) || _wysiwygHost is null)
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteRuntimeCommandAsync(command, payload);
+    }
+
+    private Task SetActiveImageAltTextFromPanelAsync(string altText) =>
+        ExecuteImageRuntimeCommandAsync("setImageAltText", new
+        {
+            AltText = altText,
+            BlockId = ActiveImageInspectorBlockId
+        });
+
+    private Task ToggleActiveImageCaptionFromPanelAsync() =>
+        ExecuteImageRuntimeCommandAsync("toggleImageCaption", new { BlockId = ActiveImageInspectorBlockId });
+
+    private Task SetActiveImageLinkFromPanelAsync(string? linkUrl) =>
+        ExecuteImageRuntimeCommandAsync("setImageLink", new { Url = linkUrl, BlockId = ActiveImageInspectorBlockId });
+
+    private Task SetActiveImageWrapModeFromPanelAsync(DocumentWrapMode wrapMode) =>
+        ExecuteImageRuntimeCommandAsync("setImageWrapMode", new { WrapMode = wrapMode.ToString(), BlockId = ActiveImageInspectorBlockId });
+
+    private Task SetActiveImageAlignmentFromPanelAsync(DocumentImageAlignment alignment) =>
+        ExecuteImageRuntimeCommandAsync("setImagePosition", new { HorizontalPosition = ToHorizontalPosition(alignment).ToString(), BlockId = ActiveImageInspectorBlockId });
+
+    private Task SetActiveImageSizeFromPanelAsync(DocumentImageSize size) =>
+        ExecuteImageRuntimeCommandAsync("setImageSize", new
+        {
+            Width = size.Width,
+            Height = size.Height,
+            LockAspectRatio = size.LockAspectRatio,
+            BlockId = ActiveImageInspectorBlockId
+        });
+
+    private static DocumentImageHorizontalPosition ToHorizontalPosition(DocumentImageAlignment alignment) =>
+        alignment switch
+        {
+            DocumentImageAlignment.Start => DocumentImageHorizontalPosition.Left,
+            DocumentImageAlignment.End => DocumentImageHorizontalPosition.Right,
+            _ => DocumentImageHorizontalPosition.Center
+        };
+
+    private async Task ExecuteTableRuntimeCommandAsync(string command, object? payload = null)
+    {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Table) || _wysiwygHost is null)
+        {
+            return;
+        }
+
+        await _wysiwygHost.ExecuteRuntimeCommandAsync(command, payload);
+    }
+
+    private async Task UploadDemoImageAsync()
+    {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Image) || _wysiwygHost is null)
+        {
+            return;
+        }
+
+        await _wysiwygHost.UploadDemoImageAsync();
+    }
+
+    private async Task InsertTableAsync(int rows = 2, int columns = 2)
+    {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Table))
+        {
+            return;
+        }
+
         if (_wysiwygHost is not null)
         {
-            await _wysiwygHost.ExecuteEditorCommandAsync("insertTable");
+            if (_lastBodySelectionSnapshot is not null)
+            {
+                await _wysiwygHost.RestoreSelectionAsync(_lastBodySelectionSnapshot);
+            }
+
+            await _wysiwygHost.ExecuteEditorCommandAsync("insertTable", new { rows, columns });
+        }
+    }
+
+    private async Task InsertPageBreakAsync()
+    {
+        if (!string.Equals(_activeWysiwygRegion, "Body", StringComparison.OrdinalIgnoreCase))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is not null)
+        {
+            await _wysiwygHost.ExecuteEditorCommandAsync("insertPageBreak");
         }
     }
 
@@ -1375,6 +1672,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 OpenSidePanel(DocumentSidePanelTab.Revisions);
                 await InvokeAsync(StateHasChanged);
             }
+            else if (IsImageInsertPatch(patch))
+            {
+                _activeImageInspectorBlockId = patch.Block!.Id;
+                OpenSidePanel(DocumentSidePanelTab.Properties);
+                await InvokeAsync(StateHasChanged);
+            }
             else if (!deferRenderUntilTransactionCommit)
             {
                 await InvokeAsync(StateHasChanged);
@@ -1434,13 +1737,6 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         _activeWysiwygRegion = string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region;
         var collapsedRenderKey = snapshot.IsCollapsed ? GetCollapsedSelectionRenderKey(snapshot) : null;
-        if (collapsedRenderKey is not null && string.Equals(collapsedRenderKey, _lastCollapsedSelectionRenderKey, StringComparison.Ordinal))
-        {
-            UpdateCollapsedSelectionWithoutRender(snapshot);
-            _suppressNextWysiwygStateRender = true;
-            return;
-        }
-
         _lastCollapsedSelectionRenderKey = collapsedRenderKey;
         if (string.Equals(_activeWysiwygRegion, "Body", StringComparison.OrdinalIgnoreCase))
         {
@@ -1483,19 +1779,37 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             ActiveBlockId = snapshot.AnchorBlockId,
             FocusedInlineRange = range,
             ActiveTableCellId = snapshot.ActiveTableCellId,
+            ActiveImageBlockId = snapshot.ActiveImageBlockId,
             Region = _activeWysiwygRegion,
             HeaderFooterId = snapshot.HeaderFooterId,
             PageIndex = snapshot.PageIndex
         };
+        if (!string.IsNullOrWhiteSpace(_selection.ActiveImageBlockId))
+        {
+            _activeImageInspectorBlockId = _selection.ActiveImageBlockId;
+            OpenSidePanel(DocumentSidePanelTab.Properties);
+        }
+        else if (SelectionTargetsDocumentContent(snapshot))
+        {
+            _activeImageInspectorBlockId = null;
+        }
+
         _formattingState = await ResolveRuntimeFormattingStateAsync(snapshot);
+        await RefreshCommandRegistryAsync();
         await BroadcastCollaborationCursorAsync();
     }
+
+    private static bool SelectionTargetsDocumentContent(WysiwygSelectionSnapshot snapshot) =>
+        !string.IsNullOrWhiteSpace(snapshot.AnchorBlockId)
+        || !string.IsNullOrWhiteSpace(snapshot.FocusBlockId)
+        || !string.IsNullOrWhiteSpace(snapshot.ActiveTableCellId);
 
     private static string GetCollapsedSelectionRenderKey(WysiwygSelectionSnapshot snapshot)
         => string.Join('|',
             string.IsNullOrWhiteSpace(snapshot.Region) ? "Body" : snapshot.Region,
             snapshot.AnchorBlockId ?? string.Empty,
             snapshot.AnchorInlineId ?? string.Empty,
+            snapshot.AnchorOffset.ToString(CultureInfo.InvariantCulture),
             snapshot.ActiveTableCellId ?? string.Empty,
             snapshot.ActiveImageBlockId ?? string.Empty,
             snapshot.HeaderFooterId ?? string.Empty,
@@ -1511,6 +1825,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         _selection.ActiveBlockId = snapshot.AnchorBlockId;
         _selection.ActiveTableCellId = snapshot.ActiveTableCellId;
+        _selection.ActiveImageBlockId = snapshot.ActiveImageBlockId;
         _selection.Region = _activeWysiwygRegion;
         _selection.HeaderFooterId = snapshot.HeaderFooterId;
         _selection.PageIndex = snapshot.PageIndex;
@@ -1548,14 +1863,43 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _textContextMenu = request;
         _tableContextMenu = null;
         _miniToolbar = null;
+        _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
+        _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
+        _floatingLayerStack.Push(new DocumentFloatingLayerState
+        {
+            LayerId = FloatingLayerId.TextContextMenu,
+            Kind = DocumentFloatingLayerKind.TextContextMenu,
+            ZIndex = 20,
+            Priority = 20,
+            Anchor = new DocumentFloatingLayerAnchor { X = request.Left, Y = request.Top, Width = request.Width, Height = request.Height },
+            RestoreFocusTarget = "surface",
+            CloseAsync = () => { CloseFloatingUi(); return Task.CompletedTask; }
+        });
         return InvokeAsync(StateHasChanged);
     }
 
     private Task HandleTableContextMenuRequestedAsync(WysiwygTableContextMenuRequest request)
     {
+        if (!IsFeatureEnabled(DocumentEditorFeatureNames.Table))
+        {
+            return Task.CompletedTask;
+        }
+
         _tableContextMenu = request;
         _textContextMenu = null;
         _miniToolbar = null;
+        _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
+        _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
+        _floatingLayerStack.Push(new DocumentFloatingLayerState
+        {
+            LayerId = FloatingLayerId.TableContextMenu,
+            Kind = DocumentFloatingLayerKind.TableContextMenu,
+            ZIndex = 20,
+            Priority = 20,
+            Anchor = new DocumentFloatingLayerAnchor { X = request.Left, Y = request.Top, Width = request.Width, Height = request.Height },
+            RestoreFocusTarget = "surface",
+            CloseAsync = () => { CloseFloatingUi(); return Task.CompletedTask; }
+        });
         return InvokeAsync(StateHasChanged);
     }
 
@@ -1566,16 +1910,52 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         {
             _textContextMenu = null;
             _tableContextMenu = null;
+            _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
+            _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
+            _floatingLayerStack.Push(new DocumentFloatingLayerState
+            {
+                LayerId = FloatingLayerId.MiniToolbar,
+                Kind = DocumentFloatingLayerKind.MiniToolbar,
+                ZIndex = 15,
+                Priority = 15,
+                Anchor = new DocumentFloatingLayerAnchor { X = _miniToolbar.Left, Y = _miniToolbar.Top, Width = _miniToolbar.Width, Height = _miniToolbar.Height },
+                RestoreFocusTarget = "surface",
+                CloseAsync = () => { CloseFloatingUi(); return Task.CompletedTask; }
+            });
+        }
+        else
+        {
+            _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
         }
 
         return InvokeAsync(StateHasChanged);
     }
 
+    private bool IsPageBreakContextMenu =>
+        _textContextMenu is { BlockId: { Length: > 0 } }
+        && string.Equals(_textContextMenu.BlockType, "PageBreak", StringComparison.OrdinalIgnoreCase);
+
+    private async Task DeletePageBreakFromContextAsync()
+    {
+        if (_wysiwygHost is not null && _textContextMenu is { BlockId: { Length: > 0 } blockId })
+        {
+            await _wysiwygHost.ExecuteEditorCommandAsync("deletePageBreak", new { BlockId = blockId });
+        }
+
+        CloseFloatingUi();
+    }
+
+    private Task InsertTableRowBeforeFromContextAsync()
+        => RunTableContextCommandAsync("insertTableRowBefore");
+
     private Task InsertTableRowFromContextAsync()
-        => RunTableContextCommandAsync("insertTableRow");
+        => RunTableContextCommandAsync("insertTableRowAfter");
+
+    private Task InsertTableColumnBeforeFromContextAsync()
+        => RunTableContextCommandAsync("insertTableColumnBefore");
 
     private Task InsertTableColumnFromContextAsync()
-        => RunTableContextCommandAsync("insertTableColumn");
+        => RunTableContextCommandAsync("insertTableColumnAfter");
 
     private Task DeleteTableRowFromContextAsync()
         => RunTableContextCommandAsync("deleteTableRow");
@@ -1583,13 +1963,27 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     private Task DeleteTableColumnFromContextAsync()
         => RunTableContextCommandAsync("deleteTableColumn");
 
+    private Task MergeTableCellsFromContextAsync()
+        => RunTableContextCommandAsync("mergeTableCells");
+
+    private Task SplitTableCellFromContextAsync()
+        => RunTableContextCommandAsync("splitTableCell");
+
+    private Task ToggleTableHeaderRowFromContextAsync()
+        => RunTableContextCommandAsync("toggleTableHeaderRow");
+
     private async Task RunTableContextCommandAsync(string command)
     {
         var selection = _tableContextMenu?.Selection;
         if (_wysiwygHost is not null && selection is not null)
         {
             await _wysiwygHost.RestoreSelectionAsync(selection);
-            await _wysiwygHost.ExecuteEditorCommandAsync(command);
+            await _wysiwygHost.ExecuteEditorCommandAsync(command, new
+            {
+                selection.ActiveTableCellId,
+                selection.AnchorBlockId,
+                selection.FocusBlockId
+            });
         }
 
         CloseFloatingUi();
@@ -1603,6 +1997,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         }
 
         await command();
+        CloseFloatingUi();
+    }
+
+    private async Task RunFloatingSelectionRegistryCommandAsync(WysiwygSelectionSnapshot? selection, string commandName)
+    {
+        if (!IsCommandEnabled(commandName))
+        {
+            return;
+        }
+
+        if (_wysiwygHost is not null && selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
+
+        await _commandRegistry.ExecuteAsync(commandName, BuildCommandContext());
         CloseFloatingUi();
     }
 
@@ -1621,6 +2031,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _textContextMenu = null;
         _tableContextMenu = null;
         _miniToolbar = null;
+        _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
+        _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
+        _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
+        _focusManager.PushRestoreTarget("surface");
     }
 
     private static string FloatingStyle(WysiwygFloatingUiPosition position)
@@ -1825,14 +2239,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         return Task.CompletedTask;
     }
 
-    private Task HandleWysiwygUndoStateChangedAsync(WysiwygUndoState state)
+    private async Task HandleWysiwygUndoStateChangedAsync(WysiwygUndoState state)
     {
         _wysiwygUndoState = state ?? new WysiwygUndoState();
+        await RefreshCommandRegistryAsync();
         _suppressNextWysiwygStateRender = true;
-        return Task.CompletedTask;
     }
 
-    private Task HandleWysiwygDirtyStateChangedAsync(WysiwygDirtyState state)
+    private async Task HandleWysiwygDirtyStateChangedAsync(WysiwygDirtyState state)
     {
         _wysiwygDirtyState = state ?? new WysiwygDirtyState();
         var wasDirty = _isDirty;
@@ -1840,15 +2254,308 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         if (_isDirty && _document is not null)
         {
             _suggestionSnapshot = Clone(_document);
+            _autosave.RegisterLocalChange();
+            if (_isSaving)
+            {
+                _saveAgainRequested = true;
+            }
+
+            ScheduleAutoSave();
         }
+        else if (!_isDirty)
+        {
+            _autosave.ResetSynchronized();
+        }
+
+        SyncAutosavePendingAction();
+        await UpdateBeforeUnloadGuardAsync();
 
         if (wasDirty == _isDirty)
         {
             _suppressNextWysiwygStateRender = true;
-            return Task.CompletedTask;
+            return;
         }
 
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task UpdateBeforeUnloadGuardAsync()
+    {
+        if (ReadOnly || _disposed) return;
+        var shouldGuard = _isDirty || _pendingActions.HasAny;
+        try
+        {
+            if (shouldGuard)
+                await JSRuntime.InvokeVoidAsync("tmDocumentEditor.enableBeforeUnloadGuard");
+            else
+                await JSRuntime.InvokeVoidAsync("tmDocumentEditor.disableBeforeUnloadGuard");
+        }
+        catch
+        {
+            // JS interop may fail during prerender or dispose — ignore silently.
+        }
+    }
+
+    private Task HandleImageUploadStateChangedAsync(bool isUploading)
+    {
+        if (isUploading)
+            _pendingActions.Add(PendingActionId.ImageUpload, Loc["TmDocumentEditor_UploadingImage"]);
+        else
+            _pendingActions.Remove(PendingActionId.ImageUpload);
         return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleRuntimeRecoveredAsync()
+    {
+        _runtimeMessage = Loc["TmDocumentEditor_RuntimeRecovered"];
+        _runtimeFailed = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleRuntimeRecoveryFailedAsync()
+    {
+        _runtimeMessage = Loc["TmDocumentEditor_RuntimeRecoveryFailed"];
+        _runtimeFailed = true;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleRuntimeRecoveryDetailAsync(WysiwygRuntimeRecoveryDetail detail)
+    {
+        _lastRuntimeRecoveryDetail = detail;
+        _runtimeFailed = string.Equals(detail.Event, "runtimeRecoveryFailed", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(detail.State, "failed", StringComparison.OrdinalIgnoreCase);
+        _runtimeMessage = BuildRuntimeRecoveryMessage(detail);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private string BuildRuntimeRecoveryMessage(WysiwygRuntimeRecoveryDetail detail)
+    {
+        var source = NormalizeRuntimeRecoverySource(detail.Source);
+        var message = _runtimeFailed
+            ? Loc["TmDocumentEditor_RuntimeRecoveryFailed"]
+            : source switch
+            {
+                "remoteOperation" => Loc["TmDocumentEditor_RuntimeRecoveredRemoteOperation"],
+                "render" => Loc["TmDocumentEditor_RuntimeRecoveredRender"],
+                "serialization" => Loc["TmDocumentEditor_RuntimeRecoveredSerialization"],
+                _ => Loc["TmDocumentEditor_RuntimeRecoveredCommand"]
+            };
+
+        return detail.UsedSnapshotFallback
+            ? $"{message} {Loc["TmDocumentEditor_RuntimeRecoveredSnapshotFallback"]}"
+            : message;
+    }
+
+    private static string NormalizeRuntimeRecoverySource(string? source)
+    {
+        if (string.IsNullOrWhiteSpace(source))
+        {
+            return "command";
+        }
+
+        return source.Replace("-", string.Empty, StringComparison.Ordinal)
+            .Replace("_", string.Empty, StringComparison.Ordinal)
+            .Trim()
+            .ToLowerInvariant() switch
+            {
+                "remoteoperation" or "remoteoperations" or "remotebatch" => "remoteOperation",
+                "render" or "rendering" => "render",
+                "serialization" or "serialize" => "serialization",
+                _ => "command"
+            };
+    }
+
+    private async Task ToggleDocumentProtectionAsync()
+    {
+        if (_document is null) return;
+        _isDocumentProtected = !_isDocumentProtected;
+        _document.IsProtected = _isDocumentProtected;
+        if (!_isDocumentProtected)
+        {
+            _isCaretInEditableRegion = false;
+            _document.RestrictedMarkers.Clear();
+        }
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.SetProtectionModeAsync(_isDocumentProtected, BuildMarkerPayloads());
+        await RefreshCommandRegistryAsync();
+    }
+
+    private async Task MarkEditableRegionAsync()
+    {
+        if (_document is null || !_isDocumentProtected) return;
+        var snap = _lastBodySelectionSnapshot;
+        if (snap is null || string.IsNullOrEmpty(snap.AnchorBlockId)) return;
+
+        var startBlockId = snap.AnchorBlockId;
+        var endBlockId = string.IsNullOrEmpty(snap.FocusBlockId) ? startBlockId : snap.FocusBlockId;
+        var startOffset = Math.Min(snap.AnchorOffset, snap.AnchorOffset == snap.FocusOffset ? snap.FocusOffset : snap.AnchorOffset);
+        var endOffset = Math.Max(snap.AnchorOffset, snap.FocusOffset);
+
+        if (startOffset == endOffset && startBlockId == endBlockId)
+            endOffset = startOffset + 1;
+
+        var marker = new DocumentRestrictedMarker
+        {
+            StartBlockId = startBlockId,
+            StartOffset = startOffset,
+            EndBlockId = endBlockId,
+            EndOffset = endOffset
+        };
+        _document.RestrictedMarkers.Add(marker);
+
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.SetProtectionModeAsync(true, BuildMarkerPayloads());
+        await RefreshCommandRegistryAsync();
+    }
+
+    private IEnumerable<object> BuildMarkerPayloads() =>
+        _document?.RestrictedMarkers.Select(m => (object)new
+        {
+            startBlockId = m.StartBlockId,
+            startOffset = m.StartOffset,
+            endBlockId = m.EndBlockId,
+            endOffset = m.EndOffset
+        }) ?? [];
+
+    private async Task ToggleShowBlocksAsync()
+    {
+        _showBlocks = !_showBlocks;
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.SetShowBlocksAsync(_showBlocks);
+        await RefreshCommandRegistryAsync();
+    }
+
+    private async Task ToggleNonPrintingCharactersAsync()
+    {
+        _showNonPrintingCharacters = !_showNonPrintingCharacters;
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.SetShowNonPrintingCharactersAsync(_showNonPrintingCharacters);
+        await RefreshCommandRegistryAsync();
+    }
+
+    private async Task ToggleFullscreenAsync()
+    {
+        _isFullscreen = !_isFullscreen;
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.SetFullscreenAsync(_isFullscreen);
+        await RefreshCommandRegistryAsync();
+    }
+
+    private async Task NavigateToBlockAsync(string blockId)
+    {
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.ScrollToBlockAsync(blockId);
+    }
+
+    private async Task NavigateToPageAsync(int pageIndex)
+    {
+        _activePageIndex = Math.Max(0, pageIndex);
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.ScrollToPageAsync(_activePageIndex);
+    }
+
+    private Task HandlePageMetricsChangedAsync(WysiwygPageMetrics metrics)
+    {
+        _pageMetrics = metrics ?? new WysiwygPageMetrics();
+        _activePageIndex = Math.Max(0, _pageMetrics.ActivePageIndex);
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task HandleActiveHeadingChangedAsync(string? blockId)
+    {
+        _activeHeadingBlockId = string.IsNullOrWhiteSpace(blockId) ? null : blockId;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ViewDocumentJsonAsync()
+    {
+        if (!ShowDebugTools) return;
+        _runtimeDebugJson = _wysiwygHost is not null
+            ? await _wysiwygHost.GetRuntimeDebugSnapshotJsonAsync()
+            : string.Empty;
+        _jsonDebugModalOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task CloseJsonDebugModalAsync()
+    {
+        _jsonDebugModalOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ViewClipboardHtmlAsync()
+    {
+        if (!ShowDebugTools) return;
+        var debugSnapshot = _wysiwygHost?.GetClipboardDebugSnapshot() ?? new DocumentClipboardDebugSnapshot();
+        _clipboardDebugRawHtml = debugSnapshot.RawHtml;
+        _clipboardDebugNormalizedJson = debugSnapshot.NormalizedJson;
+        _clipboardDebugWarningsJson = JsonSerializer.Serialize(debugSnapshot.Warnings, new JsonSerializerOptions(DocumentEditorJson.Options)
+        {
+            WriteIndented = true
+        });
+        _clipboardHtmlSnapshot = string.IsNullOrWhiteSpace(debugSnapshot.RawHtml) && _wysiwygHost is not null
+            ? await _wysiwygHost.GetBodyHtmlAsync()
+            : debugSnapshot.RawHtml;
+        _clipboardHtmlModalOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task CloseClipboardHtmlModalAsync()
+    {
+        _clipboardHtmlModalOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private string GetDocumentJson()
+    {
+        if (_document is null) return string.Empty;
+        return JsonSerializer.Serialize(_document, new JsonSerializerOptions(DocumentEditorJson.Options)
+        {
+            WriteIndented = true
+        });
+    }
+
+    private async Task CopyDocumentDebugJsonAsync()
+    {
+        if (!ShowDebugTools) return;
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", BuildDocumentDebugJson());
+        }
+        catch (JSException)
+        {
+            // Clipboard access can be denied outside a trusted user gesture.
+        }
+    }
+
+    private string BuildDocumentDebugJson()
+    {
+        JsonElement? runtimeDebug = string.IsNullOrWhiteSpace(_runtimeDebugJson)
+            ? null
+            : JsonSerializer.Deserialize<JsonElement>(_runtimeDebugJson);
+
+        return JsonSerializer.Serialize(new
+        {
+            canonicalDocument = _document,
+            runtimeDebug,
+            runtimeRecovery = _lastRuntimeRecoveryDetail
+        }, new JsonSerializerOptions(DocumentEditorJson.Options)
+        {
+            WriteIndented = true
+        });
+    }
+
+    private string? GetRuntimeRecoveryDetailJson()
+    {
+        if (_lastRuntimeRecoveryDetail is null)
+        {
+            return null;
+        }
+
+        return System.Text.Json.JsonSerializer.Serialize(_lastRuntimeRecoveryDetail, new System.Text.Json.JsonSerializerOptions
+        {
+            WriteIndented = true
+        });
     }
 
     private Task HandleWysiwygRevisionsChangedAsync(IReadOnlyList<DocumentRevision> runtimeRevisions)
@@ -2142,6 +2849,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _isSyncingOfflineDraft = true;
         _offlineStatus = DocumentSyncStatus.Syncing;
         _offlineMessage = Loc["TmDocumentEditor_OfflineSyncing"];
+        _pendingActions.Add(PendingActionId.OfflineSync, Loc["TmDocumentEditor_OfflineSyncing"]);
         try
         {
             var syncProvider = SyncProvider ?? new InMemoryDocumentSyncProvider(Provider, OfflineStore);
@@ -2184,6 +2892,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         finally
         {
             _isSyncingOfflineDraft = false;
+            _pendingActions.Remove(PendingActionId.OfflineSync);
             await InvokeAsync(StateHasChanged);
         }
     }
@@ -2323,6 +3032,18 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         return InvokeAsync(StateHasChanged);
     }
 
+    private Task SetCommentFilterAsync(DocumentCommentFilter filter)
+    {
+        _commentFilter = filter;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private Task SetCommentSortModeAsync(DocumentCommentSortMode sortMode)
+    {
+        _commentSortMode = sortMode;
+        return InvokeAsync(StateHasChanged);
+    }
+
     private async Task SetDifferentFirstPageHeaderFooterAsync(bool enabled)
     {
         if (_document is null || EffectiveReadOnly)
@@ -2450,6 +3171,8 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             DocumentSidePanelTab.Revisions => DocumentSidePanelTab.Revisions,
             DocumentSidePanelTab.Versions when ShowVersionHistory => DocumentSidePanelTab.Versions,
             DocumentSidePanelTab.Properties => DocumentSidePanelTab.Properties,
+            DocumentSidePanelTab.Outline => DocumentSidePanelTab.Outline,
+            DocumentSidePanelTab.Pages => DocumentSidePanelTab.Pages,
             _ when ShowVersionHistory => DocumentSidePanelTab.Versions,
             _ when ShowComments => DocumentSidePanelTab.Comments,
             _ => DocumentSidePanelTab.Properties
@@ -2799,6 +3522,88 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private Task RejectRevisionAsync(DocumentRevision revision)
         => ReviewRevisionAsync(revision, DocumentRevisionAction.Rejected);
+
+    private Task AcceptAllRevisionsAsync(DocumentRevisionFilter filter)
+        => ReviewAllRevisionsAsync(DocumentRevisionAction.Accepted, filter);
+
+    private Task RejectAllRevisionsAsync(DocumentRevisionFilter filter)
+        => ReviewAllRevisionsAsync(DocumentRevisionAction.Rejected, filter);
+
+    private async Task ReviewAllRevisionsAsync(DocumentRevisionAction action, DocumentRevisionFilter? filter = null)
+    {
+        if (_document is null || _isReviewingRevision || !CanReviewRevisions)
+        {
+            return;
+        }
+
+        filter ??= new DocumentRevisionFilter();
+        var revisions = _document.Revisions
+            .Where(revision => revision.Action == DocumentRevisionAction.Pending)
+            .Where(filter.Matches)
+            .ToList();
+        if (revisions.Count == 0)
+        {
+            return;
+        }
+
+        _isReviewingRevision = true;
+        _revisionMessage = null;
+        var before = DocumentEditorCommandCloner.Clone(_document);
+
+        try
+        {
+            foreach (var revision in revisions)
+            {
+                var removeContent = (revision.Type == DocumentRevisionType.Insertion && action == DocumentRevisionAction.Rejected)
+                    || (revision.Type == DocumentRevisionType.Deletion && action == DocumentRevisionAction.Accepted);
+
+                if (revision.Type == DocumentRevisionType.Formatting)
+                {
+                    ApplyFormattingRevisionDecision(_document, revision, action);
+                }
+                else if (removeContent)
+                {
+                    RemoveRevisionContent(_document, revision.Id);
+                }
+                else
+                {
+                    RemoveRevisionMarks(_document, revision.Id);
+                }
+
+                revision.Action = action;
+            }
+
+            var after = DocumentEditorCommandCloner.Clone(_document);
+            await _commandStack.PushAsync(new DocumentEditorSnapshotCommand(
+                _document,
+                before,
+                after,
+                action == DocumentRevisionAction.Accepted ? "Accept all revisions" : "Reject all revisions"));
+
+            _currentDocument = _document;
+            _isDirty = true;
+            _suggestionSnapshot = Clone(after);
+            await BroadcastLocalCollaborationChangeAsync(before, after);
+            if (_wysiwygHost is not null)
+            {
+                await _wysiwygHost.ExecuteEditorCommandAsync(
+                    action == DocumentRevisionAction.Accepted ? "acceptAllRevisions" : "rejectAllRevisions",
+                    new
+                    {
+                        RevisionIds = revisions.Select(revision => revision.Id).ToList()
+                    });
+            }
+
+            _revisionMessage = action == DocumentRevisionAction.Accepted
+                ? Loc["TmDocumentEditor_AllRevisionsAccepted", revisions.Count]
+                : Loc["TmDocumentEditor_AllRevisionsRejected", revisions.Count];
+        }
+        finally
+        {
+            _isReviewingRevision = false;
+            await InvokeAsync(StateHasChanged);
+        }
+    }
 
     private Task ReviewInlineRevisionAsync(WysiwygRevisionReviewRequest request)
     {
@@ -3165,10 +3970,16 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         var command = markType == InlineMarkType.TextColor
             ? "setTextColor"
             : "setHighlightColor";
+        var selection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+        if (selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
 
         await _wysiwygHost.ExecuteEditorCommandAsync(command, new
         {
-            Value = color
+            Value = color,
+            Selection = selection
         });
     }
 
@@ -3239,32 +4050,51 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task HandleEditorKeyDownAsync(KeyboardEventArgs args)
     {
+        if (args.Key == "Escape" && _commandPaletteOpen)
+        {
+            await CloseCommandPaletteAsync();
+            return;
+        }
+
+        // Registry-routed shortcuts: check CanExecute before dispatching.
+        var registryName = _keyboardManager.GetRegistryCommandName(args);
+        if (registryName is not null)
+        {
+            if (registryName == "commandPalette")
+            {
+                await OpenCommandPaletteAsync();
+                return;
+            }
+
+            var state = _commandRegistry.GetState(registryName);
+            if (state?.IsEnabled != true)
+            {
+                return;
+            }
+
+            // Undo/Redo: let the WYSIWYG runtime handle them when active.
+            if ((registryName == "undo" || registryName == "redo") && _wysiwygHost is not null)
+            {
+                if (registryName == "undo")
+                {
+                    await _wysiwygHost.UndoRuntimeAsync();
+                    await RefreshRuntimeUndoDirtyStateAsync();
+                }
+                else
+                {
+                    await _wysiwygHost.RedoRuntimeAsync();
+                    await RefreshRuntimeUndoDirtyStateAsync();
+                }
+
+                return;
+            }
+
+            await _commandRegistry.ExecuteAsync(registryName, BuildCommandContext());
+            return;
+        }
+
         switch (_keyboardManager.GetCommand(args))
         {
-            case DocumentEditorKeyboardCommand.Save:
-                await SaveAsync();
-                break;
-            case DocumentEditorKeyboardCommand.Undo:
-                if (_wysiwygHost is null)
-                {
-                    await UndoAsync();
-                }
-                break;
-            case DocumentEditorKeyboardCommand.Redo:
-                if (_wysiwygHost is null)
-                {
-                    await RedoAsync();
-                }
-                break;
-            case DocumentEditorKeyboardCommand.Bold:
-                await ToggleInlineMarkAsync(InlineMarkType.Bold);
-                break;
-            case DocumentEditorKeyboardCommand.Italic:
-                await ToggleInlineMarkAsync(InlineMarkType.Italic);
-                break;
-            case DocumentEditorKeyboardCommand.Link:
-                await ApplyLinkAsync("https://example.com");
-                break;
             case DocumentEditorKeyboardCommand.OpenVersions:
                 OpenSidePanel(DocumentSidePanelTab.Versions);
                 await InvokeAsync(StateHasChanged);
@@ -3275,7 +4105,144 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             case DocumentEditorKeyboardCommand.ClosePanel:
                 await CloseTopmostEditorLayerAsync();
                 break;
+            case DocumentEditorKeyboardCommand.OpenFind:
+                await OpenFindPanelAsync(replaceMode: false);
+                break;
+            case DocumentEditorKeyboardCommand.OpenReplace:
+                await OpenFindPanelAsync(replaceMode: true);
+                break;
         }
+    }
+
+    private async Task OpenFindPanelAsync(bool replaceMode)
+    {
+        _findReplaceMode = replaceMode;
+        _findPanelOpen = true;
+        _floatingLayerStack.Push(new DocumentFloatingLayerState
+        {
+            LayerId = FloatingLayerId.FindPanel,
+            Kind = DocumentFloatingLayerKind.FindPanel,
+            ZIndex = 25,
+            Priority = 25,
+            RestoreFocusTarget = "surface",
+            CloseAsync = async () =>
+            {
+                _findPanelOpen = false;
+                await ClearSearchMarkersAsync();
+            }
+        });
+        await InvokeAsync(StateHasChanged);
+
+        if (_findPanel is not null && _wysiwygHost is not null)
+        {
+            var selected = await _wysiwygHost.GetSelectedTextAsync();
+            if (!string.IsNullOrEmpty(selected))
+                await _findPanel.SetQueryAsync(selected);
+        }
+    }
+
+    private async Task OpenCommandPaletteAsync()
+    {
+        await RefreshCommandRegistryAsync();
+        if (!_commandRegistry.CurrentState.Values.Any(command => command.IsVisible))
+        {
+            return;
+        }
+
+        _commandPaletteOpen = true;
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private Task CloseCommandPaletteAsync()
+    {
+        _commandPaletteOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    private async Task ExecuteCommandPaletteCommandAsync(string commandName)
+    {
+        var state = _commandRegistry.GetState(commandName);
+        var selection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+        if (state?.AffectsData == true && _wysiwygHost is not null && selection is not null)
+        {
+            await _wysiwygHost.RestoreSelectionAsync(selection);
+        }
+
+        _commandPaletteOpen = false;
+        await _commandRegistry.ExecuteAsync(commandName, BuildCommandContext());
+        await RefreshCommandRegistryAsync();
+        await InvokeAsync(StateHasChanged);
+    }
+
+    private async Task CloseFindPanelAsync()
+    {
+        _findPanelOpen = false;
+        _floatingLayerStack.Remove(FloatingLayerId.FindPanel);
+        await ClearSearchMarkersAsync();
+        await InvokeAsync(StateHasChanged);
+        await FocusDocumentAsync();
+    }
+
+    private async Task HandleFindResultsChangedAsync(IReadOnlyList<DocumentSearchResult> results)
+    {
+        if (_wysiwygHost is null) return;
+        var ids = results.Select(r => r.BlockId).ToArray();
+        var offsets = results.Select(r => r.BlockTextOffset).ToArray();
+        var lengths = results.Select(r => r.Length).ToArray();
+        await _wysiwygHost.SetSearchMarkersAsync(ids, offsets, lengths);
+        Announce(results.Count == 0
+            ? Loc["TmDocumentEditor_FindNoResults"]
+            : string.Format(CultureInfo.CurrentCulture, Loc["TmDocumentEditor_FindResultCount"], 1, results.Count));
+    }
+
+    private async Task HandleActiveSearchResultChangedAsync(DocumentSearchResult result)
+    {
+        if (_wysiwygHost is null) return;
+        await _wysiwygHost.ScrollToSearchResultAsync(result.BlockId, result.BlockTextOffset, result.Length);
+    }
+
+    private async Task HandleFindReplaceOneRequestedAsync(DocumentFindReplaceRequest request)
+    {
+        if (_wysiwygHost is null || request.ActiveResult is null) return;
+
+        await _wysiwygHost.ExecuteRuntimeCommandAsync("replaceOne", new
+        {
+            replacement = request.Replacement,
+            query = request.Query.Text,
+            caseSensitive = request.Query.CaseSensitive,
+            wholeWord = request.Query.WholeWord,
+            scope = request.Query.Scope.ToString(),
+            markerId = request.ActiveResult.MarkerId,
+            blockId = request.ActiveResult.BlockId,
+            offset = request.ActiveResult.BlockTextOffset,
+            length = request.ActiveResult.Length
+        });
+        await RefreshRuntimeUndoDirtyStateAsync();
+    }
+
+    private async Task HandleFindReplaceAllRequestedAsync(DocumentFindReplaceRequest request)
+    {
+        if (_wysiwygHost is null) return;
+
+        await _wysiwygHost.ExecuteRuntimeCommandAsync("replaceAll", new
+        {
+            replacement = request.Replacement,
+            query = request.Query.Text,
+            caseSensitive = request.Query.CaseSensitive,
+            wholeWord = request.Query.WholeWord,
+            scope = request.Query.Scope.ToString(),
+            markerId = request.ActiveResult?.MarkerId,
+            blockId = request.ActiveResult?.BlockId,
+            offset = request.ActiveResult?.BlockTextOffset,
+            length = request.ActiveResult?.Length
+        });
+        await RefreshRuntimeUndoDirtyStateAsync();
+    }
+
+    private async Task ClearSearchMarkersAsync()
+    {
+        if (_wysiwygHost is not null)
+            await _wysiwygHost.ClearSearchMarkersAsync();
     }
 
     private async Task ActivateRibbonKeyboardModeAsync()
@@ -3292,42 +4259,39 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
     private async Task CloseTopmostEditorLayerAsync()
     {
-        var handled = false;
-        if (_textContextMenu is not null || _tableContextMenu is not null || _miniToolbar is not null)
+        if (_floatingLayerStack.HasOpenLayers)
         {
-            CloseFloatingUi();
-            handled = true;
-        }
-        else if (_versionDialogOpen)
-        {
-            CloseVersionDialog();
-            handled = true;
-        }
-        else if (_compareDialogOpen)
-        {
-            CloseCompareDialog();
-            handled = true;
-        }
-        else if (_sidePanelOpen)
-        {
-            CloseSidePanel();
-            handled = true;
-        }
-
-        if (handled)
-        {
+            await _floatingLayerStack.CloseTopmostAsync();
             await FocusDocumentAsync();
             await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (_sidePanelOpen)
+        {
+            CloseSidePanel();
+            await FocusDocumentAsync();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
+        if (_isFullscreen)
+        {
+            await ToggleFullscreenAsync();
         }
     }
 
     private async Task FocusDocumentAsync()
     {
+        _focusManager.PopRestoreTarget();
         if (_wysiwygHost is not null)
         {
             await _wysiwygHost.FocusAsync();
         }
     }
+
+    private void Announce(string? message, DocumentEditorAnnouncementPoliteness politeness = DocumentEditorAnnouncementPoliteness.Polite)
+        => _announcer.Announce(message, politeness);
 
     private void MarkDirtyAfterCommand()
     {
@@ -3371,6 +4335,13 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             or "ClearFormatting"
             or "SetParagraphProperties";
     }
+
+    private static bool IsImageInsertPatch(WysiwygPatch patch) =>
+        string.Equals(patch.Type, "InsertBlock", StringComparison.Ordinal)
+        && patch.Block is not null
+        && (patch.Block.Content is ImageBlockContent
+            || patch.Block.Type == DocumentBlockType.Image
+            || string.Equals(patch.BlockType, "Image", StringComparison.OrdinalIgnoreCase));
 
     private static bool IsTrackedStructuralPatch(WysiwygPatch patch)
     {
@@ -4028,17 +4999,52 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         _configuredAutoSaveInterval = AutoSaveInterval;
         _autoSaveTimer?.Dispose();
         _autoSaveTimer = null;
+        ScheduleAutoSave();
+    }
 
-        if (AutoSaveInterval is not { } interval || interval <= TimeSpan.Zero)
+    private void ScheduleAutoSave()
+    {
+        _autoSaveTimer?.Dispose();
+        _autoSaveTimer = null;
+
+        if (_disposed
+            || !_isDirty
+            || _isSaving
+            || AutoSaveInterval is not { } interval
+            || interval <= TimeSpan.Zero)
         {
             return;
         }
 
         _autoSaveTimer = new Timer(
-            _ => _ = InvokeAsync(() => SaveAsync(DocumentEditorSaveTrigger.AutoSave)),
+            _ => _ = InvokeAsync(RunDebouncedAutoSaveAsync),
             null,
             interval,
-            interval);
+            Timeout.InfiniteTimeSpan);
+    }
+
+    private async Task RunDebouncedAutoSaveAsync()
+    {
+        if (_disposed || !_isDirty || _isSaving)
+        {
+            return;
+        }
+
+        _autosave.DebounceElapsed();
+        SyncAutosavePendingAction();
+        await SaveAsync(DocumentEditorSaveTrigger.AutoSave);
+    }
+
+    private void SyncAutosavePendingAction()
+    {
+        var state = _autosave.State;
+        if (state.Status == DocumentAutosaveStatus.Waiting && _isDirty && AutoSaveInterval is not null && AutoSaveInterval > TimeSpan.Zero)
+        {
+            _pendingActions.Add(PendingActionId.AutosaveWaiting, Loc["TmDocumentEditor_AutosaveWaiting"]);
+            return;
+        }
+
+        _pendingActions.Remove(PendingActionId.AutosaveWaiting);
     }
 
     private async Task<bool> TryCreateSuggestionAsync(DocumentEditorDocument? before, DocumentEditorDocument after)
@@ -4412,6 +5418,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
 
         try
         {
+            _pendingActions.Add(PendingActionId.CollaborationSync, Loc["TmDocumentEditor_CollaborationSyncing"]);
             var result = await _collaborationSync.SubmitLocalBatchAsync(batch);
             if (result.IsValid)
             {
@@ -4421,6 +5428,10 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
         catch
         {
             // Collaboration transport failures should not prevent local editing.
+        }
+        finally
+        {
+            _pendingActions.Remove(PendingActionId.CollaborationSync);
         }
     }
 
@@ -4469,6 +5480,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             try
             {
                 var updated = Clone(_collaborationSync.Document);
+                new DocumentEditorPostFixer().Fix(updated);
                 var remoteWysiwygOperations = batch.Batch.Operations
                     .Where(CanApplyRemoteOperationInWysiwyg)
                     .ToList();
@@ -4569,6 +5581,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
                 try
                 {
                     var updated = Clone(_collaborationSync.Document);
+                    new DocumentEditorPostFixer().Fix(updated);
                     var remoteWysiwygOperations = _collaborationSync.LastAppliedRemoteOperations
                         .Where(CanApplyRemoteOperationInWysiwyg)
                         .ToList();
@@ -4777,12 +5790,20 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
             OpenSidePanel(DocumentSidePanelTab.Versions);
             _versionDialogOpen = true;
             _versionMessage = null;
+            _floatingLayerStack.Push(new DocumentFloatingLayerState
+            {
+                LayerId = FloatingLayerId.VersionDialog,
+                Kind = DocumentFloatingLayerKind.VersionDialog,
+                ZIndex = 50,
+                CloseAsync = () => { _versionDialogOpen = false; return Task.CompletedTask; }
+            });
         }
     }
 
     private void CloseVersionDialog()
     {
         _versionDialogOpen = false;
+        _floatingLayerStack.Remove(FloatingLayerId.VersionDialog);
     }
 
     private void CloseVersionPanel()
@@ -5490,14 +6511,59 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable
     /// <inheritdoc />
     public void Dispose()
     {
+        if (!BeginDispose(out var collaborationSync))
+        {
+            return;
+        }
+
+        _ = DisableBeforeUnloadGuardAsync();
+        if (collaborationSync is not null)
+        {
+            _ = collaborationSync.LeaveAsync();
+        }
+    }
+
+    /// <inheritdoc />
+    public async ValueTask DisposeAsync()
+    {
+        if (!BeginDispose(out var collaborationSync))
+        {
+            return;
+        }
+
+        await DisableBeforeUnloadGuardAsync();
+        if (collaborationSync is not null)
+        {
+            await collaborationSync.LeaveAsync();
+        }
+    }
+
+    private bool BeginDispose(out DocumentCollaborationSync? collaborationSync)
+    {
+        collaborationSync = null;
+        if (_disposed)
+        {
+            return false;
+        }
+
         _disposed = true;
         _commandStack.OnStackChanged -= HandleCommandStackChanged;
         _autoSaveTimer?.Dispose();
         _collaborationTimer?.Dispose();
-        if (_collaborationSync is not null)
+        collaborationSync = _collaborationSync;
+        _collaborationSync = null;
+        return true;
+    }
+
+    private async Task DisableBeforeUnloadGuardAsync()
+    {
+        try
         {
-            _ = _collaborationSync.LeaveAsync();
-            _collaborationSync = null;
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditor.disableBeforeUnloadGuard");
+        }
+        catch
+        {
+            // JS interop may already be unavailable during disposal.
         }
     }
 }

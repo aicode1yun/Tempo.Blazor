@@ -51,14 +51,14 @@
         break;
 
     case TableBlockContent table:
-        <table class="tm-document-block tm-document-table">
+        <table class="tm-document-block tm-document-table" style="@GetTableStyle(table)">
             <tbody>
                 @foreach (var row in table.Rows)
                 {
                     <tr>
                         @foreach (var cell in row.Cells.Where(cell => cell.Merge.IsOrigin))
                         {
-                            <td colspan="@cell.ColumnSpan" rowspan="@cell.RowSpan">
+                            <td colspan="@cell.ColumnSpan" rowspan="@cell.RowSpan" style="@GetTableCellStyle(cell)">
                                 @foreach (var nestedBlock in cell.Blocks.OrderBy(block => block.Order))
                                 {
                                     <TmDocumentBlockRenderer DocumentId="@DocumentId"

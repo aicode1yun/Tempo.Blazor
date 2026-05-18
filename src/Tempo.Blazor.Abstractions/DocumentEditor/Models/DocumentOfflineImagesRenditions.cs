@@ -151,6 +151,9 @@ public class DocumentImageAsset
 
     /// <summary>Whether the asset exists only locally until uploaded.</summary>
     public bool IsLocalDraft { get; set; }
+
+    /// <summary>Whether a local draft asset is no longer referenced by the editable document.</summary>
+    public bool IsUnusedDraft { get; set; }
 }
 
 /// <summary>Image upload request sent to a host/provider.</summary>
