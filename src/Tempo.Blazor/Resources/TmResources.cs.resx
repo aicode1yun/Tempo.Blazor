@@ -2755,10 +2755,26 @@
   <data name="TmDocumentEditor_TabView"                xml:space="preserve"><value>Zobrazení</value></data>
   <data name="TmDocumentEditor_TabHeaderFooter"        xml:space="preserve"><value>Hlavička a patička</value></data>
   <data name="TmDocumentEditor_Ruler"                  xml:space="preserve"><value>Pravítko</value></data>
+  <data name="TmDocumentEditor_ShowRuler"              xml:space="preserve"><value>Zobrazit pravítko</value></data>
   <data name="TmDocumentEditor_ZoomOut"                xml:space="preserve"><value>Oddálit</value></data>
   <data name="TmDocumentEditor_ZoomIn"                 xml:space="preserve"><value>Přiblížit</value></data>
   <data name="TmDocumentEditor_Zoom100"                xml:space="preserve"><value>100 %</value></data>
   <data name="TmDocumentEditor_ZoomPageWidth"          xml:space="preserve"><value>Šířka stránky</value></data>
+  <data name="TmDocumentEditor_PageWidth"              xml:space="preserve"><value>Šířka stránky</value></data>
+  <data name="TmDocumentEditor_ShowBlocks"             xml:space="preserve"><value>Zobrazit bloky</value></data>
+  <data name="TmDocumentEditor_Fullscreen"             xml:space="preserve"><value>Celá obrazovka</value></data>
+  <data name="TmDocumentEditor_Outline"                xml:space="preserve"><value>Osnova</value></data>
+  <data name="TmDocumentEditor_OutlineEmpty"           xml:space="preserve"><value>Žádné nadpisy</value></data>
+  <data name="TmDocumentEditor_ViewDocumentJson"       xml:space="preserve"><value>Zobrazit JSON</value></data>
+  <data name="TmDocumentEditor_ViewClipboardHtml"     xml:space="preserve"><value>Zobrazit HTML schránky</value></data>
+  <data name="TmDocumentEditor_DebugDocumentJsonTitle" xml:space="preserve"><value>JSON dokumentu</value></data>
+  <data name="TmDocumentEditor_DebugCanonicalDocument" xml:space="preserve"><value>Kanonický dokument</value></data>
+  <data name="TmDocumentEditor_DebugRuntimeState" xml:space="preserve"><value>Stav runtime</value></data>
+  <data name="TmDocumentEditor_DebugRuntimeRecovery" xml:space="preserve"><value>Obnova runtime</value></data>
+  <data name="TmDocumentEditor_DebugClipboardHtmlTitle" xml:space="preserve"><value>HTML schránky</value></data>
+  <data name="TmDocumentEditor_DebugClipboardRawHtml" xml:space="preserve"><value>Raw HTML</value></data>
+  <data name="TmDocumentEditor_DebugClipboardNormalized" xml:space="preserve"><value>Normalizované bloky</value></data>
+  <data name="TmDocumentEditor_DebugClipboardWarnings" xml:space="preserve"><value>Varování</value></data>
   <data name="TmDocumentEditor_GroupClipboard"         xml:space="preserve"><value>Schránka</value></data>
   <data name="TmDocumentEditor_GroupFormatting"        xml:space="preserve"><value>Formátování</value></data>
   <data name="TmDocumentEditor_GroupInsert"            xml:space="preserve"><value>Vložit</value></data>
@@ -2796,6 +2812,16 @@
   <data name="TmDocumentEditor_PageLayout"             xml:space="preserve"><value>Rozložení stránky</value></data>
   <data name="TmDocumentEditor_InsertTable"            xml:space="preserve"><value>Tabulka</value></data>
   <data name="TmDocumentEditor_InsertImage"            xml:space="preserve"><value>Obrázek</value></data>
+  <data name="TmDocumentEditor_AutocompleteLoading"    xml:space="preserve"><value>Načítám návrhy...</value></data>
+  <data name="TmDocumentEditor_AutocompleteEmpty"      xml:space="preserve"><value>Nebyly nalezeny žádné návrhy</value></data>
+  <data name="TmDocumentEditor_AutocompleteProviderError" xml:space="preserve"><value>Návrhy se nepodařilo načíst.</value></data>
+  <data name="TmDocumentEditor_AutocompleteSearch"     xml:space="preserve"><value>Hledat návrhy...</value></data>
+  <data name="TmDocumentEditor_MentionSearch"          xml:space="preserve"><value>Hledat lidi...</value></data>
+  <data name="TmDocumentEditor_TagSearch"              xml:space="preserve"><value>Hledat štítky...</value></data>
+  <data name="TmDocumentEditor_CommandSearch"          xml:space="preserve"><value>Hledat příkazy...</value></data>
+  <data name="TmDocumentEditor_SlashInsertTableDescription" xml:space="preserve"><value>Vložit tabulku 2 x 2</value></data>
+  <data name="TmDocumentEditor_SlashInsertImageDescription" xml:space="preserve"><value>Vložit nebo nahrát obrázek</value></data>
+  <data name="TmDocumentEditor_SlashInsertPageBreakDescription" xml:space="preserve"><value>Začít obsah na nové stránce</value></data>
   <data name="TmDocumentEditor_AddComment"             xml:space="preserve"><value>Komentář</value></data>
   <data name="TmDocumentEditor_MiniToolbarLabel"       xml:space="preserve"><value>Formátování výběru</value></data>
   <data name="TmDocumentEditor_EditorLabel"            xml:space="preserve"><value>Editor dokumentu</value></data>
@@ -2824,9 +2850,20 @@
   <data name="TmDocumentEditor_Comments"               xml:space="preserve"><value>Komentáře</value></data>
   <data name="TmDocumentEditor_CommentsPlaceholder"    xml:space="preserve"><value>Zatím žádné komentáře</value></data>
   <data name="TmDocumentEditor_CommentCount"           xml:space="preserve"><value>{0} komentářů</value></data>
+  <data name="TmDocumentEditor_CommentCountVisible"    xml:space="preserve"><value>{0} z {1} komentářů</value></data>
   <data name="TmDocumentEditor_NewComment"             xml:space="preserve"><value>Nový komentář</value></data>
   <data name="TmDocumentEditor_LoadingComments"        xml:space="preserve"><value>Načítám komentáře...</value></data>
   <data name="TmDocumentEditor_NoComments"             xml:space="preserve"><value>Zatím žádné komentáře</value></data>
+  <data name="TmDocumentEditor_CommentFilter"          xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmDocumentEditor_CommentFilterAll"       xml:space="preserve"><value>Vše</value></data>
+  <data name="TmDocumentEditor_CommentFilterOpen"      xml:space="preserve"><value>Otevřené</value></data>
+  <data name="TmDocumentEditor_CommentFilterResolved"  xml:space="preserve"><value>Vyřešené</value></data>
+  <data name="TmDocumentEditor_CommentFilterMine"      xml:space="preserve"><value>Moje</value></data>
+  <data name="TmDocumentEditor_CommentSort"            xml:space="preserve"><value>Řazení</value></data>
+  <data name="TmDocumentEditor_CommentSortPosition"    xml:space="preserve"><value>Pozice</value></data>
+  <data name="TmDocumentEditor_CommentSortTime"        xml:space="preserve"><value>Nejnovější</value></data>
+  <data name="TmDocumentEditor_ExpandComment"          xml:space="preserve"><value>Rozbalit</value></data>
+  <data name="TmDocumentEditor_ResolvedCommentCollapsed" xml:space="preserve"><value>Vyřešený komentář</value></data>
   <data name="TmDocumentEditor_CommentPlaceholder"     xml:space="preserve"><value>Napište komentář...</value></data>
   <data name="TmDocumentEditor_ReplyPlaceholder"       xml:space="preserve"><value>Napište odpověď...</value></data>
   <data name="TmDocumentEditor_Reply"                  xml:space="preserve"><value>Odpovědět</value></data>
@@ -2932,6 +2969,7 @@
   <data name="TmDocumentEditor_FormatImportPanelLabel" xml:space="preserve"><value>Import formátu dokumentu</value></data>
   <data name="TmDocumentEditor_FormatProviderUnavailable" xml:space="preserve"><value>Provider formátu dokumentu není dostupný.</value></data>
   <data name="TmDocumentEditor_AutoSaveComplete"       xml:space="preserve"><value>Automaticky uloženo</value></data>
+  <data name="TmDocumentEditor_AutosaveWaiting"        xml:space="preserve"><value>Čeká se na automatické uložení...</value></data>
   <data name="TmDocumentEditor_LastSavedAt"            xml:space="preserve"><value>Naposledy uloženo {0}</value></data>
   <data name="TmDocumentEditor_SaveConflict"           xml:space="preserve"><value>Dokument se změnil na serveru.</value></data>
   <data name="TmDocumentEditor_SaveFailed"             xml:space="preserve"><value>Uložení selhalo.</value></data>
@@ -2977,8 +3015,28 @@
   <data name="TmDocumentEditor_OfflineCopyTitle"       xml:space="preserve"><value>Offline kopie</value></data>
   <data name="TmDocumentEditor_OfflineCopyTitleWithName" xml:space="preserve"><value>{0} (offline kopie)</value></data>
   <data name="TmDocumentEditor_UnsavedChanges"         xml:space="preserve"><value>Neuložené změny</value></data>
+  <data name="TmDocumentEditor_Saving"                 xml:space="preserve"><value>Ukládání...</value></data>
+  <data name="TmDocumentEditor_ExportingPdf"           xml:space="preserve"><value>Export PDF...</value></data>
+  <data name="TmDocumentEditor_ImportingDocx"          xml:space="preserve"><value>Import DOCX...</value></data>
+  <data name="TmDocumentEditor_ExportingDocx"          xml:space="preserve"><value>Export DOCX...</value></data>
+  <data name="TmDocumentEditor_UploadingImage"         xml:space="preserve"><value>Nahrávání obrázku...</value></data>
+  <data name="TmDocumentEditor_CollaborationSyncing"   xml:space="preserve"><value>Synchronizace...</value></data>
+  <data name="TmDocumentEditor_PendingActions"         xml:space="preserve"><value>{0} probíhajících operací</value></data>
+  <data name="TmDocumentEditor_RuntimeRecovered"       xml:space="preserve"><value>Editor se po chybě obnovil. Vaše práce byla zachována.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveredCommand" xml:space="preserve"><value>Editor se obnovil po chybě příkazu. Vaše práce byla zachována.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveredRemoteOperation" xml:space="preserve"><value>Editor se obnovil po chybě vzdálené operace. Vaše práce byla zachována.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveredRender" xml:space="preserve"><value>Editor se obnovil po chybě vykreslení. Vaše práce byla zachována.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveredSerialization" xml:space="preserve"><value>Editor se obnovil po chybě serializace. Vaše práce byla zachována.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveredSnapshotFallback" xml:space="preserve"><value>Byl použit poslední stabilní snapshot.</value></data>
+  <data name="TmDocumentEditor_RuntimeRecoveryFailed"  xml:space="preserve"><value>Obnova editoru selhala. Prosím, znovu načtěte stránku.</value></data>
   <data name="TmDocumentEditor_WordCount"              xml:space="preserve"><value>{0} slov</value></data>
   <data name="TmDocumentEditor_PageCount"              xml:space="preserve"><value>{0} stránek</value></data>
+  <data name="TmDocumentEditor_Pages"                  xml:space="preserve"><value>Stránky</value></data>
+  <data name="TmDocumentEditor_PageLabelFormat"        xml:space="preserve"><value>Stránka {0}</value></data>
+  <data name="TmDocumentEditor_PageNavigatorEmpty"     xml:space="preserve"><value>Žádné stránky nejsou dostupné</value></data>
+  <data name="TmDocumentEditor_PageOverflow"           xml:space="preserve"><value>Přetéká</value></data>
+  <data name="TmDocumentEditor_NonPrintingCharacters"  xml:space="preserve"><value>Netisknutelné znaky</value></data>
+  <data name="TmDocumentEditor_DeletePageBreak"        xml:space="preserve"><value>Smazat konec stránky</value></data>
   <data name="TmDocumentEditor_ActiveRegion"           xml:space="preserve"><value>Editace: {0}</value></data>
   <data name="TmDocumentEditor_ZoomStatus"             xml:space="preserve"><value>Přiblížení {0}</value></data>
   <data name="TmDocumentEditor_RegionBody"             xml:space="preserve"><value>obsah</value></data>
@@ -2989,10 +3047,20 @@
   <data name="TmDocumentEditor_RegionEndnote"          xml:space="preserve"><value>koncová poznámka</value></data>
   <data name="TmDocumentEditor_Insert"                 xml:space="preserve"><value>Vložit</value></data>
   <data name="TmDocumentEditor_TrackChanges"           xml:space="preserve"><value>Sledovat změny</value></data>
+  <data name="TmDocumentEditor_ProtectDocument"        xml:space="preserve"><value>Zamknout dokument</value></data>
+  <data name="TmDocumentEditor_MarkEditableRegion"     xml:space="preserve"><value>Označit upravitelnou oblast</value></data>
+  <data name="TmDocumentEditor_More"                   xml:space="preserve"><value>Více</value></data>
+  <data name="TmDocumentEditor_MoreCommands"           xml:space="preserve"><value>Více příkazů</value></data>
   <data name="TmDocumentEditor_ShowMarkup"             xml:space="preserve"><value>Zobrazit značky</value></data>
   <data name="TmDocumentEditor_ReviewModeAllMarkup"    xml:space="preserve"><value>Všechny značky</value></data>
   <data name="TmDocumentEditor_ReviewModeSimpleMarkup" xml:space="preserve"><value>Jednoduché značky</value></data>
   <data name="TmDocumentEditor_ReviewModeNoMarkup"     xml:space="preserve"><value>Bez značek</value></data>
+  <data name="TmDocumentEditor_ReviewModeOriginal"     xml:space="preserve"><value>Původní</value></data>
+  <data name="TmDocumentEditor_ReviewSummaryLabel"     xml:space="preserve"><value>Souhrn revize</value></data>
+  <data name="TmDocumentEditor_ReviewSummaryTitle"     xml:space="preserve"><value>Vyžaduje kontrolu</value></data>
+  <data name="TmDocumentEditor_ReviewSummaryText"      xml:space="preserve"><value>{0} čekajících změn, {1} otevřených komentářů</value></data>
+  <data name="TmDocumentEditor_ReviewSummaryRevisions" xml:space="preserve"><value>{0} čekajících změn</value></data>
+  <data name="TmDocumentEditor_ReviewSummaryComments"  xml:space="preserve"><value>{0} komentářů</value></data>
   <data name="TmDocumentEditor_EditParagraph"          xml:space="preserve"><value>Upravit odstavec</value></data>
   <data name="TmDocumentEditor_HeadingLevel"           xml:space="preserve"><value>Úroveň nadpisu</value></data>
   <data name="TmDocumentEditor_Heading1"               xml:space="preserve"><value>Nadpis 1</value></data>
@@ -3012,6 +3080,40 @@
   <data name="TmDocumentEditor_AddColumn"              xml:space="preserve"><value>Přidat sloupec</value></data>
   <data name="TmDocumentEditor_DeleteRow"              xml:space="preserve"><value>Smazat řádek</value></data>
   <data name="TmDocumentEditor_DeleteColumn"           xml:space="preserve"><value>Smazat sloupec</value></data>
+  <data name="TmDocumentEditor_AddRowBefore"           xml:space="preserve"><value>Přidat řádek nad</value></data>
+  <data name="TmDocumentEditor_AddRowAfter"            xml:space="preserve"><value>Přidat řádek pod</value></data>
+  <data name="TmDocumentEditor_AddColumnBefore"        xml:space="preserve"><value>Přidat sloupec vlevo</value></data>
+  <data name="TmDocumentEditor_AddColumnAfter"         xml:space="preserve"><value>Přidat sloupec vpravo</value></data>
+  <data name="TmDocumentEditor_ToggleHeaderRow"        xml:space="preserve"><value>Přepnout záhlaví</value></data>
+  <data name="TmDocumentEditor_TableGridPickerLabel"   xml:space="preserve"><value>Vybrat velikost tabulky</value></data>
+  <data name="TmDocumentEditor_TableToolbarLabel"      xml:space="preserve"><value>Panel nástrojů tabulky</value></data>
+  <data name="TmDocumentEditor_InsertRowBefore"        xml:space="preserve"><value>Vložit řádek nad</value></data>
+  <data name="TmDocumentEditor_InsertRow"              xml:space="preserve"><value>Vložit řádek pod</value></data>
+  <data name="TmDocumentEditor_InsertColumnBefore"     xml:space="preserve"><value>Vložit sloupec vlevo</value></data>
+  <data name="TmDocumentEditor_InsertColumn"           xml:space="preserve"><value>Vložit sloupec vpravo</value></data>
+  <data name="TmDocumentEditor_MergeCells"             xml:space="preserve"><value>Sloučit buňky</value></data>
+  <data name="TmDocumentEditor_TableProperties"        xml:space="preserve"><value>Vlastnosti tabulky</value></data>
+  <data name="TmDocumentEditor_CellProperties"         xml:space="preserve"><value>Vlastnosti buňky</value></data>
+  <data name="TmDocumentEditor_TableWidth"             xml:space="preserve"><value>Šířka tabulky</value></data>
+  <data name="TmDocumentEditor_TableAlignment"         xml:space="preserve"><value>Zarovnání tabulky</value></data>
+  <data name="TmDocumentEditor_TableAlignLeft"         xml:space="preserve"><value>Vlevo</value></data>
+  <data name="TmDocumentEditor_TableAlignCenter"       xml:space="preserve"><value>Na střed</value></data>
+  <data name="TmDocumentEditor_TableAlignRight"        xml:space="preserve"><value>Vpravo</value></data>
+  <data name="TmDocumentEditor_TableCellPadding"       xml:space="preserve"><value>Odsazení buněk</value></data>
+  <data name="TmDocumentEditor_TableBackground"        xml:space="preserve"><value>Pozadí tabulky</value></data>
+  <data name="TmDocumentEditor_TableBorder"            xml:space="preserve"><value>Ohraničení tabulky</value></data>
+  <data name="TmDocumentEditor_TableBorderDefault"     xml:space="preserve"><value>Výchozí ohraničení</value></data>
+  <data name="TmDocumentEditor_TableBorderStrong"      xml:space="preserve"><value>Silné ohraničení</value></data>
+  <data name="TmDocumentEditor_CellVerticalAlign"      xml:space="preserve"><value>Svislé zarovnání buňky</value></data>
+  <data name="TmDocumentEditor_CellAlignTop"           xml:space="preserve"><value>Nahoře</value></data>
+  <data name="TmDocumentEditor_CellAlignMiddle"        xml:space="preserve"><value>Uprostřed</value></data>
+  <data name="TmDocumentEditor_CellAlignBottom"        xml:space="preserve"><value>Dole</value></data>
+  <data name="TmDocumentEditor_CellBackground"         xml:space="preserve"><value>Pozadí buňky</value></data>
+  <data name="TmDocumentEditor_CellPadding"            xml:space="preserve"><value>Odsazení buňky</value></data>
+  <data name="TmDocumentEditor_CellBorder"             xml:space="preserve"><value>Ohraničení buňky</value></data>
+  <data name="TmDocumentEditor_ColumnSpan"             xml:space="preserve"><value>Rozsah sloupců</value></data>
+  <data name="TmDocumentEditor_RowSpan"                xml:space="preserve"><value>Rozsah řádků</value></data>
+  <data name="TmDocumentEditor_None"                   xml:space="preserve"><value>Žádné</value></data>
   <data name="TmDocumentEditor_MergeRight"             xml:space="preserve"><value>Sloučit doprava</value></data>
   <data name="TmDocumentEditor_SplitCell"              xml:space="preserve"><value>Rozdělit buňku</value></data>
   <data name="TmDocumentEditor_ImageUrl"               xml:space="preserve"><value>URL obrázku</value></data>
@@ -3047,8 +3149,16 @@
   <data name="TmDocumentEditor_RevisionsEmpty"         xml:space="preserve"><value>Žádné čekající revize</value></data>
   <data name="TmDocumentEditor_RevisionAccepted"       xml:space="preserve"><value>Revize přijata</value></data>
   <data name="TmDocumentEditor_RevisionRejected"       xml:space="preserve"><value>Revize odmítnuta</value></data>
+  <data name="TmDocumentEditor_AllRevisionsAccepted"   xml:space="preserve"><value>{0} revizí přijato</value></data>
+  <data name="TmDocumentEditor_AllRevisionsRejected"   xml:space="preserve"><value>{0} revizí odmítnuto</value></data>
   <data name="TmDocumentEditor_AcceptRevision"         xml:space="preserve"><value>Přijmout</value></data>
   <data name="TmDocumentEditor_RejectRevision"         xml:space="preserve"><value>Odmítnout</value></data>
+  <data name="TmDocumentEditor_AcceptAllRevisions"     xml:space="preserve"><value>Přijmout vše</value></data>
+  <data name="TmDocumentEditor_RejectAllRevisions"     xml:space="preserve"><value>Odmítnout vše</value></data>
+  <data name="TmDocumentEditor_RevisionFilterAuthor"   xml:space="preserve"><value>Autor</value></data>
+  <data name="TmDocumentEditor_RevisionFilterAllAuthors" xml:space="preserve"><value>Všichni autoři</value></data>
+  <data name="TmDocumentEditor_RevisionFilterType"     xml:space="preserve"><value>Typ</value></data>
+  <data name="TmDocumentEditor_RevisionFilterAllTypes" xml:space="preserve"><value>Všechny typy</value></data>
   <data name="TmDocumentEditor_AcceptRevisionAria"     xml:space="preserve"><value>Přijmout revizi od {0}</value></data>
   <data name="TmDocumentEditor_RejectRevisionAria"     xml:space="preserve"><value>Odmítnout revizi od {0}</value></data>
   <data name="TmDocumentEditor_RevisionTypeInsertion"  xml:space="preserve"><value>Vložení</value></data>
@@ -3071,6 +3181,35 @@
   <data name="TmDocumentEditor_ImagePasteRejected"     xml:space="preserve"><value>Vložený obrázek není povolený.</value></data>
   <data name="TmDocumentEditor_ImageUploadFailed"      xml:space="preserve"><value>Nahrání obrázku selhalo.</value></data>
   <data name="TmDocumentEditor_ImageUploading"         xml:space="preserve"><value>Nahrávání obrázku...</value></data>
+  <data name="TmDocumentEditor_ImageInsertMenu"        xml:space="preserve"><value>Možnosti vložení obrázku</value></data>
+  <data name="TmDocumentEditor_ImageInsertUrl"         xml:space="preserve"><value>Z URL</value></data>
+  <data name="TmDocumentEditor_ImageInsertAsset"       xml:space="preserve"><value>Z knihovny</value></data>
+  <data name="TmDocumentEditor_ImageInspectorLabel"    xml:space="preserve"><value>Inspektor obrázku</value></data>
+  <data name="TmDocumentEditor_ImageAltMissing"        xml:space="preserve"><value>Doplňte alternativní text kvůli přístupnosti.</value></data>
+  <data name="TmDocumentEditor_ImageLink"              xml:space="preserve"><value>Odkaz obrázku</value></data>
+  <data name="TmDocumentEditor_ImageHeight"            xml:space="preserve"><value>Výška</value></data>
+  <data name="TmDocumentEditor_ImageAlignment"         xml:space="preserve"><value>Zarovnání obrázku</value></data>
+  <data name="TmDocumentEditor_ImageAlignStart"        xml:space="preserve"><value>Začátek</value></data>
+  <data name="TmDocumentEditor_ImageAlignCenter"       xml:space="preserve"><value>Střed</value></data>
+  <data name="TmDocumentEditor_ImageAlignEnd"          xml:space="preserve"><value>Konec</value></data>
+  <data name="TmDocumentEditor_ImageToggleCaption"     xml:space="preserve"><value>Přepnout popisek</value></data>
+  <data name="TmDocumentEditor_ReplaceImage"           xml:space="preserve"><value>Nahradit obrázek</value></data>
+  <data name="TmDocumentEditor_ImageSize"              xml:space="preserve"><value>Velikost obrázku</value></data>
+  <data name="TmDocumentEditor_PasteReportSummary"     xml:space="preserve"><value>Vložení upravilo {0} položek.</value></data>
+  <data name="TmDocumentEditor_PasteReportShowDetails" xml:space="preserve"><value>Detaily</value></data>
+  <data name="TmDocumentEditor_PasteReportHideDetails" xml:space="preserve"><value>Skrýt</value></data>
+  <data name="TmDocumentEditor_PasteReportClose"       xml:space="preserve"><value>Zavřít report vložení</value></data>
+  <data name="TmDocumentEditor_ImageWrapPanelLabel"    xml:space="preserve"><value>Možnosti obtékání obrázku</value></data>
+  <data name="TmDocumentEditor_ImageWrapMode"          xml:space="preserve"><value>Obtékat text</value></data>
+  <data name="TmDocumentEditor_ImageWrapInline"        xml:space="preserve"><value>Vložený</value></data>
+  <data name="TmDocumentEditor_ImageWrapSquare"        xml:space="preserve"><value>Čtverec</value></data>
+  <data name="TmDocumentEditor_ImageWrapTopBottom"     xml:space="preserve"><value>Nahoře a dole</value></data>
+  <data name="TmDocumentEditor_ImageWrapInFrontOfText" xml:space="preserve"><value>Před textem</value></data>
+  <data name="TmDocumentEditor_ImagePosition"          xml:space="preserve"><value>Pozice</value></data>
+  <data name="TmDocumentEditor_ImagePositionLeft"      xml:space="preserve"><value>Vlevo</value></data>
+  <data name="TmDocumentEditor_ImagePositionRight"     xml:space="preserve"><value>Vpravo</value></data>
+  <data name="TmDocumentEditor_ImageDistanceTitle"     xml:space="preserve"><value>Vzdálenost od textu</value></data>
+  <data name="TmDocumentEditor_ImageLockAnchor"        xml:space="preserve"><value>Pohybovat s textem</value></data>
   <data name="TmDocumentEditor_PageBreak"              xml:space="preserve"><value>Konec stránky</value></data>
   <data name="TmDocumentEditor_WysiwygSurfaceLabel"    xml:space="preserve"><value>WYSIWYG plocha dokumentu</value></data>
   <data name="TmDocumentEditor_WysiwygScreenReaderHelp" xml:space="preserve"><value>Editovatelná plocha dokumentu. Pomocí Tab přecházíte mezi pásem karet, záhlavím, tělem, zápatím a komentáři.</value></data>
@@ -3078,10 +3217,33 @@
   <data name="TmDocumentEditor_WysiwygBodyLabel"       xml:space="preserve"><value>Tělo dokumentu, stránka {0}</value></data>
   <data name="TmDocumentEditor_WysiwygHeaderLabel"     xml:space="preserve"><value>Záhlaví, stránka {0}</value></data>
   <data name="TmDocumentEditor_WysiwygFooterLabel"     xml:space="preserve"><value>Zápatí, stránka {0}</value></data>
+  <data name="TmDocumentEditor_WysiwygBodyPlaceholder" xml:space="preserve"><value>Začněte psát</value></data>
+  <data name="TmDocumentEditor_WysiwygHeaderPlaceholder" xml:space="preserve"><value>Záhlaví</value></data>
+  <data name="TmDocumentEditor_WysiwygFooterPlaceholder" xml:space="preserve"><value>Zápatí</value></data>
+  <data name="TmDocumentEditor_WysiwygTableCellPlaceholder" xml:space="preserve"><value>Buňka</value></data>
+  <data name="TmDocumentEditor_WysiwygPageOverflowWarning" xml:space="preserve"><value>Obsah přetéká přes stránku</value></data>
+  <data name="TmDocumentEditor_InsertPageBreak"        xml:space="preserve"><value>Vložit konec stránky</value></data>
   <data name="TmDocumentEditor_WysiwygImageResizeHandleLabel" xml:space="preserve"><value>Změnit velikost obrázku</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackTitle"   xml:space="preserve"><value>WYSIWYG editor není dostupný</value></data>
   <data name="TmDocumentEditor_WysiwygFallbackMessage" xml:space="preserve"><value>WYSIWYG editační engine se nepodařilo načíst. Použijte prosím blokový editor nebo obnovte stránku.</value></data>
   <data name="TmDocumentEditor_WysiwygPatchFailed"       xml:space="preserve"><value>Dokument se nepodařilo aktualizovat. Zkuste to znovu nebo obnovte stránku.</value></data>
+  <data name="TmDocumentEditor_FindPlaceholder"         xml:space="preserve"><value>Hledat…</value></data>
+  <data name="TmDocumentEditor_ReplacePlaceholder"      xml:space="preserve"><value>Nahradit za…</value></data>
+  <data name="TmDocumentEditor_FindResultCount"         xml:space="preserve"><value>{0} z {1}</value></data>
+  <data name="TmDocumentEditor_FindNoResults"           xml:space="preserve"><value>0 výsledků</value></data>
+  <data name="TmDocumentEditor_FindNext"                xml:space="preserve"><value>Další shoda</value></data>
+  <data name="TmDocumentEditor_FindPrev"                xml:space="preserve"><value>Předchozí shoda</value></data>
+  <data name="TmDocumentEditor_FindClose"               xml:space="preserve"><value>Zavřít panel hledání</value></data>
+  <data name="TmDocumentEditor_FindReplaceOne"          xml:space="preserve"><value>Nahradit</value></data>
+  <data name="TmDocumentEditor_FindReplaceAll"          xml:space="preserve"><value>Nahradit vše</value></data>
+  <data name="TmDocumentEditor_FindCaseSensitive"       xml:space="preserve"><value>Rozlišovat velikost písmen</value></data>
+  <data name="TmDocumentEditor_FindWholeWord"           xml:space="preserve"><value>Celé slovo</value></data>
+  <data name="TmDocumentEditor_FindScopeLabel"          xml:space="preserve"><value>Rozsah</value></data>
+  <data name="TmDocumentEditor_FindScopeBody"           xml:space="preserve"><value>Tělo</value></data>
+  <data name="TmDocumentEditor_FindScopeHeadersFooters" xml:space="preserve"><value>Záhlaví a zápatí</value></data>
+  <data name="TmDocumentEditor_FindScopeComments"       xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmDocumentEditor_FindScopeAll"            xml:space="preserve"><value>Vše</value></data>
+  <data name="TmDocumentEditor_FindPanelLabel"          xml:space="preserve"><value>Najít a nahradit</value></data>
 
   <!-- Phase 4: Token Dropdown -->
   <data name="TmNotionTokenDropdown_Label"              xml:space="preserve"><value>Vložit token</value></data>

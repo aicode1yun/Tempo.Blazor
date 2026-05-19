@@ -33,6 +33,24 @@ public sealed class WysiwygEditorOptions
     /// <summary>Footer label template. Use {0} for the one-based page number.</summary>
     public string FooterLabel { get; set; } = "Footer, page {0}";
 
+    /// <summary>Placeholder shown when a document body page has no blocks.</summary>
+    public string BodyPlaceholder { get; set; } = "Start typing";
+
+    /// <summary>Placeholder shown when a header region is empty.</summary>
+    public string HeaderPlaceholder { get; set; } = "Header";
+
+    /// <summary>Placeholder shown when a footer region is empty.</summary>
+    public string FooterPlaceholder { get; set; } = "Footer";
+
+    /// <summary>Placeholder shown when a table cell is empty.</summary>
+    public string TableCellPlaceholder { get; set; } = "Cell";
+
+    /// <summary>Status text shown when a page overflows its printable area.</summary>
+    public string PageOverflowWarning { get; set; } = "Content overflows page";
+
+    /// <summary>Label for the overflow action that inserts a page break.</summary>
+    public string InsertPageBreakLabel { get; set; } = "Insert page break";
+
     /// <summary>Accessible label for floating image resize handles.</summary>
     public string ImageResizeHandleLabel { get; set; } = "Resize image";
 

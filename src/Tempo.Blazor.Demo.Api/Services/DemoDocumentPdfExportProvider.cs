@@ -118,7 +118,7 @@ public sealed class DemoDocumentPdfExportProvider : IDocumentPdfExportProvider
 
         if (options.IncludeSuggestions && document.Revisions.Count > 0)
         {
-            yield return $"Revisions: {document.Revisions.Count}";
+            yield return $"Revisions ({options.ReviewDisplayMode}): {document.Revisions.Count}";
         }
     }
 

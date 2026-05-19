@@ -1,5 +1,6 @@
 using DocumentFormat.OpenXml;
 using DocumentFormat.OpenXml.Packaging;
+using System.Text;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Internal;
 using W = DocumentFormat.OpenXml.Wordprocessing;
@@ -57,6 +58,8 @@ public sealed class DocxPackageReader
             return Result(doc);
         }
 
+        ReadProtectionSettings(doc, main);
+
         foreach (var relationship in main.HyperlinkRelationships)
         {
             _hyperlinks[relationship.Id] = relationship.Uri.ToString();
@@ -74,6 +77,36 @@ public sealed class DocxPackageReader
             {
                 doc.Blocks.Add(ReadTable(table));
             }
+            else if (element is W.SdtBlock sdtBlock)
+            {
+                var firstBlockIndex = doc.Blocks.Count;
+                foreach (var child in sdtBlock.GetFirstChild<W.SdtContentBlock>()?.Elements() ?? Enumerable.Empty<OpenXmlElement>())
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    if (child is W.Paragraph sdtParagraph)
+                    {
+                        doc.Blocks.AddRange(await ReadParagraphAsync(sdtParagraph, main, cancellationToken));
+                    }
+                    else if (child is W.Table sdtTable)
+                    {
+                        doc.Blocks.Add(ReadTable(sdtTable));
+                    }
+                }
+
+                if (TryReadEditableRegion(sdtBlock, doc.Blocks.Skip(firstBlockIndex).ToList(), out var marker))
+                {
+                    doc.IsProtected = true;
+                    doc.RestrictedMarkers.Add(marker);
+                }
+            }
+            else if (element is not W.SectionProperties)
+            {
+                _warnings.Add(Warning(
+                    "docx.unsupportedBodyElement",
+                    $"DOCX body element '{element.LocalName}' is not mapped into the editor model.",
+                    DocumentFormatCompatibilitySeverity.Warning,
+                    "word/document.xml"));
+            }
         }
 
         doc.HeadersFooters.AddRange(ReadHeadersFooters(main));
@@ -90,6 +123,50 @@ public sealed class DocxPackageReader
 
         return Result(doc);
     }
+
+    private static void ReadProtectionSettings(DocumentEditorDocument doc, MainDocumentPart main)
+    {
+        var protection = main.DocumentSettingsPart?.Settings?.GetFirstChild<W.DocumentProtection>();
+        if (protection?.Enforcement?.Value == true)
+        {
+            doc.IsProtected = true;
+        }
+    }
+
+    private static bool TryReadEditableRegion(W.SdtBlock sdtBlock, IReadOnlyList<DocumentBlock> blocks, out DocumentRestrictedMarker marker)
+    {
+        marker = new DocumentRestrictedMarker();
+        if (blocks.Count == 0)
+        {
+            return false;
+        }
+
+        var tag = sdtBlock.SdtProperties?.GetFirstChild<W.Tag>()?.Val?.Value;
+        if (string.IsNullOrWhiteSpace(tag) || !tag.StartsWith("tm-editable:", StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        var parts = tag.Split(':');
+        var markerId = parts.Length > 1 && !string.IsNullOrWhiteSpace(parts[1]) ? parts[1] : Guid.NewGuid().ToString("N");
+        var startOffset = parts.Length > 2 && int.TryParse(parts[2], out var parsedStart) ? parsedStart : 0;
+        var endOffset = parts.Length > 3 && int.TryParse(parts[3], out var parsedEnd) ? parsedEnd : GetBlockTextLength(blocks[^1]);
+        var label = sdtBlock.SdtProperties?.GetFirstChild<W.SdtAlias>()?.Val?.Value;
+
+        marker = new DocumentRestrictedMarker
+        {
+            Id = markerId,
+            StartBlockId = blocks[0].Id,
+            StartOffset = Math.Max(0, startOffset),
+            EndBlockId = blocks[^1].Id,
+            EndOffset = Math.Max(0, endOffset),
+            Label = label
+        };
+        return true;
+    }
+
+    private static int GetBlockTextLength(DocumentBlock block)
+        => DocumentModelText.GetBlockText(block).Length;
 
     private DocumentFormatImportResult Result(DocumentEditorDocument doc)
     {
@@ -142,6 +219,14 @@ public sealed class DocxPackageReader
         }
 
         var inlines = ReadInlines(paragraph.ChildElements);
+        if (blocks.Count == 1
+            && blocks[0].Content is ImageBlockContent imageBlock
+            && TryReadImageCaption(paragraph, inlines, out var caption))
+        {
+            imageBlock.Caption = caption;
+            inlines.Clear();
+        }
+
         if (inlines.Count > 0 || blocks.Count == 0)
         {
             blocks.Insert(0, new DocumentBlock
@@ -163,6 +248,39 @@ public sealed class DocxPackageReader
         }
 
         return blocks;
+    }
+
+    private static bool TryReadImageCaption(W.Paragraph paragraph, IReadOnlyList<InlineContent> inlines, out string caption)
+    {
+        caption = string.Empty;
+        var textAfterDrawing = new StringBuilder();
+        var seenDrawing = false;
+
+        foreach (var child in paragraph.ChildElements)
+        {
+            if (child.Descendants<W.Drawing>().Any())
+            {
+                seenDrawing = true;
+                continue;
+            }
+
+            if (seenDrawing)
+            {
+                foreach (var text in child.Descendants<W.Text>())
+                {
+                    textAfterDrawing.Append(text.Text);
+                }
+            }
+        }
+
+        caption = textAfterDrawing.ToString().Trim();
+        if (string.IsNullOrWhiteSpace(caption))
+        {
+            return false;
+        }
+
+        var inlineText = string.Concat(inlines.OfType<TextRun>().Select(run => run.Text)).Trim();
+        return string.Equals(inlineText, caption, StringComparison.Ordinal);
     }
 
     private static DocumentBlockType GetParagraphType(W.Paragraph paragraph, out int headingLevel, out bool ordered, out int indent)
@@ -318,6 +436,13 @@ public sealed class DocxPackageReader
 
     private DocumentBlock ReadTable(W.Table table)
     {
+        var tableProperties = table.GetFirstChild<W.TableProperties>();
+        var tableLayout = new TableLayoutContent
+        {
+            Width = TwipsToNullablePoints(tableProperties?.GetFirstChild<W.TableWidth>()?.Width?.Value),
+            Alignment = FromDocxTableAlignment(tableProperties?.GetFirstChild<W.TableJustification>()?.Val?.Value),
+            BackgroundColor = FromDocxColor(tableProperties?.GetFirstChild<W.Shading>()?.Fill?.Value)
+        };
         var rows = new List<TableRowContent>();
         foreach (var row in table.Elements<W.TableRow>())
         {
@@ -342,6 +467,9 @@ public sealed class DocxPackageReader
                     ColumnSpan = columnSpan,
                     RowSpan = rowSpan,
                     Merge = new TableCellMerge { IsOrigin = verticalMerge?.Val?.Value != W.MergedCellValues.Continue },
+                    Width = TwipsToNullablePoints(properties?.GetFirstChild<W.TableCellWidth>()?.Width?.Value),
+                    BackgroundColor = FromDocxColor(properties?.GetFirstChild<W.Shading>()?.Fill?.Value),
+                    VerticalAlignment = FromDocxCellVerticalAlignment(properties?.GetFirstChild<W.TableCellVerticalAlignment>()?.Val?.Value),
                     Blocks = blocks.Count == 0 ? [DocumentModelText.Paragraph(string.Empty)] : blocks
                 });
             }
@@ -353,8 +481,59 @@ public sealed class DocxPackageReader
         {
             Type = DocumentBlockType.Table,
             Order = _order++,
-            Content = new TableBlockContent { Rows = rows }
+            Content = new TableBlockContent { Layout = tableLayout, Rows = rows }
         };
+    }
+
+    private static double? TwipsToNullablePoints(string? value)
+    {
+        return double.TryParse(value, out var twips) && twips > 0
+            ? Math.Round(twips / 20d, 2)
+            : null;
+    }
+
+    private static TableHorizontalAlignment FromDocxTableAlignment(W.TableRowAlignmentValues? value)
+    {
+        if (value == W.TableRowAlignmentValues.Center)
+        {
+            return TableHorizontalAlignment.Center;
+        }
+
+        if (value == W.TableRowAlignmentValues.Right)
+        {
+            return TableHorizontalAlignment.Right;
+        }
+
+        return TableHorizontalAlignment.Left;
+    }
+
+    private static TableCellVerticalAlignment FromDocxCellVerticalAlignment(W.TableVerticalAlignmentValues? value)
+    {
+        if (value == W.TableVerticalAlignmentValues.Center)
+        {
+            return TableCellVerticalAlignment.Middle;
+        }
+
+        if (value == W.TableVerticalAlignmentValues.Bottom)
+        {
+            return TableCellVerticalAlignment.Bottom;
+        }
+
+        return TableCellVerticalAlignment.Top;
+    }
+
+    private static string? FromDocxColor(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value)
+            || value.Equals("auto", StringComparison.OrdinalIgnoreCase))
+        {
+            return null;
+        }
+
+        var color = value.Trim();
+        return color.Length == 6 && color.All(Uri.IsHexDigit)
+            ? $"#{color.ToUpperInvariant()}"
+            : null;
     }
 
     private async Task<ImageBlockContent?> ReadImageAsync(W.Drawing drawing, MainDocumentPart mainPart, CancellationToken cancellationToken)
@@ -432,6 +611,15 @@ public sealed class DocxPackageReader
                     ? DocumentWrapMode.InFrontOfText
                     : DocumentWrapMode.Square;
 
+        var hAlign = horizontal?.GetFirstChild<DW.HorizontalAlignment>()?.Text?.Trim().ToLowerInvariant();
+        DocumentImageHorizontalPosition? horizontalPosition = hAlign switch
+        {
+            "left" => DocumentImageHorizontalPosition.Left,
+            "center" => DocumentImageHorizontalPosition.Center,
+            "right" => DocumentImageHorizontalPosition.Right,
+            _ => null
+        };
+
         return new DocumentFloatingLayout
         {
             Inline = false,
@@ -441,7 +629,12 @@ public sealed class DocxPackageReader
             Y = EmuToPoint(vertical?.GetFirstChild<DW.PositionOffset>()?.Text),
             WrapMode = wrapMode,
             ZIndex = (int)(anchor.RelativeHeight?.Value ?? 0),
-            LockAnchor = anchor.Locked?.Value == true
+            LockAnchor = anchor.Locked?.Value == true,
+            HorizontalPosition = horizontalPosition,
+            DistanceLeft = EmuToPoint(anchor.DistanceFromLeft?.Value.ToString()),
+            DistanceRight = EmuToPoint(anchor.DistanceFromRight?.Value.ToString()),
+            DistanceTop = EmuToPoint(anchor.DistanceFromTop?.Value.ToString()),
+            DistanceBottom = EmuToPoint(anchor.DistanceFromBottom?.Value.ToString())
         };
     }
 

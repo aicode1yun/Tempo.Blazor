@@ -200,6 +200,76 @@ public partial class TmDocumentBlockRenderer : ComponentBase
         return styles.Count == 0 ? null : string.Join("; ", styles);
     }
 
+    private static string? GetTableStyle(TableBlockContent table)
+    {
+        var styles = new List<string>();
+        var layout = table.Layout;
+        if (layout.Width is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"width: {layout.Width.Value:0.##}px"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(layout.BackgroundColor))
+        {
+            styles.Add($"background-color: {layout.BackgroundColor}");
+        }
+
+        if (layout.CellPadding is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"--tm-document-table-cell-padding: {layout.CellPadding.Value:0.##}px"));
+        }
+
+        styles.Add(layout.Alignment switch
+        {
+            TableHorizontalAlignment.Center => "margin-left: auto; margin-right: auto",
+            TableHorizontalAlignment.Right => "margin-left: auto; margin-right: 0",
+            _ => "margin-left: 0; margin-right: auto"
+        });
+
+        return styles.Count == 0 ? null : string.Join("; ", styles);
+    }
+
+    private static string? GetTableCellStyle(TableCellContent cell)
+    {
+        var styles = new List<string>();
+        if (cell.Width is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"width: {cell.Width.Value:0.##}px"));
+        }
+
+        if (!string.IsNullOrWhiteSpace(cell.BackgroundColor))
+        {
+            styles.Add($"background-color: {cell.BackgroundColor}");
+        }
+
+        if (cell.Padding is > 0)
+        {
+            styles.Add(FormattableString.Invariant($"padding: {cell.Padding.Value:0.##}px"));
+        }
+
+        styles.Add(cell.VerticalAlignment switch
+        {
+            TableCellVerticalAlignment.Middle => "vertical-align: middle",
+            TableCellVerticalAlignment.Bottom => "vertical-align: bottom",
+            _ => "vertical-align: top"
+        });
+
+        AddBorder(styles, "top", cell.Borders.Top);
+        AddBorder(styles, "right", cell.Borders.Right);
+        AddBorder(styles, "bottom", cell.Borders.Bottom);
+        AddBorder(styles, "left", cell.Borders.Left);
+
+        return styles.Count == 0 ? null : string.Join("; ", styles);
+    }
+
+    private static void AddBorder(List<string> styles, string side, string? value)
+    {
+        if (!string.IsNullOrWhiteSpace(value))
+        {
+            styles.Add($"border-{side}: {value}");
+        }
+    }
+
     private static string ToCssToken(DocumentWrapMode value)
     {
         return value switch

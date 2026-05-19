@@ -152,8 +152,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
                                 Type = InlineMarkType.Revision,
                                 RevisionId = "contract-revision-scope",
                                 Value = "Insertion"
-                            },
-                            new InlineMark { Type = InlineMarkType.Highlight, Value = "#dcfce7" }
+                            }
                         ]
                     }
                 ]

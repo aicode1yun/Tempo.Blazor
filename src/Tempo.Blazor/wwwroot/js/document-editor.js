@@ -136,6 +136,37 @@
             handlers.set(element, handler);
         },
 
+        enableBeforeUnloadGuard() {
+            if (this._beforeUnloadHandler) return;
+            this._beforeUnloadHandler = function (e) {
+                e.preventDefault();
+                e.returnValue = '';
+            };
+            window.addEventListener('beforeunload', this._beforeUnloadHandler);
+        },
+
+        disableBeforeUnloadGuard() {
+            if (!this._beforeUnloadHandler) return;
+            window.removeEventListener('beforeunload', this._beforeUnloadHandler);
+            this._beforeUnloadHandler = null;
+        },
+
+        getBeforeUnloadGuardState() {
+            return {
+                active: !!this._beforeUnloadHandler
+            };
+        },
+
+        setFullscreen(fullscreen) {
+            if (fullscreen) {
+                document.body.classList.add('tm-document-editor--fullscreen');
+                document.body.style.overflow = 'hidden';
+            } else {
+                document.body.classList.remove('tm-document-editor--fullscreen');
+                document.body.style.overflow = '';
+            }
+        },
+
         detachPaste(element) {
             const handler = handlers.get(element);
             if (!element || !handler) {
@@ -181,6 +212,148 @@
                 endInlineIndex: 0,
                 endOffset: Math.max(start, end)
             };
+        }
+    };
+}());
+
+(function () {
+    'use strict';
+
+    const overflowControllers = new WeakMap();
+
+    function getOverflowedCommands(groupsEl) {
+        if (!groupsEl || groupsEl.scrollWidth <= groupsEl.clientWidth + 2) {
+            return [];
+        }
+
+        const containerRight = groupsEl.getBoundingClientRect().right;
+        const commands = [];
+        groupsEl.querySelectorAll('[data-command]').forEach(function (btn) {
+            if (btn.getBoundingClientRect().right > containerRight + 4) {
+                commands.push(btn.getAttribute('data-command'));
+            }
+        });
+
+        return commands;
+    }
+
+    window.tmDocumentEditorToolbar = {
+        createOverflowController(groupsEl, dotNetRef) {
+            if (!groupsEl || !dotNetRef) return;
+
+            const existing = overflowControllers.get(groupsEl);
+            if (existing) existing.disconnect();
+
+            function measure() {
+                const isOverflowing = groupsEl.scrollWidth > groupsEl.clientWidth + 2;
+                const commands = isOverflowing ? getOverflowedCommands(groupsEl) : [];
+                dotNetRef.invokeMethodAsync('SetOverflowingAsync', isOverflowing, commands);
+            }
+
+            const observer = new ResizeObserver(measure);
+            observer.observe(groupsEl);
+            overflowControllers.set(groupsEl, observer);
+            measure();
+        },
+
+        disposeOverflowController(groupsEl) {
+            if (!groupsEl) return;
+            const observer = overflowControllers.get(groupsEl);
+            if (observer) {
+                observer.disconnect();
+                overflowControllers.delete(groupsEl);
+            }
+        }
+    };
+}());
+
+(function () {
+    'use strict';
+
+    const MARGIN = 8;
+
+    function computePosition(anchorRect, elementWidth, elementHeight, placement) {
+        const vw = window.innerWidth || document.documentElement.clientWidth || 1024;
+        const vh = window.innerHeight || document.documentElement.clientHeight || 768;
+
+        let left, top;
+
+        if (placement === 'above') {
+            left = anchorRect.left;
+            top = anchorRect.top - elementHeight - MARGIN;
+        } else if (placement === 'right') {
+            left = anchorRect.right + MARGIN;
+            top = anchorRect.top;
+        } else if (placement === 'left') {
+            left = anchorRect.left - elementWidth - MARGIN;
+            top = anchorRect.top;
+        } else {
+            // default: 'below'
+            left = anchorRect.left;
+            top = anchorRect.bottom + MARGIN;
+        }
+
+        // Clamp to viewport with margin
+        left = Math.max(MARGIN, Math.min(left, vw - elementWidth - MARGIN));
+        top = Math.max(MARGIN, Math.min(top, vh - elementHeight - MARGIN));
+
+        return { left, top };
+    }
+
+    function applyPosition(element, anchorRect, placement) {
+        const w = element.offsetWidth || element.getBoundingClientRect().width || 0;
+        const h = element.offsetHeight || element.getBoundingClientRect().height || 0;
+        if (!w && !h) return; // element not yet measured — skip
+
+        const { left, top } = computePosition(anchorRect, w, h, placement);
+        element.style.position = 'fixed';
+        element.style.left = left + 'px';
+        element.style.top = top + 'px';
+    }
+
+    window.tmDocumentEditorFloating = {
+        createPositioner(element, anchorRect, options) {
+            if (!element || !anchorRect) return { dispose() {} };
+
+            const placement = (options && options.placement) || 'below';
+            const rect = {
+                left: Number(anchorRect.left) || 0,
+                top: Number(anchorRect.top) || 0,
+                right: Number(anchorRect.right) || 0,
+                bottom: Number(anchorRect.bottom) || 0
+            };
+
+            function reposition() {
+                applyPosition(element, rect, placement);
+            }
+
+            reposition();
+
+            window.addEventListener('scroll', reposition, { capture: true, passive: true });
+            window.addEventListener('resize', reposition, { passive: true });
+
+            return {
+                dispose() {
+                    window.removeEventListener('scroll', reposition, { capture: true });
+                    window.removeEventListener('resize', reposition);
+                }
+            };
+        },
+
+        placeAt(element, anchorRect, options) {
+            if (!element || !anchorRect) return;
+            const placement = (options && options.placement) || 'below';
+            applyPosition(element, {
+                left: Number(anchorRect.left) || 0,
+                top: Number(anchorRect.top) || 0,
+                right: Number(anchorRect.right) || 0,
+                bottom: Number(anchorRect.bottom) || 0
+            }, placement);
+        },
+
+        __testHooks: {
+            computePosition,
+            applyPosition
         }
     };
 }());

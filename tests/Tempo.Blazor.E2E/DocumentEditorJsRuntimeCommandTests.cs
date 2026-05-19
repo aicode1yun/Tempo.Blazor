@@ -68,7 +68,13 @@ public sealed class DocumentEditorJsRuntimeCommandTests : DocumentEditorE2ETestB
         Assert.IsTrue(await SelectInlineContentsAsync(page, "contract-scope-approved"));
 
         await page.Locator("[data-testid='document-align-right']").ClickAsync();
-        await Assertions.Expect(page.Locator("[data-testid='document-align-right']")).ToHaveAttributeAsync("aria-pressed", "true");
+        await page.WaitForFunctionAsync(
+            """
+            () => {
+                const block = document.querySelector('[data-testid="document-wysiwyg-host"] [data-block-id="contract-scope"]');
+                return (block?.style.textAlign || getComputedStyle(block).textAlign || '') === 'right';
+            }
+            """);
 
         var textAlign = await page.EvaluateAsync<string>(
             """

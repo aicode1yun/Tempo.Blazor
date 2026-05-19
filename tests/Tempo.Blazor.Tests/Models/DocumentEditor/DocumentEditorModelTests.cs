@@ -111,6 +111,197 @@ public class DocumentEditorModelTests
     }
 
     [Fact]
+    public void DocumentJson_RoundtripsImageFloatingLayoutAndRestrictedMarkers()
+    {
+        var document = DocumentEditorDocument.Empty("doc-1");
+        document.IsProtected = true;
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "paragraph-1",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = "inline-1", Text = "Editable protected text" }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "image-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/image.png",
+                FloatingLayout = new DocumentFloatingLayout
+                {
+                    Inline = false,
+                    WrapMode = DocumentWrapMode.Square,
+                    HorizontalPosition = DocumentImageHorizontalPosition.Right,
+                    DistanceLeft = 12,
+                    DistanceRight = 4,
+                    DistanceTop = 2,
+                    DistanceBottom = 8
+                }
+            }
+        });
+        document.RestrictedMarkers.Add(new DocumentRestrictedMarker
+        {
+            Id = "marker-1",
+            StartBlockId = "paragraph-1",
+            StartOffset = 0,
+            EndBlockId = "paragraph-1",
+            EndOffset = 8,
+            Label = "Editable"
+        });
+
+        var json = DocumentEditorJson.Serialize(document);
+        var restored = DocumentEditorJson.Deserialize(json);
+
+        restored.IsProtected.Should().BeTrue();
+        restored.RestrictedMarkers.Should().ContainSingle(marker =>
+            marker.Id == "marker-1"
+            && marker.StartBlockId == "paragraph-1"
+            && marker.EndOffset == 8
+            && marker.Label == "Editable");
+        var restoredImage = restored.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        restoredImage.FloatingLayout.Should().NotBeNull();
+        restoredImage.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
+        restoredImage.FloatingLayout.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
+        restoredImage.FloatingLayout.DistanceLeft.Should().Be(12);
+        restoredImage.FloatingLayout.DistanceRight.Should().Be(4);
+    }
+
+    [Fact]
+    public void Phase19_DocumentJson_RoundtripsImageTableAndCellPropertiesWithoutViewOnlyState()
+    {
+        var document = DocumentEditorDocument.Empty("phase19-model");
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "image-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "https://cdn.test/image.png",
+                AltText = "Diagram",
+                Caption = "Architecture caption",
+                LinkUrl = "https://example.test/diagram",
+                Size = new DocumentImageSize { Width = 320, Height = 180, LockAspectRatio = true },
+                FloatingLayout = new DocumentFloatingLayout
+                {
+                    Inline = false,
+                    WrapMode = DocumentWrapMode.Square,
+                    HorizontalPosition = DocumentImageHorizontalPosition.Right,
+                    DistanceLeft = 12,
+                    DistanceRight = 6
+                }
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "table-1",
+            Type = DocumentBlockType.Table,
+            Content = new TableBlockContent
+            {
+                Layout = new TableLayoutContent
+                {
+                    Width = 420,
+                    Alignment = TableHorizontalAlignment.Center,
+                    CellPadding = 8,
+                    BackgroundColor = "#f8fafc",
+                    Borders = new TableCellBorders { Top = "1px solid #111827", Bottom = "1px solid #111827" }
+                },
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent
+                            {
+                                Id = "cell-1",
+                                IsHeader = true,
+                                Width = 140,
+                                BackgroundColor = "#ffef9a",
+                                VerticalAlignment = TableCellVerticalAlignment.Middle,
+                                Padding = 10,
+                                Borders = new TableCellBorders { Left = "2px solid #0f172a" },
+                                Blocks = [CreateParagraph("cell-p", "Cell text")]
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        var json = DocumentEditorJson.Serialize(document);
+        var restored = DocumentEditorJson.Deserialize(json);
+
+        var image = restored.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        image.Caption.Should().Be("Architecture caption");
+        image.LinkUrl.Should().Be("https://example.test/diagram");
+        image.Size.Width.Should().Be(320);
+        image.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
+        image.FloatingLayout.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
+
+        var table = restored.Blocks.Select(block => block.Content).OfType<TableBlockContent>().Single();
+        table.Layout.Width.Should().Be(420);
+        table.Layout.Alignment.Should().Be(TableHorizontalAlignment.Center);
+        table.Layout.CellPadding.Should().Be(8);
+        table.Layout.BackgroundColor.Should().Be("#f8fafc");
+        var cell = table.Rows[0].Cells[0];
+        cell.IsHeader.Should().BeTrue();
+        cell.Width.Should().Be(140);
+        cell.BackgroundColor.Should().Be("#ffef9a");
+        cell.VerticalAlignment.Should().Be(TableCellVerticalAlignment.Middle);
+        cell.Padding.Should().Be(10);
+
+        json.Should().NotContain("showNonPrintingCharacters");
+        json.Should().NotContain("ShowNonPrintingCharacters");
+    }
+
+    [Fact]
+    public void Phase19_DocumentJson_NormalizeRepairsNullRestrictedMarkersAndExcludesTransientMarkersFromContentJson()
+    {
+        const string json = """
+            {
+              "SchemaVersion": 1,
+              "DocumentId": "phase19-null-markers",
+              "RestrictedMarkers": null,
+              "Blocks": [
+                {
+                  "Type": 0,
+                  "Content": { "$type": "paragraph", "Inlines": [] }
+                }
+              ]
+            }
+            """;
+        var store = new DocumentMarkerStore();
+        store.Add(new DocumentMarker
+        {
+            Id = "search-transient",
+            Type = DocumentMarkerType.Search,
+            AffectsData = false,
+            Source = DocumentMarkerSource.Transient,
+            Range = DocumentMarkerRange.InBlock("block-1", 0, 4)
+        });
+        store.Add(new DocumentMarker
+        {
+            Id = "comment-data",
+            Type = DocumentMarkerType.Comment,
+            AffectsData = true,
+            Range = DocumentMarkerRange.InBlock("block-1", 0, 4)
+        });
+
+        var restored = DocumentEditorJson.Deserialize(json);
+        var normalizedJson = DocumentEditorJson.Normalize(json);
+
+        restored.RestrictedMarkers.Should().BeEmpty();
+        normalizedJson.Should().NotContain("search-transient");
+        store.GetPersistentMarkers().Select(marker => marker.Id).Should().Equal("comment-data");
+    }
+
+    [Fact]
     public void DocumentJson_RoundtripsEditingAndExportMetadata()
     {
         var document = DocumentEditorDocument.Empty("doc-1");

@@ -1,3 +1,5 @@
+using Tempo.Blazor.DocumentEditor.Models;
+
 namespace Tempo.Blazor.Components.DocumentEditor.Wysiwyg.Model;
 
 /// <summary>Abstract base for all block-level nodes.</summary>
@@ -80,6 +82,21 @@ public class TableCell
 
     /// <summary>Cell content blocks.</summary>
     public List<Block> Blocks { get; init; } = new();
+
+    /// <summary>Optional cell width.</summary>
+    public double? Width { get; set; }
+
+    /// <summary>Optional cell background color.</summary>
+    public string? BackgroundColor { get; set; }
+
+    /// <summary>Vertical alignment for cell content.</summary>
+    public TableCellVerticalAlignment VerticalAlignment { get; set; }
+
+    /// <summary>Optional cell padding.</summary>
+    public double? Padding { get; set; }
+
+    /// <summary>Cell border styles.</summary>
+    public TableCellBorders Borders { get; set; } = new();
 }
 
 /// <summary>Table properties.</summary>
@@ -90,6 +107,18 @@ public class TableProperties
 
     /// <summary>Border style.</summary>
     public string? BorderStyle { get; set; }
+
+    /// <summary>Horizontal table alignment.</summary>
+    public TableHorizontalAlignment Alignment { get; set; }
+
+    /// <summary>Default cell padding.</summary>
+    public double? CellPadding { get; set; }
+
+    /// <summary>Optional table background color.</summary>
+    public string? BackgroundColor { get; set; }
+
+    /// <summary>Table border styles.</summary>
+    public TableCellBorders Borders { get; set; } = new();
 }
 
 /// <summary>Image block.</summary>

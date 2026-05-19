@@ -176,13 +176,26 @@ public class DocumentSerializer
     {
         return new TableBlockContent
         {
+            Layout = new TableLayoutContent
+            {
+                Width = ParseNullableDouble(table.TableProperties?.Width),
+                Alignment = table.TableProperties?.Alignment ?? TableHorizontalAlignment.Left,
+                CellPadding = table.TableProperties?.CellPadding,
+                BackgroundColor = table.TableProperties?.BackgroundColor,
+                Borders = table.TableProperties?.Borders ?? new TableCellBorders()
+            },
             Rows = table.Rows.Select(r => new TableRowContent
             {
                 Cells = r.Cells.Select(c => new TableCellContent
                 {
                     Blocks = c.Blocks.Select(ToPersistenceBlock).ToList(),
                     ColumnSpan = c.ColumnSpan,
-                    RowSpan = c.RowSpan
+                    RowSpan = c.RowSpan,
+                    Width = c.Width,
+                    BackgroundColor = c.BackgroundColor,
+                    Borders = c.Borders,
+                    VerticalAlignment = c.VerticalAlignment,
+                    Padding = c.Padding
                 }).ToList()
             }).ToList()
         };
@@ -267,7 +280,19 @@ public class DocumentSerializer
 
     private static Wyg.TableBlock FromPersistenceTableBlock(TableBlockContent? content)
     {
-        var table = new Wyg.TableBlock();
+        var table = new Wyg.TableBlock
+        {
+            TableProperties = content?.Layout is { } layout
+                ? new Wyg.TableProperties
+                {
+                    Width = layout.Width?.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                    Alignment = layout.Alignment,
+                    CellPadding = layout.CellPadding,
+                    BackgroundColor = layout.BackgroundColor,
+                    Borders = layout.Borders
+                }
+                : null
+        };
         if (content?.Rows is null) return table;
 
         foreach (var row in content.Rows)
@@ -278,7 +303,12 @@ public class DocumentSerializer
                 var tableCell = new Wyg.TableCell
                 {
                     ColumnSpan = cell.ColumnSpan,
-                    RowSpan = cell.RowSpan
+                    RowSpan = cell.RowSpan,
+                    Width = cell.Width,
+                    BackgroundColor = cell.BackgroundColor,
+                    Borders = cell.Borders,
+                    VerticalAlignment = cell.VerticalAlignment,
+                    Padding = cell.Padding
                 };
                 foreach (var block in cell.Blocks)
                 {
@@ -289,6 +319,18 @@ public class DocumentSerializer
             table.Rows.Add(tableRow);
         }
         return table;
+    }
+
+    private static double? ParseNullableDouble(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return null;
+        }
+
+        return double.TryParse(value, System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var parsed)
+            ? parsed
+            : null;
     }
 
     private static Wyg.Inline FromPersistenceInline(InlineContent inline)

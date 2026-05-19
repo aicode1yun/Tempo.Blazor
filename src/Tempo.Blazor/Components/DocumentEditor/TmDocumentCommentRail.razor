@@ -8,7 +8,7 @@
     <header class="tm-document-comment-rail__header">
         <div>
             <h3>@Loc["TmDocumentEditor_Comments"]</h3>
-            <span>@Loc["TmDocumentEditor_CommentCount", Comments.Count]</span>
+            <span>@Loc["TmDocumentEditor_CommentCountVisible", VisibleComments.Count, Comments.Count]</span>
         </div>
         @if (CanComment)
         {
@@ -20,6 +20,31 @@
             </button>
         }
     </header>
+
+    <div class="tm-document-comment-rail__controls" data-testid="document-comment-controls">
+        <label class="tm-document-comment-rail__field">
+            <span>@Loc["TmDocumentEditor_CommentFilter"]</span>
+            <select value="@Filter"
+                    disabled="@IsBusy"
+                    @onchange="HandleFilterChangedAsync"
+                    data-testid="document-comment-filter">
+                <option value="@DocumentCommentFilter.All">@Loc["TmDocumentEditor_CommentFilterAll"]</option>
+                <option value="@DocumentCommentFilter.Open">@Loc["TmDocumentEditor_CommentFilterOpen"]</option>
+                <option value="@DocumentCommentFilter.Resolved">@Loc["TmDocumentEditor_CommentFilterResolved"]</option>
+                <option value="@DocumentCommentFilter.Mine">@Loc["TmDocumentEditor_CommentFilterMine"]</option>
+            </select>
+        </label>
+        <label class="tm-document-comment-rail__field">
+            <span>@Loc["TmDocumentEditor_CommentSort"]</span>
+            <select value="@SortMode"
+                    disabled="@IsBusy"
+                    @onchange="HandleSortChangedAsync"
+                    data-testid="document-comment-sort">
+                <option value="@DocumentCommentSortMode.Position">@Loc["TmDocumentEditor_CommentSortPosition"]</option>
+                <option value="@DocumentCommentSortMode.Time">@Loc["TmDocumentEditor_CommentSortTime"]</option>
+            </select>
+        </label>
+    </div>
 
     @if (!string.IsNullOrWhiteSpace(StatusMessage))
     {
@@ -50,7 +75,7 @@
             </section>
         }
 
-        @if (Comments.Count == 0)
+        @if (VisibleComments.Count == 0)
         {
             <div class="tm-document-comment-rail__empty" data-testid="document-comment-empty">
                 @Loc["TmDocumentEditor_NoComments"]
@@ -59,7 +84,7 @@
         else
         {
             <div class="tm-document-comment-rail__list" data-testid="document-comment-list">
-                @foreach (var comment in OrderedComments)
+                @foreach (var comment in VisibleComments)
                 {
                     <TmDocumentCommentThread Comment="@comment"
                                              IsSelected="@(comment.Id == SelectedCommentId)"
@@ -92,6 +117,18 @@
 
     /// <summary>Selected comment thread id.</summary>
     [Parameter] public string? SelectedCommentId { get; set; }
+
+    /// <summary>Current comment filter.</summary>
+    [Parameter] public DocumentCommentFilter Filter { get; set; } = DocumentCommentFilter.All;
+
+    /// <summary>Raised when the comment filter changes.</summary>
+    [Parameter] public EventCallback<DocumentCommentFilter> FilterChanged { get; set; }
+
+    /// <summary>Current comment sort mode.</summary>
+    [Parameter] public DocumentCommentSortMode SortMode { get; set; } = DocumentCommentSortMode.Position;
+
+    /// <summary>Raised when the comment sort mode changes.</summary>
+    [Parameter] public EventCallback<DocumentCommentSortMode> SortModeChanged { get; set; }
 
     /// <summary>Whether comments are loading.</summary>
     [Parameter] public bool IsLoading { get; set; }
@@ -144,9 +181,8 @@
     /// <summary>Raised when a comment is selected.</summary>
     [Parameter] public EventCallback<string> OnSelectComment { get; set; }
 
-    private IEnumerable<DocumentComment> OrderedComments => Comments
-        .OrderBy(comment => comment.Status == DocumentCommentStatus.Resolved)
-        .ThenByDescending(comment => comment.Entries.FirstOrDefault()?.CreatedAt ?? DateTimeOffset.MinValue);
+    private IReadOnlyList<DocumentComment> VisibleComments
+        => DocumentCommentComparer.Apply(Comments, Filter, SortMode, CurrentAuthorId);
 
     private Task CreateAsync(string text)
     {
@@ -167,5 +203,29 @@
             DocumentCommentAnchorType.Block => Loc["TmDocumentEditor_BlockCommentAnchor", anchor.BlockId ?? Loc["TmDocumentEditor_UnknownAnchor"]],
             _ => Loc["TmDocumentEditor_CommentAnchor"]
         };
+    }
+
+    private Task HandleFilterChangedAsync(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        if (!Enum.TryParse<DocumentCommentFilter>(value, out var filter))
+        {
+            filter = DocumentCommentFilter.All;
+        }
+
+        Filter = filter;
+        return FilterChanged.InvokeAsync(filter);
+    }
+
+    private Task HandleSortChangedAsync(ChangeEventArgs args)
+    {
+        var value = args.Value?.ToString();
+        if (!Enum.TryParse<DocumentCommentSortMode>(value, out var sortMode))
+        {
+            sortMode = DocumentCommentSortMode.Position;
+        }
+
+        SortMode = sortMode;
+        return SortModeChanged.InvokeAsync(sortMode);
     }
 }

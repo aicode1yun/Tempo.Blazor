@@ -1,0 +1,134 @@
+using System.Diagnostics;
+using FluentAssertions;
+
+namespace Tempo.Blazor.Tests.DocumentEditor;
+
+public sealed class DocumentEditorRuntimePhase15SurfaceJavaScriptTests
+{
+    [Fact]
+    public async Task Phase15_PageMetricsNonPrintingAndActiveHeadingHelpers()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            const metrics = hooks.buildPageMetrics(
+                [
+                    { index: 0, blockIds: ['h1', 'p1'] },
+                    { index: 1, blockIds: ['h2'] },
+                    { index: 2, blockIds: ['p3'] }
+                ],
+                [0, 2],
+                [2],
+                1);
+
+            assert.strictEqual(metrics.TotalPages, 3);
+            assert.strictEqual(metrics.RenderedPages, 2);
+            assert.strictEqual(metrics.VirtualizedPages, 1);
+            assert.strictEqual(metrics.ActivePageIndex, 1);
+            assert.strictEqual(metrics.Pages[1].IsVirtual, true);
+            assert.strictEqual(metrics.Pages[2].HasOverflow, true);
+            assert.deepStrictEqual(JSON.parse(JSON.stringify(metrics.Pages[0].BlockIds)), ['h1', 'p1']);
+
+            assert.strictEqual(hooks.formatNonPrintingText('A B\tC\n'), 'A·B→C¶\n');
+            assert.strictEqual(hooks.findActiveHeadingBlockIdFromRects([
+                { id: 'h1', top: -20 },
+                { id: 'h2', top: 90 },
+                { id: 'h3', top: 260 }
+            ], 120), 'h2');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    private static string GetWysiwygScriptPath()
+    {
+        var root = FindRepositoryRoot();
+        return Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+    }
+
+    private static string FindRepositoryRoot()
+    {
+        var directory = new DirectoryInfo(AppContext.BaseDirectory);
+        while (directory is not null)
+        {
+            if (File.Exists(Path.Combine(directory.FullName, "TempoBlazor.slnx")))
+            {
+                return directory.FullName;
+            }
+
+            directory = directory.Parent;
+        }
+
+        throw new InvalidOperationException("Repository root was not found.");
+    }
+
+    private static bool IsNodeAvailable()
+    {
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "node",
+                ArgumentList = { "--version" },
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            });
+            process?.WaitForExit(3000);
+            return process?.ExitCode == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static async Task<(int ExitCode, string StandardOutput, string StandardError)> RunNodeAsync(string scriptPath, string nodeScript)
+    {
+        var tempFile = Path.Combine(Path.GetTempPath(), $"tm-doc-runtime-phase15-{Guid.NewGuid():N}.js");
+        await File.WriteAllTextAsync(tempFile, nodeScript);
+        try
+        {
+            using var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "node",
+                ArgumentList = { tempFile, scriptPath },
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            })!;
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            var stderr = await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            return (process.ExitCode, stdout, stderr);
+        }
+        finally
+        {
+            File.Delete(tempFile);
+        }
+    }
+}

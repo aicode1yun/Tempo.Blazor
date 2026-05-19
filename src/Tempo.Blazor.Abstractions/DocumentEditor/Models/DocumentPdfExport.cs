@@ -28,6 +28,9 @@ public sealed class DocumentPdfExportOptions
     /// <summary>Whether comments should be included in the exported PDF.</summary>
     public bool IncludeComments { get; set; } = true;
 
+    /// <summary>Tracked changes display mode requested for the exported PDF.</summary>
+    public DocumentReviewDisplayMode ReviewDisplayMode { get; set; } = DocumentReviewDisplayMode.AllMarkup;
+
     /// <summary>Page setup used by the PDF renderer.</summary>
     public DocumentPdfPageSetupOptions PageSetup { get; set; } = new();
 }

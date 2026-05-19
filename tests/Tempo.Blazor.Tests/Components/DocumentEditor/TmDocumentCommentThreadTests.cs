@@ -1,0 +1,63 @@
+using Bunit;
+using FluentAssertions;
+using Tempo.Blazor.Components.DocumentEditor;
+using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Components.DocumentEditor;
+
+public class TmDocumentCommentThreadTests : LocalizationTestBase
+{
+    [Fact]
+    public void Thread_CollapsesResolvedCommentByDefault()
+    {
+        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+            .Add(p => p.Comment, Comment(DocumentCommentStatus.Resolved)));
+
+        cut.Find("[data-testid='document-comment-thread-collapsed']").TextContent.Should().Contain("Resolved text");
+        cut.FindAll("[data-testid='document-comment-entry']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Thread_ExpandsResolvedComment()
+    {
+        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+            .Add(p => p.Comment, Comment(DocumentCommentStatus.Resolved)));
+
+        cut.Find("[data-testid='document-comment-expand']").Click();
+
+        cut.Find("[data-testid='document-comment-thread-expanded']").TextContent.Should().Contain("Resolved text");
+        cut.FindAll("[data-testid='document-comment-entry']").Should().HaveCount(1);
+    }
+
+    [Fact]
+    public void Thread_ReopensResolvedCommentFromCollapsedState()
+    {
+        string? reopened = null;
+        var comment = Comment(DocumentCommentStatus.Resolved);
+        var cut = RenderComponent<TmDocumentCommentThread>(parameters => parameters
+            .Add(p => p.Comment, comment)
+            .Add(p => p.OnReopen, id => reopened = id));
+
+        cut.Find("[data-testid='document-comment-reopen']").Click();
+
+        reopened.Should().Be(comment.Id);
+    }
+
+    private static DocumentComment Comment(DocumentCommentStatus status)
+        => new()
+        {
+            Id = "comment-1",
+            Status = status,
+            Anchor = new DocumentCommentAnchor { BlockId = "block-1" },
+            Entries =
+            [
+                new DocumentCommentEntry
+                {
+                    Author = new DocumentEditorAuthor { Id = "author-1", DisplayName = "Author" },
+                    Text = "Resolved text",
+                    CreatedAt = DateTimeOffset.Parse("2026-05-17T08:00:00Z")
+                }
+            ]
+        };
+}

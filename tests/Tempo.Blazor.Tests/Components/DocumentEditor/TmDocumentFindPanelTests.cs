@@ -1,0 +1,310 @@
+using Bunit;
+using FluentAssertions;
+using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
+using Tempo.Blazor.Components.DocumentEditor;
+using Tempo.Blazor.DocumentEditor.Models;
+using Tempo.Blazor.Tests.Localization;
+
+namespace Tempo.Blazor.Tests.Components.DocumentEditor;
+
+public sealed class TmDocumentFindPanelTests : LocalizationTestBase
+{
+    private static DocumentEditorDocument EmptyDocument() => new();
+
+    // ─── Rendering ───────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_RendersWithTestId()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        cut.Find("[data-testid='document-find-panel']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Panel_HasSearchInput()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        cut.Find("[data-testid='document-find-input']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Panel_HasNextAndPreviousButtons()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        cut.Find("[data-testid='document-find-next']").Should().NotBeNull();
+        cut.Find("[data-testid='document-find-prev']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Panel_HasCloseButton()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        cut.Find("[data-testid='document-find-close']").Should().NotBeNull();
+    }
+
+    // ─── Show/Hide replace ───────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_ReplaceRowHiddenByDefault()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        cut.FindAll("[data-testid='document-replace-input']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void Panel_ShowReplace_ShowsReplaceRow()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument())
+            .Add(x => x.ShowReplace, true));
+
+        cut.Find("[data-testid='document-replace-input']").Should().NotBeNull();
+    }
+
+    // ─── Result count ────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_WithNoDocument_ShowsNoResultsText()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        var count = cut.Find("[data-testid='document-find-count']");
+        count.TextContent.Should().NotBeNullOrWhiteSpace();
+    }
+
+    [Fact]
+    public void Panel_Search_ShowsResultCount()
+    {
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "Hello world, hello!" }]
+                    }
+                }
+            ]
+        };
+
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc));
+
+        cut.Find("[data-testid='document-find-input']").Input("hello");
+
+        var count = cut.Find("[data-testid='document-find-count']");
+        count.TextContent.Should().Contain("2");
+    }
+
+    // ─── Close callback ───────────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_CloseButton_InvokesOnClose()
+    {
+        var closed = false;
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument())
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
+
+        cut.Find("[data-testid='document-find-close']").Click();
+
+        closed.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Panel_EscapeKey_InvokesOnClose()
+    {
+        var closed = false;
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument())
+            .Add(x => x.OnClose, EventCallback.Factory.Create(this, () => closed = true)));
+
+        cut.Find("[data-testid='document-find-panel']")
+            .KeyDown(new KeyboardEventArgs { Key = "Escape" });
+
+        closed.Should().BeTrue();
+    }
+
+    // ─── Navigation ──────────────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_NextButton_AdvancesActiveIndex()
+    {
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "cat and cat" }]
+                    }
+                }
+            ]
+        };
+
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc));
+
+        cut.Find("[data-testid='document-find-input']").Input("cat");
+        cut.Find("[data-testid='document-find-next']").Click();
+
+        // After clicking next once with 2 results, active index should be 1 → "2 of 2"
+        var count = cut.Find("[data-testid='document-find-count']");
+        count.TextContent.Should().Contain("2 of 2");
+    }
+
+    [Fact]
+    public void Panel_RendersSearchScopeSelector()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        var select = cut.Find("[data-testid='document-find-scope']");
+        select.TextContent.Should().Contain("Body");
+        select.TextContent.Should().Contain("Headers and footers");
+        select.TextContent.Should().Contain("Comments");
+    }
+
+    [Fact]
+    public void Panel_ScopeSelector_SearchesHeaderFooter()
+    {
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "body" }] }
+                }
+            ],
+            HeadersFooters =
+            [
+                new DocumentHeaderFooter
+                {
+                    Blocks =
+                    [
+                        new DocumentBlock
+                        {
+                            Id = "h1",
+                            Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "header secret" }] }
+                        }
+                    ]
+                }
+            ]
+        };
+
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc));
+
+        cut.Find("[data-testid='document-find-input']").Input("secret");
+        cut.Find("[data-testid='document-find-scope']").Change(DocumentSearchScope.HeadersFooters.ToString());
+
+        cut.Find("[data-testid='document-find-count']").TextContent.Should().Contain("1 of 1");
+    }
+
+    [Fact]
+    public void Panel_MultipleResults_RendersClickableResultList()
+    {
+        DocumentSearchResult? active = null;
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "cat dog cat" }]
+                    }
+                }
+            ]
+        };
+
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc)
+            .Add(x => x.OnActiveResultChanged, EventCallback.Factory.Create<DocumentSearchResult>(this, r => active = r)));
+
+        cut.Find("[data-testid='document-find-input']").Input("cat");
+        cut.FindAll("[data-testid='document-find-result']").Should().HaveCount(2);
+        cut.FindAll("[data-testid='document-find-result']")[1].Click();
+
+        active.Should().NotBeNull();
+        active!.Index.Should().Be(1);
+    }
+
+    [Fact]
+    public void Panel_ReplaceOne_RequestsRuntimeBridgeAndDoesNotMutateDocumentDirectly()
+    {
+        DocumentFindReplaceRequest? request = null;
+        var doc = new DocumentEditorDocument
+        {
+            Blocks =
+            [
+                new DocumentBlock
+                {
+                    Id = "b1",
+                    Content = new ParagraphBlockContent
+                    {
+                        Inlines = [new TextRun { Text = "hello world" }]
+                    }
+                }
+            ]
+        };
+
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, doc)
+            .Add(x => x.ShowReplace, true)
+            .Add(x => x.OnReplaceOneRequested, EventCallback.Factory.Create<DocumentFindReplaceRequest>(this, r => request = r)));
+
+        cut.Find("[data-testid='document-find-input']").Input("world");
+        cut.Find("[data-testid='document-replace-input']").Change("Tempo");
+        cut.Find("[data-testid='document-find-replace-one']").Click();
+
+        request.Should().NotBeNull();
+        request!.Replacement.Should().Be("Tempo");
+        request.ActiveResult!.BlockId.Should().Be("b1");
+        ((ParagraphBlockContent)doc.Blocks[0].Content).Inlines.OfType<TextRun>().Single().Text.Should().Be("hello world");
+    }
+
+    // ─── ARIA / accessibility ─────────────────────────────────────────────────
+
+    [Fact]
+    public void Panel_HasRoleAndAriaLabel()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        var panel = cut.Find("[data-testid='document-find-panel']");
+        panel.GetAttribute("role").Should().Be("search");
+    }
+
+    [Fact]
+    public void Panel_NextButton_DisabledWhenNoResults()
+    {
+        var cut = RenderComponent<TmDocumentFindPanel>(p => p
+            .Add(x => x.Document, EmptyDocument()));
+
+        var nextBtn = cut.Find("[data-testid='document-find-next']");
+        nextBtn.HasAttribute("disabled").Should().BeTrue();
+    }
+}

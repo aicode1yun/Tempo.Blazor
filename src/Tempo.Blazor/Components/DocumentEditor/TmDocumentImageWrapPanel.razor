@@ -1,0 +1,140 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+
+<div class="tm-document-image-wrap-panel"
+     data-testid="document-image-wrap-panel"
+     role="toolbar"
+     aria-label="@Loc["TmDocumentEditor_ImageWrapPanelLabel"]">
+
+    <div class="tm-document-image-wrap-panel__group">
+        <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImageWrapMode"]</span>
+
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Inline ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-inline"
+                title="@Loc["TmDocumentEditor_ImageWrapInline"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Inline)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Inline)">
+            @Loc["TmDocumentEditor_ImageWrapInline"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.Square ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-square"
+                title="@Loc["TmDocumentEditor_ImageWrapSquare"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.Square)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.Square)">
+            @Loc["TmDocumentEditor_ImageWrapSquare"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.TopBottom ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-top-bottom"
+                title="@Loc["TmDocumentEditor_ImageWrapTopBottom"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.TopBottom)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.TopBottom)">
+            @Loc["TmDocumentEditor_ImageWrapTopBottom"]
+        </button>
+
+        <button class="tm-document-image-wrap-panel__btn @(CurrentWrapMode == DocumentWrapMode.InFrontOfText ? "tm-document-image-wrap-panel__btn--active" : "")"
+                data-testid="document-image-wrap-in-front"
+                title="@Loc["TmDocumentEditor_ImageWrapInFrontOfText"]"
+                aria-pressed="@(CurrentWrapMode == DocumentWrapMode.InFrontOfText)"
+                @onclick="() => OnWrapModeChanged.InvokeAsync(DocumentWrapMode.InFrontOfText)">
+            @Loc["TmDocumentEditor_ImageWrapInFrontOfText"]
+        </button>
+    </div>
+
+    @if (CurrentWrapMode is DocumentWrapMode.Square or DocumentWrapMode.Tight or DocumentWrapMode.Through)
+    {
+        <div class="tm-document-image-wrap-panel__group">
+            <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImagePosition"]</span>
+
+            <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left ? "tm-document-image-wrap-panel__btn--active" : "")"
+                    data-testid="document-image-position-left"
+                    title="@Loc["TmDocumentEditor_ImagePositionLeft"]"
+                    aria-pressed="@(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Left)"
+                    @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Left)">
+                @Loc["TmDocumentEditor_ImagePositionLeft"]
+            </button>
+
+            <button class="tm-document-image-wrap-panel__btn @(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right ? "tm-document-image-wrap-panel__btn--active" : "")"
+                    data-testid="document-image-position-right"
+                    title="@Loc["TmDocumentEditor_ImagePositionRight"]"
+                    aria-pressed="@(CurrentHorizontalPosition == DocumentImageHorizontalPosition.Right)"
+                    @onclick="() => OnHorizontalPositionChanged.InvokeAsync(DocumentImageHorizontalPosition.Right)">
+                @Loc["TmDocumentEditor_ImagePositionRight"]
+            </button>
+        </div>
+    }
+
+    @if (CurrentWrapMode != DocumentWrapMode.Inline)
+    {
+        <div class="tm-document-image-wrap-panel__group tm-document-image-wrap-panel__group--distance"
+             data-testid="document-image-distance-group">
+            <span class="tm-document-image-wrap-panel__label">@Loc["TmDocumentEditor_ImageDistanceTitle"]</span>
+
+            <div class="tm-document-image-wrap-panel__distance-fields">
+                <label class="tm-document-image-wrap-panel__distance-field">
+                    <span class="tm-document-image-wrap-panel__distance-axis" aria-hidden="true">L</span>
+                    <input class="tm-document-image-wrap-panel__distance-input"
+                           type="number" min="0" step="1"
+                           data-testid="document-image-distance-left"
+                           value="@DistanceLeft"
+                           @onchange="e => OnDistanceLeftChanged.InvokeAsync(ParseDistance(e.Value))" />
+                </label>
+                <label class="tm-document-image-wrap-panel__distance-field">
+                    <span class="tm-document-image-wrap-panel__distance-axis" aria-hidden="true">R</span>
+                    <input class="tm-document-image-wrap-panel__distance-input"
+                           type="number" min="0" step="1"
+                           data-testid="document-image-distance-right"
+                           value="@DistanceRight"
+                           @onchange="e => OnDistanceRightChanged.InvokeAsync(ParseDistance(e.Value))" />
+                </label>
+                <label class="tm-document-image-wrap-panel__distance-field">
+                    <span class="tm-document-image-wrap-panel__distance-axis" aria-hidden="true">T</span>
+                    <input class="tm-document-image-wrap-panel__distance-input"
+                           type="number" min="0" step="1"
+                           data-testid="document-image-distance-top"
+                           value="@DistanceTop"
+                           @onchange="e => OnDistanceTopChanged.InvokeAsync(ParseDistance(e.Value))" />
+                </label>
+                <label class="tm-document-image-wrap-panel__distance-field">
+                    <span class="tm-document-image-wrap-panel__distance-axis" aria-hidden="true">B</span>
+                    <input class="tm-document-image-wrap-panel__distance-input"
+                           type="number" min="0" step="1"
+                           data-testid="document-image-distance-bottom"
+                           value="@DistanceBottom"
+                           @onchange="e => OnDistanceBottomChanged.InvokeAsync(ParseDistance(e.Value))" />
+                </label>
+            </div>
+        </div>
+
+        <div class="tm-document-image-wrap-panel__group" data-testid="document-image-anchor-group">
+            <label class="tm-document-image-wrap-panel__checkbox-label">
+                <input type="checkbox"
+                       data-testid="document-image-lock-anchor"
+                       checked="@LockAnchor"
+                       @onchange="e => OnLockAnchorChanged.InvokeAsync(e.Value is bool b && b)" />
+                @Loc["TmDocumentEditor_ImageLockAnchor"]
+            </label>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DocumentWrapMode CurrentWrapMode { get; set; } = DocumentWrapMode.Inline;
+    [Parameter] public DocumentImageHorizontalPosition? CurrentHorizontalPosition { get; set; }
+    [Parameter] public double DistanceLeft { get; set; }
+    [Parameter] public double DistanceRight { get; set; }
+    [Parameter] public double DistanceTop { get; set; }
+    [Parameter] public double DistanceBottom { get; set; }
+    [Parameter] public bool LockAnchor { get; set; }
+    [Parameter] public EventCallback<DocumentWrapMode> OnWrapModeChanged { get; set; }
+    [Parameter] public EventCallback<DocumentImageHorizontalPosition> OnHorizontalPositionChanged { get; set; }
+    [Parameter] public EventCallback<double> OnDistanceLeftChanged { get; set; }
+    [Parameter] public EventCallback<double> OnDistanceRightChanged { get; set; }
+    [Parameter] public EventCallback<double> OnDistanceTopChanged { get; set; }
+    [Parameter] public EventCallback<double> OnDistanceBottomChanged { get; set; }
+    [Parameter] public EventCallback<bool> OnLockAnchorChanged { get; set; }
+
+    private static double ParseDistance(object? value) =>
+        double.TryParse(value?.ToString(), out var d) ? Math.Max(0, d) : 0;
+}

@@ -1,0 +1,264 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.DocumentEditor.Models
+@using Tempo.Blazor.DocumentEditor.Services
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="tm-document-find-panel"
+     data-testid="document-find-panel"
+     role="search"
+     aria-label="@Loc["TmDocumentEditor_FindPanelLabel"]"
+     @onkeydown="HandleKeyDownAsync">
+
+    <div class="tm-document-find-panel__row">
+        <input class="tm-document-find-panel__input"
+               data-testid="document-find-input"
+               type="search"
+               placeholder="@Loc["TmDocumentEditor_FindPlaceholder"]"
+               aria-label="@Loc["TmDocumentEditor_FindPlaceholder"]"
+               value="@_query"
+               @oninput="HandleSearchInput"
+               @onkeydown="HandleKeyDownAsync"
+               @ref="_searchInput" />
+
+        <span class="tm-document-find-panel__count"
+              data-testid="document-find-count"
+              aria-live="polite">@CountText</span>
+
+        <button class="tm-document-find-panel__btn"
+                data-testid="document-find-prev"
+                title="@Loc["TmDocumentEditor_FindPrev"]"
+                aria-label="@Loc["TmDocumentEditor_FindPrev"]"
+                disabled="@(_results.Count == 0)"
+                @onclick="GoToPreviousAsync">&#8593;</button>
+
+        <button class="tm-document-find-panel__btn"
+                data-testid="document-find-next"
+                title="@Loc["TmDocumentEditor_FindNext"]"
+                aria-label="@Loc["TmDocumentEditor_FindNext"]"
+                disabled="@(_results.Count == 0)"
+                @onclick="GoToNextAsync">&#8595;</button>
+
+        <button class="tm-document-find-panel__btn tm-document-find-panel__btn--close"
+                data-testid="document-find-close"
+                title="@Loc["TmDocumentEditor_FindClose"]"
+                aria-label="@Loc["TmDocumentEditor_FindClose"]"
+                @onclick="CloseAsync">&#10005;</button>
+    </div>
+
+    <div class="tm-document-find-panel__options">
+        <label>
+            <input type="checkbox" @bind="_caseSensitive" @bind:after="RunSearchAsync" />
+            @Loc["TmDocumentEditor_FindCaseSensitive"]
+        </label>
+        <label>
+            <input type="checkbox" @bind="_wholeWord" @bind:after="RunSearchAsync" />
+            @Loc["TmDocumentEditor_FindWholeWord"]
+        </label>
+        <label>
+            <span>@Loc["TmDocumentEditor_FindScopeLabel"]</span>
+            <select class="tm-document-find-panel__scope"
+                    data-testid="document-find-scope"
+                    aria-label="@Loc["TmDocumentEditor_FindScopeLabel"]"
+                    value="@_scope"
+                    @onchange="HandleScopeChangedAsync">
+                <option value="@DocumentSearchScope.Body">@Loc["TmDocumentEditor_FindScopeBody"]</option>
+                <option value="@DocumentSearchScope.HeadersFooters">@Loc["TmDocumentEditor_FindScopeHeadersFooters"]</option>
+                <option value="@DocumentSearchScope.Comments">@Loc["TmDocumentEditor_FindScopeComments"]</option>
+                <option value="@DocumentSearchScope.All">@Loc["TmDocumentEditor_FindScopeAll"]</option>
+            </select>
+        </label>
+    </div>
+
+    @if (_results.Count > 1)
+    {
+        <ol class="tm-document-find-panel__results" data-testid="document-find-results">
+            @foreach (var result in _results)
+            {
+                var active = result.Index == _activeIndex;
+                <li>
+                    <button class="tm-document-find-panel__result @(active ? "tm-document-find-panel__result--active" : null)"
+                            type="button"
+                            data-testid="document-find-result"
+                            aria-current="@(active ? "true" : null)"
+                            @onclick="() => GoToResultAsync(result.Index)">
+                        <span>@(result.Index + 1)</span>
+                        <span>@result.Preview</span>
+                    </button>
+                </li>
+            }
+        </ol>
+    }
+
+    @if (ShowReplace)
+    {
+        <div class="tm-document-find-panel__replace-row">
+            <input class="tm-document-find-panel__input"
+                   data-testid="document-replace-input"
+                   type="text"
+                   placeholder="@Loc["TmDocumentEditor_ReplacePlaceholder"]"
+                   aria-label="@Loc["TmDocumentEditor_ReplacePlaceholder"]"
+                   @onkeydown="HandleKeyDownAsync"
+                   @bind="_replacement" />
+
+            <button class="tm-document-find-panel__btn"
+                    data-testid="document-find-replace-one"
+                    disabled="@(_results.Count == 0)"
+                    @onclick="ReplaceOneAsync">@Loc["TmDocumentEditor_FindReplaceOne"]</button>
+
+            <button class="tm-document-find-panel__btn"
+                    data-testid="document-find-replace-all"
+                    disabled="@(_results.Count == 0)"
+                    @onclick="ReplaceAllAsync">@Loc["TmDocumentEditor_FindReplaceAll"]</button>
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter] public DocumentEditorDocument? Document { get; set; }
+    [Parameter] public bool ShowReplace { get; set; }
+    [Parameter] public EventCallback OnClose { get; set; }
+    [Parameter] public EventCallback<IReadOnlyList<DocumentSearchResult>> OnResultsChanged { get; set; }
+    [Parameter] public EventCallback<DocumentSearchResult> OnActiveResultChanged { get; set; }
+    [Parameter] public EventCallback<DocumentFindReplaceRequest> OnReplaceOneRequested { get; set; }
+    [Parameter] public EventCallback<DocumentFindReplaceRequest> OnReplaceAllRequested { get; set; }
+
+    private readonly DocumentSearchService _searchService = new();
+
+    private string _query = string.Empty;
+    private string _replacement = string.Empty;
+    private bool _caseSensitive;
+    private bool _wholeWord;
+    private DocumentSearchScope _scope = DocumentSearchScope.Body;
+    private IReadOnlyList<DocumentSearchResult> _results = [];
+    private int _activeIndex;
+    private ElementReference _searchInput;
+
+    private string CountText => _results.Count == 0
+        ? Loc["TmDocumentEditor_FindNoResults"]
+        : string.Format(Loc["TmDocumentEditor_FindResultCount"], _activeIndex + 1, _results.Count);
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender)
+        {
+            try { await _searchInput.FocusAsync(); } catch { }
+        }
+    }
+
+    private async Task HandleSearchInput(ChangeEventArgs e)
+    {
+        _query = e.Value as string ?? string.Empty;
+        await RunSearchAsync();
+    }
+
+    private async Task RunSearchAsync()
+    {
+        var query = CurrentQuery();
+        if (Document is null || string.IsNullOrEmpty(_query))
+        {
+            _results = [];
+            _activeIndex = 0;
+        }
+        else
+        {
+            _results = _searchService.Search(Document, query);
+            _activeIndex = 0;
+        }
+
+        await OnResultsChanged.InvokeAsync(_results);
+        if (_results.Count > 0)
+            await OnActiveResultChanged.InvokeAsync(_results[_activeIndex]);
+    }
+
+    private async Task GoToNextAsync()
+    {
+        if (_results.Count == 0) return;
+        _activeIndex = (_activeIndex + 1) % _results.Count;
+        await OnActiveResultChanged.InvokeAsync(_results[_activeIndex]);
+    }
+
+    private async Task GoToPreviousAsync()
+    {
+        if (_results.Count == 0) return;
+        _activeIndex = (_activeIndex - 1 + _results.Count) % _results.Count;
+        await OnActiveResultChanged.InvokeAsync(_results[_activeIndex]);
+    }
+
+    private async Task GoToResultAsync(int index)
+    {
+        if (index < 0 || index >= _results.Count) return;
+        _activeIndex = index;
+        await OnActiveResultChanged.InvokeAsync(_results[_activeIndex]);
+    }
+
+    private async Task ReplaceOneAsync()
+    {
+        if (Document is null || _results.Count == 0) return;
+        await OnReplaceOneRequested.InvokeAsync(new DocumentFindReplaceRequest
+        {
+            Query = CurrentQuery(),
+            Replacement = _replacement,
+            ActiveResult = _results[_activeIndex]
+        });
+        await ClearRuntimeSearchStateAsync();
+    }
+
+    private async Task ReplaceAllAsync()
+    {
+        if (Document is null || _results.Count == 0) return;
+        await OnReplaceAllRequested.InvokeAsync(new DocumentFindReplaceRequest
+        {
+            Query = CurrentQuery(),
+            Replacement = _replacement,
+            ActiveResult = _results[_activeIndex]
+        });
+        await ClearRuntimeSearchStateAsync();
+    }
+
+    private async Task CloseAsync()
+    {
+        await OnClose.InvokeAsync();
+    }
+
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+            await CloseAsync();
+        else if (args.Key == "Enter" && !args.ShiftKey)
+            await GoToNextAsync();
+        else if (args.Key == "Enter" && args.ShiftKey)
+            await GoToPreviousAsync();
+    }
+
+    private async Task HandleScopeChangedAsync(ChangeEventArgs e)
+    {
+        if (Enum.TryParse<DocumentSearchScope>(e.Value?.ToString(), out var scope))
+        {
+            _scope = scope;
+            await RunSearchAsync();
+        }
+    }
+
+    private DocumentSearchQuery CurrentQuery() => new()
+    {
+        Text = _query,
+        CaseSensitive = _caseSensitive,
+        WholeWord = _wholeWord,
+        Scope = _scope
+    };
+
+    private async Task ClearRuntimeSearchStateAsync()
+    {
+        _results = [];
+        _activeIndex = 0;
+        await OnResultsChanged.InvokeAsync(_results);
+    }
+
+    /// <summary>Allows the host editor to programmatically set the search query (e.g. pre-fill on Ctrl+F).</summary>
+    public async Task SetQueryAsync(string query)
+    {
+        _query = query;
+        await RunSearchAsync();
+        StateHasChanged();
+    }
+}

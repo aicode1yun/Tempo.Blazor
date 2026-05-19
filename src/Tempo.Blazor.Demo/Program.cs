@@ -39,6 +39,7 @@ builder.Services.AddScoped<DemoDocumentPdfExportProvider>();
 builder.Services.AddScoped<DemoDocumentComparisonProvider>();
 builder.Services.AddScoped<DemoDocumentImageUrlResolver>();
 builder.Services.AddScoped<DemoDocumentTokenProvider>();
+builder.Services.AddScoped<DemoMentionProvider>();
 builder.Services.AddScoped<DemoNotionDataProvider>();
 builder.Services.AddScoped<DemoNotionBlockProvider>();
 builder.Services.AddScoped<DemoNotionMediaLibraryProvider>();

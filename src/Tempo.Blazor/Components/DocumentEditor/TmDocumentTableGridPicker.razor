@@ -1,0 +1,114 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using Microsoft.AspNetCore.Components.Web
+
+<div class="tm-document-table-grid-picker"
+     data-testid="document-table-grid-picker"
+     role="grid"
+     aria-label="@Loc["TmDocumentEditor_TableGridPickerLabel"]"
+     tabindex="0"
+     @onkeydown="HandleKeyDown"
+     @onkeydown:stopPropagation="true">
+
+    <div class="tm-document-table-grid-picker__grid" @onmouseleave="OnGridMouseLeave">
+        @for (int r = 0; r < MaxRows; r++)
+        {
+            int row = r;
+            <div class="tm-document-table-grid-picker__row" role="row">
+                @for (int c = 0; c < MaxCols; c++)
+                {
+                    int col = c;
+                    bool highlighted = col <= _hoverCol && row <= _hoverRow;
+                    bool isKbFocus = col == _kbCol && row == _kbRow;
+                    <button type="button"
+                            role="gridcell"
+                            class="tm-document-table-grid-picker__cell @(highlighted ? "tm-document-table-grid-picker__cell--highlighted" : "") @(isKbFocus ? "tm-document-table-grid-picker__cell--focus" : "")"
+                            aria-label="@FormatDimensions(row, col)"
+                            tabindex="-1"
+                            data-testid="@($"document-table-grid-cell-{row}-{col}")"
+                            @onmouseover="() => OnCellHover(col, row)"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
+                            @onclick="() => OnCellClick(col, row)">
+                    </button>
+                }
+            </div>
+        }
+    </div>
+
+    <div class="tm-document-table-grid-picker__dims" aria-live="polite" aria-atomic="true">
+        @FormatDimensions(_hoverRow, _hoverCol)
+    </div>
+</div>
+
+@code {
+    private const int MaxCols = 10;
+    private const int MaxRows = 10;
+
+    private int _hoverCol = 1;
+    private int _hoverRow = 1;
+    private int _kbCol = 1;
+    private int _kbRow = 1;
+
+    /// <summary>Raised when the user chooses a table size.</summary>
+    [Parameter] public EventCallback<(int Rows, int Columns)> OnInsert { get; set; }
+
+    /// <summary>Raised when the picker should close without inserting a table.</summary>
+    [Parameter] public EventCallback OnClose { get; set; }
+
+    private static string FormatDimensions(int row, int col) => $"{row + 1} x {col + 1}";
+
+    private void OnCellHover(int col, int row)
+    {
+        _hoverCol = col;
+        _hoverRow = row;
+        _kbCol = col;
+        _kbRow = row;
+    }
+
+    private void OnCellClick(int col, int row)
+    {
+        _hoverCol = col;
+        _hoverRow = row;
+        _ = OnInsert.InvokeAsync((row + 1, col + 1));
+    }
+
+    private void OnGridMouseLeave()
+    {
+        _hoverCol = 1;
+        _hoverRow = 1;
+    }
+
+    private void HandleKeyDown(KeyboardEventArgs args)
+    {
+        switch (args.Key)
+        {
+            case "ArrowRight":
+                _kbCol = Math.Min(_kbCol + 1, MaxCols - 1);
+                _hoverCol = _kbCol;
+                _hoverRow = _kbRow;
+                break;
+            case "ArrowLeft":
+                _kbCol = Math.Max(_kbCol - 1, 0);
+                _hoverCol = _kbCol;
+                _hoverRow = _kbRow;
+                break;
+            case "ArrowDown":
+                _kbRow = Math.Min(_kbRow + 1, MaxRows - 1);
+                _hoverCol = _kbCol;
+                _hoverRow = _kbRow;
+                break;
+            case "ArrowUp":
+                _kbRow = Math.Max(_kbRow - 1, 0);
+                _hoverCol = _kbCol;
+                _hoverRow = _kbRow;
+                break;
+            case "Enter":
+            case " ":
+                _ = OnInsert.InvokeAsync((_kbRow + 1, _kbCol + 1));
+                break;
+            case "Escape":
+                _ = OnClose.InvokeAsync();
+                break;
+        }
+    }
+}

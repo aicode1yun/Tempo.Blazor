@@ -52,6 +52,118 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Render_ExposesFloatingPortalAndLiveRegion()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+
+        cut.Find("[data-testid='document-floating-root']").ClassList
+            .Should()
+            .Contain("tm-document-editor__floating-root");
+        var liveRegion = cut.Find("[data-testid='document-editor-live-region']");
+        liveRegion.GetAttribute("role").Should().Be("status");
+        liveRegion.GetAttribute("aria-live").Should().Be("polite");
+        liveRegion.GetAttribute("aria-atomic").Should().Be("true");
+    }
+
+    [Fact]
+    public async Task SaveSuccess_AnnouncesThroughLiveRegion()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+
+        cut.Find("[data-testid='document-save']").Click();
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-editor-live-region']").TextContent.Should().Contain("Saved"));
+    }
+
+    [Fact]
+    public async Task FindResults_AnnouncesResultCountThroughLiveRegion()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+
+        await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "f", CtrlKey = true });
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-find-input']").Should().NotBeNull());
+        await cut.Find("[data-testid='document-find-input']").InputAsync(new ChangeEventArgs { Value = "agreement" });
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-editor-live-region']").TextContent.Should().Contain("1 of"));
+    }
+
+    [Fact]
+    public async Task AutoSaveFailure_AnnouncesThroughLiveRegion()
+    {
+        var provider = new FailingAutosaveProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.AutoSaveInterval, TimeSpan.FromMilliseconds(20)));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandlePatchGenerated(new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = " changed",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = paragraph.Id,
+                AnchorInlineId = inline.Id,
+                AnchorOffset = inline.Text.Length
+            }
+        }));
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleDirtyStateChanged(new WysiwygDirtyState
+        {
+            IsDirty = true,
+            DirtyEpoch = 1
+        }));
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-editor-live-region']").TextContent.Should().Contain("autosave-boom"),
+            TimeSpan.FromSeconds(3));
+    }
+
+    [Fact]
+    public async Task DisposeAsync_DisablesBeforeUnloadGuard()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        await cut.InvokeAsync(() => cut.Instance.DisposeAsync().AsTask());
+
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditor.disableBeforeUnloadGuard");
+    }
+
+    [Fact]
     public void Render_ExposesAccessibilityLandmarkLabels()
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -84,7 +196,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .Add(p => p.CommentsContent, builder => builder.AddContent(0, "comments content"))
             .Add(p => p.RevisionsContent, builder => builder.AddContent(0, "revisions content"))
             .Add(p => p.VersionsContent, builder => builder.AddContent(0, "versions content"))
-            .Add(p => p.PropertiesContent, builder => builder.AddContent(0, "properties content")));
+            .Add(p => p.PropertiesContent, builder => builder.AddContent(0, "properties content"))
+            .Add(p => p.ShowPages, true)
+            .Add(p => p.PagesContent, builder => builder.AddContent(0, "pages content")));
 
         cut.Find("[data-testid='document-side-panel-tab-comments']")
             .GetAttribute("aria-selected")
@@ -95,6 +209,10 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-side-panel-tab-revisions']").Click();
 
         activeTab.Should().Be(DocumentSidePanelTab.Revisions);
+
+        cut.Find("[data-testid='document-side-panel-tab-pages']").Click();
+
+        activeTab.Should().Be(DocumentSidePanelTab.Pages);
     }
 
     [Fact]
@@ -199,11 +317,60 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-open-comments']").Should().NotBeNull();
         cut.Find("[data-testid='document-open-revisions']").Should().NotBeNull();
         cut.Find("[data-testid='document-compare-open']").Should().NotBeNull();
+        cut.Find("[data-testid='document-protect-document']").Should().NotBeNull();
+        cut.Find("[data-testid='document-mark-editable-region']").Should().NotBeNull();
         cut.FindAll("[data-testid='document-template-preview']").Should().BeEmpty();
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-toggle-nonprinting']").Should().NotBeNull();
         cut.Find("[data-testid='document-template-preview']").Should().NotBeNull();
         cut.Find("[data-testid='document-open-versions']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void Toolbar_ViewTab_TogglesNonPrintingCharacters()
+    {
+        var toggled = false;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.OnToggleNonPrintingCharacters, () => toggled = true));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-toggle-nonprinting']").Click();
+
+        toggled.Should().BeTrue();
+    }
+
+    [Fact]
+    public void Toolbar_HomeTabExposesBaselineCommandsForRegistryMigration()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.CanUndo, true)
+            .Add(p => p.CanRedo, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-home']")
+            .GetAttribute("aria-selected")
+            .Should()
+            .Be("true");
+
+        var expectedHomeCommands = new[]
+        {
+            "document-save",
+            "document-undo",
+            "document-redo",
+            "document-bold",
+            "document-italic",
+            "document-underline",
+            "document-link",
+            "document-clear-formatting"
+        };
+
+        foreach (var testId in expectedHomeCommands)
+        {
+            cut.Find($"[data-testid='{testId}']").Should().NotBeNull();
+        }
+
+        cut.FindAll("[data-testid='document-toolbar-table']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-template-preview']").Should().BeEmpty();
     }
 
     [Fact]
@@ -446,6 +613,20 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task Toolbar_LinkDialog_EscapeClosesDialog()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+
+        await cut.Find("[data-testid='document-link']").ClickAsync(new MouseEventArgs());
+        cut.Find("[data-testid='document-link-dialog']").Should().NotBeNull();
+
+        await cut.Find("[data-testid='document-link-dialog']")
+            .KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        cut.FindAll("[data-testid='document-link-dialog']").Should().BeEmpty();
+    }
+
+    [Fact]
     public void Toolbar_ReadOnlyDisablesEditingCommandsButKeepsReviewAndViewNavigation()
     {
         var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
@@ -473,6 +654,52 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.Find("[data-testid='document-ribbon-tab-view']").Click();
         cut.Find("[data-testid='document-template-preview']").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public void Toolbar_ReadOnlyDisablesDataAffectingCommandsButLeavesViewCommandsAvailable()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ReadOnly, true)
+            .Add(p => p.CanUndo, true)
+            .Add(p => p.CanRedo, true)
+            .Add(p => p.CanPreviewTemplate, true));
+
+        var disabledHomeCommands = new[]
+        {
+            "document-save",
+            "document-undo",
+            "document-redo",
+            "document-bold",
+            "document-italic",
+            "document-underline",
+            "document-link",
+            "document-clear-formatting",
+            "document-font-family",
+            "document-font-size"
+        };
+
+        foreach (var testId in disabledHomeCommands)
+        {
+            cut.Find($"[data-testid='{testId}']").HasAttribute("disabled").Should().BeTrue(testId);
+        }
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        var enabledViewCommands = new[]
+        {
+            "document-toggle-ruler",
+            "document-zoom-out",
+            "document-zoom-100",
+            "document-zoom-in",
+            "document-zoom-page-width",
+            "document-template-preview",
+            "document-open-versions"
+        };
+
+        foreach (var testId in enabledViewCommands)
+        {
+            cut.Find($"[data-testid='{testId}']").HasAttribute("disabled").Should().BeFalse(testId);
+        }
     }
 
     [Fact]
@@ -744,6 +971,53 @@ public class TmDocumentEditorTests : LocalizationTestBase
             .Url.Should().BeNull();
         pdfProvider.LastRequest.Options.PageSetup.PageSize.Name.Should().Be("A4");
         formatProvider.LastExportRequest.Format.Should().Be(DocumentFormatProviderKind.Docx);
+    }
+
+    [Fact]
+    public async Task Phase19_PdfExportRequest_IncludesImageTableAndReviewDisplayOptions()
+    {
+        JSInterop.Mode = JSRuntimeMode.Strict;
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.create", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.loadDocument", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.setReviewDisplayMode", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditor.downloadFile", _ => true).SetVoidResult();
+
+        var provider = new InMemoryDocumentEditorProvider();
+        var document = CreatePhase19ExportDocument();
+        await SeedDocumentAsync(provider, document);
+        JSInterop.Setup<string>("tmDocumentEditorRuntime.getDocument", _ => true)
+            .SetResult(JsonSerializer.Serialize(new WysiwygDocumentSnapshot { Document = Clone(document) }, DocumentEditorJson.Options));
+
+        var pdfProvider = new CapturingPdfExportProvider();
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, document.DocumentId)
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.PdfExportProvider, pdfProvider));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs()));
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        await cut.Find("[data-testid='document-review-display-mode']").ChangeAsync(new ChangeEventArgs
+        {
+            Value = DocumentReviewDisplayMode.NoMarkup.ToString()
+        });
+        cut.Find("[data-testid='document-ribbon-tab-references']").Click();
+        cut.Find("[data-testid='document-export-pdf']").Click();
+
+        cut.WaitForAssertion(() => pdfProvider.LastRequest.Should().NotBeNull());
+        var request = pdfProvider.LastRequest!;
+        var image = request.Document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        image.Size.Width.Should().Be(320);
+        image.Size.Height.Should().Be(180);
+        image.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
+        image.LinkUrl.Should().Be("https://example.test/image");
+        var table = request.Document.Blocks.Select(block => block.Content).OfType<TableBlockContent>().Single();
+        table.Layout.Width.Should().Be(420);
+        table.Layout.Alignment.Should().Be(TableHorizontalAlignment.Center);
+        table.Rows[0].Cells[0].BackgroundColor.Should().Be("#ffef9a");
+        request.Options.ReviewDisplayMode.Should().Be(DocumentReviewDisplayMode.NoMarkup);
+        request.Options.IncludeSuggestions.Should().BeFalse();
+        request.Options.IncludeComments.Should().BeTrue();
     }
 
     [Fact]
@@ -1113,6 +1387,135 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task TextContextMenuRequested_HidesUnimplementedClipboardAndAdvancedTextCommands()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var selection = new WysiwygSelectionSnapshot
+        {
+            AnchorBlockId = paragraph.Id,
+            AnchorInlineId = inline.Id,
+            AnchorOffset = 0,
+            FocusBlockId = paragraph.Id,
+            FocusInlineId = inline.Id,
+            FocusOffset = 4,
+            IsCollapsed = false
+        };
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+
+        await cut.InvokeAsync(() => host.Instance.HandleTextContextMenuRequested(new WysiwygTextContextMenuRequest
+        {
+            ClientX = 200,
+            ClientY = 120,
+            Left = 200,
+            Top = 120,
+            Width = 240,
+            Height = 268,
+            Selection = selection
+        }));
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-text-context-menu']").Should().NotBeNull());
+
+        var hiddenContextCommands = new[]
+        {
+            "document-context-cut",
+            "document-context-copy",
+            "document-context-paste",
+            "document-context-font",
+            "document-context-paragraph"
+        };
+
+        foreach (var testId in hiddenContextCommands)
+        {
+            cut.FindAll($"[data-testid='{testId}']").Should().BeEmpty(testId);
+        }
+
+        cut.Find("[data-testid='document-context-bold']").HasAttribute("disabled").Should().BeFalse();
+        cut.Find("[data-testid='document-context-italic']").HasAttribute("disabled").Should().BeFalse();
+        cut.Find("[data-testid='document-context-comment']").HasAttribute("disabled").Should().BeFalse();
+    }
+
+    [Fact]
+    public async Task KeyboardShortcuts_CtrlShiftPOpensDocumentCommandPalette()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
+        {
+            Key = "p",
+            CtrlKey = true,
+            ShiftKey = true
+        });
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-command-palette']").Should().NotBeNull());
+        cut.FindAll("[data-testid='document-command-palette-item']")
+            .Should()
+            .Contain(item => item.GetAttribute("data-command") == "bold");
+    }
+
+    [Fact]
+    public async Task CommandPalette_ClickEnabledCommand_ExecutesThroughRegistry()
+    {
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.executeCommand", _ => true).SetVoidResult();
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        await cut.InvokeAsync(() => cut.FindComponent<TmDocumentWysiwygHost>().Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+
+        await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs
+        {
+            Key = "p",
+            CtrlKey = true,
+            ShiftKey = true
+        });
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-command-palette']").Should().NotBeNull());
+        cut.Find("[data-testid='document-command-palette-search']").Input("Bold");
+        cut.Find("[data-command='bold'] button").Click();
+
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments.Count >= 2
+            && invocation.Arguments[1] != null
+            && invocation.Arguments[1]!.ToString() == "toggleBold");
+        cut.FindAll("[data-testid='document-command-palette']").Should().BeEmpty();
+    }
+
+    [Fact]
     public async Task TableContextMenuRequested_RendersMenuAndRunsStructuredTableCommand()
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -1159,7 +1562,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
             invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
             && invocation.Arguments.Count >= 2
             && invocation.Arguments[1] != null
-            && invocation.Arguments[1]!.ToString() == "insertTableRow");
+            && invocation.Arguments[1]!.ToString() == "insertTableRowAfter");
     }
 
     [Fact]
@@ -1877,6 +2280,88 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
+    public async Task RuntimeRecoveryDetail_RemoteOperation_ShowsClassifiedStatusMessage()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
+
+        await cut.InvokeAsync(() => host.HandleRuntimeRecovered(new WysiwygRuntimeRecoveryDetail
+        {
+            Event = "runtimeRecovered",
+            Source = "remoteOperation",
+            State = "recovered",
+            Attempt = 1
+        }));
+
+        cut.Find("[data-testid='document-runtime-message']").TextContent
+            .Should().Contain("remote operation");
+    }
+
+    [Fact]
+    public async Task RuntimeRecoveryDetail_Failed_ShowsRecoveryFailedStatus()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
+
+        await cut.InvokeAsync(() => host.HandleRuntimeRecoveryFailed(new WysiwygRuntimeRecoveryDetail
+        {
+            Event = "runtimeRecoveryFailed",
+            Source = "command",
+            State = "failed",
+            Attempt = 3,
+            MaxAttempts = 3
+        }));
+
+        var message = cut.Find("[data-testid='document-runtime-message']");
+        message.TextContent.Should().Contain("Editor recovery failed");
+        message.ClassList.Should().Contain("tm-document-editor__runtime-message--failed");
+    }
+
+    [Fact]
+    public async Task RuntimeRecoveryDetail_DebugTools_ShowLatestRecoveryDetail()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider)
+                      .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>().Instance;
+        await cut.InvokeAsync(() => host.HandleRuntimeRecovered(new WysiwygRuntimeRecoveryDetail
+        {
+            Event = "runtimeRecovered",
+            Source = "command",
+            State = "recovered",
+            Attempt = 1,
+            BackoffMs = 100
+        }));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+
+        cut.Find("[data-testid='document-runtime-recovery-debug']").Should().NotBeNull();
+        cut.Find("[data-testid='document-runtime-recovery-debug-content']").TextContent
+            .Should().Contain("command");
+    }
+
+    [Fact]
     public async Task InsertMenu_WithTokenProvider_InsertsTokenRunIntoWysiwygDocument()
     {
         var provider = new InMemoryDocumentEditorProvider();
@@ -1905,8 +2390,8 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.Find("[data-testid='document-insert-menu']").Click();
 
         cut.WaitForAssertion(() =>
-            cut.Find("[data-testid='document-token-menu']").Should().NotBeNull());
-        cut.Find(".tm-rte-token-item").Click();
+            cut.Find("[data-testid='document-wysiwyg-token-popover']").Should().NotBeNull());
+        cut.Find("[data-testid='document-autocomplete-item']").Click();
         cut.Find("[data-testid='document-ribbon-tab-home']").Click();
         cut.Find("[data-testid='document-save']").Click();
 
@@ -1914,6 +2399,46 @@ public class TmDocumentEditorTests : LocalizationTestBase
         var saved = (await provider.LoadAsync("doc-1")).Document!;
         var savedParagraph = saved.Blocks.Select(block => block.Content).OfType<ParagraphBlockContent>().First();
         savedParagraph.Inlines.OfType<TokenRun>().Should().Contain(token => token.Key == "matter.number");
+    }
+
+    [Fact]
+    public async Task ToolbarTableGrid_RestoresLastBodySelectionBeforeInsertTableCommand()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        var seeded = provider.SeedContractDocument("doc-1");
+        var (paragraph, inline) = GetFirstParagraphTextRun(seeded);
+        var selection = new WysiwygSelectionSnapshot
+        {
+            AnchorBlockId = paragraph.Id,
+            AnchorInlineId = inline.Id,
+            AnchorOffset = 3,
+            IsCollapsed = true
+        };
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() =>
+            cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleJsEngineReady(new WysiwygEngineReadyEventArgs
+        {
+            InstanceId = "test-instance",
+            ProtocolVersion = 1
+        }));
+        await cut.InvokeAsync(() => host.Instance.HandleSelectionChanged(selection));
+
+        cut.Find("[data-testid='document-ribbon-tab-insert']").Click();
+        cut.Find("[data-testid='document-toolbar-table']").Click();
+        cut.Find("[data-testid='document-table-grid-cell-1-2']").Click();
+
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.restoreSelection");
+        JSInterop.Invocations.Should().Contain(invocation =>
+            invocation.Identifier == "tmDocumentEditorRuntime.executeCommand"
+            && invocation.Arguments.Count >= 3
+            && invocation.Arguments[1]!.ToString() == "insertTable");
     }
 
     private static Task ApplyWysiwygPatchAsync(IRenderedComponent<TmDocumentEditor> cut, WysiwygPatch patch)
@@ -2123,6 +2648,73 @@ public class TmDocumentEditorTests : LocalizationTestBase
         return document;
     }
 
+    private static DocumentEditorDocument CreatePhase19ExportDocument()
+    {
+        var document = DocumentEditorDocument.Empty("doc-phase19");
+        document.Metadata.Title = "Phase 19 export";
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "paragraph-1",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = "Phase 19 export text" }] }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "image-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "https://cdn.test/image.png",
+                AltText = "Phase 19 image",
+                Caption = "Phase 19 caption",
+                LinkUrl = "https://example.test/image",
+                Size = new DocumentImageSize { Width = 320, Height = 180 },
+                FloatingLayout = new DocumentFloatingLayout
+                {
+                    Inline = false,
+                    WrapMode = DocumentWrapMode.Square,
+                    HorizontalPosition = DocumentImageHorizontalPosition.Right,
+                    DistanceLeft = 12
+                }
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "table-1",
+            Type = DocumentBlockType.Table,
+            Content = new TableBlockContent
+            {
+                Layout = new TableLayoutContent
+                {
+                    Width = 420,
+                    Alignment = TableHorizontalAlignment.Center,
+                    CellPadding = 8
+                },
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent
+                            {
+                                Id = "cell-1",
+                                Width = 140,
+                                BackgroundColor = "#ffef9a",
+                                VerticalAlignment = TableCellVerticalAlignment.Middle,
+                                Blocks = [CreateTextBlock("cell-p", "Cell text")]
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+        document.Comments.Add(new DocumentComment { Id = "comment-1" });
+        document.Revisions.Add(new DocumentRevision { Id = "revision-1", Type = DocumentRevisionType.Insertion });
+        return document;
+    }
+
     private static DocumentBlock CreateTextBlock(string id, string text)
     {
         return new DocumentBlock
@@ -2287,6 +2879,25 @@ public class TmDocumentEditorTests : LocalizationTestBase
         public string? TypeLabel { get; init; }
     }
 
+    private sealed class FailingAutosaveProvider : InMemoryDocumentEditorProvider
+    {
+        public override Task<DocumentEditorSaveResult> SaveAsync(
+            DocumentEditorSaveRequest request,
+            CancellationToken cancellationToken = default)
+        {
+            if (request.IsAutosave)
+            {
+                return Task.FromResult(new DocumentEditorSaveResult
+                {
+                    Success = false,
+                    ErrorMessage = "autosave-boom"
+                });
+            }
+
+            return base.SaveAsync(request, cancellationToken);
+        }
+    }
+
     private sealed class CapturingPdfExportProvider : IDocumentPdfExportProvider
     {
         public DocumentPdfExportRequest? LastRequest { get; private set; }
@@ -2367,5 +2978,317 @@ public class TmDocumentEditorTests : LocalizationTestBase
         {
             throw new InvalidOperationException("Simulated collaboration transport failure.");
         }
+    }
+
+    // ── Phase 13.3 – Protect document / Mark editable region toolbar buttons ──
+
+    [Fact]
+    public void ReviewTab_ProtectDocumentButton_IsPresent()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsDocumentProtected, false));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+
+        cut.Find("[data-testid='document-protect-document']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ReviewTab_ProtectDocumentButton_HasActiveCssClassWhenProtected()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsDocumentProtected, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+
+        cut.Find("[data-testid='document-protect-document']")
+           .ClassList.Should().Contain("tm-document-editor__ribbon-button--active");
+    }
+
+    [Fact]
+    public void ReviewTab_ProtectDocumentButton_HasAriaPressedTrue_WhenProtected()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsDocumentProtected, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+
+        cut.Find("[data-testid='document-protect-document']")
+           .GetAttribute("aria-pressed").Should().Be("true");
+    }
+
+    [Fact]
+    public void ReviewTab_MarkEditableRegionButton_IsPresent()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsDocumentProtected, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+
+        cut.Find("[data-testid='document-mark-editable-region']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ReviewTab_MarkEditableRegionButton_InvokesCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsDocumentProtected, true)
+            .Add(p => p.OnMarkEditableRegion, EventCallback.Factory.Create(this, () => called = true)));
+
+        cut.Find("[data-testid='document-ribbon-tab-review']").Click();
+        cut.Find("[data-testid='document-mark-editable-region']").Click();
+
+        called.Should().BeTrue();
+    }
+
+    // ── Phase 14.2 – Escape exits fullscreen ────────────────────────────────
+
+    [Fact]
+    public async Task Editor_EscapeExitsFullscreenWhenNoLayersOpen()
+    {
+        JSInterop.SetupVoid("tmDocumentEditor.setFullscreen", _ => true).SetVoidResult();
+        JSInterop.SetupVoid("tmDocumentEditorRuntime.focus", _ => true).SetVoidResult();
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters =>
+            parameters.Add(p => p.DocumentId, "doc-1")
+                      .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-side-panel-close']").Should().NotBeNull());
+        cut.Find("[data-testid='document-side-panel-close']").Click();
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-ribbon-tab-view']").Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-fullscreen']").Click();
+
+        cut.WaitForAssertion(() =>
+            cut.Find("[data-testid='document-fullscreen']").GetAttribute("aria-pressed").Should().Be("true"));
+
+        await cut.Find(".tm-document-editor").KeyDownAsync(new KeyboardEventArgs { Key = "Escape" });
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-fullscreen']").GetAttribute("aria-pressed").Should().Be("false");
+    }
+
+    [Fact]
+    public void ViewTab_FullscreenButton_IsPresent()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.Find("[data-testid='document-fullscreen']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ViewTab_FullscreenButton_HasAriaPressedTrue_WhenFullscreen()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.IsFullscreen, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.Find("[data-testid='document-fullscreen']")
+           .GetAttribute("aria-pressed").Should().Be("true");
+    }
+
+    [Fact]
+    public void ViewTab_FullscreenButton_InvokesCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.OnFullscreenToggle, EventCallback.Factory.Create(this, () => called = true)));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-fullscreen']").Click();
+
+        called.Should().BeTrue();
+    }
+
+    // ── Phase 15 – Debug tools / viewDocumentJson ────────────────────────
+
+    [Fact]
+    public void ViewTab_ViewDocumentJsonButton_NotPresentByDefault()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.FindAll("[data-testid='document-view-json']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ViewTab_ViewDocumentJsonButton_PresentWhenShowDebugToolsEnabled()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.Find("[data-testid='document-view-json']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ViewTab_ViewDocumentJsonButton_InvokesCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowDebugTools, true)
+            .Add(p => p.OnViewDocumentJson, EventCallback.Factory.Create(this, () => called = true)));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+
+        called.Should().BeTrue();
+    }
+
+    // ── Phase 15 – View clipboard HTML ──────────────────────────────────────
+
+    [Fact]
+    public void ViewTab_ViewClipboardHtmlButton_NotPresentByDefault()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>();
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.FindAll("[data-testid='document-view-clipboard-html']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void ViewTab_ViewClipboardHtmlButton_PresentWhenShowDebugToolsEnabled()
+    {
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+
+        cut.Find("[data-testid='document-view-clipboard-html']").Should().NotBeNull();
+    }
+
+    [Fact]
+    public void ViewTab_ViewClipboardHtmlButton_InvokesCallback()
+    {
+        var called = false;
+        var cut = RenderComponent<TmDocumentEditorToolbar>(parameters => parameters
+            .Add(p => p.ShowDebugTools, true)
+            .Add(p => p.OnViewClipboardHtml, EventCallback.Factory.Create(this, () => called = true)));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-clipboard-html']").Click();
+
+        called.Should().BeTrue();
+    }
+
+    // ── Phase 18 – Developer-only source/debug workflow ───────────────────
+
+    [Fact]
+    public void DebugJsonInspector_IsNotRenderedWithoutShowDebugTools()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Provider, provider));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+
+        cut.FindAll("[data-testid='document-json-debug-modal']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-view-json']").Should().BeEmpty();
+    }
+
+    [Fact]
+    public void DebugJsonInspector_ShowsCanonicalDocumentAndRuntimeDebugState()
+    {
+        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true)
+            .SetResult("""{"HasRuntimeDocument":true,"RuntimeAuthority":"JsCanonicalBoundary"}""");
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Provider, provider)
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-json-debug-modal']").Should().NotBeNull());
+        cut.Find("[data-testid='document-json-debug-content']").TextContent.Should().Contain("doc-1");
+        cut.Find("[data-testid='document-runtime-debug-content']").TextContent.Should().Contain("JsCanonicalBoundary");
+    }
+
+    [Fact]
+    public void DebugJsonInspector_CopyButtonWritesCombinedPayloadToClipboard()
+    {
+        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true)
+            .SetResult("""{"HasRuntimeDocument":true}""");
+        JSInterop.SetupVoid("navigator.clipboard.writeText", _ => true).SetVoidResult();
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Provider, provider)
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+        cut.Find("[data-testid='document-json-debug-copy']").Click();
+
+        JSInterop.Invocations.Any(invocation =>
+        {
+            var argument = invocation.Arguments.Count > 0 ? invocation.Arguments[0]?.ToString() : null;
+            return invocation.Identifier == "navigator.clipboard.writeText"
+                && argument is not null
+                && argument.Contains("canonicalDocument", StringComparison.Ordinal);
+        }).Should().BeTrue();
+    }
+
+    [Fact]
+    public async Task DebugClipboardModal_ShowsLastRawNormalizedAndWarnings()
+    {
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Provider, provider)
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.FindComponent<TmDocumentWysiwygHost>().Should().NotBeNull());
+        var host = cut.FindComponent<TmDocumentWysiwygHost>();
+        await cut.InvokeAsync(() => host.Instance.HandleClipboardPasteRequested("<p>Phase 18</p><script>alert(1)</script>", "Phase 18"));
+
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-clipboard-html']").Click();
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-clipboard-html-debug-modal']").Should().NotBeNull());
+        cut.Find("[data-testid='document-clipboard-html-debug-content']").TextContent.Should().Contain("Phase 18");
+        cut.Find("[data-testid='document-clipboard-normalized-debug-content']").TextContent.Should().Contain("Phase 18");
+        cut.Find("[data-testid='document-clipboard-warnings-debug-content']").TextContent.Should().Contain("stripped-element");
+    }
+
+    [Fact]
+    public void PublicHtmlSourceEditing_IsNotExposedInDebugModal()
+    {
+        JSInterop.Setup<string>("tmDocumentWysiwygDebug.getRuntimeStateJson", _ => true).SetResult("{}");
+        var provider = new InMemoryDocumentEditorProvider();
+        provider.SeedContractDocument("doc-1");
+        var cut = RenderComponent<TmDocumentEditor>(parameters => parameters
+            .Add(p => p.DocumentId, "doc-1")
+            .Add(p => p.Provider, provider)
+            .Add(p => p.ShowDebugTools, true));
+
+        cut.WaitForAssertion(() => cut.Find("[data-testid='document-wysiwyg-host']").Should().NotBeNull());
+        cut.Find("[data-testid='document-ribbon-tab-view']").Click();
+        cut.Find("[data-testid='document-view-json']").Click();
+
+        cut.FindAll("[data-testid='document-html-source-editor']").Should().BeEmpty();
+        cut.FindAll("[data-testid='document-json-debug-import']").Should().BeEmpty();
+        cut.FindAll("textarea").Should().BeEmpty();
     }
 }

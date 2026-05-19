@@ -83,14 +83,16 @@ public sealed class DocxPackageWriter
         AddNotesParts();
         AddRevisionIds();
         AddCommentsPart();
+        AddSettingsPart();
 
         var body = _mainPart.Document.Body!;
         foreach (var block in _document.Blocks.OrderBy(block => block.Order))
         {
             cancellationToken.ThrowIfCancellationRequested();
+            var restrictedMarker = FindRestrictedMarkerForBlock(block.Id);
             foreach (var element in await WriteBlockAsync(block, cancellationToken))
             {
-                body.Append(element);
+                body.Append(restrictedMarker is null ? element : WrapEditableRegion(element, restrictedMarker));
             }
         }
 
@@ -98,6 +100,19 @@ public sealed class DocxPackageWriter
         AddHeadersFooters(body);
         _mainPart.Document.Save();
     }
+
+    private DocumentRestrictedMarker? FindRestrictedMarkerForBlock(string blockId)
+        => _document.RestrictedMarkers.FirstOrDefault(marker =>
+            string.Equals(marker.StartBlockId, blockId, StringComparison.Ordinal)
+            && string.Equals(marker.EndBlockId, blockId, StringComparison.Ordinal));
+
+    private static W.SdtBlock WrapEditableRegion(OpenXmlElement element, DocumentRestrictedMarker marker)
+        => new(
+            new W.SdtProperties(
+                new W.SdtAlias { Val = marker.Label ?? "Editable region" },
+                new W.Tag { Val = $"tm-editable:{marker.Id}:{marker.StartOffset}:{marker.EndOffset}" },
+                new W.Lock { Val = W.LockingValues.SdtLocked }),
+            new W.SdtContentBlock(element.CloneNode(true)));
 
     private async Task<List<OpenXmlElement>> WriteBlockAsync(DocumentBlock block, CancellationToken cancellationToken)
     {
@@ -260,13 +275,40 @@ public sealed class DocxPackageWriter
 
     private W.Table WriteTable(TableBlockContent table)
     {
-        var docxTable = new W.Table(new W.TableProperties(new W.TableBorders(
+        var tableProperties = new W.TableProperties(new W.TableBorders(
             new W.TopBorder { Val = W.BorderValues.Single, Size = 4 },
             new W.LeftBorder { Val = W.BorderValues.Single, Size = 4 },
             new W.BottomBorder { Val = W.BorderValues.Single, Size = 4 },
             new W.RightBorder { Val = W.BorderValues.Single, Size = 4 },
             new W.InsideHorizontalBorder { Val = W.BorderValues.Single, Size = 4 },
-            new W.InsideVerticalBorder { Val = W.BorderValues.Single, Size = 4 })));
+            new W.InsideVerticalBorder { Val = W.BorderValues.Single, Size = 4 }));
+
+        if (table.Layout.Width is > 0)
+        {
+            tableProperties.Append(new W.TableWidth
+            {
+                Type = W.TableWidthUnitValues.Dxa,
+                Width = PointsToTwips(table.Layout.Width.Value).ToString(CultureInfo.InvariantCulture)
+            });
+        }
+
+        if (table.Layout.Alignment != TableHorizontalAlignment.Left)
+        {
+            tableProperties.Append(new W.TableJustification
+            {
+                Val = table.Layout.Alignment == TableHorizontalAlignment.Center
+                    ? W.TableRowAlignmentValues.Center
+                    : W.TableRowAlignmentValues.Right
+            });
+        }
+
+        var tableFill = NormalizeDocxColor(table.Layout.BackgroundColor);
+        if (!string.IsNullOrWhiteSpace(tableFill))
+        {
+            tableProperties.Append(new W.Shading { Val = W.ShadingPatternValues.Clear, Fill = tableFill });
+        }
+
+        var docxTable = new W.Table(tableProperties);
 
         foreach (var row in table.Rows)
         {
@@ -283,6 +325,31 @@ public sealed class DocxPackageWriter
                 if (cell.RowSpan > 1 || !cell.Merge.IsOrigin)
                 {
                     properties.Append(new W.VerticalMerge { Val = cell.Merge.IsOrigin ? W.MergedCellValues.Restart : W.MergedCellValues.Continue });
+                }
+
+                if (cell.Width is > 0)
+                {
+                    properties.Append(new W.TableCellWidth
+                    {
+                        Type = W.TableWidthUnitValues.Dxa,
+                        Width = PointsToTwips(cell.Width.Value).ToString(CultureInfo.InvariantCulture)
+                    });
+                }
+
+                var cellFill = NormalizeDocxColor(cell.BackgroundColor);
+                if (!string.IsNullOrWhiteSpace(cellFill))
+                {
+                    properties.Append(new W.Shading { Val = W.ShadingPatternValues.Clear, Fill = cellFill });
+                }
+
+                if (cell.VerticalAlignment != TableCellVerticalAlignment.Top)
+                {
+                    properties.Append(new W.TableCellVerticalAlignment
+                    {
+                        Val = cell.VerticalAlignment == TableCellVerticalAlignment.Middle
+                            ? W.TableVerticalAlignmentValues.Center
+                            : W.TableVerticalAlignmentValues.Bottom
+                    });
                 }
 
                 if (properties.HasChildren)
@@ -314,6 +381,26 @@ public sealed class DocxPackageWriter
         }
 
         return docxTable;
+    }
+
+    private static int PointsToTwips(double value) => (int)Math.Round(value * 20);
+
+    private static string? NormalizeDocxColor(string? color)
+    {
+        if (string.IsNullOrWhiteSpace(color))
+        {
+            return null;
+        }
+
+        var value = color.Trim();
+        if (value.StartsWith('#'))
+        {
+            value = value[1..];
+        }
+
+        return value.Length == 6 && value.All(Uri.IsHexDigit)
+            ? value.ToUpperInvariant()
+            : null;
     }
 
     private async Task<W.Paragraph> WriteImageParagraphAsync(ImageBlockContent image, CancellationToken cancellationToken)
@@ -366,9 +453,7 @@ public sealed class DocxPackageWriter
         var layout = image.FloatingLayout!;
         var anchor = new DW.Anchor(
             new DW.SimplePosition { X = 0, Y = 0 },
-            new DW.HorizontalPosition(
-                new DW.PositionOffset(PointToEmu(layout.X).ToString(CultureInfo.InvariantCulture)))
-            { RelativeFrom = ToDocxHorizontalRelative(layout.HorizontalRelativeTo) },
+            CreateDocxHorizontalPosition(layout),
             new DW.VerticalPosition(
                 new DW.PositionOffset(PointToEmu(layout.Y).ToString(CultureInfo.InvariantCulture)))
             { RelativeFrom = ToDocxVerticalRelative(layout.VerticalRelativeTo) },
@@ -379,10 +464,10 @@ public sealed class DocxPackageWriter
             new DW.NonVisualGraphicFrameDrawingProperties(new A.GraphicFrameLocks { NoChangeAspect = true }),
             graphic)
         {
-            DistanceFromTop = 0,
-            DistanceFromBottom = 0,
-            DistanceFromLeft = 0,
-            DistanceFromRight = 0,
+            DistanceFromTop = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceTop)),
+            DistanceFromBottom = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceBottom)),
+            DistanceFromLeft = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceLeft)),
+            DistanceFromRight = (UInt32Value)(uint)Math.Max(0L, PointToEmu(layout.DistanceRight)),
             SimplePos = false,
             RelativeHeight = (UInt32Value)(uint)Math.Max(0, layout.ZIndex),
             BehindDoc = layout.WrapMode == DocumentWrapMode.BehindText,
@@ -406,6 +491,26 @@ public sealed class DocxPackageWriter
                     new A.Transform2D(new A.Offset { X = 0, Y = 0 }, new A.Extents { Cx = cx, Cy = cy }),
                     new A.PresetGeometry(new A.AdjustValueList()) { Preset = A.ShapeTypeValues.Rectangle })))
         { Uri = "http://schemas.openxmlformats.org/drawingml/2006/picture" });
+    }
+
+    private static DW.HorizontalPosition CreateDocxHorizontalPosition(DocumentFloatingLayout layout)
+    {
+        var hp = new DW.HorizontalPosition { RelativeFrom = ToDocxHorizontalRelative(layout.HorizontalRelativeTo) };
+        if (layout.HorizontalPosition.HasValue)
+        {
+            hp.Append(new DW.HorizontalAlignment(layout.HorizontalPosition.Value switch
+            {
+                DocumentImageHorizontalPosition.Left => "left",
+                DocumentImageHorizontalPosition.Center => "center",
+                DocumentImageHorizontalPosition.Right => "right",
+                _ => "left"
+            }));
+        }
+        else
+        {
+            hp.Append(new DW.PositionOffset(PointToEmu(layout.X).ToString(CultureInfo.InvariantCulture)));
+        }
+        return hp;
     }
 
     private static OpenXmlElement CreateDocxWrap(DocumentWrapMode wrapMode)
@@ -495,6 +600,23 @@ public sealed class DocxPackageWriter
             new W.Style(new W.Name { Val = "Heading 2" }, new W.BasedOn { Val = "Normal" }, new W.NextParagraphStyle { Val = "Normal" }) { Type = W.StyleValues.Paragraph, StyleId = "Heading2" },
             new W.Style(new W.Name { Val = "Quote" }) { Type = W.StyleValues.Paragraph, StyleId = "Quote" });
         stylesPart.Styles.Save();
+    }
+
+    private void AddSettingsPart()
+    {
+        if (!_document.IsProtected && _document.RestrictedMarkers.Count == 0)
+        {
+            return;
+        }
+
+        var settingsPart = _mainPart.AddNewPart<DocumentSettingsPart>();
+        settingsPart.Settings = new W.Settings(
+            new W.DocumentProtection
+            {
+                Edit = W.DocumentProtectionValues.ReadOnly,
+                Enforcement = true
+            });
+        settingsPart.Settings.Save();
     }
 
     private void AddNumberingPart()

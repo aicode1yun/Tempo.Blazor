@@ -1,0 +1,105 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+@using System.Globalization
+@using Tempo.Blazor.DocumentEditor.Models
+
+<aside class="tm-document-page-navigator"
+       data-testid="document-page-navigator"
+       aria-label="@Loc["TmDocumentEditor_Pages"]">
+    <header class="tm-document-page-navigator__header">
+        <span>@Loc["TmDocumentEditor_Pages"]</span>
+        <span data-testid="document-page-navigator-count">
+            @string.Format(CultureInfo.InvariantCulture, Loc["TmDocumentEditor_PageCount"], PageCount)
+        </span>
+    </header>
+
+    @if (VisiblePages.Count == 0)
+    {
+        <p class="tm-document-page-navigator__empty"
+           data-testid="document-page-navigator-empty">
+            @Loc["TmDocumentEditor_PageNavigatorEmpty"]
+        </p>
+    }
+    else
+    {
+        <ol class="tm-document-page-navigator__list">
+            @foreach (var pageMetric in VisiblePages)
+            {
+                <li>
+                    <button type="button"
+                            class="@GetPageClass(pageMetric)"
+                            data-testid="document-page-navigator-item"
+                            data-page-index="@pageMetric.PageIndex"
+                            aria-current="@GetAriaCurrent(pageMetric)"
+                            @onclick="() => OnNavigateToPage.InvokeAsync(pageMetric.PageIndex)">
+                        <span class="tm-document-page-navigator__thumbnail"
+                              aria-hidden="true">
+                            @if (pageMetric.IsVirtual)
+                            {
+                                <span class="tm-document-page-navigator__virtual"></span>
+                            }
+                        </span>
+                        <span class="tm-document-page-navigator__label">@GetPageLabel(pageMetric)</span>
+                        @if (pageMetric.HasOverflow)
+                        {
+                            <span class="tm-document-page-navigator__overflow"
+                                  data-testid="document-page-navigator-overflow">
+                                @Loc["TmDocumentEditor_PageOverflow"]
+                            </span>
+                        }
+                    </button>
+                </li>
+            }
+        </ol>
+    }
+</aside>
+
+@code {
+    /// <summary>Runtime page metrics reported by the WYSIWYG editor.</summary>
+    [Parameter] public WysiwygPageMetrics? Metrics { get; set; }
+
+    /// <summary>Zero-based active page index.</summary>
+    [Parameter] public int ActivePageIndex { get; set; }
+
+    /// <summary>Raised when a page thumbnail is selected.</summary>
+    [Parameter] public EventCallback<int> OnNavigateToPage { get; set; }
+
+    private IReadOnlyList<WysiwygPageMetric> VisiblePages =>
+        Metrics?.Pages.Count > 0
+            ? Metrics.Pages
+            : CreateFallbackPages(PageCount);
+
+    private int PageCount => Math.Max(0, Metrics?.TotalPages ?? 0);
+
+    private static IReadOnlyList<WysiwygPageMetric> CreateFallbackPages(int count)
+    {
+        if (count <= 0)
+        {
+            return [];
+        }
+
+        var pages = new List<WysiwygPageMetric>(count);
+        for (var i = 0; i < count; i++)
+        {
+            pages.Add(new WysiwygPageMetric
+            {
+                PageIndex = i,
+                PageNumber = i + 1
+            });
+        }
+
+        return pages;
+    }
+
+    private string GetPageClass(WysiwygPageMetric page)
+        => page.PageIndex == ActivePageIndex
+            ? "tm-document-page-navigator__item tm-document-page-navigator__item--active"
+            : "tm-document-page-navigator__item";
+
+    private string? GetAriaCurrent(WysiwygPageMetric page)
+        => page.PageIndex == ActivePageIndex ? "page" : null;
+
+    private string GetPageLabel(WysiwygPageMetric page)
+        => !string.IsNullOrWhiteSpace(page.Label)
+            ? page.Label
+            : string.Format(CultureInfo.InvariantCulture, Loc["TmDocumentEditor_PageLabelFormat"], page.PageNumber <= 0 ? page.PageIndex + 1 : page.PageNumber);
+}

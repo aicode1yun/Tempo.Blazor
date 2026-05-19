@@ -86,7 +86,10 @@ window.tmDocumentWysiwyg = (function () {
             pendingCollaborationTransactions: [],
             remoteCursorLayer: null,
             remoteCursorElements: new Map(),
+            markerStore: new Map(),
             lastSelectionSnapshot: null,
+            lastTextSelectionSnapshot: null,
+            miniToolbarSuppressHideUntil: 0,
             lastInputType: null,
             lastInputDataLength: 0,
             jsOwnedInputCount: 0,
@@ -118,6 +121,7 @@ window.tmDocumentWysiwyg = (function () {
                 lastInputType: '',
                 lastEventType: ''
             },
+            performanceStats: _createPerformanceStats(),
             runtimeDocument: null,
             runtimeSelection: null,
             renderPlan: null,
@@ -140,6 +144,7 @@ window.tmDocumentWysiwyg = (function () {
             lastRevisionStateJson: '',
             runtimeComments: [],
             lastCommentStateJson: '',
+            commentRailAlignmentFrame: null,
             lastCommittedHtml: '',
             virtualPages: [],
             virtualState: null,
@@ -153,6 +158,8 @@ window.tmDocumentWysiwyg = (function () {
             miniToolbarVisible: false,
             miniToolbarRequestKey: null,
             imageDragTransaction: null,
+            selectedPageBreakId: null,
+            showNonPrintingCharacters: false,
         };
 
         _instances.set(instanceId, inst);
@@ -206,6 +213,10 @@ window.tmDocumentWysiwyg = (function () {
             clearTimeout(inst.virtualizationScrollTimer);
             inst.virtualizationScrollTimer = null;
         }
+        if (inst.commentRailAlignmentFrame && window.cancelAnimationFrame) {
+            window.cancelAnimationFrame(inst.commentRailAlignmentFrame);
+            inst.commentRailAlignmentFrame = null;
+        }
 
         _hideInlineRevisionReview(inst);
         _hideImageContextMenu(inst);
@@ -234,8 +245,15 @@ window.tmDocumentWysiwyg = (function () {
     // ── Event listeners ──────────────────────────────────────────────────────
 
     function _attachEventListeners(inst) {
-        inst._handleVirtualScroll = function () { _scheduleVirtualizationRefresh(inst); };
+        inst._handleVirtualScroll = function () {
+            _scheduleVirtualizationRefresh(inst);
+            _repositionVisibleFloatingLayers(inst);
+            _scheduleCommentRailAlignment(inst);
+            _notifyPageMetrics(inst);
+            _notifyActiveHeading(inst);
+        };
         inst.root.addEventListener('scroll', inst._handleVirtualScroll, { passive: true });
+        document.addEventListener('scroll', inst._handleVirtualScroll, { passive: true, capture: true });
         window.addEventListener('scroll', inst._handleVirtualScroll, { passive: true });
         window.addEventListener('resize', inst._handleVirtualScroll);
 
@@ -263,7 +281,9 @@ window.tmDocumentWysiwyg = (function () {
         inst._handleSelectionChange = function () { _onSelectionChange(inst); };
         inst._handleKeyDown = function (e) { _onKeyDown(inst, e); };
         inst._handleDocumentKeyDown = function (e) { _onDocumentKeyDown(inst, e); };
+        inst._handleDocumentPointerDown = function (e) { _onDocumentPointerDown(inst, e); };
         inst._handlePointerDown = function (e) { _onFloatingImagePointerDown(inst, e); };
+        inst._handlePointerUp = function (e) { _onRootPointerUp(inst, e); };
         inst._handleClick = function (e) { _onRootClick(inst, e); };
         inst._handleDoubleClick = function (e) { _onRootDoubleClick(inst, e); };
         inst._handleContextMenu = function (e) { _onRootContextMenu(inst, e); };
@@ -280,8 +300,10 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.addEventListener('compositionend', inst._handleCompositionEnd, true);
         document.addEventListener('selectionchange', inst._handleSelectionChange);
         document.addEventListener('keydown', inst._handleDocumentKeyDown, true);
+        document.addEventListener('pointerdown', inst._handleDocumentPointerDown, true);
         inst.root.addEventListener('keydown', inst._handleKeyDown, true);
         inst.root.addEventListener('pointerdown', inst._handlePointerDown, true);
+        inst.root.addEventListener('pointerup', inst._handlePointerUp, true);
         inst.root.addEventListener('click', inst._handleClick, true);
         inst.root.addEventListener('dblclick', inst._handleDoubleClick, true);
         inst.root.addEventListener('contextmenu', inst._handleContextMenu, true);
@@ -318,11 +340,17 @@ window.tmDocumentWysiwyg = (function () {
         if (inst._handleDocumentKeyDown) {
             document.removeEventListener('keydown', inst._handleDocumentKeyDown, true);
         }
+        if (inst._handleDocumentPointerDown) {
+            document.removeEventListener('pointerdown', inst._handleDocumentPointerDown, true);
+        }
         if (inst._handleKeyDown) {
             inst.root.removeEventListener('keydown', inst._handleKeyDown, true);
         }
         if (inst._handlePointerDown) {
             inst.root.removeEventListener('pointerdown', inst._handlePointerDown, true);
+        }
+        if (inst._handlePointerUp) {
+            inst.root.removeEventListener('pointerup', inst._handlePointerUp, true);
         }
         if (inst._handleClick) {
             inst.root.removeEventListener('click', inst._handleClick, true);
@@ -344,6 +372,7 @@ window.tmDocumentWysiwyg = (function () {
         }
         if (inst._handleVirtualScroll) {
             inst.root.removeEventListener('scroll', inst._handleVirtualScroll);
+            document.removeEventListener('scroll', inst._handleVirtualScroll, { capture: true });
             window.removeEventListener('scroll', inst._handleVirtualScroll);
             window.removeEventListener('resize', inst._handleVirtualScroll);
         }
@@ -360,9 +389,24 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        _hideMiniToolbar(inst);
-
         if (target.closest('.tm-wysiwyg-revision-review')) {
+            return;
+        }
+
+        var commentAnchor = target.closest('.tm-document-inline--comment-anchor[data-comment-id]');
+        if (commentAnchor && inst.root.contains(commentAnchor)) {
+            var commentId = commentAnchor.getAttribute('data-comment-id') || '';
+            if (commentId) {
+                scrollToComment(inst.id, commentId);
+                _invokeDotNet(inst, 'HandleCommentSelected', commentId);
+            }
+        }
+
+        var pageBreak = target.closest('.tm-wysiwyg-page-break[data-block-id]');
+        if (pageBreak && inst.root.contains(pageBreak)) {
+            event.preventDefault();
+            _selectPageBreak(inst, pageBreak);
+            _hideInlineRevisionReview(inst);
             return;
         }
 
@@ -376,6 +420,7 @@ window.tmDocumentWysiwyg = (function () {
 
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
 
         var bodyRegion = target.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
         if (bodyRegion && inst.root.contains(bodyRegion)) {
@@ -389,6 +434,45 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         _showInlineRevisionReview(inst, revision);
+    }
+
+    function _onDocumentPointerDown(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly) return;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (!target) return;
+
+        if (inst.root.contains(target)) {
+            return;
+        }
+
+        if (target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar, .tm-document-editor__mini-toolbar')) {
+            return;
+        }
+
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+        _hideMiniToolbar(inst, true);
+    }
+
+    function _onRootPointerUp(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly || event.button !== 0) return;
+
+        var refreshSelectionToolbar = function () {
+            if (!inst || inst.disposed) return;
+            var snapshot = _captureSelectionSnapshot(inst);
+            if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) return;
+
+            inst.lastSelectionSnapshot = snapshot;
+            inst.lastTextSelectionSnapshot = snapshot;
+            inst.miniToolbarSuppressHideUntil = Date.now() + 700;
+            _scheduleSelectionNotification(inst, snapshot);
+            _scheduleMiniToolbar(inst, snapshot);
+        };
+
+        window.setTimeout(refreshSelectionToolbar, 0);
+        window.setTimeout(refreshSelectionToolbar, 140);
     }
 
     function _onRootDoubleClick(inst, event) {
@@ -457,7 +541,7 @@ window.tmDocumentWysiwyg = (function () {
 
             inst.lastSelectionSnapshot = tableSnapshot;
             _scheduleSelectionNotification(inst, tableSnapshot);
-            var tablePosition = _placeFloatingElement(event.clientX, event.clientY, 224, 196);
+            var tablePosition = _placeFloatingElement(event.clientX, event.clientY, 224, 340);
             _invokeDotNet(inst, 'HandleTableContextMenuRequested', {
                 ClientX: event.clientX,
                 ClientY: event.clientY,
@@ -478,6 +562,35 @@ window.tmDocumentWysiwyg = (function () {
             _selectImageFigure(inst, image);
             _hideMiniToolbar(inst);
             _showImageContextMenu(inst, image, event.clientX, event.clientY);
+            return;
+        }
+
+        var pageBreak = target && target.closest && target.closest('.tm-wysiwyg-page-break[data-block-id]');
+        if (pageBreak && inst.root.contains(pageBreak)) {
+            event.preventDefault();
+            _selectPageBreak(inst, pageBreak);
+            var pageBreakId = pageBreak.getAttribute('data-block-id') || '';
+            var pageBreakPosition = _placeFloatingElement(event.clientX, event.clientY, 240, 148);
+            _invokeDotNet(inst, 'HandleTextContextMenuRequested', {
+                ClientX: event.clientX,
+                ClientY: event.clientY,
+                Left: pageBreakPosition.left,
+                Top: pageBreakPosition.top,
+                Width: pageBreakPosition.width,
+                Height: pageBreakPosition.height,
+                ViewportWidth: pageBreakPosition.viewportWidth,
+                ViewportHeight: pageBreakPosition.viewportHeight,
+                BlockId: pageBreakId,
+                BlockType: 'PageBreak',
+                Selection: {
+                    Region: 'Body',
+                    AnchorBlockId: pageBreakId,
+                    FocusBlockId: pageBreakId,
+                    AnchorOffset: 0,
+                    FocusOffset: 0,
+                    IsCollapsed: true
+                }
+            });
             return;
         }
 
@@ -519,19 +632,134 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
-    function _placeFloatingElement(clientX, clientY, width, height) {
-        var margin = 8;
-        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
-        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
-        var left = Math.max(margin, Math.min(clientX, viewportWidth - width - margin));
-        var top = Math.max(margin, Math.min(clientY, viewportHeight - height - margin));
+    function _getViewportMetrics(options) {
+        options = options || {};
+        var doc = typeof document !== 'undefined' ? document : null;
+        var docEl = doc && doc.documentElement ? doc.documentElement : null;
+        return {
+            width: options.viewportWidth || (typeof window !== 'undefined' && window.innerWidth) || (docEl && docEl.clientWidth) || 1024,
+            height: options.viewportHeight || (typeof window !== 'undefined' && window.innerHeight) || (docEl && docEl.clientHeight) || 768
+        };
+    }
+
+    function _normalizeFloatingAnchor(anchor, options) {
+        anchor = anchor || {};
+        options = options || {};
+        var left = Number(anchor.left ?? anchor.x ?? anchor.Left ?? anchor.X ?? 0);
+        var top = Number(anchor.top ?? anchor.y ?? anchor.Top ?? anchor.Y ?? 0);
+        var width = Number(anchor.width ?? anchor.Width ?? 0);
+        var height = Number(anchor.height ?? anchor.Height ?? 0);
+
+        if (options.anchorIsContainerRelative && options.scrollContainerRect) {
+            var container = options.scrollContainerRect;
+            left = Number(container.left ?? container.Left ?? 0) + left - Number(options.scrollLeft || 0);
+            top = Number(container.top ?? container.Top ?? 0) + top - Number(options.scrollTop || 0);
+        }
+
         return {
             left: left,
             top: top,
             width: width,
             height: height,
-            viewportWidth: viewportWidth,
-            viewportHeight: viewportHeight
+            right: Number(anchor.right ?? anchor.Right ?? (left + width)),
+            bottom: Number(anchor.bottom ?? anchor.Bottom ?? (top + height))
+        };
+    }
+
+    function _computeFloatingBoundary(options, viewport) {
+        options = options || {};
+        var margin = Number(options.margin ?? 8);
+        var source = options.boundaryRect || (options.constrainToScrollContainer ? options.scrollContainerRect : null);
+        if (!source) {
+            return {
+                left: margin,
+                top: margin,
+                right: viewport.width - margin,
+                bottom: viewport.height - margin,
+                viewportWidth: viewport.width,
+                viewportHeight: viewport.height
+            };
+        }
+
+        var left = Number(source.left ?? source.Left ?? 0);
+        var top = Number(source.top ?? source.Top ?? 0);
+        var right = Number(source.right ?? source.Right ?? (left + Number(source.width ?? source.Width ?? viewport.width)));
+        var bottom = Number(source.bottom ?? source.Bottom ?? (top + Number(source.height ?? source.Height ?? viewport.height)));
+        return {
+            left: Math.max(margin, left + margin),
+            top: Math.max(margin, top + margin),
+            right: Math.min(viewport.width - margin, right - margin),
+            bottom: Math.min(viewport.height - margin, bottom - margin),
+            viewportWidth: viewport.width,
+            viewportHeight: viewport.height
+        };
+    }
+
+    function _clamp(value, min, max) {
+        if (max < min) return min;
+        return Math.max(min, Math.min(value, max));
+    }
+
+    function _computeFloatingPosition(anchor, elementSize, options) {
+        options = options || {};
+        var margin = Number(options.margin ?? 8);
+        var viewport = _getViewportMetrics(options);
+        var rect = _normalizeFloatingAnchor(anchor, options);
+        var boundary = _computeFloatingBoundary(options, viewport);
+        var width = Number(elementSize?.width ?? elementSize?.Width ?? options.width ?? 0);
+        var height = Number(elementSize?.height ?? elementSize?.Height ?? options.height ?? 0);
+        var placement = options.placement || options.preferredPlacement || 'bottom';
+        var align = options.align || 'center';
+
+        var left = align === 'start'
+            ? rect.left
+            : align === 'end'
+                ? rect.right - width
+                : rect.left + (rect.width / 2) - (width / 2);
+
+        var top = placement === 'top'
+            ? rect.top - height - margin
+            : rect.bottom + margin;
+        var resolvedPlacement = placement;
+
+        if (placement === 'top' && top < boundary.top && rect.bottom + margin + height <= boundary.bottom) {
+            top = rect.bottom + margin;
+            resolvedPlacement = 'bottom';
+        } else if (placement !== 'top' && top + height > boundary.bottom && rect.top - height - margin >= boundary.top) {
+            top = rect.top - height - margin;
+            resolvedPlacement = 'top';
+        }
+
+        left = _clamp(left, boundary.left, boundary.right - width);
+        top = _clamp(top, boundary.top, boundary.bottom - height);
+
+        return {
+            left: left,
+            top: top,
+            width: width,
+            height: height,
+            viewportWidth: viewport.width,
+            viewportHeight: viewport.height,
+            placement: resolvedPlacement,
+            boundaryLeft: boundary.left,
+            boundaryTop: boundary.top,
+            boundaryRight: boundary.right,
+            boundaryBottom: boundary.bottom
+        };
+    }
+
+    function _placeFloatingElement(clientX, clientY, width, height) {
+        var position = _computeFloatingPosition(
+            { left: clientX, top: clientY, width: 0, height: 0 },
+            { width: width, height: height },
+            { placement: 'bottom', align: 'start' });
+        return {
+            left: position.left,
+            top: position.top,
+            width: width,
+            height: height,
+            viewportWidth: position.viewportWidth,
+            viewportHeight: position.viewportHeight
         };
     }
 
@@ -566,17 +794,11 @@ window.tmDocumentWysiwyg = (function () {
 
         var width = 184;
         var height = 40;
-        var margin = 8;
-        var viewportWidth = window.innerWidth || document.documentElement.clientWidth || 1024;
-        var viewportHeight = window.innerHeight || document.documentElement.clientHeight || 768;
-        var left = rect.left + (rect.width / 2) - (width / 2);
-        var top = rect.top - height - margin;
-        if (top < margin) {
-            top = rect.bottom + margin;
-        }
-
-        left = Math.max(margin, Math.min(left, viewportWidth - width - margin));
-        top = Math.max(margin, Math.min(top, viewportHeight - height - margin));
+        var position = _computeFloatingPosition(rect, { width: width, height: height }, { placement: 'top', align: 'center' });
+        var left = position.left;
+        var top = position.top;
+        var viewportWidth = position.viewportWidth;
+        var viewportHeight = position.viewportHeight;
 
         var key = [
             Math.round(left),
@@ -591,6 +813,7 @@ window.tmDocumentWysiwyg = (function () {
 
         if (inst.miniToolbarVisible && inst.miniToolbarRequestKey === key) return;
         inst.miniToolbarVisible = true;
+        inst.lastTextSelectionSnapshot = snapshot;
         inst.miniToolbarRequestKey = key;
         _invokeDotNet(inst, 'HandleMiniToolbarChanged', {
             IsVisible: true,
@@ -602,13 +825,83 @@ window.tmDocumentWysiwyg = (function () {
             ViewportHeight: viewportHeight,
             Selection: _toPascalSelection(snapshot)
         });
+        window.setTimeout(function () {
+            if (!inst || inst.disposed || !inst.miniToolbarVisible || inst.miniToolbarRequestKey !== key) return;
+            if (document.querySelector('[data-testid="document-mini-toolbar"]')) return;
+            _showNativeMiniToolbarFallback(inst, { left: left, top: top, width: width, height: height }, snapshot, key);
+        }, 180);
     }
 
     function _hideMiniToolbar(inst, force) {
         if (!inst || (!force && !inst.miniToolbarVisible)) return;
         inst.miniToolbarVisible = false;
         inst.miniToolbarRequestKey = null;
+        if (force) {
+            inst.miniToolbarSuppressHideUntil = 0;
+            inst.lastTextSelectionSnapshot = null;
+        }
+        _hideNativeMiniToolbarFallback(inst);
         _invokeDotNet(inst, 'HandleMiniToolbarChanged', null);
+    }
+
+    function _showNativeMiniToolbarFallback(inst, position, snapshot, key) {
+        _hideNativeMiniToolbarFallback(inst);
+        var toolbar = document.createElement('section');
+        toolbar.className = 'tm-document-editor__mini-toolbar tm-document-editor__mini-toolbar--native';
+        toolbar.setAttribute('role', 'toolbar');
+        toolbar.setAttribute('aria-label', 'Text formatting');
+        toolbar.setAttribute('contenteditable', 'false');
+        toolbar.setAttribute('data-testid', 'document-mini-toolbar');
+        toolbar.style.position = 'fixed';
+        toolbar.style.left = Math.round(position.left) + 'px';
+        toolbar.style.top = Math.round(position.top) + 'px';
+        toolbar.style.zIndex = '1002';
+
+        [
+            { label: 'B', title: 'Bold', testId: 'document-mini-bold', command: 'toggleBold' },
+            { label: 'I', title: 'Italic', testId: 'document-mini-italic', command: 'toggleItalic' },
+            { label: 'Link', title: 'Link', testId: 'document-mini-link', command: null },
+            { label: 'Comment', title: 'Comment', testId: 'document-mini-comment', command: null }
+        ].forEach(function (item) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = item.label;
+            button.title = item.title;
+            button.setAttribute('data-testid', item.testId);
+            button.addEventListener('mousedown', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            });
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                if (!item.command) return;
+                _restoreSelection(inst, snapshot);
+                executeCommand(inst.id, item.command, { Selection: snapshot });
+            });
+            toolbar.appendChild(button);
+        });
+
+        document.body.appendChild(toolbar);
+        inst.nativeMiniToolbar = toolbar;
+        inst.nativeMiniToolbarKey = key;
+    }
+
+    function _hideNativeMiniToolbarFallback(inst) {
+        if (!inst || !inst.nativeMiniToolbar) return;
+        if (inst.nativeMiniToolbar.parentNode) {
+            inst.nativeMiniToolbar.parentNode.removeChild(inst.nativeMiniToolbar);
+        }
+
+        inst.nativeMiniToolbar = null;
+        inst.nativeMiniToolbarKey = null;
+    }
+
+    function _repositionVisibleFloatingLayers(inst) {
+        if (!inst || inst.disposed || !inst.miniToolbarVisible || !inst.lastSelectionSnapshot) return;
+        var start = _performanceNow();
+        _scheduleMiniToolbar(inst, inst.lastSelectionSnapshot);
+        _recordFloatingRepositionMetric(inst, start);
     }
 
     function _onRootDragOver(inst, event) {
@@ -657,6 +950,10 @@ window.tmDocumentWysiwyg = (function () {
         if (typeof figure.focus === 'function') {
             figure.focus({ preventScroll: true });
         }
+        var browserSelection = window.getSelection && window.getSelection();
+        if (browserSelection) {
+            browserSelection.removeAllRanges();
+        }
 
         var block = figure.closest('.tm-wysiwyg-block[data-block-id]');
         if (block) {
@@ -675,10 +972,12 @@ window.tmDocumentWysiwyg = (function () {
             inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastSelectionSnapshot);
             _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
         }
+        _showImageSelectionToolbar(inst, figure);
     }
 
     function _clearSelectedImage(inst) {
         if (!inst || !inst.selectedImageFigure) return;
+        _hideImageSelectionToolbar(inst);
         if (inst.selectedImageFigure.isConnected) {
             inst.selectedImageFigure.classList.remove('tm-wysiwyg-image--selected');
             inst.selectedImageFigure.removeAttribute('aria-selected');
@@ -705,11 +1004,14 @@ window.tmDocumentWysiwyg = (function () {
         menu.setAttribute('data-testid', 'document-wysiwyg-image-context-menu');
 
         var actions = [
-            { text: 'Replace image', testId: 'document-wysiwyg-image-replace', action: function () { _replaceSelectedImage(inst); } },
+            { text: 'Replace image', testId: 'document-wysiwyg-image-replace', action: function () { _showImageReplaceMenu(inst, figure, clientX, clientY); } },
             { text: 'Alt text', testId: 'document-wysiwyg-image-alt-text', action: function () { _editSelectedImageAltText(inst); } },
             { text: 'Caption', testId: 'document-wysiwyg-image-caption', action: function () { _editSelectedImageCaption(inst); } },
             { text: 'Wrap text: Inline', testId: 'document-wysiwyg-image-wrap-inline', action: function () { _setSelectedImageInline(inst); } },
             { text: 'Wrap text: Square', testId: 'document-wysiwyg-image-wrap-square', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'Square' }); } },
+            { text: 'Wrap text: Top and bottom', testId: 'document-wysiwyg-image-wrap-top-bottom', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'TopBottom' }); } },
+            { text: 'Position: Left', testId: 'document-wysiwyg-image-position-left', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Left' }); } },
+            { text: 'Position: Right', testId: 'document-wysiwyg-image-position-right', action: function () { _setSelectedImagePosition(inst, { horizontalPosition: 'Right' }); } },
             { text: 'Position: In front of text', testId: 'document-wysiwyg-image-position-front', action: function () { _setSelectedImageWrapMode(inst, { wrapMode: 'InFrontOfText' }); } },
             { text: 'Delete', testId: 'document-wysiwyg-image-delete', action: function () { _deleteSelectedImage(inst); } }
         ];
@@ -746,8 +1048,213 @@ window.tmDocumentWysiwyg = (function () {
         inst.imageContextMenu = null;
     }
 
-    function _replaceSelectedImage(inst) {
+    function _showImageReplaceMenu(inst, figure, clientX, clientY) {
+        figure = figure || _getSelectedImageFigure(inst);
+        if (!inst || !figure) return;
+        inst.selectedImageFigure = figure;
+        _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
+
+        var menu = document.createElement('div');
+        menu.className = 'tm-wysiwyg-image-replace-menu';
+        menu.setAttribute('role', 'menu');
+        menu.setAttribute('contenteditable', 'false');
+        menu.setAttribute('data-testid', 'document-wysiwyg-image-replace-menu');
+
+        var actions = [
+            { text: 'Replace from URL', testId: 'document-wysiwyg-image-replace-url', action: function () { _replaceSelectedImageFromUrl(inst); } },
+            { text: 'Upload file', testId: 'document-wysiwyg-image-replace-upload', action: function () { _replaceSelectedImageFromUpload(inst, figure); } }
+        ];
+
+        actions.forEach(function (item) {
+            var button = document.createElement('button');
+            button.type = 'button';
+            button.textContent = item.text;
+            button.setAttribute('role', 'menuitem');
+            button.setAttribute('data-testid', item.testId);
+            button.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                item.action();
+                _hideImageReplaceMenu(inst);
+            });
+            menu.appendChild(button);
+        });
+
+        inst.root.appendChild(menu);
+        var rootRect = inst.root.getBoundingClientRect();
+        var figRect = figure.getBoundingClientRect();
+        var menuWidth = 220;
+        var x = Number.isFinite(clientX) ? clientX - rootRect.left + inst.root.scrollLeft : figRect.left - rootRect.left + inst.root.scrollLeft;
+        var y = Number.isFinite(clientY) ? clientY - rootRect.top + inst.root.scrollTop : figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
+        menu.style.left = Math.min(Math.max(8, x), Math.max(8, inst.root.clientWidth - menuWidth - 8)) + 'px';
+        menu.style.top = Math.max(8, y) + 'px';
+        inst.imageReplaceMenu = menu;
+    }
+
+    function _hideImageReplaceMenu(inst) {
+        if (!inst || !inst.imageReplaceMenu) return;
+        if (inst.imageReplaceMenu.parentNode) {
+            inst.imageReplaceMenu.parentNode.removeChild(inst.imageReplaceMenu);
+        }
+        inst.imageReplaceMenu = null;
+    }
+
+    // Phase 9.1: floating mini-toolbar shown when image is selected.
+    function _showImageSelectionToolbar(inst, figure) {
+        _hideImageSelectionToolbar(inst);
+        if (!inst || !figure) return;
+
+        var toolbar = document.createElement('div');
+        toolbar.className = 'tm-wysiwyg-image-selection-toolbar';
+        toolbar.setAttribute('role', 'toolbar');
+        toolbar.setAttribute('contenteditable', 'false');
+        toolbar.setAttribute('data-testid', 'document-wysiwyg-image-selection-toolbar');
+        toolbar.setAttribute('aria-label', 'Image tools');
+
+        var buttons = [
+            { label: 'Alt text', testId: 'document-wysiwyg-image-toolbar-alt', action: function () { _beginEditImageAltText(inst, figure); } },
+            { label: 'Caption', testId: 'document-wysiwyg-image-toolbar-caption', action: function () { _toggleImageCaption(inst); } },
+            { label: 'Replace', testId: 'document-wysiwyg-image-toolbar-replace', action: function () { _showImageReplaceMenu(inst, figure); } },
+            { label: 'Delete', testId: 'document-wysiwyg-image-toolbar-delete', action: function () { _deleteSelectedImage(inst); } }
+        ];
+
+        buttons.forEach(function (btn) {
+            var b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = btn.label;
+            b.setAttribute('data-testid', btn.testId);
+            b.setAttribute('role', 'button');
+            b.addEventListener('mousedown', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+            });
+            b.addEventListener('click', function (event) {
+                event.preventDefault();
+                event.stopPropagation();
+                btn.action();
+            });
+            toolbar.appendChild(b);
+        });
+
+        inst.root.appendChild(toolbar);
+        var figRect = figure.getBoundingClientRect();
+        var rootRect = inst.root.getBoundingClientRect();
+        var toolbarHeight = 40;
+        var top = figRect.top - rootRect.top + inst.root.scrollTop - toolbarHeight;
+        if (top < 8) {
+            top = figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
+        }
+
+        var left = figRect.left - rootRect.left + inst.root.scrollLeft;
+        left = Math.min(left, Math.max(8, inst.root.clientWidth - 360));
+        toolbar.style.position = 'absolute';
+        toolbar.style.top = Math.max(8, top) + 'px';
+        toolbar.style.left = Math.max(8, left) + 'px';
+        toolbar.style.zIndex = '1001';
+        inst.imageSelectionToolbar = toolbar;
+    }
+
+    function _hideImageSelectionToolbar(inst) {
+        if (!inst || !inst.imageSelectionToolbar) return;
+        if (inst.imageSelectionToolbar.parentNode) {
+            inst.imageSelectionToolbar.parentNode.removeChild(inst.imageSelectionToolbar);
+        }
+        inst.imageSelectionToolbar = null;
+    }
+
+    // Phase 9.2: set alt text via command (without window.prompt).
+    function _beginEditImageAltText(inst, figure) {
+        var img = (figure || _getSelectedImageFigure(inst)) && (figure || _getSelectedImageFigure(inst)).querySelector('img');
+        if (!img) return;
+        var current = img.alt || '';
+        var next = window.prompt('Alt text', current);
+        if (next == null) return;
+        _setImageAltText(inst, next);
+    }
+
+    function _setImageAltText(inst, altText, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        if (img) img.alt = altText || '';
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
+    // Phase 9.3: toggle figcaption on the selected image.
+    function _toggleImageCaption(inst, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var existing = figure.querySelector('figcaption');
+        if (existing) {
+            existing.remove();
+        } else {
+            var figcaption = document.createElement('figcaption');
+            figcaption.setAttribute('contenteditable', 'true');
+            figcaption.setAttribute('data-testid', 'document-wysiwyg-image-caption-text');
+            figcaption.textContent = 'Caption';
+            var handle = figure.querySelector('.tm-wysiwyg-image__resize-handle');
+            if (handle) {
+                figure.insertBefore(figcaption, handle);
+            } else {
+                figure.appendChild(figcaption);
+            }
+            figcaption.focus();
+            var selection = window.getSelection && window.getSelection();
+            if (selection) {
+                var range = document.createRange();
+                range.selectNodeContents(figcaption);
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+        }
+        _ensureImageResizeHandle(figure, inst);
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
+    // Phase 9.4: set image URL (replace image source).
+    function _setImageUrl(inst, url) {
         var figure = _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        if (!img) return;
+        if (_isSafeImageUrl(url)) {
+            img.src = url;
+            figure.setAttribute('data-image-source', '0');
+            figure.removeAttribute('data-image-asset-id');
+            _attachImageLoadState(figure, img, url, inst);
+        }
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
+    // Phase 9.5: set/clear image link URL.
+    function _setImageLink(inst, linkUrl, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        if (linkUrl) {
+            figure.setAttribute('data-image-link', linkUrl);
+        } else {
+            figure.removeAttribute('data-image-link');
+        }
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
+    function _replaceSelectedImage(inst) {
+        _showImageReplaceMenu(inst, _getSelectedImageFigure(inst));
+    }
+
+    function _replaceSelectedImageFromUrl(inst) {
+        var figure = _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        var current = img ? (img.getAttribute('src') || '') : '';
+        var next = window.prompt('Image URL', current);
+        if (next == null) return;
+        _setImageUrl(inst, next);
+    }
+
+    function _replaceSelectedImageFromUpload(inst, figure) {
+        figure = figure || _getSelectedImageFigure(inst);
         if (!figure) return;
 
         var input = document.createElement('input');
@@ -820,6 +1327,7 @@ window.tmDocumentWysiwyg = (function () {
         block.remove();
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
+        _hideImageReplaceMenu(inst);
         _dispatchPatch(inst, {
             type: 'RemoveBlock',
             blockId: blockId,
@@ -833,6 +1341,66 @@ window.tmDocumentWysiwyg = (function () {
             },
             protocolVersion: inst.options.protocolVersion || 1
         });
+    }
+
+    function _selectPageBreak(inst, pageBreak) {
+        if (!inst || !pageBreak) return;
+        _clearSelectedImage(inst);
+        _hideImageContextMenu(inst);
+        _hideMiniToolbar(inst, true);
+        if (inst.selectedPageBreakId && inst.root) {
+            inst.root.querySelectorAll('.tm-wysiwyg-page-break--selected').forEach(function (el) {
+                el.classList.remove('tm-wysiwyg-page-break--selected');
+                el.removeAttribute('aria-selected');
+            });
+        }
+        inst.selectedPageBreakId = pageBreak.getAttribute('data-block-id') || null;
+        pageBreak.classList.add('tm-wysiwyg-page-break--selected');
+        pageBreak.setAttribute('aria-selected', 'true');
+        pageBreak.setAttribute('tabindex', '0');
+        try { pageBreak.focus({ preventScroll: true }); } catch {}
+    }
+
+    function _clearSelectedPageBreak(inst) {
+        if (!inst || !inst.root) return;
+        inst.root.querySelectorAll('.tm-wysiwyg-page-break--selected').forEach(function (el) {
+            el.classList.remove('tm-wysiwyg-page-break--selected');
+            el.removeAttribute('aria-selected');
+        });
+        inst.selectedPageBreakId = null;
+    }
+
+    function _deletePageBreak(inst, blockId) {
+        if (!inst || !inst.root || inst.readOnly) return false;
+        var id = blockId || inst.selectedPageBreakId || '';
+        if (!id) return false;
+        var selector = '.tm-wysiwyg-page-break[data-block-id="' + _cssEscape(id) + '"]';
+        var pageBreak = inst.root.querySelector(selector);
+        if (!pageBreak) return false;
+        var beforeSelection = {
+            Region: 'Body',
+            AnchorBlockId: id,
+            FocusBlockId: id,
+            AnchorOffset: 0,
+            FocusOffset: 0,
+            IsCollapsed: true
+        };
+        _beginUndoTransaction(inst, 'deletePageBreak', 'Delete page break', beforeSelection, true);
+        pageBreak.remove();
+        _clearSelectedPageBreak(inst);
+        _dispatchPatch(inst, {
+            type: 'RemoveBlock',
+            operationId: _nextRuntimeOperationId(inst),
+            blockId: id,
+            selection: beforeSelection,
+            beforeSelection: beforeSelection,
+            afterSelection: beforeSelection,
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1
+        });
+        _commitCurrentRuntimeTransaction(inst, true);
+        _notifyPageMetrics(inst);
+        return true;
     }
 
     function _uploadAndReplaceImageFile(inst, figure, file, selection) {
@@ -889,6 +1457,102 @@ window.tmDocumentWysiwyg = (function () {
 
     // ── Input pipeline ───────────────────────────────────────────────────────
 
+    function _isInsideProtectedEditableRegion(snapshot, markers) {
+        var blockId = snapshot.anchorBlockId || snapshot.AnchorBlockId || '';
+        var offset = snapshot.anchorOffset != null ? snapshot.anchorOffset : (snapshot.AnchorOffset || 0);
+        if (!blockId) return false;
+        for (var i = 0; i < markers.length; i++) {
+            var m = markers[i];
+            var sb = m.startBlockId || m.StartBlockId || '';
+            var eb = m.endBlockId || m.EndBlockId || '';
+            var so = m.startOffset != null ? m.startOffset : (m.StartOffset || 0);
+            var eo = m.endOffset != null ? m.endOffset : (m.EndOffset || 0);
+            if (sb === blockId && eb === blockId) {
+                if (offset >= so && offset < eo) return true;
+            } else if (sb === blockId && offset >= so) {
+                return true;
+            } else if (eb === blockId && offset < eo) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    function _refreshProtectionMarkers(inst) {
+        if (!inst || !inst.root) return;
+        if (inst.root.classList) {
+            if (inst._isProtected && inst.root.classList.add) {
+                inst.root.classList.add('tm-wysiwyg--protected');
+            } else if (!inst._isProtected && inst.root.classList.remove) {
+                inst.root.classList.remove('tm-wysiwyg--protected');
+            }
+        }
+        if (!inst.root.querySelectorAll) return;
+
+        inst.root.querySelectorAll('.tm-wysiwyg-restricted-editable')
+            .forEach(function (block) {
+                if (block.classList && block.classList.remove) {
+                    block.classList.remove('tm-wysiwyg-restricted-editable');
+                }
+                if (block.removeAttribute) {
+                    block.removeAttribute('data-restricted-editable');
+                }
+            });
+
+        _getRuntimeMarkersByType(inst, 'restrictedRegion').forEach(function (marker) {
+            var id = String(marker.id || marker.Id || '');
+            var source = String(marker.source || marker.Source || '');
+            if (id.indexOf('restricted:') === 0 || source === 'documentProtection') {
+                _removeRuntimeMarker(inst, id);
+            }
+        });
+
+        if (!inst._isProtected || !inst._protectedMarkers || inst._protectedMarkers.length === 0) return;
+
+        inst._protectedMarkers.forEach(function (marker, index) {
+            var startBlockId = marker.startBlockId || marker.StartBlockId || '';
+            var endBlockId = marker.endBlockId || marker.EndBlockId || startBlockId;
+            var markerId = marker.id || marker.Id || ('region-' + index);
+            if (startBlockId) {
+                _upsertRuntimeMarker(inst, {
+                    id: 'restricted:' + markerId,
+                    type: 'restrictedRegion',
+                    range: {
+                        startBlockId: startBlockId,
+                        startOffset: marker.startOffset ?? marker.StartOffset ?? 0,
+                        endBlockId: endBlockId || startBlockId,
+                        endOffset: marker.endOffset ?? marker.EndOffset ?? 0
+                    },
+                    priority: 40,
+                    affectsData: false,
+                    source: 'documentProtection',
+                    targetId: markerId,
+                    label: marker.label || marker.Label || ''
+                }, false);
+            }
+            if (startBlockId) {
+                inst.root.querySelectorAll('[data-block-id="' + startBlockId + '"]').forEach(function (block) {
+                    if (block.classList && block.classList.add) {
+                        block.classList.add('tm-wysiwyg-restricted-editable');
+                    }
+                    if (block.setAttribute) {
+                        block.setAttribute('data-restricted-editable', 'true');
+                    }
+                });
+            }
+            if (endBlockId && endBlockId !== startBlockId) {
+                inst.root.querySelectorAll('[data-block-id="' + endBlockId + '"]').forEach(function (block) {
+                    if (block.classList && block.classList.add) {
+                        block.classList.add('tm-wysiwyg-restricted-editable');
+                    }
+                    if (block.setAttribute) {
+                        block.setAttribute('data-restricted-editable', 'true');
+                    }
+                });
+            }
+        });
+    }
+
     function _onBeforeInput(inst, event) {
         var measure = _beginInputMeasure(inst, event, 'beforeinput');
         try {
@@ -896,6 +1560,16 @@ window.tmDocumentWysiwyg = (function () {
                 event.preventDefault();
                 event.stopPropagation();
                 return;
+            }
+
+            if (inst._isProtected) {
+                var protSnap = _captureSelectionSnapshot(inst);
+                var protectedMarkers = inst._protectedMarkers || [];
+                if (!protSnap || protectedMarkers.length === 0 || !_isInsideProtectedEditableRegion(protSnap, protectedMarkers)) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    return;
+                }
             }
 
             if (inst.compositionActive) return;
@@ -1132,6 +1806,69 @@ window.tmDocumentWysiwyg = (function () {
             : Date.now();
     }
 
+    function _createPerformanceStats() {
+        return {
+            markerRenderAttempts: 0,
+            markerRenderCount: 0,
+            markerRenderSkippedCount: 0,
+            markerRenderTotalMs: 0,
+            markerRenderMaxMs: 0,
+            markerRenderLastMs: 0,
+            floatingRepositionCount: 0,
+            floatingRepositionTotalMs: 0,
+            floatingRepositionMaxMs: 0,
+            floatingRepositionLastMs: 0,
+            clipboardNormalizationCount: 0,
+            clipboardNormalizationTotalMs: 0,
+            clipboardNormalizationMaxMs: 0,
+            clipboardNormalizationLastMs: 0
+        };
+    }
+
+    function _ensurePerformanceStats(inst) {
+        if (!inst.performanceStats) {
+            inst.performanceStats = _createPerformanceStats();
+        }
+
+        return inst.performanceStats;
+    }
+
+    function _recordMarkerRenderMetric(inst, start, rendered) {
+        if (!inst) return;
+        var stats = _ensurePerformanceStats(inst);
+        var elapsed = Math.max(0, _performanceNow() - start);
+        stats.markerRenderAttempts++;
+        if (rendered) {
+            stats.markerRenderCount++;
+        } else {
+            stats.markerRenderSkippedCount++;
+        }
+
+        stats.markerRenderTotalMs += elapsed;
+        stats.markerRenderLastMs = elapsed;
+        stats.markerRenderMaxMs = Math.max(stats.markerRenderMaxMs || 0, elapsed);
+    }
+
+    function _recordFloatingRepositionMetric(inst, start) {
+        if (!inst) return;
+        var stats = _ensurePerformanceStats(inst);
+        var elapsed = Math.max(0, _performanceNow() - start);
+        stats.floatingRepositionCount++;
+        stats.floatingRepositionTotalMs += elapsed;
+        stats.floatingRepositionLastMs = elapsed;
+        stats.floatingRepositionMaxMs = Math.max(stats.floatingRepositionMaxMs || 0, elapsed);
+    }
+
+    function _recordClipboardNormalizationMetric(inst, start) {
+        if (!inst) return;
+        var stats = _ensurePerformanceStats(inst);
+        var elapsed = Math.max(0, _performanceNow() - start);
+        stats.clipboardNormalizationCount++;
+        stats.clipboardNormalizationTotalMs += elapsed;
+        stats.clipboardNormalizationLastMs = elapsed;
+        stats.clipboardNormalizationMaxMs = Math.max(stats.clipboardNormalizationMaxMs || 0, elapsed);
+    }
+
     function _beginInputMeasure(inst, event, eventType) {
         if (!inst) return null;
         return {
@@ -1342,13 +2079,13 @@ window.tmDocumentWysiwyg = (function () {
 
     function _handlePendingTypingBeforeInput(inst, event, inputType, selection) {
         if (inputType !== 'insertText' || !event.data || !_hasPendingTypingMarks(inst)) {
-            return false;
+            return null;
         }
 
         _beginUndoTransaction(inst, 'typing', 'Type text', selection, false);
         var result = _applyPendingTypingTextToDom(inst, event.data);
         if (!result) {
-            return false;
+            return null;
         }
 
         event.preventDefault();
@@ -1685,7 +2422,7 @@ window.tmDocumentWysiwyg = (function () {
 
     function _handleStructuralBeforeInput(inst, event, inputType, selection, revisionType) {
         if (inputType !== 'insertParagraph' && inputType !== 'insertLineBreak') {
-            return false;
+            return null;
         }
 
         _commitCurrentRuntimeTransaction(inst, true);
@@ -2040,11 +2777,13 @@ window.tmDocumentWysiwyg = (function () {
 
         if (patch.type === 'InsertText' && data) {
             _queueInsertTextPatch(inst, patch);
+            _syncAutocompleteTrigger(inst, patch.afterSelection);
             return;
         }
 
         _flushPendingInputPatch(inst);
         _dispatchPatch(inst, patch);
+        _syncAutocompleteTrigger(inst, patch.afterSelection);
     }
 
     function _queueInsertTextPatch(inst, patch) {
@@ -2132,13 +2871,13 @@ window.tmDocumentWysiwyg = (function () {
         if (Date.now() > inst.suppressInputUntil) {
             inst.suppressInputType = null;
             inst.suppressInputUntil = 0;
-            return false;
+            return null;
         }
         if (inst.suppressInputType !== inputType) return false;
 
         inst.suppressInputType = null;
         inst.suppressInputUntil = 0;
-        return true;
+        return selection;
     }
 
     function _dispatchPatch(inst, patch) {
@@ -2151,6 +2890,7 @@ window.tmDocumentWysiwyg = (function () {
         _invalidateMeasureCache(inst);
         _appendUndoOperation(inst, patch);
         _transformRuntimeCommentAnchorsForPatch(inst, patch);
+        _transformRuntimeMarkersForPatch(inst, patch);
         inst.pendingLocalSnapshotSkips++;
         inst.lastPatchType = patch.type || patch.Type || null;
         inst.lastPatchId = patch.patchId || patch.PatchId || patch.operationId || patch.OperationId || null;
@@ -2158,6 +2898,914 @@ window.tmDocumentWysiwyg = (function () {
         inst.lastPatchAt = new Date().toISOString();
         _invokeDotNet(inst, 'HandlePatchGenerated', patch);
         _scheduleRemoteQueueFlush(inst);
+    }
+
+    // ─── Search marker helpers ────────────────────────────────────────────────
+
+    function _clearSearchMarkers(inst) {
+        inst._searchMarkers = [];
+        _removeRuntimeMarkersByType(inst, ['search', 'searchActive']);
+    }
+
+    function _applySearchMarker(inst, marker) {
+        var normalized = _createSearchRuntimeMarker(marker, marker.index || 0);
+        _upsertRuntimeMarker(inst, normalized, true);
+    }
+
+    function _setSearchMarkers(inst, blockIdsOrMarkers, offsets, lengths) {
+        _clearSearchMarkers(inst);
+        var markers = _normalizeSearchMarkerInput(blockIdsOrMarkers, offsets, lengths);
+        inst._searchMarkers = markers;
+        markers.forEach(function (marker, index) {
+            marker.index = index;
+            _applySearchMarker(inst, marker);
+        });
+    }
+
+    function _scrollToSearchResult(inst, blockId, offset, length) {
+        var targetMarker = null;
+        _getRuntimeMarkersByType(inst, 'search').concat(_getRuntimeMarkersByType(inst, 'searchActive')).forEach(function (marker) {
+            var range = marker.range || marker.Range || {};
+            if (String(range.startBlockId || range.StartBlockId || '') === String(blockId || '')
+                && Number(range.startOffset ?? range.StartOffset ?? 0) === Number(offset || 0)
+                && Number((range.endOffset ?? range.EndOffset ?? 0) - (range.startOffset ?? range.StartOffset ?? 0)) === Number(length || 0)) {
+                targetMarker = marker;
+            }
+        });
+
+        if (targetMarker) {
+            _setActiveSearchMarker(inst, targetMarker.id || targetMarker.Id);
+        }
+
+        var mark = inst.root.querySelector('.tm-wysiwyg-search-match--active');
+        if (!mark && targetMarker) {
+            var targetRange = targetMarker.range || targetMarker.Range || {};
+            var targetBlockId = targetRange.startBlockId || targetRange.StartBlockId || blockId || '';
+            var pageIndex = _findVirtualPageIndexForBlock(inst, targetBlockId);
+            if (pageIndex >= 0) {
+                _scrollVirtualPageToIndex(inst, pageIndex);
+                _setActiveSearchMarker(inst, targetMarker.id || targetMarker.Id);
+                mark = inst.root.querySelector('.tm-wysiwyg-search-match--active');
+            }
+        }
+
+        if (mark) {
+            mark.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+        }
+    }
+
+    function _setActiveSearchMarker(inst, markerId) {
+        if (!inst || !markerId) return;
+        var markers = _getRuntimeMarkersByType(inst, 'search').concat(_getRuntimeMarkersByType(inst, 'searchActive'));
+        markers.forEach(function (marker) {
+            marker.type = String(marker.id || marker.Id) === String(markerId) ? 'searchActive' : 'search';
+            marker.Type = marker.type;
+        });
+        _clearMarkerDecorations(inst, function (marker) {
+            var type = _normalizeRuntimeMarkerType(marker.type || marker.Type);
+            return type === 'search' || type === 'searchActive';
+        });
+        markers.forEach(function (marker) { _renderRuntimeMarker(inst, marker); });
+    }
+
+    function _normalizeSearchMarkerInput(blockIdsOrMarkers, offsets, lengths) {
+        if (Array.isArray(blockIdsOrMarkers) && blockIdsOrMarkers.length > 0 && typeof blockIdsOrMarkers[0] === 'object') {
+            return blockIdsOrMarkers.map(function (marker, index) {
+                return {
+                    id: marker.id || marker.Id || ('search-' + index),
+                    blockId: marker.blockId || marker.BlockId || '',
+                    offset: marker.offset ?? marker.Offset ?? marker.startOffset ?? marker.StartOffset ?? 0,
+                    length: marker.length ?? marker.Length ?? Math.max(0, (marker.endOffset ?? marker.EndOffset ?? 0) - (marker.startOffset ?? marker.StartOffset ?? 0)),
+                    active: !!(marker.active ?? marker.Active ?? index === 0)
+                };
+            });
+        }
+
+        var blockIds = Array.isArray(blockIdsOrMarkers) ? blockIdsOrMarkers : [];
+        return blockIds.map(function (blockId, index) {
+            return {
+                id: 'search-' + index,
+                blockId: blockId,
+                offset: Array.isArray(offsets) ? (offsets[index] || 0) : 0,
+                length: Array.isArray(lengths) ? (lengths[index] || 0) : 0,
+                active: index === 0
+            };
+        });
+    }
+
+    function _createSearchRuntimeMarker(marker, index) {
+        var offset = Number(marker.offset ?? marker.Offset ?? 0);
+        var length = Number(marker.length ?? marker.Length ?? 0);
+        return {
+            id: marker.id || marker.Id || ('search-' + index),
+            type: marker.active ? 'searchActive' : 'search',
+            range: {
+                startBlockId: marker.blockId || marker.BlockId || '',
+                startOffset: offset,
+                endBlockId: marker.blockId || marker.BlockId || '',
+                endOffset: offset + Math.max(0, length)
+            },
+            affectsData: false,
+            priority: marker.active ? 30 : 10,
+            source: 'transient',
+            label: marker.label || marker.Label || ''
+        };
+    }
+
+    // ─── Autocomplete trigger helpers ───────────────────────────────────────
+
+    function _detectAutocompleteTriggerText(text, caretOffset) {
+        var source = String(text || '');
+        var offset = Math.max(0, Math.min(Number(caretOffset || 0), source.length));
+        var before = source.slice(0, offset);
+        var match = /(^|[\s([{])(\{\{|@|#|\/)([^\s{}@#\/]*)$/.exec(before);
+        if (!match) return null;
+
+        var marker = match[2];
+        var query = match[3] || '';
+        var markerStart = offset - marker.length - query.length;
+        var triggerId = marker === '{{'
+            ? 'token'
+            : marker === '@'
+                ? 'mention'
+                : marker === '#'
+                    ? 'tag'
+                    : 'slash';
+        var markerType = marker === '{{'
+            ? 'tokenQuery'
+            : marker === '@'
+                ? 'mentionQuery'
+                : marker === '#'
+                    ? 'tagQuery'
+                    : 'slashQuery';
+
+        return {
+            triggerId: triggerId,
+            marker: marker,
+            markerType: markerType,
+            query: query,
+            startOffset: markerStart,
+            endOffset: offset
+        };
+    }
+
+    function _syncAutocompleteTrigger(inst, selection) {
+        if (!inst || inst.readOnly || inst.disposed) return;
+        var snapshot = selection || _captureSelectionSnapshot(inst);
+        if (!snapshot || snapshot.isCollapsed === false || snapshot.IsCollapsed === false) {
+            _closeAutocompleteQuery(inst, true);
+            return;
+        }
+
+        var blockId = snapshot.anchorBlockId || snapshot.AnchorBlockId || snapshot.focusBlockId || snapshot.FocusBlockId || '';
+        var caretOffset = snapshot.anchorBlockOffset ?? snapshot.AnchorBlockOffset ?? snapshot.anchorOffset ?? snapshot.AnchorOffset ?? 0;
+        if (!blockId) {
+            _closeAutocompleteQuery(inst, true);
+            return;
+        }
+
+        var block = inst.root && inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]');
+        if (!block) {
+            _closeAutocompleteQuery(inst, true);
+            return;
+        }
+
+        var detected = _detectAutocompleteTriggerText(block.textContent || '', caretOffset);
+        if (!detected) {
+            _closeAutocompleteQuery(inst, true);
+            return;
+        }
+
+        var key = [detected.triggerId, blockId, detected.startOffset, detected.endOffset, detected.query].join('|');
+        if (inst.activeAutocompleteKey === key) return;
+        inst.activeAutocompleteKey = key;
+        inst.activeAutocomplete = {
+            triggerId: detected.triggerId,
+            marker: detected.marker,
+            query: detected.query,
+            blockId: blockId,
+            startOffset: detected.startOffset,
+            endOffset: detected.endOffset
+        };
+
+        _upsertRuntimeMarker(inst, {
+            id: 'autocomplete-query',
+            type: detected.markerType,
+            range: {
+                startBlockId: blockId,
+                startOffset: detected.startOffset,
+                endBlockId: blockId,
+                endOffset: detected.endOffset
+            },
+            affectsData: false,
+            priority: 35,
+            source: 'autocomplete',
+            label: detected.marker
+        }, false);
+
+        _invokeDotNet(inst, 'HandleAutocompleteTriggerRequested', {
+            TriggerId: detected.triggerId,
+            Marker: detected.marker,
+            Query: detected.query,
+            BlockId: blockId,
+            StartOffset: detected.startOffset,
+            EndOffset: detected.endOffset
+        });
+    }
+
+    function _closeAutocompleteQuery(inst, notify) {
+        if (!inst) return;
+        var hadActive = !!inst.activeAutocompleteKey;
+        inst.activeAutocompleteKey = null;
+        inst.activeAutocomplete = null;
+        _removeRuntimeMarker(inst, 'autocomplete-query');
+        if (notify && hadActive) {
+            _invokeDotNet(inst, 'HandleAutocompleteClosed');
+        }
+    }
+
+    function _removeAutocompleteQuery(inst) {
+        if (!inst || !inst.activeAutocomplete || !inst.root) {
+            _closeAutocompleteQuery(inst, false);
+            return null;
+        }
+
+        var active = inst.activeAutocomplete;
+        var blockId = active.blockId || active.BlockId || '';
+        var start = Number(active.startOffset ?? active.StartOffset ?? 0);
+        var end = Number(active.endOffset ?? active.EndOffset ?? start);
+        var block = blockId ? inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]') : null;
+        if (!block || end <= start) {
+            _closeAutocompleteQuery(inst, false);
+            return null;
+        }
+
+        var startPos = _resolveTextPosition(block, start);
+        var endPos = _resolveTextPosition(block, end);
+        if (!startPos || !endPos) {
+            _closeAutocompleteQuery(inst, false);
+            return null;
+        }
+
+        var startInfo = _mapNodeToBlockInline(startPos.node, startPos.offset, inst.root);
+        if (!startInfo) {
+            _closeAutocompleteQuery(inst, false);
+            return null;
+        }
+
+        var removedText = '';
+        inst._applyingOwnPatch = true;
+        try {
+            var range = document.createRange();
+            range.setStart(startPos.node, startPos.offset);
+            range.setEnd(endPos.node, endPos.offset);
+            removedText = range.toString();
+            range.deleteContents();
+            _setCaret(startPos.node, Math.min(startPos.offset, (startPos.node.textContent || '').length));
+        } finally {
+            inst._applyingOwnPatch = false;
+        }
+
+        var selection = {
+            region: 'Body',
+            anchorBlockId: blockId,
+            focusBlockId: blockId,
+            anchorInlineId: startInfo.inlineId,
+            focusInlineId: startInfo.inlineId,
+            anchorOffset: startInfo.offset,
+            focusOffset: startInfo.offset,
+            anchorBlockOffset: start,
+            focusBlockOffset: start,
+            isCollapsed: true,
+            direction: 'forward'
+        };
+        inst.lastSelectionSnapshot = selection;
+        _scheduleSelectionNotification(inst, selection);
+        _closeAutocompleteQuery(inst, false);
+
+        _dispatchPatch(inst, {
+            type: 'DeleteRange',
+            operationId: _nextRuntimeOperationId(inst),
+            epoch: inst.runtimeUndoEpoch || 0,
+            data: removedText,
+            deleteLength: Math.max(0, end - start),
+            selection: selection,
+            beforeSelection: selection,
+            afterSelection: selection,
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1
+        });
+
+        return selection;
+    }
+
+    function _insertAutocompleteText(inst, text) {
+        text = String(text || '');
+        if (!inst || inst.disposed || inst.readOnly || !text) return false;
+        var selection = _captureSelectionSnapshot(inst);
+        if (!selection) return false;
+
+        _beginUndoTransaction(inst, 'autocomplete', 'Insert autocomplete text', selection, false);
+        var result = _applyInsertText(inst, text);
+        if (!result) return false;
+
+        _invalidateMeasureCache(inst);
+        var afterSelection = _captureSelectionSnapshot(inst);
+        inst.lastSelectionSnapshot = afterSelection;
+        _scheduleSelectionNotification(inst, afterSelection);
+        _markIncrementalRender(inst, 'autocompleteText');
+        _dispatchInputPatch(inst, 'insertText', text, selection, null, null, afterSelection);
+        _flushPendingInputPatch(inst);
+        _commitCurrentRuntimeTransaction(inst, true);
+        return true;
+    }
+
+    function _getSearchReplaceMarkers(inst, payload, all) {
+        var markers = _getRuntimeMarkersByType(inst, 'searchActive').concat(_getRuntimeMarkersByType(inst, 'search'));
+        if (!all) {
+            var markerId = payload && (payload.markerId || payload.MarkerId || payload.id || payload.Id);
+            if (markerId) {
+                var byId = markers.find(function (marker) {
+                    return String(marker.id || marker.Id || '') === String(markerId);
+                });
+                if (byId) return [byId];
+            }
+
+            var active = markers.find(function (marker) {
+                return _normalizeRuntimeMarkerType(marker.type || marker.Type) === 'searchActive';
+            });
+            if (active) return [active];
+        }
+
+        var blockId = payload && (payload.blockId || payload.BlockId);
+        var offset = payload && (payload.offset ?? payload.Offset);
+        var length = payload && (payload.length ?? payload.Length);
+        if (!all && blockId != null && offset != null && length != null) {
+            return [{
+                id: payload.markerId || payload.MarkerId || 'search-payload',
+                type: 'searchActive',
+                range: {
+                    startBlockId: String(blockId),
+                    startOffset: Number(offset) || 0,
+                    endBlockId: String(blockId),
+                    endOffset: (Number(offset) || 0) + (Number(length) || 0)
+                }
+            }];
+        }
+
+        return all ? markers.slice() : [];
+    }
+
+    function _resolveTextRangeInBlock(block, startOffset, endOffset) {
+        var nodes = _collectTextNodes(block);
+        var current = 0;
+        var start = null;
+        var end = null;
+
+        for (var i = 0; i < nodes.length; i++) {
+            var node = nodes[i];
+            var length = (node.nodeValue || '').length;
+            var next = current + length;
+
+            if (!start && startOffset >= current && startOffset <= next) {
+                start = { node: node, offset: startOffset - current };
+            }
+
+            if (!end && endOffset >= current && endOffset <= next) {
+                end = { node: node, offset: endOffset - current };
+                break;
+            }
+
+            current = next;
+        }
+
+        if (!start && nodes.length > 0 && startOffset === current) {
+            start = { node: nodes[nodes.length - 1], offset: (nodes[nodes.length - 1].nodeValue || '').length };
+        }
+        if (!end && start) {
+            end = { node: start.node, offset: start.offset };
+        }
+
+        return start && end ? { start: start, end: end } : null;
+    }
+
+    function _selectInsertedReplacement(node, text) {
+        var selection = window.getSelection && window.getSelection();
+        if (!selection || !document.createRange) return;
+        var range = document.createRange();
+        range.setStart(node, 0);
+        range.setEnd(node, (text || '').length);
+        selection.removeAllRanges();
+        selection.addRange(range);
+    }
+
+    function _replaceMarkerTextRange(inst, marker, replacement, tracked) {
+        var rangeInfo = marker && (marker.range || marker.Range);
+        if (!rangeInfo) return false;
+        var blockId = rangeInfo.startBlockId || rangeInfo.StartBlockId || '';
+        var startOffset = Number(rangeInfo.startOffset ?? rangeInfo.StartOffset ?? 0);
+        var endOffset = Number(rangeInfo.endOffset ?? rangeInfo.EndOffset ?? startOffset);
+        if (!blockId || endOffset < startOffset) return false;
+
+        var block = inst.root.querySelector('[data-block-id="' + _cssEscape(String(blockId)) + '"]');
+        if (!block) return false;
+
+        var resolved = _resolveTextRangeInBlock(block, startOffset, endOffset);
+        if (!resolved || !document.createRange) return false;
+
+        var domRange = document.createRange();
+        domRange.setStart(resolved.start.node, resolved.start.offset);
+        domRange.setEnd(resolved.end.node, resolved.end.offset);
+        var originalText = domRange.toString();
+        var replacementText = replacement == null ? '' : String(replacement);
+        var beforeSelection = {
+            anchorBlockId: blockId,
+            focusBlockId: blockId,
+            anchorOffset: startOffset,
+            focusOffset: endOffset,
+            isCollapsed: startOffset === endOffset
+        };
+
+        var insertedTextNode;
+        if (tracked && (originalText || replacementText)) {
+            var deletionRevisionId = originalText ? _createRevisionId() : null;
+            var insertionRevisionId = replacementText ? _createRevisionId() : null;
+            var fragment = document.createDocumentFragment();
+
+            if (deletionRevisionId) {
+                fragment.appendChild(_createRevisionSpan(deletionRevisionId, 'Deletion', originalText, resolved.start.node.parentElement));
+            }
+            if (insertionRevisionId) {
+                var insertion = _createRevisionSpan(insertionRevisionId, 'Insertion', replacementText, resolved.start.node.parentElement);
+                fragment.appendChild(insertion);
+                insertedTextNode = _firstDeepTextNode(insertion) || insertion.firstChild;
+            }
+
+            domRange.deleteContents();
+            domRange.insertNode(fragment);
+
+            var afterTrackedSelection = {
+                anchorBlockId: blockId,
+                focusBlockId: blockId,
+                anchorOffset: startOffset,
+                focusOffset: startOffset + replacementText.length,
+                isCollapsed: replacementText.length === 0
+            };
+            if (deletionRevisionId) {
+                _createRuntimeRevision(inst, deletionRevisionId, 'Deletion', originalText, beforeSelection, afterTrackedSelection);
+            }
+            if (insertionRevisionId) {
+                _createRuntimeRevision(inst, insertionRevisionId, 'Insertion', replacementText, beforeSelection, afterTrackedSelection);
+            }
+        } else {
+            domRange.deleteContents();
+            insertedTextNode = document.createTextNode(replacementText);
+            domRange.insertNode(insertedTextNode);
+        }
+
+        if (!insertedTextNode) {
+            insertedTextNode = document.createTextNode('');
+            block.appendChild(insertedTextNode);
+        }
+        _selectInsertedReplacement(insertedTextNode, replacementText);
+        _invalidateMeasureCache(inst);
+        _markIncrementalRender(inst, 'replaceText');
+        inst.lastCommittedHtml = inst.root.innerHTML;
+        var afterSelection = _captureSelectionSnapshot(inst) || {
+            anchorBlockId: blockId,
+            focusBlockId: blockId,
+            anchorOffset: startOffset,
+            focusOffset: startOffset + replacementText.length,
+            isCollapsed: replacementText.length === 0
+        };
+        inst.lastSelectionSnapshot = afterSelection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(afterSelection);
+        _scheduleSelectionNotification(inst, afterSelection);
+        _appendUndoOperation(inst, {
+            type: 'ReplaceText',
+            operationId: _nextRuntimeOperationId(inst),
+            blockId: blockId,
+            offset: startOffset,
+            length: Math.max(0, endOffset - startOffset),
+            data: replacementText,
+            originalText: originalText,
+            selection: beforeSelection,
+            afterSelection: afterSelection,
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1,
+            epoch: inst.runtimeUndoEpoch || 0
+        });
+        return true;
+    }
+
+    function _executeReplaceOneCommand(inst, payload) {
+        payload = payload || {};
+        var markers = _getSearchReplaceMarkers(inst, payload, false);
+        if (markers.length === 0) return false;
+
+        _commitCurrentRuntimeTransaction(inst, true);
+        _beginUndoTransaction(inst, 'replace', 'Replace', _captureSelectionSnapshot(inst), true);
+        var replaced = _replaceMarkerTextRange(inst, markers[0], payload.replacement ?? payload.Replacement ?? '', !!inst.trackChangesEnabled);
+        _clearSearchMarkers(inst);
+        _commitCurrentRuntimeTransaction(inst, true);
+        return replaced;
+    }
+
+    function _executeReplaceAllCommand(inst, payload) {
+        payload = payload || {};
+        var markers = _getSearchReplaceMarkers(inst, payload, true);
+        if (markers.length === 0) return false;
+
+        markers.sort(function (a, b) {
+            var ar = a.range || a.Range || {};
+            var br = b.range || b.Range || {};
+            var ab = String(ar.startBlockId || ar.StartBlockId || '');
+            var bb = String(br.startBlockId || br.StartBlockId || '');
+            if (ab !== bb) return ab < bb ? 1 : -1;
+            return Number(br.startOffset ?? br.StartOffset ?? 0) - Number(ar.startOffset ?? ar.StartOffset ?? 0);
+        });
+
+        _commitCurrentRuntimeTransaction(inst, true);
+        _beginUndoTransaction(inst, 'replace', 'Replace all', _captureSelectionSnapshot(inst), true);
+        var count = 0;
+        markers.forEach(function (marker) {
+            if (_replaceMarkerTextRange(inst, marker, payload.replacement ?? payload.Replacement ?? '', !!inst.trackChangesEnabled)) {
+                count++;
+            }
+        });
+        _clearSearchMarkers(inst);
+        _commitCurrentRuntimeTransaction(inst, true);
+        return count > 0;
+    }
+
+    function _collectTextNodes(el) {
+        var result = [];
+        var walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null);
+        var node;
+        while ((node = walker.nextNode())) {
+            result.push(node);
+        }
+        return result;
+    }
+
+    function _wrapTextRange(textNode, start, end, active) {
+        if (start >= end || !textNode.nodeValue) return;
+        var text = textNode.nodeValue;
+        var before = text.slice(0, start);
+        var match = text.slice(start, end);
+        var after = text.slice(end);
+
+        var mark = document.createElement('mark');
+        mark.className = 'tm-wysiwyg-search-match' + (active ? ' tm-wysiwyg-search-match--active' : '');
+        mark.textContent = match;
+
+        var parent = textNode.parentNode;
+        if (!parent) return;
+
+        if (before) parent.insertBefore(document.createTextNode(before), textNode);
+        parent.insertBefore(mark, textNode);
+        if (after) parent.insertBefore(document.createTextNode(after), textNode);
+        parent.removeChild(textNode);
+    }
+
+    function _ensureRuntimeMarkerStore(inst) {
+        if (!inst.markerStore) {
+            inst.markerStore = new Map();
+        }
+        return inst.markerStore;
+    }
+
+    function _normalizeRuntimeMarker(marker) {
+        if (!marker) return null;
+        var id = marker.id || marker.Id || '';
+        var range = marker.range || marker.Range || {};
+        if (!id) {
+            id = 'marker-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+        }
+
+        var startBlockId = range.startBlockId || range.StartBlockId || marker.blockId || marker.BlockId || '';
+        var startOffset = Number(range.startOffset ?? range.StartOffset ?? marker.offset ?? marker.Offset ?? 0);
+        var endBlockId = range.endBlockId || range.EndBlockId || startBlockId;
+        var endOffset = Number(range.endOffset ?? range.EndOffset ?? (startOffset + Number(marker.length ?? marker.Length ?? 0)));
+        return {
+            id: String(id),
+            Id: String(id),
+            type: _normalizeRuntimeMarkerType(marker.type || marker.Type || 'search'),
+            Type: _normalizeRuntimeMarkerType(marker.type || marker.Type || 'search'),
+            range: {
+                startBlockId: String(startBlockId || ''),
+                StartBlockId: String(startBlockId || ''),
+                startInlineId: range.startInlineId || range.StartInlineId || null,
+                StartInlineId: range.startInlineId || range.StartInlineId || null,
+                startOffset: Math.max(0, startOffset || 0),
+                StartOffset: Math.max(0, startOffset || 0),
+                endBlockId: String(endBlockId || startBlockId || ''),
+                EndBlockId: String(endBlockId || startBlockId || ''),
+                endInlineId: range.endInlineId || range.EndInlineId || null,
+                EndInlineId: range.endInlineId || range.EndInlineId || null,
+                endOffset: Math.max(0, endOffset || 0),
+                EndOffset: Math.max(0, endOffset || 0)
+            },
+            affectsData: !!(marker.affectsData ?? marker.AffectsData),
+            AffectsData: !!(marker.affectsData ?? marker.AffectsData),
+            priority: Number(marker.priority ?? marker.Priority ?? _defaultRuntimeMarkerPriority(marker.type || marker.Type)),
+            Priority: Number(marker.priority ?? marker.Priority ?? _defaultRuntimeMarkerPriority(marker.type || marker.Type)),
+            source: marker.source || marker.Source || 'localRuntime',
+            Source: marker.source || marker.Source || 'localRuntime',
+            targetId: marker.targetId || marker.TargetId || null,
+            TargetId: marker.targetId || marker.TargetId || null,
+            label: marker.label || marker.Label || '',
+            Label: marker.label || marker.Label || '',
+            status: marker.status || marker.Status || '',
+            Status: marker.status || marker.Status || '',
+            metadata: marker.metadata || marker.Metadata || {},
+            Metadata: marker.metadata || marker.Metadata || {}
+        };
+    }
+
+    function _normalizeRuntimeMarkerType(type) {
+        var value = String(type || '').replace(/[_\s-]/g, '').toLowerCase();
+        switch (value) {
+            case 'searchactive': return 'searchActive';
+            case 'comment': return 'comment';
+            case 'revisioninsertion':
+            case 'insertionrevision': return 'revisionInsertion';
+            case 'revisiondeletion':
+            case 'deletionrevision': return 'revisionDeletion';
+            case 'revisionformatting':
+            case 'formattingrevision': return 'revisionFormatting';
+            case 'remoteselection':
+            case 'remotecursor': return 'remoteSelection';
+            case 'restrictedregion': return 'restrictedRegion';
+            case 'mentionquery': return 'mentionQuery';
+            case 'tokenquery': return 'tokenQuery';
+            case 'tagquery': return 'tagQuery';
+            case 'slashquery': return 'slashQuery';
+            default: return 'search';
+        }
+    }
+
+    function _defaultRuntimeMarkerPriority(type) {
+        switch (_normalizeRuntimeMarkerType(type)) {
+            case 'revisionDeletion':
+            case 'revisionInsertion':
+            case 'revisionFormatting': return 80;
+            case 'comment': return 60;
+            case 'remoteSelection': return 50;
+            case 'restrictedRegion': return 40;
+            case 'searchActive': return 30;
+            case 'search': return 10;
+            default: return 0;
+        }
+    }
+
+    function _upsertRuntimeMarker(inst, marker, render) {
+        var normalized = _normalizeRuntimeMarker(marker);
+        if (!inst || !normalized) return null;
+        _ensureRuntimeMarkerStore(inst).set(normalized.id, normalized);
+        if (render !== false) {
+            _clearMarkerDecorations(inst, function (candidate) { return String(candidate.id || candidate.Id) === normalized.id; });
+            _renderRuntimeMarker(inst, normalized);
+        }
+        return normalized;
+    }
+
+    function _removeRuntimeMarker(inst, markerId) {
+        if (!inst || !markerId) return false;
+        var store = _ensureRuntimeMarkerStore(inst);
+        var removed = store.delete(String(markerId));
+        _clearMarkerDecorations(inst, function (marker) { return String(marker.id || marker.Id) === String(markerId); });
+        return removed;
+    }
+
+    function _removeRuntimeMarkersByType(inst, types) {
+        if (!inst) return;
+        types = (types || []).map(_normalizeRuntimeMarkerType);
+        var store = _ensureRuntimeMarkerStore(inst);
+        Array.from(store.values()).forEach(function (marker) {
+            if (types.indexOf(_normalizeRuntimeMarkerType(marker.type || marker.Type)) >= 0) {
+                store.delete(marker.id || marker.Id);
+            }
+        });
+        _clearMarkerDecorations(inst, function (marker) {
+            return types.indexOf(_normalizeRuntimeMarkerType(marker.type || marker.Type)) >= 0;
+        });
+    }
+
+    function _getRuntimeMarkers(inst) {
+        return Array.from(_ensureRuntimeMarkerStore(inst).values()).sort(_compareRuntimeMarkers);
+    }
+
+    function _getRuntimeMarkersByType(inst, type) {
+        var normalizedType = _normalizeRuntimeMarkerType(type);
+        return _getRuntimeMarkers(inst).filter(function (marker) {
+            return _normalizeRuntimeMarkerType(marker.type || marker.Type) === normalizedType;
+        });
+    }
+
+    function _getRuntimeMarkersByBlock(inst, blockId) {
+        return _getRuntimeMarkers(inst).filter(function (marker) {
+            var range = marker.range || marker.Range || {};
+            return String(range.startBlockId || range.StartBlockId || '') === String(blockId || '')
+                || String(range.endBlockId || range.EndBlockId || '') === String(blockId || '');
+        });
+    }
+
+    function _getOverlappingRuntimeMarkers(inst, range) {
+        var normalizedRange = _normalizeRuntimeMarker({ id: 'range', range: range }).range;
+        return _getRuntimeMarkers(inst).filter(function (marker) {
+            return _runtimeMarkerRangesOverlap(marker.range || marker.Range || {}, normalizedRange);
+        });
+    }
+
+    function _compareRuntimeMarkers(a, b) {
+        var ap = Number(a.priority ?? a.Priority ?? 0);
+        var bp = Number(b.priority ?? b.Priority ?? 0);
+        if (bp !== ap) return bp - ap;
+        return String(a.id || a.Id || '').localeCompare(String(b.id || b.Id || ''));
+    }
+
+    function _runtimeMarkerRangesOverlap(a, b) {
+        var aStartBlock = String(a.startBlockId || a.StartBlockId || '');
+        var aEndBlock = String(a.endBlockId || a.EndBlockId || aStartBlock);
+        var bStartBlock = String(b.startBlockId || b.StartBlockId || '');
+        var bEndBlock = String(b.endBlockId || b.EndBlockId || bStartBlock);
+        if (aStartBlock !== aEndBlock || bStartBlock !== bEndBlock || aStartBlock !== bStartBlock) {
+            return aStartBlock === bStartBlock || aStartBlock === bEndBlock || aEndBlock === bStartBlock || aEndBlock === bEndBlock;
+        }
+
+        var aStart = Number(a.startOffset ?? a.StartOffset ?? 0);
+        var aEnd = Number(a.endOffset ?? a.EndOffset ?? aStart);
+        var bStart = Number(b.startOffset ?? b.StartOffset ?? 0);
+        var bEnd = Number(b.endOffset ?? b.EndOffset ?? bStart);
+        return aStart < bEnd && bStart < aEnd;
+    }
+
+    function _renderRuntimeMarkers(inst) {
+        if (!inst) return;
+        _clearMarkerDecorations(inst);
+        _getRuntimeMarkers(inst).forEach(function (marker) { _renderRuntimeMarker(inst, marker); });
+    }
+
+    function _renderRuntimeMarker(inst, marker) {
+        if (!inst || !inst.root || !marker) return false;
+        var metricStart = _performanceNow();
+        var rendered = false;
+        var rangeData = marker.range || marker.Range || {};
+        var blockId = rangeData.startBlockId || rangeData.StartBlockId || '';
+        var start = Number(rangeData.startOffset ?? rangeData.StartOffset ?? 0);
+        var end = Number(rangeData.endOffset ?? rangeData.EndOffset ?? start);
+        if (!blockId || end <= start) {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+        var block = inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]');
+        if (!block) {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+
+        var startPos = _resolveTextPosition(block, start);
+        var endPos = _resolveTextPosition(block, end);
+        if (!startPos || !endPos) {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+        var range = document.createRange();
+        try {
+            range.setStart(startPos.node, startPos.offset);
+            range.setEnd(endPos.node, endPos.offset);
+        } catch {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+        if (range.collapsed) {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+
+        var wrapper = _createRuntimeMarkerElement(marker);
+        try {
+            wrapper.appendChild(range.extractContents());
+            range.insertNode(wrapper);
+            rendered = true;
+        } catch {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
+        _recordMarkerRenderMetric(inst, metricStart, rendered);
+        return rendered;
+    }
+
+    function _createRuntimeMarkerElement(marker) {
+        var type = _normalizeRuntimeMarkerType(marker.type || marker.Type);
+        var el = type === 'search' || type === 'searchActive'
+            ? document.createElement('mark')
+            : document.createElement('span');
+        el.className = _runtimeMarkerClassName(type, marker);
+        el.setAttribute('data-marker-id', marker.id || marker.Id || '');
+        el.setAttribute('data-marker-type', type);
+        el.setAttribute('data-testid', _runtimeMarkerTestId(type));
+        if (type === 'comment' && (marker.targetId || marker.TargetId)) {
+            el.setAttribute('data-comment-id', marker.targetId || marker.TargetId);
+        }
+        if (type.indexOf('revision') === 0 && (marker.targetId || marker.TargetId)) {
+            el.setAttribute('data-revision-id', marker.targetId || marker.TargetId);
+        }
+        return el;
+    }
+
+    function _runtimeMarkerClassName(type, marker) {
+        switch (_normalizeRuntimeMarkerType(type)) {
+            case 'searchActive': return 'tm-wysiwyg-marker tm-wysiwyg-marker--search tm-wysiwyg-marker--search-active tm-wysiwyg-search-match tm-wysiwyg-search-match--active';
+            case 'search': return 'tm-wysiwyg-marker tm-wysiwyg-marker--search tm-wysiwyg-search-match';
+            case 'comment': {
+                var status = marker && (marker.status || marker.Status || (marker.metadata || marker.Metadata || {}).status || '');
+                return 'tm-wysiwyg-marker tm-wysiwyg-marker--comment tm-document-inline--comment-anchor'
+                    + (String(status).toLowerCase() === 'resolved' || status === 1 ? ' tm-document-inline--comment-anchor--resolved' : '');
+            }
+            case 'revisionInsertion': return 'tm-wysiwyg-marker tm-wysiwyg-marker--revision-insert tm-wysiwyg-revision--insert';
+            case 'revisionDeletion': return 'tm-wysiwyg-marker tm-wysiwyg-marker--revision-delete tm-wysiwyg-revision--delete';
+            case 'revisionFormatting': return 'tm-wysiwyg-marker tm-wysiwyg-marker--revision-format tm-wysiwyg-revision--format';
+            case 'remoteSelection': return 'tm-wysiwyg-marker tm-wysiwyg-marker--remote-selection';
+            case 'restrictedRegion': return 'tm-wysiwyg-marker tm-wysiwyg-marker--restricted-region';
+            case 'mentionQuery': return 'tm-wysiwyg-marker tm-wysiwyg-marker--mention-query';
+            case 'tokenQuery': return 'tm-wysiwyg-marker tm-wysiwyg-marker--token-query';
+            case 'tagQuery': return 'tm-wysiwyg-marker tm-wysiwyg-marker--tag-query';
+            case 'slashQuery': return 'tm-wysiwyg-marker tm-wysiwyg-marker--slash-query';
+            default: return 'tm-wysiwyg-marker';
+        }
+    }
+
+    function _runtimeMarkerTestId(type) {
+        switch (_normalizeRuntimeMarkerType(type)) {
+            case 'searchActive': return 'document-search-marker-active';
+            case 'search': return 'document-search-marker';
+            case 'comment': return 'document-comment-marker';
+            case 'revisionInsertion':
+            case 'revisionDeletion':
+            case 'revisionFormatting': return 'document-revision-marker';
+            case 'remoteSelection': return 'document-remote-selection-marker';
+            case 'restrictedRegion': return 'document-restricted-region-marker';
+            case 'mentionQuery': return 'document-mention-query-marker';
+            case 'tokenQuery': return 'document-token-query-marker';
+            case 'tagQuery': return 'document-tag-query-marker';
+            case 'slashQuery': return 'document-slash-query-marker';
+            default: return 'document-marker';
+        }
+    }
+
+    function _clearMarkerDecorations(inst, predicate) {
+        if (!inst || !inst.root) return;
+        Array.from(inst.root.querySelectorAll('[data-marker-id]')).forEach(function (node) {
+            if (predicate) {
+                var marker = {
+                    id: node.getAttribute('data-marker-id') || '',
+                    type: node.getAttribute('data-marker-type') || ''
+                };
+                if (!predicate(marker)) return;
+            }
+            _unwrapElement(node);
+        });
+    }
+
+    function _transformRuntimeMarkersForPatch(inst, patch) {
+        var change = _getTextChangeFromPatch(patch);
+        if (!change) return;
+        _transformRuntimeMarkersForTextChange(inst, change.blockId, change.offset, change.length, change.isDelete);
+    }
+
+    function _transformRuntimeMarkersForTextChange(inst, blockId, offset, length, isDelete) {
+        if (!inst || !blockId || !Number.isFinite(offset) || !Number.isFinite(length) || length <= 0) return;
+        var changed = false;
+        _getRuntimeMarkersByBlock(inst, blockId).forEach(function (marker) {
+            var range = marker.range || marker.Range || {};
+            var start = Number(range.startOffset ?? range.StartOffset ?? 0);
+            var end = Number(range.endOffset ?? range.EndOffset ?? start);
+            if (isDelete) {
+                var deleteEnd = offset + length;
+                if (start >= deleteEnd) {
+                    start -= length;
+                    end -= length;
+                } else if (end > offset) {
+                    end = Math.max(offset, end - Math.min(length, Math.max(0, deleteEnd - start)));
+                    if (start > offset) start = offset;
+                }
+            } else {
+                if (start >= offset) {
+                    start += length;
+                    end += length;
+                } else if (end >= offset) {
+                    end += length;
+                }
+            }
+            range.startOffset = range.StartOffset = Math.max(0, start);
+            range.endOffset = range.EndOffset = Math.max(range.startOffset, end);
+            changed = true;
+        });
+        if (changed) {
+            _renderRuntimeMarkers(inst);
+        }
     }
 
     function _onPaste(inst, event) {
@@ -2175,7 +3823,7 @@ window.tmDocumentWysiwyg = (function () {
 
         const html = clipboardData.getData('text/html');
         const plain = clipboardData.getData('text/plain');
-        if ((!html || !html.trim()) && plain && !/[\r\n]/.test(plain)) {
+        if ((!html || !html.trim()) && plain && !/[\r\n]/.test(plain) && !_isClipboardUrlOnlyText(plain)) {
             if (inst.trackChangesEnabled) {
                 var trackedPasteSelection = _captureSelectionSnapshot(inst);
                 var trackedPasteEvent = {
@@ -2204,11 +3852,50 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        const blocks = html && html.trim()
-            ? _parseClipboardHtml(html)
-            : _parsePlainTextPaste(plain);
+        _insertClipboardBlocksFromPipeline(inst, html, plain);
+    }
 
-        _insertClipboardBlocks(inst, blocks);
+    function _isClipboardUrlOnlyText(text) {
+        var value = String(text || '').trim();
+        return /^(https?:\/\/|mailto:|tel:)[^\s]+$/i.test(value);
+    }
+
+    function _insertClipboardBlocksFromPipeline(inst, html, plain) {
+        var beforeSelection = _captureSelectionSnapshot(inst);
+        _commitCurrentRuntimeTransaction(inst, true);
+        _beginUndoTransaction(inst, 'paste', 'Paste', beforeSelection, true);
+
+        if (inst.dotNetRef) {
+            inst.dotNetRef.invokeMethodAsync('HandleClipboardPasteRequested', html || '', plain || '')
+                .then(function (blocksJson) {
+                    var normalizationStart = _performanceNow();
+                    var blocks = _normalizeInsertionBlocksForSchema(inst, JSON.parse(blocksJson), _getActiveSchemaRegion(inst));
+                    _recordClipboardNormalizationMetric(inst, normalizationStart);
+                    if (blocks && blocks.length > 0) {
+                        _insertClipboardBlocks(inst, blocks);
+                    }
+                    _commitCurrentRuntimeTransaction(inst, true);
+                })
+                .catch(function () {
+                    var normalizationStart = _performanceNow();
+                    var blocks = html && html.trim()
+                        ? _parseClipboardHtml(html)
+                        : _parsePlainTextPaste(plain);
+                    blocks = _normalizeInsertionBlocksForSchema(inst, blocks, _getActiveSchemaRegion(inst));
+                    _recordClipboardNormalizationMetric(inst, normalizationStart);
+                    _insertClipboardBlocks(inst, blocks);
+                    _commitCurrentRuntimeTransaction(inst, true);
+                });
+        } else {
+            var normalizationStart = _performanceNow();
+            var blocks = html && html.trim()
+                ? _parseClipboardHtml(html)
+                : _parsePlainTextPaste(plain);
+            blocks = _normalizeInsertionBlocksForSchema(inst, blocks, _getActiveSchemaRegion(inst));
+            _recordClipboardNormalizationMetric(inst, normalizationStart);
+            _insertClipboardBlocks(inst, blocks);
+            _commitCurrentRuntimeTransaction(inst, true);
+        }
     }
 
     function _onCopy(inst, event) {
@@ -2250,6 +3937,7 @@ window.tmDocumentWysiwyg = (function () {
     function _uploadAndInsertImageFile(inst, file, selection) {
         if (!file) return;
 
+        var placeholder = _insertImageUploadPlaceholder(inst, file, selection);
         var reader = new FileReader();
         reader.onload = function () {
             var result = String(reader.result || '');
@@ -2267,11 +3955,83 @@ window.tmDocumentWysiwyg = (function () {
 
             _invokeDotNetResult(inst, 'HandleImageUploadRequested', payload).then(function (block) {
                 if (block) {
+                    if (placeholder && placeholder.parentElement) {
+                        placeholder.remove();
+                    }
                     _insertImageBlock(inst, block, true);
+                } else {
+                    _markImageUploadPlaceholderFailed(inst, placeholder, file, selection);
                 }
+            }).catch(function () {
+                _markImageUploadPlaceholderFailed(inst, placeholder, file, selection);
             });
         };
+        reader.onerror = function () {
+            _markImageUploadPlaceholderFailed(inst, placeholder, file, selection);
+        };
         reader.readAsDataURL(file);
+    }
+
+    function _insertImageUploadPlaceholder(inst, file, selection) {
+        var block = document.createElement('figure');
+        block.className = 'tm-wysiwyg-image tm-wysiwyg-image--uploading';
+        block.setAttribute('data-testid', 'document-wysiwyg-image-upload-placeholder');
+        block.setAttribute('data-image-upload-file', file && file.name ? file.name : 'image');
+        block.setAttribute('aria-busy', 'true');
+        var status = document.createElement('span');
+        status.className = 'tm-wysiwyg-image__upload-status';
+        status.textContent = 'Uploading image...';
+        block.appendChild(status);
+
+        var sel = window.getSelection();
+        var anchorBlock = null;
+        if (sel && sel.rangeCount > 0) {
+            var node = sel.anchorNode;
+            var el = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
+            anchorBlock = el ? el.closest('.tm-wysiwyg-block[data-block-id]') : null;
+        }
+        if (!anchorBlock && selection && (selection.anchorBlockId || selection.AnchorBlockId)) {
+            var blockId = selection.anchorBlockId || selection.AnchorBlockId;
+            anchorBlock = inst.root.querySelector('[data-block-id="' + String(blockId).replace(/"/g, '\\"') + '"]');
+        }
+
+        if (anchorBlock && anchorBlock.parentElement) {
+            anchorBlock.parentElement.insertBefore(block, anchorBlock.nextSibling);
+        } else {
+            var body = inst.root.querySelector('.tm-wysiwyg-page__body') || inst.root;
+            body.appendChild(block);
+        }
+        return block;
+    }
+
+    function _markImageUploadPlaceholderFailed(inst, placeholder, file, selection) {
+        if (!placeholder || !placeholder.parentElement) return;
+        placeholder.classList.remove('tm-wysiwyg-image--uploading');
+        placeholder.classList.add('tm-wysiwyg-image--upload-error');
+        placeholder.setAttribute('data-testid', 'document-wysiwyg-image-upload-error');
+        placeholder.setAttribute('aria-busy', 'false');
+        placeholder.textContent = '';
+        var status = document.createElement('span');
+        status.className = 'tm-wysiwyg-image__upload-status';
+        status.textContent = 'Image upload failed.';
+        placeholder.appendChild(status);
+        var retry = document.createElement('button');
+        retry.type = 'button';
+        retry.className = 'tm-wysiwyg-image__upload-action';
+        retry.setAttribute('data-testid', 'document-wysiwyg-image-upload-retry');
+        retry.textContent = (inst.options && inst.options.imageRetryLabel) || 'Retry';
+        retry.addEventListener('click', function () {
+            placeholder.remove();
+            _uploadAndInsertImageFile(inst, file, selection);
+        });
+        var remove = document.createElement('button');
+        remove.type = 'button';
+        remove.className = 'tm-wysiwyg-image__upload-action';
+        remove.setAttribute('data-testid', 'document-wysiwyg-image-upload-remove');
+        remove.textContent = 'Remove';
+        remove.addEventListener('click', function () { placeholder.remove(); });
+        placeholder.appendChild(retry);
+        placeholder.appendChild(remove);
     }
 
     function _parsePlainTextPaste(plain) {
@@ -2498,12 +4258,196 @@ window.tmDocumentWysiwyg = (function () {
         return inline;
     }
 
+    function _getActiveSchemaRegion(inst) {
+        var snapshot = inst.lastSelectionSnapshot || null;
+        if (!snapshot) {
+            try {
+                snapshot = _captureSelectionSnapshot(inst);
+            } catch {
+                snapshot = null;
+            }
+        }
+
+        return _normalizeSchemaRegion(snapshot && (snapshot.Region || snapshot.region));
+    }
+
+    function _normalizeSchemaRegion(region) {
+        var normalized = String(region || 'Body').toLowerCase();
+        switch (normalized) {
+            case 'header':
+                return 'Header';
+            case 'footer':
+                return 'Footer';
+            case 'tablecell':
+            case 'table-cell':
+            case 'table_cell':
+                return 'TableCell';
+            case 'footnote':
+                return 'Footnote';
+            case 'endnote':
+                return 'Endnote';
+            case 'caption':
+                return 'Caption';
+            case 'image':
+                return 'Image';
+            default:
+                return 'Body';
+        }
+    }
+
+    function _normalizeInsertionBlocksForSchema(inst, blocks, region) {
+        region = _normalizeSchemaRegion(region);
+        var warnings = [];
+        var normalized = [];
+        (blocks || []).forEach(function (block) {
+            _appendSchemaNormalizedBlock(normalized, block, region, warnings);
+        });
+        inst.lastInsertionPolicyWarnings = warnings;
+        return normalized;
+    }
+
+    function _appendSchemaNormalizedBlock(target, block, region, warnings) {
+        block = _clonePlainJson(block || {});
+        var type = _normalizeBlockTypeNumber(block.Type ?? block.type);
+        block.Type = type;
+        if (type < 0) {
+            target.push(_createTextBlock(0, { $type: 'paragraph', Inlines: [_createTextInline('')] }));
+            warnings.push({ code: 'unknown-block-fallback', region: region });
+            return;
+        }
+
+        if (!_schemaAllowsBlock(type, region)) {
+            if (type === 4 && region === 'TableCell') {
+                _unwrapTableForSchema(target, block, warnings);
+                warnings.push({ code: 'table-unwrapped-in-table-cell', region: region });
+                return;
+            }
+
+            warnings.push({ code: 'block-rejected-by-schema', region: region, blockType: type });
+            return;
+        }
+
+        var content = block.Content || block.content || {};
+        block.Content = content;
+        if (type === 5 && (content.AltText === null || content.AltText === undefined) && (content.altText === null || content.altText === undefined)) {
+            content.AltText = '';
+            warnings.push({ code: 'image-alt-text-defaulted', region: region });
+        }
+
+        if (type === 4) {
+            _normalizeTableCellsForSchema(content, warnings);
+        }
+
+        target.push(block);
+    }
+
+    function _normalizeTableCellsForSchema(tableContent, warnings) {
+        var rows = tableContent.Rows || tableContent.rows || [];
+        tableContent.Rows = rows;
+        rows.forEach(function (row) {
+            var cells = row.Cells || row.cells || [];
+            row.Cells = cells;
+            cells.forEach(function (cell) {
+                var cellBlocks = cell.Blocks || cell.blocks || [];
+                var normalized = [];
+                cellBlocks.forEach(function (child) {
+                    _appendSchemaNormalizedBlock(normalized, child, 'TableCell', warnings);
+                });
+                cell.Blocks = normalized.length > 0
+                    ? normalized
+                    : [_createTextBlock(0, { $type: 'paragraph', Inlines: [_createTextInline('')] })];
+            });
+        });
+    }
+
+    function _unwrapTableForSchema(target, tableBlock, warnings) {
+        var content = tableBlock.Content || tableBlock.content || {};
+        var rows = content.Rows || content.rows || [];
+        var before = target.length;
+        rows.forEach(function (row) {
+            (row.Cells || row.cells || []).forEach(function (cell) {
+                (cell.Blocks || cell.blocks || []).forEach(function (child) {
+                    _appendSchemaNormalizedBlock(target, child, 'TableCell', warnings);
+                });
+            });
+        });
+        if (target.length === before) {
+            target.push(_createTextBlock(0, { $type: 'paragraph', Inlines: [_createTextInline('')] }));
+        }
+    }
+
+    function _normalizeBlockTypeNumber(type) {
+        if (typeof type === 'number') return type >= 0 && type <= 6 ? type : -1;
+        var value = String(type || '').toLowerCase();
+        switch (value) {
+            case 'paragraph':
+                return 0;
+            case 'heading':
+                return 1;
+            case 'list':
+                return 2;
+            case 'quote':
+                return 3;
+            case 'table':
+                return 4;
+            case 'image':
+                return 5;
+            case 'pagebreak':
+            case 'page-break':
+                return 6;
+            default:
+                return -1;
+        }
+    }
+
+    function _schemaAllowsBlock(type, region) {
+        region = _normalizeSchemaRegion(region);
+        if (type === 0 || type === 2 || type === 3) {
+            return region === 'Body' || region === 'Header' || region === 'Footer' || region === 'TableCell' || region === 'Footnote' || region === 'Endnote';
+        }
+        if (type === 1 || type === 4 || type === 6) {
+            return region === 'Body';
+        }
+        if (type === 5) {
+            return region === 'Body' || region === 'TableCell';
+        }
+        return false;
+    }
+
+    function _schemaAllowsToolbarBlockCommand(type, region) {
+        region = _normalizeSchemaRegion(region);
+        if (_schemaAllowsBlock(type, region)) {
+            return true;
+        }
+
+        // A selected image/caption is a block-level anchor. Toolbar block commands insert
+        // beside the image in the body instead of nesting inside the image region.
+        return region === 'Image' && type === 4;
+    }
+
+    function _createPageBreakBlock() {
+        return {
+            Id: _newId('pagebreak'),
+            Type: 6,
+            Order: 0,
+            Content: { $type: 'pageBreak' }
+        };
+    }
+
+    function _clonePlainJson(value) {
+        if (value === null || value === undefined) return value;
+        return JSON.parse(JSON.stringify(value));
+    }
+
     function _insertClipboardBlocks(inst, blocks) {
         if (!blocks || blocks.length === 0) return;
         var insertion = _getInsertionPoint(inst);
         var parent = insertion.parent;
         var after = insertion.after;
         var previousBlockId = after ? after.getAttribute('data-block-id') : (inst.lastSelectionSnapshot && inst.lastSelectionSnapshot.AnchorBlockId);
+        var beforeSelection = _captureSelectionSnapshot(inst);
+        var revisionId = inst.trackChangesEnabled ? _createRevisionId() : null;
+        var revisionPayload = revisionId ? _clipboardBlocksRevisionPayload(blocks) : '';
 
         for (var i = 0; i < blocks.length; i++) {
             var block = blocks[i];
@@ -2521,12 +4465,49 @@ window.tmDocumentWysiwyg = (function () {
                 blockType: _blockTypeName(block.Type),
                 block: block,
                 selection: { AnchorBlockId: previousBlockId || null, IsCollapsed: true },
+                revisionId: revisionId,
+                revisionType: revisionId ? 'Insertion' : null,
                 protocolVersion: inst.options.protocolVersion || 1
             });
             previousBlockId = block.Id;
         }
 
         _placeCaretAfterBlock(after);
+        if (revisionId) {
+            _createRuntimeRevision(inst, revisionId, 'Insertion', revisionPayload || 'Pasted content', beforeSelection, _captureSelectionSnapshot(inst));
+        }
+    }
+
+    function _clipboardBlocksRevisionPayload(blocks) {
+        var parts = [];
+        (blocks || []).forEach(function (block) {
+            var text = _clipboardBlockText(block);
+            if (text) parts.push(text);
+        });
+        return parts.join('\n');
+    }
+
+    function _clipboardBlockText(block) {
+        if (!block) return '';
+        var content = block.Content || block.content || {};
+        var inlines = content.Inlines || content.inlines;
+        if (Array.isArray(inlines)) {
+            return inlines.map(function (inline) {
+                return inline.Text || inline.text || '';
+            }).join('');
+        }
+
+        var rows = content.Rows || content.rows;
+        if (Array.isArray(rows)) {
+            return rows.map(function (row) {
+                var cells = row.Cells || row.cells || [];
+                return cells.map(function (cell) {
+                    return _clipboardBlocksRevisionPayload(cell.Blocks || cell.blocks || []);
+                }).filter(Boolean).join('\t');
+            }).filter(Boolean).join('\n');
+        }
+
+        return '';
     }
 
     function _getInsertionPoint(inst) {
@@ -2639,6 +4620,37 @@ window.tmDocumentWysiwyg = (function () {
             _hideMiniToolbar(inst);
         }
 
+        if ((event.key === 'Backspace' || event.key === 'Delete') && inst.selectedPageBreakId) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _deletePageBreak(inst, inst.selectedPageBreakId);
+            return;
+        }
+
+        if (event.key === 'Escape' && inst.activeAutocompleteKey) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _closeAutocompleteQuery(inst, true);
+            return;
+        }
+
+        if (inst.activeAutocompleteKey
+            && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter')) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _invokeDotNet(inst, 'HandleAutocompleteKeyRequested', event.key);
+            return;
+        }
+
         if (inst.selectedImageFigure) {
             var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
                 || event.key === 'ArrowLeft'
@@ -2662,14 +4674,10 @@ window.tmDocumentWysiwyg = (function () {
             var markPayload = _shortcutMarkPayload(event.key);
             if (markPayload) {
                 event.preventDefault();
-                event.stopPropagation();
-                if (typeof event.stopImmediatePropagation === 'function') {
-                    event.stopImmediatePropagation();
-                }
                 _flushPendingInputPatch(inst);
                 _flushSelectionNotification(inst);
-                markPayload.selection = _captureSelectionSnapshot(inst);
-                _invokeDotNet(inst, 'HandleCommandToggleMark', markPayload);
+                // Let Blazor's command registry handle formatting shortcuts.
+                // The JS layer only blocks the browser's native contenteditable command.
                 return;
             }
         }
@@ -2684,7 +4692,19 @@ window.tmDocumentWysiwyg = (function () {
                     : _findNextTableCell(cell);
                 if (nextCell) {
                     _focusCell(nextCell);
+                } else if (!event.shiftKey) {
+                    _insertTableRow(inst);
                 }
+                return;
+            }
+        }
+
+        if ((event.ctrlKey || event.metaKey) && event.key === 'Enter') {
+            var currentCell = _findCurrentTableCell(inst);
+            if (currentCell) {
+                event.preventDefault();
+                event.stopPropagation();
+                _moveCaretAfterTable(inst, currentCell);
                 return;
             }
         }
@@ -2860,12 +4880,52 @@ window.tmDocumentWysiwyg = (function () {
      */
     function _findCurrentTableCell(inst) {
         var sel = window.getSelection();
-        if (!sel || sel.rangeCount === 0) return null;
-        var node = sel.anchorNode;
-        if (!node) return null;
-        var el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
-        if (!el) return null;
-        return el.closest('td[data-cell-id], th[data-cell-id]');
+        if (sel && sel.rangeCount > 0) {
+            var node = sel.anchorNode;
+            if (node) {
+                var el = node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement;
+                var selectedCell = el ? el.closest('td[data-cell-id], th[data-cell-id]') : null;
+                if (selectedCell) return selectedCell;
+            }
+        }
+
+        var snapshot = inst && (inst.lastSelectionSnapshot || inst.runtimeSelection);
+        var cellId = snapshot && (snapshot.activeTableCellId || snapshot.ActiveTableCellId);
+        if (!cellId || !inst || !inst.root) return null;
+        try {
+            return inst.root.querySelector('td[data-cell-id="' + CSS.escape(cellId) + '"], th[data-cell-id="' + CSS.escape(cellId) + '"]');
+        } catch {
+            return null;
+        }
+    }
+
+    function _applyTableCommandSelectionPayload(inst, payload) {
+        if (!inst || !payload) return;
+        var cellId = payload.activeTableCellId || payload.ActiveTableCellId || '';
+        if (!cellId) return;
+        var cell = null;
+        try {
+            cell = inst.root.querySelector('td[data-cell-id="' + CSS.escape(cellId) + '"], th[data-cell-id="' + CSS.escape(cellId) + '"]');
+        } catch {
+            cell = null;
+        }
+
+        if (!cell) return;
+        _focusCell(cell);
+        var snapshot = _captureSelectionSnapshot(inst) || {};
+        snapshot.activeTableCellId = cellId;
+        snapshot.ActiveTableCellId = cellId;
+        inst.lastSelectionSnapshot = snapshot;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
+    }
+
+    function _findFirstTableCell(inst) {
+        if (!inst || !inst.root) return null;
+        return inst.root.querySelector('table.tm-wysiwyg-table[data-block-id] td[data-cell-id], table.tm-wysiwyg-table[data-block-id] th[data-cell-id]');
+    }
+
+    function _findCurrentOrFallbackTableCell(inst) {
+        return _findCurrentTableCell(inst) || _findFirstTableCell(inst);
     }
 
     /**
@@ -2906,6 +4966,7 @@ window.tmDocumentWysiwyg = (function () {
     function _focusCell(cell) {
         var sel = window.getSelection();
         if (!sel) return;
+        _markActiveTableCell(cell);
         sel.removeAllRanges();
         var range = document.createRange();
         var firstText = _firstDeepTextNode(cell);
@@ -2919,6 +4980,104 @@ window.tmDocumentWysiwyg = (function () {
         sel.addRange(range);
         // Trigger selection change notification.
         cell.closest('[contenteditable]')?.dispatchEvent(new Event('selectionchange'));
+    }
+
+    function _markActiveTableCell(cell) {
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+        table.querySelectorAll('.tm-wysiwyg-table-cell--active, .tm-wysiwyg-table-cell--range-selected').forEach(function (selectedCell) {
+            selectedCell.classList.remove('tm-wysiwyg-table-cell--active', 'tm-wysiwyg-table-cell--range-selected');
+            selectedCell.removeAttribute('aria-selected');
+        });
+        cell.classList.add('tm-wysiwyg-table-cell--active');
+        cell.setAttribute('aria-selected', 'true');
+        _renderTableHandles(table, cell);
+    }
+
+    function _renderTableHandles(table, activeCell) {
+        if (!table || !activeCell) return;
+        _clearTableHandles(table);
+        var activeRow = activeCell.parentElement;
+        var rows = Array.from(table.querySelectorAll('tr'));
+        var rowIndex = rows.indexOf(activeRow);
+        var colIndex = Array.from(activeRow.children).indexOf(activeCell);
+        if (rowIndex < 0 || colIndex < 0) return;
+
+        var rowHandle = document.createElement('button');
+        rowHandle.type = 'button';
+        rowHandle.className = 'tm-wysiwyg-table-handle tm-wysiwyg-table-handle--row';
+        rowHandle.setAttribute('data-testid', 'document-table-row-handle');
+        rowHandle.setAttribute('aria-label', 'Select row');
+        rowHandle.addEventListener('click', function (event) {
+            event.preventDefault();
+            _selectTableRow(table, rowIndex);
+        });
+        activeRow.insertBefore(rowHandle, activeRow.firstChild);
+
+        var headerRow = rows[0];
+        if (headerRow) {
+            var colHandle = document.createElement('button');
+            colHandle.type = 'button';
+            colHandle.className = 'tm-wysiwyg-table-handle tm-wysiwyg-table-handle--column';
+            colHandle.setAttribute('data-testid', 'document-table-column-handle');
+            colHandle.setAttribute('aria-label', 'Select column');
+            colHandle.addEventListener('click', function (event) {
+                event.preventDefault();
+                _selectTableColumn(table, colIndex);
+            });
+            headerRow.insertBefore(colHandle, headerRow.children[colIndex] || headerRow.firstChild);
+        }
+    }
+
+    function _clearTableHandles(table) {
+        if (!table) return;
+        table.querySelectorAll('.tm-wysiwyg-table-handle').forEach(function (handle) { handle.remove(); });
+    }
+
+    function _selectTableRow(table, rowIndex) {
+        table.querySelectorAll('.tm-wysiwyg-table-cell--range-selected').forEach(function (cell) {
+            cell.classList.remove('tm-wysiwyg-table-cell--range-selected');
+        });
+        var row = table.querySelectorAll('tr')[rowIndex];
+        if (!row) return;
+        row.querySelectorAll('td[data-cell-id], th[data-cell-id]').forEach(function (cell) {
+            cell.classList.add('tm-wysiwyg-table-cell--range-selected');
+        });
+    }
+
+    function _selectTableColumn(table, colIndex) {
+        table.querySelectorAll('.tm-wysiwyg-table-cell--range-selected').forEach(function (cell) {
+            cell.classList.remove('tm-wysiwyg-table-cell--range-selected');
+        });
+        table.querySelectorAll('tr').forEach(function (row) {
+            var cells = Array.from(row.querySelectorAll('td[data-cell-id], th[data-cell-id]'));
+            if (cells[colIndex]) cells[colIndex].classList.add('tm-wysiwyg-table-cell--range-selected');
+        });
+    }
+
+    function _moveCaretAfterTable(inst, cell) {
+        var table = _getTableBlockFromCell(cell);
+        if (!table || !table.parentNode) return;
+        var next = table.nextElementSibling;
+        if (!next || !next.classList.contains('tm-wysiwyg-block')) {
+            next = document.createElement('p');
+            next.className = 'tm-wysiwyg-block';
+            var blockId = _createBlockId();
+            var inlineId = _createInlineId();
+            next.setAttribute('data-block-id', blockId);
+            _setRuntimeNodeAttributes(next, blockId, 'block');
+            var span = document.createElement('span');
+            span.setAttribute('data-inline-id', inlineId);
+            _setRuntimeNodeAttributes(span, inlineId, 'inline');
+            span.appendChild(document.createTextNode(''));
+            next.appendChild(span);
+            table.parentNode.insertBefore(next, table.nextSibling);
+        }
+        var targetText = _firstDeepTextNode(next);
+        if (targetText) {
+            _setCaret(targetText, 0);
+        }
+        _scheduleSelectionNotification(inst, _captureSelectionSnapshot(inst));
     }
 
     function _beginTableTransaction(inst, description) {
@@ -2955,9 +5114,11 @@ window.tmDocumentWysiwyg = (function () {
     /**
      * Inserts a new table (2×2) at the current selection.
      */
-    function _insertTable(inst) {
+    function _insertTable(inst, rowCount, colCount) {
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return;
+        var numRows = (typeof rowCount === 'number' && rowCount > 0) ? rowCount : 2;
+        var numCols = (typeof colCount === 'number' && colCount > 0) ? colCount : 2;
         var tx = _beginTableTransaction(inst, 'Insert table');
         var beforeSelection = tx.beforeSelection;
 
@@ -2966,11 +5127,12 @@ window.tmDocumentWysiwyg = (function () {
         var tableBlock = document.createElement('table');
         tableBlock.className = 'tm-wysiwyg-table tm-wysiwyg-block';
         tableBlock.setAttribute('data-block-id', tableBlockId);
+        tableBlock.setAttribute('data-table-alignment', 'left');
         _setRuntimeNodeAttributes(tableBlock, tableBlockId, 'block');
-        for (var r = 0; r < 2; r++) {
+        for (var r = 0; r < numRows; r++) {
             var tr = document.createElement('tr');
             var rowCells = [];
-            for (var c = 0; c < 2; c++) {
+            for (var c = 0; c < numCols; c++) {
                 var cellId = _createTableCellId();
                 var td = document.createElement('td');
                 td.setAttribute('data-cell-id', cellId);
@@ -3022,7 +5184,14 @@ window.tmDocumentWysiwyg = (function () {
                 Id: tableBlockId,
                 Type: 4,
                 Order: 0,
-                Content: { $type: 'table', Rows: rows }
+                Content: {
+                    $type: 'table',
+                    Rows: rows,
+                    Layout: {
+                        Alignment: 0,
+                        Borders: {}
+                    }
+                }
             },
             selection: beforeSelection,
             beforeSelection: beforeSelection,
@@ -3111,15 +5280,28 @@ window.tmDocumentWysiwyg = (function () {
         var blockId = blockEl.getAttribute('data-block-id');
         if (!blockId) return;
         _markIncrementalRender(inst, 'imageUpdate');
+        var beforeSelection = inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+        var afterSelection = _captureSelectionSnapshot(inst) || beforeSelection;
+        var revisionId = null;
+        if (inst.trackChangesEnabled) {
+            revisionId = _createRevisionId();
+            _createRuntimeRevision(inst, revisionId, 'Image', 'Image updated', beforeSelection, afterSelection);
+        }
         _dispatchPatch(inst, {
             type: 'UpdateBlock',
+            operationId: _nextRuntimeOperationId(inst),
             block: {
                 Id: blockId,
                 Type: 5,
                 Order: 0,
                 Content: _serializeImage(figureEl)
             },
-            selection: _captureSelectionSnapshot(inst),
+            selection: afterSelection,
+            beforeSelection: beforeSelection,
+            afterSelection: afterSelection,
+            transactionId: inst.currentTransactionId,
+            revisionId: revisionId,
+            revisionType: revisionId ? 'Image' : null,
             protocolVersion: inst.options.protocolVersion || 1
         });
     }
@@ -3398,11 +5580,12 @@ window.tmDocumentWysiwyg = (function () {
      * Inserts a row before or after the current table cell's row.
      */
     function _insertTableRow(inst, before) {
-        var cell = _findCurrentTableCell(inst);
+        var cell = _findCurrentOrFallbackTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
         var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, before ? 'Insert table row before' : 'Insert table row after');
         var cellsPerRow = row.children.length;
         var newRow = document.createElement('tr');
@@ -3418,11 +5601,12 @@ window.tmDocumentWysiwyg = (function () {
      * Deletes the current table cell's row.
      */
     function _deleteTableRow(inst) {
-        var cell = _findCurrentTableCell(inst);
+        var cell = _findCurrentOrFallbackTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
         var table = _getTableBlockFromCell(cell);
         if (!row || !table) return;
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, 'Delete table row');
         if (row.parentElement.children.length <= 1) {
             // Last row: remove the whole table.
@@ -3456,11 +5640,12 @@ window.tmDocumentWysiwyg = (function () {
      * Inserts a column before or after the current table cell's column.
      */
     function _insertTableColumn(inst, before) {
-        var cell = _findCurrentTableCell(inst);
+        var cell = _findCurrentOrFallbackTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
         var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, before ? 'Insert table column before' : 'Insert table column after');
         var cellIndex = Array.from(row.children).indexOf(cell);
         var rows = table.querySelectorAll('tr');
@@ -3484,11 +5669,12 @@ window.tmDocumentWysiwyg = (function () {
      * Deletes the current table cell's column.
      */
     function _deleteTableColumn(inst) {
-        var cell = _findCurrentTableCell(inst);
+        var cell = _findCurrentOrFallbackTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
         var table = _getTableBlockFromCell(cell);
         if (!table) return;
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, 'Delete table column');
         var cellIndex = Array.from(row.children).indexOf(cell);
         var rows = table.querySelectorAll('tr');
@@ -3535,6 +5721,8 @@ window.tmDocumentWysiwyg = (function () {
         var row = cell.parentElement;
         var nextCell = cell.nextElementSibling;
         if (!nextCell || nextCell.tagName !== 'TD') return;
+        var table = _getTableBlockFromCell(cell);
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, 'Merge table cells');
         var currentSpan = parseInt(cell.getAttribute('colspan') || '1', 10);
         var nextSpan = parseInt(nextCell.getAttribute('colspan') || '1', 10);
@@ -3545,7 +5733,7 @@ window.tmDocumentWysiwyg = (function () {
         }
         nextCell.remove();
         _focusCell(cell);
-        _commitTableTransaction(inst, _getTableBlockFromCell(cell), 'Merge table cells', tx.beforeSelection);
+        _commitTableTransaction(inst, table, 'Merge table cells', tx.beforeSelection);
     }
 
     /**
@@ -3556,6 +5744,8 @@ window.tmDocumentWysiwyg = (function () {
         if (!cell) return;
         var span = parseInt(cell.getAttribute('colspan') || '1', 10);
         if (span <= 1) return;
+        var table = _getTableBlockFromCell(cell);
+        _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, 'Split table cell');
         cell.removeAttribute('colspan');
         var row = cell.parentElement;
@@ -3564,24 +5754,156 @@ window.tmDocumentWysiwyg = (function () {
             row.insertBefore(newCell, cell.nextSibling);
         }
         _focusCell(cell);
-        _commitTableTransaction(inst, _getTableBlockFromCell(cell), 'Split table cell', tx.beforeSelection);
+        _commitTableTransaction(inst, table, 'Split table cell', tx.beforeSelection);
+    }
+
+    /**
+     * Phase 8.5: Toggles the first row of the current table between <th> and <td>.
+     */
+    function _toggleTableHeaderRow(inst) {
+        var cell = _findCurrentTableCell(inst);
+        var table = cell ? _getTableBlockFromCell(cell) : null;
+        if (!table && inst && inst.root) {
+            table = inst.root.querySelector('table.tm-wysiwyg-table[data-block-id]');
+            cell = table ? table.querySelector('td[data-cell-id], th[data-cell-id]') : null;
+        }
+        if (!table) return;
+        var firstRow = table.querySelector('tr');
+        if (!firstRow) return;
+        var tx = _beginTableTransaction(inst, 'Toggle header row');
+        var cells = Array.from(firstRow.querySelectorAll('td, th'));
+        var isHeader = cells.length > 0 && cells[0].tagName === 'TH';
+        cells.forEach(function (c) {
+            var replacement = document.createElement(isHeader ? 'td' : 'th');
+            Array.from(c.attributes).forEach(function (a) {
+                replacement.setAttribute(a.name, a.value);
+            });
+            while (c.firstChild) replacement.appendChild(c.firstChild);
+            c.parentNode.replaceChild(replacement, c);
+        });
+        _focusCell(firstRow.querySelector('td[data-cell-id], th[data-cell-id]') || cell);
+        _commitTableTransaction(inst, table, 'Toggle header row', tx.beforeSelection);
+    }
+
+    /**
+     * Phase 8.5: Sets background colour of the current table cell.
+     */
+    function _setCellBackgroundColor(inst, color) {
+        var cell = _findCurrentTableCell(inst);
+        if (!cell) return;
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+        var tx = _beginTableTransaction(inst, 'Set cell background');
+        if (color) {
+            cell.style.backgroundColor = color;
+            cell.setAttribute('data-cell-background', color);
+        } else {
+            cell.style.backgroundColor = '';
+            cell.removeAttribute('data-cell-background');
+        }
+        _commitTableTransaction(inst, table, 'Set cell background', tx.beforeSelection);
+    }
+
+    function _setTableProperties(inst, payload) {
+        var cell = _findTableCommandCell(inst, payload);
+        if (!cell) return;
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+        var props = payload || {};
+        var tx = _beginTableTransaction(inst, 'Set table properties');
+        _applyTableLayoutStyle(table, {
+            Width: props.width ?? props.Width ?? '',
+            Alignment: props.alignment ?? props.Alignment ?? table.getAttribute('data-table-alignment') ?? 'left',
+            CellPadding: props.cellPadding ?? props.CellPadding ?? '',
+            BackgroundColor: props.backgroundColor ?? props.BackgroundColor ?? '',
+            Borders: props.borders ?? props.Borders ?? {}
+        });
+        _commitTableTransaction(inst, table, 'Set table properties', tx.beforeSelection);
+    }
+
+    function _setCellProperties(inst, payload) {
+        var cell = _findTableCommandCell(inst, payload);
+        if (!cell) return;
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+        var props = payload || {};
+        var tx = _beginTableTransaction(inst, 'Set cell properties');
+        _applyTableCellStyle(cell, {
+            Width: props.width ?? props.Width ?? cell.getAttribute('data-cell-width') ?? '',
+            BackgroundColor: props.backgroundColor ?? props.BackgroundColor ?? '',
+            VerticalAlignment: props.verticalAlignment ?? props.VerticalAlignment ?? cell.getAttribute('data-cell-vertical-align') ?? 'top',
+            Padding: props.padding ?? props.Padding ?? '',
+            Borders: props.borders ?? props.Borders ?? {}
+        });
+        _commitTableTransaction(inst, table, 'Set cell properties', tx.beforeSelection);
+    }
+
+    function _resizeTableColumn(inst, payload) {
+        var cell = _findTableCommandCell(inst, payload);
+        if (!cell) return;
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+        var width = payload && (payload.width ?? payload.Width);
+        if (!width) return;
+        var tx = _beginTableTransaction(inst, 'Resize table column');
+        var colIndex = Array.from(cell.parentElement.querySelectorAll('td[data-cell-id], th[data-cell-id]')).indexOf(cell);
+        table.querySelectorAll('tr').forEach(function (row) {
+            var target = Array.from(row.querySelectorAll('td[data-cell-id], th[data-cell-id]'))[colIndex];
+            if (target) {
+                target.style.width = _normalizeCssLength(width);
+                target.setAttribute('data-cell-width', String(width));
+            }
+        });
+        _commitTableTransaction(inst, table, 'Resize table column', tx.beforeSelection);
+    }
+
+    function _findTableCommandCell(inst, payload) {
+        var props = payload || {};
+        var explicitCellId = props.cellId || props.CellId || props.activeTableCellId || props.ActiveTableCellId || '';
+        if (explicitCellId && inst && inst.root) {
+            try {
+                var explicitCell = inst.root.querySelector('td[data-cell-id="' + CSS.escape(explicitCellId) + '"], th[data-cell-id="' + CSS.escape(explicitCellId) + '"]');
+                if (explicitCell) return explicitCell;
+            } catch {
+                // Fall back to current browser selection below.
+            }
+        }
+
+        return _findCurrentOrFallbackTableCell(inst);
     }
 
     function _onSelectionChange(inst) {
         if (inst.disposed) return;
         const snapshot = _captureSelectionSnapshot(inst);
         if (!snapshot) {
-            _hideMiniToolbar(inst);
+            if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
+                _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+            } else {
+                _hideMiniToolbar(inst);
+            }
             return;
         }
 
         inst.lastSelectionSnapshot = snapshot;
         _scheduleSelectionNotification(inst, snapshot);
         if (snapshot && !snapshot.isCollapsed) {
+            inst.lastTextSelectionSnapshot = snapshot;
+            inst.miniToolbarSuppressHideUntil = Date.now() + 1200;
             _scheduleMiniToolbar(inst, snapshot);
         } else {
-            _hideMiniToolbar(inst);
+            if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
+                _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+            } else {
+                _hideMiniToolbar(inst);
+            }
         }
+    }
+
+    function _shouldKeepMiniToolbarDuringSelectionSettle(inst) {
+        return !!(inst
+            && inst.lastTextSelectionSnapshot
+            && inst.miniToolbarVisible
+            && Date.now() < (inst.miniToolbarSuppressHideUntil || 0));
     }
 
     function _scheduleSelectionNotification(inst, snapshot) {
@@ -3827,11 +6149,63 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
+    function _revisionToRuntimeMarker(revision) {
+        if (!revision || revision.Action !== 0) return null;
+        var range = revision.Range || revision.range || {};
+        var blockId = range.BlockId || range.blockId || '';
+        if (!blockId) return null;
+        var start = Number(range.StartOffset ?? range.startOffset ?? 0);
+        var end = Number(range.EndOffset ?? range.endOffset ?? start);
+        if (end <= start && revision.PayloadJson) {
+            end = start + String(revision.PayloadJson).length;
+        }
+
+        var type = 'revisionInsertion';
+        if (_revisionTypeToNumber(revision.Type ?? revision.type) === 1) {
+            type = 'revisionDeletion';
+        } else if (_revisionTypeToNumber(revision.Type ?? revision.type) !== 0) {
+            type = 'revisionFormatting';
+        }
+
+        return {
+            id: 'revision:' + revision.Id,
+            type: type,
+            range: {
+                startBlockId: blockId,
+                startOffset: Math.max(0, start),
+                endBlockId: blockId,
+                endOffset: Math.max(0, end)
+            },
+            priority: 80,
+            affectsData: true,
+            source: 'document',
+            targetId: revision.Id,
+            label: (revision.Author && revision.Author.DisplayName) || ''
+        };
+    }
+
+    function _syncRuntimeRevisionMarkers(inst) {
+        if (!inst) return;
+        _getRuntimeMarkersByType(inst, 'revisionInsertion')
+            .concat(_getRuntimeMarkersByType(inst, 'revisionDeletion'))
+            .concat(_getRuntimeMarkersByType(inst, 'revisionFormatting'))
+            .forEach(function (marker) {
+                var id = String(marker.id || marker.Id || '');
+                if (id.indexOf('revision:') === 0) {
+                    _removeRuntimeMarker(inst, id);
+                }
+            });
+        (inst.runtimeRevisions || []).forEach(function (revision) {
+            _upsertRuntimeMarker(inst, _revisionToRuntimeMarker(revision), false);
+        });
+    }
+
     function _loadRuntimeRevisionsFromSnapshot(inst, snapshot) {
         var doc = snapshot && (snapshot.document || snapshot.Document) || {};
         var revisions = doc.revisions || doc.Revisions || [];
         inst.runtimeRevisions = revisions.map(_normalizeRuntimeRevision).filter(Boolean);
         inst.lastRevisionStateJson = JSON.stringify(inst.runtimeRevisions);
+        _syncRuntimeRevisionMarkers(inst);
     }
 
     function _upsertRuntimeRevision(inst, revision) {
@@ -3850,6 +6224,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!replaced) revisions.push(normalized);
         inst.runtimeRevisions = revisions;
         _syncRuntimeRevisionsToSnapshot(inst);
+        _upsertRuntimeMarker(inst, _revisionToRuntimeMarker(normalized), false);
         _notifyRuntimeRevisionsChanged(inst);
         return normalized;
     }
@@ -3892,6 +6267,11 @@ window.tmDocumentWysiwyg = (function () {
             if (revisions[i].Id === revisionId) {
                 revisions[i].Action = actionValue;
                 _syncRuntimeRevisionsToSnapshot(inst);
+                if (actionValue === 0) {
+                    _upsertRuntimeMarker(inst, _revisionToRuntimeMarker(revisions[i]), false);
+                } else {
+                    _removeRuntimeMarker(inst, 'revision:' + revisionId);
+                }
                 _notifyRuntimeRevisionsChanged(inst);
                 return;
             }
@@ -3958,6 +6338,7 @@ window.tmDocumentWysiwyg = (function () {
         inst.runtimeComments = comments.map(_normalizeRuntimeComment).filter(Boolean);
         inst.lastCommentStateJson = JSON.stringify(inst.runtimeComments);
         _syncRuntimeCommentsToSnapshot(inst);
+        _syncRuntimeCommentMarkers(inst);
     }
 
     function _syncRuntimeCommentsToSnapshot(inst) {
@@ -3967,6 +6348,47 @@ window.tmDocumentWysiwyg = (function () {
         var comments = (inst.runtimeComments || []).map(function (comment) { return _cloneRuntimeJson(comment); });
         doc.Comments = comments;
         doc.comments = comments;
+    }
+
+    function _commentToRuntimeMarker(comment) {
+        if (!comment) return null;
+        var anchor = comment.Anchor || comment.anchor || {};
+        var blockId = anchor.BlockId || anchor.blockId || '';
+        if (!blockId || anchor.IsOrphaned || anchor.isOrphaned) return null;
+        var start = Number(anchor.StartOffset ?? anchor.startOffset ?? 0);
+        var end = Number(anchor.EndOffset ?? anchor.endOffset ?? start);
+        return {
+            id: 'comment:' + comment.Id,
+            type: 'comment',
+            range: {
+                startBlockId: blockId,
+                startOffset: Math.max(0, start),
+                endBlockId: blockId,
+                endOffset: Math.max(0, end)
+            },
+            priority: 60,
+            affectsData: true,
+            source: 'document',
+            targetId: comment.Id,
+            label: comment.Title || comment.Text || '',
+            status: comment.Status === 1 ? 'resolved' : 'open',
+            metadata: {
+                status: comment.Status === 1 ? 'resolved' : 'open'
+            }
+        };
+    }
+
+    function _syncRuntimeCommentMarkers(inst) {
+        if (!inst) return;
+        _getRuntimeMarkersByType(inst, 'comment').forEach(function (marker) {
+            var id = String(marker.id || marker.Id || '');
+            if (id.indexOf('comment:') === 0) {
+                _removeRuntimeMarker(inst, id);
+            }
+        });
+        (inst.runtimeComments || []).forEach(function (comment) {
+            _upsertRuntimeMarker(inst, _commentToRuntimeMarker(comment), false);
+        });
     }
 
     function _upsertRuntimeComment(inst, comment, applyDecoration) {
@@ -3985,6 +6407,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!replaced) comments.push(normalized);
         inst.runtimeComments = comments;
         _syncRuntimeCommentsToSnapshot(inst);
+        _upsertRuntimeMarker(inst, _commentToRuntimeMarker(normalized), false);
         if (applyDecoration !== false) {
             _applyCommentDecoration(inst, normalized);
         }
@@ -3995,6 +6418,7 @@ window.tmDocumentWysiwyg = (function () {
     function _removeRuntimeComment(inst, commentId) {
         if (!inst || !commentId) return;
         _clearCommentDecorations(inst, commentId);
+        _removeRuntimeMarker(inst, 'comment:' + commentId);
         inst.runtimeComments = (inst.runtimeComments || []).filter(function (comment) { return comment.Id !== commentId; });
         _syncRuntimeCommentsToSnapshot(inst);
         _notifyRuntimeCommentsChanged(inst);
@@ -4007,6 +6431,68 @@ window.tmDocumentWysiwyg = (function () {
         if (json === inst.lastCommentStateJson) return;
         inst.lastCommentStateJson = json;
         _invokeDotNet(inst, 'HandleCommentsChanged', comments);
+        _scheduleCommentRailAlignment(inst);
+    }
+
+    function _scheduleCommentRailAlignment(inst) {
+        if (!inst || inst.disposed) return;
+        if (inst.commentRailAlignmentFrame) return;
+        var schedule = window.requestAnimationFrame || function (callback) { return window.setTimeout(callback, 16); };
+        inst.commentRailAlignmentFrame = schedule(function () {
+            inst.commentRailAlignmentFrame = null;
+            _updateCommentRailAlignment(inst);
+        });
+    }
+
+    function _findCommentAnchorNode(inst, comment) {
+        if (!inst || !inst.root || !comment) return null;
+        var id = String(comment.Id || comment.id || '');
+        var node = id ? inst.root.querySelector('[data-comment-id="' + _cssEscape(id) + '"]') : null;
+        if (node) return node;
+
+        var anchor = comment.Anchor || comment.anchor || {};
+        var blockId = anchor.BlockId || anchor.blockId || '';
+        return blockId ? inst.root.querySelector('[data-block-id="' + _cssEscape(blockId) + '"]') : null;
+    }
+
+    function _updateCommentRailAlignment(inst) {
+        if (!inst || inst.disposed || !inst.root) return false;
+        var editor = inst.root.closest && inst.root.closest('.tm-document-editor');
+        var rail = editor ? editor.querySelector('[data-testid="document-comment-rail"]') : document.querySelector('[data-testid="document-comment-rail"]');
+        var list = rail && rail.querySelector('[data-testid="document-comment-list"]');
+        if (!rail || !list || !list.getBoundingClientRect) return false;
+
+        var listRect = list.getBoundingClientRect();
+        var targets = [];
+        Array.from(list.querySelectorAll('[data-comment-id]')).forEach(function (thread) {
+            thread.style.marginTop = '';
+            delete thread.dataset.anchorTop;
+        });
+        (inst.runtimeComments || []).forEach(function (comment) {
+            var id = String(comment.Id || comment.id || '');
+            if (!id) return;
+            var thread = list.querySelector('[data-comment-id="' + _cssEscape(id) + '"]');
+            var anchorNode = _findCommentAnchorNode(inst, comment);
+            if (!thread || !anchorNode || !anchorNode.getBoundingClientRect) return;
+
+            var anchorRect = anchorNode.getBoundingClientRect();
+            var targetTop = Math.max(0, anchorRect.top - listRect.top + (list.scrollTop || 0));
+            thread.style.setProperty('--tm-document-comment-anchor-offset', targetTop.toFixed(1) + 'px');
+            thread.dataset.anchorTop = targetTop.toFixed(1);
+            targets.push({ thread: thread, top: targetTop });
+        });
+
+        targets.sort(function (left, right) { return left.top - right.top; });
+        var previousBottom = 0;
+        targets.forEach(function (target) {
+            var height = target.thread.offsetHeight || target.thread.getBoundingClientRect().height || 0;
+            var margin = Math.max(0, target.top - previousBottom);
+            target.thread.style.marginTop = margin.toFixed(1) + 'px';
+            previousBottom = target.top + height;
+        });
+
+        rail.dataset.alignedCommentCount = String(targets.length);
+        return targets.length > 0;
     }
 
     function _renderRuntimeCommentDecorations(inst) {
@@ -4015,6 +6501,7 @@ window.tmDocumentWysiwyg = (function () {
         (inst.runtimeComments || []).forEach(function (comment) {
             _applyCommentDecoration(inst, comment);
         });
+        _scheduleCommentRailAlignment(inst);
     }
 
     function _clearCommentDecorations(inst, commentId) {
@@ -4234,6 +6721,19 @@ window.tmDocumentWysiwyg = (function () {
     function _captureSelectionSnapshot(inst) {
         var selectedFigure = _getSelectedImageFigure(inst);
         if (selectedFigure) {
+            var activeSelection = window.getSelection();
+            if (activeSelection
+                && activeSelection.rangeCount > 0
+                && inst.root.contains(activeSelection.anchorNode)
+                && inst.root.contains(activeSelection.focusNode)
+                && !selectedFigure.contains(activeSelection.anchorNode)
+                && !selectedFigure.contains(activeSelection.focusNode)) {
+                _clearSelectedImage(inst);
+                selectedFigure = null;
+            }
+        }
+
+        if (selectedFigure) {
             var imageBlock = selectedFigure.closest('.tm-wysiwyg-block[data-block-id]');
             var imageBlockId = imageBlock ? (imageBlock.getAttribute('data-block-id') || '') : '';
             if (imageBlockId) {
@@ -4343,6 +6843,33 @@ window.tmDocumentWysiwyg = (function () {
             tableCellPath: selection.tableCellPath || selection.TableCellPath || null,
             activeImageBlockId: selection.activeImageBlockId || selection.ActiveImageBlockId || null
         };
+    }
+
+    function _collapseSelectionSnapshotToFocus(selection) {
+        var snapshot = _createSelectionSnapshotFromRuntimeSelection(selection);
+        if (!snapshot) return null;
+
+        var focusBlockId = snapshot.focusBlockId || snapshot.anchorBlockId || null;
+        var focusInlineId = snapshot.focusInlineId || snapshot.anchorInlineId || null;
+        var focusOffset = snapshot.focusOffset ?? snapshot.anchorOffset ?? 0;
+        var focusBlockOffset = snapshot.focusBlockOffset ?? snapshot.anchorBlockOffset ?? 0;
+        var focusNodeId = snapshot.focusNodeId || focusInlineId || focusBlockId || null;
+
+        return Object.assign({}, snapshot, {
+            anchorNodeId: focusNodeId,
+            focusNodeId: focusNodeId,
+            anchorBlockId: focusBlockId,
+            focusBlockId: focusBlockId,
+            anchorInlineId: focusInlineId,
+            focusInlineId: focusInlineId,
+            anchorOffset: focusOffset,
+            focusOffset: focusOffset,
+            anchorBlockOffset: focusBlockOffset,
+            focusBlockOffset: focusBlockOffset,
+            isCollapsed: true,
+            direction: 'forward',
+            activeImageBlockId: null
+        });
     }
 
     function _resolveSelectionRegion(node, root) {
@@ -5087,6 +7614,9 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         _checkPageOverflow(inst);
+        _refreshNonPrintingCharacters(inst);
+        _notifyPageMetrics(inst);
+        _notifyActiveHeading(inst);
         inst._applyingOwnPatch = false;
 
         if (selection) {
@@ -5115,6 +7645,11 @@ window.tmDocumentWysiwyg = (function () {
         for (var i = 0; i < pageData.blocks.length; i++) {
             var blockEl = _renderBlock(pageData.blocks[i], inst);
             if (blockEl) body.appendChild(blockEl);
+        }
+
+        if (pageData.blocks.length === 0) {
+            body.classList.add('tm-wysiwyg-page__body--empty');
+            body.setAttribute('data-placeholder', _readStringOption(inst, 'bodyPlaceholder', 'BodyPlaceholder', 'Start typing'));
         }
 
         _renderNoteRegionsForPage(inst, pageEl, pageData.index);
@@ -5156,7 +7691,16 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _getVirtualViewport(inst) {
-        if (inst.root.scrollHeight > inst.root.clientHeight + 1) {
+        if (Number.isFinite(inst._pendingVirtualScrollTop)) {
+            var pendingScrollTop = inst._pendingVirtualScrollTop;
+            inst._pendingVirtualScrollTop = null;
+            return {
+                scrollTop: Math.max(0, pendingScrollTop),
+                height: (_usesRootScrollViewport(inst) ? inst.root.clientHeight : window.innerHeight) || inst.root.clientHeight || 900
+            };
+        }
+
+        if (_usesRootScrollViewport(inst)) {
             return {
                 scrollTop: inst.root.scrollTop || 0,
                 height: inst.root.clientHeight || window.innerHeight || 900
@@ -5169,6 +7713,36 @@ window.tmDocumentWysiwyg = (function () {
             scrollTop: Math.max(0, (window.scrollY || window.pageYOffset || 0) - rootTop),
             height: window.innerHeight || inst.root.clientHeight || 900
         };
+    }
+
+    function _usesRootScrollViewport(inst) {
+        if (!inst || !inst.root || inst.root.scrollHeight <= inst.root.clientHeight + 1) return false;
+        if (typeof getComputedStyle !== 'function') return true;
+        var style = getComputedStyle(inst.root);
+        var overflowY = style.overflowY || style.overflow || '';
+        return /auto|scroll|overlay/i.test(overflowY);
+    }
+
+    function _scrollVirtualPageToIndex(inst, pageIndex) {
+        if (!inst || !inst.root || !inst.virtualPages || inst.virtualPages.length === 0) return false;
+        var index = Math.max(0, Math.min(inst.virtualPages.length - 1, Number(pageIndex) || 0));
+        var pageExtent = _estimatePageExtent(inst);
+        var targetTop = pageExtent * index;
+        var usedRootScroll = false;
+        inst._pendingVirtualScrollTop = targetTop;
+        if (_usesRootScrollViewport(inst)) {
+            inst.root.scrollTop = targetTop;
+            usedRootScroll = targetTop <= 0 || Math.abs((inst.root.scrollTop || 0) - targetTop) <= 1;
+        }
+
+        if (!usedRootScroll && window.scrollTo && inst.root.getBoundingClientRect) {
+            var rect = inst.root.getBoundingClientRect();
+            var rootTop = rect.top + (window.scrollY || window.pageYOffset || 0);
+            window.scrollTo({ top: rootTop + targetTop, behavior: 'auto' });
+        }
+
+        _renderVirtualizedPages(inst, true);
+        return true;
     }
 
     function _estimatePageExtent(inst) {
@@ -5475,7 +8049,13 @@ window.tmDocumentWysiwyg = (function () {
         el.setAttribute('data-hf-type', type);
         el.setAttribute('data-hf-scope', hf.scope || hf.Scope || 'Primary');
         el.setAttribute('data-region', type === 'header' ? 'Header' : 'Footer');
-        el.setAttribute('data-placeholder', type === 'header' ? 'Header' : 'Footer');
+        el.setAttribute(
+            'data-placeholder',
+            _readStringOption(
+                inst,
+                type === 'header' ? 'headerPlaceholder' : 'footerPlaceholder',
+                type === 'header' ? 'HeaderPlaceholder' : 'FooterPlaceholder',
+                type === 'header' ? 'Header' : 'Footer'));
         el.setAttribute('role', 'textbox');
         el.setAttribute('aria-multiline', 'true');
         el.setAttribute('aria-readonly', inst && inst.readOnly ? 'true' : 'false');
@@ -5592,17 +8172,190 @@ window.tmDocumentWysiwyg = (function () {
                 _measureBlock(inst, blockEls[bi]);
             }
 
-            // Compare scrollHeight (content) against clientHeight (visible).
-            if (page.scrollHeight > page.clientHeight + 2) {
+            var declaredPageHeight = _getDeclaredPageHeight(page);
+            var visiblePageHeight = declaredPageHeight || page.clientHeight;
+            if (visiblePageHeight > 0 && page.scrollHeight > visiblePageHeight + 2) {
                 page.classList.add('tm-wysiwyg-page--overflow');
                 warning = document.createElement('div');
                 warning.className = 'tm-wysiwyg-page__overflow-warning';
-                warning.textContent = 'Content overflows page';
+                warning.setAttribute('data-testid', 'document-page-overflow-warning');
                 warning.setAttribute('role', 'status');
                 warning.setAttribute('aria-live', 'polite');
+                var warningText = _readStringOption(inst, 'pageOverflowWarning', 'PageOverflowWarning', 'Content overflows page');
+                var insertBreakText = _readStringOption(inst, 'insertPageBreakLabel', 'InsertPageBreakLabel', 'Insert page break');
+                var warningLabel = document.createElement('span');
+                warningLabel.textContent = warningText;
+                warning.appendChild(warningLabel);
+                var insertBreakAction = document.createElement('button');
+                insertBreakAction.type = 'button';
+                insertBreakAction.setAttribute('data-testid', 'document-page-overflow-insert-page-break');
+                insertBreakAction.textContent = insertBreakText;
+                warning.appendChild(insertBreakAction);
+                var action = warning.querySelector('button');
+                if (action) {
+                    action.addEventListener('click', function (evt) {
+                        evt.preventDefault();
+                        evt.stopPropagation();
+                        executeCommand(inst.id, 'insertPageBreak', {});
+                    });
+                }
                 page.appendChild(warning);
             }
         }
+    }
+
+    function _getDeclaredPageHeight(page) {
+        if (!page || !page.ownerDocument || !page.ownerDocument.defaultView) return 0;
+        var style = page.ownerDocument.defaultView.getComputedStyle(page);
+        var minHeight = parseFloat(style.minHeight || '');
+        if (Number.isFinite(minHeight) && minHeight > 0) return minHeight;
+        var height = parseFloat(style.height || '');
+        return Number.isFinite(height) && height > 0 ? height : 0;
+    }
+
+    function _buildPageMetrics(inst) {
+        if (!inst) {
+            return { TotalPages: 0, RenderedPages: 0, VirtualizedPages: 0, ActivePageIndex: 0, Pages: [] };
+        }
+
+        var virtualPages = inst.virtualPages || [];
+        var domPages = inst.root ? Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page[data-page-index]')) : [];
+        var explicitPageBreaks = inst.root ? Array.from(inst.root.querySelectorAll('.tm-wysiwyg-page-break[data-block-id]')) : [];
+        var activePage = _getActivePageIndexFromViewport(inst, domPages);
+        var pages = virtualPages.length > 0
+            ? virtualPages.map(function (page, index) {
+                var pageIndex = page.index ?? page.Index ?? index;
+                var domPage = domPages.find(function (candidate) {
+                    return parseInt(candidate.getAttribute('data-page-index') || '-1', 10) === pageIndex;
+                });
+                return {
+                    PageIndex: pageIndex,
+                    PageNumber: pageIndex + 1,
+                    Label: _formatA11yLabel(inst, 'pageLabel', 'PageLabel', 'Page {0}', pageIndex),
+                    IsVirtual: !!(domPage && domPage.classList.contains('tm-wysiwyg-page--virtual')),
+                    HasOverflow: !!(domPage && domPage.classList.contains('tm-wysiwyg-page--overflow')),
+                    BlockIds: (page.blockIds || page.BlockIds || [])
+                };
+            })
+            : domPages.map(function (page, index) {
+                var pageIndex = parseInt(page.getAttribute('data-page-index') || String(index), 10);
+                if (!Number.isFinite(pageIndex)) pageIndex = index;
+                return {
+                    PageIndex: pageIndex,
+                    PageNumber: pageIndex + 1,
+                    Label: _formatA11yLabel(inst, 'pageLabel', 'PageLabel', 'Page {0}', pageIndex),
+                    IsVirtual: page.classList.contains('tm-wysiwyg-page--virtual'),
+                    HasOverflow: page.classList.contains('tm-wysiwyg-page--overflow'),
+                    BlockIds: Array.from(page.querySelectorAll('[data-block-id]')).map(function (block) { return block.getAttribute('data-block-id') || ''; }).filter(Boolean)
+                };
+            });
+
+        var minimumPageCount = Math.max(pages.length, explicitPageBreaks.length + 1);
+        while (pages.length < minimumPageCount) {
+            var pageIndex = pages.length;
+            pages.push({
+                PageIndex: pageIndex,
+                PageNumber: pageIndex + 1,
+                Label: _formatA11yLabel(inst, 'pageLabel', 'PageLabel', 'Page {0}', pageIndex),
+                IsVirtual: true,
+                HasOverflow: false,
+                BlockIds: []
+            });
+        }
+
+        var renderedPages = pages.filter(function (page) { return !page.IsVirtual; }).length;
+        return {
+            TotalPages: pages.length,
+            RenderedPages: renderedPages,
+            VirtualizedPages: pages.length - renderedPages,
+            ActivePageIndex: Math.max(0, Math.min(activePage, Math.max(0, pages.length - 1))),
+            Pages: pages
+        };
+    }
+
+    function _getActivePageIndexFromViewport(inst, pages) {
+        pages = pages || [];
+        if (pages.length === 0) return 0;
+        var rootRect = inst.root && inst.root.getBoundingClientRect
+            ? inst.root.getBoundingClientRect()
+            : { top: 0, height: (typeof window !== 'undefined' && window.innerHeight) || 900 };
+        var targetY = rootRect.top + Math.min(Math.max(rootRect.height * 0.25, 80), 220);
+        var best = { index: 0, distance: Number.POSITIVE_INFINITY };
+        pages.forEach(function (page) {
+            if (!page.getBoundingClientRect) return;
+            var rect = page.getBoundingClientRect();
+            var distance = Math.abs(rect.top - targetY);
+            var index = parseInt(page.getAttribute('data-page-index') || '0', 10);
+            if (distance < best.distance && Number.isFinite(index)) {
+                best = { index: index, distance: distance };
+            }
+        });
+        return best.index;
+    }
+
+    function _notifyPageMetrics(inst) {
+        if (!inst || !inst.root) return;
+        var metrics = _buildPageMetrics(inst);
+        var json = JSON.stringify(metrics);
+        if (json === inst.lastPageMetricsJson) return;
+        inst.lastPageMetricsJson = json;
+        _invokeDotNet(inst, 'HandlePageMetricsChanged', metrics);
+    }
+
+    function _notifyActiveHeading(inst) {
+        if (!inst || !inst.root) return;
+        var headings = Array.from(inst.root.querySelectorAll('h1[data-block-id], h2[data-block-id], h3[data-block-id], h4[data-block-id], h5[data-block-id], h6[data-block-id]'));
+        var active = _findActiveHeadingBlockId(inst, headings);
+        if (active === inst.lastActiveHeadingBlockId) return;
+        inst.lastActiveHeadingBlockId = active;
+        _invokeDotNet(inst, 'HandleActiveHeadingChanged', active || null);
+    }
+
+    function _findActiveHeadingBlockId(inst, headings) {
+        if (!headings || headings.length === 0) return null;
+        var rootCanScroll = !!(inst && inst.root && inst.root.scrollHeight > inst.root.clientHeight + 2);
+        if (rootCanScroll && inst.root.scrollTop >= inst.root.scrollHeight - inst.root.clientHeight - 2) {
+            var visibleAtEnd = _findLastVisibleHeading(inst, headings);
+            if (visibleAtEnd) return visibleAtEnd;
+        }
+
+        var threshold = _getActiveHeadingThreshold(inst);
+        var best = null;
+        headings.forEach(function (heading) {
+            if (!heading.getBoundingClientRect) return;
+            var rect = heading.getBoundingClientRect();
+            if (rect.top <= threshold) {
+                best = heading;
+            } else if (!best) {
+                best = heading;
+            }
+        });
+        return best ? (best.getAttribute('data-block-id') || null) : null;
+    }
+
+    function _findLastVisibleHeading(inst, headings) {
+        if (!inst || !inst.root || !inst.root.getBoundingClientRect) return null;
+        var rootRect = inst.root.getBoundingClientRect();
+        var best = null;
+        headings.forEach(function (heading) {
+            if (!heading.getBoundingClientRect) return;
+            var rect = heading.getBoundingClientRect();
+            if (rect.bottom >= rootRect.top && rect.top <= rootRect.bottom) {
+                best = heading;
+            }
+        });
+        return best ? (best.getAttribute('data-block-id') || null) : null;
+    }
+
+    function _getActiveHeadingThreshold(inst) {
+        var viewportHeight = (typeof window !== 'undefined' && window.innerHeight) || 900;
+        var viewportThreshold = Math.min(Math.max(viewportHeight * 0.2, 96), 240);
+        if (!inst || !inst.root || !inst.root.getBoundingClientRect) return viewportThreshold;
+
+        var rootRect = inst.root.getBoundingClientRect();
+        var rootThreshold = Math.min(Math.max(rootRect.height * 0.2, 96), 240);
+        var rootCanScroll = inst.root.scrollHeight > inst.root.clientHeight + 2;
+        return rootCanScroll ? rootRect.top + rootThreshold : viewportThreshold;
     }
 
     function _measureBlock(inst, blockEl) {
@@ -5699,6 +8452,9 @@ window.tmDocumentWysiwyg = (function () {
             case 6:
                 el = document.createElement('hr');
                 el.className = 'tm-wysiwyg-page-break';
+                el.setAttribute('role', 'separator');
+                el.setAttribute('data-testid', 'document-wysiwyg-page-break');
+                el.setAttribute('aria-label', 'Page break');
                 break;
             default:
                 el = document.createElement('p');
@@ -5888,6 +8644,7 @@ window.tmDocumentWysiwyg = (function () {
                 _renderTextRunContent(span, inline.text || inline.Text || '');
                 _applyMarks(span, inline.marks || inline.Marks, inst);
                 container.appendChild(span);
+                _appendNonPrintingTextOverlay(container, inline.text || inline.Text || '', inst);
             } else if (inlineType === 'token' || inlineType === 'TokenRun') {
                 var tokenSpan = document.createElement('span');
                 tokenSpan.setAttribute('data-inline-id', inlineId || '');
@@ -5934,6 +8691,43 @@ window.tmDocumentWysiwyg = (function () {
         if (!span.firstChild) {
             span.appendChild(document.createTextNode(''));
         }
+    }
+
+    function _appendNonPrintingTextOverlay(container, text, inst) {
+        if (!inst || !inst.showNonPrintingCharacters) return;
+        var marks = _formatNonPrintingText(text || '');
+        if (!marks) return;
+        var overlay = document.createElement('span');
+        overlay.className = 'tm-wysiwyg-nonprinting-text';
+        overlay.setAttribute('data-testid', 'document-wysiwyg-nonprinting-text');
+        overlay.setAttribute('contenteditable', 'false');
+        overlay.setAttribute('aria-hidden', 'true');
+        overlay.textContent = marks;
+        container.appendChild(overlay);
+    }
+
+    function _formatNonPrintingText(text) {
+        var value = String(text || '');
+        if (!/[ \t\n]/.test(value)) return '';
+        return value
+            .replace(/ /g, '·')
+            .replace(/\t/g, '→')
+            .replace(/\n/g, '¶\n');
+    }
+
+    function _refreshNonPrintingCharacters(inst) {
+        if (!inst || !inst.root) return;
+        inst.root.classList.toggle('tm-wysiwyg--show-nonprinting', !!inst.showNonPrintingCharacters);
+        inst.root.querySelectorAll('.tm-wysiwyg-nonprinting-text').forEach(function (node) { node.remove(); });
+        if (!inst.showNonPrintingCharacters) return;
+        inst.root.querySelectorAll('.tm-wysiwyg-block[data-block-id]').forEach(function (block) {
+            if (block.classList.contains('tm-wysiwyg-page-break')) return;
+            var inlines = Array.from(block.querySelectorAll(':scope > [data-inline-id]'));
+            inlines.forEach(function (inline) {
+                _appendNonPrintingTextOverlay(block, inline.textContent || '', inst);
+            });
+            _appendNonPrintingTextOverlay(block, '\n', inst);
+        });
     }
 
     function _applyMarks(el, marks, inst) {
@@ -6020,13 +8814,15 @@ window.tmDocumentWysiwyg = (function () {
     function _renderTable(content, inst) {
         var table = document.createElement('table');
         table.className = 'tm-wysiwyg-table';
+        _applyTableLayoutStyle(table, content && (content.layout || content.Layout || {}));
         var rows = (content && (content.rows || content.Rows)) || [];
         for (var r = 0; r < rows.length; r++) {
             var tr = document.createElement('tr');
             var cells = (rows[r] && (rows[r].cells || rows[r].Cells)) || [];
             for (var c = 0; c < cells.length; c++) {
                 var cell = cells[c];
-                var td = document.createElement('td');
+                var isHeaderCell = !!(cell.isHeader || cell.IsHeader);
+                var td = document.createElement(isHeaderCell ? 'th' : 'td');
                 var cellId = cell.id || cell.Id || _renderNodeId('cell', null, r + '-' + c);
                 td.setAttribute('data-cell-id', cellId);
                 _setRuntimeNodeAttributes(td, cellId, 'table-cell');
@@ -6047,6 +8843,10 @@ window.tmDocumentWysiwyg = (function () {
                 if (cellBlocks.length === 0) {
                     _appendEmptyTableCellParagraph(td);
                 }
+                if (!(td.textContent || '').trim()) {
+                    td.classList.add('tm-wysiwyg-table-cell--empty');
+                    td.setAttribute('data-placeholder', _readStringOption(inst, 'tableCellPlaceholder', 'TableCellPlaceholder', 'Cell'));
+                }
                 tr.appendChild(td);
             }
             table.appendChild(tr);
@@ -6058,7 +8858,7 @@ window.tmDocumentWysiwyg = (function () {
         if (!td || !cell) return;
         var width = cell.width ?? cell.Width ?? null;
         if (width != null && width !== '') {
-            td.style.width = String(width).match(/[a-z%]+$/i) ? String(width) : String(width) + 'px';
+            td.style.width = _normalizeCssLength(width);
             td.setAttribute('data-cell-width', String(width));
         }
 
@@ -6073,6 +8873,82 @@ window.tmDocumentWysiwyg = (function () {
         _applyTableCellBorder(td, 'Right', borders.right || borders.Right);
         _applyTableCellBorder(td, 'Bottom', borders.bottom || borders.Bottom);
         _applyTableCellBorder(td, 'Left', borders.left || borders.Left);
+
+        var verticalAlignment = _normalizeTableVerticalAlignment(cell.verticalAlignment ?? cell.VerticalAlignment ?? '');
+        if (verticalAlignment) {
+            td.style.verticalAlign = verticalAlignment;
+            td.setAttribute('data-cell-vertical-align', verticalAlignment);
+        }
+
+        var padding = cell.padding ?? cell.Padding ?? null;
+        if (padding != null && padding !== '') {
+            td.style.padding = _normalizeCssLength(padding);
+            td.setAttribute('data-cell-padding', String(padding));
+        }
+    }
+
+    function _applyTableLayoutStyle(table, layout) {
+        if (!table) return;
+        var props = layout || {};
+        var width = props.width ?? props.Width ?? null;
+        if (width != null && width !== '') {
+            table.style.width = _normalizeCssLength(width);
+            table.setAttribute('data-table-width', String(width));
+        }
+
+        var alignment = _normalizeTableAlignment(props.alignment ?? props.Alignment ?? '');
+        if (alignment) {
+            table.setAttribute('data-table-alignment', alignment);
+            table.style.marginLeft = alignment === 'center' || alignment === 'right' ? 'auto' : '0';
+            table.style.marginRight = alignment === 'center' || alignment === 'left' ? 'auto' : '0';
+        }
+
+        var background = _sanitizeColorValue(props.backgroundColor || props.BackgroundColor || '');
+        if (background) {
+            table.style.backgroundColor = background;
+            table.setAttribute('data-table-background', background);
+        }
+
+        var cellPadding = props.cellPadding ?? props.CellPadding ?? null;
+        if (cellPadding != null && cellPadding !== '') {
+            table.style.setProperty('--tm-document-table-cell-padding', _normalizeCssLength(cellPadding));
+            table.setAttribute('data-table-cell-padding', String(cellPadding));
+            table.querySelectorAll('td[data-cell-id], th[data-cell-id]').forEach(function (cell) {
+                if (!cell.getAttribute('data-cell-padding')) {
+                    cell.style.padding = _normalizeCssLength(cellPadding);
+                }
+            });
+        }
+
+        var borders = props.borders || props.Borders || {};
+        _applyTableCellBorder(table, 'Top', borders.top || borders.Top);
+        _applyTableCellBorder(table, 'Right', borders.right || borders.Right);
+        _applyTableCellBorder(table, 'Bottom', borders.bottom || borders.Bottom);
+        _applyTableCellBorder(table, 'Left', borders.left || borders.Left);
+    }
+
+    function _normalizeCssLength(value) {
+        var text = String(value || '').trim();
+        if (!text) return '';
+        return /[a-z%]+$/i.test(text) ? text : text + 'px';
+    }
+
+    function _normalizeTableAlignment(value) {
+        if (value === 1) return 'center';
+        if (value === 2) return 'right';
+        var text = String(value || '').toLowerCase();
+        if (text === 'center' || text === '1') return 'center';
+        if (text === 'right' || text === '2') return 'right';
+        return 'left';
+    }
+
+    function _normalizeTableVerticalAlignment(value) {
+        if (value === 1) return 'middle';
+        if (value === 2) return 'bottom';
+        var text = String(value || '').toLowerCase();
+        if (text === 'middle' || text === '1') return 'middle';
+        if (text === 'bottom' || text === '2') return 'bottom';
+        return 'top';
     }
 
     function _applyTableCellBorder(td, side, value) {
@@ -6112,10 +8988,16 @@ window.tmDocumentWysiwyg = (function () {
             if (naturalWidth) figure.setAttribute('data-image-natural-width', String(naturalWidth));
             if (naturalHeight) figure.setAttribute('data-image-natural-height', String(naturalHeight));
         }
+        var linkUrl = content && (content.linkUrl || content.LinkUrl);
+        if (linkUrl) {
+            figure.setAttribute('data-image-link', linkUrl);
+        }
         figure.appendChild(img);
         var caption = content && (content.caption || content.Caption);
         if (caption) {
             var figcaption = document.createElement('figcaption');
+            figcaption.setAttribute('contenteditable', 'true');
+            figcaption.setAttribute('data-testid', 'document-wysiwyg-image-caption-text');
             figcaption.textContent = caption;
             figure.appendChild(figcaption);
         }
@@ -6202,6 +9084,9 @@ window.tmDocumentWysiwyg = (function () {
             'tm-wysiwyg-image--wrap-top-bottom',
             'tm-wysiwyg-image--wrap-behind-text',
             'tm-wysiwyg-image--wrap-in-front-of-text',
+            'tm-wysiwyg-image--position-left',
+            'tm-wysiwyg-image--position-center',
+            'tm-wysiwyg-image--position-right',
             'tm-wysiwyg-image--relative-margin',
             'tm-wysiwyg-image--relative-page',
             'tm-wysiwyg-image--relative-column',
@@ -6213,6 +9098,10 @@ window.tmDocumentWysiwyg = (function () {
         figure.style.left = '';
         figure.style.top = '';
         figure.style.zIndex = '';
+        figure.style.marginLeft = '';
+        figure.style.marginRight = '';
+        figure.style.marginTop = '';
+        figure.style.marginBottom = '';
 
         if (!layout) {
             figure.setAttribute('data-floating-inline', 'true');
@@ -6228,6 +9117,11 @@ window.tmDocumentWysiwyg = (function () {
         var y = parseFloat(layout.y ?? layout.Y ?? 0) || 0;
         var z = parseInt(layout.zIndex ?? layout.ZIndex ?? 0, 10) || 0;
         var lockAnchor = !!(layout.lockAnchor ?? layout.LockAnchor);
+        var hPos = _normalizeHorizontalPosition(layout.horizontalPosition ?? layout.HorizontalPosition);
+        var distL = parseFloat(layout.distanceLeft ?? layout.DistanceLeft ?? 0) || 0;
+        var distR = parseFloat(layout.distanceRight ?? layout.DistanceRight ?? 0) || 0;
+        var distT = parseFloat(layout.distanceTop ?? layout.DistanceTop ?? 0) || 0;
+        var distB = parseFloat(layout.distanceBottom ?? layout.DistanceBottom ?? 0) || 0;
 
         figure.setAttribute('data-floating-inline', inline === false ? 'false' : 'true');
         figure.setAttribute('data-wrap-mode', String(wrapMode.value));
@@ -6236,17 +9130,24 @@ window.tmDocumentWysiwyg = (function () {
         figure.setAttribute('data-image-x', String(x));
         figure.setAttribute('data-image-y', String(y));
         figure.setAttribute('data-lock-anchor', lockAnchor ? 'true' : 'false');
+        if (hPos) figure.setAttribute('data-horizontal-position', hPos.css);
 
         if (inline !== false) return;
 
+        var positionClass = hPos ? ('tm-wysiwyg-image--position-' + hPos.css) : null;
         figure.classList.add(
             'tm-wysiwyg-image--floating',
             'tm-wysiwyg-image--wrap-' + wrapMode.css,
             'tm-wysiwyg-image--relative-' + horizontal.css,
             'tm-wysiwyg-image--vrelative-' + vertical.css);
+        if (positionClass) figure.classList.add(positionClass);
         figure.style.left = x + 'px';
         figure.style.top = y + 'px';
         if (z !== 0) figure.style.zIndex = String(z);
+        if (distL > 0) figure.style.marginLeft = distL + 'px';
+        if (distR > 0) figure.style.marginRight = distR + 'px';
+        if (distT > 0) figure.style.marginTop = distT + 'px';
+        if (distB > 0) figure.style.marginBottom = distB + 'px';
     }
 
     function _ensureImageResizeHandle(figure, inst) {
@@ -6289,6 +9190,17 @@ window.tmDocumentWysiwyg = (function () {
         return byName[raw] || Object.values(byName).find(function (item) { return String(item.value) === raw; }) || byName.page;
     }
 
+    function _normalizeHorizontalPosition(value) {
+        if (value == null) return null;
+        var raw = String(value).toLowerCase();
+        var byName = {
+            left: { value: 0, css: 'left' },
+            center: { value: 1, css: 'center' },
+            right: { value: 2, css: 'right' }
+        };
+        return byName[raw] || Object.values(byName).find(function (item) { return String(item.value) === raw; }) || null;
+    }
+
     function _isSafeImageUrl(url) {
         if (!url || !String(url).trim()) return false;
         url = String(url).trim();
@@ -6321,7 +9233,7 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
-    function _insertImageBlock(inst, block, dispatchPatch) {
+    function _insertImageBlock(inst, block, dispatchPatch, selectionOverride) {
         if (!block) return;
 
         var blockEl = _renderBlock(block, inst);
@@ -6329,7 +9241,15 @@ window.tmDocumentWysiwyg = (function () {
 
         var sel = window.getSelection();
         var anchorBlock = null;
-        if (sel && sel.rangeCount > 0) {
+        var insertionSelection = selectionOverride || inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+        var selectionAnchorBlockId = insertionSelection
+            ? (insertionSelection.anchorBlockId || insertionSelection.AnchorBlockId || '')
+            : '';
+        if (selectionAnchorBlockId) {
+            anchorBlock = inst.root.querySelector('[data-block-id="' + _cssEscape(selectionAnchorBlockId) + '"]');
+        }
+
+        if (!anchorBlock && sel && sel.rangeCount > 0) {
             var node = sel.anchorNode;
             var el = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
             anchorBlock = el ? el.closest('.tm-wysiwyg-block[data-block-id]') : null;
@@ -6355,9 +9275,16 @@ window.tmDocumentWysiwyg = (function () {
                 type: 'InsertBlock',
                 blockType: 'Image',
                 block: block,
-                selection: inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst),
+                selection: insertionSelection,
                 protocolVersion: inst.options.protocolVersion || 1
             });
+        }
+
+        var insertedFigure = blockEl.matches && blockEl.matches('figure.tm-wysiwyg-image')
+            ? blockEl
+            : blockEl.querySelector && blockEl.querySelector('figure.tm-wysiwyg-image');
+        if (insertedFigure) {
+            _selectImageFigure(inst, insertedFigure);
         }
     }
 
@@ -7083,11 +10010,30 @@ window.tmDocumentWysiwyg = (function () {
             || !String(cursor.displayName || cursor.DisplayName || '').trim();
         if (shouldRemove) {
             _removeRemoteCursor(inst, sessionId);
+            _removeRuntimeMarker(inst, 'remote:' + sessionId);
             return true;
         }
 
         var transformed = _transformRemoteCursorAgainstPendingTransactions(inst, cursor);
-        return _renderRemoteCursor(inst, transformed);
+        var rendered = _renderRemoteCursor(inst, transformed);
+        if (rendered) {
+            _upsertRuntimeMarker(inst, {
+                id: 'remote:' + sessionId,
+                type: 'remoteSelection',
+                range: {
+                    startBlockId: transformed.blockId || transformed.BlockId || '',
+                    startOffset: transformed.offset ?? transformed.Offset ?? 0,
+                    endBlockId: transformed.blockId || transformed.BlockId || '',
+                    endOffset: transformed.offset ?? transformed.Offset ?? 0
+                },
+                priority: 50,
+                affectsData: false,
+                source: 'collaboration',
+                targetId: sessionId,
+                label: transformed.displayName || transformed.DisplayName || ''
+            }, false);
+        }
+        return rendered;
     }
 
     function _transformRemoteCursorAgainstPendingTransactions(inst, cursor) {
@@ -7167,6 +10113,7 @@ window.tmDocumentWysiwyg = (function () {
         var item = inst.remoteCursorElements && inst.remoteCursorElements.get(sessionId);
         if (item) item.remove();
         if (inst.remoteCursorElements) inst.remoteCursorElements.delete(sessionId);
+        _removeRuntimeMarker(inst, 'remote:' + sessionId);
     }
 
     function _firstNonZeroClientRect(range) {
@@ -7988,6 +10935,42 @@ window.tmDocumentWysiwyg = (function () {
         return _reviewRevisionCore(inst, revisionId, normalizedAction, removeContent);
     }
 
+    function reviewAllRevisions(instanceId, action, payload) {
+        const inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        var normalizedAction = _revisionActionToNumber(action) === 2 ? 'Rejected' : 'Accepted';
+        payload = payload || {};
+        var explicitIds = payload.revisionIds || payload.RevisionIds || payload.ids || payload.Ids || null;
+        var ids = Array.isArray(explicitIds)
+            ? explicitIds.map(function (id) { return String(id || ''); }).filter(Boolean)
+            : (inst.runtimeRevisions || [])
+                .filter(function (revision) { return _revisionActionToNumber(revision.Action ?? revision.action) === 0; })
+                .map(function (revision) { return String(revision.Id || revision.id || ''); })
+                .filter(Boolean);
+
+        if (ids.length === 0 && inst.root) {
+            var seen = new Set();
+            inst.root.querySelectorAll('[data-revision-id]').forEach(function (node) {
+                var id = node.getAttribute('data-revision-id') || '';
+                if (id) seen.add(id);
+            });
+            ids = Array.from(seen);
+        }
+
+        var reviewed = 0;
+        ids.forEach(function (revisionId) {
+            var revision = _getRuntimeRevision(inst, revisionId);
+            var type = revision ? _revisionTypeToName(revision.Type ?? revision.type) : _revisionTypeToName(_findSnapshotRevisionType(inst, revisionId));
+            var removeContent = (normalizedAction === 'Rejected' && type === 'Insertion')
+                || (normalizedAction === 'Accepted' && type === 'Deletion');
+            if (_reviewRevisionCore(inst, revisionId, normalizedAction, removeContent)) {
+                reviewed++;
+            }
+        });
+
+        return reviewed > 0;
+    }
+
     function clearRevisionDecorations(instanceId, revisionId, removeContent) {
         const inst = _instances.get(instanceId);
         return _reviewRevisionCore(inst, revisionId, removeContent ? 'Accepted' : 'Rejected', !!removeContent);
@@ -8057,12 +11040,6 @@ window.tmDocumentWysiwyg = (function () {
         if (typeof node.scrollIntoView === 'function') {
             node.scrollIntoView({ block: 'center', inline: 'nearest', behavior: 'smooth' });
         }
-
-        window.setTimeout(function () {
-            if (node.isConnected && node.classList) {
-                node.classList.remove('tm-document-inline--comment-anchor--selected');
-            }
-        }, 2200);
 
         return true;
     }
@@ -8160,9 +11137,11 @@ window.tmDocumentWysiwyg = (function () {
         if (value === '0') return 'AllMarkup';
         if (value === '1') return 'SimpleMarkup';
         if (value === '2') return 'NoMarkup';
+        if (value === '3') return 'Original';
         value = value.toLowerCase();
         if (value === 'simplemarkup' || value === 'simple') return 'SimpleMarkup';
         if (value === 'nomarkup' || value === 'none') return 'NoMarkup';
+        if (value === 'original') return 'Original';
         return 'AllMarkup';
     }
 
@@ -8173,7 +11152,8 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.classList.remove(
             'tm-wysiwyg-host--review-all-markup',
             'tm-wysiwyg-host--review-simple-markup',
-            'tm-wysiwyg-host--review-no-markup');
+            'tm-wysiwyg-host--review-no-markup',
+            'tm-wysiwyg-host--review-original');
         inst.root.classList.add('tm-wysiwyg-host--review-' + mode.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase());
         inst.root.setAttribute('data-review-display-mode', mode);
     }
@@ -8738,6 +11718,12 @@ window.tmDocumentWysiwyg = (function () {
             case 'removeLink':
                 _executeRemoveLinkCommand(inst, payload || {});
                 break;
+            case 'replaceOne':
+                _executeReplaceOneCommand(inst, payload || {});
+                break;
+            case 'replaceAll':
+                _executeReplaceAllCommand(inst, payload || {});
+                break;
             case 'clearFormatting':
                 _executeClearFormattingCommand(inst, payload || {});
                 break;
@@ -8764,44 +11750,162 @@ window.tmDocumentWysiwyg = (function () {
             case 'insertImageUrl':
                 var block = _createImageBlockFromPayload(payload);
                 if (block) {
-                    _insertImageBlock(inst, block, true);
+                    _insertImageBlock(inst, block, true, (payload || {}).selection || (payload || {}).Selection || inst.lastSelectionSnapshot);
                 }
                 break;
+            case 'insertImageBlock': {
+                payload = payload || {};
+                var imageBlock = payload.block || payload.Block;
+                if (imageBlock) {
+                    _insertImageBlock(inst, imageBlock, true, payload.selection || payload.Selection || inst.lastSelectionSnapshot);
+                }
+                break;
+            }
             case 'setImageWrapMode':
                 _setSelectedImageWrapMode(inst, payload);
                 break;
+            case 'setImagePosition':
+                _setSelectedImagePosition(inst, payload);
+                break;
+            case 'replaceImage':
+                _replaceSelectedImage(inst);
+                break;
+            case 'setImageSize':
+                _setSelectedImageSize(inst, payload);
+                break;
+            case 'setImageAltText': {
+                var altPayload = payload || {};
+                var altText = altPayload.altText || altPayload.AltText || altPayload.value || '';
+                var altBlockId = altPayload.blockId || altPayload.BlockId || altPayload.imageId || altPayload.ImageId || '';
+                _setImageAltText(inst, altText, altBlockId);
+                break;
+            }
+            case 'toggleImageCaption': {
+                var captionPayload = payload || {};
+                var captionBlockId = captionPayload.blockId || captionPayload.BlockId || captionPayload.imageId || captionPayload.ImageId || '';
+                _toggleImageCaption(inst, captionBlockId);
+                break;
+            }
+            case 'setImageUrl': {
+                var urlPayload = payload || {};
+                var newUrl = urlPayload.url || urlPayload.Url || urlPayload.value || '';
+                _setImageUrl(inst, newUrl);
+                break;
+            }
+            case 'setImageLink': {
+                var linkPayload = payload || {};
+                var linkUrl = linkPayload.url || linkPayload.Url || linkPayload.value || '';
+                var linkBlockId = linkPayload.blockId || linkPayload.BlockId || linkPayload.imageId || linkPayload.ImageId || '';
+                _setImageLink(inst, linkUrl, linkBlockId);
+                break;
+            }
             case 'syncHeaderFooterLayout':
                 _executeSyncHeaderFooterLayoutCommand(inst, payload || {});
                 break;
-            // Phase 12: table structural commands.
-            case 'insertTable':
-                _insertTable(inst);
+            case 'closeAutocompleteQuery':
+                _closeAutocompleteQuery(inst, false);
                 break;
+            case 'removeAutocompleteQuery':
+                return _removeAutocompleteQuery(inst);
+            case 'insertAutocompleteText': {
+                var autocompleteTextPayload = payload || {};
+                return _insertAutocompleteText(inst, autocompleteTextPayload.text || autocompleteTextPayload.Text || '');
+            }
+            case 'insertPageBreak': {
+                var pageBreakRegion = _getActiveSchemaRegion(inst);
+                if (!_schemaAllowsBlock(6, pageBreakRegion)) {
+                    inst.lastInsertionPolicyWarnings = [{ code: 'page-break-not-allowed', region: pageBreakRegion, blockType: 6 }];
+                    break;
+                }
+
+                var pageBreakBeforeSelection = _captureSelectionSnapshot(inst);
+                _beginUndoTransaction(inst, 'insertPageBreak', 'Insert page break', pageBreakBeforeSelection, true);
+                _insertClipboardBlocks(inst, [_createPageBreakBlock()]);
+                _commitCurrentRuntimeTransaction(inst, true);
+                _notifyPageMetrics(inst);
+                break;
+            }
+            case 'deletePageBreak': {
+                var deletePageBreakPayload = payload || {};
+                return _deletePageBreak(inst, deletePageBreakPayload.blockId || deletePageBreakPayload.BlockId || inst.selectedPageBreakId || '');
+            }
+            // Phase 12: table structural commands.
+            case 'insertTable': {
+                var tp = payload || {};
+                var tRows = tp.rows || tp.Rows || 2;
+                var tCols = tp.columns || tp.Columns || tp.cols || tp.Cols || 2;
+                var tableRegion = _getActiveSchemaRegion(inst);
+                if (!_schemaAllowsToolbarBlockCommand(4, tableRegion)) {
+                    inst.lastInsertionPolicyWarnings = [{ code: 'table-not-allowed', region: tableRegion, blockType: 4 }];
+                    break;
+                }
+                _insertTable(inst, tRows, tCols);
+                break;
+            }
             case 'insertTableRowBefore':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _insertTableRow(inst, true);
                 break;
             case 'insertTableRow':
             case 'insertTableRowAfter':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _insertTableRow(inst);
                 break;
             case 'deleteTableRow':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _deleteTableRow(inst);
                 break;
             case 'insertTableColumnBefore':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _insertTableColumn(inst, true);
                 break;
             case 'insertTableColumn':
             case 'insertTableColumnAfter':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _insertTableColumn(inst);
                 break;
             case 'deleteTableColumn':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _deleteTableColumn(inst);
                 break;
             case 'mergeTableCells':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _mergeTableCells(inst);
                 break;
             case 'splitTableCell':
+                _applyTableCommandSelectionPayload(inst, payload);
                 _splitTableCell(inst);
+                break;
+            case 'toggleTableHeaderRow':
+                _applyTableCommandSelectionPayload(inst, payload);
+                _toggleTableHeaderRow(inst);
+                break;
+            case 'setCellBackgroundColor': {
+                var bgPayload = payload || {};
+                var bgColor = bgPayload.color || bgPayload.Color || bgPayload.value || bgPayload.Value || '';
+                _setCellBackgroundColor(inst, bgColor);
+                break;
+            }
+            case 'tableProperties':
+                _markActiveTableCell(_findCurrentTableCell(inst));
+                break;
+            case 'cellProperties':
+                _markActiveTableCell(_findCurrentTableCell(inst));
+                break;
+            case 'setTableProperties':
+                _setTableProperties(inst, payload);
+                break;
+            case 'setCellProperties':
+                _setCellProperties(inst, payload);
+                break;
+            case 'resizeTableColumn':
+                _resizeTableColumn(inst, payload);
+                break;
+            case 'acceptAllRevisions':
+                reviewAllRevisions(instanceId, 'Accepted', payload || {});
+                break;
+            case 'rejectAllRevisions':
+                reviewAllRevisions(instanceId, 'Rejected', payload || {});
                 break;
             case 'closeHeaderFooter':
                 closeHeaderFooter(instanceId);
@@ -9011,10 +12115,11 @@ window.tmDocumentWysiwyg = (function () {
             _applyParagraphPropertiesPatch(block, patch);
         });
 
-        var afterSelection = _captureSelectionSnapshot(inst) || beforeSelection;
+        var afterSelection = _collapseSelectionSnapshotToFocus(beforeSelection) || beforeSelection;
         inst.lastSelectionSnapshot = afterSelection;
         _focusEditorBody(inst);
         _restoreSelection(inst, afterSelection);
+        _hideMiniToolbar(inst, true);
         _scheduleSelectionNotification(inst, afterSelection);
         _beginTypingTransaction(inst);
         var afterFormatting = _getFormattingState(inst);
@@ -9257,11 +12362,17 @@ window.tmDocumentWysiwyg = (function () {
             return { collapsed: true };
         }
 
+        var originalSelectionSnapshot = _captureSelectionSnapshot(inst);
         var range = sel.getRangeAt(0);
+        var removeForToggle = forceRemove || (!_isValueMark(markType) && _getSelectionMarkState(inst, markType) === 1);
         var startInfo = _mapNodeToBlockInline(range.startContainer, range.startOffset, inst.root);
         var endInfo = _mapNodeToBlockInline(range.endContainer, range.endOffset, inst.root);
         if (!startInfo || !endInfo || startInfo.blockId !== endInfo.blockId || startInfo.inlineId !== endInfo.inlineId) {
-            return _wrapSelectionWithMark(range, markType, data, forceRemove, title);
+            var acrossResult = _applyMarkAcrossSelection(inst, range, markType, data, removeForToggle, title);
+            if (originalSelectionSnapshot) {
+                _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
+            }
+            return acrossResult;
         }
 
         var block = inst.root.querySelector('[data-block-id="' + _cssEscape(startInfo.blockId || '') + '"]');
@@ -9270,10 +12381,23 @@ window.tmDocumentWysiwyg = (function () {
 
         var start = Math.min(startInfo.offset, endInfo.offset);
         var end = Math.max(startInfo.offset, endInfo.offset);
-        var removed = forceRemove || (!_isValueMark(markType) && _rangeHasDomMark(inline, start, end, markType));
+        var removed = removeForToggle || (!_isValueMark(markType) && _rangeHasDomMark(inline, start, end, markType));
         _splitInlineForMark(inline, start, end, markType, data, removed, title);
+        if (originalSelectionSnapshot) {
+            _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
+        }
 
         return { collapsed: false };
+    }
+
+    function _restoreSelectionByBlockOffsets(inst, snapshot) {
+        if (!snapshot) return;
+        _restoreSelection(inst, Object.assign({}, snapshot, {
+            anchorNodeId: snapshot.anchorBlockId || snapshot.AnchorBlockId || null,
+            focusNodeId: snapshot.focusBlockId || snapshot.FocusBlockId || snapshot.anchorBlockId || snapshot.AnchorBlockId || null,
+            anchorInlineId: null,
+            focusInlineId: null
+        }));
     }
 
     function _wrapSelectionWithMark(range, markType, data, forceRemove, title) {
@@ -9286,6 +12410,99 @@ window.tmDocumentWysiwyg = (function () {
         wrapper.appendChild(range.extractContents());
         range.insertNode(wrapper);
         return { collapsed: false };
+    }
+
+    function _applyMarkAcrossSelection(inst, range, markType, data, remove, title) {
+        var segments = _collectRangeInlineSegments(inst, range);
+        if (!segments.length) {
+            return _wrapSelectionWithMark(range, markType, data, remove, title);
+        }
+
+        segments.forEach(function (segment) {
+            if (!segment.inline || !segment.inline.isConnected || segment.end <= segment.start) return;
+            _splitInlineForMark(segment.inline, segment.start, segment.end, markType, data, remove, title);
+        });
+
+        return { collapsed: false };
+    }
+
+    function _collectRangeInlineSegments(inst, range) {
+        var root = inst && inst.root;
+        if (!root || !range) return [];
+
+        var walkerRoot = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer
+            : range.commonAncestorContainer.parentElement;
+        if (!walkerRoot || !root.contains(walkerRoot)) {
+            walkerRoot = root;
+        }
+
+        var byInline = new Map();
+        var walker = document.createTreeWalker(walkerRoot, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                if (!root.contains(node) || !(node.textContent || '').length) return NodeFilter.FILTER_REJECT;
+                try {
+                    return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                } catch {
+                    return NodeFilter.FILTER_REJECT;
+                }
+            }
+        });
+
+        var node;
+        while ((node = walker.nextNode())) {
+            var element = node.parentElement;
+            var block = element && element.closest('[data-block-id]');
+            if (!block || !root.contains(block)) continue;
+            var inline = _findSemanticInlineElement(element, block);
+            if (!inline || !block.contains(inline)) continue;
+
+            var start = 0;
+            var end = _textLength(inline);
+            if (inline.contains(range.startContainer)) {
+                start = _textOffsetWithin(inline, range.startContainer, range.startOffset);
+            }
+            if (inline.contains(range.endContainer)) {
+                end = _textOffsetWithin(inline, range.endContainer, range.endOffset);
+            }
+
+            var existing = byInline.get(inline);
+            if (existing) {
+                existing.start = Math.min(existing.start, start);
+                existing.end = Math.max(existing.end, end);
+            } else {
+                byInline.set(inline, { inline: inline, start: start, end: end });
+            }
+        }
+
+        return Array.from(byInline.values()).sort(function (a, b) {
+            if (a.inline === b.inline) return 0;
+            return a.inline.compareDocumentPosition(b.inline) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1;
+        });
+    }
+
+    function _textOffsetWithin(root, node, offset) {
+        if (node === root && node.nodeType === Node.ELEMENT_NODE) {
+            var current = 0;
+            var max = Math.max(0, Math.min(offset || 0, node.childNodes.length));
+            for (var i = 0; i < max; i++) {
+                current += _textLength(node.childNodes[i]);
+            }
+            return current;
+        }
+
+        return _absoluteTextOffset(root, node, offset);
+    }
+
+    function _textLength(node) {
+        if (!node) return 0;
+        if (node.nodeType === Node.TEXT_NODE) return (node.textContent || '').length;
+        if (_isInlineBreakNode(node)) return 1;
+        var total = 0;
+        for (var i = 0; i < node.childNodes.length; i++) {
+            total += _textLength(node.childNodes[i]);
+        }
+        return total;
     }
 
     function _splitInlineForMark(inline, start, end, markType, data, remove, title) {
@@ -9334,6 +12551,8 @@ window.tmDocumentWysiwyg = (function () {
             sel.removeAllRanges();
             sel.addRange(range);
         }
+
+        return markedInline;
     }
 
     function _rangeHasDomMark(inline, start, end, markType) {
@@ -9545,10 +12764,63 @@ window.tmDocumentWysiwyg = (function () {
         el.style.backgroundColor = '';
     }
 
+    function _normalizeColorForState(value) {
+        if (!value) return '';
+        var raw = String(value).trim();
+        if (!raw || raw === 'transparent' || raw === 'rgba(0, 0, 0, 0)') return '';
+        if (/^#[0-9a-f]{6}$/i.test(raw)) return raw.toLowerCase();
+        if (/^#[0-9a-f]{3}$/i.test(raw)) {
+            return '#' + raw.slice(1).split('').map(function (part) { return part + part; }).join('').toLowerCase();
+        }
+
+        var match = raw.match(/^rgba?\((\d+),\s*(\d+),\s*(\d+)(?:,\s*([.\d]+))?\)$/i);
+        if (!match || match[4] === '0') return raw;
+        return '#' + [match[1], match[2], match[3]].map(function (part) {
+            return Math.max(0, Math.min(255, parseInt(part, 10))).toString(16).padStart(2, '0');
+        }).join('');
+    }
+
+    function _readNearestInlineStyleValue(el, styleName) {
+        var node = el && el.nodeType === Node.ELEMENT_NODE ? el : el?.parentElement;
+        while (node && node.nodeType === Node.ELEMENT_NODE) {
+            if (node.style && node.style[styleName]) {
+                return node.style[styleName];
+            }
+
+            if (node.matches && node.matches('.tm-wysiwyg-block, .tm-wysiwyg-page__body')) {
+                break;
+            }
+
+            node = node.parentElement;
+        }
+
+        return '';
+    }
+
+    function _readNearestInlineBackground(el) {
+        var node = el && el.nodeType === Node.ELEMENT_NODE ? el : el?.parentElement;
+        while (node && node.nodeType === Node.ELEMENT_NODE) {
+            var value = node.style && node.style.backgroundColor;
+            if (value && _normalizeColorForState(value)) {
+                return value;
+            }
+
+            if (node.matches && node.matches('.tm-wysiwyg-block, .tm-wysiwyg-page__body')) {
+                break;
+            }
+
+            node = node.parentElement;
+        }
+
+        return '';
+    }
+
     function _getElementMarkState(el) {
         var computed = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
         var fontWeight = computed.fontWeight || el.style.fontWeight || '';
         var textDecoration = computed.textDecorationLine || computed.textDecoration || el.style.textDecoration || '';
+        var textColor = _readNearestInlineStyleValue(el, 'color') || computed.color || '';
+        var highlight = _readNearestInlineBackground(el);
         return {
             Bold: fontWeight === 'bold' || fontWeight === '700' || parseInt(fontWeight, 10) >= 700,
             Italic: (computed.fontStyle || el.style.fontStyle) === 'italic',
@@ -9557,8 +12829,8 @@ window.tmDocumentWysiwyg = (function () {
             Link: !!el.closest('a[href], [data-link-href]'),
             FontFamily: el.style.fontFamily || '',
             FontSize: el.style.fontSize || '',
-            TextColor: el.style.color || '',
-            Highlight: el.style.backgroundColor || ''
+            TextColor: _normalizeColorForState(textColor),
+            Highlight: _normalizeColorForState(highlight)
         };
     }
 
@@ -9622,17 +12894,33 @@ window.tmDocumentWysiwyg = (function () {
 
         if (sel.isCollapsed) {
             var collapsedEl = sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement;
-            var inline = collapsedEl ? collapsedEl.closest('[data-inline-id]') : null;
-            return inline ? [inline] : [];
+            return collapsedEl ? [collapsedEl] : [];
         }
 
         var range = sel.getRangeAt(0);
-        var all = Array.from(inst.root.querySelectorAll('[data-inline-id]'));
+        var seen = new Set();
         var result = [];
-        for (var i = 0; i < all.length; i++) {
+        var walkerRoot = range.commonAncestorContainer.nodeType === Node.ELEMENT_NODE
+            ? range.commonAncestorContainer
+            : range.commonAncestorContainer.parentElement;
+        var walker = document.createTreeWalker(walkerRoot || inst.root, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                if (!inst.root.contains(node)) return NodeFilter.FILTER_REJECT;
+                try {
+                    return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                } catch {
+                    return NodeFilter.FILTER_REJECT;
+                }
+            }
+        });
+
+        while (walker.nextNode()) {
+            var element = walker.currentNode.parentElement;
+            if (!element) continue;
             try {
-                if (range.intersectsNode(all[i])) {
-                    result.push(all[i]);
+                if (range.intersectsNode(walker.currentNode) && !seen.has(element)) {
+                    seen.add(element);
+                    result.push(element);
                 }
             } catch {
                 // Ignore detached or browser-internal nodes.
@@ -9782,9 +13070,13 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _setSelectedImageWrapMode(inst, payload) {
-        var figure = _getSelectedImageFigure(inst);
-        if (!figure) return;
         payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image wrap', beforeSel, true);
         var wrapMode = _normalizeWrapMode(payload.wrapMode ?? payload.WrapMode ?? 'Square');
         var layout = _serializeImage(figure).FloatingLayout || {
             Inline: false,
@@ -9800,11 +13092,88 @@ window.tmDocumentWysiwyg = (function () {
         _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
         _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _setSelectedImagePosition(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var hPos = _normalizeHorizontalPosition(payload.horizontalPosition ?? payload.HorizontalPosition);
+        if (!hPos) return;
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Set image position', beforeSel, true);
+        var layout = _serializeImage(figure).FloatingLayout || {
+            Inline: false,
+            HorizontalRelativeTo: 0,
+            VerticalRelativeTo: 3,
+            X: parseFloat(figure.getAttribute('data-image-x') || '0') || 0,
+            Y: parseFloat(figure.getAttribute('data-image-y') || '0') || 0,
+            ZIndex: 0,
+            LockAnchor: false
+        };
+        layout.Inline = false;
+        layout.HorizontalPosition = hPos.value;
+        var currentWrap = _normalizeWrapMode(layout.wrapMode ?? layout.WrapMode);
+        if (currentWrap.value === 0 && (hPos.css === 'left' || hPos.css === 'right')) {
+            layout.WrapMode = 1;
+        }
+        _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
+        _ensureImageResizeHandle(figure, inst);
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
+    }
+
+    function _setSelectedImageSize(inst, payload) {
+        payload = payload || {};
+        var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var img = figure.querySelector('img');
+        if (!img) return;
+        var width = payload.width ?? payload.Width;
+        var height = payload.height ?? payload.Height;
+        var lockAspectRatio = (payload.lockAspectRatio ?? payload.LockAspectRatio) !== false;
+        var nextWidth = parseFloat(width);
+        var nextHeight = parseFloat(height);
+        if (!(nextWidth > 0) && !(nextHeight > 0)) return;
+
+        if (lockAspectRatio && nextWidth > 0 && !(nextHeight > 0)) {
+            var naturalW = parseFloat(figure.getAttribute('data-image-natural-width') || img.naturalWidth || '0');
+            var naturalH = parseFloat(figure.getAttribute('data-image-natural-height') || img.naturalHeight || '0');
+            if (naturalW > 0 && naturalH > 0) nextHeight = Math.round(nextWidth * naturalH / naturalW);
+        } else if (lockAspectRatio && nextHeight > 0 && !(nextWidth > 0)) {
+            var nW = parseFloat(figure.getAttribute('data-image-natural-width') || img.naturalWidth || '0');
+            var nH = parseFloat(figure.getAttribute('data-image-natural-height') || img.naturalHeight || '0');
+            if (nW > 0 && nH > 0) nextWidth = Math.round(nextHeight * nW / nH);
+        }
+
+        _commitCurrentRuntimeTransaction(inst, false);
+        var beforeSel = _captureSelectionSnapshot(inst);
+        _beginUndoTransaction(inst, 'image', 'Resize image', beforeSel, true);
+        if (nextWidth > 0) img.style.width = Math.round(nextWidth) + 'px';
+        if (nextHeight > 0) img.style.height = Math.round(nextHeight) + 'px';
+        _ensureImageResizeHandle(figure, inst);
+        _dispatchImageUpdatePatch(inst, figure);
+        _commitCurrentRuntimeTransaction(inst, false);
     }
 
     function _getSelectedImageFigure(inst) {
         if (inst && inst.selectedImageFigure && inst.selectedImageFigure.isConnected && inst.root.contains(inst.selectedImageFigure)) {
             return inst.selectedImageFigure;
+        }
+
+        var activeBlockId = inst && inst.lastSelectionSnapshot
+            ? (inst.lastSelectionSnapshot.activeImageBlockId || inst.lastSelectionSnapshot.ActiveImageBlockId || inst.lastSelectionSnapshot.anchorBlockId || inst.lastSelectionSnapshot.AnchorBlockId)
+            : null;
+        var activeFigure = activeBlockId ? _getImageFigureByBlockId(inst, activeBlockId) : null;
+        if (activeFigure) {
+            inst.selectedImageFigure = activeFigure;
+            activeFigure.classList.add('tm-wysiwyg-image--selected');
+            activeFigure.setAttribute('aria-selected', 'true');
+            return activeFigure;
         }
 
         var sel = window.getSelection();
@@ -9816,6 +13185,16 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         return null;
+    }
+
+    function _getImageFigureByBlockId(inst, blockId) {
+        if (!inst || !inst.root || !blockId) return null;
+        var safeId = String(blockId).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        var block = inst.root.querySelector('[data-block-id="' + safeId + '"]');
+        if (!block) return null;
+        return block.matches('figure.tm-wysiwyg-image')
+            ? block
+            : block.querySelector('figure.tm-wysiwyg-image');
     }
 
     /**
@@ -10473,6 +13852,7 @@ window.tmDocumentWysiwyg = (function () {
                     Id: cellId,
                     ColumnSpan: parseInt(td.getAttribute('colspan') || '1', 10),
                     RowSpan: parseInt(td.getAttribute('rowspan') || '1', 10),
+                    IsHeader: td.tagName === 'TH',
                     Blocks: _serializeBlocksFromContainer(td)
                 };
                 var width = td.getAttribute('data-cell-width') || td.style.width || '';
@@ -10488,11 +13868,56 @@ window.tmDocumentWysiwyg = (function () {
                 if (borders) {
                     serializedCell.Borders = borders;
                 }
+                var verticalAlignment = td.getAttribute('data-cell-vertical-align') || td.style.verticalAlign || '';
+                if (verticalAlignment) {
+                    serializedCell.VerticalAlignment = _serializeVerticalAlignment(verticalAlignment);
+                }
+                var padding = td.getAttribute('data-cell-padding') || td.style.padding || '';
+                if (padding) {
+                    var numericPadding = parseFloat(padding);
+                    serializedCell.Padding = isNaN(numericPadding) ? null : numericPadding;
+                }
                 cells.push(serializedCell);
             }
             rows.push({ Cells: cells });
         }
-        return { $type: 'table', Rows: rows };
+        return { $type: 'table', Rows: rows, Layout: _serializeTableLayout(tableEl) };
+    }
+
+    function _serializeTableLayout(tableEl) {
+        var layout = {
+            Alignment: _serializeTableAlignment(tableEl.getAttribute('data-table-alignment') || 'left'),
+            Borders: {}
+        };
+        var width = tableEl.getAttribute('data-table-width') || tableEl.style.width || '';
+        if (width) {
+            var numericWidth = parseFloat(width);
+            layout.Width = isNaN(numericWidth) ? null : numericWidth;
+        }
+        var padding = tableEl.getAttribute('data-table-cell-padding') || '';
+        if (padding) {
+            var numericPadding = parseFloat(padding);
+            layout.CellPadding = isNaN(numericPadding) ? null : numericPadding;
+        }
+        var background = tableEl.getAttribute('data-table-background') || tableEl.style.backgroundColor || '';
+        if (background) {
+            layout.BackgroundColor = background;
+        }
+        var borders = _serializeTableCellBorders(tableEl);
+        if (borders) {
+            layout.Borders = borders;
+        }
+        return layout;
+    }
+
+    function _serializeTableAlignment(value) {
+        var normalized = _normalizeTableAlignment(value);
+        return normalized === 'center' ? 1 : normalized === 'right' ? 2 : 0;
+    }
+
+    function _serializeVerticalAlignment(value) {
+        var normalized = _normalizeTableVerticalAlignment(value);
+        return normalized === 'middle' ? 1 : normalized === 'bottom' ? 2 : 0;
     }
 
     function _serializeTableCellBorders(td) {
@@ -10598,6 +14023,7 @@ window.tmDocumentWysiwyg = (function () {
         }
         var source = parseInt(figureEl.getAttribute('data-image-source') || '0', 10);
         var assetId = figureEl.getAttribute('data-image-asset-id') || '';
+        var linkUrl = figureEl.getAttribute('data-image-link') || '';
         var content = {
             $type: 'image',
             Source: source,
@@ -10606,6 +14032,7 @@ window.tmDocumentWysiwyg = (function () {
             Caption: figcaption ? figcaption.textContent : ''
         };
         if (assetId) content.AssetId = assetId;
+        if (linkUrl) content.LinkUrl = linkUrl;
         if (Object.keys(size).length > 0) content.Size = size;
         var naturalWidth = parseInt(figureEl.getAttribute('data-image-natural-width') || '0', 10) || 0;
         var naturalHeight = parseInt(figureEl.getAttribute('data-image-natural-height') || '0', 10) || 0;
@@ -10621,6 +14048,12 @@ window.tmDocumentWysiwyg = (function () {
         var x = parseFloat(figureEl.getAttribute('data-image-x') || '0') || 0;
         var y = parseFloat(figureEl.getAttribute('data-image-y') || '0') || 0;
         var z = parseInt(figureEl.style.zIndex || '0', 10) || 0;
+        var hPosAttr = figureEl.getAttribute('data-horizontal-position');
+        var hPos = hPosAttr ? _normalizeHorizontalPosition(hPosAttr) : null;
+        var distL = parseFloat(figureEl.style.marginLeft) || 0;
+        var distR = parseFloat(figureEl.style.marginRight) || 0;
+        var distT = parseFloat(figureEl.style.marginTop) || 0;
+        var distB = parseFloat(figureEl.style.marginBottom) || 0;
         if (!inline || wrapMode !== 0 || x !== 0 || y !== 0 || z !== 0) {
             content.FloatingLayout = {
                 Inline: inline,
@@ -10632,6 +14065,11 @@ window.tmDocumentWysiwyg = (function () {
                 ZIndex: z,
                 LockAnchor: figureEl.getAttribute('data-lock-anchor') === 'true'
             };
+            if (hPos) content.FloatingLayout.HorizontalPosition = hPos.value;
+            if (distL !== 0) content.FloatingLayout.DistanceLeft = distL;
+            if (distR !== 0) content.FloatingLayout.DistanceRight = distR;
+            if (distT !== 0) content.FloatingLayout.DistanceTop = distT;
+            if (distB !== 0) content.FloatingLayout.DistanceBottom = distB;
         }
         return content;
     }
@@ -10665,6 +14103,7 @@ window.tmDocumentWysiwyg = (function () {
             pageExtent: 0
         };
         var viewport = _getVirtualViewport(inst);
+        var performanceStats = _ensurePerformanceStats(inst);
 
         return {
             SnapshotApplyCount: inst.renderStats ? inst.renderStats.snapshotApplies : 0,
@@ -10691,6 +14130,26 @@ window.tmDocumentWysiwyg = (function () {
             MeasureCacheHits: inst.measureStats.cacheHits,
             MeasureInvalidations: inst.measureStats.invalidations,
             MeasureCacheSize: inst.measureCache.size,
+            MarkerRenderAttemptCount: performanceStats.markerRenderAttempts || 0,
+            MarkerRenderCount: performanceStats.markerRenderCount || 0,
+            MarkerRenderSkippedCount: performanceStats.markerRenderSkippedCount || 0,
+            LastMarkerRenderMs: performanceStats.markerRenderLastMs || 0,
+            MaxMarkerRenderMs: performanceStats.markerRenderMaxMs || 0,
+            AverageMarkerRenderMs: performanceStats.markerRenderAttempts > 0
+                ? performanceStats.markerRenderTotalMs / performanceStats.markerRenderAttempts
+                : 0,
+            FloatingRepositionCount: performanceStats.floatingRepositionCount || 0,
+            LastFloatingRepositionMs: performanceStats.floatingRepositionLastMs || 0,
+            MaxFloatingRepositionMs: performanceStats.floatingRepositionMaxMs || 0,
+            AverageFloatingRepositionMs: performanceStats.floatingRepositionCount > 0
+                ? performanceStats.floatingRepositionTotalMs / performanceStats.floatingRepositionCount
+                : 0,
+            ClipboardNormalizationCount: performanceStats.clipboardNormalizationCount || 0,
+            LastClipboardNormalizationMs: performanceStats.clipboardNormalizationLastMs || 0,
+            MaxClipboardNormalizationMs: performanceStats.clipboardNormalizationMaxMs || 0,
+            AverageClipboardNormalizationMs: performanceStats.clipboardNormalizationCount > 0
+                ? performanceStats.clipboardNormalizationTotalMs / performanceStats.clipboardNormalizationCount
+                : 0,
             VirtualizationEnabled: !!virtualState.enabled,
             TotalPages: virtualState.totalPages || 0,
             RenderedPages: virtualState.renderedPages || 0,
@@ -10759,6 +14218,8 @@ window.tmDocumentWysiwyg = (function () {
             LastPatchId: inst.lastPatchId || null,
             LastPatchTransactionId: inst.lastPatchTransactionId || null,
             LastPatchAt: inst.lastPatchAt || null,
+            MiniToolbarVisible: !!inst.miniToolbarVisible,
+            MiniToolbarRequestKey: inst.miniToolbarRequestKey || null,
             CurrentSelection: _toPascalSelection(selection),
             LastSelection: _toPascalSelection(lastSelection),
             ActiveBlockId: activeBlock ? activeBlock.getAttribute('data-block-id') : null,
@@ -10850,6 +14311,7 @@ window.tmDocumentWysiwyg = (function () {
             lastInputType: '',
             lastEventType: ''
         };
+        inst.performanceStats = _createPerformanceStats();
         inst.measureCache.clear();
     }
 
@@ -10857,6 +14319,45 @@ window.tmDocumentWysiwyg = (function () {
         var inst = _instances.get(instanceId);
         if (!inst || inst.disposed || !inst.virtualPages || inst.virtualPages.length === 0) return;
         _renderVirtualizedPages(inst, true);
+    }
+
+    function setSearchMarkers(instanceId, blockIdsOrMarkers, offsets, lengths) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        _setSearchMarkers(inst, blockIdsOrMarkers, offsets, lengths);
+        return true;
+    }
+
+    function clearSearchMarkers(instanceId) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        _clearSearchMarkers(inst);
+        return true;
+    }
+
+    function scrollToSearchResult(instanceId, blockId, offset, length) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        _scrollToSearchResult(inst, blockId, offset, length);
+        return true;
+    }
+
+    function upsertMarker(instanceId, marker) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return null;
+        return _upsertRuntimeMarker(inst, marker, true);
+    }
+
+    function removeMarker(instanceId, markerId) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return false;
+        return _removeRuntimeMarker(inst, markerId);
+    }
+
+    function getMarkers(instanceId) {
+        var inst = _instances.get(instanceId);
+        if (!inst || inst.disposed) return [];
+        return _getRuntimeMarkers(inst).map(function (marker) { return _cloneRuntimeJson(marker); });
     }
 
     // ── Public API ───────────────────────────────────────────────────────────
@@ -10902,6 +14403,12 @@ window.tmDocumentWysiwyg = (function () {
         getDebugSnapshot: getDebugSnapshot,
         clearDebugMetrics: clearDebugMetrics,
         refreshVirtualization: refreshVirtualization,
+        setSearchMarkers: setSearchMarkers,
+        clearSearchMarkers: clearSearchMarkers,
+        scrollToSearchResult: scrollToSearchResult,
+        upsertMarker: upsertMarker,
+        removeMarker: removeMarker,
+        getMarkers: getMarkers,
         __testHooks: {
             sortRemoteBatchOperations: function (operations) {
                 return _sortRemoteBatchOperations((operations || []).slice());
@@ -10951,7 +14458,144 @@ window.tmDocumentWysiwyg = (function () {
                 };
                 _transformRuntimeCommentAnchorsForTextChange(inst, blockId, offset, length, isDelete);
                 return inst.runtimeComments;
-            }
+            },
+            normalizeWrapMode: _normalizeWrapMode,
+            normalizeHorizontalPosition: _normalizeHorizontalPosition,
+            schemaAllowsBlock: _schemaAllowsBlock,
+            schemaAllowsToolbarBlockCommand: _schemaAllowsToolbarBlockCommand,
+            normalizeInsertionBlocksForSchema: function (blocks, region) {
+                var inst = { lastInsertionPolicyWarnings: [] };
+                var normalized = _normalizeInsertionBlocksForSchema(inst, blocks || [], region || 'Body');
+                return { blocks: normalized, warnings: inst.lastInsertionPolicyWarnings };
+            },
+            detectAutocompleteTriggerText: _detectAutocompleteTriggerText,
+            createMarkerStore: function (markers) {
+                var inst = { root: null, markerStore: new Map() };
+                (markers || []).forEach(function (marker) { _upsertRuntimeMarker(inst, marker, false); });
+                return {
+                    all: _getRuntimeMarkers(inst),
+                    byType: function (type) { return _getRuntimeMarkersByType(inst, type); },
+                    byBlock: function (blockId) { return _getRuntimeMarkersByBlock(inst, blockId); },
+                    overlapping: function (range) { return _getOverlappingRuntimeMarkers(inst, range); },
+                    upsert: function (marker) {
+                        _upsertRuntimeMarker(inst, marker, false);
+                        return _getRuntimeMarkers(inst);
+                    },
+                    remove: function (markerId) { return _removeRuntimeMarker(inst, markerId); },
+                    transformText: function (blockId, offset, length, isDelete) {
+                        _transformRuntimeMarkersForTextChange(inst, blockId, offset, length, !!isDelete);
+                        return _getRuntimeMarkers(inst);
+                    },
+                    renderClasses: function () {
+                        return _getRuntimeMarkers(inst).map(function (marker) {
+                            return {
+                                id: marker.id,
+                                type: marker.type,
+                                className: _runtimeMarkerClassName(marker.type, marker),
+                                testId: _runtimeMarkerTestId(marker.type)
+                            };
+                        });
+                    }
+                };
+            },
+            computeFloatingPosition: function (anchor, elementSize, options) {
+                return _computeFloatingPosition(anchor, elementSize, options);
+            },
+            createPerformanceMetricsHarness: function () {
+                var instanceId = 'phase20-metrics-' + Date.now().toString(36) + Math.random().toString(36).slice(2);
+                var root = {
+                    scrollTop: 0,
+                    scrollHeight: 0,
+                    clientHeight: 0,
+                    querySelector: function () { return null; },
+                    querySelectorAll: function () { return []; },
+                    getBoundingClientRect: function () { return { top: 0, left: 0, width: 0, height: 0 }; }
+                };
+                var inst = {
+                    id: instanceId,
+                    root: root,
+                    disposed: false,
+                    measureCache: new Map(),
+                    measureStats: { count: 0, cacheHits: 0, invalidations: 0 },
+                    renderStats: {
+                        snapshotApplies: 0,
+                        fullRenders: 0,
+                        incrementalOperations: 0,
+                        remoteOperations: 0,
+                        remoteBatches: 0,
+                        lastRenderReason: ''
+                    },
+                    inputStats: {
+                        operationCount: 1,
+                        longOperationCount: 0,
+                        totalLatencyMs: 12,
+                        totalOperationMs: 8,
+                        maxLatencyMs: 12,
+                        maxOperationMs: 8,
+                        lastLatencyMs: 12,
+                        lastOperationMs: 8,
+                        lastInputType: 'insertText',
+                        lastEventType: 'beforeinput'
+                    },
+                    performanceStats: _createPerformanceStats(),
+                    virtualPages: [],
+                    virtualState: null
+                };
+                _instances.set(instanceId, inst);
+                return {
+                    instanceId: instanceId,
+                    recordMarkerRender: function (rendered) { _recordMarkerRenderMetric(inst, _performanceNow(), !!rendered); },
+                    recordFloatingReposition: function () { _recordFloatingRepositionMetric(inst, _performanceNow()); },
+                    recordClipboardNormalization: function () { _recordClipboardNormalizationMetric(inst, _performanceNow()); },
+                    metrics: function () { return getDebugMetrics(instanceId); },
+                    clear: function () { clearDebugMetrics(instanceId); },
+                    dispose: function () { _instances.delete(instanceId); }
+                };
+            },
+            buildPageMetrics: function (virtualPages, renderedPageIndexes, overflowPageIndexes, activePageIndex) {
+                var rendered = new Set(renderedPageIndexes || []);
+                var overflow = new Set(overflowPageIndexes || []);
+                var inst = {
+                    root: null,
+                    virtualPages: (virtualPages || []).map(function (page, index) {
+                        return {
+                            index: page.index ?? page.Index ?? index,
+                            blockIds: page.blockIds || page.BlockIds || []
+                        };
+                    })
+                };
+                var pages = inst.virtualPages.map(function (page, index) {
+                    var pageIndex = page.index ?? index;
+                    return {
+                        PageIndex: pageIndex,
+                        PageNumber: pageIndex + 1,
+                        Label: 'Page ' + (pageIndex + 1),
+                        IsVirtual: !rendered.has(pageIndex),
+                        HasOverflow: overflow.has(pageIndex),
+                        BlockIds: page.blockIds || []
+                    };
+                });
+                return {
+                    TotalPages: pages.length,
+                    RenderedPages: pages.filter(function (page) { return !page.IsVirtual; }).length,
+                    VirtualizedPages: pages.filter(function (page) { return page.IsVirtual; }).length,
+                    ActivePageIndex: activePageIndex || 0,
+                    Pages: pages
+                };
+            },
+            formatNonPrintingText: _formatNonPrintingText,
+            findActiveHeadingBlockIdFromRects: function (headings, threshold) {
+                var best = null;
+                (headings || []).forEach(function (heading) {
+                    if (heading.top <= threshold) {
+                        best = heading;
+                    } else if (!best) {
+                        best = heading;
+                    }
+                });
+                return best ? best.id : null;
+            },
+            _instances: _instances
         },
         insertImageNode: function (instanceId, block, dispatchPatch) {
             var inst = _instances.get(instanceId);
@@ -10971,6 +14615,68 @@ window.tmDocumentWysiwyg = (function () {
         upsertComment: upsertComment,
         removeComment: removeComment,
         scrollToComment: scrollToComment,
+        reviewAllRevisions: reviewAllRevisions,
+        setShowBlocks: function (instanceId, show) {
+            var inst = _instances.get(instanceId);
+            if (!inst) return;
+            if (show) {
+                inst.root.classList.add('tm-wysiwyg--show-blocks');
+                // Annotate each block with its element type for the CSS label
+                inst.root.querySelectorAll('.tm-wysiwyg-block[data-block-id]').forEach(function (block) {
+                    var child = block.firstElementChild;
+                    if (child) block.setAttribute('data-block-type', child.tagName.toLowerCase());
+                });
+            } else {
+                inst.root.classList.remove('tm-wysiwyg--show-blocks');
+            }
+        },
+        setShowNonPrintingCharacters: function (instanceId, show) {
+            var inst = _instances.get(instanceId);
+            if (!inst) return;
+            inst.showNonPrintingCharacters = !!show;
+            _refreshNonPrintingCharacters(inst);
+        },
+        scrollToBlock: function (instanceId, blockId) {
+            var inst = _instances.get(instanceId);
+            if (!inst) return;
+            var el = inst.root.querySelector('[data-block-id="' + blockId + '"]');
+            if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        },
+        scrollToPage: function (instanceId, pageIndex) {
+            var inst = _instances.get(instanceId);
+            if (!inst || !inst.root) return;
+            var index = Math.max(0, Number(pageIndex) || 0);
+            var page = inst.root.querySelector('.tm-wysiwyg-page[data-page-index="' + index + '"]');
+            if ((!page || page.classList.contains('tm-wysiwyg-page--virtual')) && inst.virtualPages && index < inst.virtualPages.length) {
+                _scrollVirtualPageToIndex(inst, index);
+                page = inst.root.querySelector('.tm-wysiwyg-page[data-page-index="' + index + '"]');
+            }
+            if (!page && index > 0) {
+                page = inst.root.querySelectorAll('.tm-wysiwyg-page-break[data-block-id]')[index - 1] || null;
+            }
+            if (page) {
+                page.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                _notifyPageMetrics(inst);
+                _notifyActiveHeading(inst);
+            }
+        },
+        getPageMetrics: function (instanceId) {
+            var inst = _instances.get(instanceId);
+            return _buildPageMetrics(inst);
+        },
+        setProtectionMode: function (instanceId, isProtected, markers) {
+            var inst = _instances.get(instanceId);
+            if (!inst) return;
+            inst._isProtected = !!isProtected;
+            inst._protectedMarkers = markers || [];
+            _refreshProtectionMarkers(inst);
+        },
+        getBodyHtml: function (instanceId) {
+            var inst = _instances.get(instanceId);
+            if (!inst) return '';
+            var body = inst.root.querySelector('.tm-wysiwyg-page__body') || inst.root;
+            return body.innerHTML || '';
+        },
     };
 })();
 
@@ -11421,79 +15127,228 @@ window.tmDocumentEditorRuntime = (function () {
         return _call('dispose', [instanceId]);
     }
 
+    // Phase 5: public API remains a stable facade; these internal modules are
+    // implementation boundaries for tests and refactors, not a public contract.
+    var runtimeModules = {
+        core: {
+            create: create,
+            loadDocument: loadDocument,
+            getDocument: getDocument,
+            executeCommand: executeCommand,
+            dispose: dispose,
+            call: _call
+        },
+        selection: {
+            onSelectionStateChanged: onSelectionStateChanged,
+            restoreSelection: function (instanceId, snapshot) {
+                return _call('restoreSelection', [instanceId, snapshot]);
+            },
+            getRuntimeSelection: function (instanceId) {
+                return _call('getRuntimeSelection', [instanceId], function () { return null; });
+            },
+            getSelectionSnapshot: function (instanceId) {
+                return _call('getSelectionSnapshot', [instanceId], function () { return null; });
+            }
+        },
+        rendering: {
+            loadDocument: loadDocument,
+            applyRemoteOperation: function (instanceId, operation) {
+                return _call('applyRemoteOperation', [instanceId, operation]);
+            },
+            applyRemoteOperationBatch: function (instanceId, batch) {
+                return _call('applyRemoteOperationBatch', [instanceId, batch]);
+            },
+            applyRemoteOperations: function (instanceId, operations) {
+                return _call('applyRemoteOperations', [instanceId, operations]);
+            },
+            applyRemoteCursor: function (instanceId, cursor) {
+                return _call('applyRemoteCursor', [instanceId, cursor], function () { return false; });
+            },
+            getDebugSnapshot: function (instanceId) {
+                return _call('getDebugSnapshot', [instanceId], function () { return null; });
+            },
+            getPageMetrics: function (instanceId) {
+                return _call('getPageMetrics', [instanceId], function () { return null; });
+            }
+        },
+        input: {
+            focus: function (instanceId) {
+                return _call('focus', [instanceId]);
+            },
+            closeHeaderFooter: function (instanceId) {
+                return _call('closeHeaderFooter', [instanceId], function () { return false; });
+            }
+        },
+        formatting: {
+            executeCommand: executeCommand,
+            getFormattingState: function (instanceId) {
+                return _call('getFormattingState', [instanceId], function () { return null; });
+            },
+            getLastCommandTransaction: function (instanceId) {
+                return _call('getLastCommandTransaction', [instanceId], function () { return null; });
+            },
+            getUndoState: function (instanceId) {
+                return _call('getUndoState', [instanceId], function () { return null; });
+            },
+            getDebugUndoStack: function (instanceId) {
+                return _call('getDebugUndoStack', [instanceId], function () { return null; });
+            },
+            undo: function (instanceId) {
+                return _call('undo', [instanceId], function () { return false; });
+            },
+            redo: function (instanceId) {
+                return _call('redo', [instanceId], function () { return false; });
+            }
+        },
+        clipboard: {
+            getLinkInfo: function (instanceId) {
+                return _call('getLinkInfo', [instanceId], function () { return null; });
+            }
+        },
+        image: {
+            executeCommand: executeCommand,
+            insertImageNode: function (instanceId, block, dispatchPatch) {
+                return _call('insertImageNode', [instanceId, block, dispatchPatch]);
+            },
+            insertImageUrl: function (instanceId, payload) {
+                return executeCommand(instanceId, 'insertImageUrl', payload || {});
+            }
+        },
+        table: {
+            executeCommand: executeCommand,
+            insertTable: function (instanceId, payload) {
+                return executeCommand(instanceId, 'insertTable', payload || {});
+            }
+        },
+        comments: {
+            captureCommentAnchor: function (instanceId) {
+                return _call('captureCommentAnchor', [instanceId], function () { return null; });
+            },
+            scrollToComment: function (instanceId, commentId) {
+                return _call('scrollToComment', [instanceId, commentId], function () { return false; });
+            },
+            upsertComment: function (instanceId, comment) {
+                return _call('upsertComment', [instanceId, comment], function () { return false; });
+            },
+            removeComment: function (instanceId, commentId) {
+                return _call('removeComment', [instanceId, commentId], function () { return false; });
+            }
+        },
+        revisions: {
+            setTrackChangesEnabled: function (instanceId, enabled) {
+                return _call('setTrackChangesEnabled', [instanceId, enabled]);
+            },
+            setReviewDisplayMode: function (instanceId, mode) {
+                return _call('setReviewDisplayMode', [instanceId, mode]);
+            },
+            scrollToRevision: function (instanceId, revisionId) {
+                return _call('scrollToRevision', [instanceId, revisionId]);
+            },
+            reviewRevision: function (instanceId, revisionId, action) {
+                return _call('reviewRevision', [instanceId, revisionId, action], function () { return false; });
+            },
+            reviewAllRevisions: function (instanceId, action, payload) {
+                return _call('reviewAllRevisions', [instanceId, action, payload], function () { return false; });
+            },
+            clearRevisionDecorations: function (instanceId, revisionId, removeContent) {
+                return _call('clearRevisionDecorations', [instanceId, revisionId, removeContent]);
+            }
+        },
+        serialization: {
+            fromCanonicalDocument: fromCanonicalDocument,
+            toCanonicalDocument: toCanonicalDocument,
+            roundTripCanonicalDocument: roundTripCanonicalDocument,
+            diffCanonicalDocuments: diffCanonicalDocuments,
+            normalizeSnapshot: _normalizeSnapshot
+        },
+        watchdog: {
+            getState: function () { return null; }
+        }
+    };
+
+    function getRuntimeModuleNames() {
+        return Object.keys(runtimeModules).sort();
+    }
+
     return {
-        create: create,
-        loadDocument: loadDocument,
-        getDocument: getDocument,
-        executeCommand: executeCommand,
+        create: runtimeModules.core.create,
+        loadDocument: runtimeModules.core.loadDocument,
+        getDocument: runtimeModules.core.getDocument,
+        executeCommand: runtimeModules.core.executeCommand,
         onTransactionCommitted: onTransactionCommitted,
-        onSelectionStateChanged: onSelectionStateChanged,
-        dispose: dispose,
+        onSelectionStateChanged: runtimeModules.selection.onSelectionStateChanged,
+        dispose: runtimeModules.core.dispose,
         applyRemoteOperation: function (instanceId, operation) {
-            return _call('applyRemoteOperation', [instanceId, operation]);
+            return runtimeModules.rendering.applyRemoteOperation(instanceId, operation);
         },
         applyRemoteOperationBatch: function (instanceId, batch) {
-            return _call('applyRemoteOperationBatch', [instanceId, batch]);
+            return runtimeModules.rendering.applyRemoteOperationBatch(instanceId, batch);
         },
         applyRemoteOperations: function (instanceId, operations) {
-            return _call('applyRemoteOperations', [instanceId, operations]);
+            return runtimeModules.rendering.applyRemoteOperations(instanceId, operations);
         },
         applyRemoteCursor: function (instanceId, cursor) {
-            return _call('applyRemoteCursor', [instanceId, cursor], function () { return false; });
+            return runtimeModules.rendering.applyRemoteCursor(instanceId, cursor);
         },
         setTrackChangesEnabled: function (instanceId, enabled) {
-            return _call('setTrackChangesEnabled', [instanceId, enabled]);
+            return runtimeModules.revisions.setTrackChangesEnabled(instanceId, enabled);
         },
         setReviewDisplayMode: function (instanceId, mode) {
-            return _call('setReviewDisplayMode', [instanceId, mode]);
+            return runtimeModules.revisions.setReviewDisplayMode(instanceId, mode);
         },
         setReadOnly: function (instanceId, readOnly) {
             return _call('setReadOnly', [instanceId, readOnly]);
         },
         scrollToRevision: function (instanceId, revisionId) {
-            return _call('scrollToRevision', [instanceId, revisionId]);
+            return runtimeModules.revisions.scrollToRevision(instanceId, revisionId);
         },
         scrollToComment: function (instanceId, commentId) {
-            return _call('scrollToComment', [instanceId, commentId], function () { return false; });
+            return runtimeModules.comments.scrollToComment(instanceId, commentId);
         },
         upsertComment: function (instanceId, comment) {
-            return _call('upsertComment', [instanceId, comment], function () { return false; });
+            return runtimeModules.comments.upsertComment(instanceId, comment);
         },
         removeComment: function (instanceId, commentId) {
-            return _call('removeComment', [instanceId, commentId], function () { return false; });
+            return runtimeModules.comments.removeComment(instanceId, commentId);
         },
         reviewRevision: function (instanceId, revisionId, action) {
-            return _call('reviewRevision', [instanceId, revisionId, action], function () { return false; });
+            return runtimeModules.revisions.reviewRevision(instanceId, revisionId, action);
+        },
+        reviewAllRevisions: function (instanceId, action, payload) {
+            return runtimeModules.revisions.reviewAllRevisions(instanceId, action, payload);
         },
         clearRevisionDecorations: function (instanceId, revisionId, removeContent) {
-            return _call('clearRevisionDecorations', [instanceId, revisionId, removeContent]);
+            return runtimeModules.revisions.clearRevisionDecorations(instanceId, revisionId, removeContent);
         },
         restoreSelection: function (instanceId, snapshot) {
-            return _call('restoreSelection', [instanceId, snapshot]);
+            return runtimeModules.selection.restoreSelection(instanceId, snapshot);
         },
         focus: function (instanceId) {
-            return _call('focus', [instanceId]);
+            return runtimeModules.input.focus(instanceId);
         },
         closeHeaderFooter: function (instanceId) {
-            return _call('closeHeaderFooter', [instanceId], function () { return false; });
+            return runtimeModules.input.closeHeaderFooter(instanceId);
         },
         captureCommentAnchor: function (instanceId) {
-            return _call('captureCommentAnchor', [instanceId], function () { return null; });
+            return runtimeModules.comments.captureCommentAnchor(instanceId);
         },
         getDebugSnapshot: function (instanceId) {
-            return _call('getDebugSnapshot', [instanceId], function () { return null; });
+            return runtimeModules.rendering.getDebugSnapshot(instanceId);
+        },
+        getPageMetrics: function (instanceId) {
+            return runtimeModules.rendering.getPageMetrics(instanceId);
         },
         getFormattingState: function (instanceId) {
-            return _call('getFormattingState', [instanceId], function () { return null; });
+            return runtimeModules.formatting.getFormattingState(instanceId);
         },
         getLastCommandTransaction: function (instanceId) {
-            return _call('getLastCommandTransaction', [instanceId], function () { return null; });
+            return runtimeModules.formatting.getLastCommandTransaction(instanceId);
         },
         getUndoState: function (instanceId) {
-            return _call('getUndoState', [instanceId], function () { return null; });
+            return runtimeModules.formatting.getUndoState(instanceId);
         },
         getDebugUndoStack: function (instanceId) {
-            return _call('getDebugUndoStack', [instanceId], function () { return null; });
+            return runtimeModules.formatting.getDebugUndoStack(instanceId);
         },
         getDirtyState: function (instanceId) {
             return _call('getDirtyState', [instanceId], function () { return null; });
@@ -11508,22 +15363,27 @@ window.tmDocumentEditorRuntime = (function () {
             return _call('applyOfflineState', [instanceId, stateJson], function () { return false; });
         },
         undo: function (instanceId) {
-            return _call('undo', [instanceId], function () { return false; });
+            return runtimeModules.formatting.undo(instanceId);
         },
         redo: function (instanceId) {
-            return _call('redo', [instanceId], function () { return false; });
+            return runtimeModules.formatting.redo(instanceId);
         },
         getRuntimeSelection: function (instanceId) {
-            return _call('getRuntimeSelection', [instanceId], function () { return null; });
+            return runtimeModules.selection.getRuntimeSelection(instanceId);
         },
         getSelectionSnapshot: function (instanceId) {
-            return _call('getSelectionSnapshot', [instanceId], function () { return null; });
+            return runtimeModules.selection.getSelectionSnapshot(instanceId);
         },
         getLinkInfo: function (instanceId) {
-            return _call('getLinkInfo', [instanceId], function () { return null; });
+            return runtimeModules.clipboard.getLinkInfo(instanceId);
         },
         insertImageNode: function (instanceId, block, dispatchPatch) {
-            return _call('insertImageNode', [instanceId, block, dispatchPatch]);
+            return runtimeModules.image.insertImageNode(instanceId, block, dispatchPatch);
+        },
+        __internal: {
+            version: 1,
+            modules: runtimeModules,
+            getModuleNames: getRuntimeModuleNames
         },
         __testHooks: {
             fromCanonicalDocument: fromCanonicalDocument,
@@ -11542,9 +15402,481 @@ window.tmDocumentEditorRuntime = (function () {
                     beforeFormatting,
                     afterFormatting);
             },
-            normalizeSnapshot: _normalizeSnapshot
+            normalizeSnapshot: _normalizeSnapshot,
+            normalizeWrapMode: function (value) {
+                return _engine().__testHooks.normalizeWrapMode(value);
+            },
+            normalizeHorizontalPosition: function (value) {
+                return _engine().__testHooks.normalizeHorizontalPosition(value);
+            }
         }
     };
+})();
+
+// Phase 12: Watchdog — wraps tmDocumentEditorRuntime with error recovery
+(function () {
+    'use strict';
+
+    var runtime = window.tmDocumentEditorRuntime;
+    if (!runtime) return;
+
+    var WD_READY = 'ready';
+    var WD_RECOVERING = 'recovering';
+    var WD_RECOVERED = 'recovered';
+    var WD_FAILED = 'failed';
+    var WD_DEFAULT_MAX_ATTEMPTS = 3;
+    var WD_DEFAULT_BACKOFF_MS = 100;
+
+    var _watchdogContexts = new Map();
+
+    function _wdGet(instanceId) {
+        return _watchdogContexts.get(instanceId) || null;
+    }
+
+    function _cloneWatchdogJson(value) {
+        if (value == null) return value;
+        try { return JSON.parse(JSON.stringify(value)); } catch { return value; }
+    }
+
+    function _parseWatchdogJson(value) {
+        if (value == null || value === '') return null;
+        if (typeof value === 'string') {
+            try { return JSON.parse(value); } catch { return value; }
+        }
+
+        return _cloneWatchdogJson(value);
+    }
+
+    function _safeCall(fn, fallback) {
+        try {
+            var value = fn();
+            return value === undefined ? fallback : value;
+        } catch {
+            return fallback;
+        }
+    }
+
+    function _watchdogNow() {
+        try { return new Date().toISOString(); } catch { return ''; }
+    }
+
+    function _notifyDotNet(wd, methodName, detail) {
+        if (!wd || !wd.dotNetRef) return;
+        try {
+            wd.dotNetRef.invokeMethodAsync(methodName, detail || wd.lastRecoveryDetail || null);
+        } catch {}
+    }
+
+    function _recordWatchdogEvent(wd, eventName, source, error, extra) {
+        if (!wd) return null;
+        var detail = Object.assign({
+            event: eventName || '',
+            Event: eventName || '',
+            source: source || wd.lastErrorSource || '',
+            Source: source || wd.lastErrorSource || '',
+            state: wd.state || '',
+            State: wd.state || '',
+            attempt: wd.attempt || 0,
+            Attempt: wd.attempt || 0,
+            maxAttempts: wd.maxAttempts || WD_DEFAULT_MAX_ATTEMPTS,
+            MaxAttempts: wd.maxAttempts || WD_DEFAULT_MAX_ATTEMPTS,
+            backoffMs: wd.currentBackoffMs || 0,
+            BackoffMs: wd.currentBackoffMs || 0,
+            usedSnapshotFallback: !!wd.usedSnapshotFallback,
+            UsedSnapshotFallback: !!wd.usedSnapshotFallback,
+            errorMessage: error && error.message ? String(error.message) : (error ? String(error) : ''),
+            ErrorMessage: error && error.message ? String(error.message) : (error ? String(error) : ''),
+            timestamp: _watchdogNow(),
+            Timestamp: _watchdogNow()
+        }, extra || {});
+
+        wd.lastRecoveryDetail = detail;
+        wd.events.push(detail);
+        if (wd.events.length > 20) {
+            wd.events = wd.events.slice(wd.events.length - 20);
+        }
+
+        return detail;
+    }
+
+    function _readMarkers(instanceId) {
+        if (typeof runtime.getMarkers === 'function') {
+            return _safeCall(function () { return runtime.getMarkers(instanceId); }, []);
+        }
+
+        return _safeCall(function () {
+            return runtime.__internal.modules.core.call('getMarkers', [instanceId], function () { return []; });
+        }, []);
+    }
+
+    function _readUploadState(debugSnapshot) {
+        var pendingUploads = debugSnapshot && (debugSnapshot.PendingUploads || debugSnapshot.pendingUploads);
+        var pendingUploadCount = debugSnapshot
+            ? Number(debugSnapshot.PendingUploadCount ?? debugSnapshot.pendingUploadCount ?? (Array.isArray(pendingUploads) ? pendingUploads.length : 0))
+            : 0;
+        return {
+            pendingUploadCount: pendingUploadCount || 0,
+            PendingUploadCount: pendingUploadCount || 0,
+            pendingUploads: Array.isArray(pendingUploads) ? _cloneWatchdogJson(pendingUploads) : [],
+            PendingUploads: Array.isArray(pendingUploads) ? _cloneWatchdogJson(pendingUploads) : []
+        };
+    }
+
+    function _captureStableSnapshot(instanceId, reason) {
+        var debugSnapshot = _safeCall(function () { return runtime.getDebugSnapshot(instanceId); }, null);
+        var snapshot = {
+            capturedAt: _watchdogNow(),
+            CapturedAt: _watchdogNow(),
+            reason: reason || '',
+            Reason: reason || '',
+            document: _parseWatchdogJson(_safeCall(function () { return _origGetDocument(instanceId); }, null)),
+            Document: null,
+            markers: _cloneWatchdogJson(_readMarkers(instanceId) || []),
+            Markers: null,
+            selection: _cloneWatchdogJson(
+                _safeCall(function () { return runtime.getSelectionSnapshot(instanceId); }, null)
+                || _safeCall(function () { return runtime.getRuntimeSelection(instanceId); }, null)),
+            Selection: null,
+            undoState: _cloneWatchdogJson(_safeCall(function () { return runtime.getUndoState(instanceId); }, null)),
+            UndoState: null,
+            undoDebug: _cloneWatchdogJson(_safeCall(function () { return runtime.getDebugUndoStack(instanceId); }, null)),
+            UndoDebug: null,
+            uploadState: _readUploadState(debugSnapshot),
+            UploadState: null
+        };
+        snapshot.Document = snapshot.document;
+        snapshot.Markers = snapshot.markers;
+        snapshot.Selection = snapshot.selection;
+        snapshot.UndoState = snapshot.undoState;
+        snapshot.UndoDebug = snapshot.undoDebug;
+        snapshot.UploadState = snapshot.uploadState;
+        return snapshot;
+    }
+
+    function _rememberStableSnapshot(instanceId, wd, reason) {
+        if (!wd) return null;
+        var snapshot = _captureStableSnapshot(instanceId, reason);
+        if (snapshot && snapshot.document) {
+            wd.stableSnapshot = snapshot;
+        }
+
+        return wd.stableSnapshot;
+    }
+
+    function _rememberStableSnapshotFromDocument(instanceId, wd, reason, documentSnapshot) {
+        if (!wd) return null;
+        var document = _parseWatchdogJson(documentSnapshot);
+        if (!document) return wd.stableSnapshot;
+        var debugSnapshot = _safeCall(function () { return runtime.getDebugSnapshot(instanceId); }, null);
+        var snapshot = {
+            capturedAt: _watchdogNow(),
+            CapturedAt: _watchdogNow(),
+            reason: reason || '',
+            Reason: reason || '',
+            document: document,
+            Document: document,
+            markers: _cloneWatchdogJson(_readMarkers(instanceId) || []),
+            Markers: null,
+            selection: _cloneWatchdogJson(
+                _safeCall(function () { return runtime.getSelectionSnapshot(instanceId); }, null)
+                || _safeCall(function () { return runtime.getRuntimeSelection(instanceId); }, null)),
+            Selection: null,
+            undoState: _cloneWatchdogJson(_safeCall(function () { return runtime.getUndoState(instanceId); }, null)),
+            UndoState: null,
+            undoDebug: _cloneWatchdogJson(_safeCall(function () { return runtime.getDebugUndoStack(instanceId); }, null)),
+            UndoDebug: null,
+            uploadState: _readUploadState(debugSnapshot),
+            UploadState: null
+        };
+        snapshot.Markers = snapshot.markers;
+        snapshot.Selection = snapshot.selection;
+        snapshot.UndoState = snapshot.undoState;
+        snapshot.UndoDebug = snapshot.undoDebug;
+        snapshot.UploadState = snapshot.uploadState;
+        wd.stableSnapshot = snapshot;
+        return wd.stableSnapshot;
+    }
+
+    function _restoreStableSnapshotExtras(instanceId, stableSnapshot) {
+        if (!stableSnapshot) return;
+        var markers = stableSnapshot.markers || stableSnapshot.Markers || [];
+        if (Array.isArray(markers)) {
+            markers.forEach(function (marker) {
+                _safeCall(function () {
+                    if (typeof runtime.upsertMarker === 'function') {
+                        return runtime.upsertMarker(instanceId, marker);
+                    }
+
+                    return runtime.__internal.modules.core.call('upsertMarker', [instanceId, marker], function () { return null; });
+                }, null);
+            });
+        }
+
+        var selection = stableSnapshot.selection || stableSnapshot.Selection || null;
+        if (selection) {
+            _safeCall(function () { return runtime.restoreSelection(instanceId, selection); }, null);
+        }
+    }
+
+    function _captureRecoveryState(instanceId, wd) {
+        var snapshot = wd.forceSnapshotFallback
+            ? null
+            : _parseWatchdogJson(_safeCall(function () { return _origGetDocument(instanceId); }, null));
+        var offlineState = _safeCall(function () { return _origGetOfflineState(instanceId); }, null);
+        var stableSnapshot = null;
+        wd.usedSnapshotFallback = false;
+
+        if (snapshot) {
+            stableSnapshot = _captureStableSnapshot(instanceId, 'recovery-live');
+            stableSnapshot.document = snapshot;
+            stableSnapshot.Document = snapshot;
+        } else if (wd.stableSnapshot) {
+            stableSnapshot = _cloneWatchdogJson(wd.stableSnapshot);
+            snapshot = stableSnapshot.document || stableSnapshot.Document || null;
+            wd.usedSnapshotFallback = !!snapshot;
+            if (wd.usedSnapshotFallback) {
+                _recordWatchdogEvent(wd, 'snapshotFallbackUsed', wd.lastErrorSource, null, { usedSnapshotFallback: true, UsedSnapshotFallback: true });
+            }
+        }
+
+        return {
+            snapshot: snapshot,
+            offlineState: offlineState,
+            stableSnapshot: stableSnapshot
+        };
+    }
+
+    function _failRecovery(instanceId, wd, source, error) {
+        wd.state = WD_FAILED;
+        wd.currentBackoffMs = 0;
+        var detail = _recordWatchdogEvent(wd, 'runtimeRecoveryFailed', source, error);
+        _notifyDotNet(wd, 'HandleRuntimeRecoveryFailed', detail);
+    }
+
+    function _attemptRecovery(instanceId, wd) {
+        if (!wd || wd.state !== WD_RECOVERING) return;
+        var recoveryState = _captureRecoveryState(instanceId, wd);
+
+        try { _origDispose(instanceId); } catch {}
+
+        try {
+            if (wd.forceRecoveryFailure) {
+                throw new Error('Forced watchdog recovery failure');
+            }
+
+            _origCreate(wd.rootEl, wd.options, wd.dotNetRef);
+        } catch (error) {
+            if (wd.attempt < wd.maxAttempts) {
+                wd.state = WD_READY;
+                _scheduleRecovery(instanceId, wd, wd.lastErrorSource || 'unknown', error);
+                return;
+            }
+
+            _failRecovery(instanceId, wd, wd.lastErrorSource || 'unknown', error);
+            return;
+        }
+
+        try { if (recoveryState.snapshot) _origLoadDocument(instanceId, recoveryState.snapshot); } catch {}
+        try { if (recoveryState.offlineState) _origApplyOfflineState(instanceId, recoveryState.offlineState); } catch {}
+        _restoreStableSnapshotExtras(instanceId, recoveryState.stableSnapshot);
+        if (recoveryState.stableSnapshot) {
+            wd.stableSnapshot = _cloneWatchdogJson(recoveryState.stableSnapshot);
+        }
+
+        wd.state = WD_RECOVERED;
+        wd.currentBackoffMs = 0;
+        var detail = _recordWatchdogEvent(wd, 'runtimeRecovered', wd.lastErrorSource || 'unknown', null);
+        _notifyDotNet(wd, 'HandleRuntimeRecovered', detail);
+    }
+
+    function _scheduleRecovery(instanceId, wd, source, error) {
+        if (!wd || wd.state === WD_RECOVERING) return;
+        if (wd.attempt >= wd.maxAttempts) {
+            _failRecovery(instanceId, wd, source, error);
+            return;
+        }
+
+        wd.state = WD_RECOVERING;
+        wd.lastErrorSource = source || 'unknown';
+        wd.attempt += 1;
+        wd.currentBackoffMs = Math.max(0, wd.baseBackoffMs || WD_DEFAULT_BACKOFF_MS) * Math.pow(2, Math.max(0, wd.attempt - 1));
+        _recordWatchdogEvent(wd, 'runtimeRecoveryScheduled', source, error);
+        setTimeout(function () { _attemptRecovery(instanceId, wd); }, wd.currentBackoffMs);
+    }
+
+    var _origCreate = runtime.create;
+    var _origLoadDocument = runtime.loadDocument;
+    var _origGetDocument = runtime.getDocument;
+    var _origGetOfflineState = runtime.getOfflineState;
+    var _origApplyOfflineState = runtime.applyOfflineState;
+    runtime.create = function (rootEl, options, dotNetRef) {
+        var instanceId = options && (options.InstanceId || options.instanceId || '');
+        var result = _origCreate.apply(runtime, arguments);
+        if (instanceId) {
+            var wd = {
+                state: WD_READY,
+                rootEl: rootEl,
+                options: options,
+                dotNetRef: dotNetRef || null,
+                stableSnapshot: null,
+                events: [],
+                lastRecoveryDetail: null,
+                lastErrorSource: '',
+                attempt: 0,
+                maxAttempts: Number(options && (options.WatchdogMaxAttempts ?? options.watchdogMaxAttempts) || WD_DEFAULT_MAX_ATTEMPTS),
+                baseBackoffMs: Number(options && (options.WatchdogBackoffMs ?? options.watchdogBackoffMs) || WD_DEFAULT_BACKOFF_MS),
+                currentBackoffMs: 0,
+                usedSnapshotFallback: false,
+                forceRecoveryFailure: false,
+                forceSnapshotFallback: false
+            };
+            _watchdogContexts.set(String(instanceId), wd);
+        }
+        return result;
+    };
+
+    var _origDispose = runtime.dispose;
+    runtime.dispose = function (instanceId) {
+        _watchdogContexts.delete(String(instanceId || ''));
+        return _origDispose.apply(runtime, arguments);
+    };
+
+    runtime.loadDocument = function (instanceId) {
+        try {
+            var result = _origLoadDocument.apply(runtime, arguments);
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd) {
+                wd.state = WD_READY;
+                wd.attempt = 0;
+                _rememberStableSnapshotFromDocument(String(instanceId || ''), wd, 'loadDocument', arguments[1]);
+            }
+
+            return result;
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'render', error);
+            }
+            return undefined;
+        }
+    };
+
+    runtime.getDocument = function (instanceId) {
+        try {
+            return _origGetDocument.apply(runtime, arguments);
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'serialization', error);
+            }
+            return wd && wd.stableSnapshot && wd.stableSnapshot.document
+                ? JSON.stringify(wd.stableSnapshot.document)
+                : null;
+        }
+    };
+
+    var _origExecuteCommand = runtime.executeCommand;
+    runtime.executeCommand = function (instanceId, command, payload) {
+        try {
+            var result = _origExecuteCommand.apply(runtime, arguments);
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd) {
+                wd.state = WD_READY;
+                wd.attempt = 0;
+                _rememberStableSnapshot(String(instanceId || ''), wd, 'command');
+            }
+
+            return result;
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'command', error);
+            }
+            return undefined;
+        }
+    };
+
+    var _origApplyBatch = runtime.applyRemoteOperationBatch;
+    runtime.applyRemoteOperationBatch = function (instanceId, batch) {
+        try {
+            var result = _origApplyBatch.apply(runtime, arguments);
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd) {
+                wd.state = WD_READY;
+                wd.attempt = 0;
+                _rememberStableSnapshot(String(instanceId || ''), wd, 'remoteOperation');
+            }
+
+            return result;
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'remoteOperation', error);
+            }
+            return undefined;
+        }
+    };
+
+    var _origApplyRemoteOperation = runtime.applyRemoteOperation;
+    runtime.applyRemoteOperation = function (instanceId) {
+        try {
+            var result = _origApplyRemoteOperation.apply(runtime, arguments);
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd) _rememberStableSnapshot(String(instanceId || ''), wd, 'remoteOperation');
+            return result;
+        } catch (error) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (wd && wd.state !== WD_RECOVERING) {
+                _scheduleRecovery(String(instanceId || ''), wd, 'remoteOperation', error);
+            }
+            return undefined;
+        }
+    };
+
+    runtime.__watchdog = {
+        getState: function (instanceId) {
+            var wd = _wdGet(String(instanceId || ''));
+            return wd ? wd.state : null;
+        },
+        getStableSnapshot: function (instanceId) {
+            var wd = _wdGet(String(instanceId || ''));
+            return wd ? _cloneWatchdogJson(wd.stableSnapshot) : null;
+        },
+        getLastRecoveryDetail: function (instanceId) {
+            var wd = _wdGet(String(instanceId || ''));
+            return wd ? _cloneWatchdogJson(wd.lastRecoveryDetail) : null;
+        },
+        getEvents: function (instanceId) {
+            var wd = _wdGet(String(instanceId || ''));
+            return wd ? _cloneWatchdogJson(wd.events || []) : [];
+        },
+        configure: function (instanceId, options) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (!wd) return false;
+            if (options && options.maxAttempts != null) wd.maxAttempts = Number(options.maxAttempts) || wd.maxAttempts;
+            if (options && options.baseBackoffMs != null) wd.baseBackoffMs = Number(options.baseBackoffMs) || wd.baseBackoffMs;
+            if (options && options.forceRecoveryFailure != null) wd.forceRecoveryFailure = !!options.forceRecoveryFailure;
+            if (options && options.forceSnapshotFallback != null) wd.forceSnapshotFallback = !!options.forceSnapshotFallback;
+            return true;
+        },
+        simulateCrash: function (instanceId, source, options) {
+            var wd = _wdGet(String(instanceId || ''));
+            if (!wd) return false;
+            if (options) {
+                runtime.__watchdog.configure(instanceId, options);
+            }
+            _scheduleRecovery(String(instanceId || ''), wd, source || 'command', new Error((options && options.message) || 'Simulated watchdog crash'));
+            return true;
+        }
+    };
+
+    if (runtime.__internal && runtime.__internal.modules && runtime.__internal.modules.watchdog) {
+        runtime.__internal.modules.watchdog.getState = runtime.__watchdog.getState;
+        runtime.__internal.modules.watchdog.getStableSnapshot = runtime.__watchdog.getStableSnapshot;
+        runtime.__internal.modules.watchdog.getLastRecoveryDetail = runtime.__watchdog.getLastRecoveryDetail;
+        runtime.__internal.modules.watchdog.getEvents = runtime.__watchdog.getEvents;
+        runtime.__internal.modules.watchdog.simulateCrash = runtime.__watchdog.simulateCrash;
+    }
 })();
 
 (function () {
@@ -11579,6 +15911,9 @@ window.tmDocumentEditorRuntime = (function () {
                     ? (runtimeDocument.document.DocumentId || runtimeDocument.document.documentId || '')
                     : ''
             });
+        },
+        getRuntimeStateJson: function (instanceId) {
+            return JSON.stringify(this.getRuntimeState(instanceId), null, 2);
         },
         getRenderStats: function (instanceId) {
             var id = _resolveInstanceId(instanceId);
@@ -11619,6 +15954,45 @@ window.tmDocumentEditorRuntime = (function () {
                 VirtualizedPages: metrics.VirtualizedPages || 0
             };
         },
+        // ─── Find & Replace marker API ────────────────────────────────────────────
+
+        /// <summary>
+        /// Sets search result markers on the editor. Each marker: { blockId, offset, length, active }.
+        /// Clears any previously set markers first.
+        /// </summary>
+        setSearchMarkers: function (instanceId, markers) {
+            var inst = _getInstance(instanceId);
+            if (!inst) return;
+            _clearSearchMarkers(inst);
+            if (!markers || markers.length === 0) return;
+            inst._searchMarkers = markers;
+            markers.forEach(function (marker) {
+                _applySearchMarker(inst, marker);
+            });
+        },
+
+        /// <summary>Removes all search result highlights from the editor.</summary>
+        clearSearchMarkers: function (instanceId) {
+            var inst = _getInstance(instanceId);
+            if (!inst) return;
+            _clearSearchMarkers(inst);
+        },
+
+        /// <summary>Scrolls to the active search marker (the one with active=true).</summary>
+        scrollToSearchResult: function (instanceId, markerIndex) {
+            var inst = _getInstance(instanceId);
+            if (!inst) return;
+            var mark = inst.root.querySelector('.tm-wysiwyg-search-match--active');
+            if (!mark) {
+                // Try to find by index
+                var all = inst.root.querySelectorAll('.tm-wysiwyg-search-match');
+                mark = all[markerIndex] || null;
+            }
+            if (mark) {
+                mark.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+            }
+        },
+
         getUndoStack: function (instanceId) {
             var state = this.getRuntimeState(instanceId);
             var id = state.InstanceId || _resolveInstanceId(instanceId);

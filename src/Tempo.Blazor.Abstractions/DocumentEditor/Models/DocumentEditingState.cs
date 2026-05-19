@@ -12,6 +12,9 @@ public class DocumentEditorSelectionState
     /// <summary>Selected table cell id, when the active block is a table.</summary>
     public string? ActiveTableCellId { get; set; }
 
+    /// <summary>Selected image block id, when the active selection is an image.</summary>
+    public string? ActiveImageBlockId { get; set; }
+
     /// <summary>Logical editor region that owns the active selection.</summary>
     public string Region { get; set; } = "Body";
 
@@ -27,6 +30,7 @@ public class DocumentEditorSelectionState
         ActiveBlockId = null;
         FocusedInlineRange = null;
         ActiveTableCellId = null;
+        ActiveImageBlockId = null;
         Region = "Body";
         HeaderFooterId = null;
         PageIndex = null;

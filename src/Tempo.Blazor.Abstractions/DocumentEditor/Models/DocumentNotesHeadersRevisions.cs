@@ -200,5 +200,30 @@ public enum DocumentReviewDisplayMode
     SimpleMarkup,
 
     /// <summary>Show the final document content without visible revision markup.</summary>
-    NoMarkup
+    NoMarkup,
+
+    /// <summary>Show the original document content before pending revisions.</summary>
+    Original
+}
+
+/// <summary>Filter for batch revision review operations.</summary>
+public sealed class DocumentRevisionFilter
+{
+    /// <summary>Optional author id filter.</summary>
+    public string? AuthorId { get; set; }
+
+    /// <summary>Optional revision type filter.</summary>
+    public DocumentRevisionType? Type { get; set; }
+
+    /// <summary>Returns whether the revision matches this filter.</summary>
+    public bool Matches(DocumentRevision revision)
+    {
+        if (!string.IsNullOrWhiteSpace(AuthorId)
+            && !string.Equals(revision.Author.Id, AuthorId, StringComparison.Ordinal))
+        {
+            return false;
+        }
+
+        return Type is null || revision.Type == Type.Value;
+    }
 }

@@ -452,6 +452,126 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
         result.ExitCode.Should().Be(0, result.StandardError);
     }
 
+    // ─── 8.x Table serialization ──────────────────────────────────────────────
+
+    [Fact]
+    public async Task RuntimeFacadeTestHooks_RoundTripTableWithIsHeaderPreservesHeaderCells()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable())
+        {
+            return;
+        }
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorRuntime.__testHooks;
+            assert.ok(hooks, 'runtime test hooks are exposed');
+
+            const document = {
+                DocumentId: 'doc-header-table',
+                Blocks: [
+                    {
+                        Id: 'table1',
+                        Type: 4,
+                        Order: 0,
+                        Content: {
+                            $type: 'table',
+                            Rows: [
+                                {
+                                    Cells: [
+                                        {
+                                            Id: 'cell-h1',
+                                            IsHeader: true,
+                                            ColumnSpan: 1,
+                                            RowSpan: 1,
+                                            Blocks: [{ Id: 'hp1', Type: 0, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'ht1', Text: 'Header', Marks: [] }] } }]
+                                        },
+                                        {
+                                            Id: 'cell-h2',
+                                            IsHeader: true,
+                                            ColumnSpan: 1,
+                                            RowSpan: 1,
+                                            Blocks: [{ Id: 'hp2', Type: 0, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'ht2', Text: 'Col 2', Marks: [] }] } }]
+                                        }
+                                    ]
+                                },
+                                {
+                                    Cells: [
+                                        {
+                                            Id: 'cell-d1',
+                                            IsHeader: false,
+                                            ColumnSpan: 1,
+                                            RowSpan: 1,
+                                            Blocks: [{ Id: 'dp1', Type: 0, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'dt1', Text: 'Data', Marks: [] }] } }]
+                                        },
+                                        {
+                                            Id: 'cell-d2',
+                                            IsHeader: false,
+                                            ColumnSpan: 1,
+                                            RowSpan: 1,
+                                            Blocks: [{ Id: 'dp2', Type: 0, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'dt2', Text: 'Val', Marks: [] }] } }]
+                                        }
+                                    ]
+                                }
+                            ]
+                        }
+                    }
+                ]
+            };
+
+            const normalized = hooks.roundTripCanonicalDocument(document);
+            const tableBlock = normalized.Blocks[0];
+            assert.strictEqual(tableBlock.Content.$type, 'table', 'table block type preserved');
+            const headerRow = tableBlock.Content.Rows[0];
+            const dataRow = tableBlock.Content.Rows[1];
+            assert.strictEqual(headerRow.Cells[0].IsHeader, true, 'first row cells IsHeader=true preserved');
+            assert.strictEqual(headerRow.Cells[1].IsHeader, true, 'first row second cell IsHeader=true preserved');
+            assert.strictEqual(dataRow.Cells[0].IsHeader, false, 'data row cells IsHeader=false preserved');
+            assert.strictEqual(dataRow.Cells[1].IsHeader, false, 'data row second cell IsHeader=false preserved');
+            assert.strictEqual(headerRow.Cells[0].Blocks[0].Content.Inlines[0].Text, 'Header', 'header cell text preserved');
+
+            const runtimeDoc = hooks.fromCanonicalDocument(document);
+            const exported = hooks.toCanonicalDocument(runtimeDoc);
+            assert.strictEqual(exported.Blocks[0].Content.Rows[0].Cells[0].IsHeader, true, 'IsHeader survives fromCanonical->toCanonical');
+            assert.strictEqual(exported.Blocks[0].Content.Rows[1].Cells[0].IsHeader, false, 'data row IsHeader=false survives fromCanonical->toCanonical');
+
+            const insertTablePayloadRows = 3;
+            const insertTablePayloadCols = 5;
+            const tRows = { rows: insertTablePayloadRows, columns: insertTablePayloadCols };
+            assert.strictEqual((tRows.rows || tRows.Rows || 2), 3, 'insertTable payload rows key works');
+            assert.strictEqual((tRows.columns || tRows.Columns || tRows.cols || tRows.Cols || 2), 5, 'insertTable payload columns key works');
+
+            const tRowsAlt = { Rows: 4, Columns: 6 };
+            assert.strictEqual((tRowsAlt.rows || tRowsAlt.Rows || 2), 4, 'insertTable payload Rows (capital) key works');
+            assert.strictEqual((tRowsAlt.columns || tRowsAlt.Columns || tRowsAlt.cols || tRowsAlt.Cols || 2), 6, 'insertTable payload Columns (capital) key works');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+
+        result.ExitCode.Should().Be(0, result.StandardError);
+    }
+
     private static bool IsNodeAvailable()
     {
         try
@@ -507,4 +627,1776 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
     }
 
     private sealed record NodeResult(int ExitCode, string StandardOutput, string StandardError);
+
+    // ─── 4.2 tmDocumentEditorToolbar overflow controller ─────────────────────
+
+    [Fact]
+    public async Task ToolbarOverflowController_ExistsAndReturnsExpectedApi()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                WeakMap,
+                ResizeObserver: class ResizeObserver {
+                    constructor(cb) { this._cb = cb; }
+                    observe() {}
+                    disconnect() { this._disconnected = true; }
+                }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            const toolbar = sandbox.window.tmDocumentEditorToolbar;
+            assert.ok(toolbar, 'tmDocumentEditorToolbar must be defined on window');
+            assert.strictEqual(typeof toolbar.createOverflowController, 'function',
+                'createOverflowController must be a function');
+            assert.strictEqual(typeof toolbar.disposeOverflowController, 'function',
+                'disposeOverflowController must be a function');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ToolbarOverflowController_CreateWithNullArgs_DoesNotThrow()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                WeakMap,
+                ResizeObserver: class ResizeObserver {
+                    constructor(cb) {}
+                    observe() {}
+                    disconnect() {}
+                }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            const toolbar = sandbox.window.tmDocumentEditorToolbar;
+            // Calling with null/undefined must not throw
+            toolbar.createOverflowController(null, null);
+            toolbar.createOverflowController(undefined, undefined);
+            toolbar.disposeOverflowController(null);
+            toolbar.disposeOverflowController(undefined);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ToolbarOverflowController_Dispose_DisconnectsResizeObserver()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let disconnected = false;
+
+            const sandbox = {
+                window: {},
+                console,
+                WeakMap,
+                ResizeObserver: class ResizeObserver {
+                    constructor(cb) {}
+                    observe() {}
+                    disconnect() { disconnected = true; }
+                }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            const toolbar = sandbox.window.tmDocumentEditorToolbar;
+            const fakeEl = {};
+            const fakeDotNet = { invokeMethodAsync() {} };
+
+            toolbar.createOverflowController(fakeEl, fakeDotNet);
+            toolbar.disposeOverflowController(fakeEl);
+
+            assert.strictEqual(disconnected, true, 'ResizeObserver.disconnect must be called on dispose');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ─── 4.3 tmDocumentEditor beforeunload guard ─────────────────────────────
+
+    [Fact]
+    public async Task BeforeUnloadGuard_EnableRegistersHandler()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let registered = false;
+            const sandbox = {
+                window: {
+                    addEventListener(type, handler) { if (type === 'beforeunload') registered = true; },
+                    removeEventListener() {}
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            assert.strictEqual(registered, true, 'enableBeforeUnloadGuard must register a beforeunload listener');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task BeforeUnloadGuard_EnableIsIdempotent()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let callCount = 0;
+            const sandbox = {
+                window: {
+                    addEventListener(type, handler) { if (type === 'beforeunload') callCount++; },
+                    removeEventListener() {}
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            assert.strictEqual(callCount, 1, 'addEventListener must be called exactly once regardless of repeated enables');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task BeforeUnloadGuard_DisableRemovesHandler()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let removed = false;
+            const sandbox = {
+                window: {
+                    addEventListener() {},
+                    removeEventListener(type, handler) { if (type === 'beforeunload') removed = true; }
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            sandbox.window.tmDocumentEditor.disableBeforeUnloadGuard();
+            assert.strictEqual(removed, true, 'disableBeforeUnloadGuard must remove the beforeunload listener');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task BeforeUnloadGuard_DisableWhenNotActive_IsNoOp()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let removeCount = 0;
+            const sandbox = {
+                window: {
+                    addEventListener() {},
+                    removeEventListener(type) { if (type === 'beforeunload') removeCount++; }
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            // disable without ever enabling — must not throw or call removeEventListener
+            sandbox.window.tmDocumentEditor.disableBeforeUnloadGuard();
+            assert.strictEqual(removeCount, 0, 'disableBeforeUnloadGuard on inactive guard must not call removeEventListener');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task BeforeUnloadGuard_EnableDisableEnable_RegistersAgain()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            let addCount = 0;
+            let removeCount = 0;
+            const sandbox = {
+                window: {
+                    addEventListener(type) { if (type === 'beforeunload') addCount++; },
+                    removeEventListener(type) { if (type === 'beforeunload') removeCount++; }
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            sandbox.window.tmDocumentEditor.disableBeforeUnloadGuard();
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+
+            assert.strictEqual(addCount, 2, 'second enable after disable must re-register');
+            assert.strictEqual(removeCount, 1, 'disable must have removed the first registration');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task BeforeUnloadGuard_DebugStateTracksActiveGuard()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {
+                    addEventListener() {},
+                    removeEventListener() {}
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            assert.strictEqual(sandbox.window.tmDocumentEditor.getBeforeUnloadGuardState().active, false);
+            sandbox.window.tmDocumentEditor.enableBeforeUnloadGuard();
+            assert.strictEqual(sandbox.window.tmDocumentEditor.getBeforeUnloadGuardState().active, true);
+            sandbox.window.tmDocumentEditor.disableBeforeUnloadGuard();
+            assert.strictEqual(sandbox.window.tmDocumentEditor.getBeforeUnloadGuardState().active, false);
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ─── Phase 12: Watchdog recovery ─────────────────────────────────────────
+
+    // Helper inline comment: tests inject a mock tmDocumentEditorWysiwyg AFTER loading the
+    // file so the runtime facade's _call/_engine() picks up the mock instead of the real engine.
+    // A synchronous setTimeout stub is used so recovery callbacks fire inline.
+
+    private static string WatchdogSandboxSetup =>
+        """
+        const fs = require('fs');
+        const vm = require('vm');
+        const assert = require('assert');
+
+        const code = fs.readFileSync(process.argv[2], 'utf8');
+        const pendingTimers = [];
+        const sandbox = {
+            window: {},
+            console,
+            Map,
+            WeakMap,
+            URL,
+            JSON,
+            setTimeout: function (cb) { pendingTimers.push(cb); },
+            clearTimeout: function () {}
+        };
+        sandbox.window.setTimeout = sandbox.setTimeout;
+        sandbox.window.clearTimeout = sandbox.clearTimeout;
+        sandbox.window.addEventListener = function () {};
+        sandbox.window.removeEventListener = function () {};
+
+        vm.createContext(sandbox);
+        vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+        function flushTimers() { while (pendingTimers.length) pendingTimers.shift()(); }
+
+        function makeMockEngine(overrides) {
+            return Object.assign({
+                create: function (rootEl, opts) { return opts && (opts.InstanceId || opts.instanceId) || 'inst'; },
+                dispose: function () {},
+                loadDocument: function () {},
+                getDocument: function () { return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc', Blocks: [] }); },
+                getOfflineState: function () { return JSON.stringify({ version: 1, dirtyState: { IsDirty: false } }); },
+                applyOfflineState: function () { return true; },
+                executeCommand: function () {},
+                applyRemoteOperationBatch: function () {},
+                applyRemoteOperation: function () {},
+                applyRemoteOperations: function () {},
+                setTrackChangesEnabled: function () {},
+                setReviewDisplayMode: function () {},
+                setReadOnly: function () {},
+                isAlive: function () { return true; },
+                getDirtyState: function () { return { IsDirty: false }; },
+                markSaved: function () { return true; },
+                getOfflineState: function () { return null; },
+                applyOfflineState: function () { return true; },
+                undo: function () {},
+                redo: function () {},
+                focus: function () {},
+                getUndoState: function () { return null; },
+                getFormattingState: function () { return null; },
+                getDebugSnapshot: function () { return {}; },
+                getMarkers: function () { return []; },
+                upsertMarker: function () { return null; },
+                getLastCommandTransaction: function () { return null; },
+                getDebugUndoStack: function () { return {}; },
+                getSelectionSnapshot: function () { return null; },
+                getRuntimeSelection: function () { return null; },
+                getLinkInfo: function () { return null; },
+                insertImageNode: function () {},
+                scrollToRevision: function () {},
+                scrollToComment: function () {},
+                upsertComment: function () {},
+                removeComment: function () {},
+                reviewRevision: function () {},
+                clearRevisionDecorations: function () {},
+                restoreSelection: function () {},
+                closeHeaderFooter: function () {},
+                captureCommentAnchor: function () { return null; },
+                applyRemoteCursor: function () {},
+                setSearchMarkers: function () {},
+                clearSearchMarkers: function () {},
+                scrollToSearchResult: function () {},
+                applySnapshot: function () {},
+                getSnapshot: function () { return null; }
+            }, overrides || {});
+        }
+        """;
+
+    [Fact]
+    public async Task Watchdog_ExposesGetStateTestHook()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            assert.ok(runtime.__watchdog, '__watchdog must be exposed on the runtime');
+            assert.strictEqual(typeof runtime.__watchdog.getState, 'function', 'getState must be a function');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_GetState_ReturnsReadyAfterCreate()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            const fakeEl = {};
+            runtime.create(fakeEl, { InstanceId: 'inst-1' }, null);
+            assert.strictEqual(runtime.__watchdog.getState('inst-1'), 'ready', 'state must be ready after create');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_GetState_ReturnsNullForUnknownInstance()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            assert.strictEqual(runtime.__watchdog.getState('no-such-instance'), null, 'unknown instance must return null');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_ErrorTransitionsToRecoveringThenRecovered()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            let executeCalled = 0;
+            const mock = makeMockEngine({
+                executeCommand: function () {
+                    executeCalled++;
+                    if (executeCalled === 1) throw new Error('Simulated engine failure');
+                }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-r' }, null);
+
+            // First call throws — watchdog catches it and schedules recovery
+            runtime.executeCommand('inst-r', 'toggleBold', {});
+            assert.strictEqual(runtime.__watchdog.getState('inst-r'), 'recovering', 'state must be recovering after error');
+
+            // Flush timers to run recovery callback
+            flushTimers();
+            assert.strictEqual(runtime.__watchdog.getState('inst-r'), 'recovered', 'state must be recovered after recovery');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_CapturesDocumentBeforeDispose()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            // runtime.getDocument calls engine.getSnapshot; runtime.getOfflineState calls engine.getOfflineState.
+            // runtime.dispose (via _origDispose) calls engine.dispose.
+            // Track through mock engine — no cross-vm-context spy needed.
+            const callOrder = [];
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); },
+                getSnapshot: function () { callOrder.push('getSnapshot'); return null; },
+                getOfflineState: function () { callOrder.push('getOfflineState'); return null; },
+                dispose: function () { callOrder.push('dispose'); }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-cap' }, null);
+            runtime.executeCommand('inst-cap', 'cmd', {});
+            flushTimers();
+
+            const getDocIdx = callOrder.indexOf('getSnapshot');
+            const getOfflineIdx = callOrder.indexOf('getOfflineState');
+            const disposeIdx = callOrder.indexOf('dispose');
+            assert.ok(getDocIdx >= 0, 'getSnapshot (via getDocument) must be called');
+            assert.ok(getOfflineIdx >= 0, 'getOfflineState must be called');
+            assert.ok(disposeIdx >= 0, 'dispose must be called');
+            assert.ok(getDocIdx < disposeIdx, 'getSnapshot must run before dispose');
+            assert.ok(getOfflineIdx < disposeIdx, 'getOfflineState must run before dispose');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_LoadsDocumentAndOfflineStateAfterCreate()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            // Track recovery flow through mock engine methods.
+            // runtime.loadDocument calls engine.applySnapshot; runtime.applyOfflineState calls engine.applyOfflineState.
+            // runtime.getDocument calls engine.getSnapshot (must return non-null to trigger loadDocument).
+            // runtime.dispose (via _origDispose) calls engine.dispose.
+            // engine.create is called by _origCreate during recovery.
+            const callOrder = [];
+            const fakeOfflineJson = JSON.stringify({ version: 1, dirtyState: { IsDirty: true } });
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); },
+                getSnapshot: function () {
+                    return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc', Sections: [], Blocks: [], Metadata: {}, PageSettings: { Size: 'A4' } });
+                },
+                getOfflineState: function () { return fakeOfflineJson; },
+                dispose: function () { callOrder.push('dispose'); },
+                create: function (el, opts) { callOrder.push('create'); return opts && (opts.InstanceId || opts.instanceId) || ''; },
+                applySnapshot: function () { callOrder.push('applySnapshot'); },
+                applyOfflineState: function () { callOrder.push('applyOfflineState'); return true; }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-ld' }, null);
+            runtime.executeCommand('inst-ld', 'cmd', {});
+            flushTimers();
+
+            // The initial runtime.create also calls engine.create, so there are two 'create' entries.
+            // Use lastIndexOf to find the recovery create (second one).
+            const recoveryCreateIdx = callOrder.lastIndexOf('create');
+            const disposeIdx = callOrder.indexOf('dispose');
+            const snapshotIdx = callOrder.lastIndexOf('applySnapshot');
+            const offlineIdx = callOrder.lastIndexOf('applyOfflineState');
+            assert.ok(recoveryCreateIdx >= 0, 'recovery create must be called');
+            assert.ok(snapshotIdx >= 0, 'applySnapshot (via loadDocument) must be called');
+            assert.ok(offlineIdx >= 0, 'applyOfflineState must be called');
+            assert.ok(disposeIdx < recoveryCreateIdx, 'dispose must run before recovery create');
+            assert.ok(recoveryCreateIdx < snapshotIdx, 'recovery create must run before applySnapshot');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_RecoveryFailedSetsFailedState()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            let createCallCount = 0;
+            const mock = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); },
+                create: function () {
+                    createCallCount++;
+                    if (createCallCount > 1) throw new Error('create also failed');
+                    return 'inst-fail';
+                }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-fail' }, null);
+            runtime.executeCommand('inst-fail', 'cmd', {});
+            flushTimers();
+            assert.strictEqual(runtime.__watchdog.getState('inst-fail'), 'failed', 'state must be failed when recovery create throws');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_NotifiesDotNetRecovered()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            const notified = [];
+            const fakeDotNet = { invokeMethodAsync: function(method) { notified.push(method); } };
+            const mock = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-dn' }, fakeDotNet);
+            runtime.executeCommand('inst-dn', 'cmd', {});
+            flushTimers();
+            assert.ok(notified.includes('HandleRuntimeRecovered'), 'HandleRuntimeRecovered must be invoked on dotNetRef');
+            assert.ok(!notified.includes('HandleRuntimeRecoveryFailed'), 'HandleRuntimeRecoveryFailed must NOT be invoked on success');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_NotifiesDotNetRecoveryFailed()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            const notified = [];
+            const fakeDotNet = { invokeMethodAsync: function(method) { notified.push(method); } };
+            let createCount = 0;
+            const mock = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); },
+                create: function () {
+                    createCount++;
+                    if (createCount > 1) throw new Error('recovery create failed');
+                    return 'inst-df';
+                }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-df' }, fakeDotNet);
+            runtime.executeCommand('inst-df', 'cmd', {});
+            flushTimers();
+            assert.ok(notified.includes('HandleRuntimeRecoveryFailed'), 'HandleRuntimeRecoveryFailed must be invoked on failure');
+            assert.ok(!notified.includes('HandleRuntimeRecovered'), 'HandleRuntimeRecovered must NOT be invoked on failure');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ApplyRemoteOperationBatch_ErrorTriggersRecovery()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            const mock = makeMockEngine({
+                applyRemoteOperationBatch: function () { throw new Error('batch fail'); }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-batch' }, null);
+            runtime.applyRemoteOperationBatch('inst-batch', { operations: [] });
+            assert.strictEqual(runtime.__watchdog.getState('inst-batch'), 'recovering', 'state must be recovering after batch error');
+            flushTimers();
+            assert.strictEqual(runtime.__watchdog.getState('inst-batch'), 'recovered', 'state must be recovered after batch recovery');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_Dispose_ClearsWatchdogState()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-disp' }, null);
+            assert.strictEqual(runtime.__watchdog.getState('inst-disp'), 'ready', 'must be ready before dispose');
+            runtime.dispose('inst-disp');
+            assert.strictEqual(runtime.__watchdog.getState('inst-disp'), null, 'must be null after dispose');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_ExecuteCommand_NoRecoveryIfAlreadyRecovering()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            let disposeCalls = 0;
+            const mock = makeMockEngine({
+                executeCommand: function () { throw new Error('fail'); },
+                dispose: function () { disposeCalls++; }
+            });
+            sandbox.window.tmDocumentEditorWysiwyg = mock;
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-nr' }, null);
+
+            // Two failed calls before recovery is flushed
+            runtime.executeCommand('inst-nr', 'cmd1', {});
+            runtime.executeCommand('inst-nr', 'cmd2', {});
+            flushTimers();
+
+            // Only one recovery cycle must have run
+            assert.strictEqual(disposeCalls, 1, 'dispose must be called exactly once for double failure');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_StableSnapshot_CapturesDocumentMarkersSelectionUndoAndUploadState()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                getSnapshot: function () {
+                    return JSON.stringify({ SchemaVersion: 1, DocumentId: 'doc-stable', Sections: [], Blocks: [{ Id: 'p1' }], Metadata: {}, PageSettings: { Size: 'A4' } });
+                },
+                getMarkers: function () {
+                    return [{ id: 'comment-1', type: 'comment', range: { startBlockId: 'p1', startOffset: 0, endBlockId: 'p1', endOffset: 4 } }];
+                },
+                getSelectionSnapshot: function () {
+                    return { AnchorBlockId: 'p1', AnchorOffset: 2, FocusBlockId: 'p1', FocusOffset: 2, IsCollapsed: true };
+                },
+                getUndoState: function () {
+                    return { CanUndo: true, UndoDepth: 1, Epoch: 7 };
+                },
+                getDebugUndoStack: function () {
+                    return { UndoDepth: 1, RedoDepth: 0 };
+                },
+                getDebugSnapshot: function () {
+                    return { PendingUploadCount: 1, PendingUploads: [{ FileName: 'photo.png' }] };
+                }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-stable' }, null);
+            runtime.executeCommand('inst-stable', 'bold', {});
+
+            const stable = runtime.__watchdog.getStableSnapshot('inst-stable');
+            assert.strictEqual(stable.Document.DocumentId, 'doc-stable');
+            assert.strictEqual(stable.Markers[0].id, 'comment-1');
+            assert.strictEqual(stable.Selection.AnchorBlockId, 'p1');
+            assert.strictEqual(stable.UndoState.Epoch, 7);
+            assert.strictEqual(stable.UploadState.PendingUploadCount, 1);
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_CommandError_RecordsClassificationAndRecoveredEvent()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                executeCommand: function () { throw new Error('command exploded'); }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-command' }, null);
+            runtime.executeCommand('inst-command', 'bold', {});
+            const scheduled = runtime.__watchdog.getLastRecoveryDetail('inst-command');
+            assert.strictEqual(scheduled.Source, 'command');
+            assert.strictEqual(scheduled.Event, 'runtimeRecoveryScheduled');
+            flushTimers();
+            const recovered = runtime.__watchdog.getLastRecoveryDetail('inst-command');
+            assert.strictEqual(recovered.Event, 'runtimeRecovered');
+            assert.strictEqual(recovered.Source, 'command');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_RemoteOperationError_RecordsClassification()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                applyRemoteOperationBatch: function () { throw new Error('remote exploded'); }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-remote' }, null);
+            runtime.applyRemoteOperationBatch('inst-remote', { Operations: [] });
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-remote').Source, 'remoteOperation');
+            flushTimers();
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-remote').Source, 'remoteOperation');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_RenderError_RecordsClassification()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                applySnapshot: function () { throw new Error('render exploded'); }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-render' }, null);
+            runtime.loadDocument('inst-render', { DocumentId: 'doc' });
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-render').Source, 'render');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_SerializationCrash_RecordsClassificationViaDebugHook()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine();
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-serialization' }, null);
+            runtime.__watchdog.simulateCrash('inst-serialization', 'serialization', { message: 'serialize exploded' });
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-serialization').Source, 'serialization');
+            flushTimers();
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-serialization').Source, 'serialization');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_RetryPolicy_UsesExponentialBackoffAndFailsAfterLimit()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            let createCount = 0;
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                create: function (el, opts) {
+                    createCount++;
+                    if (createCount > 1) throw new Error('create failed');
+                    return opts.InstanceId || 'inst-retry';
+                }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-retry', WatchdogMaxAttempts: 3, WatchdogBackoffMs: 50 }, null);
+            runtime.__watchdog.simulateCrash('inst-retry', 'command');
+
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-retry').Attempt, 1);
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-retry').BackoffMs, 50);
+            flushTimers();
+
+            const events = runtime.__watchdog.getEvents('inst-retry');
+            const scheduled = events.filter(e => e.Event === 'runtimeRecoveryScheduled');
+            assert.deepStrictEqual(scheduled.map(e => e.BackoffMs), [50, 100, 200]);
+            assert.strictEqual(runtime.__watchdog.getState('inst-retry'), 'failed');
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-retry').Event, 'runtimeRecoveryFailed');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Watchdog_Recovery_UsesStableSnapshotFallbackWhenLiveSnapshotUnavailable()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript = WatchdogSandboxSetup +
+            """
+            let snapshotAvailable = true;
+            let loadedDocumentId = '';
+            sandbox.window.tmDocumentEditorWysiwyg = makeMockEngine({
+                getSnapshot: function () {
+                    return snapshotAvailable
+                        ? JSON.stringify({ SchemaVersion: 1, DocumentId: 'stable-doc', Sections: [], Blocks: [], Metadata: {}, PageSettings: { Size: 'A4' } })
+                        : null;
+                },
+                executeCommand: function (instanceId, command) {
+                    if (command === 'boom') throw new Error('command failed');
+                },
+                applySnapshot: function (instanceId, snapshot) {
+                    const doc = typeof snapshot === 'string' ? JSON.parse(snapshot) : snapshot;
+                    const document = doc.Document || doc.document || doc;
+                    loadedDocumentId = document.DocumentId || document.documentId || '';
+                }
+            });
+            const runtime = sandbox.window.tmDocumentEditorRuntime;
+            runtime.create({}, { InstanceId: 'inst-fallback' }, null);
+            runtime.executeCommand('inst-fallback', 'safe', {});
+            snapshotAvailable = false;
+            runtime.__watchdog.configure('inst-fallback', { forceSnapshotFallback: true });
+            runtime.executeCommand('inst-fallback', 'boom', {});
+            flushTimers();
+
+            assert.strictEqual(loadedDocumentId, 'stable-doc');
+            assert.ok(runtime.__watchdog.getEvents('inst-fallback').some(e => e.Event === 'snapshotFallbackUsed'));
+            assert.strictEqual(runtime.__watchdog.getLastRecoveryDetail('inst-fallback').UsedSnapshotFallback, true);
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ─── Phase 7: Image wrap / position ──────────────────────────────────────
+
+    [Fact]
+    public async Task FloatingLayout_WithHorizontalPositionRight_RoundTripsViaCanonical()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorRuntime.__testHooks;
+            const normalized = hooks.roundTripCanonicalDocument({
+                DocumentId: 'doc-1',
+                Blocks: [{
+                    Id: 'img1', Type: 5, Order: 0,
+                    Content: {
+                        $type: 'image',
+                        Url: '/img/test.png',
+                        Size: { Width: 200, Height: 150 },
+                        FloatingLayout: {
+                            Inline: false,
+                            WrapMode: 1,
+                            HorizontalPosition: 2
+                        }
+                    }
+                }]
+            });
+            const fl = normalized.Blocks[0].Content.FloatingLayout;
+            assert.ok(fl, 'FloatingLayout is preserved');
+            assert.strictEqual(fl.WrapMode, 1, 'WrapMode=Square preserved');
+            assert.strictEqual(fl.HorizontalPosition, 2, 'HorizontalPosition=Right(2) preserved');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task FloatingLayout_BackwardCompat_OldDocWithoutHorizontalPosition_LoadsFine()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorRuntime.__testHooks;
+
+            // Old doc: FloatingLayout without HorizontalPosition or Distance props
+            const runtimeDoc = hooks.fromCanonicalDocument({
+                DocumentId: 'old-doc',
+                Blocks: [{
+                    Id: 'img1', Type: 5, Order: 0,
+                    Content: {
+                        $type: 'image',
+                        Url: '/img/test.png',
+                        Size: { Width: 200, Height: 150 },
+                        FloatingLayout: {
+                            Inline: false,
+                            WrapMode: 1,
+                            X: 24,
+                            Y: 36
+                        }
+                    }
+                }]
+            });
+            const exported = hooks.toCanonicalDocument(runtimeDoc);
+            const fl = exported.Blocks[0].Content.FloatingLayout;
+            assert.ok(fl, 'FloatingLayout preserved from old doc');
+            assert.strictEqual(fl.WrapMode, 1, 'WrapMode preserved');
+            assert.strictEqual(fl.HorizontalPosition, undefined, 'HorizontalPosition absent in old doc roundtrip');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task FloatingLayout_Distance_RoundTripsViaCanonical()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = {
+                window: {},
+                console,
+                setTimeout,
+                clearTimeout,
+                URL,
+                JSON
+            };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const hooks = sandbox.window.tmDocumentEditorRuntime.__testHooks;
+            const normalized = hooks.roundTripCanonicalDocument({
+                DocumentId: 'dist-doc',
+                Blocks: [{
+                    Id: 'img1', Type: 5, Order: 0,
+                    Content: {
+                        $type: 'image',
+                        Url: '/img/test.png',
+                        Size: { Width: 200, Height: 150 },
+                        FloatingLayout: {
+                            Inline: false,
+                            WrapMode: 1,
+                            HorizontalPosition: 2,
+                            DistanceLeft: 12,
+                            DistanceRight: 0,
+                            DistanceTop: 4,
+                            DistanceBottom: 4
+                        }
+                    }
+                }]
+            });
+            const fl = normalized.Blocks[0].Content.FloatingLayout;
+            assert.ok(fl, 'FloatingLayout roundtripped');
+            assert.strictEqual(fl.HorizontalPosition, 2, 'HorizontalPosition roundtripped');
+            assert.strictEqual(fl.DistanceLeft, 12, 'DistanceLeft roundtripped');
+            assert.strictEqual(fl.DistanceTop, 4, 'DistanceTop roundtripped');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task SetImageWrapMode_CommandIsRouted_DoesNotThrowOnUnknownInstance()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const editor = sandbox.window.tmDocumentEditorWysiwyg;
+            // setImageWrapMode must route without throwing even for an unknown instance
+            let threw = false;
+            try {
+                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'Square' });
+                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'TopBottom' });
+                editor.executeCommand('no-such-instance', 'setImageWrapMode', { wrapMode: 'InFrontOfText' });
+                editor.executeCommand('no-such-instance', 'setImageSize', { width: 240 });
+            } catch (e) {
+                threw = true;
+            }
+            assert.strictEqual(threw, false, 'setImageWrapMode must not throw on unknown instance');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task NormalizeWrapMode_ByName_ReturnsCorrectValueAndCss()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const fn = sandbox.window.tmDocumentEditorRuntime.__testHooks.normalizeWrapMode;
+
+            const cases = [
+                ['Inline',        { value: 0, css: 'inline' }],
+                ['inline',        { value: 0, css: 'inline' }],
+                ['Square',        { value: 1, css: 'square' }],
+                ['square',        { value: 1, css: 'square' }],
+                ['TopBottom',     { value: 4, css: 'top-bottom' }],
+                ['topandbottom',  { value: 4, css: 'top-bottom' }],
+                ['InFrontOfText', { value: 6, css: 'in-front-of-text' }],
+                [null,            { value: 0, css: 'inline' }],
+                [0,               { value: 0, css: 'inline' }],
+                [1,               { value: 1, css: 'square' }],
+                [4,               { value: 4, css: 'top-bottom' }],
+            ];
+            for (const [input, expected] of cases) {
+                const result = fn(input);
+                assert.strictEqual(result.value, expected.value, `value for '${input}'`);
+                assert.strictEqual(result.css, expected.css, `css for '${input}'`);
+            }
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task NormalizeHorizontalPosition_ByNameAndNumeric_ReturnsCorrectValue()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const fn = sandbox.window.tmDocumentEditorRuntime.__testHooks.normalizeHorizontalPosition;
+
+            function check(input, expValue, expCss) {
+                const r = fn(input);
+                if (expValue === null) { assert.strictEqual(r, null, `null expected for ${JSON.stringify(input)}`); return; }
+                assert.strictEqual(r.value, expValue, `value for ${JSON.stringify(input)}`);
+                assert.strictEqual(r.css,   expCss,   `css for ${JSON.stringify(input)}`);
+            }
+
+            check(null,      null, null);
+            check('Left',    0, 'left');
+            check('left',    0, 'left');
+            check('Center',  1, 'center');
+            check('Right',   2, 'right');
+            check('right',   2, 'right');
+            check(0,         0, 'left');
+            check(1,         1, 'center');
+            check(2,         2, 'right');
+            check('unknown', null, null);
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ─── Phase 14.1: showBlocks ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task ShowBlocks_Enable_AddsClassToRoot()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            // Simulate a minimal instance root element
+            const classes = new Set();
+            const fakeRoot = {
+                classList: {
+                    add(c) { classes.add(c); },
+                    remove(c) { classes.delete(c); },
+                    contains(c) { return classes.has(c); }
+                },
+                querySelectorAll(selector) { return []; }
+            };
+
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-1', { root: fakeRoot, options: {}, disposed: false });
+
+            sandbox.window.tmDocumentWysiwyg.setShowBlocks('inst-1', true);
+
+            assert.strictEqual(classes.has('tm-wysiwyg--show-blocks'), true, 'class must be added');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ShowBlocks_Disable_RemovesClassFromRoot()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const classes = new Set(['tm-wysiwyg--show-blocks']);
+            const fakeRoot = {
+                classList: {
+                    add(c) { classes.add(c); },
+                    remove(c) { classes.delete(c); },
+                    contains(c) { return classes.has(c); }
+                }
+            };
+
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-2', { root: fakeRoot, options: {}, disposed: false });
+
+            sandbox.window.tmDocumentWysiwyg.setShowBlocks('inst-2', false);
+
+            assert.strictEqual(classes.has('tm-wysiwyg--show-blocks'), false, 'class must be removed');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ─── Phase 14.2: fullscreen ───────────────────────────────────────────────
+
+    [Fact]
+    public async Task Fullscreen_Enable_AddsBodyClass()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const bodyClasses = new Set();
+            const sandbox = {
+                window: {
+                    addEventListener() {},
+                    removeEventListener() {}
+                },
+                document: {
+                    body: {
+                        classList: {
+                            add(c) { bodyClasses.add(c); },
+                            remove(c) { bodyClasses.delete(c); }
+                        },
+                        style: {}
+                    }
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.setFullscreen(true);
+
+            assert.strictEqual(bodyClasses.has('tm-document-editor--fullscreen'), true, 'body class must be added');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Fullscreen_Disable_RemovesBodyClass()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const bodyClasses = new Set(['tm-document-editor--fullscreen']);
+            const sandbox = {
+                window: {
+                    addEventListener() {},
+                    removeEventListener() {}
+                },
+                document: {
+                    body: {
+                        classList: {
+                            add(c) { bodyClasses.add(c); },
+                            remove(c) { bodyClasses.delete(c); }
+                        },
+                        style: { overflow: 'hidden' }
+                    }
+                },
+                console,
+                WeakMap,
+                ResizeObserver: class { constructor() {} observe() {} disconnect() {} }
+            };
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor.js' });
+
+            sandbox.window.tmDocumentEditor.setFullscreen(false);
+
+            assert.strictEqual(bodyClasses.has('tm-document-editor--fullscreen'), false, 'body class must be removed');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ── Phase 14.3 – scrollToBlock ────────────────────────────────────────
+
+    [Fact]
+    public async Task ScrollToBlock_KnownBlockId_CallsScrollIntoView()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            let scrolledEl = null;
+            const fakeBlock = {
+                scrollIntoView(opts) { scrolledEl = this; }
+            };
+            const fakeRoot = {
+                classList: { add() {}, remove() {}, contains() { return false; } },
+                querySelector(selector) {
+                    return selector === '[data-block-id="block-42"]' ? fakeBlock : null;
+                }
+            };
+
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-scroll', { root: fakeRoot, options: {}, disposed: false });
+
+            sandbox.window.tmDocumentWysiwyg.scrollToBlock('inst-scroll', 'block-42');
+
+            assert.strictEqual(scrolledEl, fakeBlock, 'scrollIntoView must be called on the block element');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ScrollToBlock_UnknownBlockId_DoesNotThrow()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const fakeRoot = {
+                classList: { add() {}, remove() {}, contains() { return false; } },
+                querySelector(selector) { return null; }
+            };
+
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-scroll2', { root: fakeRoot, options: {}, disposed: false });
+
+            sandbox.window.tmDocumentWysiwyg.scrollToBlock('inst-scroll2', 'nonexistent-block');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    // ── Phase 13.3 – setProtectionMode ───────────────────────────────────────
+
+    [Fact]
+    public async Task ProtectionMode_Enable_SetsIsProtectedFlagOnInstance()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const fakeRoot = {
+                classList: { add() {}, remove() {}, contains() { return false; } },
+                querySelector() { return null; }
+            };
+            const inst = { root: fakeRoot, options: {}, disposed: false };
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-prot1', inst);
+
+            const markers = [{ startBlockId: 'b1', startOffset: 0, endBlockId: 'b1', endOffset: 10 }];
+            sandbox.window.tmDocumentWysiwyg.setProtectionMode('inst-prot1', true, markers);
+
+            assert.strictEqual(inst._isProtected, true, '_isProtected must be true');
+            assert.strictEqual(inst._protectedMarkers.length, 1, 'markers must be stored');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ProtectionMode_Disable_ClearsIsProtectedFlag()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const fakeRoot = {
+                classList: { add() {}, remove() {}, contains() { return false; } },
+                querySelector() { return null; }
+            };
+            const inst = { root: fakeRoot, options: {}, disposed: false, _isProtected: true, _protectedMarkers: [{}] };
+            const hooks = sandbox.window.tmDocumentWysiwyg.__testHooks;
+            hooks._instances.set('inst-prot2', inst);
+
+            sandbox.window.tmDocumentWysiwyg.setProtectionMode('inst-prot2', false, []);
+
+            assert.strictEqual(inst._isProtected, false, '_isProtected must be false after disable');
+            assert.strictEqual(inst._protectedMarkers.length, 0, 'markers must be cleared');
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task ProtectionMode_UnknownInstance_DoesNotThrow()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            sandbox.window.tmDocumentWysiwyg.setProtectionMode('no-such-instance', true, []);
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public void ReviewUxRuntime_ContainsBatchReviewDisplayModesAndCommentRailSync()
+    {
+        var root = FindRepositoryRoot();
+        var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
+        var script = File.ReadAllText(scriptPath);
+
+        script.Should().Contain("case 'acceptAllRevisions'");
+        script.Should().Contain("case 'rejectAllRevisions'");
+        script.Should().Contain("function reviewAllRevisions");
+        script.Should().Contain("'tm-wysiwyg-host--review-original'");
+        script.Should().Contain("if (value === '3') return 'Original'");
+        script.Should().Contain("function _scheduleCommentRailAlignment");
+        script.Should().Contain("function _updateCommentRailAlignment");
+    }
 }

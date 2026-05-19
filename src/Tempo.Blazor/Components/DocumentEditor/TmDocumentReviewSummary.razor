@@ -1,0 +1,41 @@
+@namespace Tempo.Blazor.Components.DocumentEditor
+
+@if (PendingRevisionCount > 0 || OpenCommentCount > 0)
+{
+    <section class="tm-document-review-summary"
+             data-testid="document-review-summary"
+             aria-label="@Loc["TmDocumentEditor_ReviewSummaryLabel"]">
+        <div class="tm-document-review-summary__text">
+            <strong>@Loc["TmDocumentEditor_ReviewSummaryTitle"]</strong>
+            <span>@Loc["TmDocumentEditor_ReviewSummaryText", PendingRevisionCount, OpenCommentCount]</span>
+        </div>
+        <div class="tm-document-review-summary__actions">
+            <button type="button"
+                    data-testid="document-review-summary-revisions"
+                    disabled="@(PendingRevisionCount == 0)"
+                    @onclick="() => OpenRevisions.InvokeAsync()">
+                @Loc["TmDocumentEditor_ReviewSummaryRevisions", PendingRevisionCount]
+            </button>
+            <button type="button"
+                    data-testid="document-review-summary-comments"
+                    disabled="@(OpenCommentCount == 0)"
+                    @onclick="() => OpenComments.InvokeAsync()">
+                @Loc["TmDocumentEditor_ReviewSummaryComments", OpenCommentCount]
+            </button>
+        </div>
+    </section>
+}
+
+@code {
+    /// <summary>Number of pending tracked changes.</summary>
+    [Parameter] public int PendingRevisionCount { get; set; }
+
+    /// <summary>Number of open comment threads.</summary>
+    [Parameter] public int OpenCommentCount { get; set; }
+
+    /// <summary>Raised when the comments panel should open.</summary>
+    [Parameter] public EventCallback OpenComments { get; set; }
+
+    /// <summary>Raised when the revisions panel should open.</summary>
+    [Parameter] public EventCallback OpenRevisions { get; set; }
+}

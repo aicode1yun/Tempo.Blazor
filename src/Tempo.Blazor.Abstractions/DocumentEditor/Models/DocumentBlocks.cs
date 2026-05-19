@@ -182,6 +182,41 @@ public class TableBlockContent : DocumentBlockContent
 {
     /// <summary>Rows in the table.</summary>
     public List<TableRowContent> Rows { get; set; } = [];
+
+    /// <summary>Presentation properties for the table as a whole.</summary>
+    public TableLayoutContent Layout { get; set; } = new();
+}
+
+/// <summary>Presentation properties for a document table.</summary>
+public class TableLayoutContent
+{
+    /// <summary>Optional table width in pixels or percent, depending on renderer context.</summary>
+    public double? Width { get; set; }
+
+    /// <summary>Horizontal table alignment.</summary>
+    public TableHorizontalAlignment Alignment { get; set; } = TableHorizontalAlignment.Left;
+
+    /// <summary>Default cell padding in pixels.</summary>
+    public double? CellPadding { get; set; }
+
+    /// <summary>Optional table background color.</summary>
+    public string? BackgroundColor { get; set; }
+
+    /// <summary>Table border styles.</summary>
+    public TableCellBorders Borders { get; set; } = new();
+}
+
+/// <summary>Horizontal table alignment.</summary>
+public enum TableHorizontalAlignment
+{
+    /// <summary>Align the table to the leading edge.</summary>
+    Left,
+
+    /// <summary>Center the table.</summary>
+    Center,
+
+    /// <summary>Align the table to the trailing edge.</summary>
+    Right
 }
 
 /// <summary>Table row content.</summary>
@@ -203,6 +238,9 @@ public class TableCellContent
     /// <summary>Row span for merged cells.</summary>
     public int RowSpan { get; set; } = 1;
 
+    /// <summary>Whether this cell is rendered as a header cell (&lt;th&gt;).</summary>
+    public bool IsHeader { get; set; }
+
     /// <summary>Merge metadata.</summary>
     public TableCellMerge Merge { get; set; } = new();
 
@@ -215,8 +253,27 @@ public class TableCellContent
     /// <summary>Cell border styles.</summary>
     public TableCellBorders Borders { get; set; } = new();
 
+    /// <summary>Vertical alignment for content inside the cell.</summary>
+    public TableCellVerticalAlignment VerticalAlignment { get; set; } = TableCellVerticalAlignment.Top;
+
+    /// <summary>Optional cell padding in pixels.</summary>
+    public double? Padding { get; set; }
+
     /// <summary>Blocks nested in the table cell.</summary>
     public List<DocumentBlock> Blocks { get; set; } = [];
+}
+
+/// <summary>Vertical alignment for content inside a table cell.</summary>
+public enum TableCellVerticalAlignment
+{
+    /// <summary>Align content to the top of the cell.</summary>
+    Top,
+
+    /// <summary>Align content to the middle of the cell.</summary>
+    Middle,
+
+    /// <summary>Align content to the bottom of the cell.</summary>
+    Bottom
 }
 
 /// <summary>CSS-like border styles for a table cell.</summary>
@@ -284,6 +341,9 @@ public class ImageBlockContent : DocumentBlockContent
 
     /// <summary>Optional floating layout metadata.</summary>
     public DocumentFloatingLayout? FloatingLayout { get; set; }
+
+    /// <summary>Optional hyperlink URL wrapping the image.</summary>
+    public string? LinkUrl { get; set; }
 }
 
 /// <summary>Source kind for a document image.</summary>
