@@ -1559,15 +1559,18 @@
     overflow-x: hidden;
 }
 
-/* Native div wrapper — in TmGantt scope, so scoped CSS applies here (unlike child components).
-   min-height: 650px ensures month grid (6 rows × 6rem + header) and day/week
-   time-grid have enough space. overflow-y: auto on parent shows scrollbar when needed. */
 .tm-gantt__calendar-inner {
-    min-height: 650px;
-    flex: 1;
+    height: 650px;
+    flex-shrink: 0;
     display: flex;
     flex-direction: column;
 }
+
+/* Scheduler fills the 650px inner div */
+.tm-gantt__calendar-inner ::deep .tm-scheduler {
+    flex: 1;
+}
+
 
 
 /* Dashboard View */

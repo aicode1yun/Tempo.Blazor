@@ -71,6 +71,8 @@
         }
     </div>
 
+    @if (!HideTimeGrid)
+    {
     @* Time grid body *@
     <div class="tm-scheduler-timegrid-body">
         <div class="tm-scheduler-timegrid-time-gutter">
@@ -112,6 +114,7 @@
             }
         }
     </div>
+    }
 </div>
 
 @code {
@@ -157,6 +160,9 @@
 
     /// <summary>Optional custom event template.</summary>
     [Parameter] public RenderFragment<TmScheduleEvent>? EventTemplate { get; set; }
+
+    /// <summary>When true, hides the hourly time grid body (only header and all-day row are shown).</summary>
+    [Parameter] public bool HideTimeGrid { get; set; }
 
     protected override async Task OnAfterRenderAsync(bool firstRender)
     {
