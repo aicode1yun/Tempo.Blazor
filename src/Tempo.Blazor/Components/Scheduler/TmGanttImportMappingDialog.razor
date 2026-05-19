@@ -1,0 +1,48 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+
+@if (IsOpen)
+{
+    <div class="tm-gantt__dialog-overlay" @onclick="OnClose">
+        <div class="tm-gantt__dialog tm-gantt__import-mapping-dialog" @onclick:stopPropagation>
+            <div class="tm-gantt__dialog-header">
+                <span class="tm-gantt__dialog-title">@Loc["TmGantt_ImportMapping"]</span>
+                <button type="button" class="tm-gantt__dialog-close" @onclick="OnClose">
+                    <TmIcon Name="x" />
+                </button>
+            </div>
+
+            <div class="tm-gantt__dialog-body">
+                <div class="tm-gantt__mapping-header">
+                    <span>@Loc["TmGantt_ImportSourceColumn"]</span>
+                    <span>@Loc["TmGantt_ImportTargetField"]</span>
+                </div>
+                @foreach (var col in SourceColumns)
+                {
+                    <div class="tm-gantt__mapping-row">
+                        <span class="tm-gantt__mapping-source">@col</span>
+                        <select class="tm-input tm-gantt__mapping-select"
+                                data-testid="mapping-select-@col"
+                                value="@GetMappingValue(col)"
+                                @onchange="e => SetMapping(col, e.Value?.ToString())">
+                            <option value="">—</option>
+                            @foreach (var key in AvailableTargets)
+                            {
+                                <option value="@key.ToString()">@key.ToString()</option>
+                            }
+                        </select>
+                    </div>
+                }
+            </div>
+
+            <div class="tm-gantt__dialog-actions">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="ConfirmAsync">
+                    @Loc["TmGantt_Import"]
+                </TmButton>
+                <TmButton Variant="ButtonVariant.Ghost" OnClick="OnClose">
+                    @Loc["Tm_Cancel"]
+                </TmButton>
+            </div>
+        </div>
+    </div>
+}

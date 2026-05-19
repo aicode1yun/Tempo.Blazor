@@ -1,88 +1,698 @@
 @page "/gantt"
 @using Tempo.Blazor.Components.Scheduler
 @using Tempo.Blazor.Abstractions.Models
+@inject IHttpClientFactory HttpFactory
+@inject ToastService Toast
 
 <PageTitle>Gantt Chart – Tempo.Blazor</PageTitle>
 
-<!-- Page Header -->
-<div class="mb-8">
-    <h1 class="text-3xl font-bold text-slate-900 dark:text-white mb-2">Gantt Chart</h1>
-    <p class="text-slate-600 dark:text-slate-400">Visualize project timelines, task hierarchies, and dependencies with an interactive Gantt chart.</p>
+<!-- ── Page Header ────────────────────────────────────────── -->
+<div class="mb-2">
+    <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Gantt Chart</h1>
 </div>
 
-<!-- Gantt Chart -->
-<section class="showcase-card p-0 overflow-hidden" style="height: 600px;">
-    <TmGantt Data="_tasks"
-             Dependencies="_dependencies"
-             @bind-View="_view"
-             OnTaskSelected="HandleTaskSelected" />
-</section>
-
-<!-- Selected Task Info -->
-@if (_selectedTask is not null)
+@if (_loading)
 {
-    <section class="mt-6 showcase-card">
-        <h2 class="text-lg font-semibold text-slate-900 dark:text-white mb-2">Selected Task</h2>
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
-            <div>
-                <span class="text-slate-500 dark:text-slate-400">Title:</span>
-                <span class="font-medium text-slate-900 dark:text-white ml-1">@_selectedTask.Title</span>
-            </div>
-            <div>
-                <span class="text-slate-500 dark:text-slate-400">Start:</span>
-                <span class="font-medium text-slate-900 dark:text-white ml-1">@_selectedTask.Start.ToString("dd.MM.yyyy")</span>
-            </div>
-            <div>
-                <span class="text-slate-500 dark:text-slate-400">End:</span>
-                <span class="font-medium text-slate-900 dark:text-white ml-1">@_selectedTask.End.ToString("dd.MM.yyyy")</span>
-            </div>
-            <div>
-                <span class="text-slate-500 dark:text-slate-400">Progress:</span>
-                <span class="font-medium text-slate-900 dark:text-white ml-1">@_selectedTask.PercentComplete%</span>
-            </div>
+    <div class="flex items-center justify-center h-64 text-slate-500 dark:text-slate-400 gap-3">
+        <svg class="animate-spin h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"/>
+            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z"/>
+        </svg>
+        Loading project data…
+    </div>
+}
+else
+{
+    <!-- ── Feature Control Bar ────────────────────────────────── -->
+    <div class="mb-2 flex flex-wrap items-center gap-2">
+
+        <!-- View selector -->
+        <div class="flex items-center gap-1 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg p-1">
+            @foreach (var v in Enum.GetValues<GanttView>())
+            {
+                <button class="@($"px-2 py-1 text-xs font-medium rounded-md transition-colors {(_view == v ? "bg-indigo-600 text-white" : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700")}")"
+                        @onclick="() => _view = v">
+                    @v
+                </button>
+            }
+        </div>
+
+        <!-- Baseline selector -->
+        <select class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                @onchange="e => _activeBaselineId = e.Value?.ToString()">
+            <option value="">— No baseline —</option>
+            @foreach (var b in _baselines)
+            {
+                <option value="@b.Id">@b.Name</option>
+            }
+        </select>
+
+        <!-- Workload mode -->
+        <select class="text-xs border border-slate-200 dark:border-slate-600 rounded-lg px-2 py-1.5 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300"
+                @onchange="e => _workloadMode = Enum.Parse<WorkloadDisplayMode>(e.Value?.ToString() ?? nameof(WorkloadDisplayMode.Hours))">
+            @foreach (var m in Enum.GetValues<WorkloadDisplayMode>())
+            {
+                <option value="@m" selected="@(_workloadMode == m)">Workload: @m</option>
+            }
+        </select>
+
+        <!-- Toggle buttons -->
+        @ToggleChip("Auto-schedule",         _autoSchedule,            v => _autoSchedule = v,           "bg-violet-600")
+        @ToggleChip("Critical Path",         _showCriticalPath,        v => _showCriticalPath = v,        "bg-red-600")
+        @ToggleChip("Workload Panel",        _showWorkloadPanel,       v => _showWorkloadPanel = v,       "bg-sky-600")
+        @ToggleChip("Overdue Highlight",     _showOverdueHighlight,    v => _showOverdueHighlight = v,    "bg-orange-600")
+        @ToggleChip("Bulk Select",           _allowBulkSelect,         v => _allowBulkSelect = v,         "bg-teal-600")
+        @ToggleChip("Dep. Creation",         _allowDependencyCreation, v => _allowDependencyCreation = v, "bg-pink-600")
+        @ToggleChip("Adv. Context Menu", _viewSettings.ShowAdvancedContextButtons, v => { _viewSettings.ShowAdvancedContextButtons = v; }, "bg-amber-600")
+    </div>
+
+    <!-- ── Active Timer Banner ────────────────────────────────── -->
+    @if (_activeTimerTaskId is not null)
+    {
+        var timerTask = _tasks.FirstOrDefault(t => t.Id == _activeTimerTaskId);
+        <div class="mb-3 flex items-center gap-2 px-4 py-2 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-lg text-sm">
+            <span class="inline-flex items-center justify-center w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+            <span class="font-medium text-green-800 dark:text-green-300">Timer running</span>
+            <span class="text-green-700 dark:text-green-400">— @(timerTask?.Title ?? _activeTimerTaskId)</span>
+            <span class="ml-auto text-green-600 dark:text-green-400 text-xs">Since @_timerStartedAt?.ToString("HH:mm")</span>
+        </div>
+    }
+
+    <!-- ── Main Gantt ─────────────────────────────────────────── -->
+    <section class="showcase-card p-0 overflow-hidden" style="height: 680px;">
+        <TmGantt Data="@_tasks"
+                 Dependencies="@_dependencies"
+                 @bind-View="@_view"
+                 ViewSettings="@_viewSettings"
+                 OnViewSettingsChanged="@HandleViewSettingsChanged"
+                 WorkingSchedule="@_schedule"
+                 Columns="@_columns"
+                 CustomFields="@_customFields"
+                 Baselines="@_baselines"
+                 ActiveBaselineId="@_activeBaselineId"
+                 OnBaselineSaved="@HandleBaselineSaved"
+                 Filters="@_filters"
+                 OnFiltersChanged="@HandleFiltersChanged"
+                 History="@_history"
+                 ResourceCalendars="@_resourceCalendars"
+                 Reports="@_reports"
+                 OnReportRun="@HandleReportRun"
+                 NotificationSettings="@_notificationSettings"
+                 ShowTaskPanel="true"
+                 ShowSidebar="true"
+                 ShowWorkloadPanel="@_showWorkloadPanel"
+                 WorkloadDisplayMode="@_workloadMode"
+                 ShowCriticalPath="@_showCriticalPath"
+                 AutoSchedule="@_autoSchedule"
+                 OnAutoScheduled="@HandleAutoScheduled"
+                 AllowBulkSelect="@_allowBulkSelect"
+                 AllowDependencyCreation="@_allowDependencyCreation"
+                 ShowOverdueHighlight="@_showOverdueHighlight"
+                 ZoomPreset="@GanttZoomPreset.Weeks"
+                 OnTaskSelected="@HandleTaskSelected"
+                 OnTaskUpdated="@HandleTaskUpdated"
+                 OnDependencyAdded="@HandleDependencyAdded"
+                 OnDependencyRemoved="@HandleDependencyRemoved"
+                 OnTaskInserted="@HandleTaskInserted"
+                 OnTaskRemoved="@HandleTaskRemoved"
+                 OnTaskReordered="@HandleTaskReordered"
+                 OnExportRequested="@HandleExportRequested"
+                 OnImportCompleted="@HandleImportCompleted"
+                 OnTimerStarted="@HandleTimerStarted"
+                 OnTimerStopped="@HandleTimerStopped"
+                 ActiveTimerTaskId="@_activeTimerTaskId"
+                 OnVirtualResourceAdded="@HandleVirtualResourceAdded"
+                 OnResourceCalendarChanged="@HandleResourceCalendarChanged"
+                 OnStatusChanged="@HandleStatusChanged"
+                 OnBulkUpdate="@HandleBulkUpdate" />
+    </section>
+
+    <!-- ── Info Cards ─────────────────────────────────────────── -->
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <!-- Selected Task -->
+        <div class="showcase-card">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-indigo-500 inline-block"></span>
+                Selected Task
+            </h3>
+            @if (_selectedTask is not null)
+            {
+                <dl class="space-y-1 text-xs">
+                    <dt class="text-slate-500">Title</dt>
+                    <dd class="font-medium text-slate-900 dark:text-white truncate">@_selectedTask.Title</dd>
+                    <dt class="text-slate-500 mt-1">Status / Priority</dt>
+                    <dd class="font-medium text-slate-900 dark:text-white">@_selectedTask.Status &nbsp;·&nbsp; @_selectedTask.Priority</dd>
+                    <dt class="text-slate-500 mt-1">Dates</dt>
+                    <dd class="font-medium text-slate-900 dark:text-white">@_selectedTask.Start.ToString("dd.MM") – @_selectedTask.End.ToString("dd.MM.yyyy")</dd>
+                    <dt class="text-slate-500 mt-1">Progress</dt>
+                    <dd class="font-medium text-slate-900 dark:text-white">@_selectedTask.PercentComplete%</dd>
+                    @if (_selectedTask.Assignees.Count > 0)
+                    {
+                        <dt class="text-slate-500 mt-1">Assignees</dt>
+                        <dd class="font-medium text-slate-900 dark:text-white truncate">
+                            @string.Join(", ", _selectedTask.Assignees.Select(a => a.IsVirtual ? $"{a.Name} (virtual)" : a.Name))
+                        </dd>
+                    }
+                    @if (_selectedTask.BudgetHours.HasValue)
+                    {
+                        <dt class="text-slate-500 mt-1">Budget / Actual</dt>
+                        <dd class="font-medium text-slate-900 dark:text-white">
+                            @_selectedTask.BudgetHours h &nbsp;·&nbsp; $@(_selectedTask.ActualCost?.ToString("N0") ?? "–")
+                        </dd>
+                    }
+                    @if (_selectedTask.TimeLog.Count > 0)
+                    {
+                        <dt class="text-slate-500 mt-1">Time Log entries</dt>
+                        <dd class="font-medium text-slate-900 dark:text-white">@_selectedTask.TimeLog.Count entries</dd>
+                    }
+                </dl>
+            }
+            else
+            {
+                <p class="text-xs text-slate-400">Click a task to see details.</p>
+            }
+        </div>
+
+        <!-- Dataset Summary -->
+        <div class="showcase-card">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-500 inline-block"></span>
+                Dataset
+            </h3>
+            <dl class="space-y-1 text-xs">
+                <dt class="text-slate-500">Tasks total</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_tasks.Count</dd>
+                <dt class="text-slate-500 mt-1">Milestones</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_tasks.Count(t => t.IsMilestone)</dd>
+                <dt class="text-slate-500 mt-1">Dependencies</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_dependencies.Count (FS/SS/FF/SF)</dd>
+                <dt class="text-slate-500 mt-1">Custom Fields</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_customFields.Count</dd>
+                <dt class="text-slate-500 mt-1">Baselines</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_baselines.Count</dd>
+                <dt class="text-slate-500 mt-1">History entries</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_history.Count</dd>
+                <dt class="text-slate-500 mt-1">Reports</dt>
+                <dd class="font-medium text-slate-900 dark:text-white">@_reports.Count</dd>
+            </dl>
+        </div>
+
+        <!-- Assignees / Resources -->
+        <div class="showcase-card">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-sky-500 inline-block"></span>
+                Assignees
+            </h3>
+            <ul class="space-y-1.5 text-xs">
+                @foreach (var a in _assignees)
+                {
+                    <li class="flex items-center gap-2">
+                        @if (a.AvatarUrl is not null)
+                        {
+                            <img src="@a.AvatarUrl" class="w-5 h-5 rounded-full" alt="@a.Name" />
+                        }
+                        else
+                        {
+                            <span class="w-5 h-5 rounded-full bg-slate-300 dark:bg-slate-600 flex items-center justify-center text-slate-600 dark:text-slate-300 text-[9px] font-bold">
+                                @a.Name[0]
+                            </span>
+                        }
+                        <span class="font-medium text-slate-900 dark:text-white">@a.Name</span>
+                        @if (a.IsVirtual)
+                        {
+                            <span class="ml-auto text-[10px] px-1 py-0.5 bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 rounded">virtual</span>
+                        }
+                        else
+                        {
+                            <span class="ml-auto text-slate-400">$@a.HourlyRate/h</span>
+                        }
+                    </li>
+                }
+            </ul>
+        </div>
+
+        <!-- Last Events / Notifications -->
+        <div class="showcase-card">
+            <h3 class="text-sm font-semibold text-slate-700 dark:text-slate-300 mb-3 flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-amber-500 inline-block"></span>
+                Last Events
+            </h3>
+            @if (_eventLog.Count == 0)
+            {
+                <p class="text-xs text-slate-400">No events yet — interact with the Gantt.</p>
+            }
+            else
+            {
+                <ul class="space-y-1.5">
+                    @foreach (var ev in _eventLog.TakeLast(6).Reverse())
+                    {
+                        <li class="text-xs text-slate-600 dark:text-slate-400 truncate" title="@ev">@ev</li>
+                    }
+                </ul>
+            }
+
+            @if (_lastRunReport is not null)
+            {
+                <div class="mt-3 pt-3 border-t border-slate-100 dark:border-slate-700">
+                    <p class="text-xs font-medium text-slate-600 dark:text-slate-400">Last report run:</p>
+                    <p class="text-xs text-indigo-600 dark:text-indigo-400 font-semibold">@_lastRunReport.Name</p>
+                    <p class="text-xs text-slate-400">Type: @_lastRunReport.Type</p>
+                </div>
+            }
+        </div>
+    </div>
+
+    <!-- ── Feature Showcase Legend ────────────────────────────── -->
+    <section class="mt-6 demo-section">
+        <div class="flex items-center justify-between mb-4">
+            <h2 class="text-lg font-semibold text-slate-900 dark:text-white">Feature Coverage</h2>
+            <span class="px-2 py-0.5 text-xs font-medium bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 rounded-full">All features active</span>
+        </div>
+        <div class="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-4 gap-3">
+            @foreach (var feat in _featureCoverage)
+            {
+                <div class="flex items-start gap-2 p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                    <span class="mt-0.5 w-4 h-4 flex-shrink-0 text-emerald-500">
+                        <svg viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M16.707 5.293a1 1 0 00-1.414 0L8 12.586 4.707 9.293a1 1 0 00-1.414 1.414l4 4a1 1 0 001.414 0l8-8a1 1 0 000-1.414z" clip-rule="evenodd"/></svg>
+                    </span>
+                    <span class="text-xs text-slate-700 dark:text-slate-300">@feat</span>
+                </div>
+            }
         </div>
     </section>
 }
 
 @code {
-    private GanttView _view = GanttView.Week;
-    private GanttTask? _selectedTask;
+    // ── Loading ───────────────────────────────────────────────────
+    private bool _loading = true;
+    private HttpClient Http => HttpFactory.CreateClient("DemoApi");
 
-    private List<GanttTask> _tasks = new()
+    // ── Data ──────────────────────────────────────────────────────
+    private List<GanttTask>             _tasks             = [];
+    private List<GanttDependency>        _dependencies      = [];
+    private List<GanttBaseline>          _baselines         = [];
+    private List<GanttCustomField>       _customFields      = [];
+    private List<GanttHistoryEntry>      _history           = [];
+    private List<GanttResourceCalendar>  _resourceCalendars = [];
+    private List<GanttReport>            _reports           = [];
+    private List<GanttAssignee>          _assignees         = [];
+    private WorkingSchedule              _schedule          = new();
+
+    // ── View / Feature state ──────────────────────────────────────
+    private GanttView             _view                    = GanttView.Week;
+    private GanttViewSettings     _viewSettings            = new() { ShowAvatarsOnChart = true, ShowTodayMarker = true, ShowDaysOff = true, ShowAdvancedContextButtons = true };
+    private GanttTask?            _selectedTask;
+    private string?               _activeBaselineId;
+    private WorkloadDisplayMode   _workloadMode            = WorkloadDisplayMode.Hours;
+    private bool                  _autoSchedule            = false;
+    private bool                  _showCriticalPath        = true;
+    private bool                  _showWorkloadPanel       = true;
+    private bool                  _showOverdueHighlight    = true;
+    private bool                  _allowBulkSelect         = true;
+    private bool                  _allowDependencyCreation = true;
+
+    private IReadOnlyList<GanttFilter> _filters = [];
+
+    private IReadOnlyList<GanttColumnDefinition> _columns =
+    [
+        new() { Key = GanttColumnKey.WBS,        Visible = true,  Order = 0, Width = 50 },
+        new() { Key = GanttColumnKey.Title,      Visible = true,  Order = 1 },
+        new() { Key = GanttColumnKey.Status,     Visible = true,  Order = 2, Width = 90 },
+        new() { Key = GanttColumnKey.Start,      Visible = true,  Order = 3, Width = 90 },
+        new() { Key = GanttColumnKey.End,        Visible = true,  Order = 4, Width = 90 },
+        new() { Key = GanttColumnKey.Progress,   Visible = true,  Order = 5, Width = 80 },
+        new() { Key = GanttColumnKey.Assignees,  Visible = true,  Order = 6, Width = 90 },
+        new() { Key = GanttColumnKey.Priority,   Visible = false, Order = 7, Width = 80 },
+        new() { Key = GanttColumnKey.Estimation, Visible = false, Order = 8, Width = 70 },
+    ];
+
+    private GanttNotificationSettings _notificationSettings = new()
     {
-        new() { Id = "1", Title = "Project Planning", Start = DateTime.Today.AddDays(-14), End = DateTime.Today.AddDays(-7), PercentComplete = 100 },
-        new() { Id = "2", Title = "Requirements Analysis", Start = DateTime.Today.AddDays(-10), End = DateTime.Today.AddDays(-4), PercentComplete = 100, ParentId = "1" },
-        new() { Id = "3", Title = "Stakeholder Interviews", Start = DateTime.Today.AddDays(-10), End = DateTime.Today.AddDays(-8), PercentComplete = 100, ParentId = "2" },
-        new() { Id = "4", Title = "Document Requirements", Start = DateTime.Today.AddDays(-7), End = DateTime.Today.AddDays(-4), PercentComplete = 100, ParentId = "2" },
-        new() { Id = "5", Title = "Design Phase", Start = DateTime.Today.AddDays(-5), End = DateTime.Today.AddDays(5), PercentComplete = 75 },
-        new() { Id = "6", Title = "UI/UX Design", Start = DateTime.Today.AddDays(-5), End = DateTime.Today.AddDays(1), PercentComplete = 90, ParentId = "5" },
-        new() { Id = "7", Title = "Database Design", Start = DateTime.Today.AddDays(-3), End = DateTime.Today.AddDays(3), PercentComplete = 80, ParentId = "5" },
-        new() { Id = "8", Title = "API Specification", Start = DateTime.Today.AddDays(0), End = DateTime.Today.AddDays(5), PercentComplete = 50, ParentId = "5" },
-        new() { Id = "9", Title = "Development", Start = DateTime.Today.AddDays(4), End = DateTime.Today.AddDays(18), PercentComplete = 30 },
-        new() { Id = "10", Title = "Backend Implementation", Start = DateTime.Today.AddDays(4), End = DateTime.Today.AddDays(14), PercentComplete = 40, ParentId = "9" },
-        new() { Id = "11", Title = "Frontend Implementation", Start = DateTime.Today.AddDays(7), End = DateTime.Today.AddDays(18), PercentComplete = 20, ParentId = "9" },
-        new() { Id = "12", Title = "Testing & QA", Start = DateTime.Today.AddDays(16), End = DateTime.Today.AddDays(22), PercentComplete = 0 },
-        new() { Id = "13", Title = "Unit Tests", Start = DateTime.Today.AddDays(16), End = DateTime.Today.AddDays(19), PercentComplete = 10, ParentId = "12" },
-        new() { Id = "14", Title = "Integration Tests", Start = DateTime.Today.AddDays(19), End = DateTime.Today.AddDays(22), PercentComplete = 0, ParentId = "12" },
-        new() { Id = "15", Title = "Project Launch", Start = DateTime.Today.AddDays(22), End = DateTime.Today.AddDays(22), PercentComplete = 0, IsMilestone = true },
+        EmailOnAssign   = true,
+        EmailOnMention  = true,
+        PushOnAssign    = true,
+        PushOnMention   = false,
+        PushOnDeadline  = true,
     };
 
-    private List<GanttDependency> _dependencies = new()
+    // ── Timer ─────────────────────────────────────────────────────
+    private string?   _activeTimerTaskId;
+    private DateTime? _timerStartedAt;
+
+    // ── Event log ─────────────────────────────────────────────────
+    private List<string> _eventLog = [];
+    private GanttReport? _lastRunReport;
+
+    // ── Feature coverage list ─────────────────────────────────────
+    private static readonly IReadOnlyList<string> _featureCoverage =
+    [
+        "Task hierarchy (3+ levels)",
+        "All statuses: Open/InProgress/Done/Closed",
+        "All priorities: Highest–Lowest",
+        "Milestones (diamond markers)",
+        "Deadlines with overdue warning",
+        "Assignees with avatars",
+        "Virtual resources",
+        "Budget & actual cost tracking",
+        "Time log entries per task",
+        "Comments & attachments",
+        "6 custom fields (List/Number/Text/Checkbox/Labels/Text)",
+        "All 4 dependency types (FS/SS/FF/SF)",
+        "2 baselines with plan vs. actual",
+        "Auto-schedule engine",
+        "Critical path highlighting",
+        "Filter panel",
+        "History drawer with 14 entries",
+        "Workload panel (hours / %)",
+        "People view with resource calendars",
+        "Vacation / days-off calendar",
+        "Reports panel (5 report types)",
+        "Run-report event callback",
+        "Built-in stopwatch timer",
+        "Notification settings (email/push)",
+        "Export dialog",
+        "Import flow",
+        "Bulk select & bulk update",
+        "Dependency drag-create",
+        "Overdue task highlight",
+        "View settings (density/theme/markers)",
+        "Column visibility & ordering",
+        "Group rollup (UseManualDates)",
+        "Board / Calendar / List / Dashboard views",
+        "Context menu (adv. buttons enabled)",
+        "Zoom presets",
+        "Working schedule (Mon–Fri, holidays)",
+    ];
+
+    // ── Lifecycle ─────────────────────────────────────────────────
+
+    protected override async Task OnInitializedAsync()
     {
-        new() { Id = "d1", FromId = "3", ToId = "4", Type = 0 },
-        new() { Id = "d2", FromId = "4", ToId = "6", Type = 0 },
-        new() { Id = "d3", FromId = "4", ToId = "7", Type = 0 },
-        new() { Id = "d4", FromId = "6", ToId = "8", Type = 0 },
-        new() { Id = "d5", FromId = "7", ToId = "8", Type = 0 },
-        new() { Id = "d6", FromId = "8", ToId = "10", Type = 0 },
-        new() { Id = "d7", FromId = "10", ToId = "11", Type = 1 },
-        new() { Id = "d8", FromId = "11", ToId = "13", Type = 0 },
-        new() { Id = "d9", FromId = "13", ToId = "14", Type = 0 },
-        new() { Id = "d10", FromId = "14", ToId = "15", Type = 0 },
-    };
+        await Http.PostAsync("/api/gantt/reset", null);
+        await Task.WhenAll(
+            LoadTasksAsync(),
+            LoadDependenciesAsync(),
+            LoadBaselinesAsync(),
+            LoadCustomFieldsAsync(),
+            LoadHistoryAsync(),
+            LoadResourceCalendarsAsync(),
+            LoadReportsAsync(),
+            LoadWorkingScheduleAsync(),
+            LoadAssigneesAsync()
+        );
+        _loading = false;
+    }
+
+    private async Task LoadTasksAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttTask>>("/api/gantt/tasks");
+        _tasks = result ?? [];
+    }
+
+    private async Task LoadDependenciesAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttDependency>>("/api/gantt/dependencies");
+        _dependencies = result ?? [];
+    }
+
+    private async Task LoadBaselinesAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttBaseline>>("/api/gantt/baselines");
+        _baselines = result ?? [];
+    }
+
+    private async Task LoadCustomFieldsAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttCustomField>>("/api/gantt/custom-fields");
+        _customFields = result ?? [];
+    }
+
+    private async Task LoadHistoryAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttHistoryEntry>>("/api/gantt/history");
+        _history = result ?? [];
+    }
+
+    private async Task LoadResourceCalendarsAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttResourceCalendar>>("/api/gantt/resource-calendars");
+        _resourceCalendars = result ?? [];
+    }
+
+    private async Task LoadReportsAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttReport>>("/api/gantt/reports");
+        _reports = result ?? [];
+    }
+
+    private async Task LoadWorkingScheduleAsync()
+    {
+        var result = await Http.GetFromJsonAsync<WorkingSchedule>("/api/gantt/working-schedule");
+        _schedule = result ?? new WorkingSchedule();
+    }
+
+    private async Task LoadAssigneesAsync()
+    {
+        var result = await Http.GetFromJsonAsync<List<GanttAssignee>>("/api/gantt/assignees");
+        _assignees = result ?? [];
+    }
+
+    // ── Event handlers ────────────────────────────────────────────
 
     private void HandleTaskSelected(GanttTask task)
     {
         _selectedTask = task;
     }
+
+    private async Task HandleTaskUpdated(GanttTask updated)
+    {
+        var idx = _tasks.FindIndex(t => t.Id == updated.Id);
+        if (idx >= 0)
+        {
+            _tasks[idx] = updated;
+            if (_selectedTask?.Id == updated.Id)
+                _selectedTask = updated;
+        }
+        Log($"Task updated: {updated.Title}");
+        await Http.PutAsJsonAsync($"/api/gantt/tasks/{updated.Id}", updated);
+    }
+
+    private async Task HandleDependencyAdded(GanttDependency dep)
+    {
+        _dependencies.Add(dep);
+        Log($"Dependency added: {dep.FromId} → {dep.ToId} ({(GanttDependencyType)dep.Type})");
+        var response = await Http.PostAsJsonAsync("/api/gantt/dependencies", dep);
+        if (response.IsSuccessStatusCode)
+        {
+            var created = await response.Content.ReadFromJsonAsync<GanttDependency>();
+            if (created is not null)
+            {
+                var idx = _dependencies.FindIndex(d => d.Id == dep.Id);
+                if (idx >= 0) _dependencies[idx] = created;
+            }
+        }
+    }
+
+    private async Task HandleDependencyRemoved(string depId)
+    {
+        _dependencies.RemoveAll(d => d.Id == depId);
+        Log($"Dependency removed: {depId}");
+        await Http.DeleteAsync($"/api/gantt/dependencies/{depId}");
+    }
+
+    private async Task HandleTaskInserted(GanttTaskInsertedArgs args)
+    {
+        if (args.Position == GanttInsertPosition.End)
+        {
+            _tasks.Add(args.Task);
+        }
+        else
+        {
+            var refIdx = _tasks.FindIndex(t => t.Id == args.ReferenceTaskId);
+            if (refIdx < 0) { _tasks.Add(args.Task); }
+            else
+            {
+                var insertIdx = args.Position switch
+                {
+                    GanttInsertPosition.Above => refIdx,
+                    GanttInsertPosition.Below => refIdx + 1,
+                    GanttInsertPosition.Child => refIdx + 1,
+                    _                         => _tasks.Count
+                };
+                _tasks.Insert(insertIdx, args.Task);
+            }
+        }
+        Log($"Task inserted: {args.Task.Title}");
+        var response = await Http.PostAsJsonAsync("/api/gantt/tasks", args.Task);
+        if (response.IsSuccessStatusCode)
+        {
+            var created = await response.Content.ReadFromJsonAsync<GanttTask>();
+            if (created is not null)
+            {
+                var idx = _tasks.FindIndex(t => t.Id == args.Task.Id);
+                if (idx >= 0) _tasks[idx] = created;
+            }
+        }
+    }
+
+    private async Task HandleTaskRemoved(string taskId)
+    {
+        _tasks.RemoveAll(t => t.Id == taskId);
+        _dependencies.RemoveAll(d => d.FromId == taskId || d.ToId == taskId);
+        var childIds = _tasks.Where(t => t.ParentId == taskId).Select(t => t.Id).ToList();
+        foreach (var childId in childIds)
+            await HandleTaskRemoved(childId);
+        Log($"Task removed: {taskId}");
+        await Http.DeleteAsync($"/api/gantt/tasks/{taskId}");
+    }
+
+    private void HandleTaskReordered(GanttTaskReorderedArgs args)
+    {
+        var task   = _tasks.FirstOrDefault(t => t.Id == args.TaskId);
+        var target = _tasks.FirstOrDefault(t => t.Id == args.TargetTaskId);
+        if (task is null || target is null) return;
+
+        _tasks.Remove(task);
+        var targetIdx  = _tasks.IndexOf(target);
+        if (targetIdx < 0) targetIdx = 0;
+
+        var insertIdx = args.Position switch
+        {
+            GanttDropPosition.Before => targetIdx,
+            GanttDropPosition.After  => targetIdx + 1,
+            GanttDropPosition.Child  => targetIdx + 1,
+            _                        => _tasks.Count
+        };
+
+        task.ParentId = args.Position == GanttDropPosition.Child ? target.Id : target.ParentId;
+        _tasks.Insert(Math.Min(insertIdx, _tasks.Count), task);
+        Log($"Task reordered: {task.Title}");
+    }
+
+    private void HandleFiltersChanged(IReadOnlyList<GanttFilter> filters)
+    {
+        _filters = filters;
+        Log($"Filters changed: {filters.Count} active");
+    }
+
+    private void HandleViewSettingsChanged(GanttViewSettings settings)
+    {
+        _viewSettings = settings;
+    }
+
+    private void HandleAutoScheduled(IReadOnlyList<GanttTask> updated)
+    {
+        foreach (var t in updated)
+        {
+            var idx = _tasks.FindIndex(x => x.Id == t.Id);
+            if (idx >= 0) _tasks[idx] = t;
+        }
+        Toast.ShowSuccess($"Auto-schedule applied to {updated.Count} tasks.");
+        Log($"Auto-schedule applied: {updated.Count} tasks rescheduled");
+    }
+
+    private async Task HandleBaselineSaved(GanttBaseline baseline)
+    {
+        _baselines.Add(baseline);
+        Toast.ShowSuccess($"Baseline '{baseline.Name}' saved.");
+        Log($"Baseline saved: {baseline.Name}");
+        var response = await Http.PostAsJsonAsync("/api/gantt/baselines", baseline);
+        if (response.IsSuccessStatusCode)
+        {
+            var created = await response.Content.ReadFromJsonAsync<GanttBaseline>();
+            if (created is not null)
+            {
+                var idx = _baselines.FindIndex(b => b.Id == baseline.Id);
+                if (idx >= 0) _baselines[idx] = created;
+            }
+        }
+    }
+
+    private void HandleReportRun(GanttReport report)
+    {
+        _lastRunReport = report;
+        Toast.ShowInfo($"Running report: {report.Name}");
+        Log($"Report run: {report.Name} ({report.Type})");
+    }
+
+    private void HandleExportRequested(GanttExportOptions opts)
+    {
+        Toast.ShowInfo($"Export requested: {opts.Format}");
+        Log($"Export: format={opts.Format}");
+    }
+
+    private void HandleImportCompleted(IReadOnlyList<GanttTask> imported)
+    {
+        _tasks.AddRange(imported);
+        Toast.ShowSuccess($"Imported {imported.Count} tasks.");
+        Log($"Import completed: {imported.Count} tasks");
+    }
+
+    private void HandleTimerStarted(string taskId)
+    {
+        _activeTimerTaskId = taskId;
+        _timerStartedAt    = DateTime.Now;
+        var task = _tasks.FirstOrDefault(t => t.Id == taskId);
+        Toast.ShowInfo($"Timer started: {task?.Title ?? taskId}");
+        Log($"Timer started: {task?.Title ?? taskId}");
+    }
+
+    private void HandleTimerStopped((string TaskId, GanttTimeLogEntry Entry) args)
+    {
+        var task = _tasks.FirstOrDefault(t => t.Id == args.TaskId);
+        if (task is not null)
+        {
+            task.TimeLog.Add(args.Entry);
+            var duration = (args.Entry.StoppedAt - args.Entry.StartedAt)?.TotalHours ?? 0;
+            task.LoggedHours = (task.LoggedHours ?? 0) + duration;
+        }
+        _activeTimerTaskId = null;
+        _timerStartedAt    = null;
+        Toast.ShowSuccess($"Timer stopped: {task?.Title ?? args.TaskId}");
+        Log($"Timer stopped: {task?.Title ?? args.TaskId}");
+    }
+
+    private void HandleVirtualResourceAdded(GanttAssignee assignee)
+    {
+        _assignees.Add(assignee);
+        Toast.ShowSuccess($"Virtual resource added: {assignee.Name}");
+        Log($"Virtual resource added: {assignee.Name}");
+    }
+
+    private async Task HandleResourceCalendarChanged(IReadOnlyList<GanttResourceCalendar> calendars)
+    {
+        _resourceCalendars = calendars.ToList();
+        Log($"Resource calendars updated: {calendars.Count}");
+        foreach (var cal in calendars)
+            await Http.PutAsJsonAsync($"/api/gantt/resource-calendars/{cal.AssigneeId}", cal);
+    }
+
+    private void HandleStatusChanged((string TaskId, GanttTaskStatus NewStatus) args)
+    {
+        var task = _tasks.FirstOrDefault(t => t.Id == args.TaskId);
+        if (task is not null) task.Status = args.NewStatus;
+        Log($"Status changed: {task?.Title ?? args.TaskId} → {args.NewStatus}");
+    }
+
+    private void HandleBulkUpdate(BulkUpdateArgs args)
+    {
+        Toast.ShowSuccess($"Bulk update applied to {args.TaskIds.Count} tasks.");
+        Log($"Bulk update: {args.TaskIds.Count} tasks");
+    }
+
+    // ── Helpers ───────────────────────────────────────────────────
+
+    private void Log(string message)
+    {
+        _eventLog.Add($"{DateTime.Now:HH:mm:ss} {message}");
+        if (_eventLog.Count > 50)
+            _eventLog.RemoveAt(0);
+    }
+
+    private RenderFragment ToggleChip(string label, bool active, Action<bool> onChange, string activeColor) =>
+        @<button class="@($"px-2.5 py-1 text-xs font-medium rounded-full border transition-colors {(active ? $"{activeColor} text-white border-transparent" : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-400")}")"
+                 @onclick="() => onChange(!active)">
+            @label
+        </button>;
 }

@@ -202,14 +202,17 @@ Models/
  AIPromptCommand.cs
  AIPromptOutput.cs
  BreadcrumbItem.cs
+ BulkUpdateArgs.cs
  ChatAttachment.cs
  ChatMessage.cs
  ChatUser.cs
  ColorFormat.cs
  ColorHelper.cs
+ CriticalPathCalculator.cs
  DashboardModels.cs
  DataTableQuery.cs
  DataTableView.cs
+ DateRange.cs
  DateRangePreset.cs
  DockLayout.cs
  DockPane.cs
@@ -234,13 +237,49 @@ Models/
  FileManagerViewMode.cs
  FileUploadInfo.cs
  FilterDefinition.cs
+ GanttAssignee.cs
+ GanttAttachment.cs
+ GanttBaseline.cs
+ GanttBaselineTask.cs
+ GanttCircularDependencyException.cs
+ GanttColumnDefinition.cs
+ GanttColumnKey.cs
+ GanttColumnMapping.cs
+ GanttComment.cs
+ GanttCustomField.cs
  GanttDependency.cs
+ GanttDependencyType.cs
+ GanttExportFormat.cs
+ GanttExportOptions.cs
+ GanttFieldType.cs
+ GanttFilter.cs
+ GanttFilterOperator.cs
  GanttHelper.cs
+ GanttHistoryEntry.cs
+ GanttImportAuthException.cs
+ GanttNotification.cs
+ GanttNotificationSettings.cs
+ GanttPortfolioProject.cs
+ GanttReport.cs
+ GanttReportType.cs
+ GanttResourceCalendar.cs
+ GanttScheduler.cs
+ GanttSidebarPanel.cs
+ GanttSignalRConnection.cs
  GanttTask.cs
+ GanttTaskNameLocation.cs
+ GanttTaskPriority.cs
+ GanttTaskStatus.cs
+ GanttTheme.cs
+ GanttTimeLogEntry.cs
+ GanttViewDensity.cs
+ GanttViewSettings.cs
+ GanttZoomPreset.cs
  GaugeRange.cs
  GroupedPagedResult.cs
  GroupedResult.cs
  GroupFieldDefinition.cs
+ IGanttRealtimeConnection.cs
  ImageUrlResolvers.cs
  MultiColumnComboBoxColumn.cs
  PagedResult.cs
@@ -294,6 +333,10 @@ Models/
  TreeListHelper.cs
  TreeListItemContext.cs
  TreeNodeMoveEventArgs.cs
+ WorkingSchedule.cs
+ WorkloadCalculator.cs
+ WorkloadDisplayMode.cs
+ WorkloadEntry.cs
 NotionEditor/
  Commands/INotionCommand.cs
  Enums/
@@ -972,14 +1015,17 @@ Models/
  AIPromptCommand.cs
  AIPromptOutput.cs
  BreadcrumbItem.cs
+ BulkUpdateArgs.cs
  ChatAttachment.cs
  ChatMessage.cs
  ChatUser.cs
  ColorFormat.cs
  ColorHelper.cs
+ CriticalPathCalculator.cs
  DashboardModels.cs
  DataTableQuery.cs
  DataTableView.cs
+ DateRange.cs
  DateRangePreset.cs
  DockLayout.cs
  DockPane.cs
@@ -1004,13 +1050,49 @@ Models/
  FileManagerViewMode.cs
  FileUploadInfo.cs
  FilterDefinition.cs
+ GanttAssignee.cs
+ GanttAttachment.cs
+ GanttBaseline.cs
+ GanttBaselineTask.cs
+ GanttCircularDependencyException.cs
+ GanttColumnDefinition.cs
+ GanttColumnKey.cs
+ GanttColumnMapping.cs
+ GanttComment.cs
+ GanttCustomField.cs
  GanttDependency.cs
+ GanttDependencyType.cs
+ GanttExportFormat.cs
+ GanttExportOptions.cs
+ GanttFieldType.cs
+ GanttFilter.cs
+ GanttFilterOperator.cs
  GanttHelper.cs
+ GanttHistoryEntry.cs
+ GanttImportAuthException.cs
+ GanttNotification.cs
+ GanttNotificationSettings.cs
+ GanttPortfolioProject.cs
+ GanttReport.cs
+ GanttReportType.cs
+ GanttResourceCalendar.cs
+ GanttScheduler.cs
+ GanttSidebarPanel.cs
+ GanttSignalRConnection.cs
  GanttTask.cs
+ GanttTaskNameLocation.cs
+ GanttTaskPriority.cs
+ GanttTaskStatus.cs
+ GanttTheme.cs
+ GanttTimeLogEntry.cs
+ GanttViewDensity.cs
+ GanttViewSettings.cs
+ GanttZoomPreset.cs
  GaugeRange.cs
  GroupedPagedResult.cs
  GroupedResult.cs
  GroupFieldDefinition.cs
+ IGanttRealtimeConnection.cs
  ImageUrlResolvers.cs
  MultiColumnComboBoxColumn.cs
  PagedResult.cs
@@ -1064,6 +1146,10 @@ Models/
  TreeListHelper.cs
  TreeListItemContext.cs
  TreeNodeMoveEventArgs.cs
+ WorkingSchedule.cs
+ WorkloadCalculator.cs
+ WorkloadDisplayMode.cs
+ WorkloadEntry.cs
 NotionEditor/
  Commands/INotionCommand.cs
  Enums/
@@ -1737,14 +1823,17 @@ Models/
  AIPromptCommand.cs
  AIPromptOutput.cs
  BreadcrumbItem.cs
+ BulkUpdateArgs.cs
  ChatAttachment.cs
  ChatMessage.cs
  ChatUser.cs
  ColorFormat.cs
  ColorHelper.cs
+ CriticalPathCalculator.cs
  DashboardModels.cs
  DataTableQuery.cs
  DataTableView.cs
+ DateRange.cs
  DateRangePreset.cs
  DockLayout.cs
  DockPane.cs
@@ -1769,13 +1858,49 @@ Models/
  FileManagerViewMode.cs
  FileUploadInfo.cs
  FilterDefinition.cs
+ GanttAssignee.cs
+ GanttAttachment.cs
+ GanttBaseline.cs
+ GanttBaselineTask.cs
+ GanttCircularDependencyException.cs
+ GanttColumnDefinition.cs
+ GanttColumnKey.cs
+ GanttColumnMapping.cs
+ GanttComment.cs
+ GanttCustomField.cs
  GanttDependency.cs
+ GanttDependencyType.cs
+ GanttExportFormat.cs
+ GanttExportOptions.cs
+ GanttFieldType.cs
+ GanttFilter.cs
+ GanttFilterOperator.cs
  GanttHelper.cs
+ GanttHistoryEntry.cs
+ GanttImportAuthException.cs
+ GanttNotification.cs
+ GanttNotificationSettings.cs
+ GanttPortfolioProject.cs
+ GanttReport.cs
+ GanttReportType.cs
+ GanttResourceCalendar.cs
+ GanttScheduler.cs
+ GanttSidebarPanel.cs
+ GanttSignalRConnection.cs
  GanttTask.cs
+ GanttTaskNameLocation.cs
+ GanttTaskPriority.cs
+ GanttTaskStatus.cs
+ GanttTheme.cs
+ GanttTimeLogEntry.cs
+ GanttViewDensity.cs
+ GanttViewSettings.cs
+ GanttZoomPreset.cs
  GaugeRange.cs
  GroupedPagedResult.cs
  GroupedResult.cs
  GroupFieldDefinition.cs
+ IGanttRealtimeConnection.cs
  ImageUrlResolvers.cs
  MultiColumnComboBoxColumn.cs
  PagedResult.cs
@@ -1829,6 +1954,10 @@ Models/
  TreeListHelper.cs
  TreeListItemContext.cs
  TreeNodeMoveEventArgs.cs
+ WorkingSchedule.cs
+ WorkloadCalculator.cs
+ WorkloadDisplayMode.cs
+ WorkloadEntry.cs
 NotionEditor/
  Commands/INotionCommand.cs
  Enums/

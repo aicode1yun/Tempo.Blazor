@@ -61,6 +61,7 @@ Data/
  MockActivityStore.cs
  MockAttachmentStore.cs
  MockDropdownStore.cs
+ MockGanttStore.cs
  MockImageStore.cs
  MockNotionBlockStore.cs
  MockNotionDatabaseStore.cs
@@ -80,6 +81,7 @@ Endpoints/
  DiagramHistoryEndpoints.cs
  DocumentEditorEndpoints.cs
  DropdownEndpoints.cs
+ GanttEndpoints.cs
  ImageEndpoints.cs
  ImportExportEndpoints.cs
  NotionEditorEndpoints.cs

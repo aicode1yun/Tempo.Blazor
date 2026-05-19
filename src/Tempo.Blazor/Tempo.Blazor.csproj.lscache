@@ -434,6 +434,15 @@ Components/
   InMemoryScheduleDataProvider.cs
   RecurrenceEngine.cs
   TmGantt.razor.cs
+  TmGanttExportDialog.razor.cs
+  TmGanttFilterPanel.razor.cs
+  TmGanttHistoryDrawer.razor.cs
+  TmGanttImportDialog.razor.cs
+  TmGanttImportMappingDialog.razor.cs
+  TmGanttPortfolio.razor.cs
+  TmGanttReportsPanel.razor.cs
+  TmGanttTaskPanel.razor.cs
+  TmGanttWorkloadView.razor.cs
  Signing/
   DocumentCommentComposerSubmitEventArgs.cs
   DocumentCommentThreadNavigateRequest.cs
@@ -585,6 +594,11 @@ Resources/TmResources.cs
 Services/
  DataGroupingService.cs
  DragDropService.cs
+ GanttExcelImporter.cs
+ GanttJiraImporter.cs
+ GanttMppImporter.cs
+ GanttXlsxExporter.cs
+ GanttXmlExporter.cs
  IndexedDbDocumentOfflineStore.cs
  InMemoryDashboardProvider.cs
  InMemoryNotificationStore.cs
@@ -1148,6 +1162,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor
@@ -1547,6 +1570,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor
@@ -2047,6 +2079,15 @@ Components/
   InMemoryScheduleDataProvider.cs
   RecurrenceEngine.cs
   TmGantt.razor.cs
+  TmGanttExportDialog.razor.cs
+  TmGanttFilterPanel.razor.cs
+  TmGanttHistoryDrawer.razor.cs
+  TmGanttImportDialog.razor.cs
+  TmGanttImportMappingDialog.razor.cs
+  TmGanttPortfolio.razor.cs
+  TmGanttReportsPanel.razor.cs
+  TmGanttTaskPanel.razor.cs
+  TmGanttWorkloadView.razor.cs
  Signing/
   DocumentCommentComposerSubmitEventArgs.cs
   DocumentCommentThreadNavigateRequest.cs
@@ -2196,6 +2237,11 @@ Resources/TmResources.cs
 Services/
  DataGroupingService.cs
  DragDropService.cs
+ GanttExcelImporter.cs
+ GanttJiraImporter.cs
+ GanttMppImporter.cs
+ GanttXlsxExporter.cs
+ GanttXmlExporter.cs
  IndexedDbDocumentOfflineStore.cs
  InMemoryDashboardProvider.cs
  InMemoryNotificationStore.cs
@@ -2754,6 +2800,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor
@@ -3153,6 +3208,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor
@@ -3652,6 +3716,15 @@ Components/
   InMemoryScheduleDataProvider.cs
   RecurrenceEngine.cs
   TmGantt.razor.cs
+  TmGanttExportDialog.razor.cs
+  TmGanttFilterPanel.razor.cs
+  TmGanttHistoryDrawer.razor.cs
+  TmGanttImportDialog.razor.cs
+  TmGanttImportMappingDialog.razor.cs
+  TmGanttPortfolio.razor.cs
+  TmGanttReportsPanel.razor.cs
+  TmGanttTaskPanel.razor.cs
+  TmGanttWorkloadView.razor.cs
  Signing/
   DocumentCommentComposerSubmitEventArgs.cs
   DocumentCommentThreadNavigateRequest.cs
@@ -3801,6 +3874,11 @@ Resources/TmResources.cs
 Services/
  DataGroupingService.cs
  DragDropService.cs
+ GanttExcelImporter.cs
+ GanttJiraImporter.cs
+ GanttMppImporter.cs
+ GanttXlsxExporter.cs
+ GanttXmlExporter.cs
  IndexedDbDocumentOfflineStore.cs
  InMemoryDashboardProvider.cs
  InMemoryNotificationStore.cs
@@ -4359,6 +4437,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor
@@ -4758,6 +4845,15 @@ Components/
   TmPivotTable.razor
  Scheduler/
   TmGantt.razor
+  TmGanttExportDialog.razor
+  TmGanttFilterPanel.razor
+  TmGanttHistoryDrawer.razor
+  TmGanttImportDialog.razor
+  TmGanttImportMappingDialog.razor
+  TmGanttPortfolio.razor
+  TmGanttReportsPanel.razor
+  TmGanttTaskPanel.razor
+  TmGanttWorkloadView.razor
   TmScheduler.razor
   TmSchedulerAgendaView.razor
   TmSchedulerDayView.razor

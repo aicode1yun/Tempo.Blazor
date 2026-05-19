@@ -45,8 +45,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj/Debug/net10.0/Tempo.Blazor.Demo.InteractiveAuto.Client.dll
-/refout:obj/Debug/net10.0/refint/Tempo.Blazor.Demo.InteractiveAuto.Client.dll
+/out:obj\Debug\net10.0\Tempo.Blazor.Demo.InteractiveAuto.Client.dll
+/refout:obj\Debug\net10.0\refint\Tempo.Blazor.Demo.InteractiveAuto.Client.dll
 /target:exe
 /warnaserror-
 /utf8output
@@ -72,7 +72,7 @@ Program.cs
  Tempo.Blazor.Demo.SharedUI/obj/Debug/net10.0/ref/Tempo.Blazor.Demo.SharedUI.dll
  Tempo.Blazor.FluentValidation/obj/Debug/net10.0/ref/Tempo.Blazor.FluentValidation.dll
  Tempo.Blazor/obj/Debug/net10.0/ref/Tempo.Blazor.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -258,7 +258,6 @@ Program.cs
  microsoft.aspnetcore.signalr.client/10.0.5/lib/net10.0/Microsoft.AspNetCore.SignalR.Client.dll
  microsoft.aspnetcore.signalr.common/10.0.5/lib/net10.0/Microsoft.AspNetCore.SignalR.Common.dll
  microsoft.aspnetcore.signalr.protocols.json/10.0.5/lib/net10.0/Microsoft.AspNetCore.SignalR.Protocols.Json.dll
- microsoft.dotnet.hotreload.webassembly.browser/10.0.201/lib/net10.0/Microsoft.DotNet.HotReload.WebAssembly.Browser.dll
  microsoft.extensions.configuration.abstractions/10.0.3/lib/net10.0/Microsoft.Extensions.Configuration.Abstractions.dll
  microsoft.extensions.configuration.binder/10.0.3/lib/net10.0/Microsoft.Extensions.Configuration.Binder.dll
  microsoft.extensions.configuration.fileextensions/10.0.3/lib/net10.0/Microsoft.Extensions.Configuration.FileExtensions.dll
@@ -288,18 +287,18 @@ Program.cs
  zxing.net/0.16.10/lib/net9.0/zxing.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk.Razor/source-generators/
  Microsoft.AspNetCore.Razor.Utilities.Shared.dll
  Microsoft.CodeAnalysis.Razor.Compiler.dll
  Microsoft.Extensions.ObjectPool.dll
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/
@@ -307,12 +306,12 @@ Program.cs
  microsoft.extensions.logging.abstractions/10.0.5/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Logging.Generators.dll
  microsoft.extensions.options/10.0.5/analyzers/dotnet/roslyn4.4/cs/Microsoft.Extensions.Options.SourceGeneration.dll
  microsoft.extensions.validation/10.0.3/analyzers/dotnet/cs/Microsoft.Extensions.Validation.ValidationsGenerator.dll
- microsoft.net.illink.tasks/10.0.5/analyzers/dotnet/cs/
+ microsoft.net.illink.tasks/10.0.8/analyzers/dotnet/cs/
   ILLink.CodeFixProvider.dll
   ILLink.RoslynAnalyzer.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.Demo.InteractiveAuto.Client.GeneratedMSBuildEditorConfig.editorconfig
 
 [additionalFiles]

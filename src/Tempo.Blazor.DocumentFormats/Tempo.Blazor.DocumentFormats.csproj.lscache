@@ -14,7 +14,7 @@ lastDtbSucceeded
 
 [properties]
 AssemblyName=Tempo.Blazor.DocumentFormats
-CommandLineArgsForDesignTimeEvaluation=-langversion:latest -define:TRACE -doc:"obj\Debug/net10.0/Tempo.Blazor.DocumentFormats.xml"
+CommandLineArgsForDesignTimeEvaluation=-langversion:latest -define:TRACE -doc:"obj\Debug\net10.0\Tempo.Blazor.DocumentFormats.xml"
 CompilerGeneratedFilesOutputPath=
 MaxSupportedLangVersion=14.0
 ProjectAssetsFile=<PATH>obj/project.assets.json
@@ -36,7 +36,7 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /nostdlib+
 /errorreport:prompt
 /warn:10
-/doc:obj/Debug/net10.0/Tempo.Blazor.DocumentFormats.xml
+/doc:obj\Debug\net10.0\Tempo.Blazor.DocumentFormats.xml
 /define:TRACE;DEBUG;NET;NET10_0;NETCOREAPP;NET5_0_OR_GREATER;NET6_0_OR_GREATER;NET7_0_OR_GREATER;NET8_0_OR_GREATER;NET9_0_OR_GREATER;NET10_0_OR_GREATER;NETCOREAPP1_0_OR_GREATER;NETCOREAPP1_1_OR_GREATER;NETCOREAPP2_0_OR_GREATER;NETCOREAPP2_1_OR_GREATER;NETCOREAPP2_2_OR_GREATER;NETCOREAPP3_0_OR_GREATER;NETCOREAPP3_1_OR_GREATER
 /highentropyva+
 /nullable:enable
@@ -45,8 +45,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj/Debug/net10.0/Tempo.Blazor.DocumentFormats.dll
-/refout:obj/Debug/net10.0/refint/Tempo.Blazor.DocumentFormats.dll
+/out:obj\Debug\net10.0\Tempo.Blazor.DocumentFormats.dll
+/refout:obj\Debug\net10.0\refint\Tempo.Blazor.DocumentFormats.dll
 /target:library
 /warnaserror-
 /utf8output
@@ -74,7 +74,7 @@ Odt/
 
 [metadataReferences]
 ../Tempo.Blazor.Abstractions/obj/Debug/net10.0/ref/Tempo.Blazor.Abstractions.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -249,17 +249,17 @@ Odt/
  system.io.packaging/8.0.1/lib/net8.0/System.IO.Packaging.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.DocumentFormats.GeneratedMSBuildEditorConfig.editorconfig

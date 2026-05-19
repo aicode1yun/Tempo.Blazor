@@ -1,0 +1,39 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-gantt-reports-panel" data-testid="gantt-reports-panel">
+    <div class="tm-gantt-reports-panel__header">
+        <span class="tm-gantt-reports-panel__title">@Loc["TmGantt_Reports"]</span>
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary"
+                  data-testid="reports-new-btn"
+                  OnClick="() => _showNewForm = !_showNewForm">
+            <TmIcon Name="plus" Size="IconSize.Xs" />
+            @Loc["TmGanttReportsPanel_NewReport"]
+        </TmButton>
+    </div>
+
+    @if (Reports.Count == 0)
+    {
+        <p class="tm-gantt-reports-panel__empty">@Loc["TmGanttReportsPanel_NoReports"]</p>
+    }
+    else
+    {
+        <ul class="tm-gantt-reports-panel__list">
+            @foreach (var report in Reports)
+            {
+                <li class="tm-gantt-reports-panel__item" data-testid="@($"report-item-{report.Id}")">
+                    <div class="tm-gantt-reports-panel__item-info">
+                        <span class="tm-gantt-reports-panel__item-name">@report.Name</span>
+                        <span class="tm-gantt-reports-panel__item-type">@Loc[$"GanttReportType_{report.Type}"]</span>
+                    </div>
+                    <TmButton Size="ButtonSize.Xs" Variant="ButtonVariant.Ghost"
+                              data-testid="@($"report-run-{report.Id}")"
+                              OnClick="() => RunReportAsync(report)">
+                        <TmIcon Name="play" Size="IconSize.Xs" />
+                        @Loc["TmGantt_RunReport"]
+                    </TmButton>
+                </li>
+            }
+        </ul>
+    }
+</div>

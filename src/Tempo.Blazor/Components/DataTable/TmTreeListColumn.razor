@@ -33,6 +33,9 @@
     /// <summary>Custom header render fragment (replaces plain <see cref="Title"/> text when set).</summary>
     [Parameter] public RenderFragment? HeaderTemplate { get; set; }
 
+    /// <summary>Optional .NET format string applied to the cell value (e.g. "{0:C0}").</summary>
+    [Parameter] public string? Format { get; set; }
+
     protected override void OnInitialized()
     {
         Parent?.AddColumn(this);

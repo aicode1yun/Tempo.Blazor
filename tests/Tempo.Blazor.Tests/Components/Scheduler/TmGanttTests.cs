@@ -1,5 +1,6 @@
 using Bunit;
 using FluentAssertions;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Scheduler;
 using Tempo.Blazor.Tests.Localization;
@@ -148,5 +149,107 @@ public class TmGanttTests : LocalizationTestBase
         // Week view header should contain "W" for week number
         var headerText = cut.Find(".tm-gantt__timeline-header").TextContent;
         headerText.Should().Contain("W");
+    }
+
+    [Fact]
+    public void TmGantt_TimelineContent_HasExplicitHeight()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var content = cut.Find(".tm-gantt__timeline-content");
+        var style = content.GetAttribute("style");
+        style.Should().Contain("height:");
+        // 4 sample tasks * 40px RowHeight = 160px
+        style.Should().Contain("160");
+    }
+
+    [Fact]
+    public void TmGantt_TimelineBody_HasVerticalScrollContainer()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var body = cut.Find(".tm-gantt__timeline-body");
+        body.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TmGantt_TimelineContainer_HasHorizontalOverflow()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var timeline = cut.Find(".tm-gantt__timeline");
+        timeline.Should().NotBeNull();
+    }
+
+    [Fact]
+    public void TmGantt_Panning_Class_Toggles_OnMouseDownUp()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var timeline = cut.Find(".tm-gantt__timeline");
+        timeline.ClassList.Should().NotContain("tm-gantt__timeline--panning");
+
+        // Mouse down starts panning
+        timeline.MouseDown(new MouseEventArgs { Button = 0, ClientX = 100, ClientY = 100 });
+        cut.Find(".tm-gantt__timeline").ClassList.Should().Contain("tm-gantt__timeline--panning");
+
+        // Mouse up ends panning
+        timeline.MouseUp(new MouseEventArgs { Button = 0 });
+        cut.Find(".tm-gantt__timeline").ClassList.Should().NotContain("tm-gantt__timeline--panning");
+    }
+
+    [Fact]
+    public async Task TmGantt_Wheel_ShiftKey_Pans_Horizontally()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var timeline = cut.Find(".tm-gantt__timeline");
+
+        // Should not throw; in bUnit loose JS mode scroll read returns 0, write is no-op
+        await timeline.WheelAsync(new WheelEventArgs { ShiftKey = true, DeltaY = 50 });
+    }
+
+    [Fact]
+    public async Task TmGantt_Wheel_CtrlKey_Zooms()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var timeline = cut.Find(".tm-gantt__timeline");
+
+        // Ctrl + wheel down (negative delta) = zoom in
+        await timeline.WheelAsync(new WheelEventArgs { CtrlKey = true, DeltaY = -50 });
+
+        // Ctrl + wheel up (positive delta) = zoom out
+        await timeline.WheelAsync(new WheelEventArgs { CtrlKey = true, DeltaY = 50 });
+    }
+
+    [Fact]
+    public async Task TmGantt_ScrollSync_TreeScroll_DoesNotThrow()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var treeBody = cut.Find(".tm-gantt__tree-body");
+
+        // Should not throw in bUnit loose JS mode
+        await treeBody.TriggerEventAsync("onscroll", new EventArgs());
+    }
+
+    [Fact]
+    public async Task TmGantt_ScrollSync_TimelineBodyScroll_DoesNotThrow()
+    {
+        var cut = RenderComponent<TmGantt>(p => p
+            .Add(c => c.Data, GetSampleTasks()));
+
+        var timelineBody = cut.Find(".tm-gantt__timeline-body");
+
+        // Should not throw in bUnit loose JS mode
+        await timelineBody.TriggerEventAsync("onscroll", new EventArgs());
     }
 }

@@ -1,0 +1,60 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+@using Tempo.Blazor.Components.Inputs
+
+<div class="tm-gantt__filter-panel-inner">
+    <div class="tm-gantt__filter-panel-header">
+        <span class="tm-gantt__filter-panel-title">@Loc["TmGantt_Filter"]</span>
+        <button type="button" class="tm-gantt__filter-panel-close" @onclick="@(_ => OnClose.InvokeAsync())">
+            <TmIcon Name="x" Size="IconSize.Sm" />
+        </button>
+    </div>
+
+    @foreach (var filter in _editFilters)
+    {
+        <div class="tm-gantt__filter-row">
+            <select class="tm-input tm-gantt__filter-field" value="@filter.Field"
+                    @onchange="e => UpdateFilterField(filter, e.Value?.ToString() ?? string.Empty)">
+                <option value="Title">@Loc["TmGantt_FilterFieldTitle"]</option>
+                <option value="Status">@Loc["TmGantt_FilterFieldStatus"]</option>
+                <option value="Priority">@Loc["TmGantt_FilterFieldPriority"]</option>
+            </select>
+            <select class="tm-input tm-gantt__filter-op" value="@filter.Operator"
+                    @onchange="e => UpdateFilterOp(filter, Enum.Parse<GanttFilterOperator>(e.Value?.ToString() ?? nameof(GanttFilterOperator.Equals)))">
+                @foreach (var op in Enum.GetValues<GanttFilterOperator>())
+                {
+                    <option value="@op">@op</option>
+                }
+            </select>
+            @if (filter.Operator is not GanttFilterOperator.IsEmpty and not GanttFilterOperator.IsNotEmpty)
+            {
+                <input type="text" class="tm-input tm-gantt__filter-value"
+                       value="@filter.Value"
+                       @onchange="e => UpdateFilterValue(filter, e.Value?.ToString())" />
+            }
+            <button type="button" class="tm-gantt__filter-remove"
+                    @onclick="() => RemoveFilter(filter)">
+                <TmIcon Name="x" Size="IconSize.Sm" />
+            </button>
+        </div>
+    }
+
+    <div class="tm-gantt__filter-panel-actions">
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
+                  OnClick="AddFilter" data-testid="filter-add">
+            <TmIcon Name="plus" Size="IconSize.Sm" />
+            @Loc["TmGantt_AddFilter"]
+        </TmButton>
+        <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Primary"
+                  OnClick="ApplyAsync" data-testid="filter-apply">
+            @Loc["TmGantt_ApplyFilters"]
+        </TmButton>
+        @if (_editFilters.Count > 0)
+        {
+            <TmButton Size="ButtonSize.Sm" Variant="ButtonVariant.Ghost"
+                      OnClick="ClearAll" data-testid="filter-clear">
+                @Loc["TmGantt_ClearFilters"]
+            </TmButton>
+        }
+    </div>
+</div>

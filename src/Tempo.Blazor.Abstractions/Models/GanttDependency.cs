@@ -16,4 +16,14 @@ public class GanttDependency
 
     /// <summary>Type of dependency: 0=Finish-Start (default), 1=Start-Start, 2=Finish-Finish, 3=Start-Finish.</summary>
     public int Type { get; set; }
+
+    /// <summary>Strongly-typed dependency type.</summary>
+    public GanttDependencyType DepType
+    {
+        get => (GanttDependencyType)Type;
+        set => Type = (int)value;
+    }
+
+    /// <summary>Lag (positive) or lead (negative) in calendar days.</summary>
+    public int LagDays { get; set; }
 }

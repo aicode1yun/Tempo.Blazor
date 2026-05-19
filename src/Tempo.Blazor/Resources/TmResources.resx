@@ -2161,6 +2161,8 @@
   <data name="TmGantt_DayView" xml:space="preserve"><value>Day</value></data>
   <data name="TmGantt_WeekView" xml:space="preserve"><value>Week</value></data>
   <data name="TmGantt_MonthView" xml:space="preserve"><value>Month</value></data>
+  <data name="TmGantt_FitToScreen" xml:space="preserve"><value>Fit to screen</value></data>
+  <data name="TmGantt_ToggleTaskPanel" xml:space="preserve"><value>Toggle task panel</value></data>
   <data name="TmGantt_TaskTitle" xml:space="preserve"><value>Task</value></data>
   <data name="TmGantt_Start" xml:space="preserve"><value>Start</value></data>
   <data name="TmGantt_End" xml:space="preserve"><value>End</value></data>
@@ -3131,5 +3133,259 @@
   <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Loading…</value></data>
   <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Create token</value></data>
   <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Create token "{0}"</value></data>
+  <data name="TmGanttTaskPanel_Title" xml:space="preserve"><value>Title</value></data>
+  <data name="TmGanttTaskPanel_TitlePlaceholder" xml:space="preserve"><value>Enter task title...</value></data>
+  <data name="TmGanttTaskPanel_Start" xml:space="preserve"><value>Start</value></data>
+  <data name="TmGanttTaskPanel_End" xml:space="preserve"><value>End</value></data>
+  <data name="TmGanttTaskPanel_PercentComplete" xml:space="preserve"><value>Percent complete</value></data>
+  <data name="TmGanttTaskPanel_IsMilestone" xml:space="preserve"><value>Milestone</value></data>
+  <data name="TmGanttTaskPanel_ParentTask" xml:space="preserve"><value>Parent task</value></data>
+  <data name="TmGanttTaskPanel_NoParent" xml:space="preserve"><value>No parent</value></data>
+  <data name="TmGanttTaskPanel_Save" xml:space="preserve"><value>Save</value></data>
+  <data name="TmGanttTaskPanel_Cancel" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmGanttTaskPanel_Close" xml:space="preserve"><value>Close panel</value></data>
+  <data name="TmGanttTaskPanel_ErrorInvalidStart" xml:space="preserve"><value>Invalid start date.</value></data>
+  <data name="TmGanttTaskPanel_ErrorInvalidEnd" xml:space="preserve"><value>Invalid end date.</value></data>
+  <data name="TmGanttTaskPanel_ErrorStartAfterEnd" xml:space="preserve"><value>Start date must be before end date.</value></data>
+  <data name="TmGanttTaskPanel_ErrorPercentRange" xml:space="preserve"><value>Percent must be between 0 and 100.</value></data>
+  <data name="TmGanttTaskPanel_Dependencies" xml:space="preserve"><value>Dependencies</value></data>
+  <data name="TmGanttTaskPanel_AddDependency" xml:space="preserve"><value>Add dependency</value></data>
+  <data name="TmGanttTaskPanel_DependencyFrom" xml:space="preserve"><value>From task</value></data>
+  <data name="TmGanttTaskPanel_DependencyType" xml:space="preserve"><value>Type</value></data>
+  <data name="TmGanttTaskPanel_SelectTask" xml:space="preserve"><value>Select task</value></data>
+  <data name="TmGanttTaskPanel_Confirm" xml:space="preserve"><value>Add</value></data>
+  <data name="TmGanttTaskPanel_CancelAdd" xml:space="preserve"><value>Cancel</value></data>
+  <data name="TmGanttTaskPanel_ErrorDuplicateDependency" xml:space="preserve"><value>This dependency already exists.</value></data>
+  <data name="TmGanttTaskPanel_ErrorCyclicDependency" xml:space="preserve"><value>This would create a cyclic dependency.</value></data>
+  <data name="TmGanttTaskPanel_ConfirmRemoveDependency" xml:space="preserve"><value>Remove this dependency?</value></data>
+  <data name="TmGantt_AddTask" xml:space="preserve"><value>Add task</value></data>
+  <data name="TmGantt_NewTaskTitle" xml:space="preserve"><value>New task</value></data>
+  <data name="TmGantt_AddTaskAbove" xml:space="preserve"><value>Add task above</value></data>
+  <data name="TmGantt_AddTaskBelow" xml:space="preserve"><value>Add task below</value></data>
+  <data name="TmGantt_AddTaskChild" xml:space="preserve"><value>Add child task</value></data>
+  <data name="TmGantt_DeleteTask" xml:space="preserve"><value>Delete task</value></data>
+  <data name="TmGantt_DuplicateTask" xml:space="preserve"><value>Duplicate task</value></data>
+  <!-- F1.1 Color / F1.3 Tooltip -->
+  <data name="TmGantt_TooltipStart" xml:space="preserve"><value>Start</value></data>
+  <data name="TmGantt_TooltipEnd" xml:space="preserve"><value>End</value></data>
+  <data name="TmGantt_TooltipProgress" xml:space="preserve"><value>Progress</value></data>
+  <!-- F1.4 Status / Priority -->
+  <data name="GanttStatus_Open" xml:space="preserve"><value>Open</value></data>
+  <data name="GanttStatus_InProgress" xml:space="preserve"><value>In Progress</value></data>
+  <data name="GanttStatus_Done" xml:space="preserve"><value>Done</value></data>
+  <data name="GanttStatus_Closed" xml:space="preserve"><value>Closed</value></data>
+  <data name="GanttPriority_Highest" xml:space="preserve"><value>Highest</value></data>
+  <data name="GanttPriority_High" xml:space="preserve"><value>High</value></data>
+  <data name="GanttPriority_Medium" xml:space="preserve"><value>Medium</value></data>
+  <data name="GanttPriority_Low" xml:space="preserve"><value>Low</value></data>
+  <data name="GanttPriority_Lowest" xml:space="preserve"><value>Lowest</value></data>
+  <data name="TmGantt_Status" xml:space="preserve"><value>Status</value></data>
+  <!-- F1.5 Deadline -->
+  <data name="GanttTask_Deadline" xml:space="preserve"><value>Deadline</value></data>
+  <data name="GanttTask_DeadlineExceeded" xml:space="preserve"><value>Deadline exceeded</value></data>
+  <!-- F1.6 Today -->
+  <data name="TmGantt_Today" xml:space="preserve"><value>Today</value></data>
+  <!-- F1.8 Expand / Collapse All -->
+  <data name="TmGantt_ExpandAll" xml:space="preserve"><value>Expand all</value></data>
+  <data name="TmGantt_CollapseAll" xml:space="preserve"><value>Collapse all</value></data>
+  <!-- F1.9 View Settings -->
+  <data name="TmGantt_ViewSettings" xml:space="preserve"><value>View settings</value></data>
+  <data name="TmGantt_ShowTodayMarker" xml:space="preserve"><value>Show today marker</value></data>
+  <data name="TmGantt_ShowDaysOff" xml:space="preserve"><value>Show days off</value></data>
+  <data name="TmGantt_ShowClosedTasks" xml:space="preserve"><value>Show closed tasks</value></data>
+  <data name="TmGantt_TaskNameLocation" xml:space="preserve"><value>Task name</value></data>
+  <data name="TmGantt_TaskNameInside" xml:space="preserve"><value>Inside bar</value></data>
+  <data name="TmGantt_TaskNameBeside" xml:space="preserve"><value>Next to bar</value></data>
+  <data name="TmGantt_TaskNameHidden" xml:space="preserve"><value>Hidden</value></data>
+  <data name="TmGantt_ViewDensity" xml:space="preserve"><value>Row density</value></data>
+  <data name="TmGantt_ViewComfortable" xml:space="preserve"><value>Comfortable</value></data>
+  <data name="TmGantt_ViewCompact" xml:space="preserve"><value>Compact</value></data>
+  <data name="TmGantt_Theme" xml:space="preserve"><value>Theme</value></data>
+  <data name="TmGantt_ThemeAuto" xml:space="preserve"><value>Auto</value></data>
+  <data name="TmGantt_ThemeLight" xml:space="preserve"><value>Light</value></data>
+  <data name="TmGantt_ThemeDark" xml:space="preserve"><value>Dark</value></data>
+
+  <!-- ═══ Phase 2 additions ═══ -->
+  <data name="TmGantt_WBS" xml:space="preserve"><value>WBS</value></data>
+  <data name="TmGantt_CascadeSort" xml:space="preserve"><value>Sort by date</value></data>
+  <data name="TmGantt_BulkSelected" xml:space="preserve"><value>selected</value></data>
+  <data name="TmGantt_BulkMarkDone" xml:space="preserve"><value>Mark done</value></data>
+  <data name="TmGantt_BulkMarkInProgress" xml:space="preserve"><value>Mark in progress</value></data>
+  <data name="TmGanttTaskPanel_Duration" xml:space="preserve"><value>Duration</value></data>
+  <data name="TmGanttTaskPanel_Days" xml:space="preserve"><value>days</value></data>
+  <data name="TmGanttTaskPanel_Deadline" xml:space="preserve"><value>Deadline</value></data>
+  <data name="TmGanttTaskPanel_Estimation" xml:space="preserve"><value>Estimation (h)</value></data>
+  <data name="TmGanttTaskPanel_TimeLog" xml:space="preserve"><value>Logged (h)</value></data>
+  <data name="TmGanttTaskPanel_Color" xml:space="preserve"><value>Color</value></data>
+
+  <!-- Phase 3: Auto-scheduling -->
+  <data name="TmGantt_AutoSchedule" xml:space="preserve"><value>Auto-schedule</value></data>
+  <data name="TmGantt_CircularDependency" xml:space="preserve"><value>Circular dependency detected</value></data>
+
+  <!-- Phase 3: Critical Path -->
+  <data name="TmGantt_CriticalPath" xml:space="preserve"><value>Critical path</value></data>
+
+  <!-- Phase 3: Baseline -->
+  <data name="TmGantt_SaveBaseline" xml:space="preserve"><value>Save baseline</value></data>
+  <data name="TmGantt_Baseline" xml:space="preserve"><value>Baseline</value></data>
+  <data name="TmGantt_NoBaseline" xml:space="preserve"><value>No baseline</value></data>
+  <data name="TmGantt_BaselineName" xml:space="preserve"><value>Baseline name</value></data>
+  <data name="TmGantt_BaselineDeviation" xml:space="preserve"><value>Deviation from baseline</value></data>
+
+  <!-- Phase 3: Custom Fields -->
+  <data name="TmGantt_AddCustomField" xml:space="preserve"><value>Add custom field</value></data>
+  <data name="TmGantt_CustomFieldName" xml:space="preserve"><value>Field name</value></data>
+  <data name="GanttFieldType_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="GanttFieldType_Number" xml:space="preserve"><value>Number</value></data>
+  <data name="GanttFieldType_Date" xml:space="preserve"><value>Date</value></data>
+  <data name="GanttFieldType_List" xml:space="preserve"><value>List</value></data>
+  <data name="GanttFieldType_Checkbox" xml:space="preserve"><value>Checkbox</value></data>
+  <data name="GanttFieldType_Color" xml:space="preserve"><value>Color</value></data>
+  <data name="GanttFieldType_Multiselect" xml:space="preserve"><value>Multi-select</value></data>
+  <data name="GanttFieldType_People" xml:space="preserve"><value>People</value></data>
+  <data name="GanttFieldType_Labels" xml:space="preserve"><value>Labels</value></data>
+
+  <!-- Phase 3: Filter Panel -->
+  <data name="TmGantt_Filter" xml:space="preserve"><value>Filter</value></data>
+  <data name="TmGantt_AddFilter" xml:space="preserve"><value>Add filter</value></data>
+  <data name="TmGantt_FilterField" xml:space="preserve"><value>Field</value></data>
+  <data name="TmGantt_FilterOperator" xml:space="preserve"><value>Operator</value></data>
+  <data name="TmGantt_FilterValue" xml:space="preserve"><value>Value</value></data>
+  <data name="TmGantt_ClearFilters" xml:space="preserve"><value>Clear all filters</value></data>
+  <data name="TmGantt_ActiveFilters" xml:space="preserve"><value>Active filters</value></data>
+  <data name="TmGantt_ApplyFilters" xml:space="preserve"><value>Apply</value></data>
+  <data name="TmGantt_FilterFieldTitle" xml:space="preserve"><value>Title</value></data>
+  <data name="TmGantt_FilterFieldStatus" xml:space="preserve"><value>Status</value></data>
+  <data name="TmGantt_FilterFieldPriority" xml:space="preserve"><value>Priority</value></data>
+
+  <!-- Phase 4: Rich Description, Attachments, Comments -->
+  <data name="GanttTask_Description" xml:space="preserve"><value>Description</value></data>
+  <data name="GanttTask_DescriptionPlaceholder" xml:space="preserve"><value>Add a description...</value></data>
+  <data name="GanttTask_Attachments" xml:space="preserve"><value>Attachments</value></data>
+  <data name="TmGantt_UploadFile" xml:space="preserve"><value>Upload file</value></data>
+  <data name="TmGantt_RemoveAttachment" xml:space="preserve"><value>Remove</value></data>
+  <data name="GanttTask_Comments" xml:space="preserve"><value>Comments</value></data>
+  <data name="TmGantt_AddComment" xml:space="preserve"><value>Add comment</value></data>
+  <data name="TmGantt_CommentPlaceholder" xml:space="preserve"><value>Write a comment...</value></data>
+
+  <!-- Phase 4: Export -->
+  <data name="TmGantt_Export" xml:space="preserve"><value>Export</value></data>
+  <data name="TmGantt_ExportPdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="TmGantt_ExportPng" xml:space="preserve"><value>PNG</value></data>
+  <data name="TmGantt_ExportXlsx" xml:space="preserve"><value>Excel (XLSX)</value></data>
+  <data name="TmGantt_ExportXml" xml:space="preserve"><value>MS Project XML</value></data>
+  <data name="TmGantt_ExportOptions" xml:space="preserve"><value>Export options</value></data>
+  <data name="TmGantt_PaperSize" xml:space="preserve"><value>Paper size</value></data>
+  <data name="TmGantt_Landscape" xml:space="preserve"><value>Landscape</value></data>
+  <data name="TmGantt_ExportZoomLevel" xml:space="preserve"><value>Zoom level</value></data>
+  <data name="TmGantt_ExportPreview" xml:space="preserve"><value>Preview</value></data>
+
+  <!-- Phase 4: Import -->
+  <data name="TmGantt_Import" xml:space="preserve"><value>Import</value></data>
+  <data name="TmGantt_ImportExcel" xml:space="preserve"><value>Import from Excel</value></data>
+  <data name="TmGantt_ImportMpp" xml:space="preserve"><value>Import MS Project</value></data>
+  <data name="TmGantt_ImportJira" xml:space="preserve"><value>Import from JIRA</value></data>
+  <data name="TmGantt_ImportError" xml:space="preserve"><value>Import failed: {0}</value></data>
+  <data name="TmGantt_ImportMapping" xml:space="preserve"><value>Column mapping</value></data>
+  <data name="TmGantt_ImportSourceColumn" xml:space="preserve"><value>Source column</value></data>
+  <data name="TmGantt_ImportTargetField" xml:space="preserve"><value>Target field</value></data>
+  <data name="TmGantt_ImportPreview" xml:space="preserve"><value>Preview</value></data>
+  <data name="TmGantt_ImportJiraUrl" xml:space="preserve"><value>JIRA URL</value></data>
+  <data name="TmGantt_ImportJiraToken" xml:space="preserve"><value>API token</value></data>
+  <data name="TmGantt_ImportJiraProject" xml:space="preserve"><value>Project key</value></data>
+
+  <!-- Phase 4: History / Audit Log -->
+  <data name="TmGantt_History" xml:space="preserve"><value>History</value></data>
+  <data name="TmGantt_Rollback" xml:space="preserve"><value>Rollback</value></data>
+  <data name="TmGantt_TimeTravel" xml:space="preserve"><value>Time travel</value></data>
+  <data name="GanttHistory_TaskChanged" xml:space="preserve"><value>Task changed</value></data>
+  <data name="GanttHistory_StatusChanged" xml:space="preserve"><value>Status changed</value></data>
+  <data name="GanttHistory_PriorityChanged" xml:space="preserve"><value>Priority changed</value></data>
+  <data name="GanttHistory_DependencyChanged" xml:space="preserve"><value>Dependency changed</value></data>
+
+  <!-- Phase 5: Enterprise Views -->
+  <data name="TmGantt_Workload" xml:space="preserve"><value>Workload</value></data>
+  <data name="TmGantt_WorkloadView" xml:space="preserve"><value>Workload View</value></data>
+  <data name="TmGantt_Overloaded" xml:space="preserve"><value>Overloaded</value></data>
+  <data name="TmGantt_WorkloadHours" xml:space="preserve"><value>Hours</value></data>
+  <data name="TmGantt_WorkloadPercent" xml:space="preserve"><value>Percent</value></data>
+  <data name="TmGantt_ListView" xml:space="preserve"><value>List</value></data>
+  <data name="TmGantt_CalendarView" xml:space="preserve"><value>Calendar</value></data>
+  <data name="TmGantt_BoardView" xml:space="preserve"><value>Board</value></data>
+  <data name="TmGantt_PortfolioView" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="TmGantt_Portfolio" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="TmGantt_DashboardStatus" xml:space="preserve"><value>Task Status</value></data>
+  <data name="TmGantt_DashboardTime" xml:space="preserve"><value>Time Spent</value></data>
+  <data name="TmGantt_DashboardMilestones" xml:space="preserve"><value>Milestones</value></data>
+  <data name="TmGantt_DashboardBudget" xml:space="preserve"><value>Budget Overview</value></data>
+  <data name="TmGantt_Notifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="TmGantt_NotifyOnAssign" xml:space="preserve"><value>Notify on assign</value></data>
+  <data name="TmGantt_NotifyOnMention" xml:space="preserve"><value>Notify on mention</value></data>
+  <data name="TmGantt_NotifyOnDeadline" xml:space="preserve"><value>Notify on deadline</value></data>
+
+  <!-- F5.2 Realtime -->
+  <data name="TmGantt_RealtimeSyncing" xml:space="preserve"><value>Syncing...</value></data>
+  <data name="TmGantt_RealtimeConnected" xml:space="preserve"><value>Connected</value></data>
+  <data name="TmGantt_RealtimeDisconnected" xml:space="preserve"><value>Disconnected</value></data>
+
+  <!-- F5.8 Dashboard -->
+  <data name="TmGantt_Dashboard" xml:space="preserve"><value>Dashboard</value></data>
+  <data name="TmGantt_TaskStatusChart" xml:space="preserve"><value>Task Status</value></data>
+  <data name="TmGantt_MilestonesWidget" xml:space="preserve"><value>Milestones</value></data>
+  <data name="TmGantt_BudgetWidget" xml:space="preserve"><value>Budget Overview</value></data>
+
+  <!-- F5.9 Budget -->
+  <data name="GanttTask_Budget" xml:space="preserve"><value>Budget Hours</value></data>
+  <data name="GanttTask_ActualCost" xml:space="preserve"><value>Actual Cost</value></data>
+  <data name="GanttAssignee_HourlyRate" xml:space="preserve"><value>Hourly Rate</value></data>
+
+  <!-- F5.10 People / Resource Calendar -->
+  <data name="TmGantt_PeopleView" xml:space="preserve"><value>People</value></data>
+  <data name="TmGantt_ResourceCalendar" xml:space="preserve"><value>Resource Calendar</value></data>
+  <data name="TmGantt_Vacation" xml:space="preserve"><value>Vacation</value></data>
+  <data name="TmGantt_DayOff" xml:space="preserve"><value>Day Off</value></data>
+  <data name="TmGantt_AddVacation" xml:space="preserve"><value>Add Vacation</value></data>
+  <data name="TmGantt_RemoveVacation" xml:space="preserve"><value>Remove Vacation</value></data>
+
+  <!-- F5.11 Virtual Resources -->
+  <data name="TmGantt_VirtualResource" xml:space="preserve"><value>Virtual Resource</value></data>
+  <data name="TmGantt_AddVirtualResource" xml:space="preserve"><value>Add Virtual Resource</value></data>
+  <data name="TmGantt_VirtualResourceName" xml:space="preserve"><value>Resource Name</value></data>
+
+  <!-- F5.12 Time Tracker -->
+  <data name="TmGantt_StartTimer" xml:space="preserve"><value>Start Timer</value></data>
+  <data name="TmGantt_StopTimer" xml:space="preserve"><value>Stop Timer</value></data>
+  <data name="TmGantt_TimerRunning" xml:space="preserve"><value>Timer Running</value></data>
+  <data name="TmGantt_TimeLog" xml:space="preserve"><value>Time Log</value></data>
+  <data name="TmGantt_TimeLogEntry" xml:space="preserve"><value>Log Entry</value></data>
+  <data name="TmGantt_TotalLogged" xml:space="preserve"><value>Total Logged</value></data>
+
+  <!-- F5.13 Sidebar -->
+  <data name="TmGantt_SidebarTasks" xml:space="preserve"><value>Tasks</value></data>
+  <data name="TmGantt_SidebarWorkload" xml:space="preserve"><value>Workload</value></data>
+  <data name="TmGantt_SidebarHistory" xml:space="preserve"><value>History</value></data>
+  <data name="TmGantt_SidebarNotifications" xml:space="preserve"><value>Notifications</value></data>
+  <data name="TmGantt_HistoryEmpty" xml:space="preserve"><value>No history yet.</value></data>
+  <data name="TmGantt_SidebarReports" xml:space="preserve"><value>Reports</value></data>
+  <data name="TmGantt_Reports" xml:space="preserve"><value>Reports</value></data>
+  <data name="TmGantt_NewReport" xml:space="preserve"><value>New Report</value></data>
+  <data name="TmGantt_RunReport" xml:space="preserve"><value>Run Report</value></data>
+  <data name="GanttReportType_StatusSummary" xml:space="preserve"><value>Status Summary</value></data>
+  <data name="GanttReportType_TimeSpent" xml:space="preserve"><value>Time Spent</value></data>
+  <data name="GanttReportType_ResourceUtilization" xml:space="preserve"><value>Resource Utilization</value></data>
+  <data name="GanttReportType_BudgetOverview" xml:space="preserve"><value>Budget Overview</value></data>
+  <data name="GanttReportType_MilestoneProgress" xml:space="preserve"><value>Milestone Progress</value></data>
+
+  <!-- F5.14 Group Rollup -->
+  <data name="TmGantt_UseManualDates" xml:space="preserve"><value>Use Manual Dates</value></data>
+  <data name="TmGantt_GroupRollup" xml:space="preserve"><value>Group Rollup</value></data>
+  <data name="TmGanttTaskPanel_BudgetSection" xml:space="preserve"><value>Budget &amp; Cost</value></data>
+  <data name="TmGanttReportsPanel_NoReports" xml:space="preserve"><value>No reports defined.</value></data>
+  <data name="TmGanttReportsPanel_NewReport" xml:space="preserve"><value>New Report</value></data>
+  <data name="TmGantt_NotifyOnAssignEmail" xml:space="preserve"><value>Email on assign</value></data>
+  <data name="TmGantt_NotifyOnMentionEmail" xml:space="preserve"><value>Email on mention</value></data>
+  <data name="TmGantt_NotifyOnAssignPush" xml:space="preserve"><value>Push on assign</value></data>
+  <data name="TmGantt_NotifyOnMentionPush" xml:space="preserve"><value>Push on mention</value></data>
+  <data name="TmGantt_NotifyOnDeadlinePush" xml:space="preserve"><value>Push on deadline</value></data>
 
 </root>

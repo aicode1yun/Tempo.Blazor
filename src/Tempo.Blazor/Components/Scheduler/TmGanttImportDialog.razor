@@ -1,0 +1,88 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+@using Microsoft.AspNetCore.Components.Forms
+
+@if (IsOpen)
+{
+    <div class="tm-gantt__dialog-overlay" @onclick="OnClose">
+        <div class="tm-gantt__dialog tm-gantt__import-dialog" @onclick:stopPropagation>
+            <div class="tm-gantt__dialog-header">
+                <span class="tm-gantt__dialog-title">@Loc["TmGantt_Import"]</span>
+                <button type="button" class="tm-gantt__dialog-close" @onclick="OnClose">
+                    <TmIcon Name="x" />
+                </button>
+            </div>
+
+            <div class="tm-gantt__dialog-body">
+                @if (!string.IsNullOrEmpty(_errorMessage))
+                {
+                    <div class="tm-gantt-task-panel__error" data-testid="import-error">
+                        <TmIcon Name="alert-circle" />
+                        <span>@_errorMessage</span>
+                    </div>
+                }
+
+                <!-- Import source tabs -->
+                <div class="tm-gantt__import-tabs">
+                    <button type="button"
+                            class="tm-gantt__import-tab @(_tab == ImportTab.Excel ? "tm-gantt__import-tab--active" : "")"
+                            @onclick="() => _tab = ImportTab.Excel">
+                        <TmIcon Name="table" Size="IconSize.Sm" />
+                        @Loc["TmGantt_ImportExcel"]
+                    </button>
+                    <button type="button"
+                            class="tm-gantt__import-tab @(_tab == ImportTab.Mpp ? "tm-gantt__import-tab--active" : "")"
+                            @onclick="() => _tab = ImportTab.Mpp">
+                        <TmIcon Name="calendar" Size="IconSize.Sm" />
+                        @Loc["TmGantt_ImportMpp"]
+                    </button>
+                    <button type="button"
+                            class="tm-gantt__import-tab @(_tab == ImportTab.Jira ? "tm-gantt__import-tab--active" : "")"
+                            @onclick="() => _tab = ImportTab.Jira">
+                        <TmIcon Name="link" Size="IconSize.Sm" />
+                        @Loc["TmGantt_ImportJira"]
+                    </button>
+                </div>
+
+                @if (_tab == ImportTab.Excel || _tab == ImportTab.Mpp)
+                {
+                    <div class="tm-gantt__import-file-area">
+                        <InputFile OnChange="OnFileChangedAsync" accept="@(_tab == ImportTab.Excel ? ".xlsx,.xls" : ".xml,.mpp")"
+                                   class="tm-gantt__import-file-input" id="import-file" />
+                        <label for="import-file" class="tm-button tm-button--ghost tm-button--sm">
+                            <TmIcon Name="upload" Size="IconSize.Sm" />
+                            @Loc["TmGantt_UploadFile"]
+                        </label>
+                        @if (_selectedFileName is not null)
+                        {
+                            <span class="tm-gantt__import-file-name">@_selectedFileName</span>
+                        }
+                    </div>
+                }
+                else if (_tab == ImportTab.Jira)
+                {
+                    <div class="tm-gantt__import-jira-form">
+                        <TmFormField Label="@Loc["TmGantt_ImportJiraUrl"]">
+                            <TmTextInput @bind-Value="_jiraUrl" Placeholder="https://yourcompany.atlassian.net" />
+                        </TmFormField>
+                        <TmFormField Label="@Loc["TmGantt_ImportJiraToken"]">
+                            <TmTextInput @bind-Value="_jiraToken" Type="password" />
+                        </TmFormField>
+                        <TmFormField Label="@Loc["TmGantt_ImportJiraProject"]">
+                            <TmTextInput @bind-Value="_jiraProject" Placeholder="PROJ" />
+                        </TmFormField>
+                    </div>
+                }
+            </div>
+
+            <div class="tm-gantt__dialog-actions">
+                <TmButton Variant="ButtonVariant.Primary" OnClick="ImportAsync" IsDisabled="_isImporting">
+                    @Loc["TmGantt_Import"]
+                </TmButton>
+                <TmButton Variant="ButtonVariant.Ghost" OnClick="OnClose">
+                    @Loc["Tm_Cancel"]
+                </TmButton>
+            </div>
+        </div>
+    </div>
+}

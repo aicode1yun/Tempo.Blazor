@@ -86,7 +86,7 @@
                                     }
                                     else if (col.Field is not null)
                                     {
-                                        @(col.Field(ctx.Item)?.ToString() ?? string.Empty)
+                                        @(FormatValue(col.Field(ctx.Item), col.Format))
                                     }
                                 }
                             </td>

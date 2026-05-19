@@ -436,4 +436,11 @@ public partial class TmTreeList<TItem>
 
     private string GetEditingCellClass(TreeListItemContext<TItem> ctx, TmTreeListColumn<TItem> col) =>
         IsEditing(ctx) && col.Editable ? "tm-tree-list-cell--editing" : "";
+
+    private static string FormatValue(object? value, string? format)
+    {
+        if (value is null) return string.Empty;
+        if (string.IsNullOrEmpty(format)) return value.ToString() ?? string.Empty;
+        return string.Format(System.Globalization.CultureInfo.CurrentCulture, format, value);
+    }
 }

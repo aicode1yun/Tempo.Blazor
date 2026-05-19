@@ -44,8 +44,8 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 /debug:portable
 /filealign:512
 /optimize-
-/out:obj/Debug/net10.0/Tempo.Blazor.Tests.dll
-/refout:obj/Debug/net10.0/refint/Tempo.Blazor.Tests.dll
+/out:obj\Debug\net10.0\Tempo.Blazor.Tests.dll
+/refout:obj\Debug\net10.0\refint\Tempo.Blazor.Tests.dll
 /target:exe
 /warnaserror-
 /utf8output
@@ -55,7 +55,6 @@ TemporaryDependencyNodeTargetIdentifier=net10.0
 
 [sourceFiles]
 <NUGET>/microsoft.net.test.sdk/17.14.1/build/net8.0/Microsoft.NET.Test.Sdk.Program.cs
- @folderNames=..,..,..,..,.nuget,packages,microsoft.net.test.sdk,17.14.1,build,net8.0
 Activity/
  TmActivityAttachmentsTests.cs
  TmActivityCommentsTests.cs
@@ -221,6 +220,15 @@ Components/
  Scheduler/
   InMemoryScheduleDataProviderTests.cs
   RecurrenceEngineTests.cs
+  TmGanttAddTaskTests.cs
+  TmGanttDragTests.cs
+  TmGanttPanTests.cs
+  TmGanttPhase1Tests.cs
+  TmGanttPhase2Tests.cs
+  TmGanttPhase3Tests.cs
+  TmGanttPhase4Tests.cs
+  TmGanttPhase5Tests.cs
+  TmGanttTaskPanelTests.cs
   TmGanttTests.cs
   TmSchedulerAgendaViewTests.cs
   TmSchedulerDayViewTests.cs
@@ -502,7 +510,7 @@ Wireframe/
  Tempo.Blazor.Demo.SharedUI/obj/Debug/net10.0/ref/Tempo.Blazor.Demo.SharedUI.dll
  Tempo.Blazor.FluentValidation/obj/Debug/net10.0/ref/Tempo.Blazor.FluentValidation.dll
  Tempo.Blazor/obj/Debug/net10.0/ref/Tempo.Blazor.dll
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/ref/net10.0/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/ref/net10.0/
  Microsoft.CSharp.dll
  Microsoft.VisualBasic.Core.dll
  Microsoft.VisualBasic.dll
@@ -745,14 +753,14 @@ Wireframe/
  zxing.net/0.16.10/lib/net9.0/zxing.dll
 
 [analyzerReferences]
-<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.5/analyzers/dotnet/cs/
+<DOTNET>/packs/Microsoft.NETCore.App.Ref/10.0.8/analyzers/dotnet/cs/
  Microsoft.Interop.ComInterfaceGenerator.dll
  Microsoft.Interop.JavaScript.JSImportGenerator.dll
  Microsoft.Interop.LibraryImportGenerator.dll
  Microsoft.Interop.SourceGeneration.dll
  System.Text.Json.SourceGeneration.dll
  System.Text.RegularExpressions.Generator.dll
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/
  Microsoft.CodeAnalysis.CSharp.NetAnalyzers.dll
  Microsoft.CodeAnalysis.NetAnalyzers.dll
 <NUGET>/
@@ -765,5 +773,5 @@ Wireframe/
   xunit.analyzers.fixes.dll
 
 [analyzerConfigFiles]
-<DOTNET>/sdk/10.0.201/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
+<DOTNET>/sdk/10.0.300/Sdks/Microsoft.NET.Sdk/analyzers/build/config/analysislevel_10_default.globalconfig
 obj/Debug/net10.0/Tempo.Blazor.Tests.GeneratedMSBuildEditorConfig.editorconfig

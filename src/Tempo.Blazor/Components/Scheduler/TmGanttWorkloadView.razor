@@ -1,0 +1,65 @@
+@namespace Tempo.Blazor.Components.Scheduler
+@using Tempo.Blazor.Abstractions.Models
+
+<div class="tm-gantt__workload" data-testid="gantt-workload-view">
+    @{
+        var allEntries = WorkloadCalculator.Calculate(Tasks, WorkingSchedule);
+        var assigneeIds = allEntries.Select(e => e.AssigneeId).Distinct().OrderBy(x => x).ToList();
+
+        // Show a 4-week window starting from the earliest date that has data, capped at today
+        var windowStart = allEntries.Any()
+            ? allEntries.Min(e => e.Date)
+            : DateTime.Today;
+        if (windowStart < DateTime.Today.AddDays(-7)) windowStart = DateTime.Today.AddDays(-7);
+        var windowEnd = windowStart.AddDays(27);
+        var dates = allEntries.Select(e => e.Date)
+            .Where(d => d >= windowStart && d <= windowEnd)
+            .Distinct().OrderBy(d => d).ToList();
+        var entries = allEntries.Where(e => dates.Contains(e.Date)).ToList();
+    }
+    @if (!assigneeIds.Any())
+    {
+        <div class="tm-gantt__workload-empty">
+            <span>@Loc["TmGantt_WorkloadView"]</span>
+        </div>
+    }
+    else
+    {
+        <div class="tm-gantt__workload-grid" style="grid-template-columns: 140px repeat(@dates.Count, 1fr);">
+            <div class="tm-gantt__workload-header-cell tm-gantt__workload-assignee-header"></div>
+            @foreach (var date in dates)
+            {
+                <div class="tm-gantt__workload-header-cell @(date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday ? "tm-gantt__workload-weekend" : "")">
+                    @date.ToString("dd.MM")
+                </div>
+            }
+            @foreach (var assigneeId in assigneeIds)
+            {
+                <div class="tm-gantt__workload-name-cell" data-testid="@($"workload-row-{assigneeId}")">
+                    @(Tasks.SelectMany(t => t.Assignees).FirstOrDefault(a => a.Id == assigneeId)?.Name ?? assigneeId)
+                </div>
+                @foreach (var date in dates)
+                {
+                    var entry = entries.FirstOrDefault(e => e.AssigneeId == assigneeId && e.Date == date);
+                    var isOver = entry is not null && entry.AllocatedHours > entry.CapacityHours;
+                    var cellClass = entry is null ? "" : (isOver ? "tm-gantt__workload-cell--over" : "tm-gantt__workload-cell--ok");
+                    var isWeekend = date.DayOfWeek is DayOfWeek.Saturday or DayOfWeek.Sunday;
+                    <div class="tm-gantt__workload-data-cell @cellClass @(isWeekend ? "tm-gantt__workload-weekend" : "")"
+                         data-testid="@($"workload-cell-{assigneeId}-{date:yyyy-MM-dd}")">
+                        @if (entry is not null)
+                        {
+                            @if (DisplayMode == WorkloadDisplayMode.Hours)
+                            {
+                                @($"{entry.AllocatedHours:0.#}h")
+                            }
+                            else
+                            {
+                                @($"{(entry.CapacityHours > 0 ? entry.AllocatedHours / entry.CapacityHours * 100 : 0):0}%")
+                            }
+                        }
+                    </div>
+                }
+            }
+        </div>
+    }
+</div>

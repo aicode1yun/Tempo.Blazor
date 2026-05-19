@@ -1988,6 +1988,8 @@
   <data name="TmGantt_DayView" xml:space="preserve"><value>Den</value></data>
   <data name="TmGantt_WeekView" xml:space="preserve"><value>Týden</value></data>
   <data name="TmGantt_MonthView" xml:space="preserve"><value>Měsíc</value></data>
+  <data name="TmGantt_FitToScreen" xml:space="preserve"><value>Přizpůsobit obrazovce</value></data>
+  <data name="TmGantt_ToggleTaskPanel" xml:space="preserve"><value>Přepnout panel úkolů</value></data>
   <data name="TmGantt_TaskTitle" xml:space="preserve"><value>Úkol</value></data>
   <data name="TmGantt_Start" xml:space="preserve"><value>Začátek</value></data>
   <data name="TmGantt_End" xml:space="preserve"><value>Konec</value></data>
@@ -3088,5 +3090,243 @@
   <data name="TmNotionTokenDropdown_Loading"            xml:space="preserve"><value>Načítání…</value></data>
   <data name="TmNotionTokenDropdown_CreateToken"        xml:space="preserve"><value>Vytvořit token</value></data>
   <data name="TmNotionTokenDropdown_CreateTokenNamed"   xml:space="preserve"><value>Vytvořit token „{0}"</value></data>
+  <data name="TmGanttTaskPanel_Title" xml:space="preserve"><value>Název</value></data>
+  <data name="TmGanttTaskPanel_TitlePlaceholder" xml:space="preserve"><value>Zadejte název úkolu...</value></data>
+  <data name="TmGanttTaskPanel_Start" xml:space="preserve"><value>Začátek</value></data>
+  <data name="TmGanttTaskPanel_End" xml:space="preserve"><value>Konec</value></data>
+  <data name="TmGanttTaskPanel_PercentComplete" xml:space="preserve"><value>Dokončeno %</value></data>
+  <data name="TmGanttTaskPanel_IsMilestone" xml:space="preserve"><value>Milník</value></data>
+  <data name="TmGanttTaskPanel_ParentTask" xml:space="preserve"><value>Rodičovský úkol</value></data>
+  <data name="TmGanttTaskPanel_NoParent" xml:space="preserve"><value>Bez rodiče</value></data>
+  <data name="TmGanttTaskPanel_Save" xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmGanttTaskPanel_Cancel" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmGanttTaskPanel_Close" xml:space="preserve"><value>Zavřít panel</value></data>
+  <data name="TmGanttTaskPanel_ErrorInvalidStart" xml:space="preserve"><value>Neplatné datum začátku.</value></data>
+  <data name="TmGanttTaskPanel_ErrorInvalidEnd" xml:space="preserve"><value>Neplatné datum konce.</value></data>
+  <data name="TmGanttTaskPanel_ErrorStartAfterEnd" xml:space="preserve"><value>Datum začátku musí být před datem konce.</value></data>
+  <data name="TmGanttTaskPanel_ErrorPercentRange" xml:space="preserve"><value>Procento musí být mezi 0 a 100.</value></data>
+  <data name="TmGanttTaskPanel_Dependencies" xml:space="preserve"><value>Závislosti</value></data>
+  <data name="TmGanttTaskPanel_AddDependency" xml:space="preserve"><value>Přidat závislost</value></data>
+  <data name="TmGanttTaskPanel_DependencyFrom" xml:space="preserve"><value>Zdrojový úkol</value></data>
+  <data name="TmGanttTaskPanel_DependencyType" xml:space="preserve"><value>Typ</value></data>
+  <data name="TmGanttTaskPanel_SelectTask" xml:space="preserve"><value>Vyberte úkol</value></data>
+  <data name="TmGanttTaskPanel_Confirm" xml:space="preserve"><value>Přidat</value></data>
+  <data name="TmGanttTaskPanel_CancelAdd" xml:space="preserve"><value>Zrušit</value></data>
+  <data name="TmGanttTaskPanel_ErrorDuplicateDependency" xml:space="preserve"><value>Tato závislost již existuje.</value></data>
+  <data name="TmGanttTaskPanel_ErrorCyclicDependency" xml:space="preserve"><value>Tím by vznikl cyklická závislost.</value></data>
+  <data name="TmGanttTaskPanel_ConfirmRemoveDependency" xml:space="preserve"><value>Odebrat tuto závislost?</value></data>
+  <data name="TmGantt_AddTask" xml:space="preserve"><value>Přidat úkol</value></data>
+  <data name="TmGantt_NewTaskTitle" xml:space="preserve"><value>Nový úkol</value></data>
+  <data name="TmGantt_AddTaskAbove" xml:space="preserve"><value>Přidat úkol nad</value></data>
+  <data name="TmGantt_AddTaskBelow" xml:space="preserve"><value>Přidat úkol pod</value></data>
+  <data name="TmGantt_AddTaskChild" xml:space="preserve"><value>Přidat podřízený úkol</value></data>
+  <data name="TmGantt_DeleteTask" xml:space="preserve"><value>Smazat úkol</value></data>
+  <data name="TmGantt_DuplicateTask" xml:space="preserve"><value>Duplikovat úkol</value></data>
+  <!-- F1.1 Color / F1.3 Tooltip -->
+  <data name="TmGantt_TooltipStart" xml:space="preserve"><value>Začátek</value></data>
+  <data name="TmGantt_TooltipEnd" xml:space="preserve"><value>Konec</value></data>
+  <data name="TmGantt_TooltipProgress" xml:space="preserve"><value>Průběh</value></data>
+  <!-- F1.4 Status / Priority -->
+  <data name="GanttStatus_Open" xml:space="preserve"><value>Otevřeno</value></data>
+  <data name="GanttStatus_InProgress" xml:space="preserve"><value>Probíhá</value></data>
+  <data name="GanttStatus_Done" xml:space="preserve"><value>Hotovo</value></data>
+  <data name="GanttStatus_Closed" xml:space="preserve"><value>Uzavřeno</value></data>
+  <data name="GanttPriority_Highest" xml:space="preserve"><value>Nejvyšší</value></data>
+  <data name="GanttPriority_High" xml:space="preserve"><value>Vysoká</value></data>
+  <data name="GanttPriority_Medium" xml:space="preserve"><value>Střední</value></data>
+  <data name="GanttPriority_Low" xml:space="preserve"><value>Nízká</value></data>
+  <data name="GanttPriority_Lowest" xml:space="preserve"><value>Nejnižší</value></data>
+  <data name="TmGantt_Status" xml:space="preserve"><value>Stav</value></data>
+  <!-- F1.5 Deadline -->
+  <data name="GanttTask_Deadline" xml:space="preserve"><value>Termín</value></data>
+  <data name="GanttTask_DeadlineExceeded" xml:space="preserve"><value>Termín překročen</value></data>
+  <!-- F1.6 Today -->
+  <data name="TmGantt_Today" xml:space="preserve"><value>Dnes</value></data>
+  <!-- F1.8 Expand / Collapse All -->
+  <data name="TmGantt_ExpandAll" xml:space="preserve"><value>Rozbalit vše</value></data>
+  <data name="TmGantt_CollapseAll" xml:space="preserve"><value>Sbalit vše</value></data>
+  <!-- F1.9 View Settings -->
+  <data name="TmGantt_ViewSettings" xml:space="preserve"><value>Nastavení zobrazení</value></data>
+  <data name="TmGantt_ShowTodayMarker" xml:space="preserve"><value>Zobrazit značku dnešního dne</value></data>
+  <data name="TmGantt_ShowDaysOff" xml:space="preserve"><value>Zobrazit nepracovní dny</value></data>
+  <data name="TmGantt_ShowClosedTasks" xml:space="preserve"><value>Zobrazit uzavřené úkoly</value></data>
+  <data name="TmGantt_TaskNameLocation" xml:space="preserve"><value>Název úkolu</value></data>
+  <data name="TmGantt_TaskNameInside" xml:space="preserve"><value>Uvnitř pruhu</value></data>
+  <data name="TmGantt_TaskNameBeside" xml:space="preserve"><value>Vedle pruhu</value></data>
+  <data name="TmGantt_TaskNameHidden" xml:space="preserve"><value>Skrytý</value></data>
+  <data name="TmGantt_ViewDensity" xml:space="preserve"><value>Hustota řádků</value></data>
+  <data name="TmGantt_ViewComfortable" xml:space="preserve"><value>Komfortní</value></data>
+  <data name="TmGantt_ViewCompact" xml:space="preserve"><value>Kompaktní</value></data>
+  <data name="TmGantt_Theme" xml:space="preserve"><value>Motiv</value></data>
+  <data name="TmGantt_ThemeAuto" xml:space="preserve"><value>Automatický</value></data>
+  <data name="TmGantt_ThemeLight" xml:space="preserve"><value>Světlý</value></data>
+  <data name="TmGantt_ThemeDark" xml:space="preserve"><value>Tmavý</value></data>
+
+  <!-- ═══ Phase 2 additions ═══ -->
+  <data name="TmGantt_WBS" xml:space="preserve"><value>WBS</value></data>
+  <data name="TmGantt_CascadeSort" xml:space="preserve"><value>Seřadit dle data</value></data>
+  <data name="TmGantt_BulkSelected" xml:space="preserve"><value>vybráno</value></data>
+  <data name="TmGantt_BulkMarkDone" xml:space="preserve"><value>Označit hotové</value></data>
+  <data name="TmGantt_BulkMarkInProgress" xml:space="preserve"><value>Označit rozpracované</value></data>
+  <data name="TmGanttTaskPanel_Duration" xml:space="preserve"><value>Délka</value></data>
+  <data name="TmGanttTaskPanel_Days" xml:space="preserve"><value>dní</value></data>
+  <data name="TmGanttTaskPanel_Deadline" xml:space="preserve"><value>Termín</value></data>
+  <data name="TmGanttTaskPanel_Estimation" xml:space="preserve"><value>Odhad (h)</value></data>
+  <data name="TmGanttTaskPanel_TimeLog" xml:space="preserve"><value>Zapsáno (h)</value></data>
+  <data name="TmGanttTaskPanel_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="TmGantt_AutoSchedule" xml:space="preserve"><value>Automatické plánování</value></data>
+  <data name="TmGantt_CircularDependency" xml:space="preserve"><value>Zjištěna cyklická závislost</value></data>
+  <data name="TmGantt_CriticalPath" xml:space="preserve"><value>Kritická cesta</value></data>
+  <data name="TmGantt_SaveBaseline" xml:space="preserve"><value>Uložit základní plán</value></data>
+  <data name="TmGantt_Baseline" xml:space="preserve"><value>Základní plán</value></data>
+  <data name="TmGantt_NoBaseline" xml:space="preserve"><value>Žádný základní plán</value></data>
+  <data name="TmGantt_BaselineName" xml:space="preserve"><value>Název základního plánu</value></data>
+  <data name="TmGantt_BaselineDeviation" xml:space="preserve"><value>Odchylka od základního plánu</value></data>
+  <data name="TmGantt_AddCustomField" xml:space="preserve"><value>Přidat vlastní pole</value></data>
+  <data name="TmGantt_CustomFieldName" xml:space="preserve"><value>Název pole</value></data>
+  <data name="GanttFieldType_Text" xml:space="preserve"><value>Text</value></data>
+  <data name="GanttFieldType_Number" xml:space="preserve"><value>Číslo</value></data>
+  <data name="GanttFieldType_Date" xml:space="preserve"><value>Datum</value></data>
+  <data name="GanttFieldType_List" xml:space="preserve"><value>Seznam</value></data>
+  <data name="GanttFieldType_Checkbox" xml:space="preserve"><value>Zaškrtávací políčko</value></data>
+  <data name="GanttFieldType_Color" xml:space="preserve"><value>Barva</value></data>
+  <data name="GanttFieldType_Multiselect" xml:space="preserve"><value>Vícenásobný výběr</value></data>
+  <data name="GanttFieldType_People" xml:space="preserve"><value>Lidé</value></data>
+  <data name="GanttFieldType_Labels" xml:space="preserve"><value>Štítky</value></data>
+  <data name="TmGantt_Filter" xml:space="preserve"><value>Filtr</value></data>
+  <data name="TmGantt_AddFilter" xml:space="preserve"><value>Přidat filtr</value></data>
+  <data name="TmGantt_FilterField" xml:space="preserve"><value>Pole</value></data>
+  <data name="TmGantt_FilterOperator" xml:space="preserve"><value>Operátor</value></data>
+  <data name="TmGantt_FilterValue" xml:space="preserve"><value>Hodnota</value></data>
+  <data name="TmGantt_ApplyFilters" xml:space="preserve"><value>Použít</value></data>
+  <data name="TmGantt_ClearFilters" xml:space="preserve"><value>Vymazat všechny filtry</value></data>
+  <data name="TmGantt_ActiveFilters" xml:space="preserve"><value>Aktivní filtry</value></data>
+  <data name="TmGantt_FilterFieldTitle" xml:space="preserve"><value>Název</value></data>
+  <data name="TmGantt_FilterFieldStatus" xml:space="preserve"><value>Stav</value></data>
+  <data name="TmGantt_FilterFieldPriority" xml:space="preserve"><value>Priorita</value></data>
+
+  <!-- Phase 4 -->
+  <data name="GanttTask_Description" xml:space="preserve"><value>Popis</value></data>
+  <data name="GanttTask_DescriptionPlaceholder" xml:space="preserve"><value>Přidejte popis...</value></data>
+  <data name="GanttTask_Attachments" xml:space="preserve"><value>Přílohy</value></data>
+  <data name="TmGantt_UploadFile" xml:space="preserve"><value>Nahrát soubor</value></data>
+  <data name="TmGantt_RemoveAttachment" xml:space="preserve"><value>Odebrat</value></data>
+  <data name="GanttTask_Comments" xml:space="preserve"><value>Komentáře</value></data>
+  <data name="TmGantt_AddComment" xml:space="preserve"><value>Přidat komentář</value></data>
+  <data name="TmGantt_CommentPlaceholder" xml:space="preserve"><value>Napište komentář...</value></data>
+  <data name="TmGantt_Export" xml:space="preserve"><value>Exportovat</value></data>
+  <data name="TmGantt_ExportPdf" xml:space="preserve"><value>PDF</value></data>
+  <data name="TmGantt_ExportPng" xml:space="preserve"><value>PNG</value></data>
+  <data name="TmGantt_ExportXlsx" xml:space="preserve"><value>Excel (XLSX)</value></data>
+  <data name="TmGantt_ExportXml" xml:space="preserve"><value>MS Project XML</value></data>
+  <data name="TmGantt_ExportOptions" xml:space="preserve"><value>Možnosti exportu</value></data>
+  <data name="TmGantt_PaperSize" xml:space="preserve"><value>Formát papíru</value></data>
+  <data name="TmGantt_Landscape" xml:space="preserve"><value>Na šířku</value></data>
+  <data name="TmGantt_ExportZoomLevel" xml:space="preserve"><value>Úroveň přiblížení</value></data>
+  <data name="TmGantt_ExportPreview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmGantt_Import" xml:space="preserve"><value>Importovat</value></data>
+  <data name="TmGantt_ImportExcel" xml:space="preserve"><value>Importovat z Excelu</value></data>
+  <data name="TmGantt_ImportMpp" xml:space="preserve"><value>Importovat MS Project</value></data>
+  <data name="TmGantt_ImportJira" xml:space="preserve"><value>Importovat z JIRA</value></data>
+  <data name="TmGantt_ImportError" xml:space="preserve"><value>Import selhal: {0}</value></data>
+  <data name="TmGantt_ImportMapping" xml:space="preserve"><value>Mapování sloupců</value></data>
+  <data name="TmGantt_ImportSourceColumn" xml:space="preserve"><value>Zdrojový sloupec</value></data>
+  <data name="TmGantt_ImportTargetField" xml:space="preserve"><value>Cílové pole</value></data>
+  <data name="TmGantt_ImportPreview" xml:space="preserve"><value>Náhled</value></data>
+  <data name="TmGantt_ImportJiraUrl" xml:space="preserve"><value>JIRA URL</value></data>
+  <data name="TmGantt_ImportJiraToken" xml:space="preserve"><value>API token</value></data>
+  <data name="TmGantt_ImportJiraProject" xml:space="preserve"><value>Klíč projektu</value></data>
+  <data name="TmGantt_History" xml:space="preserve"><value>Historie</value></data>
+  <data name="TmGantt_Rollback" xml:space="preserve"><value>Vrátit zpět</value></data>
+  <data name="TmGantt_TimeTravel" xml:space="preserve"><value>Časový skok</value></data>
+  <data name="GanttHistory_TaskChanged" xml:space="preserve"><value>Úkol změněn</value></data>
+  <data name="GanttHistory_StatusChanged" xml:space="preserve"><value>Stav změněn</value></data>
+  <data name="GanttHistory_PriorityChanged" xml:space="preserve"><value>Priorita změněna</value></data>
+  <data name="GanttHistory_DependencyChanged" xml:space="preserve"><value>Závislost změněna</value></data>
+
+  <!-- Phase 5: Enterprise Views -->
+  <data name="TmGantt_Workload" xml:space="preserve"><value>Pracovní zátěž</value></data>
+  <data name="TmGantt_WorkloadView" xml:space="preserve"><value>Zobrazení pracovní zátěže</value></data>
+  <data name="TmGantt_Overloaded" xml:space="preserve"><value>Přetížení</value></data>
+  <data name="TmGantt_WorkloadHours" xml:space="preserve"><value>Hodiny</value></data>
+  <data name="TmGantt_WorkloadPercent" xml:space="preserve"><value>Procenta</value></data>
+  <data name="TmGantt_ListView" xml:space="preserve"><value>Seznam</value></data>
+  <data name="TmGantt_CalendarView" xml:space="preserve"><value>Kalendář</value></data>
+  <data name="TmGantt_BoardView" xml:space="preserve"><value>Tabule</value></data>
+  <data name="TmGantt_PortfolioView" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="TmGantt_Portfolio" xml:space="preserve"><value>Portfolio</value></data>
+  <data name="TmGantt_DashboardStatus" xml:space="preserve"><value>Stav úkolů</value></data>
+  <data name="TmGantt_DashboardTime" xml:space="preserve"><value>Strávený čas</value></data>
+  <data name="TmGantt_DashboardMilestones" xml:space="preserve"><value>Milníky</value></data>
+  <data name="TmGantt_DashboardBudget" xml:space="preserve"><value>Přehled rozpočtu</value></data>
+  <data name="TmGantt_Notifications" xml:space="preserve"><value>Oznámení</value></data>
+  <data name="TmGantt_NotifyOnAssign" xml:space="preserve"><value>Oznámit při přiřazení</value></data>
+  <data name="TmGantt_NotifyOnMention" xml:space="preserve"><value>Oznámit při zmínce</value></data>
+  <data name="TmGantt_NotifyOnDeadline" xml:space="preserve"><value>Oznámit při deadline</value></data>
+
+  <!-- F5.2 Realtime -->
+  <data name="TmGantt_RealtimeSyncing" xml:space="preserve"><value>Synchronizuji...</value></data>
+  <data name="TmGantt_RealtimeConnected" xml:space="preserve"><value>Připojeno</value></data>
+  <data name="TmGantt_RealtimeDisconnected" xml:space="preserve"><value>Odpojeno</value></data>
+
+  <!-- F5.8 Dashboard -->
+  <data name="TmGantt_Dashboard" xml:space="preserve"><value>Přehled</value></data>
+  <data name="TmGantt_TaskStatusChart" xml:space="preserve"><value>Stav úkolů</value></data>
+  <data name="TmGantt_MilestonesWidget" xml:space="preserve"><value>Milníky</value></data>
+  <data name="TmGantt_BudgetWidget" xml:space="preserve"><value>Přehled rozpočtu</value></data>
+
+  <!-- F5.9 Budget -->
+  <data name="GanttTask_Budget" xml:space="preserve"><value>Plánované hodiny</value></data>
+  <data name="GanttTask_ActualCost" xml:space="preserve"><value>Skutečné náklady</value></data>
+  <data name="GanttAssignee_HourlyRate" xml:space="preserve"><value>Hodinová sazba</value></data>
+
+  <!-- F5.10 People / Resource Calendar -->
+  <data name="TmGantt_PeopleView" xml:space="preserve"><value>Lidé</value></data>
+  <data name="TmGantt_ResourceCalendar" xml:space="preserve"><value>Kalendář zdrojů</value></data>
+  <data name="TmGantt_Vacation" xml:space="preserve"><value>Dovolená</value></data>
+  <data name="TmGantt_DayOff" xml:space="preserve"><value>Volný den</value></data>
+  <data name="TmGantt_AddVacation" xml:space="preserve"><value>Přidat dovolenou</value></data>
+  <data name="TmGantt_RemoveVacation" xml:space="preserve"><value>Odebrat dovolenou</value></data>
+
+  <!-- F5.11 Virtual Resources -->
+  <data name="TmGantt_VirtualResource" xml:space="preserve"><value>Virtuální zdroj</value></data>
+  <data name="TmGantt_AddVirtualResource" xml:space="preserve"><value>Přidat virtuální zdroj</value></data>
+  <data name="TmGantt_VirtualResourceName" xml:space="preserve"><value>Název zdroje</value></data>
+
+  <!-- F5.12 Time Tracker -->
+  <data name="TmGantt_StartTimer" xml:space="preserve"><value>Spustit časovač</value></data>
+  <data name="TmGantt_StopTimer" xml:space="preserve"><value>Zastavit časovač</value></data>
+  <data name="TmGantt_TimerRunning" xml:space="preserve"><value>Časovač běží</value></data>
+  <data name="TmGantt_TimeLog" xml:space="preserve"><value>Výkaz práce</value></data>
+  <data name="TmGantt_TimeLogEntry" xml:space="preserve"><value>Záznam</value></data>
+  <data name="TmGantt_TotalLogged" xml:space="preserve"><value>Celkem vykázáno</value></data>
+
+  <!-- F5.13 Sidebar -->
+  <data name="TmGantt_SidebarTasks" xml:space="preserve"><value>Úkoly</value></data>
+  <data name="TmGantt_SidebarWorkload" xml:space="preserve"><value>Pracovní zátěž</value></data>
+  <data name="TmGantt_SidebarHistory" xml:space="preserve"><value>Historie</value></data>
+  <data name="TmGantt_SidebarNotifications" xml:space="preserve"><value>Oznámení</value></data>
+  <data name="TmGantt_HistoryEmpty" xml:space="preserve"><value>Zatím žádná historie.</value></data>
+  <data name="TmGantt_SidebarReports" xml:space="preserve"><value>Reporty</value></data>
+  <data name="TmGantt_Reports" xml:space="preserve"><value>Reporty</value></data>
+  <data name="TmGantt_NewReport" xml:space="preserve"><value>Nový report</value></data>
+  <data name="TmGantt_RunReport" xml:space="preserve"><value>Spustit report</value></data>
+  <data name="GanttReportType_StatusSummary" xml:space="preserve"><value>Přehled stavu</value></data>
+  <data name="GanttReportType_TimeSpent" xml:space="preserve"><value>Strávený čas</value></data>
+  <data name="GanttReportType_ResourceUtilization" xml:space="preserve"><value>Využití zdrojů</value></data>
+  <data name="GanttReportType_BudgetOverview" xml:space="preserve"><value>Přehled rozpočtu</value></data>
+  <data name="GanttReportType_MilestoneProgress" xml:space="preserve"><value>Průběh milníků</value></data>
+
+  <!-- F5.14 Group Rollup -->
+  <data name="TmGantt_UseManualDates" xml:space="preserve"><value>Ruční data</value></data>
+  <data name="TmGantt_GroupRollup" xml:space="preserve"><value>Skupinové shrnutí</value></data>
+  <data name="TmGanttTaskPanel_BudgetSection" xml:space="preserve"><value>Rozpočet &amp; náklady</value></data>
+  <data name="TmGanttReportsPanel_NoReports" xml:space="preserve"><value>Žádné reporty nejsou definovány.</value></data>
+  <data name="TmGanttReportsPanel_NewReport" xml:space="preserve"><value>Nový report</value></data>
+  <data name="TmGantt_NotifyOnAssignEmail" xml:space="preserve"><value>E-mail při přiřazení</value></data>
+  <data name="TmGantt_NotifyOnMentionEmail" xml:space="preserve"><value>E-mail při zmínce</value></data>
+  <data name="TmGantt_NotifyOnAssignPush" xml:space="preserve"><value>Push při přiřazení</value></data>
+  <data name="TmGantt_NotifyOnMentionPush" xml:space="preserve"><value>Push při zmínce</value></data>
+  <data name="TmGantt_NotifyOnDeadlinePush" xml:space="preserve"><value>Push při termínu</value></data>
 
 </root>
