@@ -933,8 +933,12 @@ public partial class TmSpreadsheetCanvasGrid : IAsyncDisposable, ISpreadsheetGri
 
         SetActiveCell(row, col, shiftKey && !string.IsNullOrEmpty(_selection.SelectionStartRef), render: false);
         await ActiveCellChanged.InvokeAsync(Sheet.ActiveCellRef);
-        _needsRender = true;
-        await InvokeAsync(StateHasChanged);
+
+        // The JS canvas has already painted the new selection locally (same fast path
+        // as keyboard navigation). Forcing _needsRender + StateHasChanged here pushed a
+        // full model re-render back to the canvas on every click, which is what made
+        // clicking feel sluggish versus arrow keys. Mirror OnCanvasSelectionChanged and
+        // skip it; an in-progress edit still re-renders via CommitEdit above.
     }
 
     [JSInvokable]
