@@ -3691,6 +3691,52 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_EnterAfterBackspaceMergeKeepsMovedTextOnCaretLine()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            const string seedRevisionText = " Priority support is included during the first thirty days.";
+            var firstLine = $" merge-prefix-{DateTimeOffset.UtcNow:HHmmssfff}";
+            var secondLine = $"merge-second-{DateTimeOffset.UtcNow:HHmmssfff}";
+
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, seedRevisionText, offsetInsideText: seedRevisionText.Length);
+            await page.Keyboard.TypeAsync(firstLine, new KeyboardTypeOptions { Delay = 5 });
+            await page.Keyboard.PressAsync("Enter");
+            await page.Keyboard.TypeAsync(secondLine, new KeyboardTypeOptions { Delay = 5 });
+
+            await page.Keyboard.PressAsync("Home");
+            await page.Keyboard.PressAsync("Backspace");
+            await Assertions.Expect(host).ToContainTextAsync(firstLine + secondLine, new() { Timeout = 5000 });
+
+            await page.Keyboard.PressAsync("Enter");
+            var probe = await CaptureParagraphSplitAfterMergeProbeAsync(page, secondLine);
+
+            probe.ParagraphExists.Should().BeTrue("pressing Enter after merging paragraphs should create the paragraph that contains the moved text");
+            probe.ParagraphText.Should().Be(secondLine);
+            probe.DirectInlineCount.Should().Be(1, "the split paragraph must not keep an empty caret-placeholder inline before the moved text");
+            probe.LeadingInlineText.Should().Be(secondLine);
+            probe.LeadingInlineHasCaretPlaceholder.Should().BeFalse("the moved text should stay on the caret line immediately after Enter");
+            probe.SelectionInsideSecondParagraph.Should().BeTrue();
+            probe.SelectionText.Should().Be(secondLine);
+            probe.SelectionOffset.Should().Be(0);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_EnterAfterBackspaceMergeKeepsMovedTextOnCaretLine),
+                "Type text, insert a paragraph, type another line, move to the start of that line, Backspace to merge, then press Enter again.",
+                "The second line must be moved into the new paragraph without a leading empty caret-placeholder line, and the caret must sit before the moved text.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Strict_Phase8_InsertImageSourcesRenderRealImagesAndPersistMetadata()
     {
         var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
@@ -8195,6 +8241,34 @@ public class DocumentEditorE2ETests : WasmTestBase
             """);
     }
 
+    private static async Task<ParagraphSplitAfterMergeProbe> CaptureParagraphSplitAfterMergeProbeAsync(IPage page, string paragraphText)
+    {
+        return await page.EvaluateAsync<ParagraphSplitAfterMergeProbe>(
+            """
+            ({ paragraphText }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const blocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body > .tm-wysiwyg-block[data-block-id]') || []);
+                const paragraph = blocks.find(block => (block.textContent || '') === paragraphText);
+                const directInlines = paragraph
+                    ? Array.from(paragraph.querySelectorAll(':scope > [data-inline-id]'))
+                    : [];
+                const leadingInline = directInlines[0] || null;
+                const selection = window.getSelection();
+                return {
+                    ParagraphExists: !!paragraph,
+                    ParagraphText: paragraph?.textContent || '',
+                    DirectInlineCount: directInlines.length,
+                    LeadingInlineText: leadingInline?.textContent || '',
+                    LeadingInlineHasCaretPlaceholder: !!leadingInline?.querySelector('br[data-caret-placeholder]'),
+                    SelectionInsideSecondParagraph: !!(paragraph && selection?.anchorNode && paragraph.contains(selection.anchorNode)),
+                    SelectionText: selection?.anchorNode?.textContent || '',
+                    SelectionOffset: selection?.anchorOffset || 0
+                };
+            }
+            """,
+            new { paragraphText });
+    }
+
     private static async Task<ILocator> GetRevisionPanelItemAsync(IPage page, string type, string text)
     {
         var itemByText = RevisionPanelItem(page, text);
@@ -12586,6 +12660,25 @@ public class DocumentEditorE2ETests : WasmTestBase
         public string TextColor { get; set; } = string.Empty;
 
         public string HighlightColor { get; set; } = string.Empty;
+    }
+
+    private sealed class ParagraphSplitAfterMergeProbe
+    {
+        public bool ParagraphExists { get; set; }
+
+        public string ParagraphText { get; set; } = string.Empty;
+
+        public int DirectInlineCount { get; set; }
+
+        public string LeadingInlineText { get; set; } = string.Empty;
+
+        public bool LeadingInlineHasCaretPlaceholder { get; set; }
+
+        public bool SelectionInsideSecondParagraph { get; set; }
+
+        public string SelectionText { get; set; } = string.Empty;
+
+        public int SelectionOffset { get; set; }
     }
 
     private sealed class ParagraphStyleProbe

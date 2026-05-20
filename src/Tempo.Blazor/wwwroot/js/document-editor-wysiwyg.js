@@ -3281,8 +3281,14 @@ window.tmDocumentWysiwyg = (function () {
             }
         }
 
-        newBlock.insertBefore(newInline, newBlock.firstChild);
-        if (!newInline.textContent && !newInline.querySelector('br[data-inline-break]')) {
+        var hasMovedFollowingInlines = !!newBlock.firstChild;
+        var hasSplitInlineContent = !!(newInline.textContent || newInline.querySelector('br[data-inline-break]'));
+        var shouldInsertSplitInline = hasSplitInlineContent || !hasMovedFollowingInlines;
+        if (shouldInsertSplitInline) {
+            newBlock.insertBefore(newInline, newBlock.firstChild);
+        }
+
+        if (shouldInsertSplitInline && !newInline.textContent && !newInline.querySelector('br[data-inline-break]')) {
             textNode = textNode.parentNode === newInline ? textNode : document.createTextNode('');
             if (!textNode.parentNode) {
                 newInline.appendChild(textNode);
@@ -3291,7 +3297,10 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         block.after(newBlock);
-        _setCaret(textNode, 0);
+        var caretTarget = shouldInsertSplitInline ? textNode : _firstDeepTextNode(newBlock);
+        if (caretTarget) {
+            _setCaret(caretTarget, 0);
+        }
         return {
             block: {
                 Id: blockId,
@@ -3299,13 +3308,7 @@ window.tmDocumentWysiwyg = (function () {
                 ParagraphProperties: _serializeParagraphProperties(newBlock, null),
                 Content: {
                     $type: 'paragraph',
-                    Inlines: [
-                        {
-                            $type: 'text',
-                            Id: inlineId,
-                            Text: textNode.textContent || ''
-                        }
-                    ]
+                    Inlines: _serializeInlines(newBlock)
                 }
             }
         };
@@ -3381,8 +3384,14 @@ window.tmDocumentWysiwyg = (function () {
                 newLi.appendChild(moved);
             }
         }
-        newLi.insertBefore(newInline, newLi.firstChild);
-        if (!newInline.textContent && !newInline.querySelector('br[data-inline-break]')) {
+        var hasMovedFollowingItems = !!newLi.firstChild;
+        var hasSplitListInlineContent = !!(newInline.textContent || newInline.querySelector('br[data-inline-break]'));
+        var shouldInsertListSplitInline = hasSplitListInlineContent || !hasMovedFollowingItems;
+        if (shouldInsertListSplitInline) {
+            newLi.insertBefore(newInline, newLi.firstChild);
+        }
+
+        if (shouldInsertListSplitInline && !newInline.textContent && !newInline.querySelector('br[data-inline-break]')) {
             textNode = textNode.parentNode === newInline ? textNode : document.createTextNode('');
             if (!textNode.parentNode) {
                 newInline.appendChild(textNode);
@@ -3392,7 +3401,10 @@ window.tmDocumentWysiwyg = (function () {
 
         newList.appendChild(newLi);
         block.after(newList);
-        _setCaret(textNode, 0);
+        var listCaretTarget = shouldInsertListSplitInline ? textNode : _firstDeepTextNode(newLi);
+        if (listCaretTarget) {
+            _setCaret(listCaretTarget, 0);
+        }
         return {
             block: {
                 Id: blockId,
@@ -3401,13 +3413,7 @@ window.tmDocumentWysiwyg = (function () {
                 Content: {
                     $type: 'list',
                     Ordered: blockTag === 'ol',
-                    Inlines: [
-                        {
-                            $type: 'text',
-                            Id: inlineId,
-                            Text: textNode.textContent || ''
-                        }
-                    ]
+                    Inlines: _serializeInlines(newLi)
                 }
             }
         };
