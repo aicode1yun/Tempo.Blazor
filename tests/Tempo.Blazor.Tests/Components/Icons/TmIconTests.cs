@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using System.Reflection;
 using Tempo.Blazor.Components.Icons;
 using Tempo.Blazor.Tests.Localization;
 
@@ -157,6 +158,84 @@ public class TmIconTests : LocalizationTestBase
         cut.Find("svg").Should().NotBeNull();
         cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
         cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect");
+    }
+
+    [Fact]
+    public void TmIcon_AllIconNamesConstants_RenderBuiltInIcons()
+    {
+        var iconNames = typeof(IconNames)
+            .GetFields(BindingFlags.Public | BindingFlags.Static | BindingFlags.FlattenHierarchy)
+            .Where(field => field.IsLiteral && !field.IsInitOnly && field.FieldType == typeof(string))
+            .Select(field => (Name: field.Name, Value: (string)field.GetRawConstantValue()!))
+            .ToArray();
+
+        iconNames.Should().NotBeEmpty();
+
+        foreach (var icon in iconNames)
+        {
+            var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, icon.Value));
+
+            cut.FindAll(".tm-icon-unknown")
+                .Should()
+                .BeEmpty($"IconNames.{icon.Name} should resolve the built-in icon '{icon.Value}'");
+            cut.Find("svg").Should().NotBeNull();
+        }
+    }
+
+    [Theory]
+    [InlineData("archive")]
+    [InlineData("between-horizontal-start")]
+    [InlineData("braces")]
+    [InlineData("building")]
+    [InlineData("calculator")]
+    [InlineData("calendar-days")]
+    [InlineData("close")]
+    [InlineData("combine")]
+    [InlineData("corner-down-right")]
+    [InlineData("delete")]
+    [InlineData("diamond")]
+    [InlineData("duplicate")]
+    [InlineData("ellipsis")]
+    [InlineData("file-code")]
+    [InlineData("file-edit")]
+    [InlineData("file-spreadsheet")]
+    [InlineData("file-stack")]
+    [InlineData("files")]
+    [InlineData("flame")]
+    [InlineData("gantt-chart")]
+    [InlineData("git-commit")]
+    [InlineData("highlighter")]
+    [InlineData("images")]
+    [InlineData("inbox")]
+    [InlineData("keyboard")]
+    [InlineData("layout-panel-top")]
+    [InlineData("layout-template")]
+    [InlineData("list-end")]
+    [InlineData("list-plus")]
+    [InlineData("maximize")]
+    [InlineData("merge")]
+    [InlineData("message-circle")]
+    [InlineData("move")]
+    [InlineData("palette")]
+    [InlineData("panel-bottom-open")]
+    [InlineData("panel-left-open")]
+    [InlineData("panel-right-open")]
+    [InlineData("panel-top-open")]
+    [InlineData("pencil")]
+    [InlineData("split")]
+    [InlineData("split-square-horizontal")]
+    [InlineData("table-header")]
+    [InlineData("table-properties")]
+    [InlineData("unlink")]
+    [InlineData("upload-cloud")]
+    [InlineData("view-list")]
+    public void TmIcon_ComponentLiteralAliases_RenderBuiltInIcons(string iconName)
+    {
+        var cut = RenderComponent<TmIcon>(p => p.Add(c => c.Name, iconName));
+
+        cut.Find("svg").Should().NotBeNull();
+        cut.FindAll(".tm-icon-unknown").Should().BeEmpty();
+        cut.Markup.Should().ContainAny("<path", "<circle", "<line", "<rect", "<polyline", "<polygon");
     }
 
     [Fact]

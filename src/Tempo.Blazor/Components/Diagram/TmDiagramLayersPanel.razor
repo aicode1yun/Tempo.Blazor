@@ -16,7 +16,7 @@
                     title="@Loc["TmDiagramLayers_AddLayer"]"
                     @onclick="OnAddLayer"
                     disabled="@ReadOnly">
-                <TmIcon Name="IconNames.Plus" />
+                <TmIcon Name="@IconNames.Plus" />
             </button>
         </div>
 
@@ -37,7 +37,7 @@
                      @ondragenter="e => OnDragEnter(e, layer.Id)"
                      @ondragleave="OnDragLeave">
                     <div class="tm-diagram-layers__drag-handle">
-                        <TmIcon Name="IconNames.GripVertical" />
+                        <TmIcon Name="@IconNames.GripVertical" />
                     </div>
 
                     <button type="button"
@@ -101,7 +101,7 @@
                                 title="@Loc["TmDiagramLayers_Delete"]"
                                 @onclick="() => OnRemoveLayer(layer)"
                                 disabled="@ReadOnly">
-                            <TmIcon Name="IconNames.Trash" />
+                            <TmIcon Name="@IconNames.Trash" />
                         </button>
                     }
                 </div>
