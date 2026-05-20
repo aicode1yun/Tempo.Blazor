@@ -721,7 +721,8 @@ public class DocumentOperationApplier
             or InlineMarkType.Highlight
             or InlineMarkType.TextColor
             or InlineMarkType.FontFamily
-            or InlineMarkType.FontSize;
+            or InlineMarkType.FontSize
+            or InlineMarkType.Link;
     }
 
     private static DocumentBlock? FindBlock(DocumentEditorDocument document, string? blockId)

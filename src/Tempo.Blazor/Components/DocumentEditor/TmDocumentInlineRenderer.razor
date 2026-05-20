@@ -3,7 +3,11 @@
 
 @if (Inline is DocumentNoteReferenceRun noteReference)
 {
-    <sup class="@InlineClass" data-note-id="@noteReference.NoteId">@GetText()</sup>
+    <sup class="@InlineClass"
+         data-note-id="@noteReference.NoteId"
+         data-note-type="@noteReference.NoteType"
+         data-testid="@GetNoteReferenceTestId(noteReference)"
+         title="@GetNoteReferenceTitle(noteReference)">@GetText()</sup>
 }
 else if (!string.IsNullOrWhiteSpace(SafeHref))
 {

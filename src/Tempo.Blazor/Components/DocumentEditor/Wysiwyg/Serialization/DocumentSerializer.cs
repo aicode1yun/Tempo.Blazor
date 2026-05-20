@@ -208,7 +208,7 @@ public class DocumentSerializer
             Wyg.TextRun t => new TextRun
             {
                 Text = t.Text,
-                Marks = t.Marks.Select(ToPersistenceMark).ToList()
+                Marks = t.Marks.SelectMany(ToPersistenceMarks).ToList()
             },
             Wyg.HardBreak => new TextRun { Text = "\n" },
             Wyg.TabInline => new TextRun { Text = "\t" },
@@ -216,23 +216,53 @@ public class DocumentSerializer
         };
     }
 
-    private static InlineMark ToPersistenceMark(Wyg.Mark mark)
+    private static IEnumerable<InlineMark> ToPersistenceMarks(Wyg.Mark mark)
     {
-        return mark switch
+        switch (mark)
         {
-            Wyg.BoldMark => new InlineMark { Type = InlineMarkType.Bold },
-            Wyg.ItalicMark => new InlineMark { Type = InlineMarkType.Italic },
-            Wyg.UnderlineMark => new InlineMark { Type = InlineMarkType.Underline },
-            Wyg.StrikethroughMark => new InlineMark { Type = InlineMarkType.Strikethrough },
-            Wyg.SubscriptMark => new InlineMark { Type = InlineMarkType.Subscript },
-            Wyg.SuperscriptMark => new InlineMark { Type = InlineMarkType.Superscript },
-            Wyg.LinkMark l => new InlineMark
-            {
-                Type = InlineMarkType.Link,
-                Link = new LinkMarkData { Href = l.Href, Title = l.Title }
-            },
-            _ => new InlineMark { Type = InlineMarkType.Bold }
-        };
+            case Wyg.BoldMark:
+                yield return new InlineMark { Type = InlineMarkType.Bold };
+                break;
+            case Wyg.ItalicMark:
+                yield return new InlineMark { Type = InlineMarkType.Italic };
+                break;
+            case Wyg.UnderlineMark:
+                yield return new InlineMark { Type = InlineMarkType.Underline };
+                break;
+            case Wyg.StrikethroughMark:
+                yield return new InlineMark { Type = InlineMarkType.Strikethrough };
+                break;
+            case Wyg.SubscriptMark:
+                yield return new InlineMark { Type = InlineMarkType.Subscript };
+                break;
+            case Wyg.SuperscriptMark:
+                yield return new InlineMark { Type = InlineMarkType.Superscript };
+                break;
+            case Wyg.FontMark font:
+                if (!string.IsNullOrWhiteSpace(font.Family))
+                {
+                    yield return new InlineMark { Type = InlineMarkType.FontFamily, Value = font.Family };
+                }
+
+                if (!string.IsNullOrWhiteSpace(font.Size))
+                {
+                    yield return new InlineMark { Type = InlineMarkType.FontSize, Value = font.Size };
+                }
+                break;
+            case Wyg.ColorMark color when !string.IsNullOrWhiteSpace(color.Color):
+                yield return new InlineMark { Type = InlineMarkType.TextColor, Value = color.Color };
+                break;
+            case Wyg.HighlightMark highlight when !string.IsNullOrWhiteSpace(highlight.Color):
+                yield return new InlineMark { Type = InlineMarkType.Highlight, Value = highlight.Color };
+                break;
+            case Wyg.LinkMark link:
+                yield return new InlineMark
+                {
+                    Type = InlineMarkType.Link,
+                    Link = new LinkMarkData { Href = link.Href, Title = link.Title }
+                };
+                break;
+        }
     }
 
     private static Wyg.Block FromPersistenceBlock(DocumentBlock block)
@@ -349,6 +379,10 @@ public class DocumentSerializer
                 InlineMarkType.Strikethrough => new Wyg.StrikethroughMark(),
                 InlineMarkType.Subscript => new Wyg.SubscriptMark(),
                 InlineMarkType.Superscript => new Wyg.SuperscriptMark(),
+                InlineMarkType.FontFamily => new Wyg.FontMark { Family = mark.Value ?? string.Empty, Size = string.Empty },
+                InlineMarkType.FontSize => new Wyg.FontMark { Family = string.Empty, Size = mark.Value ?? string.Empty },
+                InlineMarkType.TextColor => new Wyg.ColorMark { Color = mark.Value ?? string.Empty },
+                InlineMarkType.Highlight => new Wyg.HighlightMark { Color = mark.Value ?? string.Empty },
                 InlineMarkType.Link => new Wyg.LinkMark { Href = mark.Link?.Href ?? string.Empty, Title = mark.Link?.Title },
                 _ => null
             };

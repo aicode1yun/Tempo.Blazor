@@ -60,8 +60,36 @@
                                 {
                                     <span class="tm-document-comment-entry__external">@Loc["TmDocumentEditor_ExternalAuthor"]</span>
                                 }
+                                @if (CanEditEntry(entry))
+                                {
+                                    <button type="button"
+                                            class="tm-document-comment-entry__edit"
+                                            data-testid="document-comment-edit"
+                                            @onclick:stopPropagation="true"
+                                            @onclick="() => BeginEdit(entry)">
+                                        @Loc["TmDocumentEditor_EditComment"]
+                                    </button>
+                                }
                             </div>
-                            <p>@entry.Text</p>
+                            @if (_editingEntryId == entry.Id)
+                            {
+                                <TmDocumentCommentComposer CanComment="@CanComment"
+                                                           IsBusy="@IsBusy"
+                                                           MentionProvider="@MentionProvider"
+                                                           InitialText="@entry.Text"
+                                                           Placeholder="@Loc["TmDocumentEditor_CommentPlaceholder"]"
+                                                           SubmitLabel="@Loc["TmDocumentEditor_SaveComment"]"
+                                                           TestId="document-comment-edit-composer"
+                                                           InputTestId="document-comment-edit-input"
+                                                           SubmitTestId="document-comment-edit-submit"
+                                                           CancelTestId="document-comment-edit-cancel"
+                                                           OnSubmit="EditAsync"
+                                                           OnCancel="CancelEditAsync" />
+                            }
+                            else
+                            {
+                                <p>@entry.Text</p>
+                            }
                         </section>
                     }
                 </div>
@@ -148,6 +176,9 @@
     /// <summary>Raised when a reply is submitted.</summary>
     [Parameter] public EventCallback<DocumentEditorCommentReplyRequest> OnReply { get; set; }
 
+    /// <summary>Raised when an existing entry is edited.</summary>
+    [Parameter] public EventCallback<DocumentEditorCommentEditRequest> OnEdit { get; set; }
+
     /// <summary>Raised when the thread should be resolved.</summary>
     [Parameter] public EventCallback<string> OnResolve { get; set; }
 
@@ -158,6 +189,7 @@
     [Parameter] public EventCallback<string> OnDelete { get; set; }
 
     private bool _expandedByUser;
+    private string? _editingEntryId;
 
     private bool IsCollapsed
         => CollapseResolved
@@ -170,6 +202,13 @@
         ?? Loc["TmDocumentEditor_ResolvedCommentCollapsed"];
 
     private bool CanDeleteThread => CanDeleteOwnComments && IsOwnThread;
+
+    private bool CanEditEntry(DocumentCommentEntry entry)
+        => CanComment
+        && Comment?.Status == DocumentCommentStatus.Open
+        && !entry.IsExternalAuthor
+        && !string.IsNullOrWhiteSpace(CurrentAuthorId)
+        && string.Equals(entry.Author.Id, CurrentAuthorId, StringComparison.Ordinal);
 
     private bool IsOwnThread
     {
@@ -252,6 +291,34 @@
         return Comment is null
             ? Task.CompletedTask
             : OnReply.InvokeAsync(new DocumentEditorCommentReplyRequest { CommentId = Comment.Id, Text = text });
+    }
+
+    private void BeginEdit(DocumentCommentEntry entry)
+    {
+        _editingEntryId = entry.Id;
+    }
+
+    private Task CancelEditAsync()
+    {
+        _editingEntryId = null;
+        return Task.CompletedTask;
+    }
+
+    private async Task EditAsync(string text)
+    {
+        if (Comment is null || string.IsNullOrWhiteSpace(_editingEntryId))
+        {
+            return;
+        }
+
+        var entryId = _editingEntryId;
+        _editingEntryId = null;
+        await OnEdit.InvokeAsync(new DocumentEditorCommentEditRequest
+        {
+            CommentId = Comment.Id,
+            EntryId = entryId,
+            Text = text
+        });
     }
 
     private Task ResolveAsync()

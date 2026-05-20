@@ -485,6 +485,24 @@ public static class DocumentEditorEndpoints
             return Results.Ok(updated);
         });
 
+        group.MapPut("/documents/{documentId}/comments/{commentId}/entries/{entryId}", async (
+            string documentId,
+            string commentId,
+            string entryId,
+            DocumentCommentEntryUpdateRequest request,
+            DemoDocumentEditorStore store,
+            CancellationToken cancellationToken) =>
+        {
+            var updated = await store.UpdateCommentEntryAsync(
+                documentId,
+                commentId,
+                entryId,
+                request.Text,
+                request.UpdatedBy,
+                cancellationToken);
+            return Results.Ok(updated);
+        });
+
         group.MapPost("/documents/{documentId}/comments/{commentId}/resolve", async (
             string documentId,
             string commentId,

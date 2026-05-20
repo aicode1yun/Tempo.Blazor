@@ -2837,16 +2837,20 @@
   <data name="TmDocumentEditor_Bold"                   xml:space="preserve"><value>Bold</value></data>
   <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Italic</value></data>
   <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Underline</value></data>
+  <data name="TmDocumentEditor_Strikethrough"          xml:space="preserve"><value>Strikethrough</value></data>
   <data name="TmDocumentEditor_FontFamily"             xml:space="preserve"><value>Font</value></data>
   <data name="TmDocumentEditor_FontFamilyDefault"      xml:space="preserve"><value>Default font</value></data>
   <data name="TmDocumentEditor_FontSize"               xml:space="preserve"><value>Size</value></data>
   <data name="TmDocumentEditor_FontColor"              xml:space="preserve"><value>Font color</value></data>
+  <data name="TmDocumentEditor_TextColor"              xml:space="preserve"><value>Text color</value></data>
   <data name="TmDocumentEditor_HighlightColor"         xml:space="preserve"><value>Highlight</value></data>
   <data name="TmDocumentEditor_Link"                   xml:space="preserve"><value>Link</value></data>
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>Link URL</value></data>
   <data name="TmDocumentEditor_LinkTitle"              xml:space="preserve"><value>Link title</value></data>
   <data name="TmDocumentEditor_LinkInvalidUrl"         xml:space="preserve"><value>Enter a safe URL: http, https, mailto, tel, /path, or #anchor.</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Apply link</value></data>
+  <data name="TmDocumentEditor_RemoveLink"             xml:space="preserve"><value>Remove link</value></data>
+  <data name="TmDocumentEditor_MixedFormatting"        xml:space="preserve"><value>Mixed</value></data>
   <data name="TmDocumentEditor_ApplyColor"             xml:space="preserve"><value>Apply color</value></data>
   <data name="TmDocumentEditor_CancelColor"            xml:space="preserve"><value>Cancel</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Cancel</value></data>
@@ -2930,6 +2934,10 @@
   <data name="TmDocumentEditor_CommentResolveFailed"   xml:space="preserve"><value>Comment could not be resolved.</value></data>
   <data name="TmDocumentEditor_CommentReopenedMessage" xml:space="preserve"><value>Comment reopened</value></data>
   <data name="TmDocumentEditor_CommentReopenFailed"    xml:space="preserve"><value>Comment could not be reopened.</value></data>
+  <data name="TmDocumentEditor_EditComment"            xml:space="preserve"><value>Edit</value></data>
+  <data name="TmDocumentEditor_SaveComment"            xml:space="preserve"><value>Save</value></data>
+  <data name="TmDocumentEditor_CommentEdited"          xml:space="preserve"><value>Comment updated</value></data>
+  <data name="TmDocumentEditor_CommentEditFailed"      xml:space="preserve"><value>Comment could not be updated.</value></data>
   <data name="TmDocumentEditor_DeleteComment"          xml:space="preserve"><value>Delete</value></data>
   <data name="TmDocumentEditor_CommentDeleted"         xml:space="preserve"><value>Comment deleted</value></data>
   <data name="TmDocumentEditor_CommentDeleteFailed"    xml:space="preserve"><value>Comment could not be deleted.</value></data>
@@ -3116,6 +3124,8 @@
   <data name="TmDocumentEditor_ListTools"              xml:space="preserve"><value>List tools</value></data>
   <data name="TmDocumentEditor_DecreaseIndent"         xml:space="preserve"><value>Decrease indent</value></data>
   <data name="TmDocumentEditor_IncreaseIndent"         xml:space="preserve"><value>Increase indent</value></data>
+  <data name="TmDocumentEditor_BulletedList"           xml:space="preserve"><value>Bulleted list</value></data>
+  <data name="TmDocumentEditor_NumberedList"           xml:space="preserve"><value>Numbered list</value></data>
   <data name="TmDocumentEditor_EditListItem"           xml:space="preserve"><value>Edit list item</value></data>
   <data name="TmDocumentEditor_EditQuote"              xml:space="preserve"><value>Edit quote</value></data>
   <data name="TmDocumentEditor_TableTools"             xml:space="preserve"><value>Table tools</value></data>
@@ -3134,6 +3144,7 @@
   <data name="TmDocumentEditor_InsertRow"              xml:space="preserve"><value>Insert row below</value></data>
   <data name="TmDocumentEditor_InsertColumnBefore"     xml:space="preserve"><value>Insert column left</value></data>
   <data name="TmDocumentEditor_InsertColumn"           xml:space="preserve"><value>Insert column right</value></data>
+  <data name="TmDocumentEditor_DeleteTable"            xml:space="preserve"><value>Delete table</value></data>
   <data name="TmDocumentEditor_MergeCells"             xml:space="preserve"><value>Merge cells</value></data>
   <data name="TmDocumentEditor_TableProperties"        xml:space="preserve"><value>Table properties</value></data>
   <data name="TmDocumentEditor_CellProperties"         xml:space="preserve"><value>Cell properties</value></data>
@@ -3178,12 +3189,14 @@
   <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Footer</value></data>
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Notes</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Footnote</value></data>
+  <data name="TmDocumentEditor_FootnotePlaceholder"    xml:space="preserve"><value>Footnote text</value></data>
   <data name="TmDocumentEditor_TableOfContents"        xml:space="preserve"><value>Table of contents</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
   <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Drop a DOCX file or browse</value></data>
   <data name="TmDocumentEditor_ExportDocx"             xml:space="preserve"><value>Export DOCX</value></data>
   <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Endnote</value></data>
+  <data name="TmDocumentEditor_EndnotePlaceholder"     xml:space="preserve"><value>Endnote text</value></data>
   <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Footnote</value></data>
   <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Endnote</value></data>
   <data name="TmDocumentEditor_Revisions"              xml:space="preserve"><value>Revisions</value></data>
@@ -3219,6 +3232,45 @@
   <data name="TmDocumentEditor_UploadImage"            xml:space="preserve"><value>Upload image</value></data>
   <data name="TmDocumentEditor_DifferentFirstPage"     xml:space="preserve"><value>Different first page</value></data>
   <data name="TmDocumentEditor_DifferentOddEven"       xml:space="preserve"><value>Different odd and even pages</value></data>
+  <data name="TmDocumentEditor_HeaderFooterFields"     xml:space="preserve"><value>Header and footer fields</value></data>
+  <data name="TmDocumentEditor_InsertPageNumber"       xml:space="preserve"><value>Insert page number</value></data>
+  <data name="TmDocumentEditor_InsertPageCount"        xml:space="preserve"><value>Insert page count</value></data>
+  <data name="TmDocumentEditor_InsertPageXOfY"         xml:space="preserve"><value>Insert page X of Y</value></data>
+  <data name="TmDocumentEditor_InsertDateField"        xml:space="preserve"><value>Insert date</value></data>
+  <data name="TmDocumentEditor_InsertDocumentTitleField" xml:space="preserve"><value>Insert document title</value></data>
+  <data name="TmDocumentEditor_PageNumber"             xml:space="preserve"><value>Page number</value></data>
+  <data name="TmDocumentEditor_TotalPages"             xml:space="preserve"><value>Total pages</value></data>
+  <data name="TmDocumentEditor_PageXOfY"               xml:space="preserve"><value>Page X of Y</value></data>
+  <data name="TmDocumentEditor_FieldDate"              xml:space="preserve"><value>Date</value></data>
+  <data name="TmDocumentEditor_DocumentTitle"          xml:space="preserve"><value>Document title</value></data>
+  <data name="TmDocumentEditor_Author"                 xml:space="preserve"><value>Author</value></data>
+  <data name="TmDocumentEditor_FileName"               xml:space="preserve"><value>File name</value></data>
+  <data name="TmDocumentEditor_InsertField"            xml:space="preserve"><value>Insert field</value></data>
+  <data name="TmDocumentEditor_HeaderFooterPresets"    xml:space="preserve"><value>Presets</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScope"      xml:space="preserve"><value>Header and footer scope</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopePrimary" xml:space="preserve"><value>Primary</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeFirstPage" xml:space="preserve"><value>First page</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeEvenPages" xml:space="preserve"><value>Even pages</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeOddPages" xml:space="preserve"><value>Odd pages</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberRightFooter" xml:space="preserve"><value>Page number, bottom right</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberCenterFooter" xml:space="preserve"><value>Page number, bottom center</value></data>
+  <data name="TmDocumentEditor_PresetTitlePageHeader"  xml:space="preserve"><value>Title left, page number right</value></data>
+  <data name="TmDocumentEditor_PresetPageXOfYRightFooter" xml:space="preserve"><value>Page X of Y, bottom right</value></data>
+  <data name="TmDocumentEditor_PageSize"               xml:space="preserve"><value>Page size</value></data>
+  <data name="TmDocumentEditor_Orientation"            xml:space="preserve"><value>Orientation</value></data>
+  <data name="TmDocumentEditor_OrientationPortrait"    xml:space="preserve"><value>Portrait</value></data>
+  <data name="TmDocumentEditor_OrientationLandscape"   xml:space="preserve"><value>Landscape</value></data>
+  <data name="TmDocumentEditor_MarginsPreset"          xml:space="preserve"><value>Margins</value></data>
+  <data name="TmDocumentEditor_MarginsNormal"          xml:space="preserve"><value>Normal</value></data>
+  <data name="TmDocumentEditor_MarginsNarrow"          xml:space="preserve"><value>Narrow</value></data>
+  <data name="TmDocumentEditor_MarginsWide"            xml:space="preserve"><value>Wide</value></data>
+  <data name="TmDocumentEditor_MarginsCustom"          xml:space="preserve"><value>Custom</value></data>
+  <data name="TmDocumentEditor_MarginTop"              xml:space="preserve"><value>Top</value></data>
+  <data name="TmDocumentEditor_MarginRight"            xml:space="preserve"><value>Right</value></data>
+  <data name="TmDocumentEditor_MarginBottom"           xml:space="preserve"><value>Bottom</value></data>
+  <data name="TmDocumentEditor_MarginLeft"             xml:space="preserve"><value>Left</value></data>
+  <data name="TmDocumentEditor_HeaderDistance"         xml:space="preserve"><value>Header distance</value></data>
+  <data name="TmDocumentEditor_FooterDistance"         xml:space="preserve"><value>Footer distance</value></data>
   <data name="TmDocumentEditor_CloseHeaderFooter"      xml:space="preserve"><value>Close header and footer</value></data>
   <data name="TmDocumentEditor_ImageProviderMissing"   xml:space="preserve"><value>Image provider is not configured.</value></data>
   <data name="TmDocumentEditor_ImagePasteRejected"     xml:space="preserve"><value>Pasted image is not allowed.</value></data>

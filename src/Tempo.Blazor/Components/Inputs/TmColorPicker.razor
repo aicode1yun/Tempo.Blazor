@@ -2,9 +2,14 @@
 @using Tempo.Blazor.Abstractions.Models
 @inject ITmLocalizer Loc
 
-<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @(Disabled ? "tm-color-picker--disabled" : "") @Class" @attributes="AdditionalAttributes">
+<div class="tm-color-picker @(_isOpen ? "tm-color-picker--open" : "") @(Disabled ? "tm-color-picker--disabled" : "") @Class"
+     @ref="_rootElement"
+     @onkeydown="HandleKeyDownAsync"
+     @attributes="AdditionalAttributes">
     <div class="tm-color-picker-trigger"
-         @onclick="ToggleDropdown"
+         @ref="_triggerElement"
+         @onclick="ToggleDropdownAsync"
+         @onkeydown="HandleKeyDownAsync"
          role="button"
          tabindex="@(Disabled ? "-1" : "0")"
          aria-haspopup="true"

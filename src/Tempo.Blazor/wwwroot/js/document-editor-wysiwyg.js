@@ -17,6 +17,96 @@ window.tmDocumentWysiwyg = (function () {
     const _instances = new Map();
     let _instanceCounter = 0;
 
+    function _isImageDebugEnabled() {
+        try {
+            if (window.localStorage && window.localStorage.getItem('tmDocumentEditorImageDebug') === '1') {
+                return true;
+            }
+        } catch {}
+
+        try {
+            return new URLSearchParams(window.location.search).get('tmImageDebug') === '1';
+        } catch {
+            return false;
+        }
+    }
+
+    function _debugRect(rect) {
+        if (!rect) return null;
+        return {
+            left: Math.round(rect.left),
+            top: Math.round(rect.top),
+            right: Math.round(rect.right),
+            bottom: Math.round(rect.bottom),
+            width: Math.round(rect.width),
+            height: Math.round(rect.height)
+        };
+    }
+
+    function _debugElementLabel(element) {
+        if (!element) return null;
+        var parts = [element.tagName ? element.tagName.toLowerCase() : 'node'];
+        var blockId = element.getAttribute && element.getAttribute('data-block-id');
+        var inlineId = element.getAttribute && element.getAttribute('data-inline-id');
+        var sidecarFor = element.getAttribute && element.getAttribute('data-wrap-sidecar-for');
+        if (blockId) parts.push('block=' + blockId);
+        if (inlineId) parts.push('inline=' + inlineId);
+        if (sidecarFor) parts.push('sidecarFor=' + sidecarFor);
+        if (element.className && typeof element.className === 'string') {
+            parts.push('.' + element.className.trim().replace(/\s+/g, '.'));
+        }
+        return parts.join(' ');
+    }
+
+    function _debugSelectionSummary() {
+        try {
+            var sel = window.getSelection && window.getSelection();
+            if (!sel || sel.rangeCount === 0) return { present: false };
+            var anchor = sel.anchorNode && (sel.anchorNode.nodeType === Node.ELEMENT_NODE ? sel.anchorNode : sel.anchorNode.parentElement);
+            var focus = sel.focusNode && (sel.focusNode.nodeType === Node.ELEMENT_NODE ? sel.focusNode : sel.focusNode.parentElement);
+            return {
+                present: true,
+                collapsed: sel.isCollapsed,
+                anchor: _debugElementLabel(anchor),
+                focus: _debugElementLabel(focus),
+                anchorOffset: sel.anchorOffset,
+                focusOffset: sel.focusOffset
+            };
+        } catch (err) {
+            return { present: false, error: err && err.message ? err.message : String(err) };
+        }
+    }
+
+    function _debugImage(inst, eventName, data) {
+        if (!_isImageDebugEnabled()) return;
+        try {
+            var payload = Object.assign({
+                instanceId: inst && inst.id,
+                selection: _debugSelectionSummary()
+            }, data || {});
+            console.info('[TmDocumentEditor:image]', eventName, payload);
+            try {
+                console.info('[TmDocumentEditor:image-json]', JSON.stringify(Object.assign({ eventName: eventName }, payload)));
+            } catch {}
+        } catch {}
+    }
+
+    function _debugImageFigures(inst) {
+        if (!inst || !inst.root) return [];
+        return Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image')).map(function (figure, index) {
+            return {
+                index: index,
+                label: _debugElementLabel(figure),
+                inline: figure.getAttribute('data-floating-inline'),
+                wrapMode: figure.getAttribute('data-wrap-mode'),
+                horizontalPosition: figure.getAttribute('data-horizontal-position'),
+                classes: figure.className || '',
+                figureRect: _debugRect(figure.getBoundingClientRect()),
+                visualRect: _debugRect(_getImagePrimaryVisualRect(figure))
+            };
+        });
+    }
+
     /**
      * @typedef {Object} WysiwygInstance
      * @property {string} id
@@ -88,6 +178,7 @@ window.tmDocumentWysiwyg = (function () {
             remoteCursorElements: new Map(),
             markerStore: new Map(),
             lastSelectionSnapshot: null,
+            lastBodySelectionSnapshot: null,
             lastTextSelectionSnapshot: null,
             miniToolbarSuppressHideUntil: 0,
             lastInputType: null,
@@ -246,6 +337,7 @@ window.tmDocumentWysiwyg = (function () {
 
     function _attachEventListeners(inst) {
         inst._handleVirtualScroll = function () {
+            _updatePageWidthFitZoom(inst);
             _scheduleVirtualizationRefresh(inst);
             _repositionVisibleFloatingLayers(inst);
             _scheduleCommentRailAlignment(inst);
@@ -283,6 +375,7 @@ window.tmDocumentWysiwyg = (function () {
         inst._handleDocumentKeyDown = function (e) { _onDocumentKeyDown(inst, e); };
         inst._handleDocumentPointerDown = function (e) { _onDocumentPointerDown(inst, e); };
         inst._handlePointerDown = function (e) { _onFloatingImagePointerDown(inst, e); };
+        inst._handleTablePointerDown = function (e) { _onTablePointerDown(inst, e); };
         inst._handlePointerUp = function (e) { _onRootPointerUp(inst, e); };
         inst._handleClick = function (e) { _onRootClick(inst, e); };
         inst._handleDoubleClick = function (e) { _onRootDoubleClick(inst, e); };
@@ -303,6 +396,7 @@ window.tmDocumentWysiwyg = (function () {
         document.addEventListener('pointerdown', inst._handleDocumentPointerDown, true);
         inst.root.addEventListener('keydown', inst._handleKeyDown, true);
         inst.root.addEventListener('pointerdown', inst._handlePointerDown, true);
+        inst.root.addEventListener('pointerdown', inst._handleTablePointerDown, true);
         inst.root.addEventListener('pointerup', inst._handlePointerUp, true);
         inst.root.addEventListener('click', inst._handleClick, true);
         inst.root.addEventListener('dblclick', inst._handleDoubleClick, true);
@@ -348,6 +442,9 @@ window.tmDocumentWysiwyg = (function () {
         }
         if (inst._handlePointerDown) {
             inst.root.removeEventListener('pointerdown', inst._handlePointerDown, true);
+        }
+        if (inst._handleTablePointerDown) {
+            inst.root.removeEventListener('pointerdown', inst._handleTablePointerDown, true);
         }
         if (inst._handlePointerUp) {
             inst.root.removeEventListener('pointerup', inst._handlePointerUp, true);
@@ -410,10 +507,41 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        var imageSideTextBlock = _findWrappedImageSideTextBlockAtPoint(inst, event.clientX, event.clientY);
+        if (imageSideTextBlock) {
+            event.preventDefault();
+            _clearSelectedImage(inst);
+            _hideImageContextMenu(inst);
+            _hideImageReplaceMenu(inst);
+            _focusWrappedImageSideTextBlock(inst, imageSideTextBlock, event.clientX, event.clientY);
+            return;
+        }
+
         var image = target.closest('figure.tm-wysiwyg-image');
         if (image && inst.root.contains(image)) {
+            if (!_isImageVisualClick(image, event.clientX, event.clientY)) {
+                return;
+            }
+
             event.preventDefault();
             _selectImageFigure(inst, image);
+            _hideInlineRevisionReview(inst);
+            return;
+        }
+
+        var tableCell = target.closest('td[data-cell-id], th[data-cell-id]');
+        if (tableCell && inst.root.contains(tableCell)) {
+            _clearSelectedImage(inst);
+            _hideImageContextMenu(inst);
+            _hideImageReplaceMenu(inst);
+            _markActiveTableCell(tableCell);
+            var tableSnapshot = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot || {};
+            var tableCellId = tableCell.getAttribute('data-cell-id') || '';
+            tableSnapshot.activeTableCellId = tableCellId;
+            tableSnapshot.ActiveTableCellId = tableCellId;
+            inst.lastSelectionSnapshot = tableSnapshot;
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(tableSnapshot);
+            _scheduleSelectionNotification(inst, tableSnapshot);
             _hideInlineRevisionReview(inst);
             return;
         }
@@ -421,6 +549,21 @@ window.tmDocumentWysiwyg = (function () {
         _clearSelectedImage(inst);
         _hideImageContextMenu(inst);
         _hideImageReplaceMenu(inst);
+
+        var headerFooterRegion = target.closest('.tm-wysiwyg-page__header[contenteditable="true"], .tm-wysiwyg-page__footer[contenteditable="true"]');
+        if (headerFooterRegion && inst.root.contains(headerFooterRegion)) {
+            _rememberBodySelection(inst, _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot);
+            _markActivePageRegion(inst, headerFooterRegion);
+            window.setTimeout(function () {
+                var snapshot = _captureSelectionSnapshot(inst);
+                if (snapshot) {
+                    inst.lastSelectionSnapshot = snapshot;
+                    inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
+                    _scheduleSelectionNotification(inst, snapshot);
+                }
+            }, 0);
+            return;
+        }
 
         var bodyRegion = target.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
         if (bodyRegion && inst.root.contains(bodyRegion)) {
@@ -443,7 +586,30 @@ window.tmDocumentWysiwyg = (function () {
             : event.target?.parentElement;
         if (!target) return;
 
+        if (target.closest('[data-testid="document-context-clear-formatting"]')) {
+            inst.clearFormattingPointerCaptureCount = (inst.clearFormattingPointerCaptureCount || 0) + 1;
+            inst.clearFormattingPointerCaptureHandledUntil = Date.now() + 500;
+            event.preventDefault();
+            _executeClearFormattingCommand(inst, {
+                selection: inst.contextMenuSelectionSnapshot || inst.lastSelectionSnapshot,
+                fromPointerCapture: true
+            });
+            return;
+        }
+
         if (inst.root.contains(target)) {
+            return;
+        }
+
+        if (target.closest('[data-testid="document-toolbar"]')) {
+            var toolbarSelection = _captureSelectionSnapshot(inst);
+            if (toolbarSelection && _selectionRegionName(toolbarSelection) === 'body') {
+                inst.lastSelectionSnapshot = toolbarSelection;
+                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(toolbarSelection);
+                _rememberBodySelection(inst, toolbarSelection);
+                inst.pendingSelectionSnapshot = toolbarSelection;
+                _flushSelectionNotification(inst);
+            }
             return;
         }
 
@@ -462,7 +628,10 @@ window.tmDocumentWysiwyg = (function () {
         var refreshSelectionToolbar = function () {
             if (!inst || inst.disposed) return;
             var snapshot = _captureSelectionSnapshot(inst);
-            if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) return;
+            if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) {
+                _hideMiniToolbar(inst, true);
+                return;
+            }
 
             inst.lastSelectionSnapshot = snapshot;
             inst.lastTextSelectionSnapshot = snapshot;
@@ -473,6 +642,73 @@ window.tmDocumentWysiwyg = (function () {
 
         window.setTimeout(refreshSelectionToolbar, 0);
         window.setTimeout(refreshSelectionToolbar, 140);
+    }
+
+    function _onTablePointerDown(inst, event) {
+        if (!inst || inst.disposed || inst.readOnly || event.button !== 0) return;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        var cell = target && target.closest ? target.closest('td[data-cell-id], th[data-cell-id]') : null;
+        if (!cell || !inst.root.contains(cell)) return;
+
+        var table = _getTableBlockFromCell(cell);
+        if (!table) return;
+
+        _markActiveTableCell(cell);
+        var tableSnapshot = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot || {};
+        var cellId = cell.getAttribute('data-cell-id') || '';
+        tableSnapshot.activeTableCellId = cellId;
+        tableSnapshot.ActiveTableCellId = cellId;
+        inst.lastSelectionSnapshot = tableSnapshot;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(tableSnapshot);
+        _scheduleSelectionNotification(inst, tableSnapshot);
+
+        var drag = {
+            table: table,
+            startCell: cell,
+            currentCell: cell,
+            startX: event.clientX,
+            startY: event.clientY,
+            started: false
+        };
+        inst.tableCellRangeDrag = drag;
+
+        function onMove(moveEvent) {
+            if (!inst.tableCellRangeDrag || inst.tableCellRangeDrag !== drag) return;
+            var nextCell = _getTableCellAtPoint(inst, moveEvent.clientX, moveEvent.clientY);
+            if (!nextCell || _getTableBlockFromCell(nextCell) !== table) return;
+
+            var dx = moveEvent.clientX - drag.startX;
+            var dy = moveEvent.clientY - drag.startY;
+            var movedEnough = Math.sqrt((dx * dx) + (dy * dy)) >= 4;
+            if (!drag.started && (!movedEnough || nextCell === drag.startCell)) return;
+
+            drag.started = true;
+            drag.currentCell = nextCell;
+            moveEvent.preventDefault();
+            _markTableCellRange(table, drag.startCell, nextCell);
+        }
+
+        function onUp(upEvent) {
+            document.removeEventListener('pointermove', onMove, true);
+            document.removeEventListener('pointerup', onUp, true);
+            if (inst.tableCellRangeDrag === drag) {
+                inst.tableCellRangeDrag = null;
+            }
+
+            if (!drag.started) return;
+            upEvent.preventDefault();
+            var finalSnapshot = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot || {};
+            finalSnapshot.activeTableCellId = cellId;
+            finalSnapshot.ActiveTableCellId = cellId;
+            inst.lastSelectionSnapshot = finalSnapshot;
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(finalSnapshot);
+            _scheduleSelectionNotification(inst, finalSnapshot);
+        }
+
+        document.addEventListener('pointermove', onMove, true);
+        document.addEventListener('pointerup', onUp, true);
     }
 
     function _onRootDoubleClick(inst, event) {
@@ -492,11 +728,17 @@ window.tmDocumentWysiwyg = (function () {
     function _activatePageRegion(inst, regionEl) {
         if (!inst || !regionEl || !inst.root || !inst.root.contains(regionEl)) return;
 
+        var regionName = regionEl.getAttribute('data-region') || '';
+        if (regionName === 'Header' || regionName === 'Footer') {
+            _rememberBodySelection(inst, _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot);
+        }
+
         _markActivePageRegion(inst, regionEl);
         regionEl.focus({ preventScroll: true });
         _ensureEditableSelection(inst, regionEl);
         var snapshot = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = snapshot;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
         inst.pendingSelectionSnapshot = snapshot;
         _flushSelectionNotification(inst);
     }
@@ -525,10 +767,39 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _onRootContextMenu(inst, event) {
-        if (!inst || inst.disposed || inst.readOnly) return;
+        if (!inst || inst.disposed) return;
         var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
             ? event.target
             : event.target?.parentElement;
+
+        if (inst.readOnly) {
+            event.preventDefault();
+            _clearSelectedImage(inst);
+            _hideImageContextMenu(inst);
+            _hideMiniToolbar(inst, true);
+            _ensureContextMenuSelection(inst, target, event);
+            var readOnlySnapshot = _captureSelectionSnapshot(inst);
+            if (!readOnlySnapshot || readOnlySnapshot.isCollapsed || !_isTextSelectionSnapshot(readOnlySnapshot)) return;
+
+            inst.lastSelectionSnapshot = readOnlySnapshot;
+            inst.contextMenuSelectionSnapshot = _cloneRuntimeJson(readOnlySnapshot);
+            inst.virtualSelectionSnapshot = null;
+            _scheduleSelectionNotification(inst, readOnlySnapshot);
+            var readOnlyPosition = _placeFloatingElement(event.clientX, event.clientY, 260, 380);
+            _invokeDotNet(inst, 'HandleTextContextMenuRequested', {
+                ClientX: event.clientX,
+                ClientY: event.clientY,
+                Left: readOnlyPosition.left,
+                Top: readOnlyPosition.top,
+                Width: readOnlyPosition.width,
+                Height: readOnlyPosition.height,
+                ViewportWidth: readOnlyPosition.viewportWidth,
+                ViewportHeight: readOnlyPosition.viewportHeight,
+                Selection: _toPascalSelection(readOnlySnapshot)
+            });
+            return;
+        }
+
         var tableCell = target && target.closest && target.closest('td[data-cell-id], th[data-cell-id]');
         if (tableCell && inst.root.contains(tableCell)) {
             event.preventDefault();
@@ -541,7 +812,7 @@ window.tmDocumentWysiwyg = (function () {
 
             inst.lastSelectionSnapshot = tableSnapshot;
             _scheduleSelectionNotification(inst, tableSnapshot);
-            var tablePosition = _placeFloatingElement(event.clientX, event.clientY, 224, 340);
+            var tablePosition = _placeFloatingElement(event.clientX, event.clientY, 256, 520);
             _invokeDotNet(inst, 'HandleTableContextMenuRequested', {
                 ClientX: event.clientX,
                 ClientY: event.clientY,
@@ -551,6 +822,7 @@ window.tmDocumentWysiwyg = (function () {
                 Height: tablePosition.height,
                 ViewportWidth: tablePosition.viewportWidth,
                 ViewportHeight: tablePosition.viewportHeight,
+                CellId: tableCell.getAttribute('data-cell-id') || tableSnapshot.activeTableCellId || tableSnapshot.ActiveTableCellId || '',
                 Selection: _toPascalSelection(tableSnapshot)
             });
             return;
@@ -562,6 +834,16 @@ window.tmDocumentWysiwyg = (function () {
             _selectImageFigure(inst, image);
             _hideMiniToolbar(inst);
             _showImageContextMenu(inst, image, event.clientX, event.clientY);
+            return;
+        }
+
+        var revision = target && target.closest && target.closest('.tm-wysiwyg-revision[data-revision-id]');
+        if (revision && inst.root.contains(revision)) {
+            event.preventDefault();
+            _clearSelectedImage(inst);
+            _hideImageContextMenu(inst);
+            _hideMiniToolbar(inst, true);
+            _showInlineRevisionReview(inst, revision);
             return;
         }
 
@@ -603,9 +885,10 @@ window.tmDocumentWysiwyg = (function () {
         if (!snapshot || snapshot.isCollapsed || !_isTextSelectionSnapshot(snapshot)) return;
 
         inst.lastSelectionSnapshot = snapshot;
+        inst.contextMenuSelectionSnapshot = _cloneRuntimeJson(snapshot);
         inst.virtualSelectionSnapshot = null;
         _scheduleSelectionNotification(inst, snapshot);
-        var position = _placeFloatingElement(event.clientX, event.clientY, 240, 268);
+        var position = _placeFloatingElement(event.clientX, event.clientY, 260, 380);
         _invokeDotNet(inst, 'HandleTextContextMenuRequested', {
             ClientX: event.clientX,
             ClientY: event.clientY,
@@ -617,6 +900,64 @@ window.tmDocumentWysiwyg = (function () {
             ViewportHeight: position.viewportHeight,
             Selection: _toPascalSelection(snapshot)
         });
+    }
+
+    function _openKeyboardContextMenu(inst, event) {
+        if (!inst || inst.disposed) return false;
+
+        var point = _getKeyboardContextMenuPoint(inst, event);
+        var target = document.elementFromPoint(point.x, point.y)
+            || (event && event.target && event.target.nodeType === Node.ELEMENT_NODE ? event.target : null)
+            || document.activeElement
+            || inst.root;
+
+        _onRootContextMenu(inst, {
+            target: target,
+            clientX: point.x,
+            clientY: point.y,
+            preventDefault: function () { },
+            stopPropagation: function () { }
+        });
+        window.setTimeout(function () {
+            var menu = document.querySelector('[data-testid="document-text-context-menu"], [data-testid="document-table-context-menu"], .tm-wysiwyg-image-context-menu');
+            var item = menu && menu.querySelector('button[role="menuitem"]:not(:disabled), button:not(:disabled)');
+            if (item && typeof item.focus === 'function') {
+                item.focus({ preventScroll: true });
+            }
+        }, 0);
+
+        return true;
+    }
+
+    function _getKeyboardContextMenuPoint(inst, event) {
+        var rect = null;
+        var selection = window.getSelection && window.getSelection();
+        if (selection && selection.rangeCount > 0) {
+            var range = selection.getRangeAt(0);
+            var rects = Array.from(range.getClientRects()).filter(function (candidate) {
+                return candidate && candidate.width > 0 && candidate.height > 0;
+            });
+            rect = rects[0] || range.getBoundingClientRect();
+        }
+
+        if ((!rect || rect.width <= 0 || rect.height <= 0) && inst.selectedImageFigure) {
+            rect = inst.selectedImageFigure.getBoundingClientRect();
+        }
+
+        if (!rect || rect.width <= 0 || rect.height <= 0) {
+            var target = event && event.target && event.target.nodeType === Node.ELEMENT_NODE
+                ? event.target
+                : document.activeElement;
+            rect = target && target.getBoundingClientRect
+                ? target.getBoundingClientRect()
+                : inst.root.getBoundingClientRect();
+        }
+
+        var x = Math.round(rect.left + Math.min(Math.max(rect.width / 2, 12), Math.max(rect.width - 2, 12)));
+        var y = Math.round(rect.top + Math.min(Math.max(rect.height / 2, 12), Math.max(rect.height - 2, 12)));
+        x = Math.max(8, Math.min(window.innerWidth - 8, x));
+        y = Math.max(8, Math.min(window.innerHeight - 8, y));
+        return { x: x, y: y };
     }
 
     function _ensureContextMenuSelection(inst, target, event) {
@@ -792,7 +1133,7 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        var width = 184;
+        var width = 336;
         var height = 40;
         var position = _computeFloatingPosition(rect, { width: width, height: height }, { placement: 'top', align: 'center' });
         var left = position.left;
@@ -811,7 +1152,19 @@ window.tmDocumentWysiwyg = (function () {
             snapshot.focusOffset || 0
         ].join('|');
 
-        if (inst.miniToolbarVisible && inst.miniToolbarRequestKey === key) return;
+        if (inst.dismissedMiniToolbarSelectionKey && inst.dismissedMiniToolbarSelectionKey !== key) {
+            inst.dismissedMiniToolbarSelectionKey = null;
+        }
+        if (inst.dismissedMiniToolbarSelectionKey === key) {
+            _hideNativeMiniToolbarFallback(inst);
+            return;
+        }
+
+        if (inst.miniToolbarVisible
+            && inst.miniToolbarRequestKey === key
+            && document.querySelector('[data-testid="document-mini-toolbar"]')) {
+            return;
+        }
         inst.miniToolbarVisible = true;
         inst.lastTextSelectionSnapshot = snapshot;
         inst.miniToolbarRequestKey = key;
@@ -844,6 +1197,12 @@ window.tmDocumentWysiwyg = (function () {
         _invokeDotNet(inst, 'HandleMiniToolbarChanged', null);
     }
 
+    function _dismissMiniToolbar(inst) {
+        if (!inst) return;
+        inst.dismissedMiniToolbarSelectionKey = inst.miniToolbarRequestKey || '';
+        _hideMiniToolbar(inst, true);
+    }
+
     function _showNativeMiniToolbarFallback(inst, position, snapshot, key) {
         _hideNativeMiniToolbarFallback(inst);
         var toolbar = document.createElement('section');
@@ -860,8 +1219,13 @@ window.tmDocumentWysiwyg = (function () {
         [
             { label: 'B', title: 'Bold', testId: 'document-mini-bold', command: 'toggleBold' },
             { label: 'I', title: 'Italic', testId: 'document-mini-italic', command: 'toggleItalic' },
+            { label: 'U', title: 'Underline', testId: 'document-mini-underline', command: 'toggleUnderline' },
+            { label: 'S', title: 'Strikethrough', testId: 'document-mini-strikethrough', command: 'toggleStrikethrough' },
+            { label: 'A', title: 'Text color', testId: 'document-mini-text-color', command: 'setTextColor', payload: { Value: '#123456' } },
+            { label: 'H', title: 'Highlight', testId: 'document-mini-highlight', command: 'setHighlightColor', payload: { Value: '#fff59d' } },
             { label: 'Link', title: 'Link', testId: 'document-mini-link', command: null },
-            { label: 'Comment', title: 'Comment', testId: 'document-mini-comment', command: null }
+            { label: 'Comment', title: 'Comment', testId: 'document-mini-comment', command: null },
+            { label: 'Clear', title: 'Clear formatting', testId: 'document-mini-clear-formatting', command: 'clearFormatting' }
         ].forEach(function (item) {
             var button = document.createElement('button');
             button.type = 'button';
@@ -877,7 +1241,7 @@ window.tmDocumentWysiwyg = (function () {
                 event.stopPropagation();
                 if (!item.command) return;
                 _restoreSelection(inst, snapshot);
-                executeCommand(inst.id, item.command, { Selection: snapshot });
+                executeCommand(inst.id, item.command, Object.assign({ Selection: snapshot }, item.payload || {}));
             });
             toolbar.appendChild(button);
         });
@@ -885,10 +1249,25 @@ window.tmDocumentWysiwyg = (function () {
         document.body.appendChild(toolbar);
         inst.nativeMiniToolbar = toolbar;
         inst.nativeMiniToolbarKey = key;
+        if (inst.nativeMiniToolbarObserver) {
+            inst.nativeMiniToolbarObserver.disconnect();
+        }
+        inst.nativeMiniToolbarObserver = new MutationObserver(function () {
+            var blazorToolbar = document.querySelector('.tm-document-editor__floating-root [data-testid="document-mini-toolbar"]');
+            if (blazorToolbar) {
+                _hideNativeMiniToolbarFallback(inst);
+            }
+        });
+        inst.nativeMiniToolbarObserver.observe(document.body, { childList: true, subtree: true });
     }
 
     function _hideNativeMiniToolbarFallback(inst) {
-        if (!inst || !inst.nativeMiniToolbar) return;
+        if (!inst) return;
+        if (inst.nativeMiniToolbarObserver) {
+            inst.nativeMiniToolbarObserver.disconnect();
+            inst.nativeMiniToolbarObserver = null;
+        }
+        if (!inst.nativeMiniToolbar) return;
         if (inst.nativeMiniToolbar.parentNode) {
             inst.nativeMiniToolbar.parentNode.removeChild(inst.nativeMiniToolbar);
         }
@@ -957,22 +1336,28 @@ window.tmDocumentWysiwyg = (function () {
 
         var block = figure.closest('.tm-wysiwyg-block[data-block-id]');
         if (block) {
-            var blockId = block.getAttribute('data-block-id') || '';
-            inst.lastSelectionSnapshot = {
-                Region: 'Image',
-                AnchorBlockId: blockId,
-                FocusBlockId: blockId,
-                ActiveImageBlockId: blockId,
-                AnchorInlineId: '',
-                FocusInlineId: '',
-                AnchorOffset: 0,
-                FocusOffset: 0,
-                IsCollapsed: true
-            };
+            inst.lastSelectionSnapshot = _createImageSelectionSnapshot(figure);
             inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastSelectionSnapshot);
             _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
         }
         _showImageSelectionToolbar(inst, figure);
+    }
+
+    function _createImageSelectionSnapshot(figure) {
+        var blockId = figure && figure.closest
+            ? (figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || figure.getAttribute('data-block-id') || '')
+            : '';
+        return {
+            Region: 'Image',
+            AnchorBlockId: blockId,
+            FocusBlockId: blockId,
+            ActiveImageBlockId: blockId,
+            AnchorInlineId: '',
+            FocusInlineId: '',
+            AnchorOffset: 0,
+            FocusOffset: 0,
+            IsCollapsed: true
+        };
     }
 
     function _clearSelectedImage(inst) {
@@ -993,13 +1378,32 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
+    function _positionFloatingElementInRoot(inst, element, x, y, fallbackWidth, fallbackHeight) {
+        if (!inst || !inst.root || !element) return;
+        var root = inst.root;
+        var rootRect = root.getBoundingClientRect();
+        var width = element.offsetWidth || fallbackWidth || 220;
+        var height = element.offsetHeight || fallbackHeight || 40;
+        var minLeft = root.scrollLeft + Math.max(8, 8 - rootRect.left);
+        var maxLeft = root.scrollLeft + Math.min(root.clientWidth - width - 8, window.innerWidth - rootRect.left - width - 8);
+        var minTop = root.scrollTop + Math.max(8, 8 - rootRect.top);
+        var maxTop = root.scrollTop + Math.min(root.clientHeight - height - 8, window.innerHeight - rootRect.top - height - 8);
+        if (maxLeft < minLeft) maxLeft = minLeft;
+        if (maxTop < minTop) maxTop = minTop;
+        element.style.position = 'absolute';
+        element.style.left = Math.min(Math.max(x, minLeft), maxLeft) + 'px';
+        element.style.top = Math.min(Math.max(y, minTop), maxTop) + 'px';
+    }
+
     function _showImageContextMenu(inst, figure, clientX, clientY) {
         if (!inst || !figure) return;
         _hideImageContextMenu(inst);
+        _hideImageSelectionToolbar(inst);
 
         var menu = document.createElement('div');
         menu.className = 'tm-wysiwyg-image-context-menu';
         menu.setAttribute('role', 'menu');
+        menu.setAttribute('aria-label', 'Image context menu');
         menu.setAttribute('contenteditable', 'false');
         menu.setAttribute('data-testid', 'document-wysiwyg-image-context-menu');
 
@@ -1031,12 +1435,17 @@ window.tmDocumentWysiwyg = (function () {
         });
 
         inst.root.appendChild(menu);
-        var rootRect = inst.root.getBoundingClientRect();
-        var menuWidth = 220;
-        var x = Math.max(8, clientX - rootRect.left + inst.root.scrollLeft);
-        var y = Math.max(8, clientY - rootRect.top + inst.root.scrollTop);
-        menu.style.left = Math.min(x, Math.max(8, inst.root.clientWidth - menuWidth - 8)) + 'px';
-        menu.style.top = y + 'px';
+        var figRect = figure.getBoundingClientRect();
+        var anchorX = Number.isFinite(clientX) ? clientX : figRect.left + 8;
+        var anchorY = Number.isFinite(clientY) ? clientY : figRect.bottom + 8;
+        var menuWidth = menu.offsetWidth || menu.getBoundingClientRect().width || 220;
+        var menuHeight = menu.offsetHeight || menu.getBoundingClientRect().height || 340;
+        var maxLeft = Math.max(8, window.innerWidth - menuWidth - 8);
+        var maxTop = Math.max(8, window.innerHeight - menuHeight - 8);
+        menu.style.position = 'fixed';
+        menu.style.left = Math.min(Math.max(anchorX, 8), maxLeft) + 'px';
+        menu.style.top = Math.min(Math.max(anchorY, 8), maxTop) + 'px';
+        menu.style.zIndex = '1002';
         inst.imageContextMenu = menu;
     }
 
@@ -1061,10 +1470,14 @@ window.tmDocumentWysiwyg = (function () {
         menu.setAttribute('contenteditable', 'false');
         menu.setAttribute('data-testid', 'document-wysiwyg-image-replace-menu');
 
+        var hasProviderAssets = !!(inst.options.hasImageAssetOptions ?? inst.options.HasImageAssetOptions);
         var actions = [
             { text: 'Replace from URL', testId: 'document-wysiwyg-image-replace-url', action: function () { _replaceSelectedImageFromUrl(inst); } },
             { text: 'Upload file', testId: 'document-wysiwyg-image-replace-upload', action: function () { _replaceSelectedImageFromUpload(inst, figure); } }
         ];
+        if (hasProviderAssets) {
+            actions.push({ text: 'Provider asset', testId: 'document-wysiwyg-image-replace-asset', action: function () { _replaceSelectedImageFromAsset(inst, figure); } });
+        }
 
         actions.forEach(function (item) {
             var button = document.createElement('button');
@@ -1084,11 +1497,10 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.appendChild(menu);
         var rootRect = inst.root.getBoundingClientRect();
         var figRect = figure.getBoundingClientRect();
-        var menuWidth = 220;
         var x = Number.isFinite(clientX) ? clientX - rootRect.left + inst.root.scrollLeft : figRect.left - rootRect.left + inst.root.scrollLeft;
         var y = Number.isFinite(clientY) ? clientY - rootRect.top + inst.root.scrollTop : figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
-        menu.style.left = Math.min(Math.max(8, x), Math.max(8, inst.root.clientWidth - menuWidth - 8)) + 'px';
-        menu.style.top = Math.max(8, y) + 'px';
+        var menuHeight = Math.max(menu.offsetHeight || menu.getBoundingClientRect().height || 120, 120);
+        _positionFloatingElementInRoot(inst, menu, x, y, 220, menuHeight);
         inst.imageReplaceMenu = menu;
     }
 
@@ -1140,17 +1552,14 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.appendChild(toolbar);
         var figRect = figure.getBoundingClientRect();
         var rootRect = inst.root.getBoundingClientRect();
-        var toolbarHeight = 40;
-        var top = figRect.top - rootRect.top + inst.root.scrollTop - toolbarHeight;
+        var toolbarHeight = toolbar.offsetHeight || 40;
+        var top = figRect.top - rootRect.top + inst.root.scrollTop - toolbarHeight - 8;
         if (top < 8) {
             top = figRect.bottom - rootRect.top + inst.root.scrollTop + 8;
         }
 
         var left = figRect.left - rootRect.left + inst.root.scrollLeft;
-        left = Math.min(left, Math.max(8, inst.root.clientWidth - 360));
-        toolbar.style.position = 'absolute';
-        toolbar.style.top = Math.max(8, top) + 'px';
-        toolbar.style.left = Math.max(8, left) + 'px';
+        _positionFloatingElementInRoot(inst, toolbar, left, top, 360, toolbarHeight);
         toolbar.style.zIndex = '1001';
         inst.imageSelectionToolbar = toolbar;
     }
@@ -1212,9 +1621,34 @@ window.tmDocumentWysiwyg = (function () {
         _dispatchImageUpdatePatch(inst, figure);
     }
 
+    function _setImageCaption(inst, captionText, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
+        if (!figure) return;
+        var text = captionText == null ? '' : String(captionText);
+        var existing = figure.querySelector('figcaption');
+        if (text.trim().length > 0) {
+            if (!existing) {
+                existing = document.createElement('figcaption');
+                existing.setAttribute('contenteditable', 'true');
+                existing.setAttribute('data-testid', 'document-wysiwyg-image-caption-text');
+                var handle = figure.querySelector('.tm-wysiwyg-image__resize-handle');
+                if (handle) {
+                    figure.insertBefore(existing, handle);
+                } else {
+                    figure.appendChild(existing);
+                }
+            }
+            existing.textContent = text;
+        } else if (existing) {
+            existing.remove();
+        }
+        _ensureImageResizeHandle(figure, inst);
+        _dispatchImageUpdatePatch(inst, figure);
+    }
+
     // Phase 9.4: set image URL (replace image source).
-    function _setImageUrl(inst, url) {
-        var figure = _getSelectedImageFigure(inst);
+    function _setImageUrl(inst, url, blockId) {
+        var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
         if (!figure) return;
         var img = figure.querySelector('img');
         if (!img) return;
@@ -1284,6 +1718,19 @@ window.tmDocumentWysiwyg = (function () {
         document.body.appendChild(input);
         input.click();
         _hideImageContextMenu(inst);
+    }
+
+    function _replaceSelectedImageFromAsset(inst, figure) {
+        figure = figure || _getSelectedImageFigure(inst);
+        if (!figure) return;
+        _invokeDotNetResult(inst, 'HandleImageAssetRequested').then(function (block) {
+            var content = block && (block.content || block.Content);
+            if (!content) return;
+            _applyImageContentToFigure(figure, content, inst);
+            _dispatchImageUpdatePatch(inst, figure);
+            _hideImageContextMenu(inst);
+            _hideImageReplaceMenu(inst);
+        });
     }
 
     function _editSelectedImageAltText(inst) {
@@ -1437,7 +1884,12 @@ window.tmDocumentWysiwyg = (function () {
         var source = content && (content.source ?? content.Source);
         var assetId = content && (content.assetId || content.AssetId);
         figure.setAttribute('data-image-source', source == null ? '0' : String(source));
-        if (assetId) figure.setAttribute('data-image-asset-id', assetId);
+        if (assetId) {
+            figure.setAttribute('data-image-asset-id', assetId);
+        } else {
+            figure.removeAttribute('data-image-asset-id');
+        }
+        _attachImageLoadState(figure, img, src, inst);
         _ensureImageResizeHandle(figure, inst);
     }
 
@@ -1453,6 +1905,401 @@ window.tmDocumentWysiwyg = (function () {
         _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
         _dispatchImageUpdatePatch(inst, figure);
         _hideImageContextMenu(inst);
+    }
+
+    function _createWrappedImageSideTextBlockModel(figure) {
+        var imageOrder = parseFloat(figure && figure.getAttribute('data-block-order') || '0') || 0;
+        var blockId = _createBlockId();
+        var inlineId = _createInlineId();
+        return {
+            Id: blockId,
+            Type: 0,
+            Order: imageOrder + 0.1,
+            ParagraphProperties: {},
+            Content: {
+                $type: 'paragraph',
+                Inlines: [{
+                    $type: 'text',
+                    Id: inlineId,
+                    Text: ''
+                }]
+            }
+        };
+    }
+
+    function _isWrappedImageSideTextBlock(block) {
+        return !!(block && block.matches && block.matches('p.tm-wysiwyg-block[data-wrap-sidecar-for], p.tm-wysiwyg-image-sidecar-text'));
+    }
+
+    function _isTextBlockForWrappedImage(block) {
+        if (!block || !block.matches) return false;
+        if (_isWrappedImageSideTextBlock(block)) return true;
+        return block.matches('p.tm-wysiwyg-block[data-block-id]');
+    }
+
+    function _isWrappedImageSideTextLayout(figure) {
+        if (!figure) return false;
+        var inline = figure.getAttribute('data-floating-inline') !== 'false';
+        var wrapMode = parseInt(figure.getAttribute('data-wrap-mode') || (inline ? '0' : '1'), 10);
+        var hPos = figure.getAttribute('data-horizontal-position') || '';
+        return !inline && wrapMode === 1 && (!hPos || hPos === 'left' || hPos === 'right');
+    }
+
+    function _pointInRect(rect, clientX, clientY, padding) {
+        if (!rect) return false;
+        var pad = padding || 0;
+        return clientX >= rect.left - pad
+            && clientX <= rect.right + pad
+            && clientY >= rect.top - pad
+            && clientY <= rect.bottom + pad;
+    }
+
+    function _getImagePrimaryVisualRect(figure) {
+        if (!figure || !figure.querySelector) return null;
+        var img = figure.querySelector('img');
+        if (img) return img.getBoundingClientRect();
+        return figure.getBoundingClientRect();
+    }
+
+    function _isImageVisualClick(figure, clientX, clientY) {
+        if (!figure || !figure.querySelectorAll) return false;
+        var targets = figure.querySelectorAll('img, figcaption, .tm-wysiwyg-image__resize-handle');
+        for (var i = 0; i < targets.length; i++) {
+            if (_pointInRect(targets[i].getBoundingClientRect(), clientX, clientY, 4)) {
+                return true;
+            }
+        }
+
+        return targets.length === 0 && _pointInRect(figure.getBoundingClientRect(), clientX, clientY, 4);
+    }
+
+    function _createSelectionSnapshotForBlockElement(blockEl, regionOverride) {
+        if (!blockEl || !blockEl.getAttribute) return null;
+        var blockId = blockEl.getAttribute('data-block-id') || '';
+        if (!blockId) return null;
+
+        var inline = blockEl.querySelector && blockEl.querySelector('[data-inline-id]');
+        var inlineId = inline ? (inline.getAttribute('data-inline-id') || '') : '';
+        var pageEl = blockEl.closest && blockEl.closest('.tm-wysiwyg-page[data-page-index]');
+        var pageIndex = pageEl ? parseInt(pageEl.getAttribute('data-page-index') || '0', 10) : null;
+        if (!Number.isFinite(pageIndex)) pageIndex = null;
+
+        return {
+            region: regionOverride || 'Body',
+            pageIndex: pageIndex,
+            headerFooterId: null,
+            anchorNodeId: inlineId || blockId,
+            focusNodeId: inlineId || blockId,
+            anchorBlockId: blockId,
+            focusBlockId: blockId,
+            anchorInlineId: inlineId,
+            focusInlineId: inlineId,
+            anchorOffset: 0,
+            anchorBlockOffset: 0,
+            focusOffset: 0,
+            focusBlockOffset: 0,
+            isCollapsed: true,
+            direction: 'forward',
+            activeTableCellId: null,
+            tableCellPath: null,
+            activeImageBlockId: null
+        };
+    }
+
+    function _ensureWrappedImageSideTextBlock(inst, figure, dispatchPatch, selectionSnapshot) {
+        if (!inst || !figure || !_isWrappedImageSideTextLayout(figure)) {
+            _debugImage(inst, 'sidecar.ensure.skipped', {
+                figure: _debugElementLabel(figure),
+                inline: figure && figure.getAttribute('data-floating-inline'),
+                wrapMode: figure && figure.getAttribute('data-wrap-mode'),
+                horizontalPosition: figure && figure.getAttribute('data-horizontal-position')
+            });
+            return null;
+        }
+
+        var imageId = figure.getAttribute('data-block-id') || '';
+        var parent = figure.parentElement;
+        if (!parent) {
+            _debugImage(inst, 'sidecar.ensure.no-parent', { imageId: imageId });
+            return null;
+        }
+
+        var next = figure.nextElementSibling;
+        if (_isTextBlockForWrappedImage(next)) {
+            next.classList.add('tm-wysiwyg-image-sidecar-text');
+            if (imageId && !next.getAttribute('data-wrap-sidecar-for')) {
+                next.setAttribute('data-wrap-sidecar-for', imageId);
+            }
+            _debugImage(inst, 'sidecar.ensure.reused', {
+                imageId: imageId,
+                block: _debugElementLabel(next),
+                dispatchPatch: !!dispatchPatch
+            });
+            return next;
+        }
+
+        var block = _createWrappedImageSideTextBlockModel(figure);
+        var blockEl = _renderBlock(block, inst);
+        if (!blockEl) {
+            _debugImage(inst, 'sidecar.ensure.render-failed', { imageId: imageId });
+            return null;
+        }
+
+        blockEl.classList.add('tm-wysiwyg-image-sidecar-text');
+        if (imageId) {
+            blockEl.setAttribute('data-wrap-sidecar-for', imageId);
+        }
+
+        var inline = blockEl.querySelector('[data-inline-id]');
+        _ensureCaretPlaceholder(inline);
+        parent.insertBefore(blockEl, figure.nextSibling);
+
+        if (dispatchPatch) {
+            var startedSidecarTransaction = false;
+            if (!inst.currentTransactionId) {
+                inst.currentTransactionId = 'txn-sidecar-' + Date.now() + '-' + Math.random().toString(36).slice(2, 7);
+                startedSidecarTransaction = true;
+            }
+            var patchSelection = selectionSnapshot || _createImageSelectionSnapshot(figure);
+            if (!patchSelection) {
+                patchSelection = _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot;
+            }
+            var sideTextSelection = _createSelectionSnapshotForBlockElement(blockEl, 'Body');
+            _dispatchPatch(inst, {
+                type: 'InsertBlock',
+                operationId: _nextRuntimeOperationId(inst),
+                blockType: 'Paragraph',
+                block: block,
+                selection: patchSelection,
+                beforeSelection: patchSelection,
+                afterSelection: sideTextSelection || patchSelection,
+                transactionId: inst.currentTransactionId,
+                protocolVersion: inst.options.protocolVersion || 1
+            });
+            if (startedSidecarTransaction) {
+                window.setTimeout(function () {
+                    _commitCurrentRuntimeTransaction(inst, true);
+                }, 0);
+            }
+        }
+
+        _debugImage(inst, 'sidecar.ensure.created', {
+            imageId: imageId,
+            block: _debugElementLabel(blockEl),
+            dispatchPatch: !!dispatchPatch
+        });
+        return blockEl;
+    }
+
+    function _findWrappedImageSideTextBlockAtPoint(inst, clientX, clientY) {
+        if (!inst || !inst.root) return null;
+
+        var topElement = typeof document.elementFromPoint === 'function'
+            ? document.elementFromPoint(clientX, clientY)
+            : null;
+        var topFigure = topElement && topElement.closest
+            ? topElement.closest('figure.tm-wysiwyg-image')
+            : null;
+        if (topFigure && !inst.root.contains(topFigure)) {
+            topFigure = null;
+        }
+
+        var figures = Array.from(inst.root.querySelectorAll('figure.tm-wysiwyg-image'));
+        _debugImage(inst, 'sidecar.hit-test.start', {
+            x: Math.round(clientX),
+            y: Math.round(clientY),
+            figureCount: figures.length,
+            figures: _debugImageFigures(inst)
+        });
+        for (var i = 0; i < figures.length; i++) {
+            var figure = figures[i];
+            if (!_isWrappedImageSideTextLayout(figure)) {
+                _debugImage(inst, 'sidecar.hit-test.skip-layout', {
+                    figure: _debugElementLabel(figure),
+                    inline: figure.getAttribute('data-floating-inline'),
+                    wrapMode: figure.getAttribute('data-wrap-mode'),
+                    horizontalPosition: figure.getAttribute('data-horizontal-position')
+                });
+                continue;
+            }
+
+            var figureRect = figure.getBoundingClientRect();
+            var visualRect = _getImagePrimaryVisualRect(figure) || figureRect;
+            if (clientY < figureRect.top || clientY > figureRect.bottom) {
+                _debugImage(inst, 'sidecar.hit-test.skip-y', {
+                    figure: _debugElementLabel(figure),
+                    figureRect: _debugRect(figureRect),
+                    visualRect: _debugRect(visualRect),
+                    x: Math.round(clientX),
+                    y: Math.round(clientY)
+                });
+                continue;
+            }
+
+            var hPos = figure.getAttribute('data-horizontal-position') || 'left';
+            var isSideArea = hPos === 'right'
+                ? clientX < visualRect.left - 4
+                : clientX > visualRect.right + 4;
+            if (isSideArea) {
+                if (topFigure && topFigure !== figure) {
+                    _debugImage(inst, 'sidecar.hit-test.skip-visible-image', {
+                        figure: _debugElementLabel(figure),
+                        topFigure: _debugElementLabel(topFigure),
+                        topElement: _debugElementLabel(topElement),
+                        figureRect: _debugRect(figureRect),
+                        visualRect: _debugRect(visualRect),
+                        horizontalPosition: hPos,
+                        x: Math.round(clientX),
+                        y: Math.round(clientY)
+                    });
+                    return null;
+                }
+
+                _debugImage(inst, 'sidecar.hit-test.match', {
+                    figure: _debugElementLabel(figure),
+                    figureRect: _debugRect(figureRect),
+                    visualRect: _debugRect(visualRect),
+                    horizontalPosition: hPos,
+                    x: Math.round(clientX),
+                    y: Math.round(clientY)
+                });
+                return _ensureWrappedImageSideTextBlock(inst, figure, true);
+            }
+
+            _debugImage(inst, 'sidecar.hit-test.not-side-area', {
+                figure: _debugElementLabel(figure),
+                figureRect: _debugRect(figureRect),
+                visualRect: _debugRect(visualRect),
+                horizontalPosition: hPos,
+                x: Math.round(clientX),
+                y: Math.round(clientY)
+            });
+        }
+
+        _debugImage(inst, 'sidecar.hit-test.no-match', {
+            x: Math.round(clientX),
+            y: Math.round(clientY)
+        });
+        return null;
+    }
+
+    function _getCaretRangeFromPoint(doc, clientX, clientY) {
+        if (!doc || !Number.isFinite(clientX) || !Number.isFinite(clientY)) return null;
+        if (typeof doc.caretRangeFromPoint === 'function') {
+            return doc.caretRangeFromPoint(clientX, clientY);
+        }
+
+        if (typeof doc.caretPositionFromPoint === 'function') {
+            var position = doc.caretPositionFromPoint(clientX, clientY);
+            if (!position) return null;
+            var range = doc.createRange();
+            range.setStart(position.offsetNode, position.offset);
+            range.collapse(true);
+            return range;
+        }
+
+        return null;
+    }
+
+    function _trySetCaretFromPointInBlock(block, clientX, clientY) {
+        if (!block || !block.ownerDocument) return false;
+        var range = _getCaretRangeFromPoint(block.ownerDocument, clientX, clientY);
+        if (!range) return false;
+
+        var container = range.startContainer;
+        var element = container.nodeType === Node.ELEMENT_NODE ? container : container.parentElement;
+        if (!element || !block.contains(element)) {
+            _debugImage(null, 'sidecar.caret-from-point.outside-block', {
+                block: _debugElementLabel(block),
+                rangeElement: _debugElementLabel(element),
+                x: Math.round(clientX),
+                y: Math.round(clientY)
+            });
+            return false;
+        }
+
+        var sel = block.ownerDocument.defaultView && block.ownerDocument.defaultView.getSelection
+            ? block.ownerDocument.defaultView.getSelection()
+            : window.getSelection();
+        if (!sel) return false;
+        var rect = range.getBoundingClientRect ? range.getBoundingClientRect() : null;
+        if (rect && rect.width <= 1 && rect.height > 0 && clientX > rect.right + 8) {
+            _debugImage(null, 'sidecar.caret-from-point.reject-left-edge', {
+                block: _debugElementLabel(block),
+                rangeRect: _debugRect(rect),
+                x: Math.round(clientX),
+                y: Math.round(clientY)
+            });
+            return false;
+        }
+        sel.removeAllRanges();
+        sel.addRange(range);
+        _debugImage(null, 'sidecar.caret-from-point.applied', {
+            block: _debugElementLabel(block),
+            rangeRect: _debugRect(rect),
+            x: Math.round(clientX),
+            y: Math.round(clientY)
+        });
+        return true;
+    }
+
+    function _focusWrappedImageSideTextBlock(inst, block, clientX, clientY) {
+        if (!block) return;
+
+        var editable = block.closest('[contenteditable="true"]');
+        var bodyRegion = block.closest('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
+        if (bodyRegion && inst && inst.root && inst.root.contains(bodyRegion)) {
+            _markActivePageRegion(inst, bodyRegion);
+        }
+
+        if (editable && typeof editable.focus === 'function') {
+            editable.focus({ preventScroll: true });
+        }
+
+        if (_trySetCaretFromPointInBlock(block, clientX, clientY)) {
+            var pointSnapshot = _captureSelectionSnapshot(inst);
+            if (pointSnapshot) {
+                inst.lastSelectionSnapshot = pointSnapshot;
+                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(pointSnapshot);
+                _scheduleSelectionNotification(inst, pointSnapshot);
+            }
+            _debugImage(inst, 'sidecar.focus.point', {
+                block: _debugElementLabel(block),
+                snapshot: pointSnapshot
+            });
+            return;
+        }
+
+        var inline = block.querySelector('[data-inline-id]');
+        if (inline) {
+            _removeCaretPlaceholders(inline);
+            if (!inline.firstChild) {
+                inline.appendChild(document.createTextNode(''));
+            }
+
+            var textNode = Array.from(inline.childNodes).find(function (node) {
+                return node.nodeType === Node.TEXT_NODE;
+            });
+            if (!textNode) {
+                textNode = document.createTextNode('');
+                inline.insertBefore(textNode, inline.firstChild);
+            }
+
+            _setCaret(textNode, textNode.textContent ? textNode.textContent.length : 0);
+        } else {
+            _placeCaretAfterBlock(block);
+        }
+
+        var snapshot = _captureSelectionSnapshot(inst);
+        if (snapshot) {
+            inst.lastSelectionSnapshot = snapshot;
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(snapshot);
+            _scheduleSelectionNotification(inst, snapshot);
+        }
+        _debugImage(inst, 'sidecar.focus.fallback-end', {
+            block: _debugElementLabel(block),
+            snapshot: snapshot
+        });
     }
 
     // ── Input pipeline ───────────────────────────────────────────────────────
@@ -2319,6 +3166,11 @@ window.tmDocumentWysiwyg = (function () {
         var block = _closestBlockElement(range.startContainer);
         if (!block) return null;
 
+        var blockTag = block.tagName ? block.tagName.toLowerCase() : '';
+        if (blockTag === 'ul' || blockTag === 'ol') {
+            return _applyListParagraphBreakToDom(inst, block, range, sel);
+        }
+
         if (!sel.isCollapsed) {
             range.deleteContents();
         }
@@ -2390,6 +3242,108 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
+    function _applyListParagraphBreakToDom(inst, block, range, selection) {
+        if (!block || !range) return null;
+        var blockTag = block.tagName ? block.tagName.toLowerCase() : 'ul';
+
+        if (!selection.isCollapsed) {
+            range.deleteContents();
+        }
+
+        var currentLi = (range.startContainer.nodeType === Node.ELEMENT_NODE ? range.startContainer : range.startContainer.parentElement)
+            ?.closest?.('li');
+        if (!currentLi || !block.contains(currentLi)) {
+            currentLi = block.querySelector('li');
+        }
+        if (!currentLi) return null;
+
+        var normalized = _normalizeToTextNode(range.startContainer, range.startOffset);
+        var isEmptyItem = (currentLi.textContent || '').trim().length === 0;
+        if (isEmptyItem) {
+            var paragraph = _convertListBlockToParagraph(block);
+            if (!paragraph) return null;
+            block.replaceWith(paragraph);
+            var textNode = _firstDeepTextNode(paragraph);
+            if (!textNode) {
+                var inline = paragraph.querySelector('[data-inline-id]') || paragraph.appendChild(document.createElement('span'));
+                if (!inline.getAttribute('data-inline-id')) inline.setAttribute('data-inline-id', _createInlineId());
+                textNode = inline.appendChild(document.createTextNode(''));
+            }
+            _setCaret(textNode, Math.min(textNode.textContent.length, 0));
+            return {
+                block: _serializeBlock(paragraph, _createBlockMap(_resolveRuntimeDocument(inst) || {}), 0),
+                updateCurrentBlock: true
+            };
+        }
+
+        var blockId = _createBlockId();
+        var inlineId = _createInlineId();
+        var newList = document.createElement(blockTag);
+        _copyBlockShell(block, newList);
+        newList.setAttribute('data-block-id', blockId);
+        _setRuntimeNodeAttributes(newList, blockId, 'block');
+
+        var newLi = document.createElement('li');
+        var sourceInline = _findInlineElement(normalized.node);
+        var newInline = sourceInline ? sourceInline.cloneNode(false) : document.createElement('span');
+        newInline.setAttribute('data-inline-id', inlineId);
+        newInline.removeAttribute('data-revision-id');
+        newInline.removeAttribute('data-revision-type');
+        newInline.removeAttribute('data-testid');
+
+        var textNode = document.createTextNode('');
+        if (normalized.node && normalized.node.nodeType === Node.TEXT_NODE && currentLi.contains(normalized.node)) {
+            var text = normalized.node.textContent || '';
+            var offset = Math.max(0, Math.min(normalized.offset, text.length));
+            textNode = document.createTextNode(text.slice(offset));
+            normalized.node.textContent = text.slice(0, offset);
+
+            while (normalized.node.nextSibling) {
+                newInline.appendChild(normalized.node.nextSibling);
+            }
+        }
+
+        newInline.insertBefore(textNode, newInline.firstChild);
+        if (sourceInline && currentLi.contains(sourceInline)) {
+            var next = sourceInline.nextSibling;
+            while (next) {
+                var moved = next;
+                next = next.nextSibling;
+                newLi.appendChild(moved);
+            }
+        }
+        newLi.insertBefore(newInline, newLi.firstChild);
+        if (!newInline.textContent && !newInline.querySelector('br[data-inline-break]')) {
+            textNode = textNode.parentNode === newInline ? textNode : document.createTextNode('');
+            if (!textNode.parentNode) {
+                newInline.appendChild(textNode);
+            }
+            _ensureCaretPlaceholder(newInline);
+        }
+
+        newList.appendChild(newLi);
+        block.after(newList);
+        _setCaret(textNode, 0);
+        return {
+            block: {
+                Id: blockId,
+                Type: 2,
+                ParagraphProperties: _serializeParagraphProperties(newList, null),
+                Content: {
+                    $type: 'list',
+                    Ordered: blockTag === 'ol',
+                    Inlines: [
+                        {
+                            $type: 'text',
+                            Id: inlineId,
+                            Text: textNode.textContent || ''
+                        }
+                    ]
+                }
+            }
+        };
+    }
+
     function _applySoftBreakToDom(inst) {
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0) return false;
@@ -2445,9 +3399,10 @@ window.tmDocumentWysiwyg = (function () {
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
         _beginTypingTransaction(inst);
+        var isCurrentBlockUpdate = inputType === 'insertParagraph' && result.updateCurrentBlock;
         var patch = {
-            type: inputType === 'insertParagraph' ? 'SplitBlock' : 'InsertSoftBreak',
-            blockType: inputType === 'insertParagraph' ? 'Paragraph' : null,
+            type: isCurrentBlockUpdate ? 'UpdateBlock' : (inputType === 'insertParagraph' ? 'SplitBlock' : 'InsertSoftBreak'),
+            blockType: isCurrentBlockUpdate ? null : (inputType === 'insertParagraph' ? 'Paragraph' : null),
             block: result.block,
             selection: selection,
             beforeSelection: selection,
@@ -3872,7 +4827,7 @@ window.tmDocumentWysiwyg = (function () {
                     var blocks = _normalizeInsertionBlocksForSchema(inst, JSON.parse(blocksJson), _getActiveSchemaRegion(inst));
                     _recordClipboardNormalizationMetric(inst, normalizationStart);
                     if (blocks && blocks.length > 0) {
-                        _insertClipboardBlocks(inst, blocks);
+                        _insertClipboardBlocks(inst, blocks, beforeSelection);
                     }
                     _commitCurrentRuntimeTransaction(inst, true);
                 })
@@ -3883,7 +4838,7 @@ window.tmDocumentWysiwyg = (function () {
                         : _parsePlainTextPaste(plain);
                     blocks = _normalizeInsertionBlocksForSchema(inst, blocks, _getActiveSchemaRegion(inst));
                     _recordClipboardNormalizationMetric(inst, normalizationStart);
-                    _insertClipboardBlocks(inst, blocks);
+                    _insertClipboardBlocks(inst, blocks, beforeSelection);
                     _commitCurrentRuntimeTransaction(inst, true);
                 });
         } else {
@@ -3893,7 +4848,7 @@ window.tmDocumentWysiwyg = (function () {
                 : _parsePlainTextPaste(plain);
             blocks = _normalizeInsertionBlocksForSchema(inst, blocks, _getActiveSchemaRegion(inst));
             _recordClipboardNormalizationMetric(inst, normalizationStart);
-            _insertClipboardBlocks(inst, blocks);
+            _insertClipboardBlocks(inst, blocks, beforeSelection);
             _commitCurrentRuntimeTransaction(inst, true);
         }
     }
@@ -4188,6 +5143,18 @@ window.tmDocumentWysiwyg = (function () {
                 return;
             }
 
+            if ((child.className || '').indexOf('tm-wysiwyg-field') >= 0 && child.hasAttribute('data-field-type')) {
+                inlines.push({
+                    $type: 'field',
+                    Id: _newId('field'),
+                    FieldType: _normalizeDocumentFieldType(child.getAttribute('data-field-type')),
+                    Format: child.getAttribute('data-field-format') || undefined,
+                    FallbackText: child.getAttribute('data-field-fallback') || child.textContent || undefined,
+                    DisplayText: child.textContent || ''
+                });
+                return;
+            }
+
             var marks = inheritedMarks.slice();
             var mark = _clipboardMarkFromElement(child);
             if (mark) marks.push(mark);
@@ -4434,17 +5401,36 @@ window.tmDocumentWysiwyg = (function () {
         };
     }
 
+    function _createEmptyParagraphBlock() {
+        return {
+            Id: _newId('paragraph'),
+            Type: 0,
+            Order: 0,
+            Content: {
+                $type: 'paragraph',
+                Inlines: [{
+                    $type: 'text',
+                    Id: _newId('inline'),
+                    Text: ''
+                }]
+            }
+        };
+    }
+
     function _clonePlainJson(value) {
         if (value === null || value === undefined) return value;
         return JSON.parse(JSON.stringify(value));
     }
 
-    function _insertClipboardBlocks(inst, blocks) {
+    function _insertClipboardBlocks(inst, blocks, selectionSnapshot) {
         if (!blocks || blocks.length === 0) return;
-        var insertion = _getInsertionPoint(inst);
+        var insertion = _getInsertionPoint(inst, selectionSnapshot);
         var parent = insertion.parent;
         var after = insertion.after;
-        var previousBlockId = after ? after.getAttribute('data-block-id') : (inst.lastSelectionSnapshot && inst.lastSelectionSnapshot.AnchorBlockId);
+        var activeCellId = insertion.activeTableCellId || '';
+        var region = activeCellId ? 'TableCell' : _normalizeSchemaRegion(selectionSnapshot && (selectionSnapshot.region || selectionSnapshot.Region));
+        var previousBlockId = after ? after.getAttribute('data-block-id') : (selectionSnapshot && (selectionSnapshot.anchorBlockId || selectionSnapshot.AnchorBlockId))
+            || (inst.lastSelectionSnapshot && (inst.lastSelectionSnapshot.anchorBlockId || inst.lastSelectionSnapshot.AnchorBlockId));
         var beforeSelection = _captureSelectionSnapshot(inst);
         var revisionId = inst.trackChangesEnabled ? _createRevisionId() : null;
         var revisionPayload = revisionId ? _clipboardBlocksRevisionPayload(blocks) : '';
@@ -4464,7 +5450,13 @@ window.tmDocumentWysiwyg = (function () {
                 type: 'InsertBlock',
                 blockType: _blockTypeName(block.Type),
                 block: block,
-                selection: { AnchorBlockId: previousBlockId || null, IsCollapsed: true },
+                selection: {
+                    Region: region,
+                    AnchorBlockId: previousBlockId || null,
+                    FocusBlockId: previousBlockId || null,
+                    ActiveTableCellId: activeCellId || null,
+                    IsCollapsed: true
+                },
                 revisionId: revisionId,
                 revisionType: revisionId ? 'Insertion' : null,
                 protocolVersion: inst.options.protocolVersion || 1
@@ -4472,7 +5464,13 @@ window.tmDocumentWysiwyg = (function () {
             previousBlockId = block.Id;
         }
 
-        _placeCaretAfterBlock(after);
+        _placeCaretAtEndOfEditableBlock(after);
+        var afterPasteSelection = _captureSelectionSnapshot(inst);
+        if (afterPasteSelection) {
+            inst.lastSelectionSnapshot = afterPasteSelection;
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(afterPasteSelection);
+            _scheduleSelectionNotification(inst, afterPasteSelection);
+        }
         if (revisionId) {
             _createRuntimeRevision(inst, revisionId, 'Insertion', revisionPayload || 'Pasted content', beforeSelection, _captureSelectionSnapshot(inst));
         }
@@ -4510,7 +5508,38 @@ window.tmDocumentWysiwyg = (function () {
         return '';
     }
 
-    function _getInsertionPoint(inst) {
+    function _getInsertionPoint(inst, selectionSnapshot) {
+        var body = inst.root.querySelector('.tm-wysiwyg-page__body') || inst.root;
+        var snapshot = selectionSnapshot || inst.lastSelectionSnapshot || null;
+        var activeCellId = snapshot && (snapshot.activeTableCellId || snapshot.ActiveTableCellId);
+        var anchorBlockId = snapshot && (snapshot.anchorBlockId || snapshot.AnchorBlockId || snapshot.focusBlockId || snapshot.FocusBlockId);
+        if (activeCellId) {
+            var cell = inst.root.querySelector('td[data-cell-id="' + _cssEscape(activeCellId) + '"], th[data-cell-id="' + _cssEscape(activeCellId) + '"]');
+            if (cell) {
+                var anchorInCell = anchorBlockId
+                    ? cell.querySelector('.tm-wysiwyg-block[data-block-id="' + _cssEscape(anchorBlockId) + '"]')
+                    : null;
+                var lastCellBlock = anchorInCell || Array.from(cell.querySelectorAll(':scope > .tm-wysiwyg-block[data-block-id]')).pop() || null;
+                return {
+                    parent: cell,
+                    after: lastCellBlock,
+                    activeTableCellId: activeCellId
+                };
+            }
+        }
+
+        if (anchorBlockId) {
+            var snapshotBlock = inst.root.querySelector('.tm-wysiwyg-block[data-block-id="' + _cssEscape(anchorBlockId) + '"]');
+            if (snapshotBlock && snapshotBlock.parentElement) {
+                var snapshotCell = snapshotBlock.closest('td[data-cell-id], th[data-cell-id]');
+                return {
+                    parent: snapshotBlock.parentElement,
+                    after: snapshotBlock,
+                    activeTableCellId: snapshotCell ? snapshotCell.getAttribute('data-cell-id') || '' : ''
+                };
+            }
+        }
+
         var sel = window.getSelection();
         var block = null;
         if (sel && sel.rangeCount > 0) {
@@ -4518,10 +5547,11 @@ window.tmDocumentWysiwyg = (function () {
             var el = node && (node.nodeType === Node.ELEMENT_NODE ? node : node.parentElement);
             block = el ? el.closest('.tm-wysiwyg-block[data-block-id]') : null;
         }
-        var body = inst.root.querySelector('.tm-wysiwyg-page__body') || inst.root;
+        var selectedCell = block ? block.closest('td[data-cell-id], th[data-cell-id]') : null;
         return {
             parent: block && block.parentElement ? block.parentElement : body,
-            after: block
+            after: block,
+            activeTableCellId: selectedCell ? selectedCell.getAttribute('data-cell-id') || '' : ''
         };
     }
 
@@ -4531,6 +5561,48 @@ window.tmDocumentWysiwyg = (function () {
         if (!sel) return;
         var range = document.createRange();
         range.setStartAfter(blockEl);
+        range.collapse(true);
+        sel.removeAllRanges();
+        sel.addRange(range);
+    }
+
+    function _placeCaretAtEndOfEditableBlock(blockEl) {
+        if (!blockEl) return;
+        if (blockEl.matches && blockEl.matches('figure.tm-wysiwyg-image, figure.tm-wysiwyg-image-block')) {
+            _placeCaretAfterBlock(blockEl);
+            return;
+        }
+
+        var target = blockEl;
+        if (blockEl.matches && blockEl.matches('table.tm-wysiwyg-table')) {
+            target = blockEl.querySelector('td[data-cell-id] .tm-wysiwyg-block[data-block-id], th[data-cell-id] .tm-wysiwyg-block[data-block-id]')
+                || blockEl.querySelector('td[data-cell-id], th[data-cell-id]')
+                || blockEl;
+        }
+
+        var textNode = null;
+        var walker = document.createTreeWalker(target, NodeFilter.SHOW_TEXT, {
+            acceptNode: function (node) {
+                var parent = node.parentElement;
+                if (!parent || parent.closest('[contenteditable="false"], [aria-hidden="true"]')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                return NodeFilter.FILTER_ACCEPT;
+            }
+        });
+        while (walker.nextNode()) {
+            textNode = walker.currentNode;
+        }
+
+        var sel = window.getSelection();
+        if (!sel) return;
+        var range = document.createRange();
+        if (textNode) {
+            range.setStart(textNode, textNode.textContent.length);
+        } else {
+            range.selectNodeContents(target);
+            range.collapse(false);
+        }
         range.collapse(true);
         sel.removeAllRanges();
         sel.addRange(range);
@@ -4640,6 +5712,25 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        if (event.key === 'Escape'
+            && (inst.root.getAttribute('data-active-region') === 'Header'
+                || inst.root.getAttribute('data-active-region') === 'Footer')) {
+            var keyTarget = event.target && event.target.nodeType === Node.ELEMENT_NODE
+                ? event.target
+                : event.target?.parentElement;
+            if (keyTarget?.closest?.('[data-testid="document-toolbar"]')) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            closeHeaderFooter(inst.id);
+            return;
+        }
+
         if (inst.activeAutocompleteKey
             && (event.key === 'ArrowDown' || event.key === 'ArrowUp' || event.key === 'Enter')) {
             event.preventDefault();
@@ -4670,6 +5761,16 @@ window.tmDocumentWysiwyg = (function () {
             }
         }
 
+        if ((event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu') {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _openKeyboardContextMenu(inst, event);
+            return;
+        }
+
         if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey) {
             var markPayload = _shortcutMarkPayload(event.key);
             if (markPayload) {
@@ -4680,6 +5781,18 @@ window.tmDocumentWysiwyg = (function () {
                 // The JS layer only blocks the browser's native contenteditable command.
                 return;
             }
+        }
+
+        if ((event.ctrlKey || event.metaKey) && !event.altKey && !event.shiftKey && (event.key || '').toLowerCase() === 'k') {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _flushPendingInputPatch(inst);
+            _flushSelectionNotification(inst);
+            _invokeDotNet(inst, 'HandleKeyboardCommandRequested', 'link');
+            return;
         }
 
         // Phase 13: Tab navigation between table cells.
@@ -4717,7 +5830,7 @@ window.tmDocumentWysiwyg = (function () {
             if (typeof event.stopImmediatePropagation === 'function') {
                 event.stopImmediatePropagation();
             }
-            undo(inst.id);
+            _invokeDotNet(inst, 'HandleUndoRequested');
             return;
         }
         if ((event.ctrlKey || event.metaKey) && (event.key === 'y' || (event.key === 'z' && event.shiftKey))) {
@@ -4726,7 +5839,7 @@ window.tmDocumentWysiwyg = (function () {
             if (typeof event.stopImmediatePropagation === 'function') {
                 event.stopImmediatePropagation();
             }
-            redo(inst.id);
+            _invokeDotNet(inst, 'HandleRedoRequested');
             return;
         }
         if ((event.ctrlKey || event.metaKey) && event.key === 's') {
@@ -4744,6 +5857,21 @@ window.tmDocumentWysiwyg = (function () {
 
     function _onDocumentKeyDown(inst, event) {
         if (!inst || inst.disposed || inst.readOnly || event.defaultPrevented) return;
+        if (event.key === 'Escape' && document.querySelector('.tm-color-picker--open .tm-color-picker-dropdown')) {
+            return;
+        }
+
+        if (event.key === 'Escape' && inst.miniToolbarVisible) {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _hideMiniToolbar(inst, true);
+            _focusEditorBody(inst);
+            return;
+        }
+
         if (inst.selectedImageFigure) {
             var leaveBeforeImage = (event.shiftKey && event.key === 'Tab')
                 || event.key === 'ArrowLeft'
@@ -4763,6 +5891,16 @@ window.tmDocumentWysiwyg = (function () {
             }
         }
 
+        if ((event.shiftKey && event.key === 'F10') || event.key === 'ContextMenu') {
+            event.preventDefault();
+            event.stopPropagation();
+            if (typeof event.stopImmediatePropagation === 'function') {
+                event.stopImmediatePropagation();
+            }
+            _openKeyboardContextMenu(inst, event);
+            return;
+        }
+
         if (!_hasEditorSelectionOrFocus(inst)) return;
         if (!(event.ctrlKey || event.metaKey) || event.altKey) return;
 
@@ -4773,7 +5911,7 @@ window.tmDocumentWysiwyg = (function () {
             if (typeof event.stopImmediatePropagation === 'function') {
                 event.stopImmediatePropagation();
             }
-            undo(inst.id);
+            _invokeDotNet(inst, 'HandleUndoRequested');
             return;
         }
 
@@ -4783,7 +5921,7 @@ window.tmDocumentWysiwyg = (function () {
             if (typeof event.stopImmediatePropagation === 'function') {
                 event.stopImmediatePropagation();
             }
-            redo(inst.id);
+            _invokeDotNet(inst, 'HandleRedoRequested');
         }
     }
 
@@ -4994,6 +6132,62 @@ window.tmDocumentWysiwyg = (function () {
         _renderTableHandles(table, cell);
     }
 
+    function _getTableCellAtPoint(inst, clientX, clientY) {
+        if (!inst || !inst.root || typeof document.elementFromPoint !== 'function') return null;
+        var target = document.elementFromPoint(clientX, clientY);
+        var cell = target && target.closest ? target.closest('td[data-cell-id], th[data-cell-id]') : null;
+        return cell && inst.root.contains(cell) ? cell : null;
+    }
+
+    function _getTableCellCoordinates(table, cell) {
+        if (!table || !cell) return null;
+        var rows = Array.from(table.querySelectorAll('tr'));
+        for (var rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+            var cells = Array.from(rows[rowIndex].querySelectorAll('td[data-cell-id], th[data-cell-id]'));
+            var colIndex = cells.indexOf(cell);
+            if (colIndex >= 0) {
+                return { row: rowIndex, col: colIndex };
+            }
+        }
+        return null;
+    }
+
+    function _clearTableRangeSelection(table) {
+        if (!table) return;
+        table.querySelectorAll('.tm-wysiwyg-table-cell--range-selected').forEach(function (selectedCell) {
+            selectedCell.classList.remove('tm-wysiwyg-table-cell--range-selected');
+            if (!selectedCell.classList.contains('tm-wysiwyg-table-cell--active')) {
+                selectedCell.removeAttribute('aria-selected');
+            }
+        });
+    }
+
+    function _markTableCellRange(table, startCell, endCell) {
+        if (!table || !startCell || !endCell) return;
+        var start = _getTableCellCoordinates(table, startCell);
+        var end = _getTableCellCoordinates(table, endCell);
+        if (!start || !end) return;
+
+        var minRow = Math.min(start.row, end.row);
+        var maxRow = Math.max(start.row, end.row);
+        var minCol = Math.min(start.col, end.col);
+        var maxCol = Math.max(start.col, end.col);
+        _clearTableRangeSelection(table);
+
+        Array.from(table.querySelectorAll('tr')).forEach(function (row, rowIndex) {
+            if (rowIndex < minRow || rowIndex > maxRow) return;
+            Array.from(row.querySelectorAll('td[data-cell-id], th[data-cell-id]')).forEach(function (cell, colIndex) {
+                if (colIndex < minCol || colIndex > maxCol) return;
+                cell.classList.add('tm-wysiwyg-table-cell--range-selected');
+                cell.setAttribute('aria-selected', 'true');
+            });
+        });
+
+        startCell.classList.add('tm-wysiwyg-table-cell--active');
+        startCell.setAttribute('aria-selected', 'true');
+        _renderTableHandles(table, startCell);
+    }
+
     function _renderTableHandles(table, activeCell) {
         if (!table || !activeCell) return;
         _clearTableHandles(table);
@@ -5175,6 +6369,9 @@ window.tmDocumentWysiwyg = (function () {
             _focusCell(firstCell);
         }
         var afterSelection = _captureSelectionSnapshot(inst) || beforeSelection;
+        inst.lastSelectionSnapshot = afterSelection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(afterSelection);
+        _scheduleSelectionNotification(inst, afterSelection);
 
         _dispatchPatch(inst, {
             type: 'InsertBlock',
@@ -5307,16 +6504,61 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _onFloatingImagePointerDown(inst, event) {
+        _debugImage(inst, 'pointerdown.start', {
+            x: Math.round(event.clientX),
+            y: Math.round(event.clientY),
+            target: _debugElementLabel(event.target && event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target && event.target.parentElement),
+            button: event.button,
+            pointerType: event.pointerType || ''
+        });
+        var sideTextBlock = _findWrappedImageSideTextBlockAtPoint(inst, event.clientX, event.clientY);
+        if (sideTextBlock) {
+            event.preventDefault();
+            _clearSelectedImage(inst);
+            _hideImageContextMenu(inst);
+            _hideImageReplaceMenu(inst);
+            _focusWrappedImageSideTextBlock(inst, sideTextBlock, event.clientX, event.clientY);
+            _debugImage(inst, 'pointerdown.sidecar-handled', {
+                sideTextBlock: _debugElementLabel(sideTextBlock)
+            });
+            return;
+        }
+
         var handle = event.target && event.target.closest && event.target.closest('.tm-wysiwyg-image__resize-handle');
         var figure = handle
             ? handle.closest('figure.tm-wysiwyg-image')
             : event.target && event.target.closest && event.target.closest('figure.tm-wysiwyg-image');
-        if (!figure || !inst.root.contains(figure)) return;
+        if (!figure || !inst.root.contains(figure)) {
+            _debugImage(inst, 'pointerdown.no-image-target', {
+                target: _debugElementLabel(event.target && event.target.nodeType === Node.ELEMENT_NODE ? event.target : event.target && event.target.parentElement)
+            });
+            return;
+        }
+
+        if (!handle) {
+            if (!_isImageVisualClick(figure, event.clientX, event.clientY)) {
+                _debugImage(inst, 'pointerdown.image-nonvisual-click-ignored', {
+                    figure: _debugElementLabel(figure),
+                    figureRect: _debugRect(figure.getBoundingClientRect()),
+                    visualRect: _debugRect(_getImagePrimaryVisualRect(figure)),
+                    x: Math.round(event.clientX),
+                    y: Math.round(event.clientY)
+                });
+                return;
+            }
+        }
 
         event.preventDefault();
         _selectImageFigure(inst, figure);
         _hideInlineRevisionReview(inst);
         _hideImageContextMenu(inst);
+        _debugImage(inst, 'pointerdown.image-selected', {
+            figure: _debugElementLabel(figure),
+            inline: figure.getAttribute('data-floating-inline'),
+            wrapMode: figure.getAttribute('data-wrap-mode'),
+            horizontalPosition: figure.getAttribute('data-horizontal-position'),
+            handle: !!handle
+        });
 
         var isFloating = figure.classList.contains('tm-wysiwyg-image--floating') ||
             figure.getAttribute('data-floating-inline') === 'false';
@@ -5332,6 +6574,7 @@ window.tmDocumentWysiwyg = (function () {
         var initialY = parseFloat(figure.getAttribute('data-image-y') || '0') || 0;
         var initialWidth = img ? (parseFloat(img.style.width) || img.getBoundingClientRect().width || 120) : 120;
         var initialHeight = img ? (parseFloat(img.style.height) || img.getBoundingClientRect().height || 90) : 90;
+        var aspectRatio = initialWidth > 0 && initialHeight > 0 ? initialHeight / initialWidth : 0;
         var blockId = figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id') || '';
         var imageSelection = {
             Region: 'Image',
@@ -5360,8 +6603,19 @@ window.tmDocumentWysiwyg = (function () {
             var dy = moveEvent.clientY - startY;
             if (handle && img) {
                 var maxSize = _getFloatingImageMaxSize(figure);
-                img.style.width = Math.min(maxSize.width, Math.max(24, initialWidth + dx)) + 'px';
-                img.style.height = Math.min(maxSize.height, Math.max(24, initialHeight + dy)) + 'px';
+                var lockAspectRatio = figure.getAttribute('data-lock-aspect-ratio') !== 'false';
+                var nextWidth = Math.min(maxSize.width, Math.max(24, initialWidth + dx));
+                var nextHeight = lockAspectRatio && aspectRatio > 0
+                    ? nextWidth * aspectRatio
+                    : Math.min(maxSize.height, Math.max(24, initialHeight + dy));
+                if (nextHeight > maxSize.height) {
+                    nextHeight = maxSize.height;
+                    if (lockAspectRatio && aspectRatio > 0) {
+                        nextWidth = Math.max(24, nextHeight / aspectRatio);
+                    }
+                }
+                img.style.width = Math.round(nextWidth) + 'px';
+                img.style.height = Math.round(nextHeight) + 'px';
             } else {
                 var next = _clampFloatingImagePosition(figure, initialX + dx, initialY + dy);
                 var nextX = next.x;
@@ -5712,6 +6966,57 @@ window.tmDocumentWysiwyg = (function () {
         }
     }
 
+    function _createEmptyParagraphElement() {
+        var blockId = _createBlockId();
+        var inlineId = _createInlineId();
+        var p = document.createElement('p');
+        p.className = 'tm-wysiwyg-block';
+        p.setAttribute('data-block-id', blockId);
+        _setRuntimeNodeAttributes(p, blockId, 'block');
+        var span = document.createElement('span');
+        span.setAttribute('data-inline-id', inlineId);
+        _setRuntimeNodeAttributes(span, inlineId, 'inline');
+        span.appendChild(document.createTextNode(''));
+        p.appendChild(span);
+        return p;
+    }
+
+    function _deleteTable(inst) {
+        var cell = _findCurrentOrFallbackTableCell(inst);
+        if (!cell) return;
+        var table = _getTableBlockFromCell(cell);
+        if (!table || !table.parentNode) return;
+        var blockId = table.getAttribute('data-block-id') || '';
+        if (!blockId) return;
+
+        _clearTableHandles(table);
+        var tx = _beginTableTransaction(inst, 'Delete table');
+        var parent = table.parentNode;
+        var focusBlock = table.nextElementSibling || table.previousElementSibling;
+        if (!focusBlock || !focusBlock.classList || !focusBlock.classList.contains('tm-wysiwyg-block')) {
+            focusBlock = _createEmptyParagraphElement();
+            parent.insertBefore(focusBlock, table.nextSibling);
+        }
+
+        table.remove();
+        var text = _firstDeepTextNode(focusBlock);
+        if (text) {
+            _setCaret(text, 0);
+        }
+
+        _dispatchPatch(inst, {
+            type: 'RemoveBlock',
+            operationId: _nextRuntimeOperationId(inst),
+            blockId: blockId,
+            selection: tx.beforeSelection || { anchorBlockId: blockId },
+            beforeSelection: tx.beforeSelection,
+            afterSelection: _captureSelectionSnapshot(inst),
+            transactionId: inst.currentTransactionId,
+            protocolVersion: inst.options.protocolVersion || 1
+        });
+        _commitCurrentRuntimeTransaction(inst, true);
+    }
+
     /**
      * Merges the current cell with the cell to its right.
      */
@@ -5719,19 +7024,30 @@ window.tmDocumentWysiwyg = (function () {
         var cell = _findCurrentTableCell(inst);
         if (!cell) return;
         var row = cell.parentElement;
-        var nextCell = cell.nextElementSibling;
-        if (!nextCell || nextCell.tagName !== 'TD') return;
         var table = _getTableBlockFromCell(cell);
+        var selectedCells = table ? Array.from(table.querySelectorAll('.tm-wysiwyg-table-cell--range-selected')) : [];
+        var rowSelectedCells = selectedCells.filter(function (selectedCell) {
+            return selectedCell.parentElement === row && selectedCell !== cell;
+        });
+        var cellsToMerge = rowSelectedCells.length > 0
+            ? [cell].concat(rowSelectedCells)
+            : [cell].concat(cell.nextElementSibling && /^(TD|TH)$/.test(cell.nextElementSibling.tagName) ? [cell.nextElementSibling] : []);
+        cellsToMerge = cellsToMerge
+            .filter(function (candidate, index, all) { return candidate && all.indexOf(candidate) === index; })
+            .sort(function (a, b) { return Array.from(row.children).indexOf(a) - Array.from(row.children).indexOf(b); });
+        if (cellsToMerge.length < 2 || cellsToMerge[0] !== cell) return;
         _clearTableHandles(table);
         var tx = _beginTableTransaction(inst, 'Merge table cells');
         var currentSpan = parseInt(cell.getAttribute('colspan') || '1', 10);
-        var nextSpan = parseInt(nextCell.getAttribute('colspan') || '1', 10);
-        cell.setAttribute('colspan', currentSpan + nextSpan);
-        // Move content from next cell into current cell.
-        while (nextCell.firstChild) {
-            cell.appendChild(nextCell.firstChild);
-        }
-        nextCell.remove();
+        var addedSpan = 0;
+        cellsToMerge.slice(1).forEach(function (nextCell) {
+            addedSpan += parseInt(nextCell.getAttribute('colspan') || '1', 10);
+            while (nextCell.firstChild) {
+                cell.appendChild(nextCell.firstChild);
+            }
+            nextCell.remove();
+        });
+        cell.setAttribute('colspan', currentSpan + addedSpan);
         _focusCell(cell);
         _commitTableTransaction(inst, table, 'Merge table cells', tx.beforeSelection);
     }
@@ -5876,8 +7192,10 @@ window.tmDocumentWysiwyg = (function () {
         if (inst.disposed) return;
         const snapshot = _captureSelectionSnapshot(inst);
         if (!snapshot) {
+            inst.dismissedMiniToolbarSelectionKey = null;
             if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
                 _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+                _scheduleMiniToolbarSettleHide(inst);
             } else {
                 _hideMiniToolbar(inst);
             }
@@ -5885,14 +7203,35 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         inst.lastSelectionSnapshot = snapshot;
+        if (snapshot && (snapshot.region === 'Header' || snapshot.region === 'Footer')) {
+            var regionSelector = snapshot.region === 'Header' ? '.tm-wysiwyg-page__header' : '.tm-wysiwyg-page__footer';
+            var regionId = snapshot.headerFooterId || snapshot.HeaderFooterId || '';
+            var regionEl = regionId
+                ? inst.root.querySelector(regionSelector + '[data-hf-id="' + _cssEscape(regionId) + '"]')
+                : null;
+            if (regionEl) {
+                _markActivePageRegion(inst, regionEl);
+            }
+        } else if (snapshot && snapshot.region === 'Body') {
+            var bodyRegion = inst.root.querySelector('.tm-wysiwyg-page__body[contenteditable="true"], .tm-wysiwyg-page__body[contenteditable="false"]');
+            if (bodyRegion) {
+                _markActivePageRegion(inst, bodyRegion);
+            }
+        }
         _scheduleSelectionNotification(inst, snapshot);
         if (snapshot && !snapshot.isCollapsed) {
+            if (inst.miniToolbarSettleHideTimer) {
+                window.clearTimeout(inst.miniToolbarSettleHideTimer);
+                inst.miniToolbarSettleHideTimer = null;
+            }
             inst.lastTextSelectionSnapshot = snapshot;
             inst.miniToolbarSuppressHideUntil = Date.now() + 1200;
             _scheduleMiniToolbar(inst, snapshot);
         } else {
+            inst.dismissedMiniToolbarSelectionKey = null;
             if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
                 _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
+                _scheduleMiniToolbarSettleHide(inst);
             } else {
                 _hideMiniToolbar(inst);
             }
@@ -5906,13 +7245,37 @@ window.tmDocumentWysiwyg = (function () {
             && Date.now() < (inst.miniToolbarSuppressHideUntil || 0));
     }
 
+    function _scheduleMiniToolbarSettleHide(inst) {
+        if (!inst || inst.miniToolbarSettleHideTimer) return;
+        var delay = Math.max(80, (inst.miniToolbarSuppressHideUntil || 0) - Date.now() + 40);
+        inst.miniToolbarSettleHideTimer = window.setTimeout(function () {
+            inst.miniToolbarSettleHideTimer = null;
+            var current = _captureSelectionSnapshot(inst);
+            if (!current || current.isCollapsed) {
+                _hideMiniToolbar(inst, true);
+            }
+        }, delay);
+    }
+
     function _scheduleSelectionNotification(inst, snapshot) {
+        _rememberBodySelection(inst, snapshot);
         inst.pendingSelectionSnapshot = snapshot;
         if (inst.pendingSelectionTimer) return;
 
         inst.pendingSelectionTimer = setTimeout(function () {
             _flushSelectionNotification(inst);
         }, 80);
+    }
+
+    function _selectionRegionName(snapshot) {
+        return String(snapshot?.region || snapshot?.Region || '').toLowerCase();
+    }
+
+    function _rememberBodySelection(inst, snapshot) {
+        if (!inst || !snapshot || _selectionRegionName(snapshot) !== 'body') return;
+        var blockId = snapshot.anchorBlockId || snapshot.AnchorBlockId || snapshot.focusBlockId || snapshot.FocusBlockId || '';
+        if (!blockId) return;
+        inst.lastBodySelectionSnapshot = Object.assign({}, snapshot);
     }
 
     function _flushSelectionNotification(inst) {
@@ -5924,7 +7287,7 @@ window.tmDocumentWysiwyg = (function () {
         var snapshot = inst.pendingSelectionSnapshot;
         inst.pendingSelectionSnapshot = null;
         if (snapshot !== undefined) {
-            _invokeDotNet(inst, 'HandleSelectionChanged', snapshot);
+            _invokeDotNet(inst, 'HandleSelectionChanged', _toPascalSelection(snapshot));
         }
     }
 
@@ -7230,7 +8593,16 @@ window.tmDocumentWysiwyg = (function () {
         }
         if (!blockEl) return null;
 
-        var inlineEl = blockEl.querySelector('[data-inline-id="' + _cssEscape(inlineId || '') + '"]');
+        var inlineSelector = '[data-inline-id="' + _cssEscape(inlineId || '') + '"]';
+        var inlineMatches = inlineId ? Array.from(blockEl.querySelectorAll(inlineSelector)) : [];
+        if (inlineMatches.length > 1 && Number.isFinite(blockOffset)) {
+            var duplicateResolvedByBlockOffset = _resolveTextPosition(blockEl, blockOffset);
+            if (duplicateResolvedByBlockOffset) {
+                return duplicateResolvedByBlockOffset;
+            }
+        }
+
+        var inlineEl = inlineMatches[0] || null;
         if (!inlineEl) {
             // Fallback after inline split/merge: resolve the closest logical
             // character offset within the block instead of jumping to the first
@@ -7251,6 +8623,13 @@ window.tmDocumentWysiwyg = (function () {
         var resolved = _resolveTextPosition(inlineEl, offset || 0);
         if (resolved) {
             return resolved;
+        }
+
+        if (Number.isFinite(blockOffset)) {
+            var resolvedByBlockOffset = _resolveTextPosition(blockEl, blockOffset);
+            if (resolvedByBlockOffset) {
+                return resolvedByBlockOffset;
+            }
         }
 
         var textNode = _firstDeepTextNode(inlineEl);
@@ -7371,9 +8750,22 @@ window.tmDocumentWysiwyg = (function () {
 
     function _inlineTypeName(inline) {
         var type = inline ? (inline.$type || inline.type || inline.Type) : '';
+        if (!type && inline && (inline.noteId || inline.NoteId || inline.noteType !== undefined || inline.NoteType !== undefined)) {
+            return 'noteReference';
+        }
+
+        if (!type && inline && (inline.fieldType !== undefined || inline.FieldType !== undefined || inline.fallbackText !== undefined || inline.FallbackText !== undefined)) {
+            return 'field';
+        }
+
+        if (!type && inline && (inline.key || inline.Key || inline.tokenType !== undefined || inline.TokenType !== undefined)) {
+            return 'token';
+        }
+
         var normalized = String(type || '').toLowerCase();
         if (normalized === 'textrun') return 'text';
         if (normalized === 'tokenrun') return 'token';
+        if (normalized === 'documentfieldrun') return 'field';
         if (normalized === 'documentnotereferencerun') return 'noteReference';
         return normalized || 'text';
     }
@@ -7556,6 +8948,17 @@ window.tmDocumentWysiwyg = (function () {
         var documentModel = payload && (payload.document || payload.Document);
         if (!documentModel) return;
 
+        var focusIsOutsideEditor = !(document.activeElement && inst.root && inst.root.contains(document.activeElement));
+        var preferBodySelection = !!(payload.preferBodySelectionWhenFocusOutside || payload.PreferBodySelectionWhenFocusOutside);
+        var selectionSnapshot = payload.selection || payload.Selection || null;
+        if (focusIsOutsideEditor && preferBodySelection && inst.lastBodySelectionSnapshot) {
+            selectionSnapshot = inst.lastBodySelectionSnapshot;
+        }
+        if (selectionSnapshot) {
+            inst.lastSelectionSnapshot = selectionSnapshot;
+            inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(selectionSnapshot);
+        }
+        inst.suppressNextRenderSelectionRestore = focusIsOutsideEditor;
         var snapshot = inst.snapshot || { ProtocolVersion: 1 };
         _assignSnapshotDocument(snapshot, documentModel);
         inst.snapshot = snapshot;
@@ -7614,6 +9017,7 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         _checkPageOverflow(inst);
+        _refreshDocumentFields(inst);
         _refreshNonPrintingCharacters(inst);
         _notifyPageMetrics(inst);
         _notifyActiveHeading(inst);
@@ -7622,13 +9026,14 @@ window.tmDocumentWysiwyg = (function () {
         if (selection) {
             inst.lastSelectionSnapshot = selection;
             inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(selection);
-            if (_isVirtualSelectionInRange(inst, selection, range)) {
+            if (!inst.suppressNextRenderSelectionRestore && _isVirtualSelectionInRange(inst, selection, range)) {
                 inst.virtualSelectionSnapshot = null;
                 _restoreSelection(inst, selection);
             } else {
                 inst.virtualSelectionSnapshot = selection;
             }
         }
+        inst.suppressNextRenderSelectionRestore = false;
     }
 
     function _renderPageFromData(inst, pageData) {
@@ -7864,6 +9269,8 @@ window.tmDocumentWysiwyg = (function () {
         var rightPt = margins.right || margins.Right || 72;
         var bottomPt = margins.bottom || margins.Bottom || 72;
         var leftPt = margins.left || margins.Left || 72;
+        var headerPt = settings.headerDistanceFromTop || settings.HeaderDistanceFromTop || 36;
+        var footerPt = settings.footerDistanceFromBottom || settings.FooterDistanceFromBottom || 36;
 
         // Convert points (1 pt = 1/72 inch) to millimetres (1 inch = 25.4 mm).
         function ptToMm(pt) {
@@ -7876,7 +9283,9 @@ window.tmDocumentWysiwyg = (function () {
             marginTop: ptToMm(topPt),
             marginRight: ptToMm(rightPt),
             marginBottom: ptToMm(bottomPt),
-            marginLeft: ptToMm(leftPt)
+            marginLeft: ptToMm(leftPt),
+            headerDistanceFromTop: ptToMm(headerPt),
+            footerDistanceFromBottom: ptToMm(footerPt)
         };
     }
 
@@ -7910,6 +9319,56 @@ window.tmDocumentWysiwyg = (function () {
         inst.root.style.setProperty('--tm-document-page-margin-right', pageSettings.marginRight);
         inst.root.style.setProperty('--tm-document-page-margin-bottom', pageSettings.marginBottom);
         inst.root.style.setProperty('--tm-document-page-margin-left', pageSettings.marginLeft);
+        inst.root.style.setProperty('--tm-document-header-distance-from-top', pageSettings.headerDistanceFromTop);
+        inst.root.style.setProperty('--tm-document-footer-distance-from-bottom', pageSettings.footerDistanceFromBottom);
+        inst.lastPageSettings = pageSettings;
+        _updateRenderedPageMetrics(inst, pageSettings);
+        _updatePageWidthFitZoom(inst, pageSettings);
+    }
+
+    function _updateRenderedPageMetrics(inst, pageSettings) {
+        if (!inst || !inst.root || !pageSettings) return;
+        inst.root.querySelectorAll('.tm-wysiwyg-page').forEach(function (page) {
+            page.style.width = pageSettings.width;
+            page.style.minHeight = pageSettings.height;
+            page.style.paddingTop = pageSettings.marginTop;
+            page.style.paddingRight = pageSettings.marginRight;
+            page.style.paddingBottom = pageSettings.marginBottom;
+            page.style.paddingLeft = pageSettings.marginLeft;
+            page.style.setProperty('--tm-document-header-distance-from-top', pageSettings.headerDistanceFromTop);
+            page.style.setProperty('--tm-document-footer-distance-from-bottom', pageSettings.footerDistanceFromBottom);
+        });
+    }
+
+    function _updatePageWidthFitZoom(inst, pageSettings) {
+        if (!inst || !inst.root) return;
+        var settings = pageSettings || inst.lastPageSettings || inst.virtualSettings?.pageSettings || null;
+        if (!settings) return;
+
+        if (!inst.root.classList.contains('tm-document-wysiwyg-host--zoom-page-width')) {
+            inst.root.style.setProperty('--tm-document-page-fit-zoom', '1');
+            return;
+        }
+
+        var pageWidthPx = _cssLengthToPx(settings.width);
+        var style = getComputedStyle(inst.root);
+        var paddingLeft = parseFloat(style.paddingLeft || '0') || 0;
+        var paddingRight = parseFloat(style.paddingRight || '0') || 0;
+        var availableWidth = Math.max(240, (inst.root.clientWidth || pageWidthPx) - paddingLeft - paddingRight);
+        var zoom = pageWidthPx > 0 ? Math.min(1, availableWidth / pageWidthPx) : 1;
+        inst.root.style.setProperty('--tm-document-page-fit-zoom', Math.max(0.25, Math.min(1, zoom)).toFixed(4));
+    }
+
+    function _cssLengthToPx(value) {
+        if (typeof value === 'number') return value;
+        var raw = String(value || '').trim().toLowerCase();
+        var number = parseFloat(raw);
+        if (!Number.isFinite(number) || number <= 0) return 0;
+        if (raw.endsWith('mm')) return number * 96 / 25.4;
+        if (raw.endsWith('cm')) return number * 96 / 2.54;
+        if (raw.endsWith('in')) return number * 96;
+        if (raw.endsWith('pt')) return number * 96 / 72;
+        return number;
     }
 
     /**
@@ -7925,6 +9384,8 @@ window.tmDocumentWysiwyg = (function () {
         page.style.paddingRight = settings.marginRight;
         page.style.paddingBottom = settings.marginBottom;
         page.style.paddingLeft = settings.marginLeft;
+        page.style.setProperty('--tm-document-header-distance-from-top', settings.headerDistanceFromTop);
+        page.style.setProperty('--tm-document-footer-distance-from-bottom', settings.footerDistanceFromBottom);
         return page;
     }
 
@@ -7940,6 +9401,7 @@ window.tmDocumentWysiwyg = (function () {
         body.setAttribute('aria-label', _formatA11yLabel(inst, 'bodyLabel', 'BodyLabel', 'Document body, page {0}', pageIndex || 0));
         body.setAttribute('tabindex', inst && inst.readOnly ? '-1' : '0');
         body.setAttribute('contenteditable', inst && inst.readOnly ? 'false' : 'true');
+        body.setAttribute('data-region', 'Body');
         body.setAttribute('data-testid', 'document-wysiwyg-body');
         _setRuntimeNodeAttributes(body, _renderNodeId('body', null, pageIndex || 0), 'body');
         return body;
@@ -8038,6 +9500,21 @@ window.tmDocumentWysiwyg = (function () {
         return 'Primary';
     }
 
+    function _formatHeaderFooterRegionLabel(type, scope) {
+        var normalizedScope = _normalizeHeaderFooterScope(scope);
+        var prefix = type === 'header' ? 'Header' : 'Footer';
+        switch (normalizedScope) {
+            case 'FirstPage':
+                return type === 'header' ? 'First page header' : 'First page footer';
+            case 'EvenPages':
+                return type === 'header' ? 'Even page header' : 'Even page footer';
+            case 'OddPages':
+                return type === 'header' ? 'Odd page header' : 'Odd page footer';
+            default:
+                return prefix + ' - Primary';
+        }
+    }
+
     /**
      * Phase 12: Renders a header or footer region into a DOM element.
      */
@@ -8048,6 +9525,7 @@ window.tmDocumentWysiwyg = (function () {
         el.setAttribute('data-hf-id', headerFooterId);
         el.setAttribute('data-hf-type', type);
         el.setAttribute('data-hf-scope', hf.scope || hf.Scope || 'Primary');
+        el.setAttribute('data-region-label', _formatHeaderFooterRegionLabel(type, hf.scope || hf.Scope || 'Primary'));
         el.setAttribute('data-region', type === 'header' ? 'Header' : 'Footer');
         el.setAttribute(
             'data-placeholder',
@@ -8431,9 +9909,15 @@ window.tmDocumentWysiwyg = (function () {
             case 'List':
             case 2:
                 el = document.createElement((content && (content.ordered || content.Ordered)) ? 'ol' : 'ul');
+                if (content && (content.startNumber || content.StartNumber) && el.tagName.toLowerCase() === 'ol') {
+                    el.setAttribute('start', String(Math.max(1, parseInt(content.startNumber || content.StartNumber, 10) || 1)));
+                }
                 var li = document.createElement('li');
                 _renderInlines(li, content, inst);
                 el.appendChild(li);
+                if (content && (content.indentLevel ?? content.IndentLevel) != null) {
+                    el.style.marginLeft = _sanitizeParagraphPoints((content.indentLevel ?? content.IndentLevel) * 36, 0, 432) + 'pt';
+                }
                 break;
             case 'Quote':
             case 3:
@@ -8469,6 +9953,9 @@ window.tmDocumentWysiwyg = (function () {
             if (order != null) el.setAttribute('data-block-order', String(order));
             el.classList.add('tm-wysiwyg-block');
             _applyParagraphProperties(el, block.paragraphProperties || block.ParagraphProperties);
+            if ((type === 'List' || type === 2) && content && (content.indentLevel ?? content.IndentLevel) != null) {
+                el.style.marginLeft = _sanitizeParagraphPoints((content.indentLevel ?? content.IndentLevel) * 36, 0, 432) + 'pt';
+            }
             _appendSuggestionDecorations(el, id, inst);
         }
 
@@ -8657,15 +10144,180 @@ window.tmDocumentWysiwyg = (function () {
                 tokenSpan.className = 'tm-wysiwyg-token' + (inline.colorClass || inline.ColorClass ? ' ' + (inline.colorClass || inline.ColorClass) : '');
                 tokenSpan.textContent = inline.displayName || inline.DisplayName || inline.key || inline.Key || '';
                 container.appendChild(tokenSpan);
+            } else if (inlineType === 'field' || inlineType === 'DocumentFieldRun') {
+                var fieldSpan = document.createElement('span');
+                var fieldType = _normalizeDocumentFieldType(inline.fieldType ?? inline.FieldType);
+                fieldSpan.setAttribute('data-inline-id', inlineId || '');
+                _setRuntimeNodeAttributes(fieldSpan, inlineId || _renderNodeId('inline', null, i), 'inline');
+                fieldSpan.setAttribute('data-inline-atomic', 'true');
+                fieldSpan.setAttribute('data-field-type', String(fieldType));
+                fieldSpan.setAttribute('data-field-format', inline.format || inline.Format || '');
+                fieldSpan.setAttribute('data-field-fallback', inline.fallbackText || inline.FallbackText || '');
+                fieldSpan.setAttribute('contenteditable', 'false');
+                fieldSpan.className = 'tm-wysiwyg-field';
+                fieldSpan.textContent = inline.displayText || inline.DisplayText || inline.fallbackText || inline.FallbackText || _fieldFallbackLabel(fieldType);
+                container.appendChild(fieldSpan);
             } else if (inlineType === 'noteReference' || inlineType === 'DocumentNoteReferenceRun') {
                 var sup = document.createElement('sup');
+                var noteId = inline.noteId || inline.NoteId || '';
+                var noteType = _normalizeNoteType(inline.noteType ?? inline.NoteType);
                 sup.setAttribute('data-inline-id', inlineId || '');
                 _setRuntimeNodeAttributes(sup, inlineId || _renderNodeId('inline', null, i), 'inline');
+                sup.setAttribute('data-note-id', noteId);
+                sup.setAttribute('data-note-type', noteType);
+                sup.setAttribute('data-inline-atomic', 'true');
+                sup.setAttribute('data-testid', noteType === 'Endnote' ? 'document-wysiwyg-endnote-ref' : 'document-wysiwyg-footnote-ref');
+                sup.setAttribute('contenteditable', 'false');
                 sup.className = 'tm-wysiwyg-note-ref';
-                sup.textContent = inline.displayMarker || inline.DisplayMarker || inline.noteId || inline.NoteId || '';
+                sup.textContent = inline.displayMarker || inline.DisplayMarker || noteId || '';
                 container.appendChild(sup);
             }
         }
+    }
+
+    function _normalizeDocumentFieldType(value) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return Math.max(0, Math.min(10, Math.round(value)));
+        }
+
+        var raw = String(value == null ? '' : value).trim().toLowerCase();
+        switch (raw) {
+            case '0':
+            case 'pagenumber':
+            case 'page-number':
+                return 0;
+            case '1':
+            case 'pagecount':
+            case 'page-count':
+                return 1;
+            case '2':
+            case 'pagexofy':
+            case 'page-x-of-y':
+                return 2;
+            case '3':
+            case 'date':
+                return 3;
+            case '4':
+            case 'documenttitle':
+            case 'document-title':
+                return 4;
+            case '5':
+            case 'author':
+                return 5;
+            case '6':
+            case 'lastsaved':
+            case 'last-saved':
+                return 6;
+            case '7':
+            case 'sectionpagenumber':
+            case 'section-page-number':
+                return 7;
+            case '8':
+            case 'sectionpagecount':
+            case 'section-page-count':
+                return 8;
+            case '9':
+            case 'filename':
+            case 'file-name':
+                return 9;
+            case '10':
+            case 'revisionnumber':
+            case 'revision-number':
+                return 10;
+            default:
+                return 0;
+        }
+    }
+
+    function _fieldFallbackLabel(fieldType) {
+        switch (_normalizeDocumentFieldType(fieldType)) {
+            case 0: return '1';
+            case 1: return '1';
+            case 2: return '1 / 1';
+            case 3: return new Date().toLocaleDateString();
+            case 4: return 'Document title';
+            case 5: return 'Author';
+            case 6: return new Date().toLocaleDateString();
+            case 7: return '1';
+            case 8: return '1';
+            case 9: return 'File name';
+            case 10: return '1';
+            default: return '';
+        }
+    }
+
+    function _refreshDocumentFields(inst) {
+        if (!inst || !inst.root) return;
+        var pages = Array.prototype.slice.call(inst.root.querySelectorAll('.tm-wysiwyg-page[data-page-index]:not(.tm-wysiwyg-page--virtual)'));
+        if (pages.length === 0) return;
+
+        var totalPages = inst.virtualState && inst.virtualState.totalPages ? inst.virtualState.totalPages : (inst.virtualPages ? inst.virtualPages.length : pages.length);
+        totalPages = Math.max(1, totalPages || pages.length);
+        for (var i = 0; i < pages.length; i++) {
+            var page = pages[i];
+            var pageIndex = parseInt(page.getAttribute('data-page-index') || String(i), 10);
+            if (!Number.isFinite(pageIndex)) pageIndex = i;
+            var fields = page.querySelectorAll('.tm-wysiwyg-field[data-field-type]');
+            for (var f = 0; f < fields.length; f++) {
+                var field = fields[f];
+                var value = _resolveDocumentFieldValue(
+                    inst,
+                    field.getAttribute('data-field-type'),
+                    pageIndex,
+                    totalPages,
+                    field.getAttribute('data-field-format'),
+                    field.getAttribute('data-field-fallback'));
+                field.textContent = value;
+                field.setAttribute('data-field-value', value);
+                field.setAttribute('aria-label', value);
+            }
+        }
+    }
+
+    function _resolveDocumentFieldValue(inst, fieldType, pageIndex, totalPages, format, fallback) {
+        var doc = _resolveRuntimeDocument(inst) || {};
+        var metadata = doc.metadata || doc.Metadata || {};
+        switch (_normalizeDocumentFieldType(fieldType)) {
+            case 0:
+                return String((pageIndex || 0) + 1);
+            case 1:
+                return String(Math.max(1, totalPages || 1));
+            case 2:
+                return String((pageIndex || 0) + 1) + ' / ' + String(Math.max(1, totalPages || 1));
+            case 3:
+                return _formatDocumentFieldDate(new Date(), format);
+            case 4:
+                return metadata.title || metadata.Title || fallback || '';
+            case 5:
+                var author = metadata.author || metadata.Author || {};
+                return author.displayName || author.DisplayName || fallback || '';
+            case 6:
+                var modified = metadata.modifiedAt || metadata.ModifiedAt || metadata.createdAt || metadata.CreatedAt || null;
+                return _formatDocumentFieldDate(modified ? new Date(modified) : new Date(), format);
+            case 7:
+                return String((pageIndex || 0) + 1);
+            case 8:
+                return String(Math.max(1, totalPages || 1));
+            case 9:
+                return metadata.fileName || metadata.FileName || metadata.title || metadata.Title || fallback || '';
+            case 10:
+                return String(metadata.revisionNumber || metadata.RevisionNumber || fallback || '1');
+            default:
+                return fallback || '';
+        }
+    }
+
+    function _formatDocumentFieldDate(value, format) {
+        if (!(value instanceof Date) || Number.isNaN(value.getTime())) {
+            value = new Date();
+        }
+
+        var rawFormat = String(format || '').trim().toLowerCase();
+        if (rawFormat === 'iso' || rawFormat === 'yyyy-mm-dd') {
+            return value.toISOString().slice(0, 10);
+        }
+
+        return value.toLocaleDateString();
     }
 
     function _renderTextRunContent(span, text) {
@@ -8980,6 +10632,7 @@ window.tmDocumentWysiwyg = (function () {
         if (size) {
             if (size.width || size.Width) img.style.width = (size.width || size.Width) + 'px';
             if (size.height || size.Height) img.style.height = (size.height || size.Height) + 'px';
+            figure.setAttribute('data-lock-aspect-ratio', (size.lockAspectRatio ?? size.LockAspectRatio) === false ? 'false' : 'true');
         }
         var naturalSize = content && (content.naturalSize || content.NaturalSize);
         if (naturalSize) {
@@ -9106,6 +10759,9 @@ window.tmDocumentWysiwyg = (function () {
         if (!layout) {
             figure.setAttribute('data-floating-inline', 'true');
             figure.setAttribute('data-wrap-mode', '0');
+            _debugImage(inst, 'layout.apply.inline-default', {
+                figure: _debugElementLabel(figure)
+            });
             return;
         }
 
@@ -9130,9 +10786,20 @@ window.tmDocumentWysiwyg = (function () {
         figure.setAttribute('data-image-x', String(x));
         figure.setAttribute('data-image-y', String(y));
         figure.setAttribute('data-lock-anchor', lockAnchor ? 'true' : 'false');
-        if (hPos) figure.setAttribute('data-horizontal-position', hPos.css);
+        if (hPos) {
+            figure.setAttribute('data-horizontal-position', hPos.css);
+        } else {
+            figure.removeAttribute('data-horizontal-position');
+        }
 
-        if (inline !== false) return;
+        if (inline !== false) {
+            _debugImage(inst, 'layout.apply.inline', {
+                figure: _debugElementLabel(figure),
+                wrapMode: wrapMode.css,
+                horizontalPosition: hPos ? hPos.css : null
+            });
+            return;
+        }
 
         var positionClass = hPos ? ('tm-wysiwyg-image--position-' + hPos.css) : null;
         figure.classList.add(
@@ -9148,6 +10815,18 @@ window.tmDocumentWysiwyg = (function () {
         if (distR > 0) figure.style.marginRight = distR + 'px';
         if (distT > 0) figure.style.marginTop = distT + 'px';
         if (distB > 0) figure.style.marginBottom = distB + 'px';
+        _debugImage(inst, 'layout.apply.floating', {
+            figure: _debugElementLabel(figure),
+            inline: inline,
+            wrapMode: wrapMode.css,
+            wrapModeValue: wrapMode.value,
+            horizontalPosition: hPos ? hPos.css : null,
+            x: x,
+            y: y,
+            zIndex: z,
+            figureRect: _debugRect(figure.getBoundingClientRect()),
+            visualRect: _debugRect(_getImagePrimaryVisualRect(figure))
+        });
     }
 
     function _ensureImageResizeHandle(figure, inst) {
@@ -9242,6 +10921,12 @@ window.tmDocumentWysiwyg = (function () {
         var sel = window.getSelection();
         var anchorBlock = null;
         var insertionSelection = selectionOverride || inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+        var ownsUndoTransaction = false;
+        if (dispatchPatch && !inst.pendingUndoTransaction) {
+            _commitCurrentRuntimeTransaction(inst, true);
+            _beginUndoTransaction(inst, 'image', 'Insert image', insertionSelection, true);
+            ownsUndoTransaction = true;
+        }
         var selectionAnchorBlockId = insertionSelection
             ? (insertionSelection.anchorBlockId || insertionSelection.AnchorBlockId || '')
             : '';
@@ -9285,6 +10970,10 @@ window.tmDocumentWysiwyg = (function () {
             : blockEl.querySelector && blockEl.querySelector('figure.tm-wysiwyg-image');
         if (insertedFigure) {
             _selectImageFigure(inst, insertedFigure);
+        }
+
+        if (ownsUndoTransaction) {
+            _commitUndoTransaction(inst, _captureSelectionSnapshot(inst));
         }
     }
 
@@ -11097,8 +12786,13 @@ window.tmDocumentWysiwyg = (function () {
             top = revisionRect.bottom - rootRect.top + inst.root.scrollTop + 6;
         }
 
-        popover.style.left = Math.max(0, left) + 'px';
-        popover.style.top = Math.max(0, top) + 'px';
+        var minLeft = inst.root.scrollLeft + 4;
+        var maxLeft = Math.max(minLeft, inst.root.scrollLeft + rootRect.width - popover.offsetWidth - 4);
+        var minTop = inst.root.scrollTop + 4;
+        var maxTop = Math.max(minTop, inst.root.scrollTop + rootRect.height - popover.offsetHeight - 4);
+
+        popover.style.left = Math.min(Math.max(minLeft, left), maxLeft) + 'px';
+        popover.style.top = Math.min(Math.max(minTop, top), maxTop) + 'px';
     }
 
     function _hideInlineRevisionReview(inst) {
@@ -11206,10 +12900,10 @@ window.tmDocumentWysiwyg = (function () {
         if (!inst || inst.disposed) return false;
 
         _deactivatePageRegion(inst);
-        var bodySelection = inst.lastSelectionSnapshot
-            && String(inst.lastSelectionSnapshot.region || inst.lastSelectionSnapshot.Region || '').toLowerCase() === 'body'
-            ? inst.lastSelectionSnapshot
-            : null;
+        var bodySelection = inst.lastBodySelectionSnapshot
+            || (_selectionRegionName(inst.lastSelectionSnapshot) === 'body'
+                ? inst.lastSelectionSnapshot
+                : null);
 
         if (bodySelection) {
             _restoreSelection(inst, bodySelection);
@@ -11221,6 +12915,7 @@ window.tmDocumentWysiwyg = (function () {
 
         var snapshot = _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = snapshot;
+        _rememberBodySelection(inst, snapshot);
         inst.pendingSelectionSnapshot = snapshot;
         _flushSelectionNotification(inst);
         return true;
@@ -11244,7 +12939,8 @@ window.tmDocumentWysiwyg = (function () {
                 ActiveImageBlockId: null
             });
         }
-        return snapshot ? _createRuntimeSelectionFromSnapshot(snapshot) : inst.runtimeSelection;
+        var runtimeSelection = snapshot ? _createRuntimeSelectionFromSnapshot(snapshot) : inst.runtimeSelection;
+        return _toPascalSelection(_createSelectionSnapshotFromRuntimeSelection(runtimeSelection));
     }
 
     /**
@@ -11682,6 +13378,13 @@ window.tmDocumentWysiwyg = (function () {
         const inst = _instances.get(instanceId);
         if (!inst || inst.disposed || inst.readOnly) return;
         _commitCurrentRuntimeTransaction(inst, true);
+        if (String(command || '').toLowerCase().indexOf('image') >= 0) {
+            _debugImage(inst, 'command.execute', {
+                command: command,
+                payload: payload || null,
+                figures: _debugImageFigures(inst)
+            });
+        }
 
         switch (command) {
             case 'toggleBold':
@@ -11692,6 +13395,9 @@ window.tmDocumentWysiwyg = (function () {
                 break;
             case 'toggleUnderline':
                 _executeToggleMarkCommand(inst, 'Underline', payload || {}, 'toggleUnderline');
+                break;
+            case 'toggleStrikethrough':
+                _executeToggleMarkCommand(inst, 'Strikethrough', payload || {}, 'toggleStrikethrough');
                 break;
             case 'toggleMark':
                 payload = payload || {};
@@ -11727,6 +13433,9 @@ window.tmDocumentWysiwyg = (function () {
             case 'clearFormatting':
                 _executeClearFormattingCommand(inst, payload || {});
                 break;
+            case 'hideMiniToolbar':
+                _dismissMiniToolbar(inst);
+                break;
             case 'setParagraphProperties':
                 _executeSetParagraphPropertiesCommand(inst, payload || {}, 'setParagraphProperties');
                 break;
@@ -11741,6 +13450,12 @@ window.tmDocumentWysiwyg = (function () {
                 break;
             case 'decreaseIndent':
                 _executeSetParagraphPropertiesCommand(inst, { LeftIndentDelta: -36 }, 'decreaseIndent');
+                break;
+            case 'toggleBulletList':
+                _executeToggleListCommand(inst, false, payload || {});
+                break;
+            case 'toggleNumberedList':
+                _executeToggleListCommand(inst, true, payload || {});
                 break;
             case 'insertBlock':
                 payload = payload || {};
@@ -11786,10 +13501,18 @@ window.tmDocumentWysiwyg = (function () {
                 _toggleImageCaption(inst, captionBlockId);
                 break;
             }
+            case 'setImageCaption': {
+                var setCaptionPayload = payload || {};
+                var setCaptionBlockId = setCaptionPayload.blockId || setCaptionPayload.BlockId || setCaptionPayload.imageId || setCaptionPayload.ImageId || '';
+                var captionText = setCaptionPayload.caption ?? setCaptionPayload.Caption ?? setCaptionPayload.value ?? '';
+                _setImageCaption(inst, captionText, setCaptionBlockId);
+                break;
+            }
             case 'setImageUrl': {
                 var urlPayload = payload || {};
                 var newUrl = urlPayload.url || urlPayload.Url || urlPayload.value || '';
-                _setImageUrl(inst, newUrl);
+                var urlBlockId = urlPayload.blockId || urlPayload.BlockId || urlPayload.imageId || urlPayload.ImageId || '';
+                _setImageUrl(inst, newUrl, urlBlockId);
                 break;
             }
             case 'setImageLink': {
@@ -11812,6 +13535,12 @@ window.tmDocumentWysiwyg = (function () {
                 return _insertAutocompleteText(inst, autocompleteTextPayload.text || autocompleteTextPayload.Text || '');
             }
             case 'insertPageBreak': {
+                var pageBreakPayload = payload || {};
+                var pageBreakSelection = pageBreakPayload.selection || pageBreakPayload.Selection || null;
+                if (pageBreakSelection) {
+                    _restoreSelection(inst, pageBreakSelection);
+                }
+                _ensureEditorSelection(inst);
                 var pageBreakRegion = _getActiveSchemaRegion(inst);
                 if (!_schemaAllowsBlock(6, pageBreakRegion)) {
                     inst.lastInsertionPolicyWarnings = [{ code: 'page-break-not-allowed', region: pageBreakRegion, blockType: 6 }];
@@ -11820,11 +13549,13 @@ window.tmDocumentWysiwyg = (function () {
 
                 var pageBreakBeforeSelection = _captureSelectionSnapshot(inst);
                 _beginUndoTransaction(inst, 'insertPageBreak', 'Insert page break', pageBreakBeforeSelection, true);
-                _insertClipboardBlocks(inst, [_createPageBreakBlock()]);
+                _insertClipboardBlocks(inst, [_createPageBreakBlock(), _createEmptyParagraphBlock()]);
                 _commitCurrentRuntimeTransaction(inst, true);
                 _notifyPageMetrics(inst);
                 break;
             }
+            case 'insertField':
+                return _insertDocumentField(inst, payload || {});
             case 'deletePageBreak': {
                 var deletePageBreakPayload = payload || {};
                 return _deletePageBreak(inst, deletePageBreakPayload.blockId || deletePageBreakPayload.BlockId || inst.selectedPageBreakId || '');
@@ -11867,6 +13598,10 @@ window.tmDocumentWysiwyg = (function () {
             case 'deleteTableColumn':
                 _applyTableCommandSelectionPayload(inst, payload);
                 _deleteTableColumn(inst);
+                break;
+            case 'deleteTable':
+                _applyTableCommandSelectionPayload(inst, payload);
+                _deleteTable(inst);
                 break;
             case 'mergeTableCells':
                 _applyTableCommandSelectionPayload(inst, payload);
@@ -11925,6 +13660,49 @@ window.tmDocumentWysiwyg = (function () {
         payload = payload || {};
         var value = payload.value ?? payload.Value ?? payload.data ?? payload.Data ?? '';
         return Object.assign({}, payload, { value: value, Value: value, data: value, Data: value });
+    }
+
+    function _insertDocumentField(inst, payload) {
+        if (!inst || inst.readOnly) return false;
+        _flushPendingInputPatch(inst);
+        var explicitSelection = payload.selection || payload.Selection || null;
+        if (explicitSelection) {
+            _restoreSelection(inst, explicitSelection);
+        }
+        _ensureEditorSelection(inst);
+        var selection = explicitSelection || _captureSelectionSnapshot(inst) || inst.lastSelectionSnapshot;
+        if (!selection) return false;
+
+        var fieldType = _normalizeDocumentFieldType(payload.fieldType ?? payload.FieldType ?? payload.type ?? payload.Type);
+        var fallback = payload.fallbackText || payload.FallbackText || _fieldFallbackLabel(fieldType);
+        var field = {
+            $type: 'field',
+            Id: _createInlineId(),
+            FieldType: fieldType,
+            Format: payload.format || payload.Format || '',
+            FallbackText: fallback,
+            DisplayText: fallback
+        };
+
+        _beginUndoTransaction(inst, 'insertField', 'Insert field', selection, true);
+        _dispatchPatch(inst, {
+            type: 'InsertInline',
+            operationId: _nextRuntimeOperationId(inst),
+            epoch: inst.runtimeUndoEpoch || 0,
+            inline: field,
+            Inline: field,
+            selection: selection,
+            Selection: selection,
+            beforeSelection: selection,
+            BeforeSelection: selection,
+            afterSelection: selection,
+            AfterSelection: selection,
+            transactionId: null,
+            TransactionId: null,
+            protocolVersion: inst.options.protocolVersion || 1
+        });
+        _commitCurrentRuntimeTransaction(inst, true);
+        return true;
     }
 
     function _executeToggleMarkCommand(inst, markType, payload, commandName) {
@@ -12063,13 +13841,31 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _executeClearFormattingCommand(inst, payload) {
+        payload = payload || {};
+        if (!payload.fromPointerCapture && inst.clearFormattingPointerCaptureHandledUntil && inst.clearFormattingPointerCaptureHandledUntil > Date.now()) {
+            return;
+        }
+
+        inst.clearFormattingCommandCount = (inst.clearFormattingCommandCount || 0) + 1;
+        var explicitSelection = payload.selection || payload.Selection || null;
+        var contextSelection = _isTextSelectionSnapshot(inst.contextMenuSelectionSnapshot)
+            ? inst.contextMenuSelectionSnapshot
+            : null;
+        var fallbackSelection = _isTextSelectionSnapshot(explicitSelection)
+            ? explicitSelection
+            : (contextSelection || inst.lastSelectionSnapshot);
+        inst.lastClearFormattingFallbackSelection = fallbackSelection ? _cloneRuntimeJson(fallbackSelection) : null;
+        if (fallbackSelection) {
+            _restoreSelection(inst, fallbackSelection);
+        }
+
         _ensureEditorSelection(inst);
         var beforeSelection = _captureSelectionSnapshot(inst);
         var beforeFormatting = _getFormattingState(inst);
         var beforeHtml = inst.root.innerHTML;
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !inst.root.contains(sel.anchorNode)) {
-            _restoreSelection(inst, inst.lastSelectionSnapshot);
+            _restoreSelection(inst, fallbackSelection || inst.lastSelectionSnapshot);
             sel = window.getSelection();
             if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !inst.root.contains(sel.anchorNode)) {
                 inst.pendingTypingMarks = {};
@@ -12077,10 +13873,8 @@ window.tmDocumentWysiwyg = (function () {
             }
         }
 
-        var clearable = ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Superscript', 'Subscript', 'FontFamily', 'FontSize', 'TextColor', 'Highlight'];
-        clearable.forEach(function (mark) {
-            _applyToggleMarkToDom(inst, mark, '', true);
-        });
+        var range = sel.getRangeAt(0);
+        _clearFormattingInDomRange(inst, range);
         var afterSelection = _captureSelectionSnapshot(inst);
         var afterFormatting = _getFormattingState(inst);
         _beginTypingTransaction(inst);
@@ -12095,6 +13889,23 @@ window.tmDocumentWysiwyg = (function () {
             protocolVersion: inst.options.protocolVersion || 1
         });
         _recordRuntimeCommandTransaction(inst, 'clearFormatting', payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
+    }
+
+    function _clearFormattingInDomRange(inst, range) {
+        var originalSelectionSnapshot = _captureSelectionSnapshot(inst);
+        var segments = _collectRangeInlineSegments(inst, range);
+        if (!segments.length) {
+            return;
+        }
+
+        segments.forEach(function (segment) {
+            if (!segment.inline || !segment.inline.isConnected || segment.end <= segment.start) return;
+            _splitInlineForClearFormatting(segment.inline, segment.start, segment.end);
+        });
+
+        if (originalSelectionSnapshot) {
+            _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
+        }
     }
 
     function _executeSetParagraphPropertiesCommand(inst, payload, commandName) {
@@ -12135,6 +13946,119 @@ window.tmDocumentWysiwyg = (function () {
             protocolVersion: inst.options.protocolVersion || 1
         });
         _recordRuntimeCommandTransaction(inst, commandName || 'setParagraphProperties', payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
+    }
+
+    function _executeToggleListCommand(inst, ordered, payload) {
+        _ensureEditorSelection(inst);
+        var beforeSelection = _captureSelectionSnapshot(inst);
+        if (!beforeSelection) return;
+
+        var beforeFormatting = _getFormattingState(inst);
+        var beforeHtml = inst.root.innerHTML;
+        var blocks = _getSelectedBlockElements(inst, beforeSelection);
+        if (blocks.length === 0) return;
+
+        var shouldTurnOff = blocks.every(function (block) {
+            var tag = block.tagName ? block.tagName.toLowerCase() : '';
+            return ordered ? tag === 'ol' : tag === 'ul';
+        });
+        var updatedBlocks = [];
+
+        blocks.forEach(function (block) {
+            var replacement = shouldTurnOff
+                ? _convertListBlockToParagraph(block)
+                : _convertBlockToList(block, ordered);
+            if (!replacement) return;
+            block.replaceWith(replacement);
+            updatedBlocks.push(replacement);
+        });
+
+        if (updatedBlocks.length === 0) return;
+
+        var afterSelection = _collapseSelectionSnapshotToFocus(beforeSelection) || beforeSelection;
+        inst.lastSelectionSnapshot = afterSelection;
+        _focusEditorBody(inst);
+        _restoreSelection(inst, afterSelection);
+        _hideMiniToolbar(inst, true);
+        _scheduleSelectionNotification(inst, afterSelection);
+        _beginTypingTransaction(inst);
+
+        var operationId = _nextRuntimeOperationId(inst);
+        var baseDoc = _resolveRuntimeDocument(inst) || {};
+        var blockMap = _createBlockMap(baseDoc);
+        updatedBlocks.forEach(function (block, index) {
+            _dispatchPatch(inst, {
+                type: 'UpdateBlock',
+                operationId: index === 0 ? operationId : _nextRuntimeOperationId(inst),
+                block: _serializeBlock(block, blockMap, index),
+                selection: beforeSelection,
+                beforeSelection: beforeSelection,
+                afterSelection: afterSelection,
+                transactionId: inst.currentTransactionId,
+                protocolVersion: inst.options.protocolVersion || 1
+            });
+        });
+
+        var commandName = ordered ? 'toggleNumberedList' : 'toggleBulletList';
+        var afterFormatting = _getFormattingState(inst);
+        _recordRuntimeCommandTransaction(inst, commandName, payload || {}, operationId, beforeSelection, afterSelection, beforeFormatting, afterFormatting, beforeHtml, inst.root.innerHTML);
+    }
+
+    function _convertBlockToList(block, ordered) {
+        if (!block) return null;
+        var tag = block.tagName ? block.tagName.toLowerCase() : '';
+        if ((ordered && tag === 'ol') || (!ordered && tag === 'ul')) {
+            return block;
+        }
+
+        var list = document.createElement(ordered ? 'ol' : 'ul');
+        _copyBlockShell(block, list);
+        var li = document.createElement('li');
+        var source = tag === 'ul' || tag === 'ol'
+            ? (block.querySelector('li') || block)
+            : block;
+        while (source.firstChild) {
+            li.appendChild(source.firstChild);
+        }
+        if (!li.textContent && !li.querySelector('[data-inline-id]')) {
+            var inline = document.createElement('span');
+            inline.setAttribute('data-inline-id', _createInlineId());
+            inline.appendChild(document.createTextNode(''));
+            _ensureCaretPlaceholder(inline);
+            li.appendChild(inline);
+        }
+        list.appendChild(li);
+        return list;
+    }
+
+    function _convertListBlockToParagraph(block) {
+        if (!block) return null;
+        var paragraph = document.createElement('p');
+        _copyBlockShell(block, paragraph);
+        var li = block.querySelector('li') || block;
+        while (li.firstChild) {
+            paragraph.appendChild(li.firstChild);
+        }
+        if (!paragraph.textContent && !paragraph.querySelector('[data-inline-id]')) {
+            var inline = document.createElement('span');
+            inline.setAttribute('data-inline-id', _createInlineId());
+            inline.appendChild(document.createTextNode(''));
+            _ensureCaretPlaceholder(inline);
+            paragraph.appendChild(inline);
+        }
+        return paragraph;
+    }
+
+    function _copyBlockShell(source, target) {
+        target.className = source.className || '';
+        if (!target.classList.contains('tm-wysiwyg-block')) {
+            target.classList.add('tm-wysiwyg-block');
+        }
+        Array.from(source.attributes || []).forEach(function (attribute) {
+            if (attribute.name === 'class' || attribute.name === 'style') return;
+            target.setAttribute(attribute.name, attribute.value);
+        });
+        target.style.cssText = source.style.cssText || '';
     }
 
     function _nextRuntimeOperationId(inst) {
@@ -12217,6 +14141,7 @@ window.tmDocumentWysiwyg = (function () {
             case 'toggleBold':
             case 'toggleItalic':
             case 'toggleUnderline':
+            case 'toggleStrikethrough':
             case 'toggleMark':
                 return command;
             case 'setFontFamily':
@@ -12242,6 +14167,7 @@ window.tmDocumentWysiwyg = (function () {
             case 'toggleBold': return 'Bold';
             case 'toggleItalic': return 'Italic';
             case 'toggleUnderline': return 'Underline';
+            case 'toggleStrikethrough': return 'Strikethrough';
             case 'setFontFamily': return 'Font family';
             case 'setFontSize': return 'Font size';
             case 'setTextColor': return 'Text color';
@@ -12364,10 +14290,27 @@ window.tmDocumentWysiwyg = (function () {
 
         var originalSelectionSnapshot = _captureSelectionSnapshot(inst);
         var range = sel.getRangeAt(0);
-        var removeForToggle = forceRemove || (!_isValueMark(markType) && _getSelectionMarkState(inst, markType) === 1);
+        var isToggleMark = !_isValueMark(markType) && _normalizeMarkType(markType) !== 'Link';
+        var removeForToggle = forceRemove || (isToggleMark && _getSelectionMarkState(inst, markType) === 1);
         var startInfo = _mapNodeToBlockInline(range.startContainer, range.startOffset, inst.root);
         var endInfo = _mapNodeToBlockInline(range.endContainer, range.endOffset, inst.root);
-        if (!startInfo || !endInfo || startInfo.blockId !== endInfo.blockId || startInfo.inlineId !== endInfo.inlineId) {
+        var startElement = range.startContainer && range.startContainer.nodeType === Node.ELEMENT_NODE
+            ? range.startContainer
+            : range.startContainer?.parentElement;
+        var endElement = range.endContainer && range.endContainer.nodeType === Node.ELEMENT_NODE
+            ? range.endContainer
+            : range.endContainer?.parentElement;
+        var startBlock = startElement ? startElement.closest('[data-block-id]') : null;
+        var endBlock = endElement ? endElement.closest('[data-block-id]') : null;
+        var startInlineElement = startBlock ? _findSemanticInlineElement(startElement, startBlock) : null;
+        var endInlineElement = endBlock ? _findSemanticInlineElement(endElement, endBlock) : null;
+        if (!startInfo
+            || !endInfo
+            || startInfo.blockId !== endInfo.blockId
+            || startInfo.inlineId !== endInfo.inlineId
+            || !startInlineElement
+            || !endInlineElement
+            || startInlineElement !== endInlineElement) {
             var acrossResult = _applyMarkAcrossSelection(inst, range, markType, data, removeForToggle, title);
             if (originalSelectionSnapshot) {
                 _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
@@ -12381,7 +14324,7 @@ window.tmDocumentWysiwyg = (function () {
 
         var start = Math.min(startInfo.offset, endInfo.offset);
         var end = Math.max(startInfo.offset, endInfo.offset);
-        var removed = removeForToggle || (!_isValueMark(markType) && _rangeHasDomMark(inline, start, end, markType));
+        var removed = removeForToggle || (isToggleMark && _rangeHasDomMark(inline, start, end, markType));
         _splitInlineForMark(inline, start, end, markType, data, removed, title);
         if (originalSelectionSnapshot) {
             _restoreSelectionByBlockOffsets(inst, originalSelectionSnapshot);
@@ -12553,6 +14496,40 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         return markedInline;
+    }
+
+    function _splitInlineForClearFormatting(inline, start, end) {
+        var text = _serializeInlineText(inline);
+        var beforeText = text.slice(0, start);
+        var clearedText = text.slice(start, end);
+        var afterText = text.slice(end);
+        var parent = inline.parentNode;
+        if (!parent || !clearedText) return null;
+
+        var fragment = document.createDocumentFragment();
+        var clearedInline = inline.cloneNode(false);
+
+        if (beforeText) {
+            var beforeInline = inline.cloneNode(false);
+            beforeInline.setAttribute('data-inline-id', _createInlineId());
+            _renderTextRunContent(beforeInline, beforeText);
+            fragment.appendChild(beforeInline);
+        }
+
+        clearedInline.setAttribute('data-inline-id', inline.getAttribute('data-inline-id') || _createInlineId());
+        _renderTextRunContent(clearedInline, clearedText);
+        _removeAllFormattingStyles(clearedInline);
+        fragment.appendChild(clearedInline);
+
+        if (afterText) {
+            var afterInline = inline.cloneNode(false);
+            afterInline.setAttribute('data-inline-id', _createInlineId());
+            _renderTextRunContent(afterInline, afterText);
+            fragment.appendChild(afterInline);
+        }
+
+        parent.replaceChild(fragment, inline);
+        return clearedInline;
     }
 
     function _rangeHasDomMark(inline, start, end, markType) {
@@ -12729,6 +14706,12 @@ window.tmDocumentWysiwyg = (function () {
                 el.removeAttribute('data-link-href');
                 el.removeAttribute('data-link-title');
                 el.removeAttribute('title');
+                el.removeAttribute('href');
+                el.style.textDecoration = (el.style.textDecoration || '').replace('underline', '').trim();
+                Array.from(el.querySelectorAll('a')).forEach(function (link) {
+                    var text = document.createTextNode(link.textContent || '');
+                    link.parentNode && link.parentNode.replaceChild(text, link);
+                });
                 break;
             case 'Strikethrough':
                 el.style.textDecoration = (el.style.textDecoration || '').replace('line-through', '').trim();
@@ -12751,6 +14734,13 @@ window.tmDocumentWysiwyg = (function () {
                 el.style.backgroundColor = '';
                 break;
         }
+    }
+
+    function _removeAllFormattingStyles(el) {
+        ['Bold', 'Italic', 'Underline', 'Strikethrough', 'Superscript', 'Subscript', 'FontFamily', 'FontSize', 'TextColor', 'Highlight', 'Link']
+            .forEach(function (markType) {
+                _removeMarkStyle(el, markType);
+            });
     }
 
     function _clearInlineFormatting(el) {
@@ -12842,6 +14832,7 @@ window.tmDocumentWysiwyg = (function () {
             Bold: _getSelectionMarkState(inst, 'Bold'),
             Italic: _getSelectionMarkState(inst, 'Italic'),
             Underline: _getSelectionMarkState(inst, 'Underline'),
+            Strikethrough: _getSelectionMarkState(inst, 'Strikethrough'),
             ParagraphAlignment: paragraphState.alignment,
             ParagraphAlignmentMixed: paragraphState.alignmentMixed,
             FontFamily: inlineState.fontFamily.value,
@@ -12854,6 +14845,15 @@ window.tmDocumentWysiwyg = (function () {
             HighlightColorMixed: inlineState.highlightColor.mixed,
             LineSpacing: paragraphState.lineSpacing,
             LineSpacingMixed: paragraphState.lineSpacingMixed,
+            SpacingBefore: paragraphState.spacingBefore,
+            SpacingBeforeMixed: paragraphState.spacingBeforeMixed,
+            SpacingAfter: paragraphState.spacingAfter,
+            SpacingAfterMixed: paragraphState.spacingAfterMixed,
+            LeftIndent: paragraphState.leftIndent,
+            LeftIndentMixed: paragraphState.leftIndentMixed,
+            IsBulletList: paragraphState.isBulletList,
+            IsNumberedList: paragraphState.isNumberedList,
+            ListMixed: paragraphState.listMixed,
             ActiveRegion: selection ? (selection.region || selection.Region || 'Body') : 'Body',
             CurrentSelection: _toPascalSelection(selection)
         };
@@ -12907,7 +14907,7 @@ window.tmDocumentWysiwyg = (function () {
             acceptNode: function (node) {
                 if (!inst.root.contains(node)) return NodeFilter.FILTER_REJECT;
                 try {
-                    return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    return _getSelectedTextLengthInTextNode(range, node) > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
                 } catch {
                     return NodeFilter.FILTER_REJECT;
                 }
@@ -12918,7 +14918,7 @@ window.tmDocumentWysiwyg = (function () {
             var element = walker.currentNode.parentElement;
             if (!element) continue;
             try {
-                if (range.intersectsNode(walker.currentNode) && !seen.has(element)) {
+                if (_getSelectedTextLengthInTextNode(range, walker.currentNode) > 0 && !seen.has(element)) {
                     seen.add(element);
                     result.push(element);
                 }
@@ -12929,26 +14929,88 @@ window.tmDocumentWysiwyg = (function () {
         return result;
     }
 
+    function _getSelectedTextLengthInTextNode(range, node) {
+        if (!range || !node || node.nodeType !== Node.TEXT_NODE || !(node.textContent || '').length) {
+            return 0;
+        }
+
+        try {
+            if (!range.intersectsNode(node)) {
+                return 0;
+            }
+
+            var nodeRange = document.createRange();
+            nodeRange.selectNodeContents(node);
+            var intersection = range.cloneRange();
+            if (intersection.compareBoundaryPoints(Range.START_TO_START, nodeRange) < 0) {
+                intersection.setStart(nodeRange.startContainer, nodeRange.startOffset);
+            }
+
+            if (intersection.compareBoundaryPoints(Range.END_TO_END, nodeRange) > 0) {
+                intersection.setEnd(nodeRange.endContainer, nodeRange.endOffset);
+            }
+
+            return intersection.toString().length;
+        } catch {
+            return 0;
+        }
+    }
+
     function _getSelectionParagraphState(inst, selection) {
         var blocks = _collectSelectionBlocks(inst, selection);
         if (blocks.length === 0) {
-            return { alignment: 0, alignmentMixed: false, lineSpacing: 1, lineSpacingMixed: false };
+            return {
+                alignment: 0,
+                alignmentMixed: false,
+                lineSpacing: 1,
+                lineSpacingMixed: false,
+                spacingBefore: 0,
+                spacingBeforeMixed: false,
+                spacingAfter: 0,
+                spacingAfterMixed: false,
+                leftIndent: 0,
+                leftIndentMixed: false,
+                isBulletList: false,
+                isNumberedList: false,
+                listMixed: false
+            };
         }
 
         var firstAlignment = _readBlockAlignment(blocks[0]);
         var firstLineSpacing = _readBlockLineSpacing(blocks[0]);
+        var firstSpacingBefore = _readBlockSpacingBefore(blocks[0]);
+        var firstSpacingAfter = _readBlockSpacingAfter(blocks[0]);
+        var firstLeftIndent = _readBlockLeftIndent(blocks[0]);
+        var firstListState = _readBlockListState(blocks[0]);
         var alignmentMixed = false;
         var lineSpacingMixed = false;
+        var spacingBeforeMixed = false;
+        var spacingAfterMixed = false;
+        var leftIndentMixed = false;
+        var listMixed = false;
         for (var i = 1; i < blocks.length; i++) {
             if (_readBlockAlignment(blocks[i]) !== firstAlignment) alignmentMixed = true;
             if (_readBlockLineSpacing(blocks[i]) !== firstLineSpacing) lineSpacingMixed = true;
+            if (_readBlockSpacingBefore(blocks[i]) !== firstSpacingBefore) spacingBeforeMixed = true;
+            if (_readBlockSpacingAfter(blocks[i]) !== firstSpacingAfter) spacingAfterMixed = true;
+            if (_readBlockLeftIndent(blocks[i]) !== firstLeftIndent) leftIndentMixed = true;
+            if (_readBlockListState(blocks[i]) !== firstListState) listMixed = true;
         }
 
         return {
             alignment: firstAlignment,
             alignmentMixed: alignmentMixed,
             lineSpacing: firstLineSpacing,
-            lineSpacingMixed: lineSpacingMixed
+            lineSpacingMixed: lineSpacingMixed,
+            spacingBefore: firstSpacingBefore,
+            spacingBeforeMixed: spacingBeforeMixed,
+            spacingAfter: firstSpacingAfter,
+            spacingAfterMixed: spacingAfterMixed,
+            leftIndent: firstLeftIndent,
+            leftIndentMixed: leftIndentMixed,
+            isBulletList: firstListState === 'bullet',
+            isNumberedList: firstListState === 'numbered',
+            listMixed: listMixed
         };
     }
 
@@ -12984,6 +15046,35 @@ window.tmDocumentWysiwyg = (function () {
         var style = block.style || {};
         var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
         return _sanitizeLineSpacing(style.lineHeight || computed.lineHeight || 1);
+    }
+
+    function _readBlockSpacingBefore(block) {
+        if (!block) return 0;
+        var style = block.style || {};
+        var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
+        return _sanitizeParagraphPoints(_cssLengthToPoints(style.marginTop || computed.marginTop || 0), 0, 144);
+    }
+
+    function _readBlockSpacingAfter(block) {
+        if (!block) return 0;
+        var style = block.style || {};
+        var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
+        return _sanitizeParagraphPoints(_cssLengthToPoints(style.marginBottom || computed.marginBottom || 0), 0, 144);
+    }
+
+    function _readBlockLeftIndent(block) {
+        if (!block) return 0;
+        var style = block.style || {};
+        var computed = window.getComputedStyle ? window.getComputedStyle(block) : style;
+        return _sanitizeParagraphPoints(_cssLengthToPoints(style.marginLeft || computed.marginLeft || 0), 0, 432);
+    }
+
+    function _readBlockListState(block) {
+        if (!block) return 'none';
+        var tag = block.tagName ? block.tagName.toLowerCase() : '';
+        if (tag === 'ol') return 'numbered';
+        if (tag === 'ul') return 'bullet';
+        return 'none';
     }
 
     function getLinkInfo(instanceId) {
@@ -13039,7 +15130,7 @@ window.tmDocumentWysiwyg = (function () {
             acceptNode: function (node) {
                 if (!inst.root.contains(node)) return NodeFilter.FILTER_REJECT;
                 try {
-                    return range.intersectsNode(node) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    return _getSelectedTextLengthInTextNode(range, node) > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
                 } catch {
                     return NodeFilter.FILTER_REJECT;
                 }
@@ -13073,7 +15164,13 @@ window.tmDocumentWysiwyg = (function () {
         payload = payload || {};
         var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
         var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
-        if (!figure) return;
+        if (!figure) {
+            _debugImage(inst, 'command.wrap.no-figure', {
+                payload: payload,
+                figures: _debugImageFigures(inst)
+            });
+            return;
+        }
         _commitCurrentRuntimeTransaction(inst, false);
         var beforeSel = _captureSelectionSnapshot(inst);
         _beginUndoTransaction(inst, 'image', 'Set image wrap', beforeSel, true);
@@ -13089,8 +15186,24 @@ window.tmDocumentWysiwyg = (function () {
         };
         layout.Inline = false;
         layout.WrapMode = wrapMode.value;
+        var hPos = _normalizeHorizontalPosition(layout.horizontalPosition ?? layout.HorizontalPosition);
+        if (wrapMode.value === 1 && (!hPos || hPos.css === 'center')) {
+            layout.HorizontalPosition = 0;
+        }
+        _debugImage(inst, 'command.wrap.apply', {
+            figure: _debugElementLabel(figure),
+            payload: payload,
+            wrapMode: wrapMode.css,
+            wrapModeValue: wrapMode.value,
+            layout: layout
+        });
+        var imageSelection = _createImageSelectionSnapshot(figure);
+        inst.lastSelectionSnapshot = imageSelection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSelection);
         _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
+        _ensureWrappedImageSideTextBlock(inst, figure, true, imageSelection);
+        _selectImageFigure(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
     }
@@ -13099,9 +15212,21 @@ window.tmDocumentWysiwyg = (function () {
         payload = payload || {};
         var blockId = payload.blockId || payload.BlockId || payload.imageId || payload.ImageId || '';
         var figure = blockId ? _getImageFigureByBlockId(inst, blockId) : _getSelectedImageFigure(inst);
-        if (!figure) return;
+        if (!figure) {
+            _debugImage(inst, 'command.position.no-figure', {
+                payload: payload,
+                figures: _debugImageFigures(inst)
+            });
+            return;
+        }
         var hPos = _normalizeHorizontalPosition(payload.horizontalPosition ?? payload.HorizontalPosition);
-        if (!hPos) return;
+        if (!hPos) {
+            _debugImage(inst, 'command.position.invalid-position', {
+                figure: _debugElementLabel(figure),
+                payload: payload
+            });
+            return;
+        }
         _commitCurrentRuntimeTransaction(inst, false);
         var beforeSel = _captureSelectionSnapshot(inst);
         _beginUndoTransaction(inst, 'image', 'Set image position', beforeSel, true);
@@ -13117,11 +15242,22 @@ window.tmDocumentWysiwyg = (function () {
         layout.Inline = false;
         layout.HorizontalPosition = hPos.value;
         var currentWrap = _normalizeWrapMode(layout.wrapMode ?? layout.WrapMode);
-        if (currentWrap.value === 0 && (hPos.css === 'left' || hPos.css === 'right')) {
+        if ((hPos.css === 'left' || hPos.css === 'right') && (currentWrap.value === 0 || currentWrap.value === 4)) {
             layout.WrapMode = 1;
         }
+        _debugImage(inst, 'command.position.apply', {
+            figure: _debugElementLabel(figure),
+            payload: payload,
+            horizontalPosition: hPos.css,
+            layout: layout
+        });
+        var imageSelection = _createImageSelectionSnapshot(figure);
+        inst.lastSelectionSnapshot = imageSelection;
+        inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(imageSelection);
         _applyFloatingImageLayout(figure, { FloatingLayout: layout }, inst);
         _ensureImageResizeHandle(figure, inst);
+        _ensureWrappedImageSideTextBlock(inst, figure, true, imageSelection);
+        _selectImageFigure(inst, figure);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
     }
@@ -13155,6 +15291,7 @@ window.tmDocumentWysiwyg = (function () {
         _beginUndoTransaction(inst, 'image', 'Resize image', beforeSel, true);
         if (nextWidth > 0) img.style.width = Math.round(nextWidth) + 'px';
         if (nextHeight > 0) img.style.height = Math.round(nextHeight) + 'px';
+        figure.setAttribute('data-lock-aspect-ratio', lockAspectRatio ? 'true' : 'false');
         _ensureImageResizeHandle(figure, inst);
         _dispatchImageUpdatePatch(inst, figure);
         _commitCurrentRuntimeTransaction(inst, false);
@@ -13290,6 +15427,15 @@ window.tmDocumentWysiwyg = (function () {
         var el = node;
         var tag = el.tagName.toLowerCase();
         var children = Array.from(el.childNodes).map(_sanitizeClipboardNode).join('');
+        if (tag === 'span' && (el.className || '').indexOf('tm-wysiwyg-field') >= 0) {
+            return '<span class="tm-wysiwyg-field"'
+                + ' data-inline-id="' + _escapeHtmlAttribute(el.getAttribute('data-inline-id') || '') + '"'
+                + ' data-field-type="' + _escapeHtmlAttribute(el.getAttribute('data-field-type') || '0') + '"'
+                + ' data-field-format="' + _escapeHtmlAttribute(el.getAttribute('data-field-format') || '') + '"'
+                + ' data-field-fallback="' + _escapeHtmlAttribute(el.getAttribute('data-field-fallback') || '') + '">'
+                + children
+                + '</span>';
+        }
         if (tag === 'span' && el.style.fontWeight && (el.style.fontWeight === 'bold' || parseInt(el.style.fontWeight, 10) >= 700)) {
             return '<strong>' + children + '</strong>';
         }
@@ -13572,11 +15718,22 @@ window.tmDocumentWysiwyg = (function () {
                 break;
             case 'ul':
                 type = 2; // List
-                content = { $type: 'list', Ordered: false, Inlines: _serializeInlines(blockEl.querySelector('li') || blockEl) };
+                content = {
+                    $type: 'list',
+                    Ordered: false,
+                    IndentLevel: Math.max(0, Math.round(_readBlockLeftIndent(blockEl) / 36)),
+                    Inlines: _serializeInlines(blockEl.querySelector('li') || blockEl)
+                };
                 break;
             case 'ol':
                 type = 2; // List
-                content = { $type: 'list', Ordered: true, Inlines: _serializeInlines(blockEl.querySelector('li') || blockEl) };
+                content = {
+                    $type: 'list',
+                    Ordered: true,
+                    IndentLevel: Math.max(0, Math.round(_readBlockLeftIndent(blockEl) / 36)),
+                    StartNumber: Math.max(1, parseInt(blockEl.getAttribute('start') || '1', 10) || 1),
+                    Inlines: _serializeInlines(blockEl.querySelector('li') || blockEl)
+                };
                 break;
             case 'blockquote':
                 type = 3; // Quote
@@ -13697,13 +15854,24 @@ window.tmDocumentWysiwyg = (function () {
             };
         }
 
+        if (className.indexOf('tm-wysiwyg-field') >= 0) {
+            return {
+                $type: 'field',
+                Id: id,
+                FieldType: _normalizeDocumentFieldType(el.getAttribute('data-field-type')),
+                Format: el.getAttribute('data-field-format') || undefined,
+                FallbackText: el.getAttribute('data-field-fallback') || undefined,
+                DisplayText: el.textContent || ''
+            };
+        }
+
         if (tag === 'sup' && className.indexOf('tm-wysiwyg-note-ref') >= 0) {
             return {
                 $type: 'noteReference',
                 Id: id,
                 NoteId: el.getAttribute('data-note-id') || '',
                 DisplayMarker: el.textContent || '',
-                NoteType: 'Footnote'
+                NoteType: _normalizeNoteType(el.getAttribute('data-note-type'))
             };
         }
 
@@ -14020,6 +16188,7 @@ window.tmDocumentWysiwyg = (function () {
             var h = img.style.height;
             if (w) size.Width = parseInt(w, 10);
             if (h) size.Height = parseInt(h, 10);
+            size.LockAspectRatio = figureEl.getAttribute('data-lock-aspect-ratio') !== 'false';
         }
         var source = parseInt(figureEl.getAttribute('data-image-source') || '0', 10);
         var assetId = figureEl.getAttribute('data-image-asset-id') || '';
@@ -14218,6 +16387,10 @@ window.tmDocumentWysiwyg = (function () {
             LastPatchId: inst.lastPatchId || null,
             LastPatchTransactionId: inst.lastPatchTransactionId || null,
             LastPatchAt: inst.lastPatchAt || null,
+            ClearFormattingPointerCaptureCount: inst.clearFormattingPointerCaptureCount || 0,
+            ClearFormattingCommandCount: inst.clearFormattingCommandCount || 0,
+            ContextMenuSelection: _toPascalSelection(inst.contextMenuSelectionSnapshot || null),
+            LastClearFormattingFallbackSelection: _toPascalSelection(inst.lastClearFormattingFallbackSelection || null),
             MiniToolbarVisible: !!inst.miniToolbarVisible,
             MiniToolbarRequestKey: inst.miniToolbarRequestKey || null,
             CurrentSelection: _toPascalSelection(selection),
@@ -14774,6 +16947,9 @@ window.tmDocumentEditorRuntime = (function () {
 
     function _looksLikeTextInline(inline) {
         if (!inline) return false;
+        if (inline.NoteId !== undefined || inline.noteId !== undefined || inline.NoteType !== undefined || inline.noteType !== undefined) return false;
+        if (inline.FieldType !== undefined || inline.fieldType !== undefined || inline.FallbackText !== undefined || inline.fallbackText !== undefined) return false;
+        if (inline.Key !== undefined || inline.key !== undefined || inline.TokenType !== undefined || inline.tokenType !== undefined) return false;
         var type = String(inline.$type || inline.Type || inline.type || '').toLowerCase();
         return type === 'text' || type === 'textrun' || type.indexOf('text') >= 0 || _hasOwn(inline, 'Text') || _hasOwn(inline, 'text');
     }
@@ -14800,6 +16976,27 @@ window.tmDocumentEditorRuntime = (function () {
         _ensureString(result, 'Id', 'id', _stableNodeId('inline', path));
         var marks = _readInlineMarks(result).map(function (mark) { return _sortObjectDeep(_cloneJson(mark)); });
         _writeInlineMarks(result, marks);
+
+        if (result.NoteId !== undefined || result.noteId !== undefined || result.NoteType !== undefined || result.noteType !== undefined) {
+            if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+                result.$type = 'noteReference';
+            }
+            return result;
+        }
+
+        if (result.FieldType !== undefined || result.fieldType !== undefined || result.FallbackText !== undefined || result.fallbackText !== undefined) {
+            if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+                result.$type = 'field';
+            }
+            return result;
+        }
+
+        if (result.Key !== undefined || result.key !== undefined || result.TokenType !== undefined || result.tokenType !== undefined) {
+            if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
+                result.$type = 'token';
+            }
+            return result;
+        }
 
         if (_looksLikeTextInline(result)) {
             if (!result.$type && !_hasOwn(result, 'Type') && !_hasOwn(result, 'type')) {
@@ -16018,6 +18215,17 @@ window.tmDocumentEditorRuntime = (function () {
                 PendingTransactionId: state.PendingTransactionId || null,
                 PendingPatchType: state.PendingPatchType || null
             };
+        },
+
+        setImageDebugEnabled: function (enabled) {
+            try {
+                window.localStorage.setItem('tmDocumentEditorImageDebug', enabled ? '1' : '0');
+            } catch {}
+            console.info('[TmDocumentEditor:image]', enabled ? 'debug enabled' : 'debug disabled');
+        },
+
+        getImageDebugEnabled: function () {
+            return _isImageDebugEnabled();
         }
     };
 })();

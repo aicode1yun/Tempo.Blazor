@@ -17,7 +17,20 @@
         hidden="@(ToolbarMode == DocumentToolbarMode.DistractionFree)"
         data-testid="document-toolbar"
         data-keyboard-mode="@_keyboardMode.ToString().ToLowerInvariant()"
-        data-toolbar-mode="@ToolbarMode.ToString()">
+        data-toolbar-mode="@ToolbarMode.ToString()"
+        @onkeydown="HandleToolbarKeyDown">
+    @if (HasToolbarFloatingUi)
+    {
+        <button type="button"
+                class="tm-document-editor__toolbar-floating-backdrop"
+                aria-label="@Loc["TmDocumentEditor_Close"]"
+                data-testid="document-toolbar-floating-backdrop"
+                @onclick="CloseToolbarFloatingUi"
+                @oncontextmenu:preventDefault="true"
+                @oncontextmenu="CloseToolbarFloatingUi">
+        </button>
+    }
+
     <div class="tm-document-editor__ribbon-tabs" role="tablist" aria-label="@Loc["TmDocumentEditor_ToolbarTabsLabel"]">
         <button type="button"
                 @ref="_homeTab"
@@ -27,7 +40,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Home)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Home)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Home)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.Home)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Home)"
                 data-testid="document-ribbon-tab-home">@Loc["TmDocumentEditor_TabHome"]</button>
         <button type="button"
                 @ref="_insertTab"
@@ -37,7 +50,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Insert)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Insert)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Insert)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.Insert)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Insert)"
                 data-testid="document-ribbon-tab-insert">@Loc["TmDocumentEditor_TabInsert"]</button>
         <button type="button"
                 @ref="_layoutTab"
@@ -47,7 +60,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Layout)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Layout)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Layout)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.Layout)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Layout)"
                 data-testid="document-ribbon-tab-layout">@Loc["TmDocumentEditor_TabLayout"]</button>
         <button type="button"
                 @ref="_referencesTab"
@@ -57,7 +70,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.References)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.References)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.References)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.References)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.References)"
                 data-testid="document-ribbon-tab-references">@Loc["TmDocumentEditor_TabReferences"]</button>
         <button type="button"
                 @ref="_reviewTab"
@@ -67,7 +80,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.Review)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.Review)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.Review)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.Review)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.Review)"
                 data-testid="document-ribbon-tab-review">@Loc["TmDocumentEditor_TabReview"]</button>
         <button type="button"
                 @ref="_viewTab"
@@ -77,7 +90,7 @@
                 aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.View)"
                 tabindex="@GetRibbonTabIndex(DocumentRibbonTab.View)"
                 @onclick="() => SelectRibbonTab(DocumentRibbonTab.View)"
-                @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.View)"
+                @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.View)"
                 data-testid="document-ribbon-tab-view">@Loc["TmDocumentEditor_TabView"]</button>
         @if (IsHeaderFooterMode)
         {
@@ -89,57 +102,57 @@
                     aria-selected="@GetRibbonTabSelected(DocumentRibbonTab.HeaderFooter)"
                     tabindex="@GetRibbonTabIndex(DocumentRibbonTab.HeaderFooter)"
                     @onclick="() => SelectRibbonTab(DocumentRibbonTab.HeaderFooter)"
-                    @onkeydown="args => HandleRibbonTabKeyDown(args, DocumentRibbonTab.HeaderFooter)"
+                    @onkeydown="args => HandleRibbonTabKeyDownAsync(args, DocumentRibbonTab.HeaderFooter)"
                     data-testid="document-ribbon-tab-header-footer">@Loc["TmDocumentEditor_TabHeaderFooter"]</button>
         }
     </div>
 
     <div class="tm-document-editor__ribbon-commands-wrapper">
+    <section class="tm-document-editor__ribbon-group tm-document-editor__ribbon-group--quick-access"
+             aria-label="@Loc["TmDocumentEditor_GroupClipboard"]">
+        <button class="tm-document-editor__ribbon-button"
+                type="button"
+                disabled="@(!CanExecuteSave)"
+                title="@SaveTitle"
+                aria-label="@SaveTitle"
+                @onclick='() => ExecuteToolbarCommandAsync("save", OnSave, !ReadOnly && !IsSaving)'
+                data-command="save"
+                data-testid="document-save">
+            <TmIcon Name="save" Size="IconSize.Sm" />
+            <span>@Loc["TmDocumentEditor_Save"]</span>
+        </button>
+        <button class="tm-document-editor__ribbon-button"
+                type="button"
+                disabled="@(!CanExecuteUndo)"
+                title="@UndoTitle"
+                aria-label="@UndoTitle"
+                @onclick='() => ExecuteToolbarCommandAsync("undo", OnUndo, !ReadOnly && CanUndo)'
+                data-command="undo"
+                data-testid="document-undo">
+            <TmIcon Name="undo-2" Size="IconSize.Sm" />
+            <span>@Loc["TmDocumentEditor_Undo"]</span>
+        </button>
+        <button class="tm-document-editor__ribbon-button"
+                type="button"
+                disabled="@(!CanExecuteRedo)"
+                title="@RedoTitle"
+                aria-label="@RedoTitle"
+                @onclick='() => ExecuteToolbarCommandAsync("redo", OnRedo, !ReadOnly && CanRedo)'
+                data-command="redo"
+                data-testid="document-redo">
+            <TmIcon Name="redo-2" Size="IconSize.Sm" />
+            <span>@Loc["TmDocumentEditor_Redo"]</span>
+        </button>
+    </section>
     <div class="tm-document-editor__ribbon-groups" role="tabpanel" aria-labelledby="@GetRibbonTabId(_activeRibbonTab)" @ref="_ribbonGroupsRef">
         @if (_activeRibbonTab == DocumentRibbonTab.Home)
         {
-            <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupClipboard"]">
-                <button class="tm-document-editor__ribbon-button"
-                        type="button"
-                        disabled="@(!CanExecuteSave)"
-                        title="@SaveTitle"
-                        aria-label="@SaveTitle"
-                        @onclick='() => ExecuteToolbarCommandAsync("save", OnSave, !ReadOnly && !IsSaving)'
-                        data-command="save"
-                        data-testid="document-save">
-                    <TmIcon Name="save" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_Save"]</span>
-                </button>
-                <button class="tm-document-editor__ribbon-button"
-                        type="button"
-                        disabled="@(!CanExecuteUndo)"
-                        title="@UndoTitle"
-                        aria-label="@UndoTitle"
-                        @onclick='() => ExecuteToolbarCommandAsync("undo", OnUndo, !ReadOnly && CanUndo)'
-                        data-command="undo"
-                        data-testid="document-undo">
-                    <TmIcon Name="undo-2" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_Undo"]</span>
-                </button>
-                <button class="tm-document-editor__ribbon-button"
-                        type="button"
-                        disabled="@(!CanExecuteRedo)"
-                        title="@RedoTitle"
-                        aria-label="@RedoTitle"
-                        @onclick='() => ExecuteToolbarCommandAsync("redo", OnRedo, !ReadOnly && CanRedo)'
-                        data-command="redo"
-                        data-testid="document-redo">
-                    <TmIcon Name="redo-2" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_Redo"]</span>
-                </button>
-            </section>
-
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupFormatting"]">
                 <label class="tm-document-editor__ribbon-select" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))">
                     <TmIcon Name="type" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_FontFamily"]</span>
                     <select disabled="@(!IsCommandEnabled("fontFamily"))"
-                            value="@CurrentFontFamily"
+                            value="@(FontFamilyMixed ? string.Empty : CurrentFontFamily)"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontFamily"]))"
                             aria-label="@Loc["TmDocumentEditor_FontFamily"]"
                             @onchange="HandleFontFamilyChangedAsync"
@@ -154,11 +167,15 @@
                 <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))">
                     <span>@Loc["TmDocumentEditor_FontSize"]</span>
                     <select disabled="@(!IsCommandEnabled("fontSize"))"
-                            value="@NormalizeFontSizeValue(CurrentFontSize)"
+                            value="@(FontSizeMixed ? string.Empty : NormalizeFontSizeValue(CurrentFontSize))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_FontSize"]))"
                             aria-label="@Loc["TmDocumentEditor_FontSize"]"
                             @onchange="HandleFontSizeChangedAsync"
                             data-testid="document-font-size">
+                        @if (FontSizeMixed)
+                        {
+                            <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
+                        }
                         @foreach (var size in FontSizes)
                         {
                             <option value="@size">@size</option>
@@ -206,6 +223,20 @@
                         data-testid="document-underline">
                     <TmIcon Name="underline" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Underline"]</span>
+                </button>
+                <button class="@GetFormattingButtonClass(StrikethroughState)"
+                        type="button"
+                        disabled="@(!IsCommandEnabled("strikethrough"))"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_Strikethrough"]))"
+                        aria-label="@Loc["TmDocumentEditor_Strikethrough"]"
+                        aria-pressed="@GetRegistryFormattingAriaPressed("strikethrough", StrikethroughState)"
+                        @onclick='() => ExecuteToolbarCommandAsync("strikethrough", OnStrikethrough)'
+                        @onpointerdown:preventDefault="true"
+                        @onmousedown:preventDefault="true"
+                        data-command="strikethrough"
+                        data-testid="document-strikethrough">
+                    <TmIcon Name="strikethrough" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_Strikethrough"]</span>
                 </button>
                 <button class="tm-document-editor__ribbon-button"
                         type="button"
@@ -330,10 +361,15 @@
                 <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingBefore"]))">
                     <span>@Loc["TmDocumentEditor_SpacingBefore"]</span>
                     <select disabled="@(!IsCommandEnabled("lineSpacing"))"
+                            value="@(SpacingBeforeMixed ? string.Empty : NormalizeParagraphSpacingValue(CurrentSpacingBefore))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingBefore"]))"
                             aria-label="@Loc["TmDocumentEditor_SpacingBefore"]"
                             @onchange="HandleSpacingBeforeChangedAsync"
                             data-testid="document-spacing-before">
+                        @if (SpacingBeforeMixed)
+                        {
+                            <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
+                        }
                         @foreach (var spacing in ParagraphSpacingOptions)
                         {
                             <option value="@spacing">@spacing</option>
@@ -343,10 +379,15 @@
                 <label class="tm-document-editor__ribbon-select tm-document-editor__ribbon-select--compact" title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingAfter"]))">
                     <span>@Loc["TmDocumentEditor_SpacingAfter"]</span>
                     <select disabled="@(!IsCommandEnabled("lineSpacing"))"
+                            value="@(SpacingAfterMixed ? string.Empty : NormalizeParagraphSpacingValue(CurrentSpacingAfter))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_SpacingAfter"]))"
                             aria-label="@Loc["TmDocumentEditor_SpacingAfter"]"
                             @onchange="HandleSpacingAfterChangedAsync"
                             data-testid="document-spacing-after">
+                        @if (SpacingAfterMixed)
+                        {
+                            <option value="">@Loc["TmDocumentEditor_MixedFormatting"]</option>
+                        }
                         @foreach (var spacing in ParagraphSpacingOptions)
                         {
                             <option value="@spacing">@spacing</option>
@@ -372,6 +413,30 @@
                         data-testid="document-increase-indent">
                     <TmIcon Name="indent-increase" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_IncreaseIndent"]</span>
+                </button>
+                <button class="@GetListButtonClass(BulletListActive, isBullet: true)"
+                        type="button"
+                        disabled="@(!IsCommandEnabled("bulletList"))"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_BulletedList"]))"
+                        aria-label="@Loc["TmDocumentEditor_BulletedList"]"
+                        aria-pressed="@GetListAriaPressed(BulletListActive, isBullet: true)"
+                        @onclick='() => ExecuteToolbarCommandAsync("bulletList", HandleToggleBulletListAsync)'
+                        data-command="bulletList"
+                        data-testid="document-bullet-list">
+                    <TmIcon Name="list" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_BulletedList"]</span>
+                </button>
+                <button class="@GetListButtonClass(NumberedListActive, isBullet: false)"
+                        type="button"
+                        disabled="@(!IsCommandEnabled("numberedList"))"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_NumberedList"]))"
+                        aria-label="@Loc["TmDocumentEditor_NumberedList"]"
+                        aria-pressed="@GetListAriaPressed(NumberedListActive, isBullet: false)"
+                        @onclick='() => ExecuteToolbarCommandAsync("numberedList", HandleToggleNumberedListAsync)'
+                        data-command="numberedList"
+                        data-testid="document-numbered-list">
+                    <TmIcon Name="list" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_NumberedList"]</span>
                 </button>
             </section>
         }
@@ -469,6 +534,7 @@
                             type="button"
                             disabled="@(!IsCommandEnabled("insertPageBreak"))"
                             title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_PageBreak"]))"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => ExecuteToolbarCommandAsync("insertPageBreak", OnInsertPageBreak)'
                             data-command="insertPageBreak"
                             data-testid="document-insert-page-break">
@@ -481,14 +547,109 @@
         else if (_activeRibbonTab == DocumentRibbonTab.Layout)
         {
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupLayout"]">
-                <button class="tm-document-editor__ribbon-button"
-                        type="button"
-                        disabled="@ReadOnly"
-                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_PageLayout"]))"
-                        data-testid="document-page-layout">
-                    <TmIcon Name="panel-top" Size="IconSize.Sm" />
-                    <span>@Loc["TmDocumentEditor_PageLayout"]</span>
-                </button>
+                <div class="tm-document-page-layout-menu-wrapper">
+                    <button class="@($"tm-document-editor__ribbon-button{(_pageLayoutInspectorOpen ? " tm-document-editor__ribbon-button--active" : "")}")"
+                            type="button"
+                            disabled="@ReadOnly"
+                            title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_PageLayout"]))"
+                            aria-haspopup="dialog"
+                            aria-expanded="@_pageLayoutInspectorOpen.ToString().ToLowerInvariant()"
+                            @onclick="TogglePageLayoutInspector"
+                            data-command="pageLayout"
+                            data-testid="document-page-layout">
+                        <TmIcon Name="panel-top" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_PageLayout"]</span>
+                    </button>
+                    @if (_pageLayoutInspectorOpen)
+                    {
+                        <section class="tm-document-page-layout-inspector"
+                                 role="dialog"
+                                 aria-label="@Loc["TmDocumentEditor_PageLayout"]"
+                                 data-testid="document-page-layout-inspector"
+                                 tabindex="-1"
+                                 @ref="_pageLayoutInspector"
+                                 @onkeydown="HandlePageLayoutInspectorKeyDown"
+                                 @onkeydown:stopPropagation="true"
+                                 @onclick:stopPropagation="true">
+                            <div class="tm-document-page-layout-inspector__preview"
+                                 data-testid="document-page-layout-preview"
+                                 data-orientation="@(EffectivePageSettings.Landscape ? "landscape" : "portrait")">
+                                <span></span>
+                            </div>
+                            <label>
+                                <span>@Loc["TmDocumentEditor_PageSize"]</span>
+                                <select value="@EffectivePageSettings.Size.Name"
+                                        @oninput="HandlePageSizeChangedAsync"
+                                        data-testid="document-page-size">
+                                    <option value="A4">A4</option>
+                                    <option value="Letter">Letter</option>
+                                </select>
+                            </label>
+                            <label>
+                                <span>@Loc["TmDocumentEditor_Orientation"]</span>
+                                <select @bind:get="PageOrientationValue"
+                                        @bind:set="HandlePageOrientationValueChangedAsync"
+                                        data-testid="document-page-orientation">
+                                    <option value="Portrait">@Loc["TmDocumentEditor_OrientationPortrait"]</option>
+                                    <option value="Landscape">@Loc["TmDocumentEditor_OrientationLandscape"]</option>
+                                </select>
+                                <span class="tm-document-page-layout-inspector__segmented" role="group" aria-label="@Loc["TmDocumentEditor_Orientation"]">
+                                    <button type="button"
+                                            class="@GetPageOrientationButtonClass(false)"
+                                            aria-pressed="@((!EffectivePageSettings.Landscape).ToString().ToLowerInvariant())"
+                                            @onclick="() => SetPageOrientationAsync(false)"
+                                            data-testid="document-page-orientation-portrait">
+                                        @Loc["TmDocumentEditor_OrientationPortrait"]
+                                    </button>
+                                    <button type="button"
+                                            class="@GetPageOrientationButtonClass(true)"
+                                            aria-pressed="@(EffectivePageSettings.Landscape.ToString().ToLowerInvariant())"
+                                            @onclick="() => SetPageOrientationAsync(true)"
+                                            data-testid="document-page-orientation-landscape">
+                                        @Loc["TmDocumentEditor_OrientationLandscape"]
+                                    </button>
+                                </span>
+                            </label>
+                            <label>
+                                <span>@Loc["TmDocumentEditor_MarginsPreset"]</span>
+                                <select value="@CurrentMarginPreset"
+                                        @oninput="HandleMarginPresetChangedAsync"
+                                        data-testid="document-margin-preset">
+                                    <option value="Normal">@Loc["TmDocumentEditor_MarginsNormal"]</option>
+                                    <option value="Narrow">@Loc["TmDocumentEditor_MarginsNarrow"]</option>
+                                    <option value="Wide">@Loc["TmDocumentEditor_MarginsWide"]</option>
+                                    <option value="Custom">@Loc["TmDocumentEditor_MarginsCustom"]</option>
+                                </select>
+                            </label>
+                            <div class="tm-document-page-layout-inspector__grid">
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_MarginTop"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Top)" @oninput='args => HandleMarginChangedAsync("Top", args)' data-testid="document-margin-top" />
+                                </label>
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_MarginRight"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Right)" @oninput='args => HandleMarginChangedAsync("Right", args)' data-testid="document-margin-right" />
+                                </label>
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_MarginBottom"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Bottom)" @oninput='args => HandleMarginChangedAsync("Bottom", args)' data-testid="document-margin-bottom" />
+                                </label>
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_MarginLeft"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.Margins.Left)" @oninput='args => HandleMarginChangedAsync("Left", args)' data-testid="document-margin-left" />
+                                </label>
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_HeaderDistance"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.HeaderDistanceFromTop)" @oninput="HandleHeaderDistanceChangedAsync" data-testid="document-header-distance" />
+                                </label>
+                                <label>
+                                    <span>@Loc["TmDocumentEditor_FooterDistance"]</span>
+                                    <input type="number" min="0" max="144" step="6" value="@FormatPoints(EffectivePageSettings.FooterDistanceFromBottom)" @oninput="HandleFooterDistanceChangedAsync" data-testid="document-footer-distance" />
+                                </label>
+                            </div>
+                        </section>
+                    }
+                </div>
                 <button class="@GetToggleButtonClass(DifferentFirstPage)"
                         type="button"
                         disabled="@ReadOnly"
@@ -516,7 +677,31 @@
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReferences"]">
                 <button class="tm-document-editor__ribbon-button"
                         type="button"
-                        disabled="@ReadOnly"
+                        disabled="@(!IsCommandEnabled("insertFootnote"))"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertFootnote"]))"
+                        aria-label="@Loc["TmDocumentEditor_InsertFootnote"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick='() => ExecuteToolbarCommandAsync("insertFootnote", OnInsertFootnote)'
+                        data-command="insertFootnote"
+                        data-testid="document-insert-footnote">
+                    <TmIcon Name="list-plus" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_InsertFootnote"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@(!IsCommandEnabled("insertEndnote"))"
+                        title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_InsertEndnote"]))"
+                        aria-label="@Loc["TmDocumentEditor_InsertEndnote"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick='() => ExecuteToolbarCommandAsync("insertEndnote", OnInsertEndnote)'
+                        data-command="insertEndnote"
+                        data-testid="document-insert-endnote">
+                    <TmIcon Name="list-end" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_InsertEndnote"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="true"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TableOfContents"]))"
                         data-testid="document-insert-toc">
                     <TmIcon Name="list" Size="IconSize.Sm" />
@@ -565,10 +750,11 @@
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_GroupReview"]">
                 <button class="tm-document-editor__ribbon-button @(TrackChangesEnabled ? "tm-document-editor__ribbon-button--active" : null)"
                         type="button"
-                        disabled="@(!IsCommandEnabled("trackChanges"))"
+                        disabled="@(!CanTrackChanges || !IsCommandEnabled("trackChanges", CanTrackChanges))"
                         title="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         aria-label="@(GetEditingCommandTitle(Loc["TmDocumentEditor_TrackChanges"], CanTrackChanges, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
-                        @onclick='() => ExecuteToolbarCommandAsync("trackChanges", OnToggleTrackChanges)'
+                        aria-pressed="@TrackChangesEnabled.ToString().ToLowerInvariant()"
+                        @onclick='() => CanTrackChanges ? ExecuteToolbarCommandAsync("trackChanges", OnToggleTrackChanges, CanTrackChanges) : Task.CompletedTask'
                         data-command="trackChanges"
                         data-testid="document-track-changes">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />
@@ -577,7 +763,7 @@
                 <label class="tm-document-editor__ribbon-select" title="@Loc["TmDocumentEditor_ShowMarkup"]">
                     <TmIcon Name="eye" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_ShowMarkup"]</span>
-                    <select disabled="@(!IsCommandEnabled("reviewDisplayMode", fallback: true))"
+                    <select disabled="@(!IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || !IsCommandEnabled("reviewDisplayMode", fallback: true))"
                             value="@ReviewDisplayMode"
                             @onchange="HandleReviewDisplayModeChanged"
                             data-testid="document-review-display-mode">
@@ -589,7 +775,7 @@
                 </label>
                 <button class="tm-document-editor__ribbon-button"
                         type="button"
-                        disabled="@(!IsCommandEnabled("addComment", fallback: CanComment))"
+                        disabled="@(!CanComment || !IsCommandEnabled("addComment", fallback: CanComment))"
                         title="@(GetCommandTitle(Loc["TmDocumentEditor_AddComment"], CanComment, Loc["TmDocumentEditor_CommandDisabledUnavailable"]))"
                         @onclick='() => ExecuteToolbarCommandAsync("addComment", OnAddComment, CanComment)'
                         data-command="addComment"
@@ -599,16 +785,19 @@
                 </button>
                 <button class="tm-document-editor__ribbon-button"
                         type="button"
+                        disabled="@(!IsFeatureEnabled(DocumentEditorFeatureNames.Comments) || !IsCommandEnabled("openComments", fallback: IsFeatureEnabled(DocumentEditorFeatureNames.Comments)))"
                         title="@Loc["TmDocumentEditor_OpenComments"]"
-                        @onclick='() => ExecuteToolbarCommandAsync("openComments", OnOpenComments)'
+                        @onclick='() => IsFeatureEnabled(DocumentEditorFeatureNames.Comments) ? ExecuteToolbarCommandAsync("openComments", OnOpenComments, IsFeatureEnabled(DocumentEditorFeatureNames.Comments)) : Task.CompletedTask'
                         data-command="openComments"
                         data-testid="document-open-comments">
                     <TmIcon Name="message-square" Size="IconSize.Sm" />
                     <span>@Loc["TmDocumentEditor_Comments"]</span>
                 </button>
                 <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@(!IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) || !IsCommandEnabled("openRevisions", fallback: IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges)))"
                         title="@Loc["TmDocumentEditor_OpenRevisions"]"
-                        @onclick='() => ExecuteToolbarCommandAsync("openRevisions", OnOpenRevisions)'
+                        @onclick='() => IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges) ? ExecuteToolbarCommandAsync("openRevisions", OnOpenRevisions, IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges)) : Task.CompletedTask'
                         data-command="openRevisions"
                         data-testid="document-open-revisions">
                     <TmIcon Name="file-diff" Size="IconSize.Sm" />
@@ -783,6 +972,166 @@
         }
         else if (_activeRibbonTab == DocumentRibbonTab.HeaderFooter)
         {
+            <section class="tm-document-editor__ribbon-group tm-document-editor__ribbon-group--scope" aria-label="@Loc["TmDocumentEditor_HeaderFooterScope"]">
+                <span class="tm-document-header-footer-scope"
+                      data-testid="document-header-footer-scope-label">
+                    <TmIcon Name="map-pin" Size="IconSize.Sm" />
+                    <span>@(string.IsNullOrWhiteSpace(ActiveHeaderFooterScopeLabel) ? Loc["TmDocumentEditor_HeaderFooterScopePrimary"] : ActiveHeaderFooterScopeLabel)</span>
+                </span>
+            </section>
+            <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_HeaderFooterFields"]">
+                <div class="tm-document-header-footer-menu-wrapper">
+                    <button class="@($"tm-document-editor__ribbon-button{(_headerFooterFieldMenuOpen ? " tm-document-editor__ribbon-button--active" : "")}")"
+                            type="button"
+                            disabled="@ReadOnly"
+                            title="@Loc["TmDocumentEditor_InsertField"]"
+                            aria-haspopup="menu"
+                            aria-expanded="@_headerFooterFieldMenuOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleHeaderFooterFieldMenu"
+                            @onmousedown:preventDefault="true"
+                            data-command="insertField"
+                            data-testid="document-header-footer-insert-field-menu">
+                        <TmIcon Name="braces" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_InsertField"]</span>
+                    </button>
+                    @if (_headerFooterFieldMenuOpen)
+                    {
+                        <div class="tm-document-header-footer-menu"
+                             role="menu"
+                             aria-label="@Loc["TmDocumentEditor_InsertField"]"
+                             data-testid="document-header-footer-field-menu"
+                             tabindex="-1"
+                             @ref="_headerFooterFieldMenu"
+                             @onkeydown="HandleHeaderFooterMenuKeyDown"
+                             @onkeydown:stopPropagation="true"
+                             @onclick:stopPropagation="true">
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-number" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageNumber)">
+                                <TmIcon Name="hash" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_PageNumber"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-count" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageCount)">
+                                <TmIcon Name="files" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_TotalPages"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-page-x-of-y" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertPageXOfY)">
+                                <TmIcon Name="file-stack" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_PageXOfY"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-date" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDateField)">
+                                <TmIcon Name="calendar-days" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_FieldDate"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-title" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertDocumentTitleField)">
+                                <TmIcon Name="file-text" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_DocumentTitle"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-menu-author" @onclick="() => InsertHeaderFooterFieldFromMenuAsync(OnInsertAuthorField)">
+                                <TmIcon Name="user" Size="IconSize.Sm" />
+                                <span>@Loc["TmDocumentEditor_Author"]</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+                <div class="tm-document-header-footer-menu-wrapper">
+                    <button class="@($"tm-document-editor__ribbon-button{(_headerFooterPresetMenuOpen ? " tm-document-editor__ribbon-button--active" : "")}")"
+                            type="button"
+                            disabled="@ReadOnly"
+                            title="@Loc["TmDocumentEditor_HeaderFooterPresets"]"
+                            aria-haspopup="menu"
+                            aria-expanded="@_headerFooterPresetMenuOpen.ToString().ToLowerInvariant()"
+                            @onclick="ToggleHeaderFooterPresetMenu"
+                            @onmousedown:preventDefault="true"
+                            data-command="headerFooterPresets"
+                            data-testid="document-header-footer-preset-menu">
+                        <TmIcon Name="layout-template" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_HeaderFooterPresets"]</span>
+                    </button>
+                    @if (_headerFooterPresetMenuOpen)
+                    {
+                        <div class="tm-document-header-footer-menu tm-document-header-footer-menu--presets"
+                             role="menu"
+                             aria-label="@Loc["TmDocumentEditor_HeaderFooterPresets"]"
+                             data-testid="document-header-footer-presets-menu"
+                             tabindex="-1"
+                             @ref="_headerFooterPresetMenu"
+                             @onkeydown="HandleHeaderFooterMenuKeyDown"
+                             @onkeydown:stopPropagation="true"
+                             @onclick:stopPropagation="true">
+                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-number-right-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-right")'>
+                                <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--right"></span>
+                                <span>@Loc["TmDocumentEditor_PresetPageNumberRightFooter"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-number-center-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-number-center")'>
+                                <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--center"></span>
+                                <span>@Loc["TmDocumentEditor_PresetPageNumberCenterFooter"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-title-page-header" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("header-title-page-number")'>
+                                <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--split"></span>
+                                <span>@Loc["TmDocumentEditor_PresetTitlePageHeader"]</span>
+                            </button>
+                            <button type="button" role="menuitem" data-testid="document-header-footer-preset-page-x-of-y-right-footer" @onclick='() => ApplyHeaderFooterPresetFromMenuAsync("footer-page-x-of-y-right")'>
+                                <span class="tm-document-header-footer-menu__preview tm-document-header-footer-menu__preview--right"></span>
+                                <span>@Loc["TmDocumentEditor_PresetPageXOfYRightFooter"]</span>
+                            </button>
+                        </div>
+                    }
+                </div>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@Loc["TmDocumentEditor_InsertPageNumber"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick="OnInsertPageNumber"
+                        data-command="insertPageNumber"
+                        data-testid="document-header-footer-insert-page-number">
+                    <TmIcon Name="hash" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_PageNumber"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@Loc["TmDocumentEditor_InsertPageCount"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick="OnInsertPageCount"
+                        data-command="insertPageCount"
+                        data-testid="document-header-footer-insert-page-count">
+                    <TmIcon Name="files" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_TotalPages"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@Loc["TmDocumentEditor_InsertPageXOfY"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick="OnInsertPageXOfY"
+                        data-command="insertPageXOfY"
+                        data-testid="document-header-footer-insert-page-x-of-y">
+                    <TmIcon Name="file-stack" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_PageXOfY"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@Loc["TmDocumentEditor_InsertDateField"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick="OnInsertDateField"
+                        data-command="insertDateField"
+                        data-testid="document-header-footer-insert-date">
+                    <TmIcon Name="calendar-days" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_FieldDate"]</span>
+                </button>
+                <button class="tm-document-editor__ribbon-button"
+                        type="button"
+                        disabled="@ReadOnly"
+                        title="@Loc["TmDocumentEditor_InsertDocumentTitleField"]"
+                        @onmousedown:preventDefault="true"
+                        @onclick="OnInsertDocumentTitleField"
+                        data-command="insertDocumentTitleField"
+                        data-testid="document-header-footer-insert-title">
+                    <TmIcon Name="file-text" Size="IconSize.Sm" />
+                    <span>@Loc["TmDocumentEditor_DocumentTitle"]</span>
+                </button>
+            </section>
             <section class="tm-document-editor__ribbon-group" aria-label="@Loc["TmDocumentEditor_TabHeaderFooter"]">
                 <button class="@GetToggleButtonClass(DifferentFirstPage)"
                         type="button"
@@ -836,6 +1185,9 @@
     @if (_linkDialogOpen && !ReadOnly)
     {
         <section class="tm-document-editor__link-dialog"
+                 role="dialog"
+                 aria-modal="false"
+                 aria-label="@Loc["TmDocumentEditor_Link"]"
                  data-testid="document-link-dialog"
                  @onkeydown="HandleLinkDialogKeyDown"
                  @onkeydown:stopPropagation="true">
@@ -855,6 +1207,10 @@
                 <span class="tm-document-editor__link-error" role="alert" data-testid="document-link-error">@_linkError</span>
             }
             <button type="button" @onclick="ApplyLinkAsync" data-testid="document-apply-link">@Loc["TmDocumentEditor_ApplyLink"]</button>
+            @if (!string.IsNullOrWhiteSpace(_pendingLinkUrl) && OnLinkRemoved.HasDelegate)
+            {
+                <button type="button" @onclick="RemoveLinkAsync" data-testid="document-remove-link">@Loc["TmDocumentEditor_RemoveLink"]</button>
+            }
             <button type="button" @onclick="CloseLinkDialog">@Loc["TmDocumentEditor_Cancel"]</button>
         </section>
     }
@@ -896,6 +1252,9 @@
     private string? _pendingLinkTitle;
     private string? _linkError;
     private ElementReference _linkUrlInput;
+    private ElementReference _headerFooterFieldMenu;
+    private ElementReference _headerFooterPresetMenu;
+    private ElementReference _pageLayoutInspector;
     private bool _wasHeaderFooterMode;
     private bool _keyboardMode;
     private ElementReference _ribbonGroupsRef;
@@ -904,11 +1263,20 @@
     private DateTimeOffset _optimisticParagraphAlignmentExpiresAt;
     private double? _optimisticLineSpacing;
     private DateTimeOffset _optimisticLineSpacingExpiresAt;
+    private bool? _optimisticBulletListActive;
+    private bool? _optimisticNumberedListActive;
+    private DateTimeOffset _optimisticListExpiresAt;
     private bool _isOverflowing;
     private bool _overflowMenuOpen;
     private string? _overflowSearchQuery;
     private bool _tableGridPickerOpen;
     private bool _imageInsertMenuOpen;
+    private bool _headerFooterFieldMenuOpen;
+    private bool _headerFooterPresetMenuOpen;
+    private bool _pageLayoutInspectorOpen;
+    private bool _focusHeaderFooterFieldMenuOnRender;
+    private bool _focusHeaderFooterPresetMenuOnRender;
+    private bool _focusPageLayoutInspectorOnRender;
     private string[] _overflowedCommandNames = [];
     private static readonly int[] FontSizes = [8, 9, 10, 11, 12, 14, 16, 18, 20, 24, 28, 32, 36, 48, 72];
     private static readonly double[] LineSpacingOptions = [1, 1.15, 1.5, 2];
@@ -989,6 +1357,36 @@
                 // Element focus can fail during prerender or if the dialog closed before render.
             }
         }
+
+        if (_focusHeaderFooterFieldMenuOnRender)
+        {
+            _focusHeaderFooterFieldMenuOnRender = false;
+            await FocusToolbarFloatingElementAsync(_headerFooterFieldMenu);
+        }
+
+        if (_focusHeaderFooterPresetMenuOnRender)
+        {
+            _focusHeaderFooterPresetMenuOnRender = false;
+            await FocusToolbarFloatingElementAsync(_headerFooterPresetMenu);
+        }
+
+        if (_focusPageLayoutInspectorOnRender)
+        {
+            _focusPageLayoutInspectorOnRender = false;
+            await FocusToolbarFloatingElementAsync(_pageLayoutInspector);
+        }
+    }
+
+    private static async Task FocusToolbarFloatingElementAsync(ElementReference element)
+    {
+        try
+        {
+            await element.FocusAsync(preventScroll: true);
+        }
+        catch
+        {
+            // The floating element may have been closed by a rapid user action before focus runs.
+        }
     }
 
     /// <summary>Called by the JS overflow controller when overflow state changes.</summary>
@@ -1002,6 +1400,16 @@
             _overflowMenuOpen = false;
             _overflowSearchQuery = null;
         }
+        return InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Closes toolbar-owned floating UI in response to a document-level Escape key.</summary>
+    [JSInvokable]
+    public Task CloseToolbarFloatingUiFromJsAsync()
+    {
+        CloseToolbarFloatingUi();
+        _overflowMenuOpen = false;
+        _overflowSearchQuery = null;
         return InvokeAsync(StateHasChanged);
     }
 
@@ -1032,6 +1440,18 @@
         }
     }
 
+    private void HandleToolbarKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key != "Escape")
+        {
+            return;
+        }
+
+        CloseToolbarFloatingUi();
+        _overflowMenuOpen = false;
+        _overflowSearchQuery = null;
+    }
+
     private bool ShowOverflowSearch => _overflowedCommandNames.Length >= 8;
 
     private void HandleOverflowSearchInput(ChangeEventArgs args)
@@ -1044,6 +1464,7 @@
         "bold"           => OnBold.InvokeAsync(),
         "italic"         => OnItalic.InvokeAsync(),
         "underline"      => OnUnderline.InvokeAsync(),
+        "strikethrough"  => OnStrikethrough.InvokeAsync(),
         "save"           => OnSave.InvokeAsync(),
         "undo"           => OnUndo.InvokeAsync(),
         "redo"           => OnRedo.InvokeAsync(),
@@ -1052,6 +1473,8 @@
         "insertTable"    => OnInsertTable.InvokeAsync(),
         "insertImage"    => OnInsertImage.InvokeAsync(),
         "insertPageBreak" => OnInsertPageBreak.InvokeAsync(),
+        "insertFootnote" => OnInsertFootnote.InvokeAsync(),
+        "insertEndnote"  => OnInsertEndnote.InvokeAsync(),
         "importDocx"     => ToggleDocxImportPanelAsync(),
         "insertMenu"     => OnToggleInsert.InvokeAsync(),
         "trackChanges"      => OnToggleTrackChanges.InvokeAsync(),
@@ -1068,7 +1491,9 @@
         "viewDocumentJson"  => OnViewDocumentJson.InvokeAsync(),
         "viewClipboardHtml" => OnViewClipboardHtml.InvokeAsync(),
         "increaseIndent"    => OnIncreaseIndent.InvokeAsync(),
-        "decreaseIndent" => OnDecreaseIndent.InvokeAsync(),
+        "decreaseIndent"    => OnDecreaseIndent.InvokeAsync(),
+        "bulletList"        => OnToggleBulletList.InvokeAsync(),
+        "numberedList"      => OnToggleNumberedList.InvokeAsync(),
         "alignLeft"      => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Left),
         "alignCenter"    => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Center),
         "alignRight"     => OnParagraphAlignmentChanged.InvokeAsync(DocumentTextAlignment.Right),
@@ -1076,6 +1501,11 @@
         "zoomPageWidth"  => OnZoomPageWidth.InvokeAsync(),
         "differentFirstPage" => DifferentFirstPageChanged.InvokeAsync(!DifferentFirstPage),
         "differentOddEven" => DifferentOddAndEvenPagesChanged.InvokeAsync(!DifferentOddAndEvenPages),
+        "insertPageNumber" => OnInsertPageNumber.InvokeAsync(),
+        "insertPageCount" => OnInsertPageCount.InvokeAsync(),
+        "insertPageXOfY" => OnInsertPageXOfY.InvokeAsync(),
+        "insertDateField" => OnInsertDateField.InvokeAsync(),
+        "insertDocumentTitleField" => OnInsertDocumentTitleField.InvokeAsync(),
         "closeHeaderFooter" => OnCloseHeaderFooter.InvokeAsync(),
         "exportPdf"      => OnExportPdf.InvokeAsync(),
         "exportDocx"     => OnExportDocx.InvokeAsync(),
@@ -1187,6 +1617,8 @@
         "insertTable"    => Loc["TmDocumentEditor_InsertTable"],
         "insertImage"    => Loc["TmDocumentEditor_InsertImage"],
         "insertPageBreak"=> Loc["TmDocumentEditor_PageBreak"],
+        "insertFootnote" => Loc["TmDocumentEditor_InsertFootnote"],
+        "insertEndnote"  => Loc["TmDocumentEditor_InsertEndnote"],
         "importDocx"     => Loc["TmDocumentEditor_ImportDocx"],
         "insertMenu"     => Loc["TmDocumentEditor_Insert"],
         "trackChanges"   => Loc["TmDocumentEditor_TrackChanges"],
@@ -1209,6 +1641,11 @@
         "zoomPageWidth"  => Loc["TmDocumentEditor_PageWidth"],
         "differentFirstPage" => Loc["TmDocumentEditor_DifferentFirstPage"],
         "differentOddEven" => Loc["TmDocumentEditor_DifferentOddEven"],
+        "insertPageNumber" => Loc["TmDocumentEditor_InsertPageNumber"],
+        "insertPageCount" => Loc["TmDocumentEditor_InsertPageCount"],
+        "insertPageXOfY" => Loc["TmDocumentEditor_InsertPageXOfY"],
+        "insertDateField" => Loc["TmDocumentEditor_InsertDateField"],
+        "insertDocumentTitleField" => Loc["TmDocumentEditor_InsertDocumentTitleField"],
         "closeHeaderFooter" => Loc["TmDocumentEditor_CloseHeaderFooter"],
         "exportPdf"      => Loc["TmDocumentEditor_ExportPdf"],
         "exportDocx"     => Loc["TmDocumentEditor_ExportDocx"],
@@ -1294,6 +1731,9 @@
     /// <summary>Current underline formatting state for the selection.</summary>
     [Parameter] public WysiwygFormattingValue UnderlineState { get; set; }
 
+    /// <summary>Current strikethrough formatting state for the selection.</summary>
+    [Parameter] public WysiwygFormattingValue StrikethroughState { get; set; }
+
     /// <summary>Current paragraph alignment for the selection.</summary>
     [Parameter] public DocumentTextAlignment ParagraphAlignment { get; set; } = DocumentTextAlignment.Left;
 
@@ -1329,6 +1769,27 @@
 
     /// <summary>Whether selected paragraphs have mixed line spacing.</summary>
     [Parameter] public bool LineSpacingMixed { get; set; }
+
+    /// <summary>Current paragraph spacing before reported by the JS selection runtime.</summary>
+    [Parameter] public double CurrentSpacingBefore { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed spacing before values.</summary>
+    [Parameter] public bool SpacingBeforeMixed { get; set; }
+
+    /// <summary>Current paragraph spacing after reported by the JS selection runtime.</summary>
+    [Parameter] public double CurrentSpacingAfter { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed spacing after values.</summary>
+    [Parameter] public bool SpacingAfterMixed { get; set; }
+
+    /// <summary>Whether the current paragraph is a bulleted list item.</summary>
+    [Parameter] public bool BulletListActive { get; set; }
+
+    /// <summary>Whether the current paragraph is a numbered list item.</summary>
+    [Parameter] public bool NumberedListActive { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed list states.</summary>
+    [Parameter] public bool ListMixed { get; set; }
 
     /// <summary>Font families available in the font selector.</summary>
     [Parameter] public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
@@ -1374,6 +1835,15 @@
 
     /// <summary>Logical editor region currently holding the caret.</summary>
     [Parameter] public string ActiveRegion { get; set; } = "Body";
+
+    /// <summary>Human-readable label for the currently edited header/footer scope.</summary>
+    [Parameter] public string? ActiveHeaderFooterScopeLabel { get; set; }
+
+    /// <summary>Current page layout settings for the active section or document.</summary>
+    [Parameter] public DocumentPageSettings? PageSettings { get; set; }
+
+    /// <summary>Raised when page layout settings are changed through the inspector.</summary>
+    [Parameter] public EventCallback<DocumentPageSettings> PageSettingsChanged { get; set; }
 
     /// <summary>Whether the current section uses a different first-page header/footer.</summary>
     [Parameter] public bool DifferentFirstPage { get; set; }
@@ -1423,6 +1893,9 @@
     /// <summary>Raised when underline formatting is requested.</summary>
     [Parameter] public EventCallback OnUnderline { get; set; }
 
+    /// <summary>Raised when strikethrough formatting is requested.</summary>
+    [Parameter] public EventCallback OnStrikethrough { get; set; }
+
     /// <summary>Raised when the font family changes.</summary>
     [Parameter] public EventCallback<string> OnFontFamilyChanged { get; set; }
 
@@ -1453,11 +1926,20 @@
     /// <summary>Raised when paragraph indent should decrease.</summary>
     [Parameter] public EventCallback OnDecreaseIndent { get; set; }
 
+    /// <summary>Raised when bulleted list formatting should be toggled.</summary>
+    [Parameter] public EventCallback OnToggleBulletList { get; set; }
+
+    /// <summary>Raised when numbered list formatting should be toggled.</summary>
+    [Parameter] public EventCallback OnToggleNumberedList { get; set; }
+
     /// <summary>Raised when a link URL is submitted.</summary>
     [Parameter] public EventCallback<string> OnLink { get; set; }
 
     /// <summary>Raised when a link URL and title are submitted.</summary>
     [Parameter] public EventCallback<WysiwygLinkPayload> OnLinkApplied { get; set; }
+
+    /// <summary>Raised when the current link should be removed.</summary>
+    [Parameter] public EventCallback OnLinkRemoved { get; set; }
 
     /// <summary>Optional callback used to load link metadata for the current selection.</summary>
     [Parameter] public Func<Task<WysiwygLinkInfo?>>? LinkInfoProvider { get; set; }
@@ -1494,6 +1976,33 @@
 
     /// <summary>Raised when a page break should be inserted at the current selection.</summary>
     [Parameter] public EventCallback OnInsertPageBreak { get; set; }
+
+    /// <summary>Raised when a footnote should be inserted at the current selection.</summary>
+    [Parameter] public EventCallback OnInsertFootnote { get; set; }
+
+    /// <summary>Raised when an endnote should be inserted at the current selection.</summary>
+    [Parameter] public EventCallback OnInsertEndnote { get; set; }
+
+    /// <summary>Raised when a page-number field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertPageNumber { get; set; }
+
+    /// <summary>Raised when a total-page-count field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertPageCount { get; set; }
+
+    /// <summary>Raised when a page X of Y field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertPageXOfY { get; set; }
+
+    /// <summary>Raised when a date field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertDateField { get; set; }
+
+    /// <summary>Raised when a document-title field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertDocumentTitleField { get; set; }
+
+    /// <summary>Raised when a document-author field should be inserted.</summary>
+    [Parameter] public EventCallback OnInsertAuthorField { get; set; }
+
+    /// <summary>Raised when a header/footer preset should be inserted.</summary>
+    [Parameter] public EventCallback<string> OnApplyHeaderFooterPreset { get; set; }
 
     /// <summary>Raised when tracked changes should be toggled.</summary>
     [Parameter] public EventCallback OnToggleTrackChanges { get; set; }
@@ -1617,9 +2126,68 @@
         => string.Equals(ActiveRegion, "Header", StringComparison.OrdinalIgnoreCase)
             || string.Equals(ActiveRegion, "Footer", StringComparison.OrdinalIgnoreCase);
 
+    private bool HasToolbarFloatingUi =>
+        _imageInsertMenuOpen
+        || _tableGridPickerOpen
+        || _headerFooterFieldMenuOpen
+        || _headerFooterPresetMenuOpen
+        || _pageLayoutInspectorOpen;
+
+    private DocumentPageSettings EffectivePageSettings => ClonePageSettings(PageSettings);
+
+    private string PageOrientationValue => EffectivePageSettings.Landscape ? "Landscape" : "Portrait";
+
+    private string GetPageOrientationButtonClass(bool landscape)
+    {
+        var active = EffectivePageSettings.Landscape == landscape;
+        return active
+            ? "tm-document-page-layout-inspector__segment tm-document-page-layout-inspector__segment--active"
+            : "tm-document-page-layout-inspector__segment";
+    }
+
+    private string CurrentMarginPreset
+    {
+        get
+        {
+            var margins = EffectivePageSettings.Margins;
+            if (MarginsEqual(margins, 36, 36, 36, 36)) return "Narrow";
+            if (MarginsEqual(margins, 90, 90, 90, 90)) return "Wide";
+            if (MarginsEqual(margins, 72, 72, 72, 72)) return "Normal";
+            return "Custom";
+        }
+    }
+
     /// <inheritdoc />
     protected override void OnParametersSet()
     {
+        if (_optimisticParagraphAlignment is not null
+            && _optimisticParagraphAlignment.Value != ParagraphAlignment)
+        {
+            _optimisticParagraphAlignment = null;
+        }
+
+        if (_optimisticLineSpacing is not null
+            && Math.Abs(_optimisticLineSpacing.Value - CurrentLineSpacing) > 0.001)
+        {
+            _optimisticLineSpacing = null;
+        }
+
+        if (ParagraphAlignmentMixed)
+        {
+            _optimisticParagraphAlignment = null;
+        }
+
+        if (LineSpacingMixed)
+        {
+            _optimisticLineSpacing = null;
+        }
+
+        if (ListMixed)
+        {
+            _optimisticBulletListActive = null;
+            _optimisticNumberedListActive = null;
+        }
+
         if (IsHeaderFooterMode && !_wasHeaderFooterMode)
         {
             _activeRibbonTab = DocumentRibbonTab.HeaderFooter;
@@ -1714,6 +2282,66 @@
             ? "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--active"
             : "tm-document-editor__ribbon-button";
 
+    private string GetListButtonClass(bool active, bool isBullet)
+    {
+        if (_optimisticBulletListActive is null && _optimisticNumberedListActive is null && ListMixed)
+        {
+            return "tm-document-editor__ribbon-button tm-document-editor__ribbon-button--mixed";
+        }
+
+        return GetToggleButtonClass(GetEffectiveListActive(active, isBullet));
+    }
+
+    private string GetListAriaPressed(bool active, bool isBullet)
+    {
+        if (_optimisticBulletListActive is null && _optimisticNumberedListActive is null && ListMixed)
+        {
+            return "mixed";
+        }
+
+        return GetEffectiveListActive(active, isBullet) ? "true" : "false";
+    }
+
+    private bool GetEffectiveListActive(bool fallback, bool isBullet)
+    {
+        if (DateTimeOffset.UtcNow > _optimisticListExpiresAt)
+        {
+            _optimisticBulletListActive = null;
+            _optimisticNumberedListActive = null;
+            return fallback;
+        }
+
+        if (isBullet && _optimisticBulletListActive is not null)
+        {
+            return _optimisticBulletListActive.Value;
+        }
+
+        if (!isBullet && _optimisticNumberedListActive is not null)
+        {
+            return _optimisticNumberedListActive.Value;
+        }
+
+        return fallback;
+    }
+
+    private Task HandleToggleBulletListAsync()
+    {
+        var next = !BulletListActive;
+        _optimisticBulletListActive = next;
+        _optimisticNumberedListActive = false;
+        _optimisticListExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+        return OnToggleBulletList.InvokeAsync();
+    }
+
+    private Task HandleToggleNumberedListAsync()
+    {
+        var next = !NumberedListActive;
+        _optimisticNumberedListActive = next;
+        _optimisticBulletListActive = false;
+        _optimisticListExpiresAt = DateTimeOffset.UtcNow.AddSeconds(30);
+        return OnToggleNumberedList.InvokeAsync();
+    }
+
     private static string GetFormattingAriaPressed(WysiwygFormattingValue state)
     {
         return state switch
@@ -1789,6 +2417,9 @@
         => value <= 0
             ? "1"
             : value.ToString("0.##", CultureInfo.InvariantCulture);
+
+    private static string NormalizeParagraphSpacingValue(double value)
+        => Math.Max(0, value).ToString("0.##", CultureInfo.InvariantCulture);
 
     private static string NormalizeColorValue(string? value, string fallback)
     {
@@ -1893,6 +2524,132 @@
             : Task.CompletedTask;
     }
 
+    private Task HandlePageSizeChangedAsync(ChangeEventArgs args)
+    {
+        var settings = EffectivePageSettings;
+        settings.Size = string.Equals(args.Value?.ToString(), "Letter", StringComparison.OrdinalIgnoreCase)
+            ? DocumentPageSize.Letter
+            : DocumentPageSize.A4;
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private Task HandlePageOrientationChangedAsync(ChangeEventArgs args)
+        => HandlePageOrientationValueChangedAsync(args.Value?.ToString());
+
+    private Task HandlePageOrientationValueChangedAsync(string? value)
+        => SetPageOrientationAsync(string.Equals(value, "Landscape", StringComparison.OrdinalIgnoreCase));
+
+    private Task SetPageOrientationAsync(bool landscape)
+    {
+        var settings = EffectivePageSettings;
+        settings.Landscape = landscape;
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private Task HandleMarginPresetChangedAsync(ChangeEventArgs args)
+    {
+        var settings = EffectivePageSettings;
+        settings.Margins = args.Value?.ToString() switch
+        {
+            "Narrow" => CreateMargins(36),
+            "Wide" => CreateMargins(90),
+            "Custom" => CloneMargins(settings.Margins),
+            _ => DocumentPageMargins.Default
+        };
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private Task HandleMarginChangedAsync(string side, ChangeEventArgs args)
+    {
+        var settings = EffectivePageSettings;
+        var margins = CloneMargins(settings.Margins);
+        var value = ParsePoints(args.Value?.ToString(), 0, 144, 72);
+        switch (side)
+        {
+            case "Top":
+                margins.Top = value;
+                break;
+            case "Right":
+                margins.Right = value;
+                break;
+            case "Bottom":
+                margins.Bottom = value;
+                break;
+            case "Left":
+                margins.Left = value;
+                break;
+        }
+
+        settings.Margins = margins;
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private Task HandleHeaderDistanceChangedAsync(ChangeEventArgs args)
+    {
+        var settings = EffectivePageSettings;
+        settings.HeaderDistanceFromTop = ParsePoints(args.Value?.ToString(), 0, 144, 36);
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private Task HandleFooterDistanceChangedAsync(ChangeEventArgs args)
+    {
+        var settings = EffectivePageSettings;
+        settings.FooterDistanceFromBottom = ParsePoints(args.Value?.ToString(), 0, 144, 36);
+        return PageSettingsChanged.InvokeAsync(settings);
+    }
+
+    private static DocumentPageSettings ClonePageSettings(DocumentPageSettings? settings)
+    {
+        settings ??= new DocumentPageSettings();
+        return new DocumentPageSettings
+        {
+            Size = ClonePageSize(settings.Size ?? DocumentPageSize.A4),
+            Margins = CloneMargins(settings.Margins ?? DocumentPageMargins.Default),
+            Landscape = settings.Landscape,
+            HeaderDistanceFromTop = settings.HeaderDistanceFromTop,
+            FooterDistanceFromBottom = settings.FooterDistanceFromBottom
+        };
+    }
+
+    private static DocumentPageSize ClonePageSize(DocumentPageSize size) =>
+        new()
+        {
+            Name = string.IsNullOrWhiteSpace(size.Name) ? "A4" : size.Name,
+            Width = size.Width,
+            Height = size.Height
+        };
+
+    private static DocumentPageMargins CloneMargins(DocumentPageMargins margins) =>
+        new()
+        {
+            Top = margins.Top,
+            Right = margins.Right,
+            Bottom = margins.Bottom,
+            Left = margins.Left
+        };
+
+    private static DocumentPageMargins CreateMargins(double value) =>
+        new() { Top = value, Right = value, Bottom = value, Left = value };
+
+    private static bool MarginsEqual(DocumentPageMargins margins, double top, double right, double bottom, double left) =>
+        Math.Abs(margins.Top - top) < 0.01
+        && Math.Abs(margins.Right - right) < 0.01
+        && Math.Abs(margins.Bottom - bottom) < 0.01
+        && Math.Abs(margins.Left - left) < 0.01;
+
+    private static double ParsePoints(string? value, double min, double max, double fallback)
+    {
+        if (!double.TryParse(value, NumberStyles.Number, CultureInfo.InvariantCulture, out var result))
+        {
+            return fallback;
+        }
+
+        return Math.Max(min, Math.Min(max, result));
+    }
+
+    private static string FormatPoints(double value) =>
+        value.ToString("0.##", CultureInfo.InvariantCulture);
+
     private void SelectRibbonTab(DocumentRibbonTab tab)
     {
         if (tab == DocumentRibbonTab.HeaderFooter && !IsHeaderFooterMode)
@@ -1903,7 +2660,7 @@
         _activeRibbonTab = tab;
     }
 
-    private void HandleRibbonTabKeyDown(KeyboardEventArgs args, DocumentRibbonTab currentTab)
+    private async Task HandleRibbonTabKeyDownAsync(KeyboardEventArgs args, DocumentRibbonTab currentTab)
     {
         var tabs = RibbonTabs.ToArray();
         var currentIndex = Array.IndexOf(tabs, currentTab);
@@ -1924,6 +2681,10 @@
         if (nextIndex >= 0)
         {
             SelectRibbonTab(tabs[nextIndex]);
+            _keyboardMode = true;
+            await InvokeAsync(StateHasChanged);
+            await Task.Yield();
+            await GetActiveTabReference().FocusAsync();
         }
     }
 
@@ -1957,11 +2718,26 @@
 
         _tableGridPickerOpen = !_tableGridPickerOpen;
         _imageInsertMenuOpen = false;
+        _headerFooterFieldMenuOpen = false;
+        _headerFooterPresetMenuOpen = false;
+        _pageLayoutInspectorOpen = false;
     }
 
     private void CloseTableGridPicker()
     {
         _tableGridPickerOpen = false;
+    }
+
+    private void CloseToolbarFloatingUi()
+    {
+        _tableGridPickerOpen = false;
+        _imageInsertMenuOpen = false;
+        _headerFooterFieldMenuOpen = false;
+        _headerFooterPresetMenuOpen = false;
+        _pageLayoutInspectorOpen = false;
+        _focusHeaderFooterFieldMenuOnRender = false;
+        _focusHeaderFooterPresetMenuOnRender = false;
+        _focusPageLayoutInspectorOnRender = false;
     }
 
     private async Task HandleGridPickerInsertAsync((int Rows, int Columns) dims)
@@ -1986,6 +2762,79 @@
 
         _imageInsertMenuOpen = !_imageInsertMenuOpen;
         _tableGridPickerOpen = false;
+        _headerFooterFieldMenuOpen = false;
+        _headerFooterPresetMenuOpen = false;
+        _pageLayoutInspectorOpen = false;
+    }
+
+    private void ToggleHeaderFooterFieldMenu()
+    {
+        _headerFooterFieldMenuOpen = !_headerFooterFieldMenuOpen;
+        _focusHeaderFooterFieldMenuOnRender = _headerFooterFieldMenuOpen;
+        _focusHeaderFooterPresetMenuOnRender = false;
+        _focusPageLayoutInspectorOnRender = false;
+        _headerFooterPresetMenuOpen = false;
+        _pageLayoutInspectorOpen = false;
+        _tableGridPickerOpen = false;
+        _imageInsertMenuOpen = false;
+    }
+
+    private void ToggleHeaderFooterPresetMenu()
+    {
+        _headerFooterPresetMenuOpen = !_headerFooterPresetMenuOpen;
+        _focusHeaderFooterPresetMenuOnRender = _headerFooterPresetMenuOpen;
+        _focusHeaderFooterFieldMenuOnRender = false;
+        _focusPageLayoutInspectorOnRender = false;
+        _headerFooterFieldMenuOpen = false;
+        _pageLayoutInspectorOpen = false;
+        _tableGridPickerOpen = false;
+        _imageInsertMenuOpen = false;
+    }
+
+    private void TogglePageLayoutInspector()
+    {
+        _pageLayoutInspectorOpen = !_pageLayoutInspectorOpen;
+        _focusPageLayoutInspectorOnRender = _pageLayoutInspectorOpen;
+        _focusHeaderFooterFieldMenuOnRender = false;
+        _focusHeaderFooterPresetMenuOnRender = false;
+        _headerFooterFieldMenuOpen = false;
+        _headerFooterPresetMenuOpen = false;
+        _tableGridPickerOpen = false;
+        _imageInsertMenuOpen = false;
+    }
+
+    private async Task InsertHeaderFooterFieldFromMenuAsync(EventCallback callback)
+    {
+        _headerFooterFieldMenuOpen = false;
+        _focusHeaderFooterFieldMenuOnRender = false;
+        await callback.InvokeAsync();
+    }
+
+    private async Task ApplyHeaderFooterPresetFromMenuAsync(string preset)
+    {
+        _headerFooterPresetMenuOpen = false;
+        _focusHeaderFooterPresetMenuOnRender = false;
+        await OnApplyHeaderFooterPreset.InvokeAsync(preset);
+    }
+
+    private void HandleHeaderFooterMenuKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            _headerFooterFieldMenuOpen = false;
+            _headerFooterPresetMenuOpen = false;
+            _focusHeaderFooterFieldMenuOnRender = false;
+            _focusHeaderFooterPresetMenuOnRender = false;
+        }
+    }
+
+    private void HandlePageLayoutInspectorKeyDown(KeyboardEventArgs args)
+    {
+        if (args.Key == "Escape")
+        {
+            _pageLayoutInspectorOpen = false;
+            _focusPageLayoutInspectorOnRender = false;
+        }
     }
 
     private async Task InsertImageFromUrlAsync()
@@ -2039,6 +2888,17 @@
         if (_linkDialogOpen)
         {
             CloseLinkDialog();
+            return;
+        }
+
+        await OpenLinkDialogAsync();
+    }
+
+    /// <summary>Opens the link dialog and focuses its URL field on the next render.</summary>
+    public async Task OpenLinkDialogAsync()
+    {
+        if (ReadOnly)
+        {
             return;
         }
 
@@ -2105,6 +2965,20 @@
             await OnLink.InvokeAsync(payload.Href);
         }
 
+        _pendingLinkUrl = null;
+        _pendingLinkTitle = null;
+        _linkError = null;
+        _linkDialogOpen = false;
+    }
+
+    private async Task RemoveLinkAsync()
+    {
+        if (!OnLinkRemoved.HasDelegate)
+        {
+            return;
+        }
+
+        await OnLinkRemoved.InvokeAsync();
         _pendingLinkUrl = null;
         _pendingLinkTitle = null;
         _linkError = null;

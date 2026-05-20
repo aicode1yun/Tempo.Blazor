@@ -323,4 +323,26 @@ public class DocumentSerializerTests
         var linkMark = textRun.Marks.First(m => m.Type == InlineMarkType.Link);
         linkMark.Link!.Href.Should().Be("https://example.com");
     }
+
+    [Fact]
+    public void Serialize_FontAndColorMarks_ToPersistenceModel()
+    {
+        var model = new DocumentModel();
+        var paragraph = new ParagraphBlock();
+        var run = new Wyg.TextRun { Text = "Styled" };
+        run.Marks.Add(new FontMark { Family = "Georgia, serif", Size = "24pt" });
+        run.Marks.Add(new ColorMark { Color = "#123456" });
+        run.Marks.Add(new HighlightMark { Color = "#fff59d" });
+        paragraph.Inlines.Add(run);
+        model.Body.Add(paragraph);
+
+        var result = _serializer.ToPersistenceModel(model);
+
+        var content = (ParagraphBlockContent)result.Blocks[0].Content;
+        var textRun = content.Inlines.OfType<Persistence.TextRun>().Single();
+        textRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.FontFamily && mark.Value == "Georgia, serif");
+        textRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.FontSize && mark.Value == "24pt");
+        textRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.TextColor && mark.Value == "#123456");
+        textRun.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Highlight && mark.Value == "#fff59d");
+    }
 }

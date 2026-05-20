@@ -38,6 +38,7 @@
 
 @code {
     private string _text = string.Empty;
+    private string? _lastInitialText;
 
     /// <summary>Whether the current user may submit comments.</summary>
     [Parameter] public bool CanComment { get; set; } = true;
@@ -50,6 +51,9 @@
 
     /// <summary>Submit button label.</summary>
     [Parameter] public string? SubmitLabel { get; set; }
+
+    /// <summary>Initial text used when the composer edits an existing entry.</summary>
+    [Parameter] public string? InitialText { get; set; }
 
     /// <summary>Root test id.</summary>
     [Parameter] public string TestId { get; set; } = "document-comment-composer";
@@ -92,6 +96,11 @@
     {
         Placeholder ??= PlaceholderText;
         SubmitLabel ??= SubmitLabelText;
+        if (!string.Equals(_lastInitialText, InitialText, StringComparison.Ordinal))
+        {
+            _lastInitialText = InitialText;
+            _text = InitialText ?? string.Empty;
+        }
     }
 
     private async Task SubmitAsync()

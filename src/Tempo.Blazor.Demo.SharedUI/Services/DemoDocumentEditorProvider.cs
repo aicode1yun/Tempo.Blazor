@@ -335,6 +335,42 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
     }
 
     /// <inheritdoc />
+    public override async Task<DocumentComment> UpdateCommentEntryAsync(
+        string documentId,
+        string commentId,
+        string entryId,
+        string text,
+        DocumentEditorAuthor updatedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (_http is not null)
+        {
+            try
+            {
+                var response = await _http.PutAsJsonAsync(
+                    $"api/document-editor/documents/{Uri.EscapeDataString(documentId)}/comments/{Uri.EscapeDataString(commentId)}/entries/{Uri.EscapeDataString(entryId)}",
+                    new DocumentCommentEntryUpdateRequest { Text = text, UpdatedBy = updatedBy },
+                    cancellationToken);
+
+                if (response.IsSuccessStatusCode)
+                {
+                    var updated = await response.Content.ReadFromJsonAsync<DocumentComment>(cancellationToken);
+                    if (updated is not null)
+                    {
+                        return updated;
+                    }
+                }
+            }
+            catch
+            {
+                // Demo applications remain usable when the optional Demo API is not running.
+            }
+        }
+
+        return await base.UpdateCommentEntryAsync(documentId, commentId, entryId, text, updatedBy, cancellationToken);
+    }
+
+    /// <inheritdoc />
     public override async Task<DocumentComment> ResolveCommentAsync(
         string documentId,
         string commentId,

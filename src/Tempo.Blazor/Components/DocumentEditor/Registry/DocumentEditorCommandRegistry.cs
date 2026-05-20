@@ -148,7 +148,10 @@ public sealed class DocumentEditorCommandRegistry
             };
         }
 
-        if (context.IsProtected && command.AffectsData && !context.IsInEditableRegion)
+        if (context.IsProtected
+            && command.AffectsData
+            && !context.IsInEditableRegion
+            && !CanRunOutsideProtectedEditableRegion(command.Name))
         {
             return new DocumentEditorCommandState
             {
@@ -186,4 +189,9 @@ public sealed class DocumentEditorCommandRegistry
             Icon = command.Icon
         };
     }
+
+    private static bool CanRunOutsideProtectedEditableRegion(string commandName) =>
+        string.Equals(commandName, "undo", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(commandName, "redo", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(commandName, "save", StringComparison.OrdinalIgnoreCase);
 }

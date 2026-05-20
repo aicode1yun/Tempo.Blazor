@@ -11,6 +11,8 @@
 }
 
 .tm-document-editor__ribbon-tabs {
+    position: relative;
+    z-index: 20;
     gap: 0;
     min-height: 2.35rem;
     padding: 0 var(--tm-space-3);
@@ -46,6 +48,8 @@
 }
 
 .tm-document-editor__ribbon-groups {
+    flex: 1 1 auto;
+    min-width: 0;
     align-items: stretch;
     gap: 0;
     min-height: 5.2rem;
@@ -56,10 +60,13 @@
 
 .tm-document-editor__ribbon-group {
     position: relative;
+    flex: 0 1 auto;
+    flex-wrap: wrap;
     align-content: flex-start;
     align-items: center;
     gap: var(--tm-space-1);
-    min-width: max-content;
+    min-width: 0;
+    max-width: 100%;
     min-height: 4.6rem;
     padding: 0 var(--tm-space-3) 1rem;
     border-right: 1px solid var(--tm-color-border-subtle);
@@ -175,7 +182,10 @@
 .tm-document-editor__ribbon-color {
     display: inline-flex;
     align-items: center;
+    flex: 1 1 7rem;
     gap: var(--tm-space-1);
+    min-width: 0;
+    max-width: 100%;
     min-height: 2rem;
     max-height: 2rem;
     padding: 0 var(--tm-space-2);
@@ -189,8 +199,9 @@
 }
 
 .tm-document-editor__ribbon-select select {
-    min-width: 5.75rem;
+    min-width: 0;
     max-width: 8rem;
+    width: 100%;
     border: 0;
     background: transparent;
     color: inherit;
@@ -198,7 +209,7 @@
 }
 
 .tm-document-editor__ribbon-select--compact select {
-    min-width: 3.5rem;
+    min-width: 0;
     max-width: 4.25rem;
 }
 
@@ -322,12 +333,20 @@
 
 .tm-document-editor__ribbon-commands-wrapper {
     position: relative;
+    z-index: 20;
     display: flex;
     align-items: stretch;
     overflow: visible;
 }
 
+.tm-document-editor__ribbon-group--quick-access {
+    flex: 0 0 auto;
+    background: var(--tm-color-surface-elevated);
+}
+
 .tm-document-editor__ribbon-more {
+    position: relative;
+    z-index: 30;
     flex: 0 0 auto;
     align-self: center;
     min-height: 2rem;
@@ -432,15 +451,26 @@
 
 .tm-document-table-grid-picker-wrapper {
     position: relative;
+    z-index: var(--tm-z-popover, 1000);
     display: inline-flex;
 }
 
+.tm-document-editor__toolbar-floating-backdrop {
+    position: fixed;
+    inset: 0;
+    z-index: 19;
+    padding: 0;
+    background: transparent;
+    border: 0;
+    cursor: default;
+}
+
 .tm-document-table-grid-picker {
-    position: absolute;
-    top: calc(100% + var(--tm-space-1));
+    position: fixed;
+    top: 50%;
     left: 50%;
-    translate: -50%;
-    z-index: var(--tm-z-popover, 1000);
+    translate: -50% -50%;
+    z-index: calc(var(--tm-z-popover, 1000) + 10);
     display: grid;
     gap: var(--tm-space-2);
     padding: var(--tm-space-2);
@@ -526,6 +556,12 @@
         min-width: 2.5rem;
         min-height: 2.5rem;
         padding: 0;
+    }
+
+    .tm-document-editor__ribbon-select,
+    .tm-document-editor__ribbon-color {
+        flex: 1 1 5.75rem;
+        max-width: 100%;
     }
 
     .tm-document-editor__ribbon-button span {

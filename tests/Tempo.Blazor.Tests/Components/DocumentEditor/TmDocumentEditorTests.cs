@@ -1387,7 +1387,7 @@ public class TmDocumentEditorTests : LocalizationTestBase
     }
 
     [Fact]
-    public async Task TextContextMenuRequested_HidesUnimplementedClipboardAndAdvancedTextCommands()
+    public async Task TextContextMenuRequested_ShowsTruthfulClipboardStatesAndHidesAdvancedTextCommands()
     {
         var provider = new InMemoryDocumentEditorProvider();
         var seeded = provider.SeedContractDocument("doc-1");
@@ -1425,11 +1425,12 @@ public class TmDocumentEditorTests : LocalizationTestBase
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-text-context-menu']").Should().NotBeNull());
 
+        cut.Find("[data-testid='document-context-cut']").HasAttribute("disabled").Should().BeTrue();
+        cut.Find("[data-testid='document-context-copy']").HasAttribute("disabled").Should().BeFalse();
+        cut.Find("[data-testid='document-context-paste']").HasAttribute("disabled").Should().BeTrue();
+
         var hiddenContextCommands = new[]
         {
-            "document-context-cut",
-            "document-context-copy",
-            "document-context-paste",
             "document-context-font",
             "document-context-paragraph"
         };
@@ -1554,6 +1555,9 @@ public class TmDocumentEditorTests : LocalizationTestBase
 
         cut.WaitForAssertion(() =>
             cut.Find("[data-testid='document-table-context-menu']").TextContent.Should().Contain("Add row"));
+        cut.Find("[data-testid='document-table-delete-table']").TextContent.Should().Contain("Delete table");
+        cut.Find("[data-testid='document-table-cell-properties']").TextContent.Should().Contain("Cell properties");
+        cut.Find("[data-testid='document-table-table-properties']").TextContent.Should().Contain("Table properties");
         cut.Find("[data-testid='document-table-insert-row']").Click();
 
         JSInterop.Invocations.Should().Contain(invocation =>

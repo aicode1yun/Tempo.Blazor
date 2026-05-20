@@ -53,6 +53,16 @@ public class DocumentCommentEntry
     public DateTimeOffset? ModifiedAt { get; set; }
 }
 
+/// <summary>Request used to update an existing comment entry.</summary>
+public class DocumentCommentEntryUpdateRequest
+{
+    /// <summary>Updated entry text.</summary>
+    public string Text { get; set; } = string.Empty;
+
+    /// <summary>Author who submitted the update.</summary>
+    public DocumentEditorAuthor UpdatedBy { get; set; } = new();
+}
+
 /// <summary>Anchor describing the commented document range or object.</summary>
 public class DocumentCommentAnchor
 {

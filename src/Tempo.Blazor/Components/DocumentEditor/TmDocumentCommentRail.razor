@@ -96,6 +96,7 @@
                                              MentionProvider="@MentionProvider"
                                              OnSelect="OnSelectComment"
                                              OnReply="OnReplyComment"
+                                             OnEdit="OnEditComment"
                                              OnResolve="OnResolveComment"
                                              OnReopen="OnReopenComment"
                                              OnDelete="OnDeleteComment" />
@@ -168,6 +169,9 @@
 
     /// <summary>Raised when a reply is submitted.</summary>
     [Parameter] public EventCallback<DocumentEditorCommentReplyRequest> OnReplyComment { get; set; }
+
+    /// <summary>Raised when an existing comment entry is edited.</summary>
+    [Parameter] public EventCallback<DocumentEditorCommentEditRequest> OnEditComment { get; set; }
 
     /// <summary>Raised when a comment should be resolved.</summary>
     [Parameter] public EventCallback<string> OnResolveComment { get; set; }

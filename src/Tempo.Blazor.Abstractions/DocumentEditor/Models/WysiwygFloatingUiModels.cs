@@ -50,6 +50,9 @@ public sealed class WysiwygTableContextMenuRequest : WysiwygFloatingUiPosition
     /// <summary>Original pointer Y coordinate in viewport pixels.</summary>
     public double ClientY { get; set; }
 
+    /// <summary>Runtime id of the table cell that opened the menu.</summary>
+    public string? CellId { get; set; }
+
     /// <summary>Selection snapshot to restore before a table command runs.</summary>
     public WysiwygSelectionSnapshot? Selection { get; set; }
 }

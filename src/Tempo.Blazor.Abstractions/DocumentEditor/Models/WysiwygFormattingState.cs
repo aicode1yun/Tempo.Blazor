@@ -25,6 +25,9 @@ public sealed class WysiwygFormattingState
     /// <summary>Underline formatting state.</summary>
     public WysiwygFormattingValue Underline { get; set; }
 
+    /// <summary>Strikethrough formatting state.</summary>
+    public WysiwygFormattingValue Strikethrough { get; set; }
+
     /// <summary>Paragraph alignment for the current selection.</summary>
     public DocumentTextAlignment ParagraphAlignment { get; set; } = DocumentTextAlignment.Left;
 
@@ -60,6 +63,33 @@ public sealed class WysiwygFormattingState
 
     /// <summary>Whether selected paragraphs have mixed line spacing.</summary>
     public bool LineSpacingMixed { get; set; }
+
+    /// <summary>Spacing before the current paragraph in points.</summary>
+    public double SpacingBefore { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed spacing before values.</summary>
+    public bool SpacingBeforeMixed { get; set; }
+
+    /// <summary>Spacing after the current paragraph in points.</summary>
+    public double SpacingAfter { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed spacing after values.</summary>
+    public bool SpacingAfterMixed { get; set; }
+
+    /// <summary>Left indent of the current paragraph in points.</summary>
+    public double LeftIndent { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed left indent values.</summary>
+    public bool LeftIndentMixed { get; set; }
+
+    /// <summary>Whether the current paragraph is an unordered list item.</summary>
+    public bool IsBulletList { get; set; }
+
+    /// <summary>Whether the current paragraph is an ordered list item.</summary>
+    public bool IsNumberedList { get; set; }
+
+    /// <summary>Whether selected paragraphs have mixed list states.</summary>
+    public bool ListMixed { get; set; }
 
     /// <summary>Logical region where the selection currently lives.</summary>
     public string ActiveRegion { get; set; } = "Body";

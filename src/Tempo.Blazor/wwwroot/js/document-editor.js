@@ -252,7 +252,17 @@
 
             const observer = new ResizeObserver(measure);
             observer.observe(groupsEl);
-            overflowControllers.set(groupsEl, observer);
+            const keydown = function (event) {
+                if (event.key !== 'Escape') return;
+                dotNetRef.invokeMethodAsync('CloseToolbarFloatingUiFromJsAsync');
+            };
+            document.addEventListener('keydown', keydown, true);
+            overflowControllers.set(groupsEl, {
+                disconnect() {
+                    observer.disconnect();
+                    document.removeEventListener('keydown', keydown, true);
+                }
+            });
             measure();
         },
 

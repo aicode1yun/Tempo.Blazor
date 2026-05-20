@@ -44,3 +44,16 @@ public sealed class DocumentEditorCommentReplyRequest
     /// <summary>Reply text.</summary>
     public string Text { get; set; } = string.Empty;
 }
+
+/// <summary>Request emitted when the user edits an existing comment entry.</summary>
+public sealed class DocumentEditorCommentEditRequest
+{
+    /// <summary>Target comment thread id.</summary>
+    public string CommentId { get; set; } = string.Empty;
+
+    /// <summary>Target comment entry id.</summary>
+    public string EntryId { get; set; } = string.Empty;
+
+    /// <summary>Updated entry text.</summary>
+    public string Text { get; set; } = string.Empty;
+}

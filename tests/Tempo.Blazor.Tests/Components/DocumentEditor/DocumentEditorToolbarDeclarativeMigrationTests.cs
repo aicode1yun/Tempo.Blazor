@@ -58,6 +58,7 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
             "showRuler", "zoomPageWidth", "showBlocks", "fullscreen", "viewDocumentJson",
             "viewClipboardHtml", "exportPdf", "importDocx", "exportDocx", "openVersions");
         AssertMetadata(DocumentToolbarTab.HeaderFooter,
+            "insertPageNumber", "insertPageCount", "insertPageXOfY", "insertDateField", "insertDocumentTitleField",
             "differentFirstPage", "differentOddEven", "closeHeaderFooter");
     }
 
@@ -122,6 +123,11 @@ public class DocumentEditorToolbarDeclarativeMigrationTests : LocalizationTestBa
 
         headerCut.Find("[data-testid='document-ribbon-tab-header-footer']")
             .GetAttribute("aria-selected").Should().Be("true");
+        AssertCommand(headerCut, "document-header-footer-insert-page-number", "insertPageNumber");
+        AssertCommand(headerCut, "document-header-footer-insert-page-count", "insertPageCount");
+        AssertCommand(headerCut, "document-header-footer-insert-page-x-of-y", "insertPageXOfY");
+        AssertCommand(headerCut, "document-header-footer-insert-date", "insertDateField");
+        AssertCommand(headerCut, "document-header-footer-insert-title", "insertDocumentTitleField");
         AssertCommand(headerCut, "document-header-footer-different-first-page", "differentFirstPage");
         AssertCommand(headerCut, "document-header-footer-different-odd-even", "differentOddEven");
         AssertCommand(headerCut, "document-close-header-footer", "closeHeaderFooter");

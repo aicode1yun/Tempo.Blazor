@@ -27,15 +27,30 @@ public partial class TmDocumentInlineRenderer : ComponentBase
 
     private string? RevisionId => RevisionMark?.RevisionId;
 
-    private string? InlineTestId => Inline is TokenRun
-        ? "document-token-chip"
-        : !string.IsNullOrWhiteSpace(RevisionId)
+    private string? InlineTestId => Inline switch
+    {
+        TokenRun => "document-token-chip",
+        DocumentFieldRun => "document-field-chip",
+        _ => !string.IsNullOrWhiteSpace(RevisionId)
             ? GetRevisionTestId()
-            : string.IsNullOrWhiteSpace(CommentId) ? null : "document-comment-highlight";
+            : string.IsNullOrWhiteSpace(CommentId) ? null : "document-comment-highlight"
+    };
 
-    private string? InlineTitle => Inline is TokenRun token
-        ? string.IsNullOrWhiteSpace(token.Description) ? token.Key : token.Description
-        : LinkTitle;
+    private string? InlineTitle => Inline switch
+    {
+        TokenRun token => string.IsNullOrWhiteSpace(token.Description) ? token.Key : token.Description,
+        DocumentFieldRun run => run.FieldType.ToString(),
+        DocumentNoteReferenceRun note => GetNoteReferenceTitle(note),
+        _ => LinkTitle
+    };
+
+    private static string GetNoteReferenceTestId(DocumentNoteReferenceRun note) =>
+        note.NoteType == DocumentNoteType.Endnote
+            ? "document-wysiwyg-endnote-ref"
+            : "document-wysiwyg-footnote-ref";
+
+    private static string GetNoteReferenceTitle(DocumentNoteReferenceRun note) =>
+        note.NoteType == DocumentNoteType.Endnote ? "Endnote" : "Footnote";
 
     private string InlineClass
     {
@@ -54,6 +69,11 @@ public partial class TmDocumentInlineRenderer : ComponentBase
             if (Inline is DocumentNoteReferenceRun)
             {
                 classes.Add("tm-document-inline--note-reference");
+            }
+
+            if (Inline is DocumentFieldRun)
+            {
+                classes.Add("tm-document-inline--field");
             }
 
             foreach (var mark in Inline?.Marks ?? [])
@@ -111,7 +131,37 @@ public partial class TmDocumentInlineRenderer : ComponentBase
         {
             TextRun text => text.Text,
             TokenRun token => string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
+            DocumentFieldRun field => ResolveFieldDisplayText(field),
             DocumentNoteReferenceRun note => string.IsNullOrWhiteSpace(note.DisplayMarker) ? note.NoteId : note.DisplayMarker!,
+            _ => string.Empty
+        };
+    }
+
+    private static string ResolveFieldDisplayText(DocumentFieldRun field)
+    {
+        if (!string.IsNullOrWhiteSpace(field.DisplayText))
+        {
+            return field.DisplayText;
+        }
+
+        if (!string.IsNullOrWhiteSpace(field.FallbackText))
+        {
+            return field.FallbackText;
+        }
+
+        return field.FieldType switch
+        {
+            DocumentFieldType.PageNumber => "1",
+            DocumentFieldType.PageCount => "1",
+            DocumentFieldType.PageXOfY => "1 / 1",
+            DocumentFieldType.Date => DateTime.Today.ToShortDateString(),
+            DocumentFieldType.DocumentTitle => "Document title",
+            DocumentFieldType.Author => "Author",
+            DocumentFieldType.LastSaved => DateTime.Today.ToShortDateString(),
+            DocumentFieldType.SectionPageNumber => "1",
+            DocumentFieldType.SectionPageCount => "1",
+            DocumentFieldType.FileName => "File name",
+            DocumentFieldType.RevisionNumber => "1",
             _ => string.Empty
         };
     }

@@ -6,6 +6,7 @@ namespace Tempo.Blazor.DocumentEditor.Models;
 [JsonPolymorphic(TypeDiscriminatorPropertyName = "$type")]
 [JsonDerivedType(typeof(TextRun), "text")]
 [JsonDerivedType(typeof(TokenRun), "token")]
+[JsonDerivedType(typeof(DocumentFieldRun), "field")]
 [JsonDerivedType(typeof(DocumentNoteReferenceRun), "noteReference")]
 public abstract class InlineContent
 {
@@ -46,6 +47,59 @@ public class TokenRun : InlineContent
 
     /// <summary>Optional fallback text used when the token has no value.</summary>
     public string? FallbackText { get; set; }
+}
+
+/// <summary>Automatic document field rendered from page or document context.</summary>
+public class DocumentFieldRun : InlineContent
+{
+    /// <summary>Automatic field type.</summary>
+    public DocumentFieldType FieldType { get; set; } = DocumentFieldType.PageNumber;
+
+    /// <summary>Optional field formatting hint, for example a date format.</summary>
+    public string? Format { get; set; }
+
+    /// <summary>Fallback text used when the field cannot be resolved.</summary>
+    public string? FallbackText { get; set; }
+
+    /// <summary>Last display text captured by an editor runtime. The renderer may recompute this value.</summary>
+    public string? DisplayText { get; set; }
+}
+
+/// <summary>Automatic document fields supported by headers, footers, and document text.</summary>
+public enum DocumentFieldType
+{
+    /// <summary>Current page number.</summary>
+    PageNumber,
+
+    /// <summary>Total page count.</summary>
+    PageCount,
+
+    /// <summary>Current page number followed by the total page count.</summary>
+    PageXOfY,
+
+    /// <summary>Current date.</summary>
+    Date,
+
+    /// <summary>Document title from metadata.</summary>
+    DocumentTitle,
+
+    /// <summary>Document author display name from metadata.</summary>
+    Author,
+
+    /// <summary>Last saved or modified date from metadata.</summary>
+    LastSaved,
+
+    /// <summary>Current page number within the active section.</summary>
+    SectionPageNumber,
+
+    /// <summary>Total page count within the active section.</summary>
+    SectionPageCount,
+
+    /// <summary>Document file name from metadata or storage context.</summary>
+    FileName,
+
+    /// <summary>Document revision number from metadata or storage context.</summary>
+    RevisionNumber
 }
 
 /// <summary>Reference to a footnote or endnote.</summary>

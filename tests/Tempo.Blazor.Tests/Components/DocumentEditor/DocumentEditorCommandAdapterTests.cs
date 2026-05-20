@@ -261,6 +261,7 @@ public class DocumentEditorCommandAdapterTests : LocalizationTestBase
     [InlineData("insertTableColumnAfter")]
     [InlineData("deleteTableRow")]
     [InlineData("deleteTableColumn")]
+    [InlineData("deleteTable")]
     [InlineData("mergeTableCells")]
     [InlineData("splitTableCell")]
     [InlineData("tableProperties")]

@@ -63,9 +63,14 @@ public static class DocumentEditorBuiltInToolbar
         Item("importDocx", "importDocx", "upload", "TmDocumentEditor_ImportDocx", DocumentToolbarItemKind.Button, DocumentToolbarTab.View, "file", 40, ToolbarItemPriority.Secondary),
         Item("exportDocx", "exportDocx", "file-text", "TmDocumentEditor_ExportDocx", DocumentToolbarItemKind.Button, DocumentToolbarTab.View, "file", 50, ToolbarItemPriority.Secondary),
         Item("openVersions", "openVersions", "archive", "TmDocumentEditor_Versions", DocumentToolbarItemKind.Button, DocumentToolbarTab.View, "file", 60, ToolbarItemPriority.Secondary),
-        Item("differentFirstPage", "differentFirstPage", "file-stack", "TmDocumentEditor_DifferentFirstPage", DocumentToolbarItemKind.Toggle, DocumentToolbarTab.HeaderFooter, "headerFooter", 10, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
-        Item("differentOddEven", "differentOddEven", "layout", "TmDocumentEditor_DifferentOddEven", DocumentToolbarItemKind.Toggle, DocumentToolbarTab.HeaderFooter, "headerFooter", 20, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
-        Item("closeHeaderFooter", "closeHeaderFooter", "x", "TmDocumentEditor_CloseHeaderFooter", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 30, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("insertPageNumber", "insertPageNumber", "hash", "TmDocumentEditor_InsertPageNumber", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 10, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("insertPageCount", "insertPageCount", "files", "TmDocumentEditor_InsertPageCount", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 20, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("insertPageXOfY", "insertPageXOfY", "file-stack", "TmDocumentEditor_InsertPageXOfY", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 30, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("insertDateField", "insertDateField", "calendar-days", "TmDocumentEditor_InsertDateField", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 40, ToolbarItemPriority.Secondary, context => context.IsHeaderFooterMode),
+        Item("insertDocumentTitleField", "insertDocumentTitleField", "file-text", "TmDocumentEditor_InsertDocumentTitleField", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 50, ToolbarItemPriority.Secondary, context => context.IsHeaderFooterMode),
+        Item("differentFirstPage", "differentFirstPage", "file-stack", "TmDocumentEditor_DifferentFirstPage", DocumentToolbarItemKind.Toggle, DocumentToolbarTab.HeaderFooter, "headerFooter", 60, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("differentOddEven", "differentOddEven", "layout", "TmDocumentEditor_DifferentOddEven", DocumentToolbarItemKind.Toggle, DocumentToolbarTab.HeaderFooter, "headerFooter", 70, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
+        Item("closeHeaderFooter", "closeHeaderFooter", "x", "TmDocumentEditor_CloseHeaderFooter", DocumentToolbarItemKind.Button, DocumentToolbarTab.HeaderFooter, "headerFooter", 80, ToolbarItemPriority.Primary, context => context.IsHeaderFooterMode),
     ];
 
     /// <summary>Built-in toolbar groups in their default order.</summary>

@@ -19,6 +19,10 @@
      data-ruler-visible="@ShowRuler.ToString().ToLowerInvariant()"
      data-zoom-percent="@ZoomPercent"
      data-zoom-mode="@(ZoomPageWidth ? "page-width" : "percent")"
+     data-active-table-cell-id="@(_lastSelectionSnapshot?.ActiveTableCellId ?? string.Empty)"
+     data-table-properties-open="@_tablePropertiesPanelOpen.ToString().ToLowerInvariant()"
+     data-cell-properties-open="@_cellPropertiesPanelOpen.ToString().ToLowerInvariant()"
+     data-active-table-cell-resolved="@((ActiveTableCell is not null).ToString().ToLowerInvariant())"
      data-active-region="Body"
      role="textbox"
      aria-label="@Loc["TmDocumentEditor_WysiwygSurfaceLabel"]"
@@ -71,8 +75,8 @@
                                     DeleteColumn="DeleteActiveTableColumnAsync"
                                     MergeCells="MergeActiveTableCellsAsync"
                                     SplitCell="SplitActiveTableCellAsync"
-                                    TableProperties="OpenTablePropertiesPanel"
-                                    CellProperties="OpenCellPropertiesPanel" />
+                                    TableProperties="OpenActiveTablePropertiesPanelAsync"
+                                    CellProperties="OpenActiveCellPropertiesPanelAsync" />
 
             @if (_tablePropertiesPanelOpen && ActiveTableContent is { } activeTable)
             {
@@ -215,6 +219,9 @@
     /// <summary>Optional image provider for upload and clipboard flows.</summary>
     [Parameter] public IDocumentImageProvider? ImageProvider { get; set; }
 
+    /// <summary>Provider-managed image assets available for direct insertion or replacement.</summary>
+    [Parameter] public IReadOnlyList<DocumentImageAsset> ImageAssetOptions { get; set; } = [];
+
     /// <summary>Image validation options used by upload and clipboard image flows.</summary>
     [Parameter] public DocumentImageValidationOptions ImageValidation { get; set; } = new();
 
@@ -302,6 +309,9 @@
     /// <summary>Raised when the user requests save via keyboard.</summary>
     [Parameter] public EventCallback SaveRequested { get; set; }
 
+    /// <summary>Raised when the JS editor surface owns a keyboard shortcut that must run through the command registry.</summary>
+    [Parameter] public EventCallback<string> KeyboardCommandRequested { get; set; }
+
     /// <summary>Fired when an image upload starts (<c>true</c>) or finishes (<c>false</c>).</summary>
     [Parameter] public EventCallback<bool> ImageUploadStateChanged { get; set; }
 
@@ -357,9 +367,37 @@
 
     private ImageBlockContent? ActiveImageContent => ActiveImageBlock?.Content as ImageBlockContent;
 
-    private TableBlockContent? ActiveTableContent => FindActiveTableCell().Table;
+    private TableBlockContent? ActiveTableContent
+    {
+        get
+        {
+            var active = FindActiveTableCell();
+            if (active.Table is not null)
+            {
+                return active.Table;
+            }
 
-    private TableCellContent? ActiveTableCell => FindActiveTableCell().Cell;
+            return string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveTableCellId)
+                ? null
+                : new TableBlockContent();
+        }
+    }
+
+    private TableCellContent? ActiveTableCell
+    {
+        get
+        {
+            var active = FindActiveTableCell();
+            if (active.Cell is not null)
+            {
+                return active.Cell;
+            }
+
+            return string.IsNullOrWhiteSpace(_lastSelectionSnapshot?.ActiveTableCellId)
+                ? null
+                : new TableCellContent { Id = _lastSelectionSnapshot.ActiveTableCellId };
+        }
+    }
 
     private (TableBlockContent? Table, TableCellContent? Cell) FindActiveTableCell()
     {
@@ -444,6 +482,7 @@
                 InsertPageBreakLabel = Loc["TmDocumentEditor_InsertPageBreak"],
                 ImageResizeHandleLabel = Loc["TmDocumentEditor_WysiwygImageResizeHandleLabel"],
                 ImageRetryLabel = Loc["TmDocumentEditor_Retry"],
+                HasImageAssetOptions = ImageAssetOptions.Count > 0,
                 FontFamilies = FontFamilies,
                 Author = Author,
                 SuggestionInsertLabel = Loc["TmDocumentEditor_SuggestionInsertAria"],
@@ -1148,6 +1187,18 @@
     [JSInvokable]
     public async Task HandleSelectionChanged(WysiwygSelectionSnapshot? snapshot)
     {
+        if (string.IsNullOrWhiteSpace(snapshot?.ActiveTableCellId)
+            && (string.Equals(snapshot?.Region, "TableCell", StringComparison.OrdinalIgnoreCase)
+                || _tablePropertiesPanelOpen
+                || _cellPropertiesPanelOpen))
+        {
+            var runtimeSelection = await RequestRuntimeSelectionAsync();
+            if (!string.IsNullOrWhiteSpace(runtimeSelection?.ActiveTableCellId))
+            {
+                snapshot = runtimeSelection;
+            }
+        }
+
         _lastSelectionSnapshot = snapshot;
         if (string.IsNullOrWhiteSpace(snapshot?.ActiveTableCellId))
         {
@@ -1267,6 +1318,13 @@
         return SaveRequested.InvokeAsync();
     }
 
+    /// <summary>Called by the JS engine when a contenteditable shortcut should execute a registry command.</summary>
+    [JSInvokable]
+    public Task HandleKeyboardCommandRequested(string commandName)
+    {
+        return KeyboardCommandRequested.InvokeAsync(commandName);
+    }
+
     /// <summary>Called by the JS engine when a snapshot is applied.</summary>
     [JSInvokable]
     public Task HandleSnapshotApplied()
@@ -1330,6 +1388,24 @@
         return ExecuteRuntimeCommandAsync(command, payload);
     }
 
+    /// <summary>Copies the current editor selection through the runtime clipboard serializer.</summary>
+    public async Task CopySelectionToClipboardAsync()
+    {
+        if (_jsFailed || _disposed || !_jsReady || string.IsNullOrWhiteSpace(_instanceId))
+        {
+            return;
+        }
+
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("tmDocumentEditorRuntime.copySelection", _instanceId, true);
+        }
+        catch (JSException)
+        {
+            // Best-effort.
+        }
+    }
+
     private Task SetActiveImageAltTextAsync(string altText) =>
         ExecuteRuntimeCommandAsync("setImageAltText", new { AltText = altText });
 
@@ -1369,18 +1445,46 @@
 
     private Task SplitActiveTableCellAsync() => ExecuteRuntimeCommandAsync("splitTableCell");
 
-    private Task OpenTablePropertiesPanel()
+    private async Task OpenActiveTablePropertiesPanelAsync()
     {
-        _tablePropertiesPanelOpen = true;
-        _cellPropertiesPanelOpen = false;
-        return Task.CompletedTask;
+        var selection = await RequestRuntimeSelectionAsync()
+            ?? await RequestSelectionSnapshotAsync()
+            ?? _lastSelectionSnapshot;
+        await OpenTablePropertiesPanelAsync(selection);
     }
 
-    private Task OpenCellPropertiesPanel()
+    private async Task OpenActiveCellPropertiesPanelAsync()
     {
+        var selection = await RequestRuntimeSelectionAsync()
+            ?? await RequestSelectionSnapshotAsync()
+            ?? _lastSelectionSnapshot;
+        await OpenCellPropertiesPanelAsync(selection);
+    }
+
+    /// <summary>Opens the table properties panel for the active table cell.</summary>
+    public Task OpenTablePropertiesPanelAsync(WysiwygSelectionSnapshot? selection = null)
+    {
+        if (selection is not null)
+        {
+            _lastSelectionSnapshot = selection;
+        }
+
+        _tablePropertiesPanelOpen = true;
+        _cellPropertiesPanelOpen = false;
+        return InvokeAsync(StateHasChanged);
+    }
+
+    /// <summary>Opens the cell properties panel for the active table cell.</summary>
+    public Task OpenCellPropertiesPanelAsync(WysiwygSelectionSnapshot? selection = null)
+    {
+        if (selection is not null)
+        {
+            _lastSelectionSnapshot = selection;
+        }
+
         _cellPropertiesPanelOpen = true;
         _tablePropertiesPanelOpen = false;
-        return Task.CompletedTask;
+        return InvokeAsync(StateHasChanged);
     }
 
     private Task SetActiveTablePropertiesAsync(TableLayoutContent layout) =>
@@ -1929,6 +2033,23 @@
     /// <summary>Uploads a small provider-backed demo image and inserts it at the active selection.</summary>
     public Task UploadDemoImageAsync() => InsertProviderImageAsync();
 
+    /// <summary>Inserts a provider-managed image asset at the active selection.</summary>
+    public async Task InsertImageAssetAsync(DocumentImageAsset asset)
+    {
+        if (ReadOnly || Document is null || asset is null)
+        {
+            return;
+        }
+
+        var block = CreateImageBlock(asset);
+        RememberImageAsset(asset);
+        await InsertImageBlockFromBlazorAsync(block, _lastSelectionSnapshot);
+        _imageDialogOpen = false;
+        _pendingImageUrl = null;
+        _pendingImageAltText = null;
+        _imageError = null;
+    }
+
     private async Task InsertProviderImageAsync()
     {
         if (ImageProvider is null || Document is null)
@@ -1967,6 +2088,25 @@
     {
         var uploaded = await UploadImagePayloadAsync(payload);
         return uploaded is null ? null : CreateImageBlock(uploaded);
+    }
+
+    /// <summary>Returns the default provider-managed image asset for a JS image replacement request.</summary>
+    [JSInvokable]
+    public Task<DocumentBlock?> HandleImageAssetRequested()
+    {
+        if (ReadOnly || Document is null)
+        {
+            return Task.FromResult<DocumentBlock?>(null);
+        }
+
+        var asset = ImageAssetOptions.FirstOrDefault();
+        if (asset is null)
+        {
+            return Task.FromResult<DocumentBlock?>(null);
+        }
+
+        RememberImageAsset(asset);
+        return Task.FromResult<DocumentBlock?>(CreateImageBlock(asset));
     }
 
     private async Task<WysiwygImagePayload?> UploadImagePayloadAsync(WysiwygImagePayload payload)
@@ -2147,6 +2287,43 @@
             AltText = payload.AltText,
             Caption = payload.Caption
         });
+    }
+
+    private static DocumentBlock CreateImageBlock(DocumentImageAsset asset)
+    {
+        return CreateImageBlock(new ImageBlockContent
+        {
+            Source = asset.Source,
+            Url = asset.Url,
+            AssetId = asset.Id,
+            AltText = asset.AltText ?? asset.FileName,
+            Caption = asset.Caption,
+            Size = asset.ImageSize
+        });
+    }
+
+    private void RememberImageAsset(DocumentImageAsset asset)
+    {
+        if (Document is null || string.IsNullOrWhiteSpace(asset.Id))
+        {
+            return;
+        }
+
+        var existing = Document.Assets.FirstOrDefault(item => string.Equals(item.Id, asset.Id, StringComparison.OrdinalIgnoreCase));
+        if (existing is null)
+        {
+            Document.Assets.Add(asset);
+            return;
+        }
+
+        existing.Source = asset.Source;
+        existing.Url = asset.Url;
+        existing.ContentType = asset.ContentType;
+        existing.FileName = asset.FileName;
+        existing.SizeBytes = asset.SizeBytes;
+        existing.AltText = asset.AltText;
+        existing.Caption = asset.Caption;
+        existing.ImageSize = asset.ImageSize;
     }
 
     private static DocumentBlock CreateImageBlock(ImageBlockContent content)

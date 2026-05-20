@@ -92,14 +92,14 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
     public void ImageInspector_ExposesComplementaryLandmarkLabelsAndLiveWarning()
     {
         var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
-            .Add(p => p.Image, new ImageBlockContent()));
+            .Add(p => p.Image, new ImageBlockContent { Source = DocumentImageSource.Url, Url = "https://example.test/evidence.png" }));
 
         var inspector = cut.Find("[data-testid='document-image-inspector']");
         inspector.GetAttribute("role").Should().Be("complementary");
         inspector.GetAttribute("aria-label").Should().NotBeNullOrWhiteSpace();
 
         cut.Find("[data-testid='document-image-inspector-alt']").ParentElement!.TextContent.Should().Contain("Alt");
-        cut.Find("[data-testid='document-image-inspector-link']").ParentElement!.TextContent.ToLowerInvariant().Should().Contain("link");
+        cut.Find("[data-testid='document-image-inspector-link']").ParentElement!.TextContent.ToLowerInvariant().Should().Contain("url");
         cut.Find("[data-testid='document-image-inspector-alt-warning']").GetAttribute("role").Should().Be("status");
         cut.FindAll("[role='toolbar']").Should().HaveCount(2);
     }

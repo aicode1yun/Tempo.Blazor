@@ -45,6 +45,17 @@ public partial class TmDocumentEditor
             defaultShortcut: "Ctrl+U",
             icon: "underline"));
 
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "strikethrough", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            computeValue: ctx => FormattingValueToString(ctx.FormattingState.Strikethrough),
+            execute: (_, _) => ToggleInlineMarkAsync(InlineMarkType.Strikethrough),
+            descriptionKey: "TmDocumentEditor_Strikethrough",
+            tooltipKey: "TmDocumentEditor_Strikethrough",
+            category: "Formatting",
+            defaultShortcut: "Alt+Shift+5",
+            icon: "strikethrough"));
+
         // ── Document lifecycle ───────────────────────────────────────────────
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "save", affectsData: true,
@@ -90,7 +101,7 @@ public partial class TmDocumentEditor
                     return ApplyLinkAsync(linkPayload);
                 }
 
-                return ApplyLinkAsync("https://example.com");
+                return _toolbar?.OpenLinkDialogAsync() ?? Task.CompletedTask;
             },
             descriptionKey: "TmDocumentEditor_Link",
             tooltipKey: "TmDocumentEditor_Link",
@@ -115,6 +126,7 @@ public partial class TmDocumentEditor
             RegisterTableRuntimeCommand("insertTableColumnAfter", "TmDocumentEditor_InsertColumn", "panel-right-open");
             RegisterTableRuntimeCommand("deleteTableRow", "TmDocumentEditor_DeleteRow", "delete");
             RegisterTableRuntimeCommand("deleteTableColumn", "TmDocumentEditor_DeleteColumn", "delete");
+            RegisterTableRuntimeCommand("deleteTable", "TmDocumentEditor_DeleteTable", "trash-2");
             RegisterTableRuntimeCommand("mergeTableCells", "TmDocumentEditor_MergeCells", "combine");
             RegisterTableRuntimeCommand("splitTableCell", "TmDocumentEditor_SplitCell", "split-square-horizontal");
             RegisterTableRuntimeCommand("tableProperties", "TmDocumentEditor_TableProperties", "table-properties", affectsData: false);
@@ -197,25 +209,31 @@ public partial class TmDocumentEditor
             icon: "separator-horizontal",
             disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
 
+        RegisterHeaderFooterFieldCommand("insertPageNumber", "TmDocumentEditor_InsertPageNumber", "hash", DocumentFieldType.PageNumber);
+        RegisterHeaderFooterFieldCommand("insertPageCount", "TmDocumentEditor_InsertPageCount", "files", DocumentFieldType.PageCount);
+        RegisterHeaderFooterFieldCommand("insertPageXOfY", "TmDocumentEditor_InsertPageXOfY", "file-stack", DocumentFieldType.PageXOfY);
+        RegisterHeaderFooterFieldCommand("insertDateField", "TmDocumentEditor_InsertDateField", "calendar-days", DocumentFieldType.Date);
+        RegisterHeaderFooterFieldCommand("insertDocumentTitleField", "TmDocumentEditor_InsertDocumentTitleField", "file-text", DocumentFieldType.DocumentTitle);
+
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "insertFootnote", affectsData: true,
-            computeEnabled: _ => false,
-            execute: (_, _) => Task.CompletedTask,
-            computeVisible: _ => false,
+            computeEnabled: ctx => ctx.HasDocument && !ctx.IsReadOnly && string.Equals(ctx.ActiveRegion, "Body", StringComparison.OrdinalIgnoreCase),
+            execute: (_, _) => InsertFootnoteAsync(),
             descriptionKey: "TmDocumentEditor_InsertFootnote",
             tooltipKey: "TmDocumentEditor_InsertFootnote",
             category: "References",
-            icon: "pilcrow"));
+            icon: "list-plus",
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "insertEndnote", affectsData: true,
-            computeEnabled: _ => false,
-            execute: (_, _) => Task.CompletedTask,
-            computeVisible: _ => false,
+            computeEnabled: ctx => ctx.HasDocument && !ctx.IsReadOnly && string.Equals(ctx.ActiveRegion, "Body", StringComparison.OrdinalIgnoreCase),
+            execute: (_, _) => InsertEndnoteAsync(),
             descriptionKey: "TmDocumentEditor_InsertEndnote",
             tooltipKey: "TmDocumentEditor_InsertEndnote",
             category: "References",
-            icon: "pilcrow"));
+            icon: "list-end",
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
 
         // ── Format providers ─────────────────────────────────────────────────
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
@@ -289,7 +307,9 @@ public partial class TmDocumentEditor
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "clearFormatting", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
-            execute: (_, _) => ClearInlineFormattingAsync(),
+            execute: (_, payload) => payload is WysiwygSelectionSnapshot selection
+                ? ClearInlineFormattingAsync(selection)
+                : ClearInlineFormattingAsync(),
             descriptionKey: "TmDocumentEditor_ClearFormatting",
             tooltipKey: "TmDocumentEditor_ClearFormatting",
             category: "Formatting",
@@ -340,6 +360,24 @@ public partial class TmDocumentEditor
             category: "Paragraph",
             icon: "indent-decrease"));
 
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "bulletList", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => ToggleBulletListAsync(),
+            descriptionKey: "TmDocumentEditor_BulletedList",
+            tooltipKey: "TmDocumentEditor_BulletedList",
+            category: "Paragraph",
+            icon: "list"));
+
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            "numberedList", affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument,
+            execute: (_, _) => ToggleNumberedListAsync(),
+            descriptionKey: "TmDocumentEditor_NumberedList",
+            tooltipKey: "TmDocumentEditor_NumberedList",
+            category: "Paragraph",
+            icon: "list"));
+
         // ── Insert tab ───────────────────────────────────────────────────────
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "insertMenu", affectsData: false,
@@ -352,7 +390,7 @@ public partial class TmDocumentEditor
 
         // ── Review tab ───────────────────────────────────────────────────────
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
-            "protectDocument", affectsData: false,
+            "protectDocument", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument,
             computeValue: ctx => ctx.IsProtected ? "active" : "inactive",
             execute: (_, _) => ToggleDocumentProtectionAsync(),
@@ -362,7 +400,7 @@ public partial class TmDocumentEditor
             icon: "lock"));
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
-            "markEditableRegion", affectsData: false,
+            "markEditableRegion", affectsData: true,
             computeEnabled: ctx => ctx.HasDocument && ctx.IsProtected,
             execute: (_, _) => MarkEditableRegionAsync(),
             descriptionKey: "TmDocumentEditor_MarkEditableRegion",
@@ -372,7 +410,7 @@ public partial class TmDocumentEditor
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "reviewDisplayMode", affectsData: false,
-            computeEnabled: ctx => ctx.HasDocument,
+            computeEnabled: ctx => ctx.HasDocument && IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges),
             execute: (_, _) => Task.CompletedTask,
             descriptionKey: "TmDocumentEditor_ShowMarkup",
             tooltipKey: "TmDocumentEditor_ShowMarkup",
@@ -380,7 +418,7 @@ public partial class TmDocumentEditor
             icon: "eye"));
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
-            "addComment", affectsData: false,
+            "addComment", affectsData: true,
             computeEnabled: ctx => ctx.CanAddComment,
             execute: (_, _) => BeginCommentFromToolbarAsync(),
             descriptionKey: "TmDocumentEditor_AddComment",
@@ -399,7 +437,7 @@ public partial class TmDocumentEditor
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "openComments", affectsData: false,
-            computeEnabled: _ => ShowComments,
+            computeEnabled: _ => ShowComments && IsFeatureEnabled(DocumentEditorFeatureNames.Comments),
             execute: (_, _) => OpenCommentsPanelAsync(),
             descriptionKey: "TmDocumentEditor_OpenComments",
             tooltipKey: "TmDocumentEditor_OpenComments",
@@ -408,7 +446,7 @@ public partial class TmDocumentEditor
 
         _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
             "openRevisions", affectsData: false,
-            computeEnabled: _ => true,
+            computeEnabled: _ => IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges),
             execute: (_, _) => OpenRevisionsPanelAsync(),
             descriptionKey: "TmDocumentEditor_OpenRevisions",
             tooltipKey: "TmDocumentEditor_OpenRevisions",
@@ -532,13 +570,16 @@ public partial class TmDocumentEditor
             ActiveRegion = _activeWysiwygRegion,
             SelectionSnapshot = _lastBodySelectionSnapshot,
             FormattingState = _formattingState,
-            UndoState = _wysiwygUndoState,
+            UndoState = EffectiveUndoState,
             HasDocument = _document is not null,
             CanExportPdf = CanExportPdf,
             CanImportDocx = CanImportDocx,
             CanExportDocx = CanExportDocx,
             IsSaving = _isSaving,
-            CanTrackChanges = CanEditDocument && !IsVersionPreview && !IsTemplatePreview,
+            CanTrackChanges = CanEditDocument
+                && !IsVersionPreview
+                && !IsTemplatePreview
+                && IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges),
             CanAddComment = CanStartComment,
             CanCompareDocuments = CanCompareDocuments,
             IsProtected = _isDocumentProtected,
@@ -564,6 +605,24 @@ public partial class TmDocumentEditor
             category: "Table",
             icon: icon));
     }
+
+    private void RegisterHeaderFooterFieldCommand(string name, string key, string icon, DocumentFieldType fieldType)
+    {
+        _commandRegistry.Register(new FuncDocumentEditorCommandEntry(
+            name,
+            affectsData: true,
+            computeEnabled: ctx => ctx.HasDocument && IsHeaderFooterRegion(ctx.ActiveRegion),
+            execute: (_, _) => InsertHeaderFooterFieldAsync(fieldType),
+            descriptionKey: key,
+            tooltipKey: key,
+            category: "HeaderFooter",
+            icon: icon,
+            disabledReasonKey: "TmDocumentEditor_CommandDisabledUnavailable"));
+    }
+
+    private static bool IsHeaderFooterRegion(string? region) =>
+        string.Equals(region, "Header", StringComparison.OrdinalIgnoreCase)
+        || string.Equals(region, "Footer", StringComparison.OrdinalIgnoreCase);
 
     private bool HasActiveTable(DocumentEditorCommandContext context) =>
         !string.IsNullOrWhiteSpace(context.SelectionSnapshot?.ActiveTableCellId)

@@ -2794,16 +2794,20 @@
   <data name="TmDocumentEditor_Bold"                   xml:space="preserve"><value>Tučné</value></data>
   <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Kurzíva</value></data>
   <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Podtržení</value></data>
+  <data name="TmDocumentEditor_Strikethrough"          xml:space="preserve"><value>Přeškrtnutí</value></data>
   <data name="TmDocumentEditor_FontFamily"             xml:space="preserve"><value>Písmo</value></data>
   <data name="TmDocumentEditor_FontFamilyDefault"      xml:space="preserve"><value>Výchozí písmo</value></data>
   <data name="TmDocumentEditor_FontSize"               xml:space="preserve"><value>Velikost</value></data>
   <data name="TmDocumentEditor_FontColor"              xml:space="preserve"><value>Barva písma</value></data>
+  <data name="TmDocumentEditor_TextColor"              xml:space="preserve"><value>Barva textu</value></data>
   <data name="TmDocumentEditor_HighlightColor"         xml:space="preserve"><value>Zvýraznění</value></data>
   <data name="TmDocumentEditor_Link"                   xml:space="preserve"><value>Odkaz</value></data>
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>URL odkazu</value></data>
   <data name="TmDocumentEditor_LinkTitle"              xml:space="preserve"><value>Název odkazu</value></data>
   <data name="TmDocumentEditor_LinkInvalidUrl"         xml:space="preserve"><value>Zadejte bezpečnou URL: http, https, mailto, tel, /cesta nebo #kotva.</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Použít odkaz</value></data>
+  <data name="TmDocumentEditor_RemoveLink"             xml:space="preserve"><value>Odebrat odkaz</value></data>
+  <data name="TmDocumentEditor_MixedFormatting"        xml:space="preserve"><value>Smíšené</value></data>
   <data name="TmDocumentEditor_ApplyColor"             xml:space="preserve"><value>Použít barvu</value></data>
   <data name="TmDocumentEditor_CancelColor"            xml:space="preserve"><value>Storno</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Zrušit</value></data>
@@ -2887,6 +2891,10 @@
   <data name="TmDocumentEditor_CommentResolveFailed"   xml:space="preserve"><value>Komentář se nepodařilo vyřešit.</value></data>
   <data name="TmDocumentEditor_CommentReopenedMessage" xml:space="preserve"><value>Komentář znovu otevřen</value></data>
   <data name="TmDocumentEditor_CommentReopenFailed"    xml:space="preserve"><value>Komentář se nepodařilo znovu otevřít.</value></data>
+  <data name="TmDocumentEditor_EditComment"            xml:space="preserve"><value>Upravit</value></data>
+  <data name="TmDocumentEditor_SaveComment"            xml:space="preserve"><value>Uložit</value></data>
+  <data name="TmDocumentEditor_CommentEdited"          xml:space="preserve"><value>Komentář upraven</value></data>
+  <data name="TmDocumentEditor_CommentEditFailed"      xml:space="preserve"><value>Komentář se nepodařilo upravit.</value></data>
   <data name="TmDocumentEditor_DeleteComment"          xml:space="preserve"><value>Smazat</value></data>
   <data name="TmDocumentEditor_CommentDeleted"         xml:space="preserve"><value>Komentář smazán</value></data>
   <data name="TmDocumentEditor_CommentDeleteFailed"    xml:space="preserve"><value>Komentář se nepodařilo smazat.</value></data>
@@ -3073,6 +3081,8 @@
   <data name="TmDocumentEditor_ListTools"              xml:space="preserve"><value>Nástroje seznamu</value></data>
   <data name="TmDocumentEditor_DecreaseIndent"         xml:space="preserve"><value>Zmenšit odsazení</value></data>
   <data name="TmDocumentEditor_IncreaseIndent"         xml:space="preserve"><value>Zvětšit odsazení</value></data>
+  <data name="TmDocumentEditor_BulletedList"           xml:space="preserve"><value>Odrážkový seznam</value></data>
+  <data name="TmDocumentEditor_NumberedList"           xml:space="preserve"><value>Číslovaný seznam</value></data>
   <data name="TmDocumentEditor_EditListItem"           xml:space="preserve"><value>Upravit položku seznamu</value></data>
   <data name="TmDocumentEditor_EditQuote"              xml:space="preserve"><value>Upravit citaci</value></data>
   <data name="TmDocumentEditor_TableTools"             xml:space="preserve"><value>Nástroje tabulky</value></data>
@@ -3091,6 +3101,7 @@
   <data name="TmDocumentEditor_InsertRow"              xml:space="preserve"><value>Vložit řádek pod</value></data>
   <data name="TmDocumentEditor_InsertColumnBefore"     xml:space="preserve"><value>Vložit sloupec vlevo</value></data>
   <data name="TmDocumentEditor_InsertColumn"           xml:space="preserve"><value>Vložit sloupec vpravo</value></data>
+  <data name="TmDocumentEditor_DeleteTable"            xml:space="preserve"><value>Smazat tabulku</value></data>
   <data name="TmDocumentEditor_MergeCells"             xml:space="preserve"><value>Sloučit buňky</value></data>
   <data name="TmDocumentEditor_TableProperties"        xml:space="preserve"><value>Vlastnosti tabulky</value></data>
   <data name="TmDocumentEditor_CellProperties"         xml:space="preserve"><value>Vlastnosti buňky</value></data>
@@ -3135,12 +3146,14 @@
   <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Zápatí</value></data>
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Poznámky</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Poznámka pod čarou</value></data>
+  <data name="TmDocumentEditor_FootnotePlaceholder"    xml:space="preserve"><value>Text poznámky pod čarou</value></data>
   <data name="TmDocumentEditor_TableOfContents"        xml:space="preserve"><value>Obsah</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Export PDF</value></data>
   <data name="TmDocumentEditor_ImportDocx"             xml:space="preserve"><value>Import DOCX</value></data>
   <data name="TmDocumentEditor_ImportDocxDropZone"     xml:space="preserve"><value>Přetáhněte DOCX soubor nebo vyberte</value></data>
   <data name="TmDocumentEditor_ExportDocx"             xml:space="preserve"><value>Export DOCX</value></data>
   <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Koncová poznámka</value></data>
+  <data name="TmDocumentEditor_EndnotePlaceholder"     xml:space="preserve"><value>Text koncové poznámky</value></data>
   <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Poznámka pod čarou</value></data>
   <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Koncová poznámka</value></data>
   <data name="TmDocumentEditor_Revisions"              xml:space="preserve"><value>Revize</value></data>
@@ -3176,6 +3189,45 @@
   <data name="TmDocumentEditor_UploadImage"            xml:space="preserve"><value>Nahrát obrázek</value></data>
   <data name="TmDocumentEditor_DifferentFirstPage"     xml:space="preserve"><value>Jiné záhlaví/zápatí první stránky</value></data>
   <data name="TmDocumentEditor_DifferentOddEven"       xml:space="preserve"><value>Jiné liché a sudé stránky</value></data>
+  <data name="TmDocumentEditor_HeaderFooterFields"     xml:space="preserve"><value>Pole hlavičky a patičky</value></data>
+  <data name="TmDocumentEditor_InsertPageNumber"       xml:space="preserve"><value>Vložit číslo stránky</value></data>
+  <data name="TmDocumentEditor_InsertPageCount"        xml:space="preserve"><value>Vložit počet stránek</value></data>
+  <data name="TmDocumentEditor_InsertPageXOfY"         xml:space="preserve"><value>Vložit strana z počtu</value></data>
+  <data name="TmDocumentEditor_InsertDateField"        xml:space="preserve"><value>Vložit datum</value></data>
+  <data name="TmDocumentEditor_InsertDocumentTitleField" xml:space="preserve"><value>Vložit název dokumentu</value></data>
+  <data name="TmDocumentEditor_PageNumber"             xml:space="preserve"><value>Číslo stránky</value></data>
+  <data name="TmDocumentEditor_TotalPages"             xml:space="preserve"><value>Počet stránek</value></data>
+  <data name="TmDocumentEditor_PageXOfY"               xml:space="preserve"><value>Strana z počtu</value></data>
+  <data name="TmDocumentEditor_FieldDate"              xml:space="preserve"><value>Datum</value></data>
+  <data name="TmDocumentEditor_DocumentTitle"          xml:space="preserve"><value>Název dokumentu</value></data>
+  <data name="TmDocumentEditor_Author"                 xml:space="preserve"><value>Autor</value></data>
+  <data name="TmDocumentEditor_FileName"               xml:space="preserve"><value>Název souboru</value></data>
+  <data name="TmDocumentEditor_InsertField"            xml:space="preserve"><value>Vložit pole</value></data>
+  <data name="TmDocumentEditor_HeaderFooterPresets"    xml:space="preserve"><value>Presety</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScope"      xml:space="preserve"><value>Rozsah hlavičky a patičky</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopePrimary" xml:space="preserve"><value>Primární</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeFirstPage" xml:space="preserve"><value>První stránka</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeEvenPages" xml:space="preserve"><value>Sudé stránky</value></data>
+  <data name="TmDocumentEditor_HeaderFooterScopeOddPages" xml:space="preserve"><value>Liché stránky</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberRightFooter" xml:space="preserve"><value>Číslo stránky vpravo dole</value></data>
+  <data name="TmDocumentEditor_PresetPageNumberCenterFooter" xml:space="preserve"><value>Číslo stránky uprostřed dole</value></data>
+  <data name="TmDocumentEditor_PresetTitlePageHeader"  xml:space="preserve"><value>Název vlevo, číslo stránky vpravo</value></data>
+  <data name="TmDocumentEditor_PresetPageXOfYRightFooter" xml:space="preserve"><value>Strana z počtu vpravo dole</value></data>
+  <data name="TmDocumentEditor_PageSize"               xml:space="preserve"><value>Velikost stránky</value></data>
+  <data name="TmDocumentEditor_Orientation"            xml:space="preserve"><value>Orientace</value></data>
+  <data name="TmDocumentEditor_OrientationPortrait"    xml:space="preserve"><value>Na výšku</value></data>
+  <data name="TmDocumentEditor_OrientationLandscape"   xml:space="preserve"><value>Na šířku</value></data>
+  <data name="TmDocumentEditor_MarginsPreset"          xml:space="preserve"><value>Okraje</value></data>
+  <data name="TmDocumentEditor_MarginsNormal"          xml:space="preserve"><value>Normální</value></data>
+  <data name="TmDocumentEditor_MarginsNarrow"          xml:space="preserve"><value>Úzké</value></data>
+  <data name="TmDocumentEditor_MarginsWide"            xml:space="preserve"><value>Široké</value></data>
+  <data name="TmDocumentEditor_MarginsCustom"          xml:space="preserve"><value>Vlastní</value></data>
+  <data name="TmDocumentEditor_MarginTop"              xml:space="preserve"><value>Nahoře</value></data>
+  <data name="TmDocumentEditor_MarginRight"            xml:space="preserve"><value>Vpravo</value></data>
+  <data name="TmDocumentEditor_MarginBottom"           xml:space="preserve"><value>Dole</value></data>
+  <data name="TmDocumentEditor_MarginLeft"             xml:space="preserve"><value>Vlevo</value></data>
+  <data name="TmDocumentEditor_HeaderDistance"         xml:space="preserve"><value>Vzdálenost hlavičky</value></data>
+  <data name="TmDocumentEditor_FooterDistance"         xml:space="preserve"><value>Vzdálenost patičky</value></data>
   <data name="TmDocumentEditor_CloseHeaderFooter"      xml:space="preserve"><value>Zavřít hlavičku a patičku</value></data>
   <data name="TmDocumentEditor_ImageProviderMissing"   xml:space="preserve"><value>Provider obrázků není nastaven.</value></data>
   <data name="TmDocumentEditor_ImagePasteRejected"     xml:space="preserve"><value>Vložený obrázek není povolený.</value></data>

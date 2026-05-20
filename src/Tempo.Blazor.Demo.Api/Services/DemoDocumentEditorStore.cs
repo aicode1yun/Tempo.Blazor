@@ -45,7 +45,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                 AltText = "Embedded evidence preview",
                 Caption = "Evidence image loaded from the Demo API",
                 Size = new DocumentImageSize { Width = 220, Height = 124 },
-                Alignment = DocumentImageAlignment.Center
+                Alignment = DocumentImageAlignment.Start,
+                FloatingLayout = CreateLeftWrappedImageLayout()
             }
         });
 
@@ -60,7 +61,8 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
                 AltText = "Provider-managed exhibit",
                 Caption = "Image resolved through IDocumentImageUrlResolver",
                 Size = new DocumentImageSize { Width = 240, Height = 135 },
-                Alignment = DocumentImageAlignment.Center
+                Alignment = DocumentImageAlignment.Start,
+                FloatingLayout = CreateLeftWrappedImageLayout()
             }
         });
 
@@ -123,6 +125,18 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Author = DemoAuthor
         }).GetAwaiter().GetResult();
     }
+
+    private static DocumentFloatingLayout CreateLeftWrappedImageLayout() =>
+        new()
+        {
+            Inline = false,
+            WrapMode = DocumentWrapMode.Square,
+            HorizontalPosition = DocumentImageHorizontalPosition.Left,
+            HorizontalRelativeTo = DocumentRelativePosition.Page,
+            VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+            DistanceRight = 16,
+            DistanceBottom = 12
+        };
 
     /// <summary>Saves a demo image asset.</summary>
     public async Task<DocumentImageAsset> SaveImageAsync(string fileName, string contentType, Stream stream, CancellationToken cancellationToken = default)

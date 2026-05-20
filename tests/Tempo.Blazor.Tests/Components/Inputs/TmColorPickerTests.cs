@@ -1,6 +1,7 @@
 using Bunit;
 using FluentAssertions;
 using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components.Web;
 using Tempo.Blazor.Abstractions.Models;
 using Tempo.Blazor.Components.Inputs;
 using Tempo.Blazor.Tests.Localization;
@@ -158,6 +159,26 @@ public class TmColorPickerTests : LocalizationTestBase
         cut.Find(".tm-color-picker-trigger").Click();
         cut.Find(".tm-color-palette-swatch").Click();
         cut.Find(".tm-color-picker-cancel").Click();
+
+        cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
+        changed.Should().BeNull();
+        cut.Find(".tm-color-picker-trigger-text").TextContent.Trim().Should().Be("#112233");
+    }
+
+    [Fact]
+    public void TmColorPicker_Escape_ClosesDropdownWithoutFiringValueChanged()
+    {
+        string? changed = null;
+        var cut = RenderComponent<TmColorPicker>(parameters =>
+        {
+            parameters.Add(p => p.Value, "#112233");
+            parameters.Add(p => p.ShowApplyButton, true);
+            parameters.Add(p => p.ValueChanged, EventCallback.Factory.Create<string?>(this, v => changed = v));
+        });
+
+        cut.Find(".tm-color-picker-trigger").Click();
+        cut.Find(".tm-color-palette-swatch").Click();
+        cut.Find(".tm-color-picker").KeyDown(new KeyboardEventArgs { Key = "Escape" });
 
         cut.FindAll(".tm-color-picker-dropdown").Should().BeEmpty();
         changed.Should().BeNull();

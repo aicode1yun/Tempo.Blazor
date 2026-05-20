@@ -57,6 +57,9 @@ public sealed class WysiwygEditorOptions
     /// <summary>Label for retrying a failed image load.</summary>
     public string ImageRetryLabel { get; set; } = "Retry";
 
+    /// <summary>Whether the host exposes provider-managed image assets that can be selected by the editor UI.</summary>
+    public bool HasImageAssetOptions { get; set; }
+
     /// <summary>Font families allowed for font family marks.</summary>
     public IReadOnlyList<DocumentFontFamily> FontFamilies { get; set; } = [];
 

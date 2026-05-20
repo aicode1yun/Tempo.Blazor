@@ -4,6 +4,7 @@
 {
     <aside class="tm-document-side-panel"
            data-testid="document-side-panel"
+           role="complementary"
            aria-label="@Loc["TmDocumentEditor_SidePanelLabel"]">
         <header class="tm-document-side-panel__header">
             <div class="tm-document-side-panel__tabs"
@@ -119,7 +120,7 @@
         <section id="@PanelId"
                  class="tm-document-side-panel__body"
                  role="tabpanel"
-                 aria-labelledby="@GetTabId(ActiveTab)"
+                 aria-labelledby="@GetTabId(EffectiveActiveTab)"
                  data-testid="document-side-panel-body">
             @GetActiveContent()
         </section>
@@ -203,11 +204,18 @@ else if (ShowEdgeToggle)
     /// <summary>Raised when the side panel should reopen.</summary>
     [Parameter] public EventCallback OnOpen { get; set; }
 
+    private DocumentSidePanelTab EffectiveActiveTab =>
+        IsTabAvailable(ActiveTab)
+            ? ActiveTab
+            : FirstAvailableTab();
+
     private Task SelectTabAsync(DocumentSidePanelTab tab)
-        => ActiveTabChanged.InvokeAsync(tab);
+        => IsTabAvailable(tab)
+            ? ActiveTabChanged.InvokeAsync(tab)
+            : Task.CompletedTask;
 
     private RenderFragment? GetActiveContent()
-        => ActiveTab switch
+        => EffectiveActiveTab switch
         {
             DocumentSidePanelTab.Comments => CommentsContent,
             DocumentSidePanelTab.Revisions => RevisionsContent,
@@ -222,10 +230,33 @@ else if (ShowEdgeToggle)
         => $"document-side-panel-tab-{tab.ToString().ToLowerInvariant()}";
 
     private string GetTabClass(DocumentSidePanelTab tab)
-        => ActiveTab == tab
+        => EffectiveActiveTab == tab
             ? "tm-document-side-panel__tab tm-document-side-panel__tab--active"
             : "tm-document-side-panel__tab";
 
     private string GetTabSelected(DocumentSidePanelTab tab)
-        => ActiveTab == tab ? "true" : "false";
+        => EffectiveActiveTab == tab ? "true" : "false";
+
+    private bool IsTabAvailable(DocumentSidePanelTab tab) =>
+        tab switch
+        {
+            DocumentSidePanelTab.Comments => ShowComments,
+            DocumentSidePanelTab.Revisions => ShowRevisions,
+            DocumentSidePanelTab.Versions => ShowVersions,
+            DocumentSidePanelTab.Properties => ShowProperties,
+            DocumentSidePanelTab.Outline => ShowOutline,
+            DocumentSidePanelTab.Pages => ShowPages,
+            _ => false
+        };
+
+    private DocumentSidePanelTab FirstAvailableTab()
+    {
+        if (ShowComments) return DocumentSidePanelTab.Comments;
+        if (ShowRevisions) return DocumentSidePanelTab.Revisions;
+        if (ShowVersions) return DocumentSidePanelTab.Versions;
+        if (ShowProperties) return DocumentSidePanelTab.Properties;
+        if (ShowOutline) return DocumentSidePanelTab.Outline;
+        if (ShowPages) return DocumentSidePanelTab.Pages;
+        return DocumentSidePanelTab.Properties;
+    }
 }

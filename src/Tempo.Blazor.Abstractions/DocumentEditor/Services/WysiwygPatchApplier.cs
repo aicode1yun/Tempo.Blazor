@@ -251,8 +251,7 @@ public sealed class WysiwygPatchApplier
         }
 
         var markType = ParseMarkType(patch.MarkType);
-        var anchorOffset = patch.Selection?.AnchorOffset ?? 0;
-        var focusOffset = patch.Selection?.FocusOffset ?? anchorOffset;
+        var (anchorOffset, focusOffset) = ResolveFormattingRangeOffsets(patch.Selection);
         var startOffset = Math.Min(anchorOffset, focusOffset);
         var endOffset = Math.Max(anchorOffset, focusOffset);
 
@@ -282,8 +281,7 @@ public sealed class WysiwygPatchApplier
         }
 
         var markType = ParseMarkType(patch.MarkType);
-        var anchorOffset = patch.Selection?.AnchorOffset ?? 0;
-        var focusOffset = patch.Selection?.FocusOffset ?? anchorOffset;
+        var (anchorOffset, focusOffset) = ResolveFormattingRangeOffsets(patch.Selection);
         var startOffset = Math.Min(anchorOffset, focusOffset);
         var endOffset = Math.Max(anchorOffset, focusOffset);
 
@@ -321,8 +319,7 @@ public sealed class WysiwygPatchApplier
             return;
         }
 
-        var anchorOffset = patch.Selection?.AnchorOffset ?? 0;
-        var focusOffset = patch.Selection?.FocusOffset ?? anchorOffset;
+        var (anchorOffset, focusOffset) = ResolveFormattingRangeOffsets(patch.Selection);
         var startOffset = Math.Min(anchorOffset, focusOffset);
         var endOffset = Math.Max(anchorOffset, focusOffset);
 
@@ -721,7 +718,6 @@ public sealed class WysiwygPatchApplier
     {
         var block = patch.Block ?? CreateDefaultBlock(DocumentBlockType.Paragraph, patch.HeadingLevel);
         block.Id = string.IsNullOrWhiteSpace(block.Id) ? Guid.NewGuid().ToString("N") : block.Id;
-        block.Type = DocumentBlockType.Paragraph;
         SanitizeBlock(block);
 
         if (!TryApplyBlockSplit(document, patch, block))
@@ -765,7 +761,23 @@ public sealed class WysiwygPatchApplier
         inlines.Clear();
         inlines.AddRange(split.Before);
 
-        block.Content = new ParagraphBlockContent { Inlines = split.After };
+        block.Content = block.Content switch
+        {
+            ListBlockContent list => new ListBlockContent
+            {
+                Ordered = list.Ordered,
+                IndentLevel = list.IndentLevel,
+                StartNumber = Math.Max(1, list.StartNumber),
+                Inlines = split.After
+            },
+            HeadingBlockContent heading => new HeadingBlockContent
+            {
+                Level = Math.Clamp(heading.Level, 1, 6),
+                Inlines = split.After
+            },
+            QuoteBlockContent => new QuoteBlockContent { Inlines = split.After },
+            _ => new ParagraphBlockContent { Inlines = split.After }
+        };
         var targetIndex = anchorIndex + 1;
         block.Order = CalculateOrder(blocks, targetIndex);
         blocks.Insert(targetIndex, block);
@@ -968,6 +980,13 @@ public sealed class WysiwygPatchApplier
         WysiwygSelectionSnapshot? selection)
     {
         if (selection is not null
+            && string.Equals(selection.Region, "TableCell", StringComparison.OrdinalIgnoreCase)
+            && FindTableCellById(document, selection.ActiveTableCellId, selection: null) is { } selectedCell)
+        {
+            return selectedCell.Blocks;
+        }
+
+        if (selection is not null
             && IsHeaderFooterRegion(selection)
             && !string.IsNullOrWhiteSpace(selection.HeaderFooterId)
             && DocumentHeaderFooterResolver.FindById(document, selection.HeaderFooterId) is { } headerFooter)
@@ -1156,7 +1175,33 @@ public sealed class WysiwygPatchApplier
         {
             TextRun text => text.Text,
             TokenRun token => string.IsNullOrWhiteSpace(token.DisplayName) ? token.Key : token.DisplayName,
+            DocumentFieldRun field => ResolveFieldDisplayText(field),
             DocumentNoteReferenceRun note => string.IsNullOrWhiteSpace(note.DisplayMarker) ? note.NoteId : note.DisplayMarker!,
+            _ => string.Empty
+        };
+    }
+
+    private static string ResolveFieldDisplayText(DocumentFieldRun field)
+    {
+        if (!string.IsNullOrWhiteSpace(field.DisplayText))
+        {
+            return field.DisplayText;
+        }
+
+        if (!string.IsNullOrWhiteSpace(field.FallbackText))
+        {
+            return field.FallbackText;
+        }
+
+        return field.FieldType switch
+        {
+            DocumentFieldType.PageNumber => "1",
+            DocumentFieldType.PageCount => "1",
+            DocumentFieldType.PageXOfY => "1 / 1",
+            DocumentFieldType.Date => DateTime.Today.ToShortDateString(),
+            DocumentFieldType.DocumentTitle => "Document title",
+            DocumentFieldType.Author => "Author",
+            DocumentFieldType.LastSaved => DateTime.Today.ToShortDateString(),
             _ => string.Empty
         };
     }
@@ -1171,6 +1216,23 @@ public sealed class WysiwygPatchApplier
         return Enum.TryParse<InlineMarkType>(markType, ignoreCase: true, out var result)
             ? result
             : InlineMarkType.Bold;
+    }
+
+    private static (int AnchorOffset, int FocusOffset) ResolveFormattingRangeOffsets(WysiwygSelectionSnapshot? selection)
+    {
+        if (selection is null)
+        {
+            return (0, 0);
+        }
+
+        var anchorOffset = selection.AnchorOffset;
+        var focusOffset = selection.FocusOffset;
+        var sameBlock = string.Equals(selection.AnchorBlockId, selection.FocusBlockId, StringComparison.Ordinal);
+        var hasBlockOffsets = selection.AnchorBlockOffset != 0 || selection.FocusBlockOffset != 0;
+
+        return sameBlock && hasBlockOffsets
+            ? (selection.AnchorBlockOffset, selection.FocusBlockOffset)
+            : (anchorOffset, focusOffset);
     }
 
     private static DocumentBlockType ParseBlockType(string? blockType)
@@ -1495,7 +1557,8 @@ public sealed class WysiwygPatchApplier
             InlineMarkType.FontFamily,
             InlineMarkType.FontSize,
             InlineMarkType.TextColor,
-            InlineMarkType.Highlight
+            InlineMarkType.Highlight,
+            InlineMarkType.Link
         };
         var currentOffset = 0;
         var newInlines = new List<InlineContent>();
@@ -1617,6 +1680,15 @@ public sealed class WysiwygPatchApplier
                 FallbackText = token.FallbackText,
                 Marks = token.Marks.ToList()
             },
+            DocumentFieldRun field => new DocumentFieldRun
+            {
+                Id = field.Id,
+                FieldType = field.FieldType,
+                Format = field.Format,
+                FallbackText = field.FallbackText,
+                DisplayText = field.DisplayText,
+                Marks = field.Marks.ToList()
+            },
             DocumentNoteReferenceRun note => new DocumentNoteReferenceRun
             {
                 Id = note.Id,
@@ -1666,6 +1738,9 @@ public sealed class WysiwygPatchApplier
                 break;
             case TokenRun tokenRun:
                 tokenRun.Key = slice;
+                break;
+            case DocumentFieldRun fieldRun:
+                fieldRun.DisplayText = slice;
                 break;
             case DocumentNoteReferenceRun noteRun:
                 noteRun.NoteId = slice;

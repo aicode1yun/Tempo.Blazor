@@ -361,7 +361,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
 
         var storedComment = NormalizeComment(Clone(comment));
         stored.Document.Comments.Add(storedComment);
-        StoreDocument(stored.Document);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.FromResult(Clone(storedComment));
     }
 
@@ -380,7 +380,29 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         var comment = stored.Document.Comments.First(item => item.Id == commentId);
         var storedEntry = NormalizeCommentEntry(Clone(entry));
         comment.Entries.Add(storedEntry);
-        StoreDocument(stored.Document);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
+        return Task.FromResult(Clone(comment));
+    }
+
+    /// <inheritdoc />
+    public virtual Task<DocumentComment> UpdateCommentEntryAsync(
+        string documentId,
+        string commentId,
+        string entryId,
+        string text,
+        DocumentEditorAuthor updatedBy,
+        CancellationToken cancellationToken = default)
+    {
+        if (!_documents.TryGetValue(documentId, out var stored))
+        {
+            throw new KeyNotFoundException($"Document '{documentId}' was not found.");
+        }
+
+        var comment = stored.Document.Comments.First(item => item.Id == commentId);
+        var entry = comment.Entries.First(item => item.Id == entryId);
+        entry.Text = text.Trim();
+        entry.ModifiedAt = DateTimeOffset.UtcNow;
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.FromResult(Clone(comment));
     }
 
@@ -400,7 +422,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         comment.Status = DocumentCommentStatus.Resolved;
         comment.ResolvedAt = DateTimeOffset.UtcNow;
         comment.ResolvedBy = resolvedBy;
-        StoreDocument(stored.Document);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.FromResult(Clone(comment));
     }
 
@@ -420,7 +442,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         comment.Status = DocumentCommentStatus.Open;
         comment.ResolvedAt = null;
         comment.ResolvedBy = null;
-        StoreDocument(stored.Document);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.FromResult(Clone(comment));
     }
 
@@ -437,7 +459,7 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         }
 
         stored.Document.Comments.RemoveAll(item => item.Id == commentId);
-        StoreDocument(stored.Document);
+        StoreDocument(stored.Document, stored.ConcurrencyToken);
         return Task.CompletedTask;
     }
 
@@ -448,13 +470,13 @@ public class InMemoryDocumentEditorProvider : IDocumentEditorProvider, IDocument
         return Task.CompletedTask;
     }
 
-    private void StoreDocument(DocumentEditorDocument document)
+    private void StoreDocument(DocumentEditorDocument document, string? concurrencyToken = null)
     {
         var clone = Clone(document);
         _documents[clone.DocumentId] = new StoredDocument(
             clone,
             DocumentEditorJson.Serialize(clone),
-            CreateConcurrencyToken());
+            concurrencyToken ?? CreateConcurrencyToken());
     }
 
     private static string CreateConcurrencyToken()

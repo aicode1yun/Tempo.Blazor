@@ -62,6 +62,10 @@
     color: var(--tm-color-text, #1f2937);
 }
 
+.tm-document-wysiwyg-host [data-inline-id]:not(.tm-wysiwyg-field):not(.tm-wysiwyg-token) {
+    white-space: break-spaces;
+}
+
 .tm-document-wysiwyg-host .tm-wysiwyg-block:last-child {
     margin-bottom: 0;
 }

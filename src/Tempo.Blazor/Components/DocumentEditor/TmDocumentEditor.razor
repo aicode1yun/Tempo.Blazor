@@ -53,15 +53,16 @@
                                      IsDirty="@_isDirty"
                                      SaveMessage="@_saveMessage"
                                      LastSavedAt="@_lastSavedAt"
-                                     CanUndo="@_wysiwygUndoState.CanUndo"
-                                     CanRedo="@_wysiwygUndoState.CanRedo"
-                                     NextUndoDescription="@_wysiwygUndoState.NextUndoDescription"
-                                     NextRedoDescription="@_wysiwygUndoState.NextRedoDescription"
+                                     CanUndo="@EffectiveUndoState.CanUndo"
+                                     CanRedo="@EffectiveUndoState.CanRedo"
+                                     NextUndoDescription="@EffectiveUndoState.NextUndoDescription"
+                                     NextRedoDescription="@EffectiveUndoState.NextRedoDescription"
                                      TrackChangesEnabled="@EffectiveTrackChangesEnabled"
                                      ReviewDisplayMode="@_reviewDisplayMode"
                                      BoldState="@_formattingState.Bold"
                                      ItalicState="@_formattingState.Italic"
                                      UnderlineState="@_formattingState.Underline"
+                                     StrikethroughState="@_formattingState.Strikethrough"
                                      ParagraphAlignment="@_formattingState.ParagraphAlignment"
                                      ParagraphAlignmentMixed="@_formattingState.ParagraphAlignmentMixed"
                                      CurrentFontFamily="@_formattingState.FontFamily"
@@ -74,6 +75,13 @@
                                      HighlightColorMixed="@_formattingState.HighlightColorMixed"
                                      CurrentLineSpacing="@_formattingState.LineSpacing"
                                      LineSpacingMixed="@_formattingState.LineSpacingMixed"
+                                     CurrentSpacingBefore="@_formattingState.SpacingBefore"
+                                     SpacingBeforeMixed="@_formattingState.SpacingBeforeMixed"
+                                     CurrentSpacingAfter="@_formattingState.SpacingAfter"
+                                     SpacingAfterMixed="@_formattingState.SpacingAfterMixed"
+                                     BulletListActive="@_formattingState.IsBulletList"
+                                     NumberedListActive="@_formattingState.IsNumberedList"
+                                     ListMixed="@_formattingState.ListMixed"
                                      FontFamilies="@_fontFamilies"
                                      TemplatePreviewEnabled="@_templatePreviewEnabled"
                                      CanPreviewTemplate="@CanPreviewTemplate"
@@ -85,6 +93,9 @@
                                      IsExportingDocx="@_isExportingDocx"
                                      CanCompareDocuments="@CanCompareDocuments"
                                      ActiveRegion="@_activeWysiwygRegion"
+                                     ActiveHeaderFooterScopeLabel="@ActiveHeaderFooterScopeLabel"
+                                     PageSettings="@ActivePageSettings"
+                                     PageSettingsChanged="SetPageSettingsAsync"
                                      DifferentFirstPage="@DifferentFirstPageHeaderFooter"
                                      DifferentFirstPageChanged="SetDifferentFirstPageHeaderFooterAsync"
                                      DifferentOddAndEvenPages="@DifferentOddAndEvenHeaderFooter"
@@ -101,6 +112,7 @@
                                      OnBold="() => ToggleInlineMarkAsync(InlineMarkType.Bold)"
                                      OnItalic="() => ToggleInlineMarkAsync(InlineMarkType.Italic)"
                                      OnUnderline="() => ToggleInlineMarkAsync(InlineMarkType.Underline)"
+                                     OnStrikethrough="() => ToggleInlineMarkAsync(InlineMarkType.Strikethrough)"
                                      OnFontFamilyChanged="ApplyFontFamilyAsync"
                                      OnFontSizeChanged="ApplyFontSizeAsync"
                                      OnTextColorChanged="ApplyTextColorAsync"
@@ -111,8 +123,11 @@
                                      OnSpacingAfterChanged="ApplySpacingAfterAsync"
                                      OnIncreaseIndent="IncreaseParagraphIndentAsync"
                                      OnDecreaseIndent="DecreaseParagraphIndentAsync"
+                                     OnToggleBulletList="ToggleBulletListAsync"
+                                     OnToggleNumberedList="ToggleNumberedListAsync"
                                      OnLink="ApplyLinkAsync"
                                      OnLinkApplied="ApplyLinkAsync"
+                                     OnLinkRemoved="RemoveLinkAsync"
                                      LinkInfoProvider="GetCurrentLinkInfoAsync"
                                      OnClearFormatting="ClearInlineFormattingAsync"
                                      OnToggleInsert="ToggleInsertPanelAsync"
@@ -120,14 +135,24 @@
                                      OnInsertTableWithDimensions="d => InsertTableAsync(d.Rows, d.Columns)"
                                      OnInsertImage="OpenImageDialogAsync"
                                      CanUploadImages="@(ImageProvider is not null)"
-                                     CanBrowseImageAssets="false"
+                                     CanBrowseImageAssets="@(ImageAssetOptions.Count > 0)"
                                      OnInsertImageUrl="OpenImageDialogAsync"
                                      OnInsertImageUpload="UploadDemoImageAsync"
+                                     OnInsertImageAsset="InsertImageAssetAsync"
                                      OnInsertPageBreak="InsertPageBreakAsync"
+                                     OnInsertFootnote="InsertFootnoteAsync"
+                                     OnInsertEndnote="InsertEndnoteAsync"
+                                     OnInsertPageNumber="InsertPageNumberFieldAsync"
+                                     OnInsertPageCount="InsertPageCountFieldAsync"
+                                     OnInsertPageXOfY="InsertPageXOfYFieldAsync"
+                                     OnInsertDateField="InsertDateFieldAsync"
+                                     OnInsertDocumentTitleField="InsertDocumentTitleFieldAsync"
+                                     OnInsertAuthorField="InsertAuthorFieldAsync"
+                                     OnApplyHeaderFooterPreset="ApplyHeaderFooterPresetAsync"
                                      OnToggleTrackChanges="ToggleTrackChanges"
                                      ReviewDisplayModeChanged="SetReviewDisplayModeAsync"
                                      CanComment="@CanUseComments"
-                                     CanTrackChanges="@(CanEditDocument && !IsVersionPreview && !IsTemplatePreview)"
+                                     CanTrackChanges="@(CanEditDocument && !IsVersionPreview && !IsTemplatePreview && IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges))"
                                      OnAddComment="BeginCommentFromToolbarAsync"
                                      OnOpenComments="OpenCommentsPanelAsync"
                                      OnOpenRevisions="OpenRevisionsPanelAsync"
@@ -286,6 +311,7 @@
                                                ImageUrlResolver="@ImageUrlResolver"
                                                ImageProvider="@ImageProvider"
                                                ImageValidation="@ImageValidation"
+                                               ImageAssetOptions="@ImageAssetOptions"
                                                AllowOfflineClipboardImages="@OfflineEnabled"
                                                TokenProvider="@TokenProvider"
                                                MentionProvider="@MentionProvider"
@@ -314,6 +340,7 @@
                                                UndoRequested="UndoAsync"
                                                RedoRequested="RedoAsync"
                                                SaveRequested="SaveAsync"
+                                               KeyboardCommandRequested="HandleWysiwygKeyboardCommandRequestedAsync"
                                                ImageUploadStateChanged="HandleImageUploadStateChangedAsync"
                                                RuntimeRecovered="HandleRuntimeRecoveredAsync"
                                                RuntimeRecoveryFailed="HandleRuntimeRecoveryFailedAsync"
@@ -329,8 +356,8 @@
             <TmDocumentSidePanel IsOpen="@_sidePanelOpen"
                                  ActiveTab="@ActiveSidePanelTab"
                                  ActiveTabChanged="SetSidePanelTabAsync"
-                                 ShowComments="@ShowComments"
-                                 ShowRevisions="true"
+                                 ShowComments="@IsFeatureEnabled(DocumentEditorFeatureNames.Comments)"
+                                 ShowRevisions="@IsFeatureEnabled(DocumentEditorFeatureNames.TrackChanges)"
                                  ShowVersions="@ShowVersionHistory"
                                  ShowProperties="true"
                                  ShowOutline="true"
@@ -362,6 +389,7 @@
                                            OnCreateComment="CreateCommentAsync"
                                            OnCancelComment="CancelCommentComposer"
                                            OnReplyComment="ReplyToCommentAsync"
+                                           OnEditComment="EditCommentAsync"
                                            OnResolveComment="ResolveCommentAsync"
                                            OnReopenComment="ReopenCommentAsync"
                                            OnDeleteComment="DeleteCommentAsync"
@@ -407,7 +435,8 @@
                         <TmDocumentImageInspector Image="activeImage"
                                                   AltTextChanged="SetActiveImageAltTextFromPanelAsync"
                                                   ToggleCaption="ToggleActiveImageCaptionFromPanelAsync"
-                                                  LinkChanged="SetActiveImageLinkFromPanelAsync"
+                                                  CaptionChanged="SetActiveImageCaptionFromPanelAsync"
+                                                  UrlChanged="SetActiveImageUrlFromPanelAsync"
                                                   WrapModeChanged="SetActiveImageWrapModeFromPanelAsync"
                                                   AlignmentChanged="SetActiveImageAlignmentFromPanelAsync"
                                                   SizeChanged="SetActiveImageSizeFromPanelAsync" />
@@ -470,23 +499,61 @@
                          role="toolbar"
                          aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
                          data-testid="document-mini-toolbar"
-                         @onpointerdown:preventDefault="true">
+                         @onpointerdown:preventDefault="true"
+                         @onmousedown:preventDefault="true">
                     <button type="button"
                             data-testid="document-mini-bold"
                             aria-label="@Loc["TmDocumentEditor_Bold"]"
-                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "bold")'>
+                            aria-pressed="@FormattingAriaPressed(_formattingState.Bold)"
+                            disabled="@(!IsCommandEnabled("bold"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "bold", null, false)'>
                         <TmIcon Name="bold" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
                             data-testid="document-mini-italic"
                             aria-label="@Loc["TmDocumentEditor_Italic"]"
-                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "italic")'>
+                            aria-pressed="@FormattingAriaPressed(_formattingState.Italic)"
+                            disabled="@(!IsCommandEnabled("italic"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "italic", null, false)'>
                         <TmIcon Name="italic" Size="IconSize.Sm" />
+                    </button>
+                    <button type="button"
+                            data-testid="document-mini-underline"
+                            aria-label="@Loc["TmDocumentEditor_Underline"]"
+                            aria-pressed="@FormattingAriaPressed(_formattingState.Underline)"
+                            disabled="@(!IsCommandEnabled("underline"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "underline", null, false)'>
+                        <TmIcon Name="underline" Size="IconSize.Sm" />
+                    </button>
+                    <button type="button"
+                            data-testid="document-mini-strikethrough"
+                            aria-label="@Loc["TmDocumentEditor_Strikethrough"]"
+                            aria-pressed="@FormattingAriaPressed(_formattingState.Strikethrough)"
+                            disabled="@(!IsCommandEnabled("strikethrough"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "strikethrough", null, false)'>
+                        <TmIcon Name="strikethrough" Size="IconSize.Sm" />
+                    </button>
+                    <button type="button"
+                            data-testid="document-mini-text-color"
+                            aria-label="@Loc["TmDocumentEditor_TextColor"]"
+                            title="@Loc["TmDocumentEditor_TextColor"]"
+                            disabled="@(!IsCommandEnabled("textColor"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "textColor", MiniToolbarTextColor, false)'>
+                        <TmIcon Name="palette" Size="IconSize.Sm" />
+                    </button>
+                    <button type="button"
+                            data-testid="document-mini-highlight"
+                            aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
+                            title="@Loc["TmDocumentEditor_HighlightColor"]"
+                            disabled="@(!IsCommandEnabled("highlightColor"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "highlightColor", MiniToolbarHighlightColor, false)'>
+                        <TmIcon Name="highlighter" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
                             data-testid="document-mini-link"
                             aria-label="@Loc["TmDocumentEditor_Link"]"
-                            @onclick="() => RunFloatingSelectionCommandAsync(_miniToolbar.Selection, ApplyDefaultFloatingLinkAsync)">
+                            disabled="@(!IsCommandEnabled("link"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "link", new WysiwygLinkPayload { Href = "https://example.com" })'>
                         <TmIcon Name="link" Size="IconSize.Sm" />
                     </button>
                     <button type="button"
@@ -496,7 +563,27 @@
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "addComment")'>
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
                     </button>
+                    <button type="button"
+                            data-testid="document-mini-clear-formatting"
+                            aria-label="@Loc["TmDocumentEditor_ClearFormatting"]"
+                            title="@Loc["TmDocumentEditor_ClearFormatting"]"
+                            disabled="@(!IsCommandEnabled("clearFormatting"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "clearFormatting", null, false)'>
+                        <TmIcon Name="eraser" Size="IconSize.Sm" />
+                    </button>
                 </section>
+            }
+
+            @if (_textContextMenu is not null || _tableContextMenu is not null)
+            {
+                <button type="button"
+                        class="tm-document-editor__floating-backdrop"
+                        aria-label="@Loc["TmDocumentEditor_Close"]"
+                        data-testid="document-floating-backdrop"
+                        @onclick="CloseFloatingUi"
+                        @oncontextmenu:preventDefault="true"
+                        @oncontextmenu="CloseFloatingUi">
+                </button>
             }
 
             @if (_textContextMenu is not null)
@@ -506,7 +593,35 @@
                          role="menu"
                          aria-label="@Loc["TmDocumentEditor_TextContextMenuLabel"]"
                          data-testid="document-text-context-menu"
-                         @onpointerdown:preventDefault="true">
+                         @onpointerdown:preventDefault="true"
+                         @onpointerdown:stopPropagation="true"
+                         @onclick:stopPropagation="true">
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-cut"
+                            disabled="true"
+                            aria-disabled="true">
+                        <TmIcon Name="scissors" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Cut"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-copy"
+                            disabled="@(!CanCopyTextContextSelection)"
+                            aria-disabled="@((!CanCopyTextContextSelection).ToString().ToLowerInvariant())"
+                            @onclick="CopyTextContextSelectionAsync">
+                        <TmIcon Name="copy" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Copy"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-paste"
+                            disabled="true"
+                            aria-disabled="true">
+                        <TmIcon Name="clipboard" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Paste"]</span>
+                    </button>
+                    <div class="tm-document-editor__context-separator" role="separator"></div>
                     <button type="button"
                             role="menuitem"
                             data-testid="document-context-bold"
@@ -525,11 +640,46 @@
                     </button>
                     <button type="button"
                             role="menuitem"
+                            data-testid="document-context-underline"
+                            disabled="@(!IsCommandEnabled("underline"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "underline")'>
+                        <TmIcon Name="underline" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Underline"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-link"
+                            disabled="@(!IsCommandEnabled("link"))"
+                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "link", new WysiwygLinkPayload { Href = "https://example.com" })'>
+                        <TmIcon Name="link" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_Link"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
                             data-testid="document-context-comment"
                             disabled="@(!IsCommandEnabled("addComment", CanUseComments))"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_textContextMenu.Selection, "addComment")'>
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_AddComment"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-remove-link"
+                            disabled="@(!IsCommandEnabled("link"))"
+                            @onclick="RemoveLinkFromTextContextAsync">
+                        <TmIcon Name="unlink" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_RemoveLink"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-context-clear-formatting"
+                            disabled="@(!IsCommandEnabled("clearFormatting"))"
+                            @onpointerdown="ClearFormattingFromTextContextAsync"
+                            @onpointerdown:preventDefault="true"
+                            @onpointerdown:stopPropagation="true"
+                            @onclick="ClearFormattingFromTextContextAsync">
+                        <TmIcon Name="eraser" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_ClearFormatting"]</span>
                     </button>
                     @if (IsPageBreakContextMenu)
                     {
@@ -618,6 +768,34 @@
                             @onclick="DeleteTableColumnFromContextAsync">
                         <TmIcon Name="delete-column" Size="IconSize.Sm" />
                         <span>@Loc["TmDocumentEditor_DeleteColumn"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-table-delete-table"
+                            @onclick="DeleteTableFromContextAsync">
+                        <TmIcon Name="trash-2" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_DeleteTable"]</span>
+                    </button>
+                    <div class="tm-document-editor__context-separator" role="separator"></div>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-table-cell-properties"
+                            @onpointerdown="OpenCellPropertiesFromContextAsync"
+                            @onpointerdown:preventDefault="true"
+                            @onpointerdown:stopPropagation="true"
+                            @onclick="OpenCellPropertiesFromContextAsync">
+                        <TmIcon Name="square" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_CellProperties"]</span>
+                    </button>
+                    <button type="button"
+                            role="menuitem"
+                            data-testid="document-table-table-properties"
+                            @onpointerdown="OpenTablePropertiesFromContextAsync"
+                            @onpointerdown:preventDefault="true"
+                            @onpointerdown:stopPropagation="true"
+                            @onclick="OpenTablePropertiesFromContextAsync">
+                        <TmIcon Name="table-properties" Size="IconSize.Sm" />
+                        <span>@Loc["TmDocumentEditor_TableProperties"]</span>
                     </button>
                 </section>
             }

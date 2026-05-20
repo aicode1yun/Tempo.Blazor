@@ -296,6 +296,38 @@ public class WysiwygPatchApplierTests
         inlines[2].Should().BeOfType<TextRun>().Which.Text.Should().Be("world");
     }
 
+    [Fact]
+    public void InsertInline_HeaderFooterField_PreservesAutomaticFieldRun()
+    {
+        var document = CreateDocument(Paragraph("body-1", "Body"));
+        var header = AddHeaderFooter(document, DocumentHeaderFooterType.Header, DocumentHeaderFooterScope.Primary, "header-primary", "header-block", "Header ");
+
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertInline",
+            Inline = new DocumentFieldRun
+            {
+                FieldType = DocumentFieldType.PageXOfY,
+                FallbackText = "1 / 1"
+            },
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Header",
+                HeaderFooterId = header.Id,
+                AnchorBlockId = "header-block",
+                AnchorInlineId = "i-header-block",
+                AnchorOffset = 7
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        var inlines = ((ParagraphBlockContent)header.Blocks[0].Content).Inlines;
+        inlines.Should().HaveCount(2);
+        inlines[0].Should().BeOfType<TextRun>().Which.Text.Should().Be("Header ");
+        inlines[1].Should().BeOfType<DocumentFieldRun>().Which.FieldType.Should().Be(DocumentFieldType.PageXOfY);
+    }
+
     // ── DeleteRange ──────────────────────────────────────────────────────────
 
     [Fact]
@@ -1482,6 +1514,80 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
+    public void SetMarks_FontSize_PreservesExistingFontFamily()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontFamily),
+            Data = "Georgia, serif",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontSize),
+            Data = "24pt",
+            Selection = Selection("b1", "i-b1", 0, 5)
+        });
+
+        var run = GetInlines(document, "b1").OfType<TextRun>().Single();
+        run.Marks.Should().Contain(mark =>
+            mark.Type == InlineMarkType.FontFamily && mark.Value == "Georgia, serif");
+        run.Marks.Should().Contain(mark =>
+            mark.Type == InlineMarkType.FontSize && mark.Value == "24pt");
+    }
+
+    [Fact]
+    public void SetMarks_FontSize_UsesBlockOffsetsAfterInlineSplit()
+    {
+        var document = CreateDocument(Paragraph("b1", "Hello world"));
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontFamily),
+            Data = "Georgia, serif",
+            Selection = Selection("b1", "i-b1", 3, 8)
+        });
+
+        var markedRun = GetInlines(document, "b1")
+            .OfType<TextRun>()
+            .Single(run => run.Text == "lo wo");
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "SetMarks",
+            MarkType = nameof(InlineMarkType.FontSize),
+            Data = "24pt",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = markedRun.Id,
+                AnchorOffset = 0,
+                AnchorBlockOffset = 3,
+                FocusBlockId = "b1",
+                FocusInlineId = markedRun.Id,
+                FocusOffset = markedRun.Text.Length,
+                FocusBlockOffset = 8,
+                IsCollapsed = false
+            }
+        });
+
+        markedRun = GetInlines(document, "b1")
+            .OfType<TextRun>()
+            .Single(run => run.Text == "lo wo");
+        markedRun.Marks.Should().Contain(mark =>
+            mark.Type == InlineMarkType.FontFamily && mark.Value == "Georgia, serif");
+        markedRun.Marks.Should().Contain(mark =>
+            mark.Type == InlineMarkType.FontSize && mark.Value == "24pt");
+        GetInlines(document, "b1").OfType<TextRun>().Single(run => run.Text == "Hel").Marks.Should().BeEmpty();
+        GetInlines(document, "b1").OfType<TextRun>().Single(run => run.Text == "rld").Marks.Should().BeEmpty();
+    }
+
+    [Fact]
     public void SetMarks_Link_PersistsSafeHrefAndTitle()
     {
         var document = CreateDocument(Paragraph("b1", "Hello"));
@@ -1521,7 +1627,7 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
-    public void ClearFormatting_RemovesStyleMarksButKeepsLinkAndRevision()
+    public void ClearFormatting_RemovesInlineFormattingAndLinkButKeepsRevision()
     {
         var document = CreateDocument(Paragraph("b1", "Hello"));
         var run = GetInlines(document, "b1").OfType<TextRun>().Single();
@@ -1547,10 +1653,10 @@ public class WysiwygPatchApplierTests
             InlineMarkType.Bold,
             InlineMarkType.FontFamily,
             InlineMarkType.TextColor,
-            InlineMarkType.Highlight
+            InlineMarkType.Highlight,
+            InlineMarkType.Link
         };
         run.Marks.Should().NotContain(mark => removedTypes.Contains(mark.Type));
-        run.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Link);
         run.Marks.Should().Contain(mark => mark.Type == InlineMarkType.Revision);
     }
 

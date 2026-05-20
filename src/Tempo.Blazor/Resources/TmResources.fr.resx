@@ -2387,16 +2387,20 @@
   <data name="TmDocumentEditor_Bold"                   xml:space="preserve"><value>Gras</value></data>
   <data name="TmDocumentEditor_Italic"                 xml:space="preserve"><value>Italique</value></data>
   <data name="TmDocumentEditor_Underline"              xml:space="preserve"><value>Souligné</value></data>
+  <data name="TmDocumentEditor_Strikethrough"          xml:space="preserve"><value>Barré</value></data>
   <data name="TmDocumentEditor_FontFamily"             xml:space="preserve"><value>Police</value></data>
   <data name="TmDocumentEditor_FontFamilyDefault"      xml:space="preserve"><value>Police par défaut</value></data>
   <data name="TmDocumentEditor_FontSize"               xml:space="preserve"><value>Taille</value></data>
   <data name="TmDocumentEditor_FontColor"              xml:space="preserve"><value>Couleur du texte</value></data>
+  <data name="TmDocumentEditor_TextColor"              xml:space="preserve"><value>Couleur du texte</value></data>
   <data name="TmDocumentEditor_HighlightColor"         xml:space="preserve"><value>Surlignage</value></data>
   <data name="TmDocumentEditor_Link"                   xml:space="preserve"><value>Lien</value></data>
   <data name="TmDocumentEditor_LinkUrl"                xml:space="preserve"><value>URL du lien</value></data>
   <data name="TmDocumentEditor_LinkTitle"              xml:space="preserve"><value>Titre du lien</value></data>
   <data name="TmDocumentEditor_LinkInvalidUrl"         xml:space="preserve"><value>Saisissez une URL sûre : http, https, mailto, tel, /chemin ou #ancre.</value></data>
   <data name="TmDocumentEditor_ApplyLink"              xml:space="preserve"><value>Appliquer le lien</value></data>
+  <data name="TmDocumentEditor_RemoveLink"             xml:space="preserve"><value>Supprimer le lien</value></data>
+  <data name="TmDocumentEditor_MixedFormatting"        xml:space="preserve"><value>Mixte</value></data>
   <data name="TmDocumentEditor_ApplyColor"             xml:space="preserve"><value>Appliquer la couleur</value></data>
   <data name="TmDocumentEditor_CancelColor"            xml:space="preserve"><value>Annuler</value></data>
   <data name="TmDocumentEditor_Cancel"                 xml:space="preserve"><value>Annuler</value></data>
@@ -2459,6 +2463,10 @@
   <data name="TmDocumentEditor_CommentResolveFailed"   xml:space="preserve"><value>Impossible de résoudre le commentaire.</value></data>
   <data name="TmDocumentEditor_CommentReopenedMessage" xml:space="preserve"><value>Commentaire rouvert</value></data>
   <data name="TmDocumentEditor_CommentReopenFailed"    xml:space="preserve"><value>Impossible de rouvrir le commentaire.</value></data>
+  <data name="TmDocumentEditor_EditComment"            xml:space="preserve"><value>Modifier</value></data>
+  <data name="TmDocumentEditor_SaveComment"            xml:space="preserve"><value>Enregistrer</value></data>
+  <data name="TmDocumentEditor_CommentEdited"          xml:space="preserve"><value>Commentaire mis à jour</value></data>
+  <data name="TmDocumentEditor_CommentEditFailed"      xml:space="preserve"><value>Impossible de mettre à jour le commentaire.</value></data>
   <data name="TmDocumentEditor_DeleteComment"          xml:space="preserve"><value>Supprimer</value></data>
   <data name="TmDocumentEditor_CommentDeleted"         xml:space="preserve"><value>Commentaire supprimé</value></data>
   <data name="TmDocumentEditor_CommentDeleteFailed"    xml:space="preserve"><value>Impossible de supprimer le commentaire.</value></data>
@@ -2636,6 +2644,8 @@
   <data name="TmDocumentEditor_ListTools"              xml:space="preserve"><value>Outils de liste</value></data>
   <data name="TmDocumentEditor_DecreaseIndent"         xml:space="preserve"><value>Diminuer le retrait</value></data>
   <data name="TmDocumentEditor_IncreaseIndent"         xml:space="preserve"><value>Augmenter le retrait</value></data>
+  <data name="TmDocumentEditor_BulletedList"           xml:space="preserve"><value>Liste à puces</value></data>
+  <data name="TmDocumentEditor_NumberedList"           xml:space="preserve"><value>Liste numérotée</value></data>
   <data name="TmDocumentEditor_EditListItem"           xml:space="preserve"><value>Modifier l'élément de liste</value></data>
   <data name="TmDocumentEditor_EditQuote"              xml:space="preserve"><value>Modifier la citation</value></data>
   <data name="TmDocumentEditor_TableTools"             xml:space="preserve"><value>Outils de tableau</value></data>
@@ -2654,6 +2664,7 @@
   <data name="TmDocumentEditor_InsertRow"              xml:space="preserve"><value>Insérer une ligne en dessous</value></data>
   <data name="TmDocumentEditor_InsertColumnBefore"     xml:space="preserve"><value>Insérer une colonne à gauche</value></data>
   <data name="TmDocumentEditor_InsertColumn"           xml:space="preserve"><value>Insérer une colonne à droite</value></data>
+  <data name="TmDocumentEditor_DeleteTable"            xml:space="preserve"><value>Supprimer le tableau</value></data>
   <data name="TmDocumentEditor_MergeCells"             xml:space="preserve"><value>Fusionner les cellules</value></data>
   <data name="TmDocumentEditor_TableProperties"        xml:space="preserve"><value>Propriétés du tableau</value></data>
   <data name="TmDocumentEditor_CellProperties"         xml:space="preserve"><value>Propriétés de la cellule</value></data>
@@ -2698,9 +2709,11 @@
   <data name="TmDocumentEditor_Footer"                 xml:space="preserve"><value>Pied de page</value></data>
   <data name="TmDocumentEditor_Notes"                  xml:space="preserve"><value>Notes</value></data>
   <data name="TmDocumentEditor_InsertFootnote"         xml:space="preserve"><value>Note de bas de page</value></data>
+  <data name="TmDocumentEditor_FootnotePlaceholder"    xml:space="preserve"><value>Texte de la note de bas de page</value></data>
   <data name="TmDocumentEditor_TableOfContents"        xml:space="preserve"><value>Table des matières</value></data>
   <data name="TmDocumentEditor_ExportPdf"              xml:space="preserve"><value>Exporter en PDF</value></data>
   <data name="TmDocumentEditor_InsertEndnote"          xml:space="preserve"><value>Note de fin</value></data>
+  <data name="TmDocumentEditor_EndnotePlaceholder"     xml:space="preserve"><value>Texte de la note de fin</value></data>
   <data name="TmDocumentEditor_Footnote"               xml:space="preserve"><value>Note de bas de page</value></data>
   <data name="TmDocumentEditor_Endnote"                xml:space="preserve"><value>Note de fin</value></data>
   <data name="TmDocumentEditor_Revisions"              xml:space="preserve"><value>Révisions</value></data>
@@ -2728,6 +2741,18 @@
   <data name="TmDocumentEditor_UploadImage"            xml:space="preserve"><value>Téléverser l'image</value></data>
   <data name="TmDocumentEditor_DifferentFirstPage"     xml:space="preserve"><value>Première page différente</value></data>
   <data name="TmDocumentEditor_DifferentOddEven"       xml:space="preserve"><value>Pages paires et impaires différentes</value></data>
+  <data name="TmDocumentEditor_HeaderFooterFields"     xml:space="preserve"><value>Champs d'en-tête et pied de page</value></data>
+  <data name="TmDocumentEditor_InsertPageNumber"       xml:space="preserve"><value>Insérer le numéro de page</value></data>
+  <data name="TmDocumentEditor_InsertPageCount"        xml:space="preserve"><value>Insérer le nombre de pages</value></data>
+  <data name="TmDocumentEditor_InsertPageXOfY"         xml:space="preserve"><value>Insérer page X sur Y</value></data>
+  <data name="TmDocumentEditor_InsertDateField"        xml:space="preserve"><value>Insérer la date</value></data>
+  <data name="TmDocumentEditor_InsertDocumentTitleField" xml:space="preserve"><value>Insérer le titre du document</value></data>
+  <data name="TmDocumentEditor_PageNumber"             xml:space="preserve"><value>Numéro de page</value></data>
+  <data name="TmDocumentEditor_TotalPages"             xml:space="preserve"><value>Nombre de pages</value></data>
+  <data name="TmDocumentEditor_PageXOfY"               xml:space="preserve"><value>Page X sur Y</value></data>
+  <data name="TmDocumentEditor_FieldDate"              xml:space="preserve"><value>Date</value></data>
+  <data name="TmDocumentEditor_DocumentTitle"          xml:space="preserve"><value>Titre du document</value></data>
+  <data name="TmDocumentEditor_Author"                 xml:space="preserve"><value>Auteur</value></data>
   <data name="TmDocumentEditor_CloseHeaderFooter"      xml:space="preserve"><value>Fermer l'en-tête et le pied de page</value></data>
   <data name="TmDocumentEditor_ImageProviderMissing"   xml:space="preserve"><value>Provider d'image non configuré.</value></data>
   <data name="TmDocumentEditor_ImagePasteRejected"     xml:space="preserve"><value>L'image collée n'est pas autorisée.</value></data>

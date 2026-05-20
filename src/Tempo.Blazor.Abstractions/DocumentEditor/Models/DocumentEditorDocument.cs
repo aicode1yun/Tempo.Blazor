@@ -161,6 +161,12 @@ public class DocumentPageSettings
 
     /// <summary>Whether pages are landscape instead of portrait.</summary>
     public bool Landscape { get; set; }
+
+    /// <summary>Header distance from the top edge of the page in points.</summary>
+    public double HeaderDistanceFromTop { get; set; } = 36;
+
+    /// <summary>Footer distance from the bottom edge of the page in points.</summary>
+    public double FooterDistanceFromBottom { get; set; } = 36;
 }
 
 /// <summary>Physical page size in points.</summary>

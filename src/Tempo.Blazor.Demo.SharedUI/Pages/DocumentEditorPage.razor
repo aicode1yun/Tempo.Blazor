@@ -185,12 +185,14 @@
                   ReadOnly="@_readOnly"
                   ImageUrlResolver="@ImageResolver"
                   ImageProvider="@DemoImageProvider"
+                  ImageAssetOptions="@DemoImageAssets"
                   TokenProvider="@TokenProvider"
                   MentionProvider="@MentionProvider"
                   TokenValueProvider="@TokenProvider"
                   Author="@DemoAuthor"
                   AutoSaveInterval="@DemoAutoSaveInterval"
                   ToolbarMode="@_toolbarMode"
+                  CanDeleteOwnComments="true"
                   ShowDebugTools="true"
                   DisabledFeatures="@DemoDisabledFeatures"
                   OnDocumentLoaded="HandleDocumentLoaded"
@@ -214,6 +216,21 @@
     private string? _signingDesignerUrl;
     private TimeSpan DemoAutoSaveInterval => TimeSpan.FromMilliseconds(_autosaveFailureEnabled ? 750 : ReadQueryInt("autosaveMs", 30000, 250, 30000));
     private IDocumentImageProvider? DemoImageProvider => _imageProviderEnabled ? ImageResolver : null;
+    private IReadOnlyList<DocumentImageAsset> DemoImageAssets => _imageProviderEnabled
+        ?
+        [
+            new DocumentImageAsset
+            {
+                Id = DemoDocumentImageUrlResolver.ContractAssetId,
+                Source = DocumentImageSource.Asset,
+                Url = DemoDocumentImageUrlResolver.DemoPngDataUrl,
+                ContentType = "image/png",
+                FileName = "contract-evidence.png",
+                AltText = "Provider evidence preview",
+                Caption = "Provider-backed evidence preview"
+            }
+        ]
+        : [];
     private DemoDocumentEditorProvider DemoProvider
     {
         get
@@ -221,6 +238,11 @@
             DocumentProvider.FailDemoSaves = _autosaveFailureEnabled;
             return DocumentProvider;
         }
+    }
+
+    protected override void OnInitialized()
+    {
+        _documentId = ReadQueryString("documentId", _documentId);
     }
 
     private IReadOnlyCollection<string> DemoDisabledFeatures
@@ -285,6 +307,30 @@
             return int.TryParse(value, out var parsed)
                 ? Math.Clamp(parsed, min, max)
                 : fallback;
+        }
+
+        return fallback;
+    }
+
+    private string ReadQueryString(string key, string fallback)
+    {
+        var query = NavigationManager.ToAbsoluteUri(NavigationManager.Uri).Query;
+        if (string.IsNullOrWhiteSpace(query) || query.Length <= 1)
+        {
+            return fallback;
+        }
+
+        foreach (var pair in query[1..].Split('&', StringSplitOptions.RemoveEmptyEntries))
+        {
+            var separator = pair.IndexOf('=');
+            var name = separator >= 0 ? pair[..separator] : pair;
+            if (!string.Equals(Uri.UnescapeDataString(name), key, StringComparison.OrdinalIgnoreCase))
+            {
+                continue;
+            }
+
+            var value = separator >= 0 ? Uri.UnescapeDataString(pair[(separator + 1)..]) : string.Empty;
+            return string.IsNullOrWhiteSpace(value) ? fallback : value;
         }
 
         return fallback;

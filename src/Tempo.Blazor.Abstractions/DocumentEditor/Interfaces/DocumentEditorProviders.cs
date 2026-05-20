@@ -57,6 +57,15 @@ public interface IDocumentCommentProvider
         DocumentCommentEntry entry,
         CancellationToken cancellationToken = default);
 
+    /// <summary>Updates an existing comment entry.</summary>
+    Task<DocumentComment> UpdateCommentEntryAsync(
+        string documentId,
+        string commentId,
+        string entryId,
+        string text,
+        DocumentEditorAuthor updatedBy,
+        CancellationToken cancellationToken = default);
+
     /// <summary>Resolves a comment thread.</summary>
     Task<DocumentComment> ResolveCommentAsync(
         string documentId,
