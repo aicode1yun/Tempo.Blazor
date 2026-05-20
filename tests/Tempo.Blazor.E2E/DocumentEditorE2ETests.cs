@@ -3538,6 +3538,159 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_RevisionVisualStyleDoesNotPolluteToolbarState()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        await WaitForWysiwygBodyAsync(page.Locator("[data-testid='document-wysiwyg-host']"));
+
+        try
+        {
+            var revisionText = await CreateInsertionRevisionAsync(page, $"phase7-toolbar-revision-{DateTimeOffset.UtcNow:HHmmssfff}");
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, revisionText, offsetInsideText: 4);
+
+            var formatting = await CaptureRuntimeFormattingProbeAsync(page);
+            formatting.Underline.Should().Be(0, "the toolbar must reflect real underline marks, not the green insertion review style");
+            formatting.TextColor.Should().BeNullOrEmpty("the toolbar must not report the green insertion review color as a real text color");
+            await page.Locator("[data-testid='document-ribbon-tab-home']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-underline']"))
+                .ToHaveAttributeAsync("aria-pressed", "false", new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_RevisionVisualStyleDoesNotPolluteToolbarState),
+                "Create a pending insertion revision, turn tracking off and place the caret inside the green/underlined marker.",
+                "The toolbar/runtime formatting state must show the underlying text formatting, not the CSS used to visualize review markup.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_TypingWithTrackingOffInsideRevisionDoesNotExtendRevision()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var revisionText = await CreateInsertionRevisionAsync(page, $"phase7-insert-base-{DateTimeOffset.UtcNow:HHmmssfff}");
+            var plainText = $"plain-outside-revision-{DateTimeOffset.UtcNow:HHmmssfff}";
+            var splitOffset = Math.Min(24, revisionText.Length - 1);
+            var revisionBefore = revisionText[..splitOffset];
+            var revisionAfter = revisionText[splitOffset..];
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, revisionText, offsetInsideText: splitOffset);
+            await page.Keyboard.InsertTextAsync(plainText);
+
+            await Assertions.Expect(host).ToContainTextAsync(plainText, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-revision-id], .tm-wysiwyg-revision").Filter(new() { HasText = plainText }))
+                .ToHaveCountAsync(0, new() { Timeout = 5000 });
+            await Assertions.Expect(RevisionMarker(page, "insert", revisionBefore)).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(RevisionMarker(page, "insert", revisionAfter)).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            DocumentHasInlineMark(saved, revisionBefore, InlineMarkType.Revision).Should().BeTrue("the original pending revision before the typed text should remain pending");
+            DocumentHasInlineMark(saved, revisionAfter, InlineMarkType.Revision).Should().BeTrue("the original pending revision after the typed text should remain pending");
+            DocumentHasInlineMark(saved, plainText, InlineMarkType.Revision).Should().BeFalse("typing with tracking off must create normal text outside the pending revision");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_TypingWithTrackingOffInsideRevisionDoesNotExtendRevision),
+                "Create a pending insertion revision, disable tracking, place the caret inside the marker and type new text.",
+                "New typing must split out as normal document text and must not become part of the existing pending insertion revision.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_TypingCharacterByCharacterAfterRevisionStaysPlain()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var revisionText = await CreateInsertionRevisionAsync(page, $"phase7-edge-revision-{DateTimeOffset.UtcNow:HHmmssfff}");
+            var plainText = $" plain-edge-{DateTimeOffset.UtcNow:HHmmssfff}";
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, revisionText, offsetInsideText: revisionText.Length);
+
+            await page.Keyboard.TypeAsync(plainText, new KeyboardTypeOptions { Delay = 15 });
+
+            await Assertions.Expect(host).ToContainTextAsync(plainText, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-revision-id], .tm-wysiwyg-revision").Filter(new() { HasText = plainText }))
+                .ToHaveCountAsync(0, new() { Timeout = 5000 });
+            await Assertions.Expect(RevisionMarker(page, "insert", revisionText)).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-revision-item']").Filter(new() { HasText = plainText }))
+                .ToHaveCountAsync(0, new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            DocumentHasInlineMark(saved, revisionText, InlineMarkType.Revision).Should().BeTrue("the original pending insertion remains a revision");
+            DocumentHasInlineMark(saved, plainText, InlineMarkType.Revision).Should().BeFalse("character-by-character typing with tracking off must stay outside the pending revision");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_TypingCharacterByCharacterAfterRevisionStaysPlain),
+                "Create a pending insertion revision, disable tracking, place the caret at the end of that marker and type normal text character by character.",
+                "The typed text must remain a plain inline in both DOM and saved model, and the existing revision row must not absorb the new text.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_TypingAfterSeedRevisionDoesNotPaintApprovedTextAsRevision()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            const string approvedText = "The provider will deliver implementation, training, and documentation services.";
+            const string seedRevisionText = " Priority support is included during the first thirty days.";
+            var plainText = $" seed-plain-{DateTimeOffset.UtcNow:HHmmssfff}";
+
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, seedRevisionText, offsetInsideText: seedRevisionText.Length);
+
+            await page.Keyboard.TypeAsync(plainText, new KeyboardTypeOptions { Delay = 15 });
+
+            await Assertions.Expect(host).ToContainTextAsync(plainText, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-marker-id='revision:contract-revision-scope']"))
+                .ToHaveCountAsync(0, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-revision-id='contract-revision-scope']").Filter(new() { HasText = approvedText }))
+                .ToHaveCountAsync(0, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-revision-id='contract-revision-scope']").Filter(new() { HasText = seedRevisionText }))
+                .ToHaveCountAsync(1, new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            DocumentHasInlineMark(saved, approvedText, InlineMarkType.Revision).Should().BeFalse("approved demo text must not become a visual or persisted revision");
+            DocumentHasInlineMark(saved, seedRevisionText, InlineMarkType.Revision).Should().BeTrue("the original seed insertion remains pending");
+            DocumentHasInlineMark(saved, plainText, InlineMarkType.Revision).Should().BeFalse("typing after the seed revision with tracking off must stay plain");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_TypingAfterSeedRevisionDoesNotPaintApprovedTextAsRevision),
+                "Disable track changes, place the caret at the end of the seeded demo insertion revision and type normal text.",
+                "Typing must not render the approved paragraph prefix with the revision style, must not create a duplicate runtime revision marker, and must persist the new text without a revision mark.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Strict_Phase8_InsertImageSourcesRenderRealImagesAndPersistMetadata()
     {
         var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
@@ -7982,6 +8135,66 @@ public class DocumentEditorE2ETests : WasmTestBase
             .Filter(new() { HasText = text })
             .First;
 
+    private static async Task PlaceCaretInsideRevisionTextAsync(IPage page, string text, int offsetInsideText)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ text, offsetInsideText }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const revision = Array.from(host?.querySelectorAll('[data-revision-id], .tm-wysiwyg-revision') || [])
+                    .find(node => isVisible(node) && (node.textContent || '').includes(text));
+                if (!revision) throw new Error(`Revision text '${text}' was not found.`);
+
+                revision.scrollIntoView({ block: 'center', inline: 'nearest' });
+                const walker = document.createTreeWalker(revision, NodeFilter.SHOW_TEXT);
+                let node;
+                while ((node = walker.nextNode())) {
+                    const index = (node.textContent || '').indexOf(text);
+                    if (index < 0) continue;
+                    const range = document.createRange();
+                    range.setStart(node, index + Math.max(0, Math.min(offsetInsideText, text.length)));
+                    range.collapse(true);
+                    revision.closest('[contenteditable="true"]')?.focus();
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                    document.dispatchEvent(new Event('selectionchange'));
+                    return;
+                }
+
+                throw new Error(`Revision text node '${text}' was not found.`);
+            }
+            """,
+            new { text, offsetInsideText });
+        await page.WaitForTimeoutAsync(120);
+    }
+
+    private static async Task<WysiwygRuntimeFormattingProbe> CaptureRuntimeFormattingProbeAsync(IPage page)
+    {
+        return await page.EvaluateAsync<WysiwygRuntimeFormattingProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const formatting = window.tmDocumentEditorWysiwyg?.getFormattingState?.(instanceId) || {};
+                return {
+                    Underline: formatting.Underline ?? formatting.underline ?? 0,
+                    TextColor: formatting.TextColor ?? formatting.textColor ?? '',
+                    HighlightColor: formatting.HighlightColor ?? formatting.highlightColor ?? ''
+                };
+            }
+            """);
+    }
+
     private static async Task<ILocator> GetRevisionPanelItemAsync(IPage page, string type, string text)
     {
         var itemByText = RevisionPanelItem(page, text);
@@ -12364,6 +12577,15 @@ public class DocumentEditorE2ETests : WasmTestBase
         public string TextDecoration { get; set; } = string.Empty;
 
         public string BoxShadow { get; set; } = string.Empty;
+    }
+
+    private sealed class WysiwygRuntimeFormattingProbe
+    {
+        public int Underline { get; set; }
+
+        public string TextColor { get; set; } = string.Empty;
+
+        public string HighlightColor { get; set; } = string.Empty;
     }
 
     private sealed class ParagraphStyleProbe

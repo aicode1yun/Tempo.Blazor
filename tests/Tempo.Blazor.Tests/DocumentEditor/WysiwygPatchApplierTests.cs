@@ -126,6 +126,87 @@ public class WysiwygPatchApplierTests
     }
 
     [Fact]
+    public void InsertText_InsidePendingRevisionSplitsOutPlainTypingMarks()
+    {
+        var document = CreateDocument(Paragraph("b1", "pending"));
+        var run = (TextRun)GetInlines(document, "b1")[0];
+        run.Marks.Add(new InlineMark { Type = InlineMarkType.Bold });
+        run.Marks.Add(new InlineMark { Type = InlineMarkType.Revision, RevisionId = "rev-1", Value = "Insertion" });
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = " plain ",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 3
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        var runs = GetInlines(document, "b1").OfType<TextRun>().ToList();
+        runs.Select(item => item.Text).Should().Equal("pen", " plain ", "ding");
+        runs[0].Marks.Should().Contain(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == "rev-1");
+        runs[1].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Bold);
+        runs[1].Marks.Should().NotContain(mark => mark.Type == InlineMarkType.Revision);
+        runs[2].Marks.Should().Contain(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == "rev-1");
+    }
+
+    [Fact]
+    public void InsertText_AfterSplittingPendingRevisionKeepsGeneratedPlainInlineAddressable()
+    {
+        var document = CreateDocument(Paragraph("b1", "pending"));
+        var revisionRun = (TextRun)GetInlines(document, "b1")[0];
+        revisionRun.Marks.Add(new InlineMark { Type = InlineMarkType.Revision, RevisionId = "rev-1", Value = "Insertion" });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "a",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = revisionRun.Text.Length
+            },
+            AfterSelection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "plain-after-revision",
+                AnchorOffset = 1,
+                IsCollapsed = true
+            }
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertText",
+            Data = "bc",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "plain-after-revision",
+                AnchorOffset = 1
+            },
+            AfterSelection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "plain-after-revision",
+                AnchorOffset = 3,
+                IsCollapsed = true
+            }
+        });
+
+        var runs = GetInlines(document, "b1").OfType<TextRun>().ToList();
+        runs.Select(run => run.Text).Should().Equal("pending", "abc");
+        runs[0].Marks.Should().ContainSingle(mark => mark.Type == InlineMarkType.Revision && mark.RevisionId == "rev-1");
+        runs[1].Id.Should().Be("plain-after-revision");
+        runs[1].Marks.Should().NotContain(mark => mark.Type == InlineMarkType.Revision);
+    }
+
+    [Fact]
     public void InsertText_WithHeaderRegion_UpdatesHeaderFooterBlocksOnly()
     {
         var document = CreateDocument(Paragraph("body-1", "Body text"));

@@ -97,7 +97,9 @@ public sealed class WysiwygPatchApplier
 
     private static void ApplyInsertText(DocumentEditorDocument document, WysiwygPatch patch)
     {
-        var (_, inline) = ResolveBlockAndInline(document, patch.Selection);
+        var (_, inlines) = ResolveBlockAndInlines(document, patch.Selection);
+        var inlineIndex = inlines is null ? -1 : FindInlineIndex(inlines, patch.Selection?.AnchorInlineId);
+        var inline = inlineIndex >= 0 ? inlines![inlineIndex] : ResolveBlockAndInline(document, patch.Selection).Inline;
         var textRun = inline as TextRun ?? EnsureTableCellTextRun(document, patch.Selection);
         if (textRun is null)
         {
@@ -106,7 +108,71 @@ public sealed class WysiwygPatchApplier
 
         var offset = patch.Selection?.AnchorOffset ?? 0;
         var text = patch.Data ?? string.Empty;
+        if (inlines is not null
+            && inlineIndex >= 0
+            && string.IsNullOrWhiteSpace(patch.RevisionId)
+            && string.IsNullOrWhiteSpace(patch.RevisionType)
+            && textRun.Marks.Any(mark => mark.Type == InlineMarkType.Revision))
+        {
+            var insertedInlineId = ResolveInsertedInlineId(patch, textRun.Id);
+            InsertUntrackedTextOutsideRevision(inlines, inlineIndex, textRun, offset, text, insertedInlineId);
+            return;
+        }
+
         textRun.Text = textRun.Text.Insert(Math.Clamp(offset, 0, textRun.Text.Length), text);
+    }
+
+    private static void InsertUntrackedTextOutsideRevision(
+        List<InlineContent> inlines,
+        int inlineIndex,
+        TextRun revisionRun,
+        int offset,
+        string text,
+        string insertedInlineId)
+    {
+        var clampedOffset = Math.Clamp(offset, 0, revisionRun.Text.Length);
+        var replacement = new List<InlineContent>();
+        AddTextRunSlice(replacement, revisionRun, 0, clampedOffset);
+        replacement.Add(new TextRun
+        {
+            Id = insertedInlineId,
+            Text = text,
+            Marks = CloneTypingMarks(revisionRun.Marks)
+        });
+        AddTextRunSlice(replacement, revisionRun, clampedOffset, revisionRun.Text.Length);
+
+        inlines.RemoveAt(inlineIndex);
+        inlines.InsertRange(inlineIndex, MergeAdjacentTextRuns(replacement));
+    }
+
+    private static string ResolveInsertedInlineId(WysiwygPatch patch, string? sourceInlineId)
+    {
+        var candidate = patch.AfterSelection?.AnchorInlineId
+            ?? patch.AfterSelection?.FocusInlineId
+            ?? patch.Inline?.Id;
+        if (string.IsNullOrWhiteSpace(candidate) || string.Equals(candidate, sourceInlineId, StringComparison.Ordinal))
+        {
+            return Guid.NewGuid().ToString("N");
+        }
+
+        return candidate;
+    }
+
+    private static void AddTextRunSlice(List<InlineContent> target, TextRun source, int start, int end)
+    {
+        var safeStart = Math.Clamp(start, 0, source.Text.Length);
+        var safeEnd = Math.Clamp(end, safeStart, source.Text.Length);
+        if (safeEnd <= safeStart)
+        {
+            return;
+        }
+
+        target.Add(new TextRun
+        {
+            Id = safeStart == 0 ? source.Id : Guid.NewGuid().ToString("N"),
+            Text = source.Text[safeStart..safeEnd],
+            Marks = source.Marks.Select(CloneMark).ToList()
+        });
     }
 
     private static void ApplyInsertInline(DocumentEditorDocument document, WysiwygPatch patch)

@@ -2475,6 +2475,12 @@ window.tmDocumentWysiwyg = (function () {
                 range.deleteContents();
             }
 
+            var untrackedRevisionInsert = _applyUntrackedInsertTextOutsideRevision(inst, data, range);
+            if (untrackedRevisionInsert) {
+                untrackedRevisionInsert.replacedText = replacedText;
+                return untrackedRevisionInsert;
+            }
+
             var textNode = range.startContainer;
             var offset = range.startOffset;
 
@@ -2505,6 +2511,69 @@ window.tmDocumentWysiwyg = (function () {
         } finally {
             inst._applyingOwnPatch = false;
         }
+    }
+
+    function _applyUntrackedInsertTextOutsideRevision(inst, data, range) {
+        if (!inst || inst.trackChangesEnabled || !data || !range || !range.collapsed) return null;
+
+        var normalized = _normalizeToTextNode(range.startContainer, range.startOffset);
+        var revisionInline = _findInlineElement(normalized.node);
+        if (!revisionInline || !revisionInline.closest || !revisionInline.closest('[data-revision-id], .tm-wysiwyg-revision')) {
+            return null;
+        }
+
+        var textNode = normalized.node;
+        if (!textNode || textNode.nodeType !== Node.TEXT_NODE || !revisionInline.contains(textNode)) {
+            return null;
+        }
+
+        var current = textNode.textContent || '';
+        var offset = Math.max(0, Math.min(normalized.offset, current.length));
+        var beforeText = current.slice(0, offset);
+        var afterText = current.slice(offset);
+        textNode.textContent = beforeText;
+
+        var insertedInline = _cloneInlineWithoutRevision(revisionInline);
+        var inlineId = _createInlineId();
+        insertedInline.setAttribute('data-inline-id', inlineId);
+        var insertedText = document.createTextNode(data);
+        insertedInline.textContent = '';
+        insertedInline.appendChild(insertedText);
+
+        if (afterText) {
+            var afterInline = revisionInline.cloneNode(false);
+            afterInline.setAttribute('data-inline-id', _createInlineId());
+            afterInline.textContent = afterText;
+            revisionInline.after(insertedInline, afterInline);
+        } else {
+            revisionInline.after(insertedInline);
+        }
+
+        _setCaret(insertedText, data.length);
+        return { insertedText: data, insertedInline: true, inlineId: inlineId };
+    }
+
+    function _cloneInlineWithoutRevision(sourceInline) {
+        var clone = sourceInline.cloneNode(false);
+        [
+            'tm-wysiwyg-revision',
+            'tm-wysiwyg-revision--insert',
+            'tm-wysiwyg-revision--delete',
+            'tm-wysiwyg-revision--format',
+            'tm-wysiwyg-revision--selected',
+            'tm-document-inline--revision',
+            'tm-document-inline--revision-insert',
+            'tm-document-inline--revision-delete'
+        ].forEach(function (className) {
+            clone.classList.remove(className);
+        });
+        clone.removeAttribute('data-revision-id');
+        clone.removeAttribute('data-revision-type');
+        var testId = clone.getAttribute('data-testid') || '';
+        if (testId.indexOf('document-wysiwyg-revision-') === 0 || testId.indexOf('document-revision-') === 0) {
+            clone.removeAttribute('data-testid');
+        }
+        return clone;
     }
 
     function _createCaretPlaceholderBreak() {
@@ -4452,12 +4521,16 @@ window.tmDocumentWysiwyg = (function () {
                 StartBlockId: String(startBlockId || ''),
                 startInlineId: range.startInlineId || range.StartInlineId || null,
                 StartInlineId: range.startInlineId || range.StartInlineId || null,
+                startInlineIndex: range.startInlineIndex ?? range.StartInlineIndex ?? null,
+                StartInlineIndex: range.startInlineIndex ?? range.StartInlineIndex ?? null,
                 startOffset: Math.max(0, startOffset || 0),
                 StartOffset: Math.max(0, startOffset || 0),
                 endBlockId: String(endBlockId || startBlockId || ''),
                 EndBlockId: String(endBlockId || startBlockId || ''),
                 endInlineId: range.endInlineId || range.EndInlineId || null,
                 EndInlineId: range.endInlineId || range.EndInlineId || null,
+                endInlineIndex: range.endInlineIndex ?? range.EndInlineIndex ?? null,
+                EndInlineIndex: range.endInlineIndex ?? range.EndInlineIndex ?? null,
                 endOffset: Math.max(0, endOffset || 0),
                 EndOffset: Math.max(0, endOffset || 0)
             },
@@ -4619,9 +4692,14 @@ window.tmDocumentWysiwyg = (function () {
             _recordMarkerRenderMetric(inst, metricStart, false);
             return false;
         }
+        if (_isEmbeddedRevisionAlreadyRendered(inst, marker)) {
+            _recordMarkerRenderMetric(inst, metricStart, false);
+            return false;
+        }
 
-        var startPos = _resolveTextPosition(block, start);
-        var endPos = _resolveTextPosition(block, end);
+        var inlineRange = _resolveRuntimeMarkerInlineRange(block, rangeData);
+        var startPos = inlineRange ? inlineRange.start : _resolveTextPosition(block, start);
+        var endPos = inlineRange ? inlineRange.end : _resolveTextPosition(block, end);
         if (!startPos || !endPos) {
             _recordMarkerRenderMetric(inst, metricStart, false);
             return false;
@@ -4650,6 +4728,37 @@ window.tmDocumentWysiwyg = (function () {
         }
         _recordMarkerRenderMetric(inst, metricStart, rendered);
         return rendered;
+    }
+
+    function _isEmbeddedRevisionAlreadyRendered(inst, marker) {
+        if (!inst || !inst.root || !marker) return false;
+        var type = _normalizeRuntimeMarkerType(marker.type || marker.Type);
+        if (type.indexOf('revision') !== 0) return false;
+        var targetId = marker.targetId || marker.TargetId || '';
+        if (!targetId) return false;
+        return !!inst.root.querySelector('[data-revision-id="' + _cssEscape(targetId) + '"]:not([data-marker-id])');
+    }
+
+    function _resolveRuntimeMarkerInlineRange(block, rangeData) {
+        if (!block || !rangeData) return null;
+        var startInlineIndex = rangeData.startInlineIndex ?? rangeData.StartInlineIndex;
+        var endInlineIndex = rangeData.endInlineIndex ?? rangeData.EndInlineIndex ?? startInlineIndex;
+        if (startInlineIndex == null || endInlineIndex == null) return null;
+
+        startInlineIndex = Number(startInlineIndex);
+        endInlineIndex = Number(endInlineIndex);
+        if (!Number.isFinite(startInlineIndex) || !Number.isFinite(endInlineIndex)) return null;
+
+        var inlines = Array.from(block.querySelectorAll(':scope > [data-inline-id]'));
+        var startInline = inlines[Math.max(0, Math.floor(startInlineIndex))];
+        var endInline = inlines[Math.max(0, Math.floor(endInlineIndex))];
+        if (!startInline || !endInline) return null;
+
+        var startOffset = Math.max(0, Number(rangeData.startOffset ?? rangeData.StartOffset ?? 0) || 0);
+        var endOffset = Math.max(0, Number(rangeData.endOffset ?? rangeData.EndOffset ?? startOffset) || 0);
+        var start = _resolveTextPosition(startInline, startOffset);
+        var end = _resolveTextPosition(endInline, endOffset);
+        return start && end ? { start: start, end: end } : null;
     }
 
     function _createRuntimeMarkerElement(marker) {
@@ -7535,8 +7644,10 @@ window.tmDocumentWysiwyg = (function () {
             type: type,
             range: {
                 startBlockId: blockId,
+                startInlineIndex: range.StartInlineIndex ?? range.startInlineIndex ?? null,
                 startOffset: Math.max(0, start),
                 endBlockId: blockId,
+                endInlineIndex: range.EndInlineIndex ?? range.endInlineIndex ?? range.StartInlineIndex ?? range.startInlineIndex ?? null,
                 endOffset: Math.max(0, end)
             },
             priority: 80,
@@ -7559,7 +7670,10 @@ window.tmDocumentWysiwyg = (function () {
                 }
             });
         (inst.runtimeRevisions || []).forEach(function (revision) {
-            _upsertRuntimeMarker(inst, _revisionToRuntimeMarker(revision), false);
+            var marker = _revisionToRuntimeMarker(revision);
+            if (marker && !_isEmbeddedRevisionAlreadyRendered(inst, marker)) {
+                _upsertRuntimeMarker(inst, marker, false);
+            }
         });
     }
 
@@ -14787,6 +14901,23 @@ window.tmDocumentWysiwyg = (function () {
         return '';
     }
 
+    function _hasNearestInlineClass(el, className) {
+        var node = el && el.nodeType === Node.ELEMENT_NODE ? el : el?.parentElement;
+        while (node && node.nodeType === Node.ELEMENT_NODE) {
+            if (node.classList && node.classList.contains(className)) {
+                return true;
+            }
+
+            if (node.matches && node.matches('.tm-wysiwyg-block, .tm-wysiwyg-page__body')) {
+                break;
+            }
+
+            node = node.parentElement;
+        }
+
+        return false;
+    }
+
     function _readNearestInlineBackground(el) {
         var node = el && el.nodeType === Node.ELEMENT_NODE ? el : el?.parentElement;
         while (node && node.nodeType === Node.ELEMENT_NODE) {
@@ -14806,19 +14937,24 @@ window.tmDocumentWysiwyg = (function () {
     }
 
     function _getElementMarkState(el) {
-        var computed = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
-        var fontWeight = computed.fontWeight || el.style.fontWeight || '';
-        var textDecoration = computed.textDecorationLine || computed.textDecoration || el.style.textDecoration || '';
-        var textColor = _readNearestInlineStyleValue(el, 'color') || computed.color || '';
+        var fontWeight = _readNearestInlineStyleValue(el, 'fontWeight') || '';
+        var fontStyle = _readNearestInlineStyleValue(el, 'fontStyle') || '';
+        var textDecoration = (_readNearestInlineStyleValue(el, 'textDecorationLine') || '')
+            + ' ' + (_readNearestInlineStyleValue(el, 'textDecoration') || '');
+        var textColor = _readNearestInlineStyleValue(el, 'color') || '';
         var highlight = _readNearestInlineBackground(el);
+        var weightValue = parseInt(fontWeight, 10);
         return {
-            Bold: fontWeight === 'bold' || fontWeight === '700' || parseInt(fontWeight, 10) >= 700,
-            Italic: (computed.fontStyle || el.style.fontStyle) === 'italic',
-            Underline: textDecoration.indexOf('underline') >= 0,
-            Strikethrough: textDecoration.indexOf('line-through') >= 0,
+            Bold: _hasNearestInlineClass(el, 'tm-document-inline--bold')
+                || fontWeight === 'bold'
+                || fontWeight === '700'
+                || weightValue >= 700,
+            Italic: _hasNearestInlineClass(el, 'tm-document-inline--italic') || fontStyle === 'italic',
+            Underline: _hasNearestInlineClass(el, 'tm-document-inline--underline') || textDecoration.indexOf('underline') >= 0,
+            Strikethrough: _hasNearestInlineClass(el, 'tm-document-inline--strikethrough') || textDecoration.indexOf('line-through') >= 0,
             Link: !!el.closest('a[href], [data-link-href]'),
-            FontFamily: el.style.fontFamily || '',
-            FontSize: el.style.fontSize || '',
+            FontFamily: _readNearestInlineStyleValue(el, 'fontFamily') || '',
+            FontSize: _readNearestInlineStyleValue(el, 'fontSize') || '',
             TextColor: _normalizeColorForState(textColor),
             Highlight: _normalizeColorForState(highlight)
         };
@@ -15919,22 +16055,25 @@ window.tmDocumentWysiwyg = (function () {
     function _serializeMarks(el) {
         var marks = [];
         var style = el.style;
-        var computed = window.getComputedStyle ? window.getComputedStyle(el) : el.style;
+        var classList = el.classList;
 
-        var fontWeight = computed.fontWeight || style.fontWeight;
-        if (fontWeight === 'bold' || fontWeight === '700' || parseInt(fontWeight, 10) >= 700) {
+        var fontWeight = style.fontWeight || '';
+        if (classList.contains('tm-document-inline--bold')
+            || fontWeight === 'bold'
+            || fontWeight === '700'
+            || parseInt(fontWeight, 10) >= 700) {
             marks.push({ Type: 0 }); // Bold
         }
 
-        if ((computed.fontStyle || style.fontStyle) === 'italic') {
+        if (classList.contains('tm-document-inline--italic') || style.fontStyle === 'italic') {
             marks.push({ Type: 1 }); // Italic
         }
 
-        var textDeco = computed.textDecorationLine || computed.textDecoration || style.textDecoration || '';
-        if (textDeco.indexOf('underline') >= 0) {
+        var textDeco = (style.textDecorationLine || '') + ' ' + (style.textDecoration || '');
+        if (classList.contains('tm-document-inline--underline') || textDeco.indexOf('underline') >= 0) {
             marks.push({ Type: 2 }); // Underline
         }
-        if (textDeco.indexOf('line-through') >= 0) {
+        if (classList.contains('tm-document-inline--strikethrough') || textDeco.indexOf('line-through') >= 0) {
             marks.push({ Type: 3 }); // Strikethrough
         }
 
@@ -15956,12 +16095,12 @@ window.tmDocumentWysiwyg = (function () {
             marks.push({ Type: 12, Value: style.fontSize }); // FontSize
         }
 
-        var vAlign = computed.verticalAlign || style.verticalAlign;
-        var fSize = computed.fontSize || style.fontSize;
-        if (vAlign === 'super' && fSize === 'smaller') {
+        var vAlign = style.verticalAlign || '';
+        var fSize = style.fontSize || '';
+        if (classList.contains('tm-document-inline--superscript') || (vAlign === 'super' && fSize === 'smaller')) {
             marks.push({ Type: 4 }); // Superscript
         }
-        if (vAlign === 'sub' && fSize === 'smaller') {
+        if (classList.contains('tm-document-inline--subscript') || (vAlign === 'sub' && fSize === 'smaller')) {
             marks.push({ Type: 5 }); // Subscript
         }
 
