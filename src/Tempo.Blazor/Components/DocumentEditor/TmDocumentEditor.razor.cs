@@ -288,6 +288,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private WysiwygMiniToolbarRequest? _lastMiniToolbarRequest;
     private bool _miniToolbarColorPickerOpen;
     private DateTimeOffset _keepMiniToolbarVisibleUntil;
+    private DateTimeOffset _ignoreFloatingCollapsedSelectionUntil;
     private string? _optimisticFloatingTextColor;
     private string? _optimisticFloatingHighlightColor;
     private string? _optimisticFloatingFormattingSelectionKey;
@@ -2223,6 +2224,14 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
             _miniToolbar = null;
         }
 
+        if (ShouldIgnoreTransientFloatingCollapsedSelection(snapshot))
+        {
+            _formattingState.CurrentSelection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+            ApplyPendingFloatingFormattingOverride();
+            await InvokeAsync(StateHasChanged);
+            return;
+        }
+
         if (_miniToolbarColorPickerOpen && snapshot?.IsCollapsed != false)
         {
             _formattingState.CurrentSelection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
@@ -2736,6 +2745,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (!closeAfterCommand)
         {
             _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
+            _ignoreFloatingCollapsedSelectionUntil = DateTimeOffset.UtcNow.AddSeconds(1);
         }
 
         if (_wysiwygHost is not null && selection is not null)
@@ -2776,6 +2786,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         if (!closeAfterCommand)
         {
             _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
+            _ignoreFloatingCollapsedSelectionUntil = DateTimeOffset.UtcNow.AddSeconds(1);
         }
 
         if (_wysiwygHost is not null && selection is not null)
@@ -2932,6 +2943,22 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
     }
 
+    private bool ShouldIgnoreTransientFloatingCollapsedSelection(WysiwygSelectionSnapshot? snapshot)
+    {
+        if (DateTimeOffset.UtcNow > _ignoreFloatingCollapsedSelectionUntil)
+        {
+            return false;
+        }
+
+        if (snapshot?.IsCollapsed == false)
+        {
+            return false;
+        }
+
+        return _lastBodyRangeSelectionSnapshot is not null
+            && (_miniToolbar is not null || _lastMiniToolbarRequest is not null);
+    }
+
     private static string? GetFloatingFormattingSelectionKey(WysiwygSelectionSnapshot? selection)
     {
         if (selection is null)
@@ -2962,6 +2989,7 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _lastMiniToolbarRequest = null;
         _miniToolbarColorPickerOpen = false;
         _keepMiniToolbarVisibleUntil = default;
+        _ignoreFloatingCollapsedSelectionUntil = default;
         _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);

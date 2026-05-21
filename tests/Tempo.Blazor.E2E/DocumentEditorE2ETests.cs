@@ -2867,6 +2867,9 @@ public class DocumentEditorE2ETests : WasmTestBase
                 AssertSelectionRangeEquivalent(selection, await GetBrowserSelectionProbeAsync(page), $"{command.Name} mini toolbar apply");
                 await Assertions.Expect(page.Locator($"[data-testid='{command.RibbonTestId}']"))
                     .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 5000 });
+                await page.WaitForTimeoutAsync(1300);
+                await Assertions.Expect(page.Locator($"[data-testid='{command.RibbonTestId}']"))
+                    .ToHaveAttributeAsync("aria-pressed", "true", new() { Timeout = 1000 });
                 await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync();
                 await AssertNoFloatingUiLeaksExceptAsync(page, "mini-toolbar");
 
