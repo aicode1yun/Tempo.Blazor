@@ -2344,6 +2344,8 @@
 .tm-wysiwyg-page {
     position: relative;
     box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
     flex: 0 0 auto;
     max-width: none;
     background: var(--tm-color-surface);
@@ -2412,6 +2414,7 @@
 .tm-wysiwyg-page__footer {
     position: relative;
     box-sizing: border-box;
+    flex: 0 0 auto;
     min-height: var(--tm-document-header-distance-from-top, 12.7mm);
     padding: var(--tm-space-1) 0;
     font-size: var(--tm-font-size-sm);
@@ -2486,8 +2489,8 @@
 
 /* Body region: fills remaining space */
 .tm-wysiwyg-page__body {
-    flex: 1 1 auto;
-    min-height: 3rem;
+    flex: 1 0 auto;
+    min-height: 0;
     position: relative;
     font-family: var(--tm-document-body-font-family, var(--tm-font-sans));
     font-size: var(--tm-document-body-font-size, 11pt);
@@ -2499,7 +2502,7 @@
     display: block;
     box-sizing: border-box;
     width: 100%;
-    min-height: 30rem;
+    min-height: 0;
     padding: 0;
     outline: none;
 }

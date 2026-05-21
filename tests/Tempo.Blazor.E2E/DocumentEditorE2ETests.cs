@@ -1845,6 +1845,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await PlaceCaretInFirstInlineAsync(page, 6);
             var selectionBefore = await GetBrowserSelectionProbeAsync(page);
             var before = await CapturePageLayoutProbeAsync(page);
+            before.BodyHeight.Should().BeGreaterThan(before.PageHeight * 0.55, "the body editing boundary should span the usable page height, not just the current content");
 
             await page.Locator("[data-testid='document-ribbon-tab-layout']").ClickAsync();
             await page.Locator("[data-testid='document-page-layout']").ClickAsync();
@@ -1868,6 +1869,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             changed.MarginLeftMm.Should().BeLessThan(before.MarginLeftMm);
             changed.HeaderBottom.Should().BeLessThan(changed.BodyTop, "header must remain above the body content box");
             changed.BodyBottom.Should().BeLessThan(changed.FooterTop, "footer must remain below the body content box");
+            changed.BodyHeight.Should().BeGreaterThan(changed.PageHeight * 0.55, "the body editing boundary should continue to fill the page after layout changes");
 
             await Assertions.Expect(page.Locator("[data-testid='document-footer-distance']")).ToBeFocusedAsync();
             var rememberedSelection = await GetWysiwygRememberedSelectionProbeAsync(page);
@@ -1900,6 +1902,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             persisted.MarginLeftMm.Should().BeLessThan(afterUndo.MarginLeftMm);
             persisted.HeaderBottom.Should().BeLessThan(persisted.BodyTop);
             persisted.BodyBottom.Should().BeLessThan(persisted.FooterTop);
+            persisted.BodyHeight.Should().BeGreaterThan(persisted.PageHeight * 0.55);
         }
         catch
         {
@@ -10319,6 +10322,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     HeaderBottom: headerRect.Bottom,
                     BodyTop: bodyRect.Y,
                     BodyBottom: bodyRect.Bottom,
+                    BodyHeight: bodyRect.Height,
                     FooterTop: footerRect.Y,
                     MarginTopMm: cssMm('--tm-document-page-margin-top'),
                     MarginRightMm: cssMm('--tm-document-page-margin-right'),
@@ -12949,6 +12953,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         public double BodyTop { get; set; }
 
         public double BodyBottom { get; set; }
+
+        public double BodyHeight { get; set; }
 
         public double FooterTop { get; set; }
 
