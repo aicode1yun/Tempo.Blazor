@@ -482,6 +482,11 @@ window.tmDocumentWysiwyg = (function () {
             : event.target?.parentElement;
         if (!target) return;
 
+        if (_isMiniToolbarInteractionTarget(target)) {
+            inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+            return;
+        }
+
         if (target.closest('.tm-wysiwyg-image-context-menu')) {
             return;
         }
@@ -597,6 +602,11 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        if (_isMiniToolbarInteractionTarget(target)) {
+            inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+            return;
+        }
+
         if (inst.root.contains(target)) {
             return;
         }
@@ -613,7 +623,12 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
-        if (target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar, .tm-document-editor__mini-toolbar')) {
+        if (_isMiniToolbarInteractionTarget(target)
+            || target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar')) {
+            if (_isMiniToolbarInteractionTarget(target)) {
+                inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+            }
+
             return;
         }
 
@@ -624,6 +639,13 @@ window.tmDocumentWysiwyg = (function () {
 
     function _onRootPointerUp(inst, event) {
         if (!inst || inst.disposed || inst.readOnly || event.button !== 0) return;
+        var target = event.target && event.target.nodeType === Node.ELEMENT_NODE
+            ? event.target
+            : event.target?.parentElement;
+        if (_isMiniToolbarInteractionTarget(target)) {
+            inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+            return;
+        }
 
         var refreshSelectionToolbar = function () {
             if (!inst || inst.disposed) return;
@@ -1112,12 +1134,14 @@ window.tmDocumentWysiwyg = (function () {
 
     function _scheduleMiniToolbar(inst, snapshot) {
         if (!inst || inst.disposed || inst.readOnly || !_isTextSelectionSnapshot(snapshot)) {
+            if (_isMiniToolbarColorPickerOpen()) return;
             _hideMiniToolbar(inst);
             return;
         }
 
         var sel = window.getSelection();
         if (!sel || sel.rangeCount === 0 || sel.isCollapsed || !_nodeBelongsToRoot(sel.anchorNode, inst.root)) {
+            if (_isMiniToolbarColorPickerOpen()) return;
             _hideMiniToolbar(inst);
             return;
         }
@@ -1129,6 +1153,7 @@ window.tmDocumentWysiwyg = (function () {
             rect = rects.length > 0 ? rects[0] : null;
         }
         if (!rect) {
+            if (_isMiniToolbarColorPickerOpen()) return;
             _hideMiniToolbar(inst);
             return;
         }
@@ -1278,6 +1303,7 @@ window.tmDocumentWysiwyg = (function () {
 
     function _repositionVisibleFloatingLayers(inst) {
         if (!inst || inst.disposed || !inst.miniToolbarVisible || !inst.lastSelectionSnapshot) return;
+        if (_isMiniToolbarColorPickerOpen()) return;
         var start = _performanceNow();
         _scheduleMiniToolbar(inst, inst.lastSelectionSnapshot);
         _recordFloatingRepositionMetric(inst, start);
@@ -7308,12 +7334,33 @@ window.tmDocumentWysiwyg = (function () {
         const snapshot = _captureSelectionSnapshot(inst);
         if (!snapshot) {
             inst.dismissedMiniToolbarSelectionKey = null;
-            if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
+            if (_isMiniToolbarColorPickerOpen() && inst.lastTextSelectionSnapshot) {
+                inst.lastSelectionSnapshot = inst.lastTextSelectionSnapshot;
+                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastTextSelectionSnapshot);
+                inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+                _scheduleMiniToolbarSettleHide(inst);
+            } else if (_shouldKeepMiniToolbarDuringSelectionSettle(inst)) {
                 _scheduleMiniToolbar(inst, inst.lastTextSelectionSnapshot);
                 _scheduleMiniToolbarSettleHide(inst);
             } else {
                 _hideMiniToolbar(inst);
             }
+            return;
+        }
+
+        if (_isMiniToolbarColorPickerOpen() && snapshot.isCollapsed) {
+            inst.dismissedMiniToolbarSelectionKey = null;
+            if (inst.lastTextSelectionSnapshot) {
+                inst.lastSelectionSnapshot = inst.lastTextSelectionSnapshot;
+                inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastTextSelectionSnapshot);
+                if (inst.miniToolbarSettleHideTimer) {
+                    window.clearTimeout(inst.miniToolbarSettleHideTimer);
+                    inst.miniToolbarSettleHideTimer = null;
+                }
+
+                inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
+            }
+
             return;
         }
 
@@ -7357,7 +7404,18 @@ window.tmDocumentWysiwyg = (function () {
         return !!(inst
             && inst.lastTextSelectionSnapshot
             && inst.miniToolbarVisible
-            && Date.now() < (inst.miniToolbarSuppressHideUntil || 0));
+            && (Date.now() < (inst.miniToolbarSuppressHideUntil || 0)
+                || _isMiniToolbarColorPickerOpen()));
+    }
+
+    function _isMiniToolbarInteractionTarget(target) {
+        return !!(target
+            && target.closest
+            && target.closest('.tm-document-editor__mini-toolbar, .tm-document-editor__mini-color-picker, [data-testid="document-mini-text-color"], [data-testid="document-mini-highlight"]'));
+    }
+
+    function _isMiniToolbarColorPickerOpen() {
+        return !!document.querySelector('[data-testid="document-mini-toolbar"] .tm-document-editor__mini-color-picker.tm-color-picker--open');
     }
 
     function _scheduleMiniToolbarSettleHide(inst) {
@@ -7365,6 +7423,11 @@ window.tmDocumentWysiwyg = (function () {
         var delay = Math.max(80, (inst.miniToolbarSuppressHideUntil || 0) - Date.now() + 40);
         inst.miniToolbarSettleHideTimer = window.setTimeout(function () {
             inst.miniToolbarSettleHideTimer = null;
+            if (_isMiniToolbarColorPickerOpen()) {
+                _scheduleMiniToolbarSettleHide(inst);
+                return;
+            }
+
             var current = _captureSelectionSnapshot(inst);
             if (!current || current.isCollapsed) {
                 _hideMiniToolbar(inst, true);

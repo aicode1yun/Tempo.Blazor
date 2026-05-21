@@ -23,6 +23,9 @@ public partial class TmColorPicker : IAsyncDisposable
     /// <summary>Fires when the color value changes.</summary>
     [Parameter] public EventCallback<string?> ValueChanged { get; set; }
 
+    /// <summary>Fires when the dropdown open state changes.</summary>
+    [Parameter] public EventCallback<bool> OpenChanged { get; set; }
+
     /// <summary>Output color format. Defaults to hex.</summary>
     [Parameter] public ColorFormat Format { get; set; } = ColorFormat.Hex;
 
@@ -75,6 +78,8 @@ public partial class TmColorPicker : IAsyncDisposable
             _pendingValue = Value;
             _focusTriggerAfterOpen = true;
         }
+
+        await OpenChanged.InvokeAsync(_isOpen);
     }
 
     /// <inheritdoc />
@@ -106,6 +111,7 @@ public partial class TmColorPicker : IAsyncDisposable
         {
             await ValueChanged.InvokeAsync(value);
             _isOpen = false;
+            await OpenChanged.InvokeAsync(false);
         }
     }
 
@@ -118,46 +124,47 @@ public partial class TmColorPicker : IAsyncDisposable
 
         await ValueChanged.InvokeAsync(_pendingValue);
         _isOpen = false;
+        await OpenChanged.InvokeAsync(false);
     }
 
-    private Task HandleKeyDownAsync(KeyboardEventArgs args)
+    private async Task HandleKeyDownAsync(KeyboardEventArgs args)
     {
         if (Disabled)
         {
-            return Task.CompletedTask;
+            return;
         }
 
         if (args.Key == "Escape" && _isOpen)
         {
-            CloseWithoutApplying();
+            await CloseWithoutApplyingAsync();
         }
-
-        return Task.CompletedTask;
     }
 
     [JSInvokable]
-    public Task CloseFromGlobalEscapeAsync()
+    public async Task CloseFromGlobalEscapeAsync()
     {
         if (!_isOpen)
         {
-            return Task.CompletedTask;
+            return;
         }
 
-        CloseWithoutApplying();
-        return InvokeAsync(StateHasChanged);
+        await CloseWithoutApplyingAsync();
+        await InvokeAsync(StateHasChanged);
     }
 
     private Task CancelAsync()
-    {
-        CloseWithoutApplying();
-        return Task.CompletedTask;
-    }
+        => CloseWithoutApplyingAsync();
 
-    private void CloseWithoutApplying()
+    private async Task CloseWithoutApplyingAsync()
     {
+        var wasOpen = _isOpen;
         _pendingValue = Value;
         _isOpen = false;
         _focusTriggerAfterOpen = false;
+        if (wasOpen)
+        {
+            await OpenChanged.InvokeAsync(false);
+        }
     }
 
     private async Task UnregisterEscapeHandlerAsync()

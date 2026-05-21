@@ -1,4 +1,5 @@
 @namespace Tempo.Blazor.Components.DocumentEditor
+@using Tempo.Blazor.Abstractions.Models
 @using Tempo.Blazor.Components.DocumentEditor.Features
 @using Tempo.Blazor.DocumentEditor.Models
 
@@ -498,14 +499,14 @@
                          style="@FloatingStyle(_miniToolbar)"
                          role="toolbar"
                          aria-label="@Loc["TmDocumentEditor_MiniToolbarLabel"]"
-                         data-testid="document-mini-toolbar"
-                         @onpointerdown:preventDefault="true"
-                         @onmousedown:preventDefault="true">
+                         data-testid="document-mini-toolbar">
                     <button type="button"
                             data-testid="document-mini-bold"
                             aria-label="@Loc["TmDocumentEditor_Bold"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Bold)"
                             disabled="@(!IsCommandEnabled("bold"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "bold", null, false)'>
                         <TmIcon Name="bold" Size="IconSize.Sm" />
                     </button>
@@ -514,6 +515,8 @@
                             aria-label="@Loc["TmDocumentEditor_Italic"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Italic)"
                             disabled="@(!IsCommandEnabled("italic"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "italic", null, false)'>
                         <TmIcon Name="italic" Size="IconSize.Sm" />
                     </button>
@@ -522,6 +525,8 @@
                             aria-label="@Loc["TmDocumentEditor_Underline"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Underline)"
                             disabled="@(!IsCommandEnabled("underline"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "underline", null, false)'>
                         <TmIcon Name="underline" Size="IconSize.Sm" />
                     </button>
@@ -530,29 +535,51 @@
                             aria-label="@Loc["TmDocumentEditor_Strikethrough"]"
                             aria-pressed="@FormattingAriaPressed(_formattingState.Strikethrough)"
                             disabled="@(!IsCommandEnabled("strikethrough"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "strikethrough", null, false)'>
                         <TmIcon Name="strikethrough" Size="IconSize.Sm" />
                     </button>
-                    <button type="button"
-                            data-testid="document-mini-text-color"
-                            aria-label="@Loc["TmDocumentEditor_TextColor"]"
-                            title="@Loc["TmDocumentEditor_TextColor"]"
-                            disabled="@(!IsCommandEnabled("textColor"))"
-                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "textColor", MiniToolbarTextColor, false)'>
-                        <TmIcon Name="palette" Size="IconSize.Sm" />
-                    </button>
-                    <button type="button"
-                            data-testid="document-mini-highlight"
-                            aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
-                            title="@Loc["TmDocumentEditor_HighlightColor"]"
-                            disabled="@(!IsCommandEnabled("highlightColor"))"
-                            @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "highlightColor", MiniToolbarHighlightColor, false)'>
-                        <TmIcon Name="highlighter" Size="IconSize.Sm" />
-                    </button>
+                    <TmColorPicker Value="@NormalizeMiniToolbarTextColor()"
+                                   ValueChanged="HandleMiniToolbarTextColorAppliedAsync"
+                                   Format="ColorFormat.Hex"
+                                   ShowAlpha="false"
+                                   ShowPalette="true"
+                                   ShowClearButton="false"
+                                   ShowApplyButton="true"
+                                   ShowCancelButton="true"
+                                   OpenChanged="HandleMiniToolbarColorPickerOpenChangedAsync"
+                                   Disabled="@(!IsCommandEnabled("textColor"))"
+                                   Placeholder="@Loc["TmDocumentEditor_TextColor"]"
+                                   ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
+                                   CancelText="@Loc["TmDocumentEditor_CancelColor"]"
+                                   Class="@GetMiniToolbarColorPickerClass(_formattingState.TextColorMixed)"
+                                   data-testid="document-mini-text-color"
+                                   aria-label="@Loc["TmDocumentEditor_TextColor"]"
+                                   title="@Loc["TmDocumentEditor_TextColor"]" />
+                    <TmColorPicker Value="@NormalizeMiniToolbarHighlightColor()"
+                                   ValueChanged="HandleMiniToolbarHighlightColorAppliedAsync"
+                                   Format="ColorFormat.Hex"
+                                   ShowAlpha="false"
+                                   ShowPalette="true"
+                                   ShowClearButton="false"
+                                   ShowApplyButton="true"
+                                   ShowCancelButton="true"
+                                   OpenChanged="HandleMiniToolbarColorPickerOpenChangedAsync"
+                                   Disabled="@(!IsCommandEnabled("highlightColor"))"
+                                   Placeholder="@Loc["TmDocumentEditor_HighlightColor"]"
+                                   ApplyText="@Loc["TmDocumentEditor_ApplyColor"]"
+                                   CancelText="@Loc["TmDocumentEditor_CancelColor"]"
+                                   Class="@GetMiniToolbarColorPickerClass(_formattingState.HighlightColorMixed)"
+                                   data-testid="document-mini-highlight"
+                                   aria-label="@Loc["TmDocumentEditor_HighlightColor"]"
+                                   title="@Loc["TmDocumentEditor_HighlightColor"]" />
                     <button type="button"
                             data-testid="document-mini-link"
                             aria-label="@Loc["TmDocumentEditor_Link"]"
                             disabled="@(!IsCommandEnabled("link"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "link", new WysiwygLinkPayload { Href = "https://example.com" })'>
                         <TmIcon Name="link" Size="IconSize.Sm" />
                     </button>
@@ -560,6 +587,8 @@
                             data-testid="document-mini-comment"
                             aria-label="@Loc["TmDocumentEditor_AddComment"]"
                             disabled="@(!IsCommandEnabled("addComment", CanUseComments))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "addComment")'>
                         <TmIcon Name="message-square" Size="IconSize.Sm" />
                     </button>
@@ -568,6 +597,8 @@
                             aria-label="@Loc["TmDocumentEditor_ClearFormatting"]"
                             title="@Loc["TmDocumentEditor_ClearFormatting"]"
                             disabled="@(!IsCommandEnabled("clearFormatting"))"
+                            @onpointerdown:preventDefault="true"
+                            @onmousedown:preventDefault="true"
                             @onclick='() => RunFloatingSelectionRegistryCommandAsync(_miniToolbar.Selection, "clearFormatting", null, false)'>
                         <TmIcon Name="eraser" Size="IconSize.Sm" />
                     </button>

@@ -2907,14 +2907,14 @@ public class DocumentEditorE2ETests : WasmTestBase
             var selected = selection.Text;
             await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
 
-            await page.Locator("[data-testid='document-mini-text-color']").ClickAsync();
+            await SetTempoColorPickerAsync(page, "[data-testid='document-mini-text-color']", "#123456", assertStaysOpenAfterEditing: true);
             var colored = await GetVisibleInlineStyleForTextAsync(page, selected);
             colored.Color.Should().Be("#123456");
             AssertSelectionRangeEquivalent(selection, await GetBrowserSelectionProbeAsync(page), "mini toolbar text color");
             await Assertions.Expect(page.Locator("[data-testid='document-font-color-trigger']")).ToContainTextAsync("#123456", new() { Timeout = 5000 });
             await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync();
 
-            await page.Locator("[data-testid='document-mini-highlight']").ClickAsync();
+            await SetTempoColorPickerAsync(page, "[data-testid='document-mini-highlight']", "#fff59d", assertStaysOpenAfterEditing: true);
             var highlighted = await GetVisibleInlineStyleForTextAsync(page, selected);
             highlighted.BackgroundColor.Should().Be("#fff59d");
             AssertSelectionRangeEquivalent(selection, await GetBrowserSelectionProbeAsync(page), "mini toolbar highlight");
@@ -7662,8 +7662,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         else if (entryPoint == "mini")
         {
             await Assertions.Expect(page.Locator("[data-testid='document-mini-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
-            await page.Locator("[data-testid='document-mini-text-color']").ClickAsync();
-            await page.Locator("[data-testid='document-mini-highlight']").ClickAsync();
+            await SetTempoColorPickerAsync(page, "[data-testid='document-mini-text-color']", "#123456", assertStaysOpenAfterEditing: true);
+            await SetTempoColorPickerAsync(page, "[data-testid='document-mini-highlight']", "#fff59d", assertStaysOpenAfterEditing: true);
         }
         else
         {
@@ -9720,7 +9720,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         return value;
     }
 
-    private static async Task SetTempoColorPickerAsync(IPage page, string selector, string value)
+    private static async Task SetTempoColorPickerAsync(IPage page, string selector, string value, bool assertStaysOpenAfterEditing = false)
     {
         var picker = page.Locator(selector);
         await picker.Locator(".tm-color-picker-trigger").ClickAsync();
@@ -9744,6 +9744,17 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         var rgb = HexToRgb(value);
         var inputs = picker.Locator(".tm-color-gradient-input");
+        if (assertStaysOpenAfterEditing)
+        {
+            await picker.Locator(".tm-color-gradient-area").ClickAsync();
+            await Assertions.Expect(picker.Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(picker.Locator(".tm-color-picker-apply")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await page.WaitForTimeoutAsync(1300);
+            await SetNumberInputAsync(inputs.Nth(0), rgb.R);
+            await Assertions.Expect(picker.Locator(".tm-color-picker-dropdown")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(picker.Locator(".tm-color-picker-apply")).ToBeVisibleAsync(new() { Timeout = 3000 });
+        }
+
         await SetNumberInputAsync(inputs.Nth(0), rgb.R);
         await SetNumberInputAsync(inputs.Nth(1), rgb.G);
         await SetNumberInputAsync(inputs.Nth(2), rgb.B);

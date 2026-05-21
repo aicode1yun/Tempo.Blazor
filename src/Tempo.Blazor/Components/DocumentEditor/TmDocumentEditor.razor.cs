@@ -285,8 +285,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
     private WysiwygTextContextMenuRequest? _textContextMenu;
     private WysiwygTableContextMenuRequest? _tableContextMenu;
     private WysiwygMiniToolbarRequest? _miniToolbar;
-    private const string MiniToolbarTextColor = "#123456";
-    private const string MiniToolbarHighlightColor = "#fff59d";
+    private WysiwygMiniToolbarRequest? _lastMiniToolbarRequest;
+    private bool _miniToolbarColorPickerOpen;
+    private DateTimeOffset _keepMiniToolbarVisibleUntil;
     private string? _optimisticFloatingTextColor;
     private string? _optimisticFloatingHighlightColor;
     private string? _optimisticFloatingFormattingSelectionKey;
@@ -2216,18 +2217,38 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task HandleWysiwygSelectionChangedAsync(WysiwygSelectionSnapshot? snapshot)
     {
-        if (snapshot?.IsCollapsed != false)
+        var keepMiniToolbarVisible = _miniToolbarColorPickerOpen || DateTimeOffset.UtcNow <= _keepMiniToolbarVisibleUntil;
+        if (snapshot?.IsCollapsed != false && !keepMiniToolbarVisible)
         {
             _miniToolbar = null;
+        }
+
+        if (_miniToolbarColorPickerOpen && snapshot?.IsCollapsed != false)
+        {
+            _formattingState.CurrentSelection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+            ApplyPendingFloatingFormattingOverride();
+            await RefreshCommandRegistryAsync();
+            await InvokeAsync(StateHasChanged);
+            return;
         }
 
         if (snapshot is null)
         {
             _selection = new DocumentEditorSelectionState();
-            _formattingState = new WysiwygFormattingState();
             _activeWysiwygRegion = "Body";
             _lastWysiwygSelectionSnapshot = null;
             _lastCollapsedSelectionRenderKey = null;
+            if (_optimisticFloatingFormattingExpiresAt != default)
+            {
+                _formattingState.CurrentSelection = _lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot;
+                ApplyPendingFloatingFormattingOverride();
+                await RefreshCommandRegistryAsync();
+                await InvokeAsync(StateHasChanged);
+                await BroadcastCollaborationCursorAsync();
+                return;
+            }
+
+            _formattingState = new WysiwygFormattingState();
             await BroadcastCollaborationCursorAsync();
             return;
         }
@@ -2451,6 +2472,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _miniToolbar = request?.IsVisible == true ? request : null;
         if (_miniToolbar is not null)
         {
+            _lastMiniToolbarRequest = _miniToolbar;
+            if (_miniToolbar.Selection is not null)
+            {
+                RememberBodySelection(_miniToolbar.Selection);
+            }
+
             _textContextMenu = null;
             _tableContextMenu = null;
             _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
@@ -2472,6 +2499,80 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         return InvokeAsync(StateHasChanged);
+    }
+
+    private string NormalizeMiniToolbarTextColor()
+        => NormalizeMiniToolbarColorValue(_formattingState.TextColor, "#111827");
+
+    private string NormalizeMiniToolbarHighlightColor()
+        => NormalizeMiniToolbarColorValue(_formattingState.HighlightColor, "#ffffff");
+
+    private static string GetMiniToolbarColorPickerClass(bool mixed)
+        => mixed
+            ? "tm-document-editor__mini-color-picker tm-document-editor__mini-color-picker--mixed"
+            : "tm-document-editor__mini-color-picker";
+
+    private Task HandleMiniToolbarTextColorAppliedAsync(string? value)
+    {
+        var normalized = NormalizeMiniToolbarColorValue(value, string.Empty);
+        var selection = GetMiniToolbarSelectionSnapshot();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? Task.CompletedTask
+            : RunFloatingSelectionRegistryCommandAsync(selection, "textColor", normalized, false);
+    }
+
+    private Task HandleMiniToolbarHighlightColorAppliedAsync(string? value)
+    {
+        var normalized = NormalizeMiniToolbarColorValue(value, string.Empty);
+        var selection = GetMiniToolbarSelectionSnapshot();
+        return string.IsNullOrWhiteSpace(normalized)
+            ? Task.CompletedTask
+            : RunFloatingSelectionRegistryCommandAsync(selection, "highlightColor", normalized, false);
+    }
+
+    private Task HandleMiniToolbarColorPickerOpenChangedAsync(bool isOpen)
+    {
+        _miniToolbarColorPickerOpen = isOpen;
+        _keepMiniToolbarVisibleUntil = isOpen
+            ? DateTimeOffset.UtcNow.AddMinutes(10)
+            : DateTimeOffset.UtcNow.AddSeconds(1);
+
+        if (isOpen && _miniToolbar is null && _lastMiniToolbarRequest is not null)
+        {
+            _lastMiniToolbarRequest.IsVisible = true;
+            return HandleMiniToolbarChangedAsync(_lastMiniToolbarRequest);
+        }
+
+        return Task.CompletedTask;
+    }
+
+    private WysiwygSelectionSnapshot? GetMiniToolbarSelectionSnapshot()
+        => _miniToolbar?.Selection
+            ?? _lastMiniToolbarRequest?.Selection
+            ?? _lastBodyRangeSelectionSnapshot
+            ?? _lastBodySelectionSnapshot;
+
+    private static string NormalizeMiniToolbarColorValue(string? value, string fallback)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+        {
+            return fallback;
+        }
+
+        var trimmed = value.Trim();
+        if (!trimmed.StartsWith('#'))
+        {
+            trimmed = $"#{trimmed}";
+        }
+
+        if (trimmed.Length == 4 && trimmed.Skip(1).All(Uri.IsHexDigit))
+        {
+            return $"#{trimmed[1]}{trimmed[1]}{trimmed[2]}{trimmed[2]}{trimmed[3]}{trimmed[3]}".ToLowerInvariant();
+        }
+
+        return trimmed.Length == 7 && trimmed.Skip(1).All(Uri.IsHexDigit)
+            ? trimmed.ToLowerInvariant()
+            : fallback;
     }
 
     private bool IsPageBreakContextMenu =>
@@ -2631,7 +2732,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
 
     private async Task RunFloatingSelectionCommandAsync(WysiwygSelectionSnapshot? selection, Func<Task> command, bool closeAfterCommand = true)
     {
-        var previousMiniToolbar = _miniToolbar;
+        var previousMiniToolbar = _miniToolbar ?? _lastMiniToolbarRequest;
+        if (!closeAfterCommand)
+        {
+            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
+        }
+
         if (_wysiwygHost is not null && selection is not null)
         {
             await _wysiwygHost.RestoreSelectionAsync(selection);
@@ -2661,10 +2767,15 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         object? payload = null,
         bool closeAfterCommand = true)
     {
-        var previousMiniToolbar = _miniToolbar;
+        var previousMiniToolbar = _miniToolbar ?? _lastMiniToolbarRequest;
         if (!IsCommandEnabled(commandName))
         {
             return;
+        }
+
+        if (!closeAfterCommand)
+        {
+            _keepMiniToolbarVisibleUntil = DateTimeOffset.UtcNow.AddSeconds(1);
         }
 
         if (_wysiwygHost is not null && selection is not null)
@@ -2794,9 +2905,12 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         }
 
         var currentSelectionKey = GetFloatingFormattingSelectionKey(_formattingState.CurrentSelection);
+        var lastBodySelectionKey = GetFloatingFormattingSelectionKey(_lastBodyRangeSelectionSnapshot ?? _lastBodySelectionSnapshot);
+        var selectionMatches = string.IsNullOrWhiteSpace(_optimisticFloatingFormattingSelectionKey)
+            || string.Equals(_optimisticFloatingFormattingSelectionKey, currentSelectionKey, StringComparison.Ordinal)
+            || string.Equals(_optimisticFloatingFormattingSelectionKey, lastBodySelectionKey, StringComparison.Ordinal);
         if (DateTimeOffset.UtcNow > _optimisticFloatingFormattingExpiresAt
-            || (!string.IsNullOrWhiteSpace(_optimisticFloatingFormattingSelectionKey)
-                && !string.Equals(_optimisticFloatingFormattingSelectionKey, currentSelectionKey, StringComparison.Ordinal)))
+            || !selectionMatches)
         {
             _optimisticFloatingTextColor = null;
             _optimisticFloatingHighlightColor = null;
@@ -2845,6 +2959,9 @@ public partial class TmDocumentEditor : ComponentBase, IDisposable, IAsyncDispos
         _textContextMenu = null;
         _tableContextMenu = null;
         _miniToolbar = null;
+        _lastMiniToolbarRequest = null;
+        _miniToolbarColorPickerOpen = false;
+        _keepMiniToolbarVisibleUntil = default;
         _floatingLayerStack.Remove(FloatingLayerId.TextContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.TableContextMenu);
         _floatingLayerStack.Remove(FloatingLayerId.MiniToolbar);
