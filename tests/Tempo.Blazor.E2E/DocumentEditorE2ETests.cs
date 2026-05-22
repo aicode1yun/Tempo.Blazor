@@ -4823,6 +4823,83 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_SpaceAfterSeedRevisionKeepsLogicalVisualOrder()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            const string seedRevisionText = " Priority support is included during the first thirty days.";
+
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, seedRevisionText, offsetInsideText: seedRevisionText.Length);
+            await page.Keyboard.PressAsync("Space");
+            await page.WaitForTimeoutAsync(450);
+
+            var probe = await CaptureSeedRevisionLayoutProbeAsync(page);
+            probe.RuntimeMarkerCount.Should().Be(0, "typing a plain space after the seeded revision must not recreate a duplicate runtime marker");
+            probe.Text.Should().Contain("Priority support is included during the first thirty days.");
+            probe.PriorityBeforeSupportVisually.Should().BeTrue(
+                "a plain edit after the seeded pending revision must not reorder the absolute layout segments");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_SpaceAfterSeedRevisionKeepsLogicalVisualOrder),
+                "Disable track changes, put the caret at the end of the seeded insertion revision, then press Space.",
+                "The pending revision must keep its visual word order after local layout reflow and must not be wrapped by duplicate runtime revision markup.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_EnterAfterSeedRevisionKeepsTypingBelowRevision()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            const string seedRevisionText = " Priority support is included during the first thirty days.";
+            var typedText = $"enter-after-revision-{DateTimeOffset.UtcNow:HHmmssfff}";
+
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInsideRevisionTextAsync(page, seedRevisionText, offsetInsideText: seedRevisionText.Length);
+            await page.Keyboard.PressAsync("Enter");
+            await page.Keyboard.TypeAsync(typedText, new KeyboardTypeOptions { Delay = 1 });
+            await Assertions.Expect(host).ToContainTextAsync(typedText, new() { Timeout = 5000 });
+            await page.WaitForTimeoutAsync(450);
+
+            var probe = await CaptureSeedRevisionEnterTypingProbeAsync(page, typedText);
+            probe.TypedTextFound.Should().BeTrue("the text typed after Enter must remain in the document body");
+            probe.TypedTextBlockId.Should().NotBe("contract-heading", "typing after a paragraph split must not jump to the document heading");
+            probe.TypedTextBlockId.Should().NotBe("contract-intro", "typing after a paragraph split must not jump to the first paragraph");
+            probe.TypedTextRect.Y.Should().BeGreaterThan(probe.RevisionBottom - 1,
+                "the new paragraph should render below the seeded revision, not at the top of the page");
+            probe.TypedTextRect.Y.Should().BeGreaterThan(probe.HeadingRect.Y,
+                "the caret after Enter must not reset to the beginning of the document");
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            DocumentHasInlineMark(saved, seedRevisionText, InlineMarkType.Revision).Should().BeTrue("the original seed insertion remains pending");
+            DocumentHasInlineMark(saved, typedText, InlineMarkType.Revision).Should().BeFalse("typing after Enter with tracking off must stay outside the pending revision");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_EnterAfterSeedRevisionKeepsTypingBelowRevision),
+                "Disable track changes, put the caret at the end of the seeded insertion revision, press Enter and immediately type.",
+                "The local split/reflow must keep the caret in the newly created paragraph below the revision instead of briefly placing typed text at the top of the document.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Strict_Phase7_EnterAfterBackspaceMergeKeepsMovedTextOnCaretLine()
     {
         var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
@@ -10197,6 +10274,71 @@ public class DocumentEditorE2ETests : WasmTestBase
             }
             """) ?? new SeedRevisionLayoutProbe();
 
+    private static async Task<SeedRevisionEnterTypingProbe> CaptureSeedRevisionEnterTypingProbeAsync(IPage page, string typedText)
+        => await page.EvaluateAsync<SeedRevisionEnterTypingProbe>(
+            """
+            ({ typedText }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const emptyRect = () => ({ X: 0, Y: 0, Width: 0, Height: 0 });
+                const rectForText = (root, text) => {
+                    if (!root || !text) return { rect: emptyRect(), blockId: '', found: false };
+                    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+                        acceptNode(node) {
+                            const parent = node.parentElement;
+                            if (!parent || !isVisible(parent)) return NodeFilter.FILTER_REJECT;
+                            return (node.textContent || '').includes(text)
+                                ? NodeFilter.FILTER_ACCEPT
+                                : NodeFilter.FILTER_SKIP;
+                        }
+                    });
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const value = node.textContent || '';
+                        const index = value.indexOf(text);
+                        if (index < 0) continue;
+                        const range = document.createRange();
+                        range.setStart(node, index);
+                        range.setEnd(node, index + text.length);
+                        const rect = range.getBoundingClientRect();
+                        return {
+                            rect: { X: rect.left, Y: rect.top, Width: rect.width, Height: rect.height },
+                            blockId: node.parentElement?.closest('[data-block-id]')?.getAttribute('data-block-id') || '',
+                            found: rect.width > 0 || rect.height > 0
+                        };
+                    }
+
+                    return { rect: emptyRect(), blockId: '', found: false };
+                };
+
+                const typed = rectForText(host, typedText);
+                const heading = rectForText(host?.querySelector('[data-block-id="contract-heading"]') || host, 'Service agreement');
+                const revisionNodes = Array.from(host?.querySelectorAll('[data-revision-id="contract-revision-scope"]') || [])
+                    .filter(isVisible);
+                const revisionBottom = revisionNodes.reduce((bottom, node) => {
+                    const rect = node.getBoundingClientRect();
+                    return Math.max(bottom, rect.bottom);
+                }, 0);
+
+                return {
+                    TypedTextFound: typed.found,
+                    TypedTextRect: typed.rect,
+                    TypedTextBlockId: typed.blockId,
+                    HeadingRect: heading.rect,
+                    RevisionBottom: revisionBottom
+                };
+            }
+            """,
+            new { typedText }) ?? new SeedRevisionEnterTypingProbe();
+
     private static async Task<WysiwygRuntimeFormattingProbe> CaptureRuntimeFormattingProbeAsync(IPage page)
     {
         return await page.EvaluateAsync<WysiwygRuntimeFormattingProbe>(
@@ -12662,6 +12804,59 @@ public class DocumentEditorE2ETests : WasmTestBase
             new { blockId, offset });
     }
 
+    private static async Task PlaceCaretInInlineByIdAsync(IPage page, string inlineId, int offset)
+    {
+        await page.EvaluateAsync(
+            """
+            ({ inlineId, offset }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const inline = Array
+                    .from(host?.querySelectorAll(`[data-inline-id="${CSS.escape(inlineId)}"]`) || [])
+                    .find(isVisible);
+                if (!inline) {
+                    throw new Error(`Visible inline ${inlineId} was not found.`);
+                }
+
+                inline.scrollIntoView({ block: 'center', inline: 'nearest' });
+                inline.closest('[contenteditable="true"]')?.focus();
+                const resolve = absoluteOffset => {
+                    const walker = document.createTreeWalker(inline, NodeFilter.SHOW_TEXT);
+                    let current = 0;
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const length = node.textContent.length;
+                        if (absoluteOffset <= current + length) {
+                            return { node, offset: Math.max(0, Math.min(length, absoluteOffset - current)) };
+                        }
+                        current += length;
+                    }
+
+                    const fallback = inline.appendChild(document.createTextNode(''));
+                    return { node: fallback, offset: 0 };
+                };
+                const target = resolve(Math.max(0, Math.min(offset, inline.textContent.length)));
+                const range = document.createRange();
+                range.setStart(target.node, target.offset);
+                range.collapse(true);
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+                document.dispatchEvent(new Event('selectionchange'));
+            }
+            """,
+            new { inlineId, offset });
+        await page.WaitForTimeoutAsync(80);
+    }
+
     private static async Task PlaceCaretInVisibleTextAsync(IPage page, string text, int offset)
     {
         await page.EvaluateAsync(
@@ -13329,6 +13524,12 @@ public class DocumentEditorE2ETests : WasmTestBase
 
     private static async Task TypeTextBesideWrappedImageAsync(IPage page, ILocator figure, string text, bool rightOfLeftImage)
     {
+        await ClickWrappedImageSideTextAsync(page, figure, rightOfLeftImage);
+        await page.Keyboard.InsertTextAsync(text);
+    }
+
+    private static async Task ClickWrappedImageSideTextAsync(IPage page, ILocator figure, bool rightOfLeftImage)
+    {
         var line = await CaptureWrappedImageLineBesideImageAsync(figure, rightOfLeftImage);
         line.LineId.Should().NotBeNullOrWhiteSpace("typing beside a wrapped image must target a real layout line, not a generated sidecar paragraph");
 
@@ -13347,7 +13548,6 @@ public class DocumentEditorE2ETests : WasmTestBase
         await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
         await AssertSelectionInsideWrappedImageSideTextAsync(figure);
         await AssertWrappedImageCaretBesideImageAsync(figure, rightOfLeftImage ? "right" : "left");
-        await page.Keyboard.InsertTextAsync(text);
     }
 
     private static Task<Phase0WrappedTextLineProbe> CaptureWrappedImageLineBesideImageAsync(ILocator figure, bool rightOfLeftImage)
@@ -13606,6 +13806,43 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         issues.Should().BeEmpty();
     }
+
+    private static Task<WysiwygLayoutActivityProbe> CaptureWysiwygLayoutActivityProbeAsync(IPage page)
+        => page.EvaluateAsync<WysiwygLayoutActivityProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const debug = window.tmDocumentEditorWysiwyg?.getDebugSnapshot?.(instanceId) || {};
+                const selection = window.getSelection();
+                const anchor = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE
+                    ? selection.anchorNode
+                    : selection?.anchorNode?.parentElement;
+                const line = anchor?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]') || null;
+                const image = anchor?.closest?.('figure.tm-wysiwyg-image') || null;
+                const block = anchor?.closest?.('[data-block-id]') || null;
+                const inline = anchor?.closest?.('[data-inline-id]') || null;
+                const rect = line?.getBoundingClientRect?.();
+                return {
+                    LayoutPassCount: debug.LayoutPassCount || debug.Performance?.LayoutPassCount || 0,
+                    LastLayoutReason: debug.LastLayoutReason || debug.Performance?.LastLayoutReason || '',
+                    PendingPatchType: debug.PendingPatchType || '',
+                    ActiveBlockId: block?.getAttribute('data-block-id') || debug.ActiveBlockId || '',
+                    ActiveInlineId: inline?.getAttribute('data-inline-id') || debug.ActiveInlineId || '',
+                    SelectionInsideLayoutLine: !!line,
+                    SelectionInsideImage: !!image,
+                    SelectionLineId: line?.getAttribute('data-layout-line-id') || '',
+                    SelectionLineRect: {
+                        X: rect?.left || 0,
+                        Y: rect?.top || 0,
+                        Width: rect?.width || 0,
+                        Height: rect?.height || 0,
+                        Right: rect?.right || 0,
+                        Bottom: rect?.bottom || 0
+                    }
+                };
+            }
+            """);
 
     private static async Task<DocumentOverlapProbe> CaptureDocumentOverlapProbeAsync(IPage page)
     {
@@ -13972,6 +14209,74 @@ public class DocumentEditorE2ETests : WasmTestBase
                 return issues;
             }
             """);
+
+    private static Task<string[]> CaptureLiveLayoutTypingIssuesAsync(IPage page, string blockId)
+        => page.EvaluateAsync<string[]>(
+            """
+            blockId => {
+                const issues = [];
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const paragraph = host?.querySelector(`.tm-wysiwyg-layout-paragraph[data-block-id="${CSS.escape(blockId)}"]`);
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                if (!paragraph || !isVisible(paragraph)) {
+                    return [`layout paragraph ${blockId} is missing or hidden`];
+                }
+
+                const paragraphText = (paragraph.textContent || '').replace(/\s+/g, ' ').trim();
+                if (blockId === 'contract-intro' && !paragraphText.startsWith('This agreement is made with Client name.')) {
+                    issues.push(`intro paragraph word order changed: ${paragraphText}`);
+                }
+
+                const segments = Array.from(paragraph.querySelectorAll('.tm-wysiwyg-layout-segment[data-layout-segment-id]'))
+                    .filter(isVisible);
+                if (segments.length === 0) {
+                    issues.push(`layout paragraph ${blockId} has no visible segments`);
+                }
+
+                for (const segment of segments) {
+                    const text = segment.textContent || '';
+                    const style = getComputedStyle(segment);
+                    const segmentId = segment.getAttribute('data-layout-segment-id') || '';
+                    const inlineId = segment.getAttribute('data-inline-id') || '';
+
+                    if (style.whiteSpace !== 'pre') {
+                        issues.push(`${segmentId || inlineId} uses ${style.whiteSpace} instead of pre`);
+                    }
+
+                    if (style.textAlign !== 'left') {
+                        issues.push(`${segmentId || inlineId} inherits ${style.textAlign} text alignment inside absolute layout`);
+                    }
+
+                    if (text.length > 0 && segment.scrollHeight > segment.clientHeight + 2) {
+                        issues.push(`${segmentId || inlineId} wraps vertically while typing: ${segment.scrollHeight} > ${segment.clientHeight}`);
+                    }
+
+                    const textNode = Array
+                        .from(segment.childNodes)
+                        .find(node => node.nodeType === Node.TEXT_NODE && (node.nodeValue || '').length > 0);
+                    if (!textNode) continue;
+
+                    const range = document.createRange();
+                    range.selectNodeContents(textNode);
+                    const rects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+                    range.detach?.();
+                    if (rects.length > 1) {
+                        issues.push(`${segmentId || inlineId} text node split into ${rects.length} visual rects: ${text.slice(0, 48)}`);
+                    }
+                }
+
+                return issues;
+            }
+            """,
+            blockId);
 
     private static Task<string[]> CaptureStrictLayoutIssuesAsync(IPage page, bool allowDocumentCanvasHorizontalScroll = false)
         => page.EvaluateAsync<string[]>(
@@ -16791,6 +17096,40 @@ public class DocumentEditorE2ETests : WasmTestBase
         public bool PriorityBeforeSupportVisually { get; set; }
     }
 
+    private sealed class SeedRevisionEnterTypingProbe
+    {
+        public bool TypedTextFound { get; set; }
+
+        public RectProbe TypedTextRect { get; set; } = new();
+
+        public string TypedTextBlockId { get; set; } = string.Empty;
+
+        public RectProbe HeadingRect { get; set; } = new();
+
+        public double RevisionBottom { get; set; }
+    }
+
+    private sealed class WysiwygLayoutActivityProbe
+    {
+        public int LayoutPassCount { get; set; }
+
+        public string LastLayoutReason { get; set; } = string.Empty;
+
+        public string PendingPatchType { get; set; } = string.Empty;
+
+        public string ActiveBlockId { get; set; } = string.Empty;
+
+        public string ActiveInlineId { get; set; } = string.Empty;
+
+        public bool SelectionInsideLayoutLine { get; set; }
+
+        public bool SelectionInsideImage { get; set; }
+
+        public string SelectionLineId { get; set; } = string.Empty;
+
+        public RectProbe SelectionLineRect { get; set; } = new();
+    }
+
     private sealed class WysiwygRuntimeFormattingProbe
     {
         public int Underline { get; set; }
@@ -18123,6 +18462,120 @@ public class DocumentEditorE2ETests : WasmTestBase
         catch
         {
             await SaveDocumentEditorDebugArtifactsAsync(page, nameof(DocumentEditor_Phase7_TypingAfterWrappedImage_DoesNotCorruptText));
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_TypingBesideWrappedImageDefersReflowUntilIdle()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        await ReloadDocumentEditorPageAsync(page);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var typedText = $" stable-wrap-typing-{DateTimeOffset.UtcNow:HHmmssfff}-{Guid.NewGuid():N} ";
+
+        try
+        {
+            await SetTrackChangesAsync(page, enabled: false);
+
+            var figure = host.Locator("figure.tm-wysiwyg-image:visible").First;
+            await figure.ScrollIntoViewIfNeededAsync();
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-left"), new() { Timeout = 5000 });
+
+            await ClickWrappedImageSideTextAsync(page, figure, rightOfLeftImage: true);
+            await page.WaitForTimeoutAsync(1200);
+            var before = await CaptureWysiwygLayoutActivityProbeAsync(page);
+            before.SelectionInsideLayoutLine.Should().BeTrue("the regression target must be a normal layout text line beside the image");
+
+            var typing = page.Keyboard.TypeAsync(typedText, new KeyboardTypeOptions { Delay = 35 });
+            await page.WaitForTimeoutAsync(450);
+            var during = await CaptureWysiwygLayoutActivityProbeAsync(page);
+            during.LayoutPassCount.Should().Be(
+                before.LayoutPassCount,
+                "active typing beside a wrapped image must not be interrupted by a full layout reflow from a partial snapshot");
+            during.SelectionInsideLayoutLine.Should().BeTrue("caret ownership must stay in the editable layout line while text is being typed");
+            during.SelectionInsideImage.Should().BeFalse("typing text beside a wrapped image must not reselect the image");
+
+            await typing;
+            await Assertions.Expect(host).ToContainTextAsync(typedText, new() { Timeout = 5000 });
+            var afterTyping = await CaptureWysiwygLayoutActivityProbeAsync(page);
+            afterTyping.LayoutPassCount.Should().Be(
+                before.LayoutPassCount,
+                "the layout should wait for typing idle before re-rendering absolute line boxes");
+
+            await page.WaitForTimeoutAsync(1400);
+            var afterIdle = await CaptureWysiwygLayoutActivityProbeAsync(page);
+            afterIdle.LayoutPassCount.Should().BeGreaterThan(
+                before.LayoutPassCount,
+                "once typing is idle the engine should reconcile the document model into a fresh page layout");
+            afterIdle.SelectionInsideImage.Should().BeFalse();
+            await Assertions.Expect(host).ToContainTextAsync(typedText, new() { Timeout = 5000 });
+
+            var overlapProbe = await CaptureDocumentOverlapProbeAsync(page);
+            overlapProbe.Collisions.Should().BeEmpty("the idle reflow after typing must not create visible text/image overlap");
+            overlapProbe.LayoutDomMismatches.Should().BeEmpty("the idle reflow must keep DOM rectangles aligned with engine layout coordinates");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_TypingBesideWrappedImageDefersReflowUntilIdle),
+                "Reload the default demo, click a normal text line beside the left-wrapped image and type character by character.",
+                "No full layout pass may run while typing is active; the idle reflow must run only after typing settles and must not introduce visual collisions.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_LiveTypingInJustifiedLayoutParagraphDoesNotWrapSegments()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1320, height: 980);
+        await ReloadDocumentEditorPageAsync(page);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var typedText = $" live-layout-{DateTimeOffset.UtcNow:HHmmssfff}-{Guid.NewGuid():N} ";
+
+        try
+        {
+            await SetTrackChangesAsync(page, enabled: false);
+            await PlaceCaretInInlineByIdAsync(page, "contract-intro-suffix", 1);
+
+            var before = await GetBrowserSelectionProbeAsync(page);
+            before.AnchorBlockId.Should().Be("contract-intro");
+            before.AnchorInlineId.Should().Be("contract-intro-suffix");
+
+            var typing = page.Keyboard.TypeAsync(typedText, new KeyboardTypeOptions { Delay = 90 });
+            await page.WaitForTimeoutAsync(650);
+
+            var duringIssues = await CaptureLiveLayoutTypingIssuesAsync(page, "contract-intro");
+            duringIssues.Should().BeEmpty(
+                "the exact regression is that CSS overrides make absolute layout segments wrap and justify themselves while the user is still typing");
+
+            await typing;
+            await Assertions.Expect(host).ToContainTextAsync(typedText, new() { Timeout = 5000 });
+            await page.WaitForTimeoutAsync(1400);
+
+            var afterIssues = await CaptureLiveLayoutTypingIssuesAsync(page, "contract-intro");
+            afterIssues.Should().BeEmpty("the reconciled layout must keep absolute segment text stable after the idle reflow too");
+
+            var finalText = await page.EvaluateAsync<string>(
+                """
+                () => document
+                    .querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-layout-paragraph[data-block-id="contract-intro"]')
+                    ?.textContent || ''
+                """);
+            finalText.Should().Contain("This agreement is made with Client name.");
+            finalText.Should().Contain(typedText.Trim());
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_LiveTypingInJustifiedLayoutParagraphDoesNotWrapSegments),
+                "Reload the default demo, place the caret after the Client name token in the justified intro paragraph and type slowly.",
+                "During typing and after idle reflow, absolute layout segments must keep white-space pre, left internal alignment, one visual line and unchanged logical word order.");
             throw;
         }
     }

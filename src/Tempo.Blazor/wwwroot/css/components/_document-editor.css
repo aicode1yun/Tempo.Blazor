@@ -2883,8 +2883,17 @@
     font-size: inherit;
 }
 
-.tm-wysiwyg-page [data-inline-id]:not(.tm-wysiwyg-field):not(.tm-wysiwyg-token) {
+.tm-wysiwyg-page [data-inline-id]:not(.tm-wysiwyg-layout-segment):not(.tm-wysiwyg-field):not(.tm-wysiwyg-token) {
     white-space: break-spaces;
+}
+
+.tm-wysiwyg-page .tm-wysiwyg-layout-line,
+.tm-wysiwyg-page .tm-wysiwyg-layout-segment,
+.tm-wysiwyg-page .tm-wysiwyg-layout-segment[data-inline-id] {
+    text-align: left;
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .tm-wysiwyg-block p {

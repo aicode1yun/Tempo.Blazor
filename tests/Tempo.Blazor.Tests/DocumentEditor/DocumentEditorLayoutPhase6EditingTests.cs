@@ -159,6 +159,144 @@ public sealed class DocumentEditorLayoutPhase6EditingTests
         result.StandardOutput.Trim().Should().Be("OK");
     }
 
+    [Fact]
+    public async Task Phase6_LayoutSnapshot_SegmentsCarryBlockOffsetsAcrossInlineRuns()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Math, Number, String, parseInt };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const layout = sandbox.window.tmDocumentWysiwyg.__testHooks.createLayoutSnapshotForRender({
+                Blocks: [{
+                    Id: 'p1',
+                    Type: 0,
+                    Content: {
+                        $type: 'paragraph',
+                        Inlines: [
+                            { $type: 'text', Id: 'approved', Text: 'Approved text. ' },
+                            {
+                                $type: 'text',
+                                Id: 'revision',
+                                Text: 'Priority support.',
+                                Marks: [{ Type: 'Revision', RevisionId: 'rev-1', Value: 'Insertion' }]
+                            }
+                        ]
+                    }
+                }]
+            });
+            const paragraph = layout.Pages[0].Paragraphs.find(item => item.BlockId === 'p1');
+            const revisionSegments = paragraph.Lines
+                .flatMap(line => line.Segments)
+                .filter(segment => segment.InlineId === 'revision');
+
+            assert.ok(revisionSegments.length > 0, 'revision segments should be present');
+            assert.ok(revisionSegments.every(segment => segment.BlockStartOffset >= 'Approved text. '.length),
+                'revision block offsets must include the approved inline prefix');
+            assert.strictEqual(revisionSegments[0].BlockStartOffset, 'Approved text. '.length);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase6_LayoutSnapshot_EmptyTextRunRendersEditableSegment()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Math, Number, String, parseInt };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const layout = sandbox.window.tmDocumentWysiwyg.__testHooks.createLayoutSnapshotForRender({
+                Blocks: [{
+                    Id: 'empty-paragraph',
+                    Type: 0,
+                    Content: {
+                        $type: 'paragraph',
+                        Inlines: [{ $type: 'text', Id: 'empty-inline', Text: '' }]
+                    }
+                }]
+            });
+            const paragraph = layout.Pages[0].Paragraphs.find(item => item.BlockId === 'empty-paragraph');
+            const segments = paragraph.Lines.flatMap(line => line.Segments);
+
+            assert.strictEqual(segments.length, 1);
+            assert.strictEqual(segments[0].InlineId, 'empty-inline');
+            assert.strictEqual(segments[0].Text, '');
+            assert.strictEqual(segments[0].Length, 0);
+            assert.strictEqual(segments[0].BlockStartOffset, 0);
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
+    [Fact]
+    public async Task Phase6_MarkNormalization_KnowsRevisionAndCommentAnchorMarks()
+    {
+        var scriptPath = GetWysiwygScriptPath();
+        if (!IsNodeAvailable()) return;
+
+        var nodeScript =
+            """
+            const fs = require('fs');
+            const vm = require('vm');
+            const assert = require('assert');
+
+            const code = fs.readFileSync(process.argv[2], 'utf8');
+            const sandbox = { window: {}, console, setTimeout, clearTimeout, URL, JSON, Math, Number, String, parseInt };
+            sandbox.window.setTimeout = setTimeout;
+            sandbox.window.clearTimeout = clearTimeout;
+            sandbox.window.console = console;
+            vm.createContext(sandbox);
+            vm.runInContext(code, sandbox, { filename: 'document-editor-wysiwyg.js' });
+
+            const normalize = sandbox.window.tmDocumentWysiwyg.__testHooks.normalizeMarkType;
+            assert.strictEqual(normalize('Revision'), 'Revision');
+            assert.strictEqual(normalize(8), 'Revision');
+            assert.strictEqual(normalize('revision-anchor'), 'Revision');
+            assert.strictEqual(normalize('CommentAnchor'), 'CommentAnchor');
+            assert.strictEqual(normalize(7), 'CommentAnchor');
+
+            console.log('OK');
+            """;
+
+        var result = await RunNodeAsync(scriptPath, nodeScript);
+        result.ExitCode.Should().Be(0, result.StandardError);
+        result.StandardOutput.Trim().Should().Be("OK");
+    }
+
     private static string GetWysiwygScriptPath()
     {
         var root = FindRepositoryRoot();

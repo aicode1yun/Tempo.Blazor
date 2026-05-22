@@ -171,6 +171,7 @@ window.tmDocumentWysiwyg = (function () {
             pendingInputPatchTimer: null,
             pendingInputPatchMaxTimer: null,
             localLayoutReflowTimer: null,
+            localLayoutTypingSuppressUntil: 0,
             forceNextLocalSnapshotRender: false,
             forceNextLocalSnapshotSelection: null,
             pendingTypingMarks: {},
@@ -3060,16 +3061,16 @@ window.tmDocumentWysiwyg = (function () {
                 range.deleteContents();
             }
 
-            var untrackedRevisionInsert = _applyUntrackedInsertTextOutsideRevision(inst, data, range);
-            if (untrackedRevisionInsert) {
-                untrackedRevisionInsert.replacedText = replacedText;
-                return untrackedRevisionInsert;
-            }
-
             var layoutInsert = _applyLayoutInsertText(inst, data, selection, sel);
             if (layoutInsert) {
                 layoutInsert.replacedText = replacedText;
                 return layoutInsert;
+            }
+
+            var untrackedRevisionInsert = _applyUntrackedInsertTextOutsideRevision(inst, data, range);
+            if (untrackedRevisionInsert) {
+                untrackedRevisionInsert.replacedText = replacedText;
+                return untrackedRevisionInsert;
             }
 
             var textNode = range.startContainer;
@@ -3325,6 +3326,7 @@ window.tmDocumentWysiwyg = (function () {
                 }
 
                 var startOffset = parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10);
+                var blockStartOffset = parseInt(segment.getAttribute('data-layout-block-start-offset') || segment.getAttribute('data-layout-start-offset') || '0', 10);
                 var line = segment.closest('.tm-wysiwyg-layout-line[data-layout-line-id]');
                 return {
                     id: segment.getAttribute('data-layout-segment-id') || '',
@@ -3333,6 +3335,7 @@ window.tmDocumentWysiwyg = (function () {
                     inlineId: inlineId,
                     blockId: blockId,
                     startOffset: Number.isFinite(startOffset) ? startOffset : 0,
+                    blockStartOffset: Number.isFinite(blockStartOffset) ? blockStartOffset : (Number.isFinite(startOffset) ? startOffset : 0),
                     element: segment,
                     textNode: textNode,
                     text: textNode.textContent || ''
@@ -3488,10 +3491,39 @@ window.tmDocumentWysiwyg = (function () {
 
         var text = target.segment.textNode.textContent || '';
         var localOffset = Math.max(0, Math.min(target.offset, text.length));
+        var insertedInlineId = null;
+        var insertedBlockOffset = null;
+        if (!inst.trackChangesEnabled && _layoutSegmentHasRevisionMark(target.segment.element)) {
+            insertedInlineId = _createInlineId();
+            var selectionBlockOffset = selection.anchorBlockOffset ?? selection.AnchorBlockOffset ?? null;
+            if (!Number.isFinite(Number(selectionBlockOffset))) {
+                selectionBlockOffset = (target.segment.blockStartOffset ?? target.segment.startOffset ?? 0) + localOffset;
+            }
+            insertedBlockOffset = (parseInt(selectionBlockOffset, 10) || 0) + data.length;
+        }
+
         target.segment.textNode.textContent = text.slice(0, localOffset) + data + text.slice(localOffset);
         target.segment.element.setAttribute('data-layout-length', String(target.segment.textNode.textContent.length));
         _setCaret(target.segment.textNode, localOffset + data.length);
+        if (insertedInlineId) {
+            return {
+                insertedText: data,
+                replacedText: '',
+                layoutTextEdit: true,
+                insertedInline: true,
+                inlineId: insertedInlineId,
+                inlineOffset: data.length,
+                blockOffset: insertedBlockOffset
+            };
+        }
+
         return { insertedText: data, replacedText: '', layoutTextEdit: true };
+    }
+
+    function _layoutSegmentHasRevisionMark(segment) {
+        return !!(segment
+            && segment.closest
+            && segment.closest('[data-revision-id], .tm-wysiwyg-revision'));
     }
 
     function _applyLayoutDeleteText(inst, selection, unit, backward) {
@@ -3957,6 +3989,13 @@ window.tmDocumentWysiwyg = (function () {
 
             _invalidateMeasureCache(inst);
             var afterSelection = _captureSelectionSnapshot(inst);
+            if (result.insertedInline && result.inlineId) {
+                afterSelection = _retargetCollapsedSelectionToInsertedInline(
+                    afterSelection || insertSelection,
+                    result.inlineId,
+                    result.inlineOffset ?? text.length,
+                    result.blockOffset);
+            }
             inst.lastSelectionSnapshot = afterSelection;
             _scheduleSelectionNotification(inst, afterSelection);
             inst.jsOwnedInputCount++;
@@ -3980,6 +4019,14 @@ window.tmDocumentWysiwyg = (function () {
             }
 
             _dispatchInputPatch(inst, inputType, text, insertSelection, null, null, afterSelection);
+            if (result.insertedInline && result.layoutTextEdit) {
+                _flushPendingInputPatch(inst);
+                if (inst.localLayoutReflowTimer) {
+                    clearTimeout(inst.localLayoutReflowTimer);
+                    inst.localLayoutReflowTimer = null;
+                }
+                _runLocalLayoutReflow(inst);
+            }
             return true;
         }
 
@@ -4087,6 +4134,48 @@ window.tmDocumentWysiwyg = (function () {
         clone.AnchorOffset = offset;
         clone.focusOffset = offset;
         clone.FocusOffset = offset;
+        clone.isCollapsed = true;
+        clone.IsCollapsed = true;
+        clone.direction = 'forward';
+        clone.Direction = 'forward';
+        return clone;
+    }
+
+    function _retargetCollapsedSelectionToInsertedInline(selection, inlineId, inlineOffset, blockOffset) {
+        if (!selection || !inlineId) return selection;
+        var clone = _cloneRuntimeJson(selection);
+        var blockId = clone.anchorBlockId || clone.AnchorBlockId || clone.focusBlockId || clone.FocusBlockId || null;
+        var offset = Math.max(0, parseInt(inlineOffset, 10) || 0);
+        var absoluteBlockOffset = blockOffset ?? clone.anchorBlockOffset ?? clone.AnchorBlockOffset ?? clone.focusBlockOffset ?? clone.FocusBlockOffset ?? offset;
+        absoluteBlockOffset = Math.max(0, parseInt(absoluteBlockOffset, 10) || 0);
+        clone.anchorBlockId = blockId;
+        clone.AnchorBlockId = blockId;
+        clone.focusBlockId = blockId;
+        clone.FocusBlockId = blockId;
+        clone.anchorInlineId = inlineId;
+        clone.AnchorInlineId = inlineId;
+        clone.focusInlineId = inlineId;
+        clone.FocusInlineId = inlineId;
+        clone.anchorNodeId = inlineId;
+        clone.AnchorNodeId = inlineId;
+        clone.focusNodeId = inlineId;
+        clone.FocusNodeId = inlineId;
+        clone.anchorOffset = offset;
+        clone.AnchorOffset = offset;
+        clone.focusOffset = offset;
+        clone.FocusOffset = offset;
+        clone.anchorBlockOffset = absoluteBlockOffset;
+        clone.AnchorBlockOffset = absoluteBlockOffset;
+        clone.focusBlockOffset = absoluteBlockOffset;
+        clone.FocusBlockOffset = absoluteBlockOffset;
+        clone.layoutLineId = null;
+        clone.LayoutLineId = null;
+        clone.layoutSegmentId = null;
+        clone.LayoutSegmentId = null;
+        clone.visualLineIndex = null;
+        clone.VisualLineIndex = null;
+        clone.hitTargetKind = 'TextCaret';
+        clone.HitTargetKind = 'TextCaret';
         clone.isCollapsed = true;
         clone.IsCollapsed = true;
         clone.direction = 'forward';
@@ -4428,40 +4517,7 @@ window.tmDocumentWysiwyg = (function () {
 
         var blockId = _createBlockId();
         var inlineId = _createInlineId();
-        var newBlock = document.createElement('p');
-        newBlock.className = 'tm-wysiwyg-block';
-        newBlock.setAttribute('data-block-id', blockId);
-        newBlock.setAttribute('data-block-order', block.getAttribute('data-block-order') || '');
-        newBlock.style.cssText = block.style.cssText || '';
-        newBlock.style.position = '';
-        newBlock.style.left = '';
-        newBlock.style.top = '';
-        newBlock.style.width = '';
-        newBlock.style.minHeight = '';
-
-        var sourceSegmentId = _getSelectionSegmentId(snapshot);
-        var sourceSegment = sourceSegmentId
-            ? block.querySelector('.tm-wysiwyg-layout-segment[data-layout-segment-id="' + _cssEscape(sourceSegmentId) + '"]')
-            : null;
-        var sourceInline = sourceSegment
-            ? sourceSegment.closest('[data-inline-id]')
-            : null;
-        var newInline = sourceInline ? sourceInline.cloneNode(false) : document.createElement('span');
-        newInline.setAttribute('data-inline-id', inlineId);
-        newInline.removeAttribute('data-layout-segment-id');
-        newInline.removeAttribute('data-layout-line-id');
-        newInline.removeAttribute('data-layout-start-offset');
-        newInline.removeAttribute('data-layout-length');
-        newInline.removeAttribute('data-revision-id');
-        newInline.removeAttribute('data-revision-type');
-        newInline.removeAttribute('data-testid');
-
-        var textNode = document.createTextNode('');
-        newInline.appendChild(textNode);
-        _ensureCaretPlaceholder(newInline);
-        newBlock.appendChild(newInline);
-        block.after(newBlock);
-        _setCaret(textNode, 0);
+        var pageIndex = selection.pageIndex ?? selection.PageIndex ?? null;
 
         return {
             block: {
@@ -4472,6 +4528,25 @@ window.tmDocumentWysiwyg = (function () {
                     $type: 'paragraph',
                     Inlines: [{ $type: 'text', Id: inlineId, Text: '' }]
                 }
+            },
+            afterSelection: {
+                region: selection.region || selection.Region || 'Body',
+                pageIndex: pageIndex,
+                headerFooterId: selection.headerFooterId || selection.HeaderFooterId || null,
+                anchorBlockId: blockId,
+                focusBlockId: blockId,
+                anchorInlineId: inlineId,
+                focusInlineId: inlineId,
+                anchorOffset: 0,
+                focusOffset: 0,
+                anchorBlockOffset: 0,
+                focusBlockOffset: 0,
+                isCollapsed: true,
+                direction: 'forward',
+                layoutLineId: null,
+                layoutSegmentId: null,
+                visualLineIndex: null,
+                hitTargetKind: 'TextCaret'
             }
         };
     }
@@ -4632,7 +4707,7 @@ window.tmDocumentWysiwyg = (function () {
         _flushPendingInputPatch(inst);
         _invalidateMeasureCache(inst);
         _markIncrementalRender(inst, inputType === 'insertParagraph' ? 'splitParagraph' : 'insertSoftBreak');
-        var afterSelection = _captureSelectionSnapshot(inst);
+        var afterSelection = result.afterSelection || _captureSelectionSnapshot(inst);
         inst.lastSelectionSnapshot = afterSelection;
         _scheduleSelectionNotification(inst, afterSelection);
         _requestLocalLayoutSnapshotRender(inst, selection, afterSelection);
@@ -4662,6 +4737,13 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         _dispatchPatch(inst, patch);
+        if (inputType === 'insertParagraph' && _isLayoutSelectionSnapshot(selection)) {
+            if (inst.localLayoutReflowTimer) {
+                clearTimeout(inst.localLayoutReflowTimer);
+                inst.localLayoutReflowTimer = null;
+            }
+            _runLocalLayoutReflow(inst);
+        }
         _commitCurrentRuntimeTransaction(inst, true);
         return true;
     }
@@ -5084,6 +5166,7 @@ window.tmDocumentWysiwyg = (function () {
         _appendUndoOperation(inst, patch);
         _transformRuntimeCommentAnchorsForPatch(inst, patch);
         _transformRuntimeMarkersForPatch(inst, patch);
+        _markLocalLayoutTypingActivity(inst, patch);
         inst.pendingLocalSnapshotSkips++;
         inst.lastPatchType = patch.type || patch.Type || null;
         inst.lastPatchId = patch.patchId || patch.PatchId || patch.operationId || patch.OperationId || null;
@@ -10499,12 +10582,27 @@ window.tmDocumentWysiwyg = (function () {
             return false;
         }
 
+        if (type === 'SplitBlock') {
+            var splitChanged = _splitSnapshotBlockForPatch(inst, patch);
+            if (splitChanged) {
+                inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
+            }
+            return splitChanged;
+        }
+
         var target = _getPatchTextTarget(patch);
         if (!target.blockId) return false;
 
         if (type === 'InsertText') {
             var insertedText = String(patch.data ?? patch.Data ?? '');
             if (!insertedText) return false;
+            if (stringIsNullOrWhiteSpace(patch.revisionId || patch.RevisionId)
+                && stringIsNullOrWhiteSpace(patch.revisionType || patch.RevisionType)
+                && _insertUntrackedTextOutsideSnapshotRevision(inst, target, insertedText, patch)) {
+                inst.runtimeDocument = _createRuntimeDocumentFromSnapshot(inst.snapshot);
+                return true;
+            }
+
             return _updateSnapshotInlineText(inst, target, function (current) {
                 var offset = Math.max(0, Math.min(target.offset, current.length));
                 return current.slice(0, offset) + insertedText + current.slice(offset);
@@ -10541,6 +10639,264 @@ window.tmDocumentWysiwyg = (function () {
         return false;
     }
 
+    function stringIsNullOrWhiteSpace(value) {
+        return value == null || String(value).trim().length === 0;
+    }
+
+    function _splitSnapshotBlockForPatch(inst, patch) {
+        var snapshotDoc = _getSnapshotDocument(inst);
+        var blocks = _getDocumentBlocks(snapshotDoc);
+        var selection = _getPatchBeforeSelection(patch) || {};
+        var blockId = selection.anchorBlockId || selection.AnchorBlockId || selection.focusBlockId || selection.FocusBlockId || '';
+        if (!blocks || !blockId) return false;
+
+        var blockIndex = -1;
+        for (var i = 0; i < blocks.length; i++) {
+            if ((blocks[i].id || blocks[i].Id) === blockId) {
+                blockIndex = i;
+                break;
+            }
+        }
+        if (blockIndex < 0) return false;
+
+        var sourceBlock = blocks[blockIndex];
+        var content = sourceBlock.content || sourceBlock.Content;
+        var inlines = _ensureSnapshotContentInlines(content);
+        if (!inlines) return false;
+        if (inlines.length === 0) {
+            inlines.push({ $type: 'text', Id: selection.anchorInlineId || selection.AnchorInlineId || _createInlineId(), Text: '' });
+        }
+
+        var inlineId = selection.anchorInlineId || selection.AnchorInlineId || selection.focusInlineId || selection.FocusInlineId || '';
+        var inlineIndex = _findSnapshotInlineIndex(inlines, inlineId);
+        if (inlineIndex < 0) {
+            inlineIndex = Math.max(0, Math.min(inlines.length - 1, selection.anchorInlineIndex ?? selection.AnchorInlineIndex ?? 0));
+        }
+
+        var patchBlock = _cloneRuntimeJson(patch.block || patch.Block || {});
+        var newInlineId = _firstSnapshotInlineId(patchBlock) || patch.afterSelection?.anchorInlineId || patch.AfterSelection?.AnchorInlineId || _createInlineId();
+        var split = _splitSnapshotInlinesForBlockBreak(inlines, inlineIndex, selection.anchorOffset ?? selection.AnchorOffset ?? 0, newInlineId);
+        var before = split.before;
+        var after = split.after;
+        _setSnapshotContentInlines(content, before);
+
+        var newBlock = _createSnapshotSplitBlock(sourceBlock, patchBlock, after, blocks, blockIndex);
+        blocks.splice(blockIndex + 1, 0, newBlock);
+        _sortSnapshotBlocks(blocks);
+        return true;
+    }
+
+    function _insertUntrackedTextOutsideSnapshotRevision(inst, target, insertedText, patch) {
+        var snapshotDoc = _getSnapshotDocument(inst);
+        var block = _findDocumentBlock(snapshotDoc, target.blockId);
+        var content = block && (block.content || block.Content);
+        var inlines = _ensureSnapshotContentInlines(content);
+        if (!Array.isArray(inlines)) return false;
+
+        var inlineIndex = _findSnapshotInlineIndex(inlines, target.inlineId);
+        if (inlineIndex < 0) inlineIndex = Math.max(0, Math.min(inlines.length - 1, target.inlineIndex || 0));
+        var inline = inlines[inlineIndex];
+        if (!_snapshotInlineHasRevisionMark(inline)) return false;
+
+        var text = String(inline.text ?? inline.Text ?? '');
+        var offset = Math.max(0, Math.min(target.offset || 0, text.length));
+        var insertedInlineId = patch.afterSelection?.anchorInlineId
+            || patch.AfterSelection?.AnchorInlineId
+            || patch.inline?.id
+            || patch.Inline?.Id
+            || _createInlineId();
+        if (insertedInlineId === (inline.id || inline.Id)) {
+            insertedInlineId = _createInlineId();
+        }
+
+        var replacement = [];
+        _addSnapshotTextRunSlice(replacement, inline, 0, offset, inline.id || inline.Id || target.inlineId || _createInlineId());
+        replacement.push(_createSnapshotTextRun(insertedInlineId, insertedText, _cloneSnapshotTypingMarks(inline.marks || inline.Marks || [])));
+        _addSnapshotTextRunSlice(replacement, inline, offset, text.length, _createInlineId());
+
+        inlines.splice(inlineIndex, 1, ..._mergeAdjacentSnapshotTextRuns(replacement));
+        return true;
+    }
+
+    function _ensureSnapshotContentInlines(content) {
+        if (!content) return null;
+        if (!content.Inlines && content.inlines) content.Inlines = content.inlines;
+        if (!content.inlines && content.Inlines) content.inlines = content.Inlines;
+        if (!content.Inlines) {
+            content.Inlines = [];
+            content.inlines = content.Inlines;
+        }
+        return content.Inlines;
+    }
+
+    function _setSnapshotContentInlines(content, inlines) {
+        if (!content) return;
+        content.Inlines = inlines;
+        content.inlines = inlines;
+    }
+
+    function _findSnapshotInlineIndex(inlines, inlineId) {
+        if (!Array.isArray(inlines) || !inlineId) return -1;
+        for (var i = 0; i < inlines.length; i++) {
+            if ((inlines[i].id || inlines[i].Id) === inlineId) return i;
+        }
+        return -1;
+    }
+
+    function _firstSnapshotInlineId(block) {
+        var content = block && (block.content || block.Content);
+        var inlines = content && (content.inlines || content.Inlines);
+        return Array.isArray(inlines) && inlines.length > 0
+            ? (inlines[0].id || inlines[0].Id || null)
+            : null;
+    }
+
+    function _splitSnapshotInlinesForBlockBreak(inlines, inlineIndex, offset, newInlineId) {
+        var before = [];
+        var after = [];
+        var selected = inlines[inlineIndex] || {};
+        var typingMarks = _cloneSnapshotTypingMarks(selected.marks || selected.Marks || []);
+        var selectedId = selected.id || selected.Id || _createInlineId();
+        var splitOffset = Math.max(0, parseInt(offset, 10) || 0);
+
+        for (var i = 0; i < inlines.length; i++) {
+            var inline = inlines[i];
+            if (i < inlineIndex) {
+                before.push(_cloneRuntimeJson(inline));
+                continue;
+            }
+            if (i > inlineIndex) {
+                after.push(_cloneRuntimeJson(inline));
+                continue;
+            }
+
+            var text = String(inline.text ?? inline.Text ?? '');
+            var clamped = Math.max(0, Math.min(splitOffset, text.length));
+            _addSnapshotTextRunSlice(before, inline, 0, clamped, selectedId);
+            _addSnapshotTextRunSlice(after, inline, clamped, text.length, newInlineId);
+        }
+
+        if (before.length === 0) {
+            before.push(_createSnapshotTextRun(selectedId, '', typingMarks));
+        }
+        if (after.length === 0) {
+            after.push(_createSnapshotTextRun(newInlineId, '', typingMarks));
+        }
+
+        return {
+            before: _mergeAdjacentSnapshotTextRuns(before),
+            after: _mergeAdjacentSnapshotTextRuns(after)
+        };
+    }
+
+    function _createSnapshotSplitBlock(sourceBlock, patchBlock, afterInlines, blocks, sourceIndex) {
+        var newBlock = patchBlock && Object.keys(patchBlock).length > 0
+            ? patchBlock
+            : {};
+        newBlock.Id = newBlock.Id || newBlock.id || _createBlockId();
+        newBlock.id = newBlock.Id;
+        newBlock.Type = newBlock.Type ?? newBlock.type ?? sourceBlock.Type ?? sourceBlock.type ?? 0;
+        newBlock.type = newBlock.Type;
+        newBlock.SectionId = newBlock.SectionId || newBlock.sectionId || sourceBlock.SectionId || sourceBlock.sectionId || null;
+        if (newBlock.SectionId) newBlock.sectionId = newBlock.SectionId;
+        newBlock.ParagraphProperties = newBlock.ParagraphProperties || newBlock.paragraphProperties || _cloneRuntimeJson(sourceBlock.ParagraphProperties || sourceBlock.paragraphProperties || {});
+        newBlock.paragraphProperties = newBlock.ParagraphProperties;
+        newBlock.Order = Number.isFinite(parseFloat(newBlock.Order ?? newBlock.order))
+            ? parseFloat(newBlock.Order ?? newBlock.order)
+            : _calculateSnapshotInsertedOrder(blocks, sourceIndex);
+        newBlock.order = newBlock.Order;
+
+        var content = newBlock.Content || newBlock.content || {};
+        content.$type = content.$type || _snapshotContentTypeForBlock(newBlock);
+        _setSnapshotContentInlines(content, afterInlines);
+        newBlock.Content = content;
+        newBlock.content = content;
+        return newBlock;
+    }
+
+    function _calculateSnapshotInsertedOrder(blocks, sourceIndex) {
+        var sourceOrder = parseFloat(blocks[sourceIndex]?.Order ?? blocks[sourceIndex]?.order ?? ((sourceIndex + 1) * 10));
+        if (!Number.isFinite(sourceOrder)) sourceOrder = (sourceIndex + 1) * 10;
+        var nextOrder = parseFloat(blocks[sourceIndex + 1]?.Order ?? blocks[sourceIndex + 1]?.order ?? NaN);
+        if (Number.isFinite(nextOrder) && nextOrder > sourceOrder) {
+            return sourceOrder + ((nextOrder - sourceOrder) / 2);
+        }
+        return sourceOrder + 1;
+    }
+
+    function _snapshotContentTypeForBlock(block) {
+        switch (_blockTypeName(block)) {
+            case 'heading': return 'heading';
+            case 'list': return 'list';
+            case 'quote': return 'quote';
+            default: return 'paragraph';
+        }
+    }
+
+    function _addSnapshotTextRunSlice(target, source, start, end, inlineId) {
+        var text = String(source.text ?? source.Text ?? '');
+        var safeStart = Math.max(0, Math.min(start, text.length));
+        var safeEnd = Math.max(safeStart, Math.min(end, text.length));
+        if (safeEnd <= safeStart) return;
+        target.push(_createSnapshotTextRun(
+            safeStart === 0 ? (source.id || source.Id || inlineId || _createInlineId()) : (inlineId || _createInlineId()),
+            text.slice(safeStart, safeEnd),
+            _cloneSnapshotMarks(source.marks || source.Marks || [])));
+    }
+
+    function _createSnapshotTextRun(id, text, marks) {
+        var runId = id || _createInlineId();
+        return {
+            $type: 'text',
+            Id: runId,
+            id: runId,
+            Text: String(text || ''),
+            text: String(text || ''),
+            Marks: marks || [],
+            marks: marks || []
+        };
+    }
+
+    function _snapshotInlineHasRevisionMark(inline) {
+        var marks = (inline && (inline.marks || inline.Marks)) || [];
+        return marks.some(function (mark) {
+            return _normalizeMarkType(mark.type ?? mark.Type) === 'Revision';
+        });
+    }
+
+    function _cloneSnapshotTypingMarks(marks) {
+        return _cloneSnapshotMarks(marks).filter(function (mark) {
+            return _normalizeMarkType(mark.type ?? mark.Type) !== 'Revision';
+        });
+    }
+
+    function _cloneSnapshotMarks(marks) {
+        return (marks || []).map(function (mark) { return _cloneRuntimeJson(mark); });
+    }
+
+    function _mergeAdjacentSnapshotTextRuns(inlines) {
+        var merged = [];
+        for (var i = 0; i < (inlines || []).length; i++) {
+            var current = inlines[i];
+            var previous = merged.length > 0 ? merged[merged.length - 1] : null;
+            if (previous
+                && _inlineTypeName(previous) === 'text'
+                && _inlineTypeName(current) === 'text'
+                && _snapshotMarksEqual(previous.marks || previous.Marks || [], current.marks || current.Marks || [])) {
+                var combined = String(previous.text ?? previous.Text ?? '') + String(current.text ?? current.Text ?? '');
+                previous.Text = combined;
+                previous.text = combined;
+            } else {
+                merged.push(current);
+            }
+        }
+        return merged;
+    }
+
+    function _snapshotMarksEqual(left, right) {
+        return JSON.stringify(left || []) === JSON.stringify(right || []);
+    }
+
     function _scheduleLocalLayoutReflow(inst, selection) {
         if (!inst || inst.disposed || !inst.hasRenderedDocument || !inst.layoutSnapshot) return;
         inst.forceNextLocalSnapshotRender = true;
@@ -10555,9 +10911,48 @@ window.tmDocumentWysiwyg = (function () {
         }, 120);
     }
 
+    function _markLocalLayoutTypingActivity(inst, patch) {
+        if (!inst || !patch) return;
+        var type = patch.type || patch.Type || '';
+        if (type !== 'InsertText'
+            && type !== 'DeleteRange'
+            && type !== 'DeleteContentBackward'
+            && type !== 'DeleteContentForward'
+            && type !== 'DeleteWordBackward'
+            && type !== 'DeleteWordForward') {
+            return;
+        }
+
+        var debounceMs = _readNumberOption(inst, 'layoutTypingReflowDebounceMs', 'LayoutTypingReflowDebounceMs', 1000);
+        inst.localLayoutTypingSuppressUntil = Date.now() + Math.max(250, Math.min(2500, debounceMs));
+    }
+
+    function _getLocalLayoutTypingDelay(inst) {
+        var suppressUntil = inst && Number.isFinite(inst.localLayoutTypingSuppressUntil)
+            ? inst.localLayoutTypingSuppressUntil
+            : 0;
+        if (suppressUntil <= 0) return 0;
+        return Math.max(0, suppressUntil - Date.now());
+    }
+
     function _runLocalLayoutReflow(inst) {
         if (!inst || inst.disposed || inst.compositionActive) return;
         var selection = inst.forceNextLocalSnapshotSelection || inst.lastSelectionSnapshot || _captureSelectionSnapshot(inst);
+        var typingDelay = _getLocalLayoutTypingDelay(inst);
+        if (inst.pendingInputPatch || inst.pendingInputPatchTimer || inst.acceptingNativeInput || typingDelay > 0) {
+            inst.forceNextLocalSnapshotRender = true;
+            inst.forceNextLocalSnapshotSelection = _cloneRuntimeJson(inst.lastSelectionSnapshot || selection || null);
+            if (inst.localLayoutReflowTimer) {
+                clearTimeout(inst.localLayoutReflowTimer);
+            }
+            var delay = typingDelay > 0 ? Math.max(120, Math.min(typingDelay + 30, 2530)) : 120;
+            inst.localLayoutReflowTimer = setTimeout(function () {
+                inst.localLayoutReflowTimer = null;
+                _runLocalLayoutReflow(inst);
+            }, delay);
+            return;
+        }
+
         var hadEditorFocus = _hasEditorSelectionOrFocus(inst);
         inst.forceNextLocalSnapshotRender = false;
         inst.forceNextLocalSnapshotSelection = null;
@@ -12506,6 +12901,7 @@ window.tmDocumentWysiwyg = (function () {
                     InlineIndex: run.InlineIndex,
                     SourceRunIndex: run.InlineIndex,
                     StartOffset: charIndex,
+                    BlockStartOffset: (run.BlockStartOffset || 0) + charIndex,
                     Length: 0,
                     Text: '',
                     Marks: run.Marks || [],
@@ -12529,6 +12925,34 @@ window.tmDocumentWysiwyg = (function () {
             segment.Length += 1;
             segment.Rect.Width = _roundLayoutNumber(segment.Rect.Width + width);
             x = Math.min(currentInterval.X + currentInterval.Width, x + width);
+        }
+
+        function appendEmptySegmentToLine(run) {
+            if (!currentLine) startLine();
+            currentLine.Segments.push({
+                Id: 'layout-segment-' + blockId + '-' + currentLine.Segments.length + '-' + state.lineIndex + '-empty',
+                BlockId: blockId,
+                LineId: currentLine.Id,
+                InlineId: run.InlineId,
+                InlineIndex: run.InlineIndex,
+                SourceRunIndex: run.InlineIndex,
+                StartOffset: 0,
+                BlockStartOffset: run.BlockStartOffset || 0,
+                Length: 0,
+                Text: '',
+                Marks: run.Marks || [],
+                FontFamily: run.FontFamily,
+                FontSize: run.FontSize,
+                FontWeight: run.FontWeight,
+                FontStyle: run.FontStyle,
+                LetterSpacing: run.LetterSpacing,
+                Rect: {
+                    X: _roundLayoutNumber(x),
+                    Y: _roundLayoutNumber(y),
+                    Width: 0,
+                    Height: _roundLayoutNumber(lineHeight)
+                }
+            });
         }
 
         function addCharacter(run, char, charIndex) {
@@ -12610,7 +13034,7 @@ window.tmDocumentWysiwyg = (function () {
             var run = runs[runIndex];
             var text = run.Text || '';
             if (text.length === 0) {
-                startLine();
+                appendEmptySegmentToLine(run);
                 continue;
             }
 
@@ -12689,6 +13113,7 @@ window.tmDocumentWysiwyg = (function () {
                 InlineId: 'layout-inline-empty',
                 InlineIndex: 0,
                 Text: '',
+                BlockStartOffset: 0,
                 Marks: [],
                 FontFamily: emptyStyle.FontFamily,
                 FontSize: emptyStyle.FontSize,
@@ -12698,6 +13123,7 @@ window.tmDocumentWysiwyg = (function () {
             }];
         }
 
+        var blockOffset = 0;
         return inlines.map(function (inline, index) {
             var type = _inlineTypeName(inline);
             var inlineId = (inline && (inline.id || inline.Id)) || ('layout-inline-' + index);
@@ -12714,10 +13140,12 @@ window.tmDocumentWysiwyg = (function () {
 
             var marks = (inline && (inline.marks || inline.Marks)) || [];
             var style = _createLayoutRunStyle(marks, theme);
-            return {
+            var runText = String(text || '');
+            var run = {
                 InlineId: inlineId,
                 InlineIndex: index,
-                Text: String(text || ''),
+                Text: runText,
+                BlockStartOffset: blockOffset,
                 Marks: marks,
                 FontFamily: style.FontFamily,
                 FontSize: style.FontSize,
@@ -12725,6 +13153,8 @@ window.tmDocumentWysiwyg = (function () {
                 FontStyle: style.FontStyle,
                 LetterSpacing: style.LetterSpacing
             };
+            blockOffset += runText.length;
+            return run;
         });
     }
 
@@ -19474,6 +19904,8 @@ window.tmDocumentWysiwyg = (function () {
         if (value === 'superscript' || value === '4') return 'Superscript';
         if (value === 'subscript' || value === '5') return 'Subscript';
         if (value === 'link' || value === '6') return 'Link';
+        if (value === 'commentanchor' || value === 'comment-anchor' || value === 'comment' || value === '7') return 'CommentAnchor';
+        if (value === 'revision' || value === 'revisionanchor' || value === 'revision-anchor' || value === '8') return 'Revision';
         if (value === 'highlight' || value === '9') return 'Highlight';
         if (value === 'textcolor' || value === 'text-color' || value === 'fontcolor' || value === 'font-color' || value === '10') return 'TextColor';
         if (value === 'fontfamily' || value === 'font-family' || value === '11') return 'FontFamily';
@@ -19490,6 +19922,8 @@ window.tmDocumentWysiwyg = (function () {
             case 'Superscript': return 4;
             case 'Subscript': return 5;
             case 'Link': return 6;
+            case 'CommentAnchor': return 7;
+            case 'Revision': return 8;
             case 'Highlight': return 9;
             case 'TextColor': return 10;
             case 'FontFamily': return 11;
@@ -22410,6 +22844,7 @@ window.tmDocumentWysiwyg = (function () {
             applyLayoutTextEditModel: function (segments, edit) {
                 return _applyLayoutTextEditModel(segments || [], edit || {});
             },
+            normalizeMarkType: _normalizeMarkType,
             computeImageMoveSnap: function (candidate, context) {
                 return _computeImageMoveSnap(candidate || {}, context || {});
             },
