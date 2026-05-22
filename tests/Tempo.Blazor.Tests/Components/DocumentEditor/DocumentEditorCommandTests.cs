@@ -104,6 +104,276 @@ public class DocumentEditorCommandTests
     }
 
     [Fact]
+    public async Task MoveImageObjectCommand_UpdatesOnlyPositionAndPreservesAnchorMetadata()
+    {
+        var image = new DocumentBlock
+        {
+            Id = "img-1",
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Asset,
+                AssetId = "asset-1",
+                AltText = "Evidence",
+                Layout = new DocumentObjectLayout
+                {
+                    Kind = DocumentObjectLayoutKind.Fixed,
+                    Anchor = new DocumentObjectAnchor
+                    {
+                        BlockId = "anchor-1",
+                        MoveWithText = false,
+                        FixedOnPage = true,
+                        LockAnchor = true
+                    },
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalRelativeTo = DocumentRelativePosition.Page,
+                        VerticalRelativeTo = DocumentRelativePosition.Page,
+                        X = 12,
+                        Y = 18,
+                        HorizontalAlignment = DocumentImageHorizontalPosition.Left
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = DocumentWrapMode.Square,
+                        DistanceRight = 12,
+                        DistanceBottom = 8
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 220,
+                        Height = 124,
+                        LockAspectRatio = true
+                    },
+                    Stacking = new DocumentObjectStacking
+                    {
+                        ZIndex = 4,
+                        AllowOverlap = true
+                    }
+                }
+            }
+        };
+        var document = CreateDocument(Paragraph("Before"), image, Paragraph("After"));
+        var stack = new DocumentEditorCommandStack();
+
+        var command = new MoveImageObjectCommand(
+            document,
+            "img-1",
+            new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Page,
+                X = 12,
+                Y = 18,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Left
+            },
+            new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Page,
+                VerticalRelativeTo = DocumentRelativePosition.Page,
+                X = 144,
+                Y = 96,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Left
+            });
+
+        await stack.PushAsync(command);
+
+        var moved = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content).Layout;
+        moved.Position.X.Should().Be(144);
+        moved.Position.Y.Should().Be(96);
+        moved.Anchor.BlockId.Should().Be("anchor-1");
+        moved.Anchor.MoveWithText.Should().BeFalse();
+        moved.Anchor.FixedOnPage.Should().BeTrue();
+        moved.Anchor.LockAnchor.Should().BeTrue();
+        moved.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        moved.Transform.Width.Should().Be(220);
+        moved.Stacking.ZIndex.Should().Be(4);
+        command.InvalidatesLayout.Should().BeTrue();
+        command.InvalidatedBlockIds.Should().ContainSingle().Which.Should().Be("img-1");
+        command.Description.Should().Be("Move image");
+
+        await stack.UndoAsync();
+
+        var restored = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content).Layout;
+        restored.Position.X.Should().Be(12);
+        restored.Position.Y.Should().Be(18);
+        restored.Anchor.FixedOnPage.Should().BeTrue();
+
+        await stack.RedoAsync();
+
+        var redone = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content).Layout;
+        redone.Position.X.Should().Be(144);
+        redone.Position.Y.Should().Be(96);
+        stack.NextUndoDescription.Should().Be("Move image");
+    }
+
+    [Fact]
+    public async Task ResizeImageObjectCommand_CornerResizePreservesAspectAndUndoMetadata()
+    {
+        var image = ImageBlock("img-1", width: 220, height: 124);
+        var document = CreateDocument(Paragraph("Before"), image, Paragraph("After"));
+        var stack = new DocumentEditorCommandStack();
+
+        var command = new ResizeImageObjectCommand(
+            document,
+            "img-1",
+            new DocumentObjectTransform { Width = 220, Height = 124, LockAspectRatio = true },
+            new DocumentObjectTransform { Width = 360, LockAspectRatio = true },
+            new DocumentObjectPosition { X = 12, Y = 18 },
+            new DocumentObjectPosition { X = 8, Y = 14 },
+            new ResizeImageObjectConstraints { PreserveAspectRatio = true },
+            "Resize evidence image");
+
+        await stack.PushAsync(command);
+
+        var resized = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content);
+        resized.Layout.Transform.Width.Should().Be(360);
+        resized.Layout.Transform.Height.Should().BeApproximately(202.91, 0.01);
+        resized.Size.Width.Should().Be(360);
+        resized.Size.Height.Should().BeApproximately(202.91, 0.01);
+        resized.Layout.Position.X.Should().Be(8);
+        resized.Layout.Position.Y.Should().Be(14);
+        resized.Layout.Anchor.BlockId.Should().Be("anchor-1");
+        resized.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        resized.Layout.Stacking.ZIndex.Should().Be(4);
+        command.StartTransform.Width.Should().Be(220);
+        command.EndTransform.Width.Should().Be(360);
+        command.InvalidatesLayout.Should().BeTrue();
+        command.InvalidatedBlockIds.Should().ContainSingle().Which.Should().Be("img-1");
+        stack.NextUndoDescription.Should().Be("Resize evidence image");
+
+        await stack.UndoAsync();
+
+        var restored = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content);
+        restored.Layout.Transform.Width.Should().Be(220);
+        restored.Layout.Transform.Height.Should().Be(124);
+        restored.Size.Width.Should().Be(220);
+        restored.Size.Height.Should().Be(124);
+        restored.Layout.Position.X.Should().Be(12);
+
+        await stack.RedoAsync();
+
+        var redone = ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content);
+        redone.Layout.Transform.Width.Should().Be(360);
+        redone.Layout.Transform.Height.Should().BeApproximately(202.91, 0.01);
+    }
+
+    [Fact]
+    public async Task ResizeImageObjectCommand_SideResizeCanChangeOneAxis()
+    {
+        var image = ImageBlock("img-1", width: 220, height: 124);
+        var document = CreateDocument(image);
+        var stack = new DocumentEditorCommandStack();
+
+        await stack.PushAsync(new ResizeImageObjectCommand(
+            document,
+            "img-1",
+            new DocumentObjectTransform { Width = 220, Height = 124, LockAspectRatio = false },
+            new DocumentObjectTransform { Width = 300, Height = 124, LockAspectRatio = false },
+            constraints: new ResizeImageObjectConstraints { PreserveAspectRatio = false }));
+
+        var resized = ((ImageBlockContent)document.Blocks.Single().Content);
+        resized.Layout.Transform.Width.Should().Be(300);
+        resized.Layout.Transform.Height.Should().Be(124);
+        resized.Layout.Transform.LockAspectRatio.Should().BeFalse();
+        resized.Size.Width.Should().Be(300);
+        resized.Size.Height.Should().Be(124);
+    }
+
+    [Fact]
+    public async Task ResizeImageObjectCommand_ClampsToMinimumSize()
+    {
+        var image = ImageBlock("img-1", width: 220, height: 124);
+        var document = CreateDocument(image);
+        var stack = new DocumentEditorCommandStack();
+
+        await stack.PushAsync(new ResizeImageObjectCommand(
+            document,
+            "img-1",
+            new DocumentObjectTransform { Width = 220, Height = 124, LockAspectRatio = false },
+            new DocumentObjectTransform { Width = 8, Height = 10, LockAspectRatio = false },
+            constraints: new ResizeImageObjectConstraints
+            {
+                MinWidth = 48,
+                MinHeight = 32,
+                PreserveAspectRatio = false
+            }));
+
+        var resized = ((ImageBlockContent)document.Blocks.Single().Content);
+        resized.Layout.Transform.Width.Should().Be(48);
+        resized.Layout.Transform.Height.Should().Be(32);
+    }
+
+    [Fact]
+    public async Task ResizeImageObjectCommand_ClampsToPageBodyMaximum()
+    {
+        var image = ImageBlock("img-1", width: 220, height: 124);
+        var document = CreateDocument(image);
+        var stack = new DocumentEditorCommandStack();
+
+        await stack.PushAsync(new ResizeImageObjectCommand(
+            document,
+            "img-1",
+            new DocumentObjectTransform { Width = 220, Height = 124, LockAspectRatio = false },
+            new DocumentObjectTransform { Width = 1200, Height = 800, LockAspectRatio = false },
+            constraints: new ResizeImageObjectConstraints
+            {
+                MaxWidth = 500,
+                MaxHeight = 300,
+                PreserveAspectRatio = false
+            }));
+
+        var resized = ((ImageBlockContent)document.Blocks.Single().Content);
+        resized.Layout.Transform.Width.Should().Be(500);
+        resized.Layout.Transform.Height.Should().Be(300);
+        resized.Size.Width.Should().Be(500);
+        resized.Size.Height.Should().Be(300);
+    }
+
+    [Fact]
+    public async Task ImageZOrderCommands_UpdateStackingAndUndoRedo()
+    {
+        var back = ImageBlock("img-back", width: 220, height: 124);
+        var middle = ImageBlock("img-middle", width: 220, height: 124);
+        var front = ImageBlock("img-front", width: 220, height: 124);
+        GetImage(back).Layout.Stacking.ZIndex = 1;
+        GetImage(middle).Layout.Stacking.ZIndex = 5;
+        GetImage(front).Layout.Stacking.ZIndex = 9;
+        var document = CreateDocument(back, middle, front);
+        var stack = new DocumentEditorCommandStack();
+
+        var bringForward = new BringForwardCommand(document, "img-middle");
+        await stack.PushAsync(bringForward);
+
+        GetImage(middle).Layout.Stacking.ZIndex.Should().Be(6);
+        bringForward.BeforeZIndex.Should().Be(5);
+        bringForward.AfterZIndex.Should().Be(6);
+        bringForward.InvalidatesLayout.Should().BeTrue();
+        bringForward.InvalidatedBlockIds.Should().ContainSingle().Which.Should().Be("img-middle");
+
+        await stack.UndoAsync();
+        GetImage(middle).Layout.Stacking.ZIndex.Should().Be(5);
+        await stack.RedoAsync();
+        GetImage(middle).Layout.Stacking.ZIndex.Should().Be(6);
+
+        await stack.PushAsync(new SendBackwardCommand(document, "img-middle"));
+        GetImage(middle).Layout.Stacking.ZIndex.Should().Be(5);
+        await stack.UndoAsync();
+        GetImage(middle).Layout.Stacking.ZIndex.Should().Be(6);
+
+        await stack.PushAsync(new BringToFrontCommand(document, "img-back"));
+        GetImage(back).Layout.Stacking.ZIndex.Should().Be(10);
+        stack.NextUndoDescription.Should().Be("Bring image to front");
+        await stack.UndoAsync();
+        GetImage(back).Layout.Stacking.ZIndex.Should().Be(1);
+
+        await stack.PushAsync(new SendToBackCommand(document, "img-front"));
+        GetImage(front).Layout.Stacking.ZIndex.Should().Be(0);
+        await stack.UndoAsync();
+        GetImage(front).Layout.Stacking.ZIndex.Should().Be(9);
+    }
+
+    [Fact]
     public async Task Commands_AreIdempotentAndExposeUndoMetadata()
     {
         var document = CreateDocument(Paragraph("One"), Paragraph("Two"), Paragraph("Three"));
@@ -221,6 +491,63 @@ public class DocumentEditorCommandTests
         Type = DocumentBlockType.Paragraph,
         Content = new ParagraphBlockContent { Inlines = [new TextRun { Text = text }] }
     };
+
+    private static DocumentBlock ImageBlock(string id, double width, double height) => new()
+    {
+        Id = id,
+        Type = DocumentBlockType.Image,
+        Content = new ImageBlockContent
+        {
+            Source = DocumentImageSource.Asset,
+            AssetId = "asset-1",
+            AltText = "Evidence",
+            Size = new DocumentImageSize
+            {
+                Width = width,
+                Height = height,
+                LockAspectRatio = true
+            },
+            Layout = new DocumentObjectLayout
+            {
+                Kind = DocumentObjectLayoutKind.Anchored,
+                Anchor = new DocumentObjectAnchor
+                {
+                    BlockId = "anchor-1",
+                    MoveWithText = true,
+                    FixedOnPage = false,
+                    LockAnchor = true
+                },
+                Position = new DocumentObjectPosition
+                {
+                    HorizontalRelativeTo = DocumentRelativePosition.Page,
+                    VerticalRelativeTo = DocumentRelativePosition.Page,
+                    X = 12,
+                    Y = 18,
+                    HorizontalAlignment = DocumentImageHorizontalPosition.Left
+                },
+                Wrap = new DocumentObjectWrap
+                {
+                    Mode = DocumentWrapMode.Square,
+                    DistanceRight = 12,
+                    DistanceBottom = 8
+                },
+                Transform = new DocumentObjectTransform
+                {
+                    Width = width,
+                    Height = height,
+                    LockAspectRatio = true
+                },
+                Stacking = new DocumentObjectStacking
+                {
+                    ZIndex = 4,
+                    AllowOverlap = true
+                }
+            }
+        }
+    };
+
+    private static ImageBlockContent GetImage(DocumentBlock block)
+        => block.Content.Should().BeOfType<ImageBlockContent>().Subject;
 
     private static string TextOf(DocumentBlock block)
     {

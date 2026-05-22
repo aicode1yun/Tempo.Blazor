@@ -7,6 +7,9 @@ namespace Tempo.Blazor.DocumentFormats.Tests;
 
 public class DocumentOdtFormatTests
 {
+    private static readonly XNamespace Draw = "urn:oasis:names:tc:opendocument:xmlns:drawing:1.0";
+    private static readonly XNamespace Tm = "urn:tempo-blazor:document-editor:1.0";
+
     [Fact]
     public async Task ExportAsync_CreatesOpenableOdtZipPackage()
     {
@@ -225,6 +228,35 @@ public class DocumentOdtFormatTests
         image.FloatingLayout.LockAnchor.Should().BeTrue();
         image.Size.Width.Should().Be(160);
         image.Size.Height.Should().Be(90);
+    }
+
+    [Fact]
+    public async Task Phase14B_ExportAsync_ImageLayouts_WritesTempoLayoutMetadata()
+    {
+        var exported = await new DocumentOdtExporter().ExportAsync(DocumentFormatTestData.CreateImageLayoutParityDocument());
+
+        using var archive = new ZipArchive(new MemoryStream(exported.Content), ZipArchiveMode.Read);
+        await using var contentStream = archive.GetEntry("content.xml")!.Open();
+        var xml = await XDocument.LoadAsync(contentStream, LoadOptions.None, CancellationToken.None);
+        var frames = xml.Descendants(Draw + "frame").ToList();
+
+        frames.Should().HaveCount(6);
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "layout-kind") == DocumentObjectLayoutKind.Fixed.ToString());
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "wrap-mode") == DocumentWrapMode.TopBottom.ToString());
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "wrap-mode") == DocumentWrapMode.BehindText.ToString());
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "horizontal-alignment") == DocumentImageHorizontalPosition.Left.ToString());
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "horizontal-alignment") == DocumentImageHorizontalPosition.Right.ToString());
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "allow-overlap") == "true");
+        frames.Should().Contain(frame => (string?)frame.Attribute(Tm + "rotation") == "-10");
+    }
+
+    [Fact]
+    public async Task Phase14B_RoundTrip_OdtImageLayouts_PreservesObjectLayout()
+    {
+        var exported = await new DocumentOdtExporter().ExportAsync(DocumentFormatTestData.CreateImageLayoutParityDocument());
+        var imported = await new DocumentOdtImporter().ImportAsync(new MemoryStream(exported.Content));
+
+        DocumentFormatTestData.AssertImageLayoutParity(imported.Document);
     }
 
     private static string FlattenText(DocumentEditorDocument document)

@@ -2,6 +2,7 @@ using DocumentFormat.OpenXml.Packaging;
 using DocumentFormat.OpenXml;
 using Tempo.Blazor.DocumentEditor.Models;
 using Tempo.Blazor.DocumentFormats.Docx;
+using A = DocumentFormat.OpenXml.Drawing;
 using DW = DocumentFormat.OpenXml.Drawing.Wordprocessing;
 using W = DocumentFormat.OpenXml.Wordprocessing;
 
@@ -9,6 +10,8 @@ namespace Tempo.Blazor.DocumentFormats.Tests;
 
 public class DocumentDocxFormatTests
 {
+    private const string TempoNamespace = "urn:tempo-blazor:document-editor:1.0";
+
     [Fact]
     public async Task ExportAsync_CreatesOpenableDocxPackage()
     {
@@ -407,6 +410,37 @@ public class DocumentDocxFormatTests
         imported.Warnings.Should().Contain(warning =>
             warning.Code == "docx.unsupportedBodyElement"
             && warning.Severity == DocumentFormatCompatibilitySeverity.Warning);
+    }
+
+    [Fact]
+    public async Task Phase14B_ExportAsync_ImageLayouts_WritesDocxNativeAndTempoMetadata()
+    {
+        var exported = await new DocumentDocxExporter().ExportAsync(DocumentFormatTestData.CreateImageLayoutParityDocument());
+
+        using var stream = new MemoryStream(exported.Content);
+        using var word = WordprocessingDocument.Open(stream, false);
+        var anchors = word.MainDocumentPart!.Document.Body!.Descendants<DW.Anchor>().ToList();
+
+        anchors.Should().HaveCount(5);
+        anchors.Any(anchor => anchor.GetAttribute("layout-kind", TempoNamespace).Value == DocumentObjectLayoutKind.Fixed.ToString()).Should().BeTrue();
+        anchors.Any(anchor => anchor.GetFirstChild<DW.WrapTopBottom>() is not null).Should().BeTrue();
+        anchors.Any(anchor => anchor.BehindDoc?.Value == true).Should().BeTrue();
+        anchors.Any(anchor => anchor.GetFirstChild<DW.HorizontalPosition>()?.GetFirstChild<DW.HorizontalAlignment>()?.Text == "left").Should().BeTrue();
+        anchors.Any(anchor => anchor.GetFirstChild<DW.HorizontalPosition>()?.GetFirstChild<DW.HorizontalAlignment>()?.Text == "right").Should().BeTrue();
+        anchors.Any(anchor => anchor.GetAttribute("allow-overlap", TempoNamespace).Value == "true").Should().BeTrue();
+        word.MainDocumentPart.Document.Body!.Descendants<A.Transform2D>()
+            .Any(transform => transform.Rotation?.Value != null)
+            .Should()
+            .BeTrue();
+    }
+
+    [Fact]
+    public async Task Phase14B_RoundTrip_DocxImageLayouts_PreservesObjectLayout()
+    {
+        var exported = await new DocumentDocxExporter().ExportAsync(DocumentFormatTestData.CreateImageLayoutParityDocument());
+        var imported = await new DocumentDocxImporter().ImportAsync(new MemoryStream(exported.Content));
+
+        DocumentFormatTestData.AssertImageLayoutParity(imported.Document);
     }
 
     private static string FlattenText(DocumentEditorDocument document)

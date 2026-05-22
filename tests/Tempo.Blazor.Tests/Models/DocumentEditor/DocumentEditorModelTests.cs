@@ -111,7 +111,7 @@ public class DocumentEditorModelTests
     }
 
     [Fact]
-    public void DocumentJson_RoundtripsImageFloatingLayoutAndRestrictedMarkers()
+    public void DocumentJson_RoundtripsImageObjectLayoutAndRestrictedMarkers()
     {
         var document = DocumentEditorDocument.Empty("doc-1");
         document.IsProtected = true;
@@ -132,15 +132,30 @@ public class DocumentEditorModelTests
             {
                 Source = DocumentImageSource.Url,
                 Url = "/image.png",
-                FloatingLayout = new DocumentFloatingLayout
+                Layout = new DocumentObjectLayout
                 {
-                    Inline = false,
-                    WrapMode = DocumentWrapMode.Square,
-                    HorizontalPosition = DocumentImageHorizontalPosition.Right,
-                    DistanceLeft = 12,
-                    DistanceRight = 4,
-                    DistanceTop = 2,
-                    DistanceBottom = 8
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Anchor = new DocumentObjectAnchor
+                    {
+                        BlockId = "paragraph-1",
+                        InlineIndex = 0,
+                        Offset = 4,
+                        Region = DocumentRenditionAnchorScope.Body,
+                        PageIndex = 2,
+                        LockAnchor = true
+                    },
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalAlignment = DocumentImageHorizontalPosition.Right
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = DocumentWrapMode.Square,
+                        DistanceLeft = 12,
+                        DistanceRight = 4,
+                        DistanceTop = 2,
+                        DistanceBottom = 8
+                    }
                 }
             }
         });
@@ -164,11 +179,71 @@ public class DocumentEditorModelTests
             && marker.EndOffset == 8
             && marker.Label == "Editable");
         var restoredImage = restored.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
-        restoredImage.FloatingLayout.Should().NotBeNull();
-        restoredImage.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
-        restoredImage.FloatingLayout.HorizontalPosition.Should().Be(DocumentImageHorizontalPosition.Right);
-        restoredImage.FloatingLayout.DistanceLeft.Should().Be(12);
-        restoredImage.FloatingLayout.DistanceRight.Should().Be(4);
+        json.Should().Contain("\"Layout\"");
+        json.Should().NotContain("FloatingLayout");
+        restoredImage.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Anchored);
+        restoredImage.Layout.Anchor.BlockId.Should().Be("paragraph-1");
+        restoredImage.Layout.Anchor.InlineIndex.Should().Be(0);
+        restoredImage.Layout.Anchor.Offset.Should().Be(4);
+        restoredImage.Layout.Anchor.Region.Should().Be(DocumentRenditionAnchorScope.Body);
+        restoredImage.Layout.Anchor.PageIndex.Should().BeNull();
+        restoredImage.Layout.Anchor.LockAnchor.Should().BeTrue();
+        restoredImage.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        restoredImage.Layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Right);
+        restoredImage.Layout.Wrap.DistanceLeft.Should().Be(12);
+        restoredImage.Layout.Wrap.DistanceRight.Should().Be(4);
+        json.Should().NotContain("PageIndex");
+    }
+
+    [Fact]
+    public void ImageBlockContent_DefaultLayout_IsInlineWithSeparatedNaturalAndTransformSizes()
+    {
+        var image = new ImageBlockContent
+        {
+            NaturalSize = new DocumentImageSize { Width = 640, Height = 360 },
+            Layout = DocumentObjectLayout.Inline()
+        };
+
+        image.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Inline);
+        image.Layout.IsInline.Should().BeTrue();
+        image.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Inline);
+        image.Layout.Anchor.MoveWithText.Should().BeTrue();
+        image.Layout.Transform.LockAspectRatio.Should().BeTrue();
+        image.NaturalSize.Width.Should().Be(640);
+        image.Layout.Transform.Width.Should().BeNull();
+    }
+
+    [Fact]
+    public void DocumentObjectLayout_AnchoredSquareLeft_StoresPositionWrapAndTransform()
+    {
+        var layout = DocumentObjectLayout.Anchored(DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left);
+        layout.Transform.Width = 220;
+        layout.Transform.Height = 124;
+        layout.Wrap.DistanceRight = 16;
+
+        layout.Kind.Should().Be(DocumentObjectLayoutKind.Anchored);
+        layout.IsInline.Should().BeFalse();
+        layout.Position.HorizontalAlignment.Should().Be(DocumentImageHorizontalPosition.Left);
+        layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+        layout.Wrap.DistanceRight.Should().Be(16);
+        layout.Transform.Width.Should().Be(220);
+        layout.Transform.Height.Should().Be(124);
+    }
+
+    [Fact]
+    public void DocumentObjectLayout_FixedBehindText_StoresFixedAnchorAndStacking()
+    {
+        var layout = DocumentObjectLayout.Fixed();
+        layout.Wrap.Mode = DocumentWrapMode.BehindText;
+        layout.Stacking.ZIndex = 3;
+        layout.Stacking.AllowOverlap = true;
+
+        layout.Kind.Should().Be(DocumentObjectLayoutKind.Fixed);
+        layout.Anchor.MoveWithText.Should().BeFalse();
+        layout.Anchor.FixedOnPage.Should().BeTrue();
+        layout.Wrap.Mode.Should().Be(DocumentWrapMode.BehindText);
+        layout.Stacking.ZIndex.Should().Be(3);
+        layout.Stacking.AllowOverlap.Should().BeTrue();
     }
 
     [Fact]
@@ -729,6 +804,130 @@ public class DocumentEditorModelTests
         token.Description.Should().Be("Client full name");
         token.TypeLabel.Should().Be("Text");
         token.TokenType.Should().Be("text");
+    }
+
+    [Fact]
+    public void Phase14_DocumentJson_RoundtripsAllImageLayoutVariants()
+    {
+        var document = DocumentEditorDocument.Empty("phase14-image-roundtrip");
+        document.Blocks.Add(CreateParagraph("phase14-anchor", "Anchor text for every image layout variant."));
+        document.Blocks.Add(CreateImage("phase14-inline", 20, DocumentObjectLayoutKind.Inline, DocumentWrapMode.Inline, null, moveWithText: true, fixedOnPage: false, zIndex: 0, rotation: 0));
+        document.Blocks.Add(CreateImage("phase14-square-left", 30, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, moveWithText: true, fixedOnPage: false, zIndex: 1, rotation: 0));
+        document.Blocks.Add(CreateImage("phase14-square-right", 40, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Right, moveWithText: true, fixedOnPage: false, zIndex: 2, rotation: 0));
+        document.Blocks.Add(CreateImage("phase14-top-bottom", 50, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.TopBottom, DocumentImageHorizontalPosition.Center, moveWithText: true, fixedOnPage: false, zIndex: 3, rotation: 3));
+        document.Blocks.Add(CreateImage("phase14-behind", 60, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.BehindText, DocumentImageHorizontalPosition.Left, moveWithText: true, fixedOnPage: false, zIndex: 4, rotation: 7));
+        document.Blocks.Add(CreateImage("phase14-front", 70, DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, moveWithText: false, fixedOnPage: true, zIndex: 9, rotation: 11));
+
+        var json = DocumentEditorJson.Serialize(document);
+        var restored = DocumentEditorJson.Deserialize(json);
+
+        json.Should().Contain("\"Layout\"");
+        json.Should().Contain("\"Rotation\":11");
+        json.Should().Contain("\"FixedOnPage\":true");
+        json.Should().NotContain("FloatingLayout");
+        AssertImage(restored, "phase14-inline", DocumentObjectLayoutKind.Inline, DocumentWrapMode.Inline, null, true, false, 0, 0);
+        AssertImage(restored, "phase14-square-left", DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, true, false, 1, 0);
+        AssertImage(restored, "phase14-square-right", DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Right, true, false, 2, 0);
+        AssertImage(restored, "phase14-top-bottom", DocumentObjectLayoutKind.Anchored, DocumentWrapMode.TopBottom, DocumentImageHorizontalPosition.Center, true, false, 3, 3);
+        AssertImage(restored, "phase14-behind", DocumentObjectLayoutKind.Anchored, DocumentWrapMode.BehindText, DocumentImageHorizontalPosition.Left, true, false, 4, 7);
+        AssertImage(restored, "phase14-front", DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, false, true, 9, 11);
+
+        static DocumentBlock CreateImage(
+            string id,
+            int order,
+            DocumentObjectLayoutKind kind,
+            DocumentWrapMode wrapMode,
+            DocumentImageHorizontalPosition? horizontalPosition,
+            bool moveWithText,
+            bool fixedOnPage,
+            int zIndex,
+            double rotation)
+            => new()
+            {
+                Id = id,
+                Type = DocumentBlockType.Image,
+                Order = order,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/favicon.png",
+                    AltText = id,
+                    Caption = $"{id} caption",
+                    Size = new DocumentImageSize { Width = 220, Height = 124 },
+                    NaturalSize = new DocumentImageSize { Width = 220, Height = 124 },
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = kind,
+                        Anchor = new DocumentObjectAnchor
+                        {
+                            BlockId = "phase14-anchor",
+                            MoveWithText = moveWithText,
+                            FixedOnPage = fixedOnPage,
+                            LockAnchor = fixedOnPage
+                        },
+                        Position = new DocumentObjectPosition
+                        {
+                            HorizontalRelativeTo = DocumentRelativePosition.Page,
+                            VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                            HorizontalAlignment = horizontalPosition,
+                            X = order / 10d,
+                            Y = order / 20d
+                        },
+                        Wrap = new DocumentObjectWrap
+                        {
+                            Mode = wrapMode,
+                            DistanceLeft = 5,
+                            DistanceRight = 6,
+                            DistanceTop = 7,
+                            DistanceBottom = 8
+                        },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = 220,
+                            Height = 124,
+                            NaturalWidth = 220,
+                            NaturalHeight = 124,
+                            LockAspectRatio = true,
+                            Rotation = rotation
+                        },
+                        Stacking = new DocumentObjectStacking
+                        {
+                            ZIndex = zIndex,
+                            AllowOverlap = wrapMode is DocumentWrapMode.BehindText or DocumentWrapMode.InFrontOfText
+                        }
+                    }
+                }
+            };
+
+        static void AssertImage(
+            DocumentEditorDocument restored,
+            string id,
+            DocumentObjectLayoutKind kind,
+            DocumentWrapMode wrapMode,
+            DocumentImageHorizontalPosition? horizontalPosition,
+            bool moveWithText,
+            bool fixedOnPage,
+            int zIndex,
+            double rotation)
+        {
+            var image = restored.Blocks.Single(block => block.Id == id).Content.Should().BeOfType<ImageBlockContent>().Subject;
+            image.Caption.Should().Be($"{id} caption");
+            image.Layout.Kind.Should().Be(kind);
+            image.Layout.Anchor.BlockId.Should().Be("phase14-anchor");
+            image.Layout.Anchor.MoveWithText.Should().Be(moveWithText);
+            image.Layout.Anchor.FixedOnPage.Should().Be(fixedOnPage);
+            image.Layout.Anchor.LockAnchor.Should().Be(fixedOnPage);
+            image.Layout.Wrap.Mode.Should().Be(wrapMode);
+            image.Layout.Wrap.DistanceLeft.Should().Be(5);
+            image.Layout.Wrap.DistanceRight.Should().Be(6);
+            image.Layout.Wrap.DistanceTop.Should().Be(7);
+            image.Layout.Wrap.DistanceBottom.Should().Be(8);
+            image.Layout.Position.HorizontalAlignment.Should().Be(horizontalPosition);
+            image.Layout.Transform.Width.Should().Be(220);
+            image.Layout.Transform.Height.Should().Be(124);
+            image.Layout.Transform.Rotation.Should().Be(rotation);
+            image.Layout.Stacking.ZIndex.Should().Be(zIndex);
+        }
     }
 
     private static string GetParagraphText(DocumentEditorDocument document)

@@ -187,6 +187,152 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             assert.strictEqual(commandTransaction.operations[0].operationId, 'test-op-1');
             assert.strictEqual(commandTransaction.inverseOperations[0].inverseOf, 'test-op-1');
             assert.strictEqual(commandTransaction.inverseOperations[0].command, 'toggleBold');
+
+            const anchorDoc = {
+                DocumentId: 'anchor-doc',
+                PageSettings: {
+                    Size: { Width: 400, Height: 500 },
+                    Margins: { Top: 50, Right: 50, Bottom: 50, Left: 50 }
+                },
+                Theme: { BodyFontSize: 11, BodyLineHeight: 1.15, ParagraphSpacingAfter: 0 },
+                Blocks: [
+                    { Id: 'intro', Type: 0, Order: 1, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'intro-i', Text: 'Intro text before anchor '.repeat(12) }] } },
+                    { Id: 'anchor', Type: 0, Order: 2, Content: { $type: 'paragraph', Inlines: [{ $type: 'text', Id: 'anchor-i', Text: 'Anchor paragraph' }] } },
+                    {
+                        Id: 'img-move',
+                        Type: 5,
+                        Order: 3,
+                        Content: {
+                            $type: 'image',
+                            Source: 0,
+                            Url: '/favicon.png',
+                            Size: { Width: 90, Height: 60 },
+                            Layout: {
+                                Kind: 1,
+                                Anchor: { BlockId: 'anchor', Offset: 0, Region: 0, MoveWithText: true, FixedOnPage: false, LockAnchor: false },
+                                Position: { HorizontalRelativeTo: 1, VerticalRelativeTo: 3, X: 0, Y: 0, HorizontalAlignment: 0 },
+                                Wrap: { Mode: 1, DistanceRight: 8 },
+                                Transform: { Width: 90, Height: 60 }
+                            }
+                        }
+                    },
+                    {
+                        Id: 'img-fixed',
+                        Type: 5,
+                        Order: 4,
+                        Content: {
+                            $type: 'image',
+                            Source: 0,
+                            Url: '/favicon.png',
+                            Size: { Width: 90, Height: 60 },
+                            Layout: {
+                                Kind: 2,
+                                Anchor: { BlockId: 'anchor', Offset: 0, Region: 0, MoveWithText: false, FixedOnPage: true, LockAnchor: true },
+                                Position: { HorizontalRelativeTo: 0, VerticalRelativeTo: 0, X: 10, Y: 20 },
+                                Wrap: { Mode: 6 },
+                                Transform: { Width: 90, Height: 60 }
+                            }
+                        }
+                    }
+                ]
+            };
+            const anchorLayout = hooks.createLayoutSnapshotForRender(anchorDoc);
+            const layoutObjects = anchorLayout.Pages[0].Objects;
+            const moveObject = layoutObjects.find(item => item.BlockId === 'img-move');
+            const fixedObject = layoutObjects.find(item => item.BlockId === 'img-fixed');
+            const anchorParagraph = anchorLayout.Pages[0].Paragraphs.find(item => item.BlockId === 'anchor');
+            assert.strictEqual(moveObject.AnchorBlockId, 'anchor');
+            assert.strictEqual(moveObject.AnchorOffset, 0);
+            assert.strictEqual(moveObject.AnchorRegion, 0);
+            assert.strictEqual(moveObject.Rect.Y, anchorParagraph.Rect.Y);
+            assert.strictEqual(fixedObject.AnchorBlockId, 'anchor');
+            assert.strictEqual(fixedObject.Rect.Y, 20);
+
+            const overlapDoc = {
+                DocumentId: 'overlap-doc',
+                PageSettings: {
+                    Size: { Width: 400, Height: 500 },
+                    Margins: { Top: 50, Right: 50, Bottom: 50, Left: 50 }
+                },
+                Theme: { BodyFontSize: 11, BodyLineHeight: 1.15, ParagraphSpacingAfter: 0 },
+                Blocks: [
+                    {
+                        Id: 'img-a',
+                        Type: 5,
+                        Order: 1,
+                        Content: {
+                            $type: 'image',
+                            Source: 0,
+                            Url: '/favicon.png',
+                            Size: { Width: 100, Height: 70 },
+                            Layout: {
+                                Kind: 1,
+                                Position: { HorizontalRelativeTo: 1, VerticalRelativeTo: 3, X: 0, Y: 0, HorizontalAlignment: 0 },
+                                Wrap: { Mode: 1 },
+                                Transform: { Width: 100, Height: 70 },
+                                Stacking: { ZIndex: 1, AllowOverlap: false }
+                            }
+                        }
+                    },
+                    {
+                        Id: 'img-b',
+                        Type: 5,
+                        Order: 2,
+                        Content: {
+                            $type: 'image',
+                            Source: 0,
+                            Url: '/favicon.png',
+                            Size: { Width: 100, Height: 70 },
+                            Layout: {
+                                Kind: 1,
+                                Position: { HorizontalRelativeTo: 1, VerticalRelativeTo: 3, X: 0, Y: 0, HorizontalAlignment: 0 },
+                                Wrap: { Mode: 1 },
+                                Transform: { Width: 100, Height: 70 },
+                                Stacking: { ZIndex: 2, AllowOverlap: false }
+                            }
+                        }
+                    }
+                ]
+            };
+            const overlapLayout = hooks.createLayoutSnapshotForRender(overlapDoc);
+            const overlapA = overlapLayout.Pages[0].Objects.find(item => item.BlockId === 'img-a');
+            const overlapB = overlapLayout.Pages[0].Objects.find(item => item.BlockId === 'img-b');
+            assert.strictEqual(overlapA.AllowOverlap, false);
+            assert.ok(overlapB.Rect.Y >= overlapA.Rect.Y + overlapA.Rect.Height);
+
+            const clampedContour = hooks.normalizeWrapContourPoints([
+                { X: -2, Y: 0.25 },
+                { X: 0.5, Y: 2 },
+                { X: 1.5, Y: -1 }
+            ]);
+            assert.deepStrictEqual(JSON.parse(JSON.stringify(clampedContour)), [
+                { X: 0, Y: 0.25 },
+                { X: 0.5, Y: 1 },
+                { X: 1, Y: 0 }
+            ]);
+
+            const squareIntervals = hooks.getLayoutAvailableIntervals(
+                88,
+                12,
+                { X: 0, Y: 0, Width: 300, Height: 240 },
+                [{ BlocksText: true, Rect: { X: 100, Y: 80, Width: 100, Height: 100 } }]);
+            const diamondIntervals = hooks.getLayoutAvailableIntervals(
+                88,
+                12,
+                { X: 0, Y: 0, Width: 300, Height: 240 },
+                [{
+                    BlocksText: true,
+                    Rect: { X: 100, Y: 80, Width: 100, Height: 100 },
+                    Polygon: [
+                        { X: 150, Y: 80 },
+                        { X: 200, Y: 130 },
+                        { X: 150, Y: 180 },
+                        { X: 100, Y: 130 }
+                    ]
+                }]);
+            assert.strictEqual(squareIntervals[0].Width, 100);
+            assert.ok(diamondIntervals[0].Width > squareIntervals[0].Width);
+            assert.ok(diamondIntervals[1].X < squareIntervals[1].X);
             """;
 
         var result = await RunNodeAsync(scriptPath, nodeScript);
@@ -260,7 +406,12 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                             AltText: 'Diagram',
                             Size: { Width: 240, Height: 120 },
                             NaturalSize: { Width: 640, Height: 320 },
-                            FloatingLayout: { Inline: false, WrapMode: 1, X: 24, Y: 36, ZIndex: 2 }
+                            Layout: {
+                                Kind: 1,
+                                Position: { X: 24, Y: 36 },
+                                Wrap: { Mode: 1 },
+                                Stacking: { ZIndex: 2 }
+                            }
                         }
                     },
                     {
@@ -327,7 +478,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
             assert.strictEqual(normalized.Blocks[1].Content.AssetId, 'asset-1');
             assert.strictEqual(normalized.Blocks[1].Content.Size.Width, 240);
             assert.strictEqual(normalized.Blocks[1].Content.NaturalSize.Width, 640);
-            assert.strictEqual(normalized.Blocks[1].Content.FloatingLayout.WrapMode, 1);
+            assert.strictEqual(normalized.Blocks[1].Content.Layout.Wrap.Mode, 1);
             assert.strictEqual(normalized.Blocks[2].Content.Rows[0].Cells[0].Blocks[0].Content.Inlines[0].Text, 'Cell');
             assert.strictEqual(normalized.Blocks[2].Content.Rows[0].Cells[0].Width, 180);
             assert.strictEqual(normalized.Blocks[2].Content.Rows[0].Cells[0].BackgroundColor, 'rgb(255, 242, 204)');
@@ -1684,7 +1835,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
     // ─── Phase 7: Image wrap / position ──────────────────────────────────────
 
     [Fact]
-    public async Task FloatingLayout_WithHorizontalPositionRight_RoundTripsViaCanonical()
+    public async Task ObjectLayout_WithHorizontalAlignmentRight_RoundTripsViaCanonical()
     {
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
@@ -1719,18 +1870,18 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                         $type: 'image',
                         Url: '/img/test.png',
                         Size: { Width: 200, Height: 150 },
-                        FloatingLayout: {
-                            Inline: false,
-                            WrapMode: 1,
-                            HorizontalPosition: 2
+                        Layout: {
+                            Kind: 1,
+                            Position: { HorizontalAlignment: 2 },
+                            Wrap: { Mode: 1 }
                         }
                     }
                 }]
             });
-            const fl = normalized.Blocks[0].Content.FloatingLayout;
-            assert.ok(fl, 'FloatingLayout is preserved');
-            assert.strictEqual(fl.WrapMode, 1, 'WrapMode=Square preserved');
-            assert.strictEqual(fl.HorizontalPosition, 2, 'HorizontalPosition=Right(2) preserved');
+            const layout = normalized.Blocks[0].Content.Layout;
+            assert.ok(layout, 'Layout is preserved');
+            assert.strictEqual(layout.Wrap.Mode, 1, 'WrapMode=Square preserved');
+            assert.strictEqual(layout.Position.HorizontalAlignment, 2, 'HorizontalAlignment=Right(2) preserved');
             console.log('OK');
             """;
 
@@ -1740,7 +1891,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
     }
 
     [Fact]
-    public async Task FloatingLayout_BackwardCompat_OldDocWithoutHorizontalPosition_LoadsFine()
+    public async Task ObjectLayout_OldFloatingLayoutInput_NormalizesToLayout()
     {
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
@@ -1787,10 +1938,11 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                 }]
             });
             const exported = hooks.toCanonicalDocument(runtimeDoc);
-            const fl = exported.Blocks[0].Content.FloatingLayout;
-            assert.ok(fl, 'FloatingLayout preserved from old doc');
-            assert.strictEqual(fl.WrapMode, 1, 'WrapMode preserved');
-            assert.strictEqual(fl.HorizontalPosition, undefined, 'HorizontalPosition absent in old doc roundtrip');
+            const layout = exported.Blocks[0].Content.Layout;
+            assert.ok(layout, 'Layout created from old doc');
+            assert.strictEqual(layout.Wrap.Mode, 1, 'WrapMode preserved');
+            assert.strictEqual(layout.Position.HorizontalAlignment, undefined, 'HorizontalAlignment absent when old doc did not define it');
+            assert.strictEqual(exported.Blocks[0].Content.FloatingLayout, undefined, 'old FloatingLayout is not written');
             console.log('OK');
             """;
 
@@ -1800,7 +1952,7 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
     }
 
     [Fact]
-    public async Task FloatingLayout_Distance_RoundTripsViaCanonical()
+    public async Task ObjectLayout_Distance_RoundTripsViaCanonical()
     {
         var root = FindRepositoryRoot();
         var scriptPath = Path.Combine(root, "src", "Tempo.Blazor", "wwwroot", "js", "document-editor-wysiwyg.js");
@@ -1835,23 +1987,25 @@ public sealed class DocumentEditorWysiwygJavaScriptTests
                         $type: 'image',
                         Url: '/img/test.png',
                         Size: { Width: 200, Height: 150 },
-                        FloatingLayout: {
-                            Inline: false,
-                            WrapMode: 1,
-                            HorizontalPosition: 2,
-                            DistanceLeft: 12,
-                            DistanceRight: 0,
-                            DistanceTop: 4,
-                            DistanceBottom: 4
+                        Layout: {
+                            Kind: 1,
+                            Position: { HorizontalAlignment: 2 },
+                            Wrap: {
+                                Mode: 1,
+                                DistanceLeft: 12,
+                                DistanceRight: 0,
+                                DistanceTop: 4,
+                                DistanceBottom: 4
+                            }
                         }
                     }
                 }]
             });
-            const fl = normalized.Blocks[0].Content.FloatingLayout;
-            assert.ok(fl, 'FloatingLayout roundtripped');
-            assert.strictEqual(fl.HorizontalPosition, 2, 'HorizontalPosition roundtripped');
-            assert.strictEqual(fl.DistanceLeft, 12, 'DistanceLeft roundtripped');
-            assert.strictEqual(fl.DistanceTop, 4, 'DistanceTop roundtripped');
+            const layout = normalized.Blocks[0].Content.Layout;
+            assert.ok(layout, 'Layout roundtripped');
+            assert.strictEqual(layout.Position.HorizontalAlignment, 2, 'HorizontalAlignment roundtripped');
+            assert.strictEqual(layout.Wrap.DistanceLeft, 12, 'DistanceLeft roundtripped');
+            assert.strictEqual(layout.Wrap.DistanceTop, 4, 'DistanceTop roundtripped');
             console.log('OK');
             """;
 

@@ -33,6 +33,25 @@ public sealed class TmDocumentImageInspectorTests : LocalizationTestBase
     }
 
     [Fact]
+    public void Inspector_DecorativeCheckbox_RaisesDecorativeChangedAndSuppressesAltWarning()
+    {
+        bool? received = null;
+        var cut = RenderComponent<TmDocumentImageInspector>(parameters => parameters
+            .Add(p => p.Image, new ImageBlockContent { IsDecorative = true })
+            .Add(p => p.DecorativeChanged, value => received = value));
+
+        cut.Find("[data-testid='document-image-inspector-decorative']")
+            .HasAttribute("checked").Should().BeTrue();
+        cut.FindAll("[data-testid='document-image-inspector-alt-warning']").Should().BeEmpty();
+        cut.Find("[data-testid='document-image-inspector-alt']")
+            .HasAttribute("disabled").Should().BeTrue();
+
+        cut.Find("[data-testid='document-image-inspector-decorative']").Change(false);
+
+        received.Should().BeFalse();
+    }
+
+    [Fact]
     public void Inspector_WrapButton_RaisesWrapModeChanged()
     {
         DocumentWrapMode? received = null;

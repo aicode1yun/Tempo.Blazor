@@ -1438,7 +1438,7 @@ window.tmDocumentWysiwyg = (function () {
             inst.runtimeSelection = _createRuntimeSelectionFromSnapshot(inst.lastSelectionSnapshot);
             _scheduleSelectionNotification(inst, inst.lastSelectionSnapshot);
         }
-        _showImageSelectionToolbar(inst, figure);
+        _hideImageSelectionToolbar(inst);
         _syncParagraphAnchorGlyphSelection(inst, block ? block.getAttribute('data-block-id') : figure.getAttribute('data-block-id'));
     }
 

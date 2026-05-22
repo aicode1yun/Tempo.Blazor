@@ -31,25 +31,61 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
     }
 
     [TestMethod]
-    public async Task Phase11_ArrowLeavesImageSelectionWithoutBlazorRender()
+    public async Task Phase16_ArrowKeysMoveSelectedImageAndUndoRedoRestoresPosition()
     {
         var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
-        var imageId = $"phase11-image-arrow-{Guid.NewGuid():N}";
+        var imageId = $"phase16-image-arrow-{Guid.NewGuid():N}";
 
-        await InsertDataImageBlockAsync(page, imageId, "Arrow leaves image", 140, 90);
+        await InsertDataImageBlockAsync(page, imageId, "Keyboard movable image", 140, 90);
         var figure = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
         await Assertions.Expect(figure).ToBeVisibleAsync();
-        await figure.ClickAsync();
+        await FocusImageWithTabAsync(page, imageId);
         await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
-        var fullRenderBefore = await ReadFullRenderCountAsync(page);
+        var xBefore = await ReadImageCoordinateAsync(page, imageId, "data-image-x");
 
         await page.Keyboard.PressAsync("ArrowRight");
 
-        await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+        await page.WaitForFunctionAsync(
+            """
+            ({ imageId, xBefore }) => {
+                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                return Number(figure?.getAttribute('data-image-x') || 0) === xBefore + 1;
+            }
+            """,
+            new { imageId, xBefore });
+        var xAfterArrow = await ReadImageCoordinateAsync(page, imageId, "data-image-x");
+        xAfterArrow.Should().Be(xBefore + 1);
+
+        await page.Keyboard.PressAsync("Control+Z");
+        await page.WaitForFunctionAsync(
+            """
+            ({ imageId, xBefore }) => {
+                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                return Number(figure?.getAttribute('data-image-x') || 0) === xBefore;
+            }
+            """,
+            new { imageId, xBefore });
+
+        await page.Keyboard.PressAsync("Control+Y");
+        await page.WaitForFunctionAsync(
+            """
+            ({ imageId, xAfterArrow }) => {
+                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                return Number(figure?.getAttribute('data-image-x') || 0) === xAfterArrow;
+            }
+            """,
+            new { imageId, xAfterArrow });
+
+        await page.Keyboard.PressAsync("Shift+ArrowDown");
+        (await ReadImageCoordinateAsync(page, imageId, "data-image-y")).Should().Be(10);
+
+        await page.Keyboard.PressAsync("Control+ArrowLeft");
+        (await ReadImageCoordinateAsync(page, imageId, "data-image-x")).Should().Be(xAfterArrow - 0.25);
+
         var selection = await ReadRuntimeSelectionAsync(page);
         var debug = await ReadImageSelectionDebugAsync(page, imageId);
-        Assert.AreNotEqual("Image", selection.Region, debug);
-        Assert.AreEqual(fullRenderBefore, await ReadFullRenderCountAsync(page), "Leaving image selection should be handled by the JS runtime without a full Blazor render.");
+        Assert.AreEqual("Image", selection.Region, debug);
+        Assert.AreEqual(imageId, selection.ActiveImageBlockId, debug);
     }
 
     [TestMethod]
@@ -79,6 +115,118 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
         Assert.AreEqual(90, content.Size.Height);
         Assert.IsTrue(content.NaturalSize.Width > 0, "The JS snapshot should keep the loaded natural image width.");
         Assert.IsTrue(content.NaturalSize.Height > 0, "The JS snapshot should keep the loaded natural image height.");
+    }
+
+    [TestMethod]
+    public async Task Phase16_KeyboardFocusOpensLayoutBubbleAndChangesWrapMode()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var imageId = $"phase16-image-bubble-{Guid.NewGuid():N}";
+
+        await InsertDataImageBlockAsync(page, imageId, "Keyboard layout image", 140, 90);
+        var figure = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
+        await FocusImageWithTabAsync(page, imageId);
+
+        await Assertions.Expect(figure).ToBeFocusedAsync();
+        await Assertions.Expect(figure).ToHaveAttributeAsync("tabindex", "0");
+        var ariaLabel = await figure.GetAttributeAsync("aria-label");
+        StringAssert.Contains(ariaLabel, "Keyboard layout image");
+        StringAssert.Contains(ariaLabel, "Wrap mode");
+
+        await page.Keyboard.PressAsync("Enter");
+        var bubble = figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']");
+        await Assertions.Expect(bubble).ToHaveClassAsync(new Regex("tm-wysiwyg-layout-bubble--keyboard-open"));
+
+        await page.Keyboard.PressAsync("ArrowRight");
+        await page.Keyboard.PressAsync("Enter");
+
+        await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "1");
+        await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-wrap']")).ToHaveAttributeAsync("aria-pressed", "true");
+    }
+
+    [TestMethod]
+    public async Task Phase16_ShiftF10OpensImageContextMenuAndEscapeReturnsFocus()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var imageId = $"phase16-image-menu-{Guid.NewGuid():N}";
+
+        await InsertDataImageBlockAsync(page, imageId, "Keyboard menu image", 140, 90);
+        var figure = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
+        await FocusImageWithTabAsync(page, imageId);
+
+        await page.Keyboard.PressAsync("Shift+F10");
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToBeVisibleAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace']")).ToBeFocusedAsync();
+
+        await page.Keyboard.PressAsync("Escape");
+        await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToHaveCountAsync(0);
+        await Assertions.Expect(figure).ToBeFocusedAsync();
+    }
+
+    [TestMethod]
+    public async Task Phase16_DeleteRemovesKeyboardSelectedImage()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var imageId = $"phase16-image-delete-{Guid.NewGuid():N}";
+
+        await InsertDataImageBlockAsync(page, imageId, "Keyboard delete image", 140, 90);
+        await FocusImageWithTabAsync(page, imageId);
+
+        await page.Keyboard.PressAsync("Delete");
+
+        await Assertions.Expect(page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']")).ToHaveCountAsync(0);
+    }
+
+    [TestMethod]
+    public async Task Phase16_MissingAltWarningAndDecorativeStateAreExposed()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var imageId = $"phase16-image-alt-{Guid.NewGuid():N}";
+
+        await InsertDataImageBlockAsync(page, imageId, string.Empty, 140, 90);
+        var figure = page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
+        await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-alt-warning", "true");
+        await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-image-alt-warning']")).ToHaveCountAsync(1);
+        StringAssert.Contains(await figure.GetAttributeAsync("aria-label"), "missing alternative text");
+
+        await page.EvaluateAsync(
+            """
+            imageId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                window.tmDocumentEditorRuntime.executeCommand(instanceId, 'setImageDecorative', {
+                    BlockId: imageId,
+                    IsDecorative: true
+                });
+            }
+            """,
+            imageId);
+
+        await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-alt-warning", "false");
+        await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-decorative", "true");
+        await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-image-alt-warning']")).ToHaveCountAsync(0);
+        StringAssert.Contains(await figure.GetAttributeAsync("aria-label"), "Decorative image");
+        (await ReadImageContentAsync(page, imageId)).IsDecorative.Should().BeTrue();
+    }
+
+    [TestMethod]
+    public async Task Phase17_ImageOperationsAndSaveReloadNeverCreateLegacySidecars()
+    {
+        var page = await OpenDocumentEditorAsync(width: 1440, height: 900);
+        var imageId = $"phase17-image-no-sidecar-{Guid.NewGuid():N}";
+
+        await InsertDataImageBlockAsync(page, imageId, "No legacy sidecar image", 140, 90);
+        await AssertNoLegacySidecarAsync(page);
+
+        await ExecuteImageCommandSeriesAsync(page, imageId);
+        await AssertNoLegacySidecarAsync(page);
+
+        await SaveDocumentAsync(page);
+        await page.ReloadAsync(new() { WaitUntil = WaitUntilState.DOMContentLoaded, Timeout = 60000 });
+        await WaitForDocumentEditorReadyAsync(page);
+
+        await Assertions.Expect(page.Locator($"[data-testid='document-wysiwyg-host'] figure.tm-wysiwyg-image[data-block-id='{imageId}']")).ToBeVisibleAsync();
+        await AssertNoLegacySidecarAsync(page);
     }
 
     private static Task InsertDataImageBlockAsync(IPage page, string imageId, string altText, double width, double height)
@@ -133,6 +281,50 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
             new { imageId, altText, width, height });
     }
 
+    private static Task ExecuteImageCommandSeriesAsync(IPage page, string imageId)
+    {
+        return page.EvaluateAsync(
+            """
+            imageId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorRuntime;
+                runtime.executeCommand(instanceId, 'setImageWrapMode', { BlockId: imageId, WrapMode: 'Square' });
+                runtime.executeCommand(instanceId, 'setImageHorizontalPosition', { BlockId: imageId, HorizontalPosition: 'Left' });
+                runtime.executeCommand(instanceId, 'setImageObjectPosition', {
+                    BlockId: imageId,
+                    X: 42,
+                    Y: 28,
+                    HorizontalRelativeTo: 'Margin',
+                    VerticalRelativeTo: 'Paragraph',
+                    HorizontalPosition: 'Left'
+                });
+                runtime.executeCommand(instanceId, 'setImageSize', {
+                    BlockId: imageId,
+                    Width: 180,
+                    Height: 116,
+                    LockAspectRatio: false
+                });
+                runtime.executeCommand(instanceId, 'setImageWrapMode', { BlockId: imageId, WrapMode: 'Tight' });
+                runtime.executeCommand(instanceId, 'setImageHorizontalPosition', { BlockId: imageId, HorizontalPosition: 'Right' });
+            }
+            """,
+            imageId);
+    }
+
+    private static async Task AssertNoLegacySidecarAsync(IPage page)
+    {
+        var count = await page.Locator("[data-testid='document-wysiwyg-host'] [data-wrap-sidecar-for], [data-testid='document-wysiwyg-host'] .tm-wysiwyg-image-sidecar-text").CountAsync();
+        Assert.AreEqual(0, count, "The editor must not render legacy image sidecar paragraphs.");
+    }
+
+    private static async Task SaveDocumentAsync(IPage page)
+    {
+        await page.Locator("[data-testid='document-save']").ClickAsync();
+        await Assertions.Expect(page.Locator("[data-testid='document-save-message']"))
+            .ToContainTextAsync("Saved", new() { Timeout = 10000 });
+    }
+
     private static Task<RuntimeSelectionSnapshot> ReadRuntimeSelectionAsync(IPage page)
     {
         return page.EvaluateAsync<RuntimeSelectionSnapshot>(
@@ -143,6 +335,46 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
                 return window.tmDocumentEditorRuntime?.getRuntimeSelection?.(instanceId) || {};
             }
             """);
+    }
+
+    private static async Task FocusImageWithTabAsync(IPage page, string imageId)
+    {
+        await page.EvaluateAsync(
+            """
+            imageId => {
+                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                if (!figure) return;
+                const marker = document.createElement('button');
+                marker.type = 'button';
+                marker.textContent = 'focus marker';
+                marker.style.position = 'fixed';
+                marker.style.left = '-10000px';
+                marker.style.top = '0';
+                marker.setAttribute('data-testid', `phase16-focus-marker-${imageId}`);
+                figure.parentElement?.insertBefore(marker, figure);
+                marker.focus();
+            }
+            """,
+            imageId);
+
+        await page.Keyboard.PressAsync("Tab");
+        await page.WaitForFunctionAsync(
+            """
+            imageId => document.activeElement?.matches?.(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`)
+            """,
+            imageId);
+    }
+
+    private static Task<double> ReadImageCoordinateAsync(IPage page, string imageId, string attribute)
+    {
+        return page.EvaluateAsync<double>(
+            """
+            ({ imageId, attribute }) => {
+                const figure = document.querySelector(`[data-testid="document-wysiwyg-host"] figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                return Number(figure?.getAttribute(attribute) || 0);
+            }
+            """,
+            new { imageId, attribute });
     }
 
     private static Task<ImageContentSnapshot> ReadImageContentAsync(IPage page, string imageId)
@@ -160,19 +392,6 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
             }
             """,
             imageId);
-    }
-
-    private static Task<int> ReadFullRenderCountAsync(IPage page)
-    {
-        return page.EvaluateAsync<int>(
-            """
-            () => {
-                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
-                const instanceId = host?.getAttribute('data-instance-id') || '';
-                const stats = window.tmDocumentWysiwygDebug?.getRenderStats?.(instanceId) || {};
-                return Number(stats.FullRenderCount || 0);
-            }
-            """);
     }
 
     private static Task<string> ReadImageSelectionDebugAsync(IPage page, string imageId)
@@ -207,6 +426,9 @@ public sealed class DocumentEditorJsRuntimeImageTests : DocumentEditorE2ETestBas
 
     private sealed class ImageContentSnapshot
     {
+        [JsonPropertyName("IsDecorative")]
+        public bool IsDecorative { get; set; }
+
         [JsonPropertyName("Size")]
         public ImageSizeSnapshot? Size { get; set; }
 

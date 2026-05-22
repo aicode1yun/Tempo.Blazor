@@ -155,6 +155,82 @@ public class DocumentSerializerTests
     }
 
     [Fact]
+    public void Serialize_FloatingImageBlock_ToDocumentObjectLayout()
+    {
+        var model = new DocumentModel();
+        model.Body.Add(new ImageBlock
+        {
+            Src = "image.png",
+            Alt = "Floating image",
+            Layout = ImageLayout.Floating,
+            Position = new ImagePosition { X = "24", Y = "36" },
+            WrapMode = ImageWrapMode.BehindText,
+            Size = new Wyg.ImageSize { Width = "220", Height = "124" }
+        });
+
+        var result = _serializer.ToPersistenceModel(model);
+
+        var content = result.Blocks[0].Content.Should().BeOfType<ImageBlockContent>().Subject;
+        content.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Anchored);
+        content.Layout.Position.X.Should().Be(24);
+        content.Layout.Position.Y.Should().Be(36);
+        content.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.BehindText);
+        content.Layout.Transform.Width.Should().Be(220);
+        content.Layout.Transform.Height.Should().Be(124);
+    }
+
+    [Fact]
+    public void Deserialize_ImageBlockWithObjectLayout_ToFloatingWysiwygImageBlock()
+    {
+        var persistence = new DocumentEditorDocument();
+        persistence.Blocks.Add(new DocumentBlock
+        {
+            Type = DocumentBlockType.Image,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "image.png",
+                AltText = "Front image",
+                Layout = new DocumentObjectLayout
+                {
+                    Kind = DocumentObjectLayoutKind.Fixed,
+                    Anchor = new DocumentObjectAnchor
+                    {
+                        MoveWithText = false,
+                        FixedOnPage = true,
+                        LockAnchor = true
+                    },
+                    Position = new DocumentObjectPosition
+                    {
+                        X = 14,
+                        Y = 22
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = DocumentWrapMode.InFrontOfText
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 180,
+                        Height = 95
+                    }
+                }
+            }
+        });
+
+        var result = _serializer.FromPersistenceModel(persistence);
+
+        var image = result.Body.Should().ContainSingle().Subject.Should().BeOfType<ImageBlock>().Subject;
+        image.Layout.Should().Be(ImageLayout.Floating);
+        image.Position.Should().NotBeNull();
+        image.Position!.X.Should().Be("14");
+        image.Position.Y.Should().Be("22");
+        image.WrapMode.Should().Be(ImageWrapMode.InFrontOfText);
+        image.Size.Width.Should().Be("180");
+        image.Size.Height.Should().Be("95");
+    }
+
+    [Fact]
     public void Serialize_PageBreakBlock_ToDocumentEditorDocument()
     {
         var model = new DocumentModel();

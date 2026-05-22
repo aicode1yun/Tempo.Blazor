@@ -132,6 +132,994 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_ClickSecondLineBesideLeftImagePlacesCaretThere()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-click-lines-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-click-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var issues = new List<string>();
+
+            var initial = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (initial.SidecarCount > 0)
+            {
+                issues.Add($"target layout must not create sidecar text blocks, found {initial.SidecarCount}");
+            }
+
+            if (initial.Lines.Length < 3)
+            {
+                issues.Add($"target scenario must render at least 3 wrapped text lines, found {initial.Lines.Length}");
+            }
+
+            for (var lineIndex = 0; lineIndex < Math.Min(3, initial.Lines.Length); lineIndex++)
+            {
+                var beforeClick = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                var line = beforeClick.Lines[lineIndex];
+                await ClickPhase0WrappedLineAsync(page, line, Math.Min(10, Math.Max(2, line.Rect.Width / 4)));
+                await WaitForPhase0WrappedTextSelectionAsync(page, imageId, lineIndex);
+
+                var afterClick = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                if (!afterClick.SelectionInsideTargetText)
+                {
+                    issues.Add($"clicking wrapped text line {lineIndex + 1} did not place selection inside the target text");
+                }
+
+                if (afterClick.SelectionLineIndex != lineIndex)
+                {
+                    issues.Add($"clicking wrapped text line {lineIndex + 1} placed caret on line {afterClick.SelectionLineIndex + 1}");
+                }
+
+                if (afterClick.SelectedImageId == imageId || afterClick.ActiveImageBlockId == imageId)
+                {
+                    issues.Add($"clicking wrapped text line {lineIndex + 1} selected the image instead of text");
+                }
+
+                if (afterClick.ImageToolbarVisible)
+                {
+                    issues.Add($"image toolbar remained visible after clicking wrapped text line {lineIndex + 1}");
+                }
+            }
+
+            for (var lineIndex = 0; lineIndex < 3; lineIndex++)
+            {
+                var typingImageId = $"{imageId}-typing-{lineIndex}";
+                await PreparePhase0WrappedImageScenarioAsync(page, typingImageId, text);
+                var beforeTyping = await CapturePhase0ImageWrapProbeAsync(page, typingImageId, text);
+                if (beforeTyping.Lines.Length <= lineIndex)
+                {
+                    issues.Add($"typing scenario for wrapped line {lineIndex + 1} rendered only {beforeTyping.Lines.Length} lines");
+                    continue;
+                }
+
+                var targetLine = beforeTyping.Lines[lineIndex];
+                await ClickPhase0WrappedLineAsync(page, targetLine, Math.Min(12, Math.Max(2, targetLine.Rect.Width / 4)));
+                await WaitForPhase0WrappedTextSelectionAsync(page, typingImageId, lineIndex);
+                var afterLineClick = await CapturePhase0ImageWrapProbeAsync(page, typingImageId, text);
+                var beforeLineLayoutSignature = Phase0LineLayoutSignature(beforeTyping.Lines);
+                if (!afterLineClick.SelectionInsideTargetText || afterLineClick.SelectionLineIndex != lineIndex)
+                {
+                    issues.Add($"typing setup did not keep caret on wrapped line {lineIndex + 1}; line={afterLineClick.SelectionLineIndex + 1}, offset={afterLineClick.SelectionOffset}");
+                    continue;
+                }
+
+                var typedToken = lineIndex == 2
+                    ? " phase-six-long-insert-that-forces-visible-reflow-across-the-wrapped-lines"
+                    : $" phase-six-line-{lineIndex + 1}";
+                var expectedTextAfterTyping = afterLineClick.SelectionOffset >= 0 && afterLineClick.SelectionOffset <= text.Length
+                    ? text.Insert(afterLineClick.SelectionOffset, typedToken)
+                    : null;
+                await page.Keyboard.InsertTextAsync(typedToken);
+                await page.WaitForFunctionAsync(
+                    """
+                    token => (document.querySelector('[data-testid="document-wysiwyg-host"]')?.textContent || '').includes(token)
+                    """,
+                    typedToken,
+                    new() { Timeout = 5000 });
+
+                var afterTyping = expectedTextAfterTyping is null
+                    ? await CapturePhase0ImageWrapProbeAsync(page, typingImageId, text)
+                    : await CapturePhase0ImageWrapProbeAsync(page, typingImageId, expectedTextAfterTyping);
+                if (expectedTextAfterTyping is not null && !string.Equals(afterTyping.Text, expectedTextAfterTyping, StringComparison.Ordinal))
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} did not insert at the expected logical offset");
+                }
+
+                if (lineIndex == 2 && string.Equals(Phase0LineLayoutSignature(afterTyping.Lines), beforeLineLayoutSignature, StringComparison.Ordinal))
+                {
+                    issues.Add("long typing on the third wrapped line did not change the visible wrapped line layout");
+                }
+
+                if (afterTyping.SelectedImageId == typingImageId || afterTyping.ActiveImageBlockId == typingImageId || afterTyping.ImageToolbarVisible)
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} activated image selection UI");
+                }
+
+                if (Math.Abs(beforeTyping.ImageFigureRect.Width - afterTyping.ImageFigureRect.Width) > 1.5
+                    || Math.Abs(beforeTyping.ImageFigureRect.Height - afterTyping.ImageFigureRect.Height) > 1.5)
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} changed the anchored image size");
+                }
+
+                if (afterTyping.SidecarCount > 0)
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} recreated the old sidecar text workaround");
+                }
+
+                await SaveDocumentAsync(page);
+                var savedDocument = await LoadDemoDocumentFromPageAsync(page);
+                var savedText = string.Concat(EnumerateDocumentInlines(savedDocument).Select(InlineText));
+                if (expectedTextAfterTyping is not null && !savedText.Contains(expectedTextAfterTyping, StringComparison.Ordinal))
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} was not persisted into the expected document model offset");
+                }
+
+                if (savedDocument.Blocks.FirstOrDefault(block => block.Id == typingImageId)?.Content is not ImageBlockContent savedImage
+                    || savedImage.Layout.Wrap.Mode != DocumentWrapMode.Square
+                    || savedImage.Layout.Position.HorizontalAlignment != DocumentImageHorizontalPosition.Left
+                    || Math.Abs((savedImage.Layout.Transform.Width ?? 0) - 168) > 0.5
+                    || Math.Abs((savedImage.Layout.Transform.Height ?? 0) - 120) > 0.5)
+                {
+                    issues.Add($"typing on wrapped line {lineIndex + 1} changed the saved anchored image layout");
+                }
+            }
+
+            issues.Should().BeEmpty("clicking each visual line beside a wrapped image must behave like ordinary text editing");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_ClickSecondLineBesideLeftImagePlacesCaretThere),
+                "Create a left square-wrapped image, click each visual line beside it and type into the second line.",
+                "Caret must land in the clicked text line, image UI must not remain active, and no sidecar workaround may be created.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_BackspaceAtWrappedLineStartEditsTextNormally()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-backspace-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-backspace-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = new List<string>();
+
+            if (before.SidecarCount > 0)
+            {
+                issues.Add($"target layout must not create sidecar text blocks, found {before.SidecarCount}");
+            }
+
+            if (before.Lines.Length < 2)
+            {
+                issues.Add($"target scenario must render at least 2 wrapped text lines, found {before.Lines.Length}");
+            }
+            else
+            {
+                var line = before.Lines[1];
+                var expectedOffset = line.StartOffset;
+                var expectedText = expectedOffset > 0
+                    ? RemoveCharAt(before.Text, expectedOffset - 1)
+                    : before.Text;
+                await ClickPhase0WrappedLineAsync(page, line, 1);
+                await WaitForPhase0WrappedTextSelectionAsync(page, imageId, 1);
+
+                var afterClick = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                if (!afterClick.SelectionInsideTargetText || afterClick.SelectionLineIndex != 1)
+                {
+                    issues.Add($"caret was not placed at the second wrapped line before Backspace; line={afterClick.SelectionLineIndex + 1}, offset={afterClick.SelectionOffset}");
+                }
+
+                await page.Keyboard.PressAsync("Backspace");
+                var afterBackspace = await CapturePhase0ImageWrapProbeAsync(page, imageId, expectedText);
+                if (expectedOffset <= 0)
+                {
+                    issues.Add("second wrapped line start offset must be greater than zero for Backspace semantics");
+                }
+                else
+                {
+                    if (!string.Equals(afterBackspace.Text, expectedText, StringComparison.Ordinal))
+                    {
+                        issues.Add($"Backspace did not remove the character before the wrapped line start. Expected '{expectedText}', got '{afterBackspace.Text}'.");
+                    }
+
+                    await ClickUndoAsync(page);
+                    var afterUndo = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                    if (!string.Equals(afterUndo.Text, before.Text, StringComparison.Ordinal))
+                    {
+                        issues.Add("Undo after wrapped-line Backspace did not restore the original text");
+                    }
+
+                    await ClickRedoAsync(page);
+                    var afterRedo = await CapturePhase0ImageWrapProbeAsync(page, imageId, expectedText);
+                    if (!string.Equals(afterRedo.Text, expectedText, StringComparison.Ordinal))
+                    {
+                        issues.Add("Redo after wrapped-line Backspace did not reapply the deletion");
+                    }
+                }
+
+                if (afterClick.SelectedImageId == imageId || afterClick.ImageToolbarVisible)
+                {
+                    issues.Add("Backspace scenario activated image selection UI instead of ordinary text editing");
+                }
+            }
+
+            issues.Should().BeEmpty("Backspace at the start of a visual wrapped text line must edit ordinary text, not a special image sidecar");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_BackspaceAtWrappedLineStartEditsTextNormally),
+                "Place caret at the start of the second visual line beside a left square-wrapped image and press Backspace.",
+                "Backspace must delete through the same paragraph/text flow, preserve the image, and undo/redo cleanly.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_DeleteAtWrappedLineEndEditsTextNormally()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-delete-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-delete-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = new List<string>();
+
+            if (before.SidecarCount > 0)
+            {
+                issues.Add($"target layout must not create sidecar text blocks, found {before.SidecarCount}");
+            }
+
+            if (before.Lines.Length < 2)
+            {
+                issues.Add($"target scenario must render at least 2 wrapped text lines, found {before.Lines.Length}");
+            }
+            else
+            {
+                var line = before.Lines[0];
+                await ClickPhase0WrappedLineAsync(page, line, Math.Max(1, line.Rect.Width - 2));
+                await WaitForPhase0WrappedTextSelectionAsync(page, imageId, 0);
+
+                var afterClick = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                if (!afterClick.SelectionInsideTargetText || afterClick.SelectionOffset < 0 || afterClick.SelectionOffset >= text.Length)
+                {
+                    issues.Add($"caret was not placed inside wrapped text before Delete; line={afterClick.SelectionLineIndex + 1}, offset={afterClick.SelectionOffset}");
+                }
+
+                if (afterClick.SelectionOffset < line.EndOffset - 2)
+                {
+                    issues.Add($"clicking near the end of the wrapped line produced offset {afterClick.SelectionOffset}, expected near {line.EndOffset}");
+                }
+
+                if (afterClick.SelectionOffset >= 0 && afterClick.SelectionOffset < text.Length)
+                {
+                    var expectedText = RemoveCharAt(before.Text, afterClick.SelectionOffset);
+                    await page.Keyboard.PressAsync("Delete");
+                    var afterDelete = await CapturePhase0ImageWrapProbeAsync(page, imageId, expectedText);
+                    if (!string.Equals(afterDelete.Text, expectedText, StringComparison.Ordinal))
+                    {
+                        issues.Add($"Delete did not remove the character at the logical wrapped-line offset. Expected '{expectedText}', got '{afterDelete.Text}'.");
+                    }
+
+                    await ClickUndoAsync(page);
+                    var afterUndo = await CapturePhase0ImageWrapProbeAsync(page, imageId, before.Text);
+                    if (!string.Equals(afterUndo.Text, before.Text, StringComparison.Ordinal))
+                    {
+                        issues.Add("Undo after wrapped-line Delete did not restore the original text");
+                    }
+
+                    await ClickRedoAsync(page);
+                    var afterRedo = await CapturePhase0ImageWrapProbeAsync(page, imageId, expectedText);
+                    if (!string.Equals(afterRedo.Text, expectedText, StringComparison.Ordinal))
+                    {
+                        issues.Add("Redo after wrapped-line Delete did not reapply the deletion");
+                    }
+
+                    if (afterDelete.SelectedImageId == imageId || afterDelete.ImageToolbarVisible)
+                    {
+                        issues.Add("Delete scenario activated image selection UI instead of ordinary text editing");
+                    }
+                }
+            }
+
+            issues.Should().BeEmpty("Delete at the end of a visual wrapped text line must edit the same logical paragraph");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_DeleteAtWrappedLineEndEditsTextNormally),
+                "Place caret near the end of a visual wrapped line and press Delete.",
+                "Delete must remove the next logical character, preserve the wrapped image, and undo/redo cleanly.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_EnterAtWrappedLineSplitsParagraphAndUndoRestores()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-enter-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-enter-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = new List<string>();
+
+            if (before.SidecarCount > 0)
+            {
+                issues.Add($"target layout must not create sidecar text blocks, found {before.SidecarCount}");
+            }
+
+            if (before.Lines.Length < 2)
+            {
+                issues.Add($"target scenario must render at least 2 wrapped text lines, found {before.Lines.Length}");
+            }
+            else
+            {
+                var line = before.Lines[1];
+                await ClickPhase0WrappedLineAsync(page, line, 2);
+                await WaitForPhase0WrappedTextSelectionAsync(page, imageId, 1);
+
+                var afterClick = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+                if (!afterClick.SelectionInsideTargetText || afterClick.SelectionOffset <= 0 || afterClick.SelectionOffset >= text.Length)
+                {
+                    issues.Add($"caret was not placed at a splittable wrapped-text offset before Enter; line={afterClick.SelectionLineIndex + 1}, offset={afterClick.SelectionOffset}");
+                }
+
+                if (afterClick.SelectionOffset > 0 && afterClick.SelectionOffset < text.Length)
+                {
+                    var expectedBefore = text[..afterClick.SelectionOffset];
+                    var expectedAfter = text[afterClick.SelectionOffset..];
+                    await page.Keyboard.PressAsync("Enter");
+                    await SaveDocumentAsync(page);
+                    var splitDocument = await LoadDemoDocumentFromPageAsync(page);
+                    if (!DocumentHasConsecutiveParagraphTexts(splitDocument, expectedBefore, expectedAfter))
+                    {
+                        issues.Add("Enter in wrapped text did not split the paragraph at the logical caret offset in the saved model");
+                    }
+
+                    var splitProbe = await CapturePhase0ImageWrapProbeAsync(page, imageId, expectedAfter);
+                    if (splitProbe.SidecarCount > 0)
+                    {
+                        issues.Add("Enter in wrapped text recreated the old sidecar text workaround");
+                    }
+
+                    if (splitProbe.Lines.Length > 0)
+                    {
+                        var focusLine = splitProbe.Lines[0];
+                        await page.Mouse.ClickAsync(
+                            (float)(focusLine.Rect.X + 2),
+                            (float)(focusLine.Rect.Y + focusLine.Rect.Height / 2));
+                    }
+
+                    await ClickUndoAsync(page);
+                    await SaveDocumentAsync(page);
+                    var undoDocument = await LoadDemoDocumentFromPageAsync(page);
+                    if (!DocumentHasParagraphText(undoDocument, text))
+                    {
+                        issues.Add("Undo after wrapped-text Enter did not restore the original paragraph");
+                    }
+                }
+            }
+
+            issues.Should().BeEmpty("Enter in a visual wrapped line must split the logical paragraph and preserve normal undo");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_EnterAtWrappedLineSplitsParagraphAndUndoRestores),
+                "Place caret at the start of the second visual line beside a square-wrapped image and press Enter.",
+                "The document model must split at the logical text offset, reflow without sidecars, and undo must restore the paragraph.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_DragImageReflowsAdjacentText()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-drag-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-drag-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            await DragFloatingImageAsync(page, figure, deltaX: 96, deltaY: 0);
+            var after = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            var issues = CollectCommonPhase0ImageLayoutIssues(before, after, imageId);
+            if (!RectMoved(before.ImageVisualRect, after.ImageVisualRect, 8))
+            {
+                issues.Add("dragging the wrapped image did not move the image visual rect enough");
+            }
+
+            if (!LineGeometryChanged(before.Lines, after.Lines))
+            {
+                issues.Add("dragging the image did not reflow adjacent text line boxes");
+            }
+
+            if (after.TextIntersectionCount > 0)
+            {
+                issues.Add($"dragging produced {after.TextIntersectionCount} text/image wrap intersections");
+            }
+
+            var beforeBlockedLine = FirstPhase0LineOverlappingImage(before);
+            var afterRightSegmentWidth = await CaptureMaxRightTextSegmentWidthInImageBandAsync(page, imageId, text);
+            if (beforeBlockedLine is null || afterRightSegmentWidth <= 0)
+            {
+                issues.Add("dragging right could not find text segments in the wrapped image vertical band");
+            }
+            else
+            {
+                if (!after.Lines.Any(line => line.AvailableIntervalCount >= 2))
+                {
+                    issues.Add("dragging the left image right did not create split available intervals around the image");
+                }
+
+                if (afterRightSegmentWidth >= beforeBlockedLine.Rect.Width - 20)
+                {
+                    issues.Add($"dragging the left image right did not reduce the right-side text interval enough: before={beforeBlockedLine.Rect.Width:0.##}, after={afterRightSegmentWidth:0.##}");
+                }
+            }
+
+            await ClickUndoAsync(page);
+            var undone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (!RectApproximatelyEquals(before.ImageLayoutRect, undone.ImageLayoutRect, 4))
+            {
+                issues.Add("undo after image drag did not restore the original image layout rect");
+            }
+
+            if (LineLayoutGeometryChanged(before.Lines, undone.Lines))
+            {
+                issues.Add("undo after image drag did not restore the original wrapped text line boxes");
+            }
+
+            await ClickRedoAsync(page);
+            var redone = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (!RectApproximatelyEquals(after.ImageLayoutRect, redone.ImageLayoutRect, 4))
+            {
+                issues.Add("redo after image drag did not restore the moved image layout rect");
+            }
+
+            if (LineLayoutGeometryChanged(after.Lines, redone.Lines))
+            {
+                issues.Add("redo after image drag did not restore the moved wrapped text line boxes");
+            }
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+            var reloaded = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (!RectApproximatelyEquals(redone.ImageLayoutRect, reloaded.ImageLayoutRect, 4))
+            {
+                issues.Add("save/reload did not preserve dragged image layout position");
+            }
+
+            issues.Should().BeEmpty("dragging a wrapped image must reflow adjacent text and persist the new object position");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_DragImageReflowsAdjacentText),
+                "Drag a left square-wrapped image and inspect the adjacent text line geometry.",
+                "Image rect must move, text line boxes must reflow, text content must remain stable, and save/reload must preserve layout.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_DragDownAndUpUpdatesBlockedLines()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-drag-y-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-drag-y-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            await DragFloatingImageAsync(page, figure, deltaX: 0, deltaY: 180);
+            var afterDown = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            var issues = CollectCommonPhase0ImageLayoutIssues(before, afterDown, imageId);
+            var beforeTopLine = before.Lines.OrderBy(line => line.Rect.Y).FirstOrDefault();
+            var downTopLine = afterDown.Lines.OrderBy(line => line.Rect.Y).FirstOrDefault();
+            if (beforeTopLine is null || downTopLine is null)
+            {
+                issues.Add("dragging image down did not leave readable line probes");
+            }
+            else
+            {
+                if (downTopLine.Rect.X >= beforeTopLine.Rect.X - 20 && downTopLine.Rect.Width <= beforeTopLine.Rect.Width + 20)
+                {
+                    issues.Add($"dragging the image down did not unblock the top text lines: before x/width={beforeTopLine.Rect.X:0.##}/{beforeTopLine.Rect.Width:0.##}, after x/width={downTopLine.Rect.X:0.##}/{downTopLine.Rect.Width:0.##}");
+                }
+            }
+
+            var movedFigure = page.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await DragFloatingImageAsync(page, movedFigure, deltaX: 0, deltaY: -150);
+            var afterUp = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            issues.AddRange(CollectCommonPhase0ImageLayoutIssues(afterDown, afterUp, imageId));
+
+            var upBlockedLine = FirstPhase0LineOverlappingImage(afterUp);
+            var downFirstLine = afterDown.Lines.OrderBy(line => line.Rect.Y).FirstOrDefault();
+            if (upBlockedLine is null || downFirstLine is null)
+            {
+                issues.Add("dragging image up did not create a wrapped line in the image vertical band");
+            }
+            else if (upBlockedLine.Rect.X <= downFirstLine.Rect.X + 20 && upBlockedLine.Rect.Width >= downFirstLine.Rect.Width - 20)
+            {
+                issues.Add($"dragging the image up did not cause newly blocked lines to wrap: down x/width={downFirstLine.Rect.X:0.##}/{downFirstLine.Rect.Width:0.##}, up x/width={upBlockedLine.Rect.X:0.##}/{upBlockedLine.Rect.Width:0.##}");
+            }
+
+            issues.Should().BeEmpty("moving a wrapped image vertically must immediately reflow the text bands it covers");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_DragDownAndUpUpdatesBlockedLines),
+                "Drag a square-wrapped image down and back up while inspecting the first text line boxes.",
+                "Top lines must become unblocked when the image moves down and must wrap again when the image moves up.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_DragCenterShowsPreviewGuideAndTwoIntervals()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-center-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-center-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var bodyRect = await CaptureWysiwygBodyRectAsync(page);
+            await figure.ClickAsync();
+            await page.WaitForTimeoutAsync(50);
+            var figureBox = await figure.BoundingBoxAsync();
+            Assert.IsNotNull(figureBox, "Floating image should have a box before dragging to center.");
+            var startX = figureBox!.X + figureBox.Width / 2;
+            var startY = figureBox.Y + Math.Min(figureBox.Height - 8, Math.Max(8, figureBox.Height / 2));
+            var bodyCenterX = bodyRect.X + bodyRect.Width / 2;
+            await page.Mouse.MoveAsync((float)startX, (float)startY);
+            await page.Mouse.DownAsync();
+            await page.Mouse.MoveAsync((float)bodyCenterX, (float)startY, new() { Steps = 10 });
+
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-move-preview']")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            var centerGuide = page.Locator("[data-testid='document-wysiwyg-image-move-guide'][data-guide-kind='page-center-x']");
+            var centerGuideVisible = await centerGuide.CountAsync() > 0 && await centerGuide.First.IsVisibleAsync();
+            for (var offset = -180; !centerGuideVisible && offset <= 180; offset += 12)
+            {
+                await page.Mouse.MoveAsync((float)(bodyCenterX + offset), (float)startY, new() { Steps = 2 });
+                await page.WaitForTimeoutAsync(60);
+                centerGuideVisible = await centerGuide.CountAsync() > 0 && await centerGuide.First.IsVisibleAsync();
+            }
+
+            centerGuideVisible.Should().BeTrue("dragging near the page center must reveal the center snap guide");
+            await page.Mouse.UpAsync();
+
+            var after = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = CollectCommonPhase0ImageLayoutIssues(after, after, imageId);
+            var imageCenterX = after.ImageVisualRect.X + after.ImageVisualRect.Width / 2;
+            if (Math.Abs(imageCenterX - bodyCenterX) > 8)
+            {
+                issues.Add($"center snap did not place the image on the page center: expected={bodyCenterX:0.##}, actual={imageCenterX:0.##}");
+            }
+
+            if (!after.Lines.Any(line => line.AvailableIntervalCount >= 2))
+            {
+                issues.Add("dragging the image to the center did not expose a two-interval text line around the image");
+            }
+
+            if (!await LineHasTextOnBothSidesOfImageAsync(page, imageId, text))
+            {
+                issues.Add("dragging the image to the center did not render text segments on both sides of the image");
+            }
+
+            issues.Should().BeEmpty("center-dragged square images must show move feedback, snap to guides, and create split text intervals");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_DragCenterShowsPreviewGuideAndTwoIntervals),
+                "Drag a square-wrapped image to the text area center and inspect live feedback and line intervals.",
+                "The preview box and center guide must appear during drag, and the committed layout must split text around the centered image.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_ResizeImageReflowsAdjacentText()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-resize-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-resize-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            await ResizeImageAsync(page, figure, deltaX: 80, deltaY: 0);
+            var after = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+
+            var issues = CollectCommonPhase0ImageLayoutIssues(before, after, imageId);
+            if (after.ImageVisualRect.Width <= before.ImageVisualRect.Width + 24)
+            {
+                issues.Add($"resize did not increase image width enough: before={before.ImageVisualRect.Width:0.##}, after={after.ImageVisualRect.Width:0.##}");
+            }
+
+            var beforeRatio = before.ImageVisualRect.Height / Math.Max(1, before.ImageVisualRect.Width);
+            var afterRatio = after.ImageVisualRect.Height / Math.Max(1, after.ImageVisualRect.Width);
+            if (Math.Abs(beforeRatio - afterRatio) > 0.05)
+            {
+                issues.Add($"corner resize should preserve aspect ratio by default: before={beforeRatio:0.###}, after={afterRatio:0.###}");
+            }
+
+            if (!LineGeometryChanged(before.Lines, after.Lines))
+            {
+                issues.Add("resizing the image did not reflow adjacent text line boxes");
+            }
+
+            var inspectorWidth = await page.Locator("[data-testid='document-image-inspector-width']").InputValueAsync();
+            if (!double.TryParse(inspectorWidth, out var inspectorWidthValue) || Math.Abs(inspectorWidthValue - after.ImageLayoutRect.Width) > 6)
+            {
+                issues.Add($"image inspector width did not reflect the resized image layout size: input='{inspectorWidth}', layout={after.ImageLayoutRect.Width:0.##}, rendered={after.ImageVisualRect.Width:0.##}");
+            }
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+            var reloaded = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (Math.Abs(reloaded.ImageLayoutRect.Width - after.ImageLayoutRect.Width) > 4)
+            {
+                issues.Add("save/reload did not preserve resized image width");
+            }
+
+            issues.Should().BeEmpty("resizing a wrapped image must reflow adjacent text, update inspector state and persist size");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_ResizeImageReflowsAdjacentText),
+                "Resize a left square-wrapped image and inspect adjacent text line geometry plus inspector state.",
+                "Image size must change, aspect ratio should hold, text line boxes must reflow, inspector must sync, and save/reload must preserve size.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_ResizeHandlesExposeWordLikeChrome()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-resize-handles-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-resize-handles-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            await figure.ClickAsync();
+
+            var expectedCursors = new Dictionary<string, string>
+            {
+                ["nw"] = "nwse-resize",
+                ["n"] = "ns-resize",
+                ["ne"] = "nesw-resize",
+                ["e"] = "ew-resize",
+                ["se"] = "nwse-resize",
+                ["s"] = "ns-resize",
+                ["sw"] = "nesw-resize",
+                ["w"] = "ew-resize"
+            };
+            var issues = new List<string>();
+
+            foreach (var (handleName, expectedCursor) in expectedCursors)
+            {
+                var handle = figure.Locator($"[data-testid='document-wysiwyg-object-resize-handle-{handleName}']").First;
+                await Assertions.Expect(handle).ToBeVisibleAsync(new() { Timeout = 3000 });
+                var ariaLabel = await handle.GetAttributeAsync("aria-label");
+                if (string.IsNullOrWhiteSpace(ariaLabel))
+                {
+                    issues.Add($"resize handle {handleName} has no aria label");
+                }
+
+                var cursor = await handle.EvaluateAsync<string>("el => getComputedStyle(el).cursor");
+                if (!string.Equals(cursor, expectedCursor, StringComparison.Ordinal))
+                {
+                    issues.Add($"resize handle {handleName} cursor mismatch: expected={expectedCursor}, actual={cursor}");
+                }
+            }
+
+            var rotation = figure.Locator("[data-testid='document-wysiwyg-object-rotation-handle']").First;
+            await Assertions.Expect(rotation).ToBeVisibleAsync(new() { Timeout = 3000 });
+            var rotationAria = await rotation.GetAttributeAsync("aria-label");
+            if (string.IsNullOrWhiteSpace(rotationAria))
+            {
+                issues.Add("rotation handle has no aria label");
+            }
+
+            issues.Should().BeEmpty("selected floating images need all Word-like resize handles, rotation handle, cursors and accessible labels");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_ResizeHandlesExposeWordLikeChrome),
+                "Select a wrapped image and inspect all object resize handles plus the rotation handle.",
+                "All eight resize handles and the rotation handle must be visible, addressable by data-testid, have accessible labels, and expose the expected cursors.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_ResizeHandlesHonorAxisAspectAndPersistence()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-resize-axis-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-resize-axis-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var before = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var issues = new List<string>();
+
+            var feedback = await ResizeImageWithLiveFeedbackAsync(page, figure, deltaX: 80, deltaY: 36, handleName: "se");
+            var afterSe = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            issues.AddRange(CollectCommonPhase0ImageLayoutIssues(before, afterSe, imageId));
+
+            if (!Regex.IsMatch(feedback.BadgeText, @"^\d+\s+x\s+\d+$"))
+            {
+                issues.Add($"resize size badge did not expose current dimensions: '{feedback.BadgeText}'");
+            }
+
+            if (!feedback.PreviewVisible)
+            {
+                issues.Add("resize did not show the live preview box while dragging");
+            }
+
+            var beforeRatio = before.ImageVisualRect.Height / Math.Max(1, before.ImageVisualRect.Width);
+            var afterSeRatio = afterSe.ImageVisualRect.Height / Math.Max(1, afterSe.ImageVisualRect.Width);
+            if (afterSe.ImageVisualRect.Width <= before.ImageVisualRect.Width + 32)
+            {
+                issues.Add("se resize did not grow the image width enough");
+            }
+
+            if (Math.Abs(beforeRatio - afterSeRatio) > 0.05)
+            {
+                issues.Add($"se corner resize should preserve aspect ratio by default: before={beforeRatio:0.###}, after={afterSeRatio:0.###}");
+            }
+
+            if (!LineGeometryChanged(before.Lines, afterSe.Lines))
+            {
+                issues.Add("se resize did not reflow adjacent text after growth");
+            }
+
+            await ResizeImageAsync(page, figure, deltaX: 70, deltaY: 0, handleName: "e");
+            var afterE = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (afterE.ImageVisualRect.Width <= afterSe.ImageVisualRect.Width + 32)
+            {
+                issues.Add("e side resize did not grow width");
+            }
+
+            if (Math.Abs(afterE.ImageVisualRect.Height - afterSe.ImageVisualRect.Height) > 8)
+            {
+                issues.Add("e side resize changed height even though aspect ratio is not held for side handles by default");
+            }
+
+            await ResizeImageAsync(page, figure, deltaX: 0, deltaY: 42, handleName: "s");
+            var afterS = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (afterS.ImageVisualRect.Height <= afterE.ImageVisualRect.Height + 24)
+            {
+                issues.Add("s side resize did not grow height");
+            }
+
+            if (Math.Abs(afterS.ImageVisualRect.Width - afterE.ImageVisualRect.Width) > 8)
+            {
+                issues.Add("s side resize changed width even though aspect ratio is not held for side handles by default");
+            }
+
+            await ResizeImageAsync(page, figure, deltaX: 36, deltaY: 28, handleName: "nw");
+            var afterNw = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (afterNw.ImageLayoutRect.X <= afterS.ImageLayoutRect.X + 8 && afterNw.ImageLayoutRect.Y <= afterS.ImageLayoutRect.Y + 8)
+            {
+                issues.Add("nw resize did not move the object origin while shrinking from the top-left handle");
+            }
+
+            if (afterNw.ImageVisualRect.Width >= afterS.ImageVisualRect.Width - 16)
+            {
+                issues.Add("nw resize did not shrink the image width");
+            }
+
+            if (!LineGeometryChanged(afterS.Lines, afterNw.Lines))
+            {
+                issues.Add("nw shrink did not reflow adjacent text");
+            }
+
+            var beforeFreeRatio = afterNw.ImageVisualRect.Height / Math.Max(1, afterNw.ImageVisualRect.Width);
+            await ResizeImageAsync(page, figure, deltaX: 78, deltaY: 8, handleName: "se", holdShift: true);
+            var afterFree = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var afterFreeRatio = afterFree.ImageVisualRect.Height / Math.Max(1, afterFree.ImageVisualRect.Width);
+            if (Math.Abs(beforeFreeRatio - afterFreeRatio) < 0.05)
+            {
+                issues.Add("Shift+se resize did not temporarily disable aspect-ratio preservation");
+            }
+
+            await SaveDocumentAsync(page);
+            await ReloadDocumentEditorPageAsync(page);
+            var reloaded = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            if (Math.Abs(reloaded.ImageVisualRect.Width - afterFree.ImageVisualRect.Width) > 4
+                || Math.Abs(reloaded.ImageVisualRect.Height - afterFree.ImageVisualRect.Height) > 4)
+            {
+                issues.Add("save/reload did not preserve the free-resized image dimensions");
+            }
+
+            issues.Should().BeEmpty("image resize handles must behave like a real editor: corner aspect, side-axis resize, live feedback, reflow and persistence");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_ResizeHandlesHonorAxisAspectAndPersistence),
+                "Resize a wrapped image through se/e/s/nw handles and Shift+se, then inspect live feedback, text reflow, and saved dimensions.",
+                "Resize must preserve aspect ratio on corners by default, keep side handles axis-specific, allow modifier-based free resize, reflow text while resizing, and persist dimensions after save/reload.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_TightContourEditorReflowsAndPersists()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-contour-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var imageId = $"strict-image-wrap-contour-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var square = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var diamond = new[]
+            {
+                new WrapContourPointProbe { X = 0.50, Y = 0.00 },
+                new WrapContourPointProbe { X = 1.00, Y = 0.50 },
+                new WrapContourPointProbe { X = 0.50, Y = 1.00 },
+                new WrapContourPointProbe { X = 0.00, Y = 0.50 }
+            };
+            var issues = new List<string>();
+
+            await ExecuteWysiwygCommandAsync(page, "setImageWrapContour", new { blockId = imageId, wrapMode = "Tight", points = diamond });
+            await WaitForImageWrapContourAsync(page, imageId, expectedWrapMode: "2", expectedPointCount: 4);
+            var tight = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var tightContour = await CaptureImageWrapContourPointsAsync(page, imageId);
+
+            if (tight.SidecarCount > 0)
+            {
+                issues.Add($"tight contour wrapping must not recreate sidecar text blocks, found {tight.SidecarCount}");
+            }
+
+            if (!string.Equals(tight.Text, text, StringComparison.Ordinal))
+            {
+                issues.Add("tight contour wrapping changed the target paragraph text");
+            }
+
+            if (!LineLayoutGeometryChanged(square.Lines, tight.Lines))
+            {
+                issues.Add("tight diamond contour did not change line boxes compared with square wrapping");
+            }
+
+            if (!ContourApproximatelyEquals(tightContour, diamond, 0.03))
+            {
+                issues.Add("tight contour points rendered in the DOM do not match the commanded diamond contour");
+            }
+
+            await ExecuteWysiwygCommandAsync(page, "editImageWrapPoints", new { blockId = imageId });
+            var editor = page.Locator("[data-testid='document-wysiwyg-wrap-points-editor']").First;
+            await Assertions.Expect(editor).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-wrap-point']")).ToHaveCountAsync(4, new() { Timeout = 5000 });
+
+            await DragImageWrapPointAsync(page, pointIndex: 1, deltaX: -56, deltaY: 0);
+            await WaitForImageWrapContourAsync(page, imageId, expectedWrapMode: "2", expectedPointCount: 4);
+            await Assertions.Expect(editor).ToBeVisibleAsync(new() { Timeout = 5000 });
+            var dragged = await CapturePhase0ImageWrapProbeAsync(page, imageId, text);
+            var draggedContour = await CaptureImageWrapContourPointsAsync(page, imageId);
+            if (Math.Abs(draggedContour[1].X - tightContour[1].X) < 0.12)
+            {
+                issues.Add("dragging the right wrap point did not materially change its normalized X coordinate");
+            }
+
+            if (!LineLayoutGeometryChanged(tight.Lines, dragged.Lines))
+            {
+                issues.Add("dragging a wrap point did not reflow adjacent wrapped text line boxes");
+            }
+
+            await AddImageWrapPointOnSegmentAsync(page, segmentIndex: 1);
+            await WaitForImageWrapContourAsync(page, imageId, expectedWrapMode: "2", expectedPointCount: 5);
+            var addedContour = await CaptureImageWrapContourPointsAsync(page, imageId);
+            if (addedContour.Length <= 4)
+            {
+                issues.Add("clicking a wrap contour edge did not add a new point");
+            }
+
+            await SaveDocumentAsync(page);
+            var savedWithAddedPoint = GetImageContent(await LoadDemoDocumentFromPageAsync(page), imageId);
+            if (savedWithAddedPoint.Layout.Wrap.Mode != DocumentWrapMode.Tight)
+            {
+                issues.Add($"saving after editing wrap points persisted wrap mode {savedWithAddedPoint.Layout.Wrap.Mode} instead of Tight");
+            }
+
+            if (savedWithAddedPoint.Layout.Wrap.WrapContourPoints.Count <= 4)
+            {
+                issues.Add("saving after adding a wrap point did not persist the custom contour");
+            }
+
+            await ExecuteWysiwygCommandAsync(page, "editImageWrapPoints", new { blockId = imageId });
+            await Assertions.Expect(editor).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-wysiwyg-wrap-point'][data-wrap-point-index='2']").First.ClickAsync();
+            await page.Keyboard.PressAsync("Delete");
+            await WaitForImageWrapContourAsync(page, imageId, expectedWrapMode: "2", expectedPointCount: 4);
+            var deletedContour = await CaptureImageWrapContourPointsAsync(page, imageId);
+            if (deletedContour.Length != 4)
+            {
+                issues.Add("Delete did not remove the active wrap point from the contour editor");
+            }
+
+            await ExecuteWysiwygCommandAsync(page, "resetImageWrapPoints", new { blockId = imageId });
+            await WaitForImageWrapContourAsync(page, imageId, expectedWrapMode: "2", expectedPointCount: 4);
+            var resetContour = await CaptureImageWrapContourPointsAsync(page, imageId);
+            if (!ContourApproximatelyEquals(resetContour, DefaultWrapContour(), 0.01))
+            {
+                issues.Add("reset wrap points did not restore the default rectangle contour");
+            }
+
+            await SaveDocumentAsync(page);
+            var savedAfterReset = GetImageContent(await LoadDemoDocumentFromPageAsync(page), imageId);
+            if (!ContourApproximatelyEquals(savedAfterReset.Layout.Wrap.WrapContourPoints, DefaultWrapContour(), 0.01))
+            {
+                issues.Add("save after reset did not persist the default rectangle contour");
+            }
+
+            await ExecuteWysiwygCommandAsync(page, "editImageWrapPoints", new { blockId = imageId });
+            await Assertions.Expect(editor).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await editor.FocusAsync();
+            await page.Keyboard.PressAsync("Escape");
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-wrap-points-editor']")).ToHaveCountAsync(0, new() { Timeout = 5000 });
+
+            issues.Should().BeEmpty("tight/through wrap points must behave like a real contour editor: reflow, drag, add, reset, escape and persist");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_TightContourEditorReflowsAndPersists),
+                "Set a tight diamond contour, edit wrap points with pointer interactions, save, reset and close the editor.",
+                "The contour must change real line boxes, expose visible draggable points, persist added points, reset to a rectangle, and close on Escape.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Strict_Phase1_GlobalLayoutBaselineAcrossViewports()
     {
         (int Width, int Height, string Name)[] viewports =
@@ -1600,18 +2588,12 @@ public class DocumentEditorE2ETests : WasmTestBase
         var page = await OpenIsolatedDocumentEditorPageAsync($"strict-phase10-footer-to-image-side-text-{Guid.NewGuid():N}", width: 1440, height: 900);
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(host);
-        var imageId = $"strict-footer-sidecar-{Guid.NewGuid():N}";
-        var sideText = $" Side text after footer {Guid.NewGuid():N}";
+        var imageId = $"strict-footer-wrapped-line-{Guid.NewGuid():N}";
+        var sideText = $" side-{Guid.NewGuid().ToString("N")[..6]}";
 
         try
         {
-            await InsertLocalImageBlockAsync(page, imageId, "Footer to side text image", width: 180, order: 5);
-            await SetImageWrapModeAsync(page, imageId, "Square");
-            await SetImageHorizontalPositionAsync(page, imageId, "Left");
-
-            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
-            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
-            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-left"), new() { Timeout = 5000 });
+            var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, Phase0WrappedImageText());
 
             var footer = host.Locator(".tm-wysiwyg-page__footer[contenteditable='true']").First;
             await footer.ScrollIntoViewIfNeededAsync();
@@ -1619,19 +2601,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await Assertions.Expect(host).ToHaveAttributeAsync("data-active-region", "Footer", new() { Timeout = 5000 });
             await Assertions.Expect(page.Locator("[data-testid='document-ribbon-tab-header-footer']")).ToBeVisibleAsync();
 
-            await figure.ScrollIntoViewIfNeededAsync();
-            var point = await figure.EvaluateAsync<MousePointProbe>(
-                """
-                figure => {
-                    const rect = (figure.querySelector('img') || figure).getBoundingClientRect();
-                    return {
-                        X: Math.min(window.innerWidth - 16, rect.right + 44),
-                        Y: Math.min(window.innerHeight - 16, rect.top + Math.min(36, Math.max(16, rect.height / 3)))
-                    };
-                }
-                """);
-
-            await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
+            await TypeTextBesideWrappedImageAsync(page, figure, sideText, rightOfLeftImage: true);
             await Assertions.Expect(host).ToHaveAttributeAsync("data-active-region", "Body", new() { Timeout = 5000 });
             await AssertSelectionInsideWrappedImageSideTextAsync(figure);
             await AssertWrappedImageCaretBesideImageAsync(figure, "right");
@@ -1645,7 +2615,6 @@ public class DocumentEditorE2ETests : WasmTestBase
             var activeTestId = await page.EvaluateAsync<string?>("() => document.activeElement?.getAttribute?.('data-testid')");
             activeTestId.Should().Be("document-wysiwyg-body");
 
-            await page.Keyboard.InsertTextAsync(sideText);
             await AssertWrappedImageSideTextAsync(figure, sideText, expectedSide: "right");
             var footerText = await footer.InnerTextAsync();
             footerText.Should().NotContain(sideText);
@@ -3817,9 +4786,10 @@ public class DocumentEditorE2ETests : WasmTestBase
             await Assertions.Expect(figure).ToHaveAttributeAsync("aria-selected", "true");
             await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
             await Assertions.Expect(page.Locator("[data-testid='document-side-panel-tab-properties']")).ToHaveAttributeAsync("aria-selected", "true");
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToBeVisibleAsync(new() { Timeout = 5000 });
-            await AssertElementInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "image selection toolbar");
-            await AssertElementsDoNotOverlapAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "[data-testid='document-side-panel']", "image selection toolbar", "side panel");
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await AssertElementInsideViewportAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "image layout bubble");
+            await AssertElementsDoNotOverlapAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "[data-testid='document-side-panel']", "image layout bubble", "side panel");
 
             await figure.ClickAsync(new() { Button = MouseButton.Right });
             await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
@@ -3954,7 +4924,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await figure.ClickAsync();
             await page.Locator("[data-testid='document-image-inspector-wrap-square']").ClickAsync();
             await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
-            await Assertions.Expect(host.Locator($"[data-wrap-sidecar-for='{imageId}']")).ToHaveCountAsync(1, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text")).ToHaveCountAsync(0);
             var sideTextBeforeExplicitPosition = $"Text beside default wrapped image {Guid.NewGuid():N}";
             await TypeTextBesideWrappedImageAsync(page, figure, sideTextBeforeExplicitPosition, rightOfLeftImage: true);
             await AssertWrappedImageSideTextAsync(figure, sideTextBeforeExplicitPosition, expectedSide: "right");
@@ -4009,6 +4979,146 @@ public class DocumentEditorE2ETests : WasmTestBase
                 nameof(DocumentEditor_Strict_Phase8_ImageAltCaptionWrapPositionResizeAndDragPersist),
                 "Use the image inspector and direct manipulation for alt text, caption, wrap, position, resize and drag.",
                 "Image metadata and layout must update visibly, preserve aspect ratio, avoid document text mutation and survive save/reload.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase9_ImageLayoutBubbleInspectorAndContextMenuStayInSync()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync(
+            "strict-phase9-image-ui",
+            width: 1440,
+            height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"strict-phase9-ui-{Guid.NewGuid():N}";
+        var figure = await PreparePhase0WrappedImageScenarioAsync(page, imageId, Phase0WrappedImageText());
+
+        try
+        {
+            await figure.ClickAsync();
+
+            await Assertions.Expect(figure.Locator("[data-testid^='document-wysiwyg-object-resize-handle-']")).ToHaveCountAsync(8);
+            var bubble = figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']");
+            await Assertions.Expect(bubble).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await AssertElementInsideViewportAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "image layout bubble");
+            await AssertElementsDoNotOverlapAsync(
+                page,
+                $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']",
+                "[data-testid='document-side-panel']",
+                "image layout bubble",
+                "side panel");
+
+            foreach (var testId in new[]
+            {
+                "document-wysiwyg-layout-bubble-inline",
+                "document-wysiwyg-layout-bubble-wrap",
+                "document-wysiwyg-layout-bubble-break",
+                "document-wysiwyg-layout-bubble-behind",
+                "document-wysiwyg-layout-bubble-front",
+                "document-wysiwyg-layout-bubble-move-with-text",
+                "document-wysiwyg-layout-bubble-fix-position",
+                "document-wysiwyg-layout-bubble-more"
+            })
+            {
+                await Assertions.Expect(bubble.Locator($"[data-testid='{testId}']")).ToBeVisibleAsync();
+            }
+
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            foreach (var sectionId in new[]
+            {
+                "document-image-inspector-section-picture",
+                "document-image-inspector-section-size",
+                "document-image-inspector-section-wrap",
+                "document-image-inspector-section-position",
+                "document-image-inspector-section-order",
+                "document-image-inspector-section-accessibility"
+            })
+            {
+                await Assertions.Expect(page.Locator($"[data-testid='{sectionId}']")).ToBeVisibleAsync();
+            }
+
+            await bubble.Locator("[data-testid='document-wysiwyg-layout-bubble-inline']").ClickAsync();
+            await Assertions.Expect(bubble).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", "0", new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector-wrap-inline']"))
+                .ToHaveClassAsync(new Regex("tm-document-image-inspector__swatch--active"), new() { Timeout = 5000 });
+
+            await bubble.Locator("[data-testid='document-wysiwyg-layout-bubble-wrap']").ClickAsync();
+            await Assertions.Expect(bubble).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector-wrap-square']"))
+                .ToHaveClassAsync(new Regex("tm-document-image-inspector__swatch--active"), new() { Timeout = 5000 });
+
+            await bubble.Locator("[data-testid='document-wysiwyg-layout-bubble-fix-position']").ClickAsync();
+            await Assertions.Expect(bubble).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-fixed-on-page", "true", new() { Timeout = 5000 });
+            await bubble.Locator("[data-testid='document-wysiwyg-layout-bubble-move-with-text']").ClickAsync();
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-fixed-on-page", "false", new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-move-with-text", "true", new() { Timeout = 5000 });
+
+            await page.Locator("[data-testid='document-image-inspector-position-x']").FillAsync("24");
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-x", "24", new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-position-y']").FillAsync("12");
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-image-y", "12", new() { Timeout = 5000 });
+
+            await bubble.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await AssertElementInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-context-menu']", "image context menu");
+            foreach (var testId in new[]
+            {
+                "document-wysiwyg-image-replace",
+                "document-wysiwyg-image-crop",
+                "document-wysiwyg-image-alt-text",
+                "document-wysiwyg-image-caption",
+                "document-wysiwyg-image-link",
+                "document-wysiwyg-image-wrap-submenu",
+                "document-wysiwyg-image-wrap-behind",
+                "document-wysiwyg-image-wrap-in-front",
+                "document-wysiwyg-image-position-submenu",
+                "document-wysiwyg-image-position-center",
+                "document-wysiwyg-image-bring-forward",
+                "document-wysiwyg-image-send-backward",
+                "document-wysiwyg-image-reset-size",
+                "document-wysiwyg-image-delete"
+            })
+            {
+                await Assertions.Expect(page.Locator($"[data-testid='{testId}']")).ToBeVisibleAsync();
+            }
+
+            var fileInputCountBeforeReplace = await page.Locator("input[type='file'][accept='image/*']").CountAsync();
+            await page.Locator("[data-testid='document-wysiwyg-image-replace']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-url']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-upload']")).ToBeVisibleAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-clipboard']")).ToBeVisibleAsync();
+            (await page.Locator("input[type='file'][accept='image/*']").CountAsync()).Should()
+                .Be(fileInputCountBeforeReplace, "opening Replace must show source choices without creating an upload file input");
+
+            var panelIssues = await page.EvaluateAsync<string[]>(
+                """
+                () => {
+                    const panel = document.querySelector('[data-testid="document-side-panel"]');
+                    const body = document.querySelector('[data-testid="document-side-panel-body"]');
+                    if (!panel || !body) return ['side panel missing'];
+                    const panelRect = panel.getBoundingClientRect();
+                    const spareBelow = window.innerHeight - panelRect.bottom;
+                    const overflow = body.scrollHeight - body.clientHeight;
+                    return overflow > 2 && spareBelow > 64
+                        ? [`side panel body scrolls by ${overflow}px while ${spareBelow}px is available below the panel`]
+                        : [];
+                }
+                """);
+            panelIssues.Should().BeEmpty();
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase9_ImageLayoutBubbleInspectorAndContextMenuStayInSync),
+                "Select a wrapped image and exercise the image layout bubble, inspector sections and context menu.",
+                "Image UI must expose all controls, keep bubble open while clicked, synchronize wrap/position state, keep floating UI inside the viewport and avoid unnecessary side-panel scroll.");
             throw;
         }
     }
@@ -4702,7 +5812,8 @@ public class DocumentEditorE2ETests : WasmTestBase
             var naturalWidth = await image.EvaluateAsync<int>("img => img.naturalWidth || 0");
             var naturalHeight = await image.EvaluateAsync<int>("img => img.naturalHeight || 0");
             Assert.IsTrue(naturalWidth > 0 && naturalHeight > 0, "Provider image should render as a loaded image, not as a broken placeholder.");
-            (await figure.GetAttributeAsync("data-block-id")).Should().NotBeNullOrWhiteSpace("rendered image must map back to a document block");
+            var blockId = await figure.GetAttributeAsync("data-block-id");
+            blockId.Should().NotBeNullOrWhiteSpace("rendered image must map back to a document block");
             (await image.GetAttributeAsync("alt")).Should().NotBeNullOrWhiteSpace("rendered images must keep accessible alt text");
 
             var model = await LoadDemoDocumentFromPageAsync(page);
@@ -4710,8 +5821,9 @@ public class DocumentEditorE2ETests : WasmTestBase
                 && !string.IsNullOrWhiteSpace(imageContent.AltText))
                 .Should().BeTrue("the rendered image must be backed by image metadata in the model");
             await figure.ClickAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
-            await AssertFloatingUiReadableAndInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "image selection toolbar");
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await AssertFloatingUiReadableAndInsideViewportAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{blockId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "image layout bubble");
             await page.Keyboard.PressAsync("Escape");
             await AssertNoFloatingUiLeaksAsync(page);
         }
@@ -5174,7 +6286,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                         FigureAriaSelected: figure?.getAttribute('aria-selected') || '',
                         RuntimeRegion: runtimeSelection.Region || runtimeSelection.region || '',
                         ActiveImageBlockId: runtimeSelection.ActiveImageBlockId || runtimeSelection.activeImageBlockId || '',
-                        ToolbarVisible: !!document.querySelector('[data-testid="document-wysiwyg-image-selection-toolbar"]')
+                        ToolbarVisible: !!figure?.querySelector('[data-testid="document-wysiwyg-object-layout-bubble"]')
                     };
                 }
                 """,
@@ -5184,7 +6296,8 @@ public class DocumentEditorE2ETests : WasmTestBase
             imageSelection.RuntimeRegion.Should().Be("Image");
             imageSelection.ActiveImageBlockId.Should().NotBeNullOrWhiteSpace();
             imageSelection.ToolbarVisible.Should().BeTrue();
-            await AssertNoFloatingUiLeaksExceptAsync(page, "image-toolbar");
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await AssertNoFloatingUiLeaksExceptAsync(page, "image-layout-bubble");
         }
         catch
         {
@@ -5294,6 +6407,526 @@ public class DocumentEditorE2ETests : WasmTestBase
                 "Open the text context menu and inspect browser-restricted paste.",
                 "Context-menu paste is shown as unsupported/disabled, preserves selection and dismisses cleanly.");
             throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_Phase13_CopyPasteImagePreservesMetadataLayoutAndUndo()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-phase13-image-copy-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"phase13-copy-image-{Guid.NewGuid():N}";
+        const string altText = "Phase 13 copied image alt";
+        const string caption = "Phase 13 copied image caption";
+
+        try
+        {
+            var document = await LoadDemoDocumentFromPageAsync(page);
+            document.Blocks.Clear();
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = "phase13-copy-before",
+                Type = DocumentBlockType.Paragraph,
+                Order = 10,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "phase13-copy-before-run", Text = "Before copied image." }]
+                }
+            });
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = imageId,
+                Type = DocumentBlockType.Image,
+                Order = 20,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/favicon.png",
+                    AltText = altText,
+                    Caption = caption,
+                    Size = new DocumentImageSize { Width = 188, Height = 124, LockAspectRatio = true },
+                    NaturalSize = new DocumentImageSize { Width = 188, Height = 124, LockAspectRatio = true },
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = DocumentObjectLayoutKind.Anchored,
+                        Position = new DocumentObjectPosition
+                        {
+                            HorizontalRelativeTo = DocumentRelativePosition.Page,
+                            VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                            HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                            X = 12,
+                            Y = 4
+                        },
+                        Wrap = new DocumentObjectWrap
+                        {
+                            Mode = DocumentWrapMode.Square,
+                            DistanceRight = 18,
+                            DistanceBottom = 7
+                        },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = 188,
+                            Height = 124,
+                            NaturalWidth = 188,
+                            NaturalHeight = 124,
+                            LockAspectRatio = true
+                        }
+                    }
+                }
+            });
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = "phase13-copy-after",
+                Type = DocumentBlockType.Paragraph,
+                Order = 30,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "phase13-copy-after-run", Text = "After copied image." }]
+                }
+            });
+            await SaveDemoDocumentAsync(document);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await figure.ClickAsync();
+
+            var copy = await DispatchClipboardCopyAsync(page);
+            copy.Plain.Should().Contain(altText);
+            copy.Plain.Should().Contain(caption);
+            copy.Html.Should().Contain("data-tempo-clipboard=\"image-block\"");
+            copy.InternalJson.Should().Contain(imageId);
+            copy.InternalJson.Should().Contain("distanceRight\":18");
+
+            await DispatchInternalClipboardPasteAsync(page, copy);
+            await Assertions.Expect(host.Locator("figure.tm-wysiwyg-image:visible")).ToHaveCountAsync(2, new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            var copiedImageBlocks = saved.Blocks
+                .Where(block => block.Content is ImageBlockContent image && image.AltText == altText)
+                .ToArray();
+            copiedImageBlocks.Should().HaveCount(2);
+            copiedImageBlocks.Select(block => block.Id).Should().OnlyHaveUniqueItems();
+
+            var original = GetImageContent(saved, imageId);
+            var pastedBlock = copiedImageBlocks.Single(block => block.Id != imageId);
+            var pasted = GetImageContent(saved, pastedBlock.Id);
+            pasted.Caption.Should().Be(caption);
+            pasted.Layout.Should().NotBeNull();
+            pasted.Layout!.Kind.Should().Be(original.Layout!.Kind);
+            pasted.Layout.Wrap.Mode.Should().Be(original.Layout.Wrap.Mode);
+            pasted.Layout.Wrap.DistanceRight.Should().Be(original.Layout.Wrap.DistanceRight);
+            pasted.Layout.Position.HorizontalAlignment.Should().Be(original.Layout.Position.HorizontalAlignment);
+            pasted.Layout.Transform.Width.Should().Be(original.Layout.Transform.Width);
+            pasted.Layout.Transform.Height.Should().Be(original.Layout.Transform.Height);
+
+            await ClickUndoAsync(page);
+            await Assertions.Expect(host.Locator("figure.tm-wysiwyg-image:visible")).ToHaveCountAsync(1, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("figure.tm-wysiwyg-image")).ToHaveCountAsync(1, new() { Timeout = 5000 });
+            await SaveDocumentAsync(page);
+            var afterUndo = await LoadDemoDocumentFromPageAsync(page);
+            afterUndo.Blocks.Count(block => block.Content is ImageBlockContent image && image.AltText == altText)
+                .Should().Be(1, "undo paste must remove only the newly pasted image block");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_Phase13_CopyPasteImagePreservesMetadataLayoutAndUndo),
+                "Select an image, dispatch a real copy event, paste the internal Tempo clipboard payload and undo.",
+                "Image clipboard must preserve alt text, caption and layout, create a new block id and undo the pasted copy cleanly.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_Phase13_CopyTextBesideAnchoredImageExcludesObjectAndPastesText()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-phase13-text-copy-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"phase13-text-image-{Guid.NewGuid():N}";
+        var text = Phase0WrappedImageText();
+        const string selectedText = "Bravo words continue onto the second visual line";
+
+        try
+        {
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, text);
+            var selection = await SelectTextByMouseAsync(page, selectedText);
+            selection.Text.Should().Be(selectedText);
+
+            var copy = await DispatchClipboardCopyAsync(page);
+            copy.Plain.Should().Be(selectedText);
+            copy.Html.Should().NotContain("<img");
+            copy.Html.Should().NotContain("data-tempo-clipboard=\"image-block\"");
+            copy.InternalJson.Should().BeNullOrWhiteSpace("anchored objects are copied only when explicitly selected");
+
+            await DispatchClipboardPasteAsync(page, copy.Html, copy.Plain);
+            await Assertions.Expect(host).ToContainTextAsync(selectedText, new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            saved.Blocks.Count(block => block.Content is ImageBlockContent).Should().Be(1);
+            saved.Blocks
+                .Where(block => block.Content is ParagraphBlockContent)
+                .Count(block => BlockText(block).Contains(selectedText, StringComparison.Ordinal))
+                .Should().BeGreaterThanOrEqualTo(2, "pasted wrapped text should become normal paragraph content, not image sidecar state");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_Phase13_CopyTextBesideAnchoredImageExcludesObjectAndPastesText),
+                "Select wrapped text beside an anchored image, copy it and paste it back.",
+                "Text selection beside an anchored image must copy only text/html text, must not include the object and must paste as normal document text.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_Phase13_CopyRangeAcrossInlineImagePreservesImageAtom()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-phase13-inline-copy-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        var imageId = $"phase13-inline-image-{Guid.NewGuid():N}";
+        const string beforeText = "Inline image copy starts before the object.";
+        const string afterText = "Inline image copy ends after the object.";
+        const string altText = "Phase 13 inline atom alt";
+        const string caption = "Phase 13 inline atom caption";
+
+        try
+        {
+            var document = await LoadDemoDocumentFromPageAsync(page);
+            document.Blocks.Clear();
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = "phase13-inline-before",
+                Type = DocumentBlockType.Paragraph,
+                Order = 10,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "phase13-inline-before-run", Text = beforeText }]
+                }
+            });
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = imageId,
+                Type = DocumentBlockType.Image,
+                Order = 20,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/favicon.png",
+                    AltText = altText,
+                    Caption = caption,
+                    Size = new DocumentImageSize { Width = 144, Height = 96, LockAspectRatio = true },
+                    NaturalSize = new DocumentImageSize { Width = 144, Height = 96, LockAspectRatio = true },
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = DocumentObjectLayoutKind.Inline,
+                        Wrap = new DocumentObjectWrap { Mode = DocumentWrapMode.Inline },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = 144,
+                            Height = 96,
+                            NaturalWidth = 144,
+                            NaturalHeight = 96,
+                            LockAspectRatio = true
+                        }
+                    }
+                }
+            });
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = "phase13-inline-after",
+                Type = DocumentBlockType.Paragraph,
+                Order = 30,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "phase13-inline-after-run", Text = afterText }]
+                }
+            });
+            await SaveDemoDocumentAsync(document);
+            await ReloadDocumentEditorPageAsync(page);
+
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-floating-inline", "true");
+
+            await page.EvaluateAsync(
+                """
+                ({ beforeBlockId, afterBlockId }) => {
+                    const host = document.querySelector("[data-testid='document-wysiwyg-host']");
+                    const before = host?.querySelector(`[data-block-id="${CSS.escape(beforeBlockId)}"]`);
+                    const after = host?.querySelector(`[data-block-id="${CSS.escape(afterBlockId)}"]`);
+                    const firstTextNode = element => {
+                        const walker = document.createTreeWalker(element, NodeFilter.SHOW_TEXT);
+                        return walker.nextNode();
+                    };
+                    const start = firstTextNode(before);
+                    const end = firstTextNode(after);
+                    if (!start || !end) throw new Error("Expected selectable text around inline image.");
+                    const range = document.createRange();
+                    range.setStart(start, 0);
+                    range.setEnd(end, end.textContent.length);
+                    const selection = window.getSelection();
+                    selection.removeAllRanges();
+                    selection.addRange(range);
+                }
+                """,
+                new { beforeBlockId = "phase13-inline-before", afterBlockId = "phase13-inline-after" });
+
+            var copy = await DispatchClipboardCopyAsync(page);
+            copy.Plain.Should().Contain(beforeText);
+            copy.Plain.Should().Contain(afterText);
+            copy.Html.Should().Contain("data-tempo-clipboard=\"image-block\"");
+            copy.Html.Should().Contain("<img");
+            copy.InternalJson.Should().Contain(imageId);
+            copy.InternalJson.Should().Contain(altText);
+            copy.InternalJson.Should().Contain(caption);
+
+            await DispatchInternalClipboardPasteAsync(page, copy);
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            var copiedImageBlocks = saved.Blocks
+                .Where(block => block.Content is ImageBlockContent image && image.AltText == altText)
+                .ToArray();
+            copiedImageBlocks.Should().HaveCount(2);
+            copiedImageBlocks.Select(block => block.Id).Should().OnlyHaveUniqueItems();
+            var pasted = GetImageContent(saved, copiedImageBlocks.Single(block => block.Id != imageId).Id);
+            pasted.Caption.Should().Be(caption);
+            pasted.Layout.Kind.Should().Be(DocumentObjectLayoutKind.Inline);
+            pasted.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Inline);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_Phase13_CopyRangeAcrossInlineImagePreservesImageAtom),
+                "Select text across an inline image, copy it and paste the internal Tempo clipboard payload.",
+                "Inline image selection must include the image as an atomic clipboard block, clone it with a new id and preserve metadata.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_ImageWrap_Phase14_SaveReloadAllLayoutVariantsAndInternalJson()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-phase14-save-reload-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        const string anchorId = "phase14-anchor";
+        const string inlineId = "phase14-inline";
+        const string leftId = "phase14-square-left";
+        const string rightId = "phase14-square-right";
+        const string topBottomId = "phase14-top-bottom";
+        const string behindId = "phase14-behind";
+        const string frontId = "phase14-front";
+
+        try
+        {
+            var document = await LoadDemoDocumentFromPageAsync(page);
+            document.Blocks.Clear();
+            document.Anchors.Clear();
+            document.Theme.BodyFontSize = 12;
+            document.Theme.BodyLineHeight = 1.25;
+            document.Theme.ParagraphSpacingAfter = 6;
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = anchorId,
+                Type = DocumentBlockType.Paragraph,
+                Order = 10,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines =
+                    [
+                        new TextRun
+                        {
+                            Id = $"{anchorId}-run",
+                            Text = "Phase 14 verifies that every image layout variant keeps its anchor, wrapping distances, z-order, fixed/move behavior and transform after save, JSON roundtrip and reload."
+                        }
+                    ]
+                }
+            });
+            document.Blocks.Add(CreateImage(inlineId, 20, DocumentObjectLayoutKind.Inline, DocumentWrapMode.Inline, null, moveWithText: true, fixedOnPage: false, zIndex: 0, rotation: 0, width: 120, height: 80));
+            document.Blocks.Add(CreateImage(leftId, 30, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, moveWithText: true, fixedOnPage: false, zIndex: 1, rotation: 0, width: 150, height: 95));
+            document.Blocks.Add(CreateImage(rightId, 40, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Right, moveWithText: true, fixedOnPage: false, zIndex: 2, rotation: 0, width: 150, height: 95));
+            document.Blocks.Add(CreateImage(topBottomId, 50, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.TopBottom, DocumentImageHorizontalPosition.Center, moveWithText: true, fixedOnPage: false, zIndex: 3, rotation: 3, width: 170, height: 96));
+            document.Blocks.Add(CreateImage(behindId, 60, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.BehindText, DocumentImageHorizontalPosition.Left, moveWithText: true, fixedOnPage: false, zIndex: 4, rotation: 7, width: 130, height: 84));
+            document.Blocks.Add(CreateImage(frontId, 70, DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, moveWithText: false, fixedOnPage: true, zIndex: 9, rotation: 11, width: 130, height: 84));
+            document.Blocks.Add(new DocumentBlock
+            {
+                Id = "phase14-after",
+                Type = DocumentBlockType.Paragraph,
+                Order = 80,
+                Content = new ParagraphBlockContent
+                {
+                    Inlines = [new TextRun { Id = "phase14-after-run", Text = "End of phase 14 save and reload fixture." }]
+                }
+            });
+
+            await SaveDemoDocumentAsync(document);
+            await ReloadDocumentEditorPageAsync(page);
+            await AssertDomImageStateAsync(inlineId, inline: true, DocumentWrapMode.Inline, null, fixedOnPage: false, zIndex: 0);
+            await AssertDomImageStateAsync(leftId, inline: false, DocumentWrapMode.Square, "left", fixedOnPage: false, zIndex: 1);
+            await AssertDomImageStateAsync(rightId, inline: false, DocumentWrapMode.Square, "right", fixedOnPage: false, zIndex: 2);
+            await AssertDomImageStateAsync(topBottomId, inline: false, DocumentWrapMode.TopBottom, "center", fixedOnPage: false, zIndex: 3);
+            await AssertDomImageStateAsync(behindId, inline: false, DocumentWrapMode.BehindText, "left", fixedOnPage: false, zIndex: 4);
+            await AssertDomImageStateAsync(frontId, inline: false, DocumentWrapMode.InFrontOfText, "right", fixedOnPage: true, zIndex: 9);
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            AssertSavedImage(saved, inlineId, DocumentObjectLayoutKind.Inline, DocumentWrapMode.Inline, null, true, false, 0, 0, 120, 80);
+            AssertSavedImage(saved, leftId, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, true, false, 1, 0, 150, 95);
+            AssertSavedImage(saved, rightId, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Right, true, false, 2, 0, 150, 95);
+            AssertSavedImage(saved, topBottomId, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.TopBottom, DocumentImageHorizontalPosition.Center, true, false, 3, 3, 170, 96);
+            AssertSavedImage(saved, behindId, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.BehindText, DocumentImageHorizontalPosition.Left, true, false, 4, 7, 130, 84);
+            AssertSavedImage(saved, frontId, DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, false, true, 9, 11, 130, 84);
+
+            var json = DocumentEditorJson.Serialize(saved);
+            json.Should().Contain("\"Layout\"");
+            json.Should().Contain("\"Rotation\":11");
+            json.Should().Contain("\"FixedOnPage\":true");
+            json.Should().NotContain("FloatingLayout");
+            var roundtrip = DocumentEditorJson.Deserialize(json);
+            AssertSavedImage(roundtrip, frontId, DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, false, true, 9, 11, 130, 84);
+
+            await ReloadDocumentEditorPageAsync(page);
+            var reloaded = await LoadDemoDocumentFromPageAsync(page);
+            AssertSavedImage(reloaded, leftId, DocumentObjectLayoutKind.Anchored, DocumentWrapMode.Square, DocumentImageHorizontalPosition.Left, true, false, 1, 0, 150, 95);
+            AssertSavedImage(reloaded, frontId, DocumentObjectLayoutKind.Fixed, DocumentWrapMode.InFrontOfText, DocumentImageHorizontalPosition.Right, false, true, 9, 11, 130, 84);
+            await AssertDomImageStateAsync(frontId, inline: false, DocumentWrapMode.InFrontOfText, "right", fixedOnPage: true, zIndex: 9);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_ImageWrap_Phase14_SaveReloadAllLayoutVariantsAndInternalJson),
+                "Seed a document with inline, square-left, square-right, top/bottom, behind-text and in-front images, save, JSON roundtrip and reload.",
+                "Every image layout variant must preserve anchor, fixed/move flags, wrap distances, z-index, size and rotation through DOM save, internal JSON and reload.");
+            throw;
+        }
+
+        async Task AssertDomImageStateAsync(
+            string imageId,
+            bool inline,
+            DocumentWrapMode wrapMode,
+            string? horizontalPosition,
+            bool fixedOnPage,
+            int zIndex)
+        {
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-floating-inline", inline ? "true" : "false");
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-wrap-mode", ((int)wrapMode).ToString());
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-fixed-on-page", fixedOnPage ? "true" : "false");
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-object-z-index", zIndex.ToString());
+            if (horizontalPosition is not null)
+            {
+                await Assertions.Expect(figure).ToHaveAttributeAsync("data-horizontal-position", horizontalPosition);
+            }
+        }
+
+        DocumentBlock CreateImage(
+            string id,
+            int order,
+            DocumentObjectLayoutKind kind,
+            DocumentWrapMode wrapMode,
+            DocumentImageHorizontalPosition? horizontalPosition,
+            bool moveWithText,
+            bool fixedOnPage,
+            int zIndex,
+            double rotation,
+            double width,
+            double height)
+            => new()
+            {
+                Id = id,
+                Type = DocumentBlockType.Image,
+                Order = order,
+                Content = new ImageBlockContent
+                {
+                    Source = DocumentImageSource.Url,
+                    Url = "/favicon.png",
+                    AltText = $"{id} alt",
+                    Caption = $"{id} caption",
+                    Size = new DocumentImageSize { Width = width, Height = height, LockAspectRatio = true },
+                    NaturalSize = new DocumentImageSize { Width = width, Height = height, LockAspectRatio = true },
+                    Layout = new DocumentObjectLayout
+                    {
+                        Kind = kind,
+                        Anchor = new DocumentObjectAnchor
+                        {
+                            BlockId = anchorId,
+                            MoveWithText = moveWithText,
+                            FixedOnPage = fixedOnPage,
+                            LockAnchor = fixedOnPage
+                        },
+                        Position = new DocumentObjectPosition
+                        {
+                            HorizontalRelativeTo = DocumentRelativePosition.Page,
+                            VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                            HorizontalAlignment = horizontalPosition,
+                            X = order / 10d,
+                            Y = order / 20d
+                        },
+                        Wrap = new DocumentObjectWrap
+                        {
+                            Mode = wrapMode,
+                            DistanceLeft = 5,
+                            DistanceRight = 6,
+                            DistanceTop = 7,
+                            DistanceBottom = 8
+                        },
+                        Transform = new DocumentObjectTransform
+                        {
+                            Width = width,
+                            Height = height,
+                            NaturalWidth = width,
+                            NaturalHeight = height,
+                            LockAspectRatio = true,
+                            Rotation = rotation
+                        },
+                        Stacking = new DocumentObjectStacking
+                        {
+                            ZIndex = zIndex,
+                            AllowOverlap = wrapMode is DocumentWrapMode.BehindText or DocumentWrapMode.InFrontOfText
+                        }
+                    }
+                }
+            };
+
+        void AssertSavedImage(
+            DocumentEditorDocument document,
+            string imageId,
+            DocumentObjectLayoutKind kind,
+            DocumentWrapMode wrapMode,
+            DocumentImageHorizontalPosition? horizontalPosition,
+            bool moveWithText,
+            bool fixedOnPage,
+            int zIndex,
+            double rotation,
+            double width,
+            double height)
+        {
+            var image = GetImageContent(document, imageId);
+            image.Layout.Kind.Should().Be(kind);
+            image.Layout.Anchor.BlockId.Should().Be(anchorId);
+            image.Layout.Anchor.MoveWithText.Should().Be(moveWithText);
+            image.Layout.Anchor.FixedOnPage.Should().Be(fixedOnPage);
+            image.Layout.Anchor.LockAnchor.Should().Be(fixedOnPage);
+            image.Layout.Wrap.Mode.Should().Be(wrapMode);
+            image.Layout.Wrap.DistanceLeft.Should().Be(5);
+            image.Layout.Wrap.DistanceRight.Should().Be(6);
+            image.Layout.Wrap.DistanceTop.Should().Be(7);
+            image.Layout.Wrap.DistanceBottom.Should().Be(8);
+            image.Layout.Position.HorizontalAlignment.Should().Be(horizontalPosition);
+            image.Layout.Transform.Width.Should().BeApproximately(width, 0.5);
+            image.Layout.Transform.Height.Should().BeApproximately(height, 0.5);
+            image.Layout.Transform.Rotation.Should().Be(rotation);
+            image.Layout.Stacking.ZIndex.Should().Be(zIndex);
         }
     }
 
@@ -5965,10 +7598,11 @@ public class DocumentEditorE2ETests : WasmTestBase
             await InsertLocalImageBlockAsync(page, imageId, "Strict phase 16 image", width: 180);
             var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
             await figure.ClickAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToBeVisibleAsync(new() { Timeout = 5000 });
-            await AssertFloatingUiReadableAndInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "image selection toolbar");
-            await AssertElementsDoNotOverlapAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "[data-testid='document-side-panel']", "image toolbar", "side panel");
-            await AssertViewportScreenshotAsync(page, "strict-phase16-image-selected-toolbar");
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await AssertFloatingUiReadableAndInsideViewportAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "image layout bubble");
+            await AssertElementsDoNotOverlapAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "[data-testid='document-side-panel']", "image layout bubble", "side panel");
+            await AssertViewportScreenshotAsync(page, "strict-phase16-image-selected-layout-bubble");
 
             await figure.ClickAsync(new() { Button = MouseButton.Right });
             await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
@@ -7764,16 +9398,16 @@ public class DocumentEditorE2ETests : WasmTestBase
 
         if (entryPoint == "toolbar")
         {
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-replace']").ClickAsync();
+            await page.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await page.Locator("[data-testid='document-wysiwyg-image-replace']").ClickAsync();
             await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
             await page.Locator("[data-testid='document-wysiwyg-image-replace-asset']").ClickAsync();
             await figure.ClickAsync();
-            await AcceptPromptAfterClickAsync(page, page.Locator("[data-testid='document-wysiwyg-image-toolbar-alt']"), "Phase 18 replacement alt");
+            await page.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await AcceptPromptAfterClickAsync(page, page.Locator("[data-testid='document-wysiwyg-image-alt-text']"), "Phase 18 replacement alt");
             await figure.ClickAsync();
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-caption']").ClickAsync();
-            var caption = figure.Locator("[data-testid='document-wysiwyg-image-caption-text']").First;
-            await Assertions.Expect(caption).ToBeVisibleAsync(new() { Timeout = 5000 });
-            await SetImageCaptionAsync(page, imageId, "Phase 18 replacement caption");
+            await page.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await AcceptPromptAfterClickAsync(page, page.Locator("[data-testid='document-wysiwyg-image-caption']"), "Phase 18 replacement caption");
         }
         else if (entryPoint == "context")
         {
@@ -7988,12 +9622,48 @@ public class DocumentEditorE2ETests : WasmTestBase
             && inline.Marks.Any(mark => formattingMarks.Contains(mark.Type)));
     }
 
+    private static bool DocumentHasParagraphText(DocumentEditorDocument document, string text)
+        => EnumerateDocumentBlocks(document).Any(block => string.Equals(BlockText(block), text, StringComparison.Ordinal));
+
+    private static bool DocumentHasConsecutiveParagraphTexts(DocumentEditorDocument document, string before, string after)
+    {
+        var texts = EnumerateDocumentBlocks(document).Select(BlockText).ToArray();
+        for (var i = 0; i < texts.Length - 1; i++)
+        {
+            if (string.Equals(texts[i], before, StringComparison.Ordinal)
+                && string.Equals(texts[i + 1], after, StringComparison.Ordinal))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     private static string? DocumentInlineLinkHref(DocumentEditorDocument document, string text)
         => EnumerateDocumentInlines(document)
             .Where(inline => InlineText(inline).Contains(text, StringComparison.Ordinal))
             .SelectMany(inline => inline.Marks)
             .FirstOrDefault(mark => mark.Type == InlineMarkType.Link)
             ?.Link?.Href;
+
+    private static IEnumerable<DocumentBlock> EnumerateDocumentBlocks(DocumentEditorDocument document)
+    {
+        foreach (var block in document.Blocks.OrderBy(block => block.Order))
+        {
+            yield return block;
+        }
+
+        foreach (var block in document.HeadersFooters
+            .SelectMany(headerFooter => headerFooter.Blocks)
+            .OrderBy(block => block.Order))
+        {
+            yield return block;
+        }
+    }
+
+    private static string BlockText(DocumentBlock block)
+        => string.Concat(EnumerateBlockInlines(block).Select(InlineText));
 
     private static IEnumerable<InlineContent> EnumerateDocumentInlines(DocumentEditorDocument document)
     {
@@ -8703,19 +10373,68 @@ public class DocumentEditorE2ETests : WasmTestBase
             new { imageId, altText, width, order });
     }
 
-    private static async Task ResizeImageAsync(IPage page, ILocator figure, double deltaX, double deltaY)
+    private static async Task ResizeImageAsync(
+        IPage page,
+        ILocator figure,
+        double deltaX,
+        double deltaY,
+        string handleName = "se",
+        bool holdShift = false)
+        => await ResizeImageWithLiveFeedbackAsync(page, figure, deltaX, deltaY, handleName, holdShift);
+
+    private static async Task<(string BadgeText, bool PreviewVisible)> ResizeImageWithLiveFeedbackAsync(
+        IPage page,
+        ILocator figure,
+        double deltaX,
+        double deltaY,
+        string handleName = "se",
+        bool holdShift = false)
     {
         await figure.ClickAsync();
-        var handle = figure.Locator("[data-testid='document-wysiwyg-image-resize-handle']").First;
+        var handle = figure.Locator($"[data-testid='document-wysiwyg-object-resize-handle-{handleName}']").First;
+        if (await handle.CountAsync() == 0)
+        {
+            handle = figure.Locator("[data-testid='document-wysiwyg-image-resize-handle']").First;
+        }
+
         await Assertions.Expect(handle).ToBeVisibleAsync();
         var box = await handle.BoundingBoxAsync();
         Assert.IsNotNull(box, "Image resize handle should have a bounding box.");
         var x = box!.X + (box.Width / 2);
         var y = box.Y + (box.Height / 2);
-        await page.Mouse.MoveAsync(x, y);
-        await page.Mouse.DownAsync();
-        await page.Mouse.MoveAsync((float)(x + deltaX), (float)(y + deltaY), new() { Steps = 6 });
-        await page.Mouse.UpAsync();
+        await page.Mouse.MoveAsync((float)x, (float)y);
+        if (holdShift)
+        {
+            await page.Keyboard.DownAsync("Shift");
+        }
+
+        var mouseDown = false;
+        try
+        {
+            await page.Mouse.DownAsync();
+            mouseDown = true;
+            await page.Mouse.MoveAsync((float)(x + deltaX), (float)(y + deltaY), new() { Steps = 6 });
+            var badge = page.Locator("[data-testid='document-wysiwyg-image-resize-size-badge']").First;
+            var preview = page.Locator("[data-testid='document-wysiwyg-image-move-preview']").First;
+            await Assertions.Expect(badge).ToBeVisibleAsync(new() { Timeout = 2000 });
+            var badgeText = await badge.InnerTextAsync();
+            var previewVisible = await preview.IsVisibleAsync();
+            await page.Mouse.UpAsync();
+            mouseDown = false;
+            return (badgeText, previewVisible);
+        }
+        finally
+        {
+            if (mouseDown)
+            {
+                await page.Mouse.UpAsync();
+            }
+
+            if (holdShift)
+            {
+                await page.Keyboard.UpAsync("Shift");
+            }
+        }
     }
 
     private static async Task DragInlineImageToEndAsync(IPage page, ILocator figure)
@@ -8741,7 +10460,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         Assert.IsNotNull(box, "Floating image should have a bounding box before dragging.");
         var x = box!.X + Math.Min(box.Width - 8, Math.Max(8, box.Width / 2));
         var y = box.Y + Math.Min(box.Height - 8, Math.Max(8, box.Height / 2));
-        await page.Mouse.MoveAsync(x, y);
+        await page.Mouse.MoveAsync((float)x, (float)y);
         await page.Mouse.DownAsync();
         await page.Mouse.MoveAsync((float)(x + deltaX), (float)(y + deltaY), new() { Steps = 8 });
         await page.Mouse.UpAsync();
@@ -8798,6 +10517,1375 @@ public class DocumentEditorE2ETests : WasmTestBase
             """,
             new { imageId, horizontalPosition });
     }
+
+    private static Task ExecuteWysiwygCommandAsync(IPage page, string command, object? payload = null) =>
+        page.EvaluateAsync(
+            """
+            ({ command, payload }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                window.tmDocumentEditorWysiwyg?.executeCommand?.(instanceId, command, payload || {});
+            }
+            """,
+            new { command, payload });
+
+    private static Task WaitForImageWrapContourAsync(IPage page, string imageId, string expectedWrapMode, int expectedPointCount)
+        => page.WaitForFunctionAsync(
+            """
+            ({ imageId, expectedWrapMode, expectedPointCount }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                if (!figure || figure.getAttribute('data-wrap-mode') !== expectedWrapMode) return false;
+
+                let points = [];
+                try {
+                    points = JSON.parse(figure.getAttribute('data-wrap-contour-points') || '[]');
+                } catch {
+                    points = [];
+                }
+
+                return points.length === expectedPointCount;
+            }
+            """,
+            new { imageId, expectedWrapMode, expectedPointCount },
+            new() { Timeout = 5000 });
+
+    private static Task<WrapContourPointProbe[]> CaptureImageWrapContourPointsAsync(IPage page, string imageId)
+        => page.EvaluateAsync<WrapContourPointProbe[]>(
+            """
+            imageId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                let points = [];
+                try {
+                    points = JSON.parse(figure?.getAttribute('data-wrap-contour-points') || '[]');
+                } catch {
+                    points = [];
+                }
+
+                return points.map(point => ({
+                    X: Number(point.X ?? point.x ?? 0),
+                    Y: Number(point.Y ?? point.y ?? 0)
+                }));
+            }
+            """,
+            imageId);
+
+    private static async Task DragImageWrapPointAsync(IPage page, int pointIndex, double deltaX, double deltaY)
+    {
+        var handle = page.Locator($"[data-testid='document-wysiwyg-wrap-point'][data-wrap-point-index='{pointIndex}']").First;
+        await Assertions.Expect(handle).ToBeVisibleAsync(new() { Timeout = 5000 });
+        var box = await handle.BoundingBoxAsync();
+        Assert.IsNotNull(box, $"Wrap point {pointIndex} should expose a visible bounding box.");
+        var startX = box!.X + box.Width / 2;
+        var startY = box.Y + box.Height / 2;
+
+        await page.Mouse.MoveAsync((float)startX, (float)startY);
+        await page.Mouse.DownAsync();
+        await page.Mouse.MoveAsync((float)(startX + deltaX), (float)(startY + deltaY), new() { Steps = 8 });
+        await page.Mouse.UpAsync();
+    }
+
+    private static async Task AddImageWrapPointOnSegmentAsync(IPage page, int segmentIndex)
+    {
+        var point = await page.EvaluateAsync<MousePointProbe>(
+            """
+            segmentIndex => {
+                const svg = document.querySelector('[data-testid="document-wysiwyg-wrap-points-editor"]');
+                if (!svg) throw new Error('Wrap points editor was not rendered.');
+                const figure = svg.closest('figure.tm-wysiwyg-image');
+                let points = [];
+                try {
+                    points = JSON.parse(figure?.getAttribute('data-wrap-contour-points') || '[]');
+                } catch {
+                    points = [];
+                }
+
+                if (points.length < 2) throw new Error('Wrap contour does not have enough points.');
+                const index = Math.max(0, Math.min(points.length - 1, Number(segmentIndex) || 0));
+                const start = points[index];
+                const end = points[(index + 1) % points.length];
+                const rect = svg.getBoundingClientRect();
+                const x = ((Number(start.X ?? start.x ?? 0) + Number(end.X ?? end.x ?? 0)) / 2);
+                const y = ((Number(start.Y ?? start.y ?? 0) + Number(end.Y ?? end.y ?? 0)) / 2);
+                return {
+                    X: rect.left + x * rect.width,
+                    Y: rect.top + y * rect.height
+                };
+            }
+            """,
+            segmentIndex);
+
+        await page.Mouse.ClickAsync((float)point.X, (float)point.Y);
+    }
+
+    private static WrapContourPointProbe[] DefaultWrapContour() =>
+    [
+        new() { X = 0, Y = 0 },
+        new() { X = 1, Y = 0 },
+        new() { X = 1, Y = 1 },
+        new() { X = 0, Y = 1 }
+    ];
+
+    private static bool ContourApproximatelyEquals(
+        IReadOnlyList<WrapContourPointProbe> actual,
+        IReadOnlyList<WrapContourPointProbe> expected,
+        double tolerance)
+    {
+        if (actual.Count != expected.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < actual.Count; index++)
+        {
+            if (Math.Abs(actual[index].X - expected[index].X) > tolerance
+                || Math.Abs(actual[index].Y - expected[index].Y) > tolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static bool ContourApproximatelyEquals(
+        IReadOnlyList<DocumentObjectWrapPoint> actual,
+        IReadOnlyList<WrapContourPointProbe> expected,
+        double tolerance)
+    {
+        if (actual.Count != expected.Count)
+        {
+            return false;
+        }
+
+        for (var index = 0; index < actual.Count; index++)
+        {
+            if (Math.Abs(actual[index].X - expected[index].X) > tolerance
+                || Math.Abs(actual[index].Y - expected[index].Y) > tolerance)
+            {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static async Task PreparePhase10AnchorScenarioAsync(
+        IPage page,
+        string imageId,
+        string introId,
+        string anchorId,
+        string otherId)
+    {
+        var document = await LoadDemoDocumentFromPageAsync(page);
+        document.Blocks.Clear();
+        document.Anchors.Clear();
+        document.Theme.BodyFontSize = 12;
+        document.Theme.BodyLineHeight = 1.2;
+        document.Theme.ParagraphSpacingAfter = 4;
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = introId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = $"{introId}-run", Text = "Intro paragraph before the image anchor." }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = anchorId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 20,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = $"{anchorId}-run", Text = "Anchor paragraph" }]
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = imageId,
+            Type = DocumentBlockType.Image,
+            Order = 30,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/favicon.png",
+                AltText = "Phase 10 anchored image",
+                Size = new DocumentImageSize { Width = 120, Height = 80, LockAspectRatio = true },
+                NaturalSize = new DocumentImageSize { Width = 120, Height = 80, LockAspectRatio = true },
+                Layout = new DocumentObjectLayout
+                {
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Anchor = new DocumentObjectAnchor
+                    {
+                        BlockId = anchorId,
+                        Offset = 0,
+                        Region = DocumentRenditionAnchorScope.Body,
+                        MoveWithText = true,
+                        FixedOnPage = false,
+                        LockAnchor = false
+                    },
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalRelativeTo = DocumentRelativePosition.Margin,
+                        VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                        HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                        X = 0,
+                        Y = 0
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = DocumentWrapMode.Square,
+                        DistanceRight = 16,
+                        DistanceBottom = 8
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 120,
+                        Height = 80,
+                        NaturalWidth = 120,
+                        NaturalHeight = 80,
+                        LockAspectRatio = true
+                    }
+                }
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = otherId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 40,
+            Content = new ParagraphBlockContent
+            {
+                Inlines = [new TextRun { Id = $"{otherId}-run", Text = "Another paragraph used to test locked anchor dragging." }]
+            }
+        });
+
+        await SaveDemoDocumentAsync(document);
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible"))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
+    private static async Task PreparePhase11LayeringScenarioAsync(
+        IPage page,
+        string textId,
+        string behindId,
+        string frontLowId,
+        string frontHighId)
+    {
+        var document = await LoadDemoDocumentFromPageAsync(page);
+        document.Blocks.Clear();
+        document.Anchors.Clear();
+        document.PageSettings = new DocumentPageSettings
+        {
+            Size = new DocumentPageSize { Name = "Phase 11", Width = 500, Height = 650 },
+            Margins = new DocumentPageMargins { Top = 60, Right = 60, Bottom = 60, Left = 60 }
+        };
+        document.Theme.BodyFontSize = 12;
+        document.Theme.BodyLineHeight = 1.2;
+        document.Theme.ParagraphSpacingAfter = 4;
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = textId,
+            Type = DocumentBlockType.Paragraph,
+            Order = 10,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = $"{textId}-run",
+                        Text = "Layered text remains editable while images can sit behind it and in front of it. ".PadRight(190, 'x')
+                    }
+                ]
+            }
+        });
+        document.Blocks.Add(CreatePhase11ImageBlock(behindId, textId, "Behind text object", DocumentWrapMode.BehindText, x: 32, y: 0, zIndex: 1, order: 20));
+        document.Blocks.Add(CreatePhase11ImageBlock(frontLowId, textId, "Low front object", DocumentWrapMode.InFrontOfText, x: 160, y: 18, zIndex: 2, order: 30));
+        document.Blocks.Add(CreatePhase11ImageBlock(frontHighId, textId, "High front object", DocumentWrapMode.InFrontOfText, x: 160, y: 18, zIndex: 3, order: 40));
+
+        await SaveDemoDocumentAsync(document);
+        await ReloadDocumentEditorPageAsync(page);
+        await Assertions.Expect(page.Locator($"figure.tm-wysiwyg-image[data-block-id='{behindId}']:visible"))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(page.Locator($"figure.tm-wysiwyg-image[data-block-id='{frontHighId}']:visible"))
+            .ToBeVisibleAsync(new() { Timeout = 5000 });
+    }
+
+    private static DocumentBlock CreatePhase11ImageBlock(
+        string imageId,
+        string anchorId,
+        string altText,
+        DocumentWrapMode wrapMode,
+        double x,
+        double y,
+        int zIndex,
+        int order)
+        => new()
+        {
+            Id = imageId,
+            Type = DocumentBlockType.Image,
+            Order = order,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/favicon.png",
+                AltText = altText,
+                Size = new DocumentImageSize { Width = 130, Height = 90, LockAspectRatio = true },
+                NaturalSize = new DocumentImageSize { Width = 130, Height = 90, LockAspectRatio = true },
+                Layout = new DocumentObjectLayout
+                {
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Anchor = new DocumentObjectAnchor
+                    {
+                        BlockId = anchorId,
+                        Offset = 0,
+                        Region = DocumentRenditionAnchorScope.Body,
+                        MoveWithText = true,
+                        FixedOnPage = false,
+                        LockAnchor = false
+                    },
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalRelativeTo = DocumentRelativePosition.Margin,
+                        VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                        HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                        X = x,
+                        Y = y
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = wrapMode
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 130,
+                        Height = 90,
+                        NaturalWidth = 130,
+                        NaturalHeight = 90,
+                        LockAspectRatio = true
+                    },
+                    Stacking = new DocumentObjectStacking
+                    {
+                        ZIndex = zIndex,
+                        AllowOverlap = true
+                    }
+                }
+            }
+        };
+
+    private static Task<MousePointProbe> CapturePhase11ImageCenterAsync(IPage page, string imageId)
+        => page.EvaluateAsync<MousePointProbe>(
+            """
+            async imageId => {
+                const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const bringIntoViewport = async element => {
+                    for (let attempt = 0; attempt < 6; attempt++) {
+                        element.scrollIntoView({ block: 'center', inline: 'center' });
+                        await waitForFrame();
+                        let rect = element.getBoundingClientRect();
+                        if (rect.top >= 8 && rect.bottom <= window.innerHeight - 8) {
+                            return rect;
+                        }
+
+                        const delta = rect.top + rect.height / 2 - window.innerHeight / 2;
+                        window.scrollBy(0, delta);
+                        let parent = element.parentElement;
+                        while (parent && parent !== document.body) {
+                            if (parent.scrollHeight > parent.clientHeight + 1) {
+                                parent.scrollTop += delta;
+                            }
+                            parent = parent.parentElement;
+                        }
+                        await waitForFrame();
+                    }
+
+                    return element.getBoundingClientRect();
+                };
+                const figure = Array.from(document.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`))
+                    .find(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0 && !el.closest('.tm-wysiwyg-page--virtual');
+                    });
+                if (!figure) throw new Error(`Image ${imageId} was not rendered`);
+                await bringIntoViewport(figure);
+                const rect = (figure?.querySelector('img') || figure)?.getBoundingClientRect();
+                if (!rect) throw new Error(`Image ${imageId} was not rendered`);
+                return { X: rect.left + rect.width / 2, Y: rect.top + rect.height / 2 };
+            }
+            """,
+            imageId);
+
+    private static Task<MousePointProbe> CapturePhase11BehindTextCaretPointAsync(IPage page, string imageId, string textId)
+        => page.EvaluateAsync<MousePointProbe>(
+            """
+            async ({ imageId, textId }) => {
+                const waitForFrame = () => new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
+                const bringIntoViewport = async element => {
+                    for (let attempt = 0; attempt < 6; attempt++) {
+                        element.scrollIntoView({ block: 'center', inline: 'center' });
+                        await waitForFrame();
+                        let rect = element.getBoundingClientRect();
+                        if (rect.top >= 8 && rect.bottom <= window.innerHeight - 8) {
+                            return rect;
+                        }
+
+                        const delta = rect.top + rect.height / 2 - window.innerHeight / 2;
+                        window.scrollBy(0, delta);
+                        let parent = element.parentElement;
+                        while (parent && parent !== document.body) {
+                            if (parent.scrollHeight > parent.clientHeight + 1) {
+                                parent.scrollTop += delta;
+                            }
+                            parent = parent.parentElement;
+                        }
+                        await waitForFrame();
+                    }
+
+                    return element.getBoundingClientRect();
+                };
+                const figure = Array.from(document.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`))
+                    .find(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0 && !el.closest('.tm-wysiwyg-page--virtual');
+                    });
+                if (!figure) throw new Error(`Image ${imageId} was not rendered`);
+                await bringIntoViewport(figure);
+                const imageRect = (figure?.querySelector('img') || figure)?.getBoundingClientRect();
+                const segments = Array.from(document.querySelectorAll(`[data-block-id="${CSS.escape(textId)}"] .tm-wysiwyg-layout-segment[data-layout-segment-id]`));
+                for (const segment of segments) {
+                    const rect = segment.getBoundingClientRect();
+                    const left = Math.max(rect.left, imageRect.left + 8);
+                    const right = Math.min(rect.right, imageRect.right - 8);
+                    const top = Math.max(rect.top, imageRect.top + 4);
+                    const bottom = Math.min(rect.bottom, imageRect.bottom - 4);
+                    if (right > left && bottom > top) {
+                        return { X: left + Math.min(24, (right - left) / 2), Y: top + (bottom - top) / 2 };
+                    }
+                }
+
+                throw new Error('No text segment intersects the behind-text image.');
+            }
+            """,
+            new { imageId, textId });
+
+    private static Task<RectProbe> CaptureVisibleImageRectAsync(IPage page, string imageId) =>
+        page.EvaluateAsync<RectProbe>(
+            """
+            imageId => {
+                const figure = Array.from(document.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`))
+                    .find(el => {
+                        const rect = el.getBoundingClientRect();
+                        const style = getComputedStyle(el);
+                        return rect.width > 0
+                            && rect.height > 0
+                            && style.display !== 'none'
+                            && style.visibility !== 'hidden'
+                            && !el.closest('.tm-wysiwyg-page--virtual');
+                    });
+                const target = figure?.querySelector('img') || figure;
+                const rect = target?.getBoundingClientRect() || { x: 0, y: 0, width: 0, height: 0, right: 0, bottom: 0 };
+                return {
+                    X: rect.x,
+                    Y: rect.y,
+                    Width: rect.width,
+                    Height: rect.height,
+                    Right: rect.right,
+                    Bottom: rect.bottom
+                };
+            }
+            """,
+            imageId);
+
+    private static async Task InsertTextAtEndOfBlockAsync(IPage page, string blockId, string text)
+    {
+        await page.EvaluateAsync(
+            """
+            blockId => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const block = Array.from(host?.querySelectorAll(`[data-block-id="${CSS.escape(blockId)}"]`) || [])
+                    .find(el => {
+                        const rect = el.getBoundingClientRect();
+                        return rect.width > 0 && rect.height > 0 && !el.closest('.tm-wysiwyg-page--virtual') && !el.matches('figure.tm-wysiwyg-image');
+                    });
+                if (!block) throw new Error(`Block ${blockId} not found`);
+                const editable = block.closest('[contenteditable="true"]') || host;
+                editable?.focus();
+                const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT, {
+                    acceptNode(node) {
+                        const parent = node.parentElement;
+                        if (!parent || parent.closest('[contenteditable="false"], .tm-wysiwyg-paragraph-anchor-glyph')) {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return (node.textContent || '').length > 0 ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                    }
+                });
+                let last = null;
+                while (walker.nextNode()) last = walker.currentNode;
+                const range = document.createRange();
+                if (last) {
+                    range.setStart(last, (last.textContent || '').length);
+                } else {
+                    range.selectNodeContents(block);
+                    range.collapse(false);
+                }
+                const selection = window.getSelection();
+                selection.removeAllRanges();
+                selection.addRange(range);
+            }
+            """,
+            blockId);
+
+        await page.Keyboard.InsertTextAsync(text);
+    }
+
+    private static string Phase0WrappedImageText() =>
+        "Alpha wrapped text starts beside the image and must behave like one normal paragraph. "
+        + "Bravo words continue onto the second visual line so a mouse click can target it precisely. "
+        + "Charlie words continue onto the third visual line and prove that caret geometry follows the line boxes.";
+
+    private static string Phase0LineLayoutSignature(IEnumerable<Phase0WrappedTextLineProbe> lines) =>
+        string.Join(
+            "|",
+            lines.Select(line =>
+                FormattableString.Invariant($"{line.StartOffset}:{line.EndOffset}:{line.Rect.X:0.##}:{line.Rect.Y:0.##}:{line.Rect.Width:0.##}:{line.Text}")));
+
+    private static async Task<ILocator> PreparePhase0WrappedImageScenarioAsync(IPage page, string imageId, string text)
+    {
+        var document = await LoadDemoDocumentFromPageAsync(page);
+        document.Blocks.Clear();
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = imageId,
+            Type = DocumentBlockType.Image,
+            Order = 10,
+            Content = new ImageBlockContent
+            {
+                Source = DocumentImageSource.Url,
+                Url = "/favicon.png",
+                AltText = "Strict wrapped image target",
+                Size = new DocumentImageSize { Width = 168, Height = 120, LockAspectRatio = true },
+                NaturalSize = new DocumentImageSize { Width = 168, Height = 120, LockAspectRatio = true },
+                Alignment = DocumentImageAlignment.Start,
+                Layout = new DocumentObjectLayout
+                {
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalRelativeTo = DocumentRelativePosition.Page,
+                        VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                        HorizontalAlignment = DocumentImageHorizontalPosition.Left,
+                        X = 0,
+                        Y = 0
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = DocumentWrapMode.Square,
+                        DistanceRight = 16,
+                        DistanceBottom = 8
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 168,
+                        Height = 120,
+                        NaturalWidth = 168,
+                        NaturalHeight = 120,
+                        LockAspectRatio = true
+                    }
+                }
+            }
+        });
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = $"{imageId}-text",
+            Type = DocumentBlockType.Paragraph,
+            Order = 20,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = $"{imageId}-text-run",
+                        Text = text
+                    }
+                ]
+            }
+        });
+        await SaveDemoDocumentAsync(document);
+        await ReloadDocumentEditorPageAsync(page);
+
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+        await Assertions.Expect(figure).ToBeVisibleAsync(new() { Timeout = 5000 });
+        await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
+        await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-left"), new() { Timeout = 5000 });
+        await Assertions.Expect(host).ToContainTextAsync(text, new() { Timeout = 5000 });
+
+        await page.WaitForFunctionAsync(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const figure = host?.querySelector(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                const img = figure?.querySelector('img') || figure;
+                if (!figure || !img) return false;
+                const imageRect = img.getBoundingClientRect();
+                const textBlock = Array.from(host.querySelectorAll('.tm-wysiwyg-block[data-block-id]'))
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host.querySelectorAll('[data-block-id]'))
+                        .find(block => (block.textContent || '').includes(text));
+                const layoutLines = Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-line[data-layout-line-id]') || [])
+                    .filter(line => {
+                        const rect = line.getBoundingClientRect();
+                        return rect.width > 0
+                            && rect.height > 0
+                            && rect.top < imageRect.bottom
+                            && rect.bottom > imageRect.top;
+                    });
+                if (layoutLines.length >= 3) return true;
+
+                const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+                let node;
+                while ((node = walker.nextNode())) {
+                    const value = node.textContent || '';
+                    const index = value.indexOf(text);
+                    if (index < 0) continue;
+                    const range = document.createRange();
+                    range.setStart(node, index);
+                    range.setEnd(node, index + text.length);
+                    const lines = Array.from(range.getClientRects())
+                        .filter(rect => rect.width > 0 && rect.height > 0 && rect.top < imageRect.bottom && rect.bottom > imageRect.top);
+                    return lines.length >= 3;
+                }
+
+                return false;
+            }
+            """,
+            new { imageId, text },
+            new() { Timeout = 5000 });
+
+        await page.EvaluateAsync(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text));
+                const target = textBlock?.querySelector('.tm-wysiwyg-layout-line[data-layout-line-id]')
+                    || textBlock
+                    || host?.querySelector(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`);
+                target?.scrollIntoView({ block: 'center', inline: 'nearest' });
+                if (!target) return;
+
+                const scrollables = [];
+                for (let parent = target.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+                    const style = getComputedStyle(parent);
+                    if (parent.scrollHeight > parent.clientHeight + 2
+                        && /(auto|scroll|overlay)/.test(`${style.overflowY} ${style.overflow}`)) {
+                        scrollables.push(parent);
+                    }
+                }
+
+                scrollables.push(document.scrollingElement || document.documentElement);
+                for (const scroller of scrollables) {
+                    const rect = target.getBoundingClientRect();
+                    const viewport = scroller === document.scrollingElement || scroller === document.documentElement
+                        ? { top: 0, height: window.innerHeight }
+                        : scroller.getBoundingClientRect();
+                    const desiredCenter = viewport.top + viewport.height * 0.55;
+                    scroller.scrollTop += rect.top + rect.height / 2 - desiredCenter;
+                }
+            }
+            """,
+            new { imageId, text });
+        await page.WaitForTimeoutAsync(100);
+        await page.WaitForFunctionAsync(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text));
+                const lines = Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-line[data-layout-line-id]') || [])
+                    .slice(0, 3);
+                return lines.length >= 3 && lines.every(line => {
+                    const rect = line.getBoundingClientRect();
+                    return rect.top >= 0 && rect.bottom <= window.innerHeight;
+                });
+            }
+            """,
+            new { imageId, text },
+            new() { Timeout = 3000 });
+
+        return figure;
+    }
+
+    private static Task<Phase0ImageWrapProbe> CapturePhase0ImageWrapProbeAsync(IPage page, string imageId, string text)
+        => page.EvaluateAsync<Phase0ImageWrapProbe>(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const rectOf = el => {
+                    const rect = el?.getBoundingClientRect?.();
+                    return {
+                        X: rect?.left || 0,
+                        Y: rect?.top || 0,
+                        Width: rect?.width || 0,
+                        Height: rect?.height || 0,
+                        Right: rect?.right || 0,
+                        Bottom: rect?.bottom || 0
+                    };
+                };
+                const union = (target, rect) => {
+                    if (!target.Width && !target.Height) {
+                        target.X = rect.left;
+                        target.Y = rect.top;
+                        target.Width = rect.width;
+                        target.Height = rect.height;
+                        target.Right = rect.right;
+                        target.Bottom = rect.bottom;
+                        return;
+                    }
+
+                    const left = Math.min(target.X, rect.left);
+                    const top = Math.min(target.Y, rect.top);
+                    const right = Math.max(target.Right, rect.right);
+                    const bottom = Math.max(target.Bottom, rect.bottom);
+                    target.X = left;
+                    target.Y = top;
+                    target.Width = right - left;
+                    target.Height = bottom - top;
+                    target.Right = right;
+                    target.Bottom = bottom;
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible) || null;
+                const visual = figure?.querySelector('img') || figure;
+                const imageVisualRect = rectOf(visual);
+                const imageFigureRect = rectOf(figure);
+                const marginLeft = Number.parseFloat(figure?.style?.marginLeft || '0') || 0;
+                const marginRight = Number.parseFloat(figure?.style?.marginRight || '0') || 0;
+                const marginTop = Number.parseFloat(figure?.style?.marginTop || '0') || 0;
+                const marginBottom = Number.parseFloat(figure?.style?.marginBottom || '0') || 0;
+                const wrapRect = {
+                    X: imageVisualRect.X - marginLeft,
+                    Y: imageVisualRect.Y - marginTop,
+                    Width: imageVisualRect.Width + marginLeft + marginRight,
+                    Height: imageVisualRect.Height + marginTop + marginBottom,
+                    Right: imageVisualRect.Right + marginRight,
+                    Bottom: imageVisualRect.Bottom + marginBottom
+                };
+                const imageLayoutX = Number.parseFloat(figure?.getAttribute('data-image-x') || figure?.style?.left || '0') || 0;
+                const imageLayoutY = Number.parseFloat(figure?.getAttribute('data-image-y') || figure?.style?.top || '0') || 0;
+                const imageLayoutWidth = Number.parseFloat(figure?.style?.width || figure?.style?.getPropertyValue('--tm-layout-object-width') || String(imageVisualRect.Width)) || imageVisualRect.Width;
+                const imageLayoutHeight = Number.parseFloat(figure?.style?.minHeight || figure?.style?.height || figure?.style?.getPropertyValue('--tm-layout-object-height') || String(imageVisualRect.Height)) || imageVisualRect.Height;
+                const imageLayoutRect = {
+                    X: imageLayoutX,
+                    Y: imageLayoutY,
+                    Width: imageLayoutWidth,
+                    Height: imageLayoutHeight,
+                    Right: imageLayoutX + imageLayoutWidth,
+                    Bottom: imageLayoutY + imageLayoutHeight
+                };
+
+                let textNode = null;
+                let textStart = -1;
+                let textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text))
+                    || null;
+                let blockTextStart = textBlock ? (textBlock.textContent || '').indexOf(text) : -1;
+                const walker = document.createTreeWalker(host || document.body, NodeFilter.SHOW_TEXT);
+                let candidate;
+                while ((candidate = walker.nextNode())) {
+                    const value = candidate.textContent || '';
+                    const index = value.indexOf(text);
+                    if (index < 0) continue;
+                    const element = candidate.parentElement;
+                    if (!element || !host?.contains(element)) continue;
+                    textNode = candidate;
+                    textStart = index;
+                    textBlock = textBlock || element.closest('.tm-wysiwyg-block[data-block-id], [data-block-id]');
+                    blockTextStart = textBlock ? (textBlock.textContent || '').indexOf(text) : textStart;
+                    break;
+                }
+
+                const lines = [];
+                const layoutLineElements = Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-line[data-layout-line-id]') || []);
+                if (textBlock && blockTextStart >= 0 && layoutLineElements.length > 0) {
+                    const parseCssNumber = value => Number.parseFloat(String(value || '').replace('px', '')) || 0;
+                    const paragraphLayoutX = parseCssNumber(textBlock.style?.left);
+                    const paragraphLayoutY = parseCssNumber(textBlock.style?.top);
+                    const targetStart = blockTextStart;
+                    const targetEnd = blockTextStart + text.length;
+                    for (const lineElement of layoutLineElements) {
+                        const lineLayoutX = paragraphLayoutX + parseCssNumber(lineElement.style?.left);
+                        const lineLayoutY = paragraphLayoutY + parseCssNumber(lineElement.style?.top);
+                        const lineLayoutWidth = parseCssNumber(lineElement.style?.width);
+                        const lineLayoutHeight = parseCssNumber(lineElement.style?.height);
+                        const segments = Array.from(lineElement.querySelectorAll('.tm-wysiwyg-layout-segment[data-layout-segment-id]'));
+                        let line = null;
+                        for (const segment of segments) {
+                            const segmentText = segment.textContent || '';
+                            const segmentStart = Number.parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                            const segmentEnd = segmentStart + segmentText.length;
+                            const overlapStart = Math.max(targetStart, segmentStart);
+                            const overlapEnd = Math.min(targetEnd, segmentEnd);
+                            if (overlapEnd <= overlapStart) continue;
+
+                            const rect = segment.getBoundingClientRect();
+                            if (rect.width <= 0 || rect.height <= 0) continue;
+                            if (!line) {
+                                line = {
+                                    Index: lines.length,
+                                    LineId: lineElement.getAttribute('data-layout-line-id') || '',
+                                    AvailableIntervalCount: Number.parseInt(lineElement.getAttribute('data-layout-available-interval-count') || '0', 10) || 0,
+                                    StartOffset: overlapStart - targetStart,
+                                    EndOffset: overlapEnd - targetStart,
+                                    Text: '',
+                                    Rect: { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 },
+                                    LayoutRect: {
+                                        X: lineLayoutX,
+                                        Y: lineLayoutY,
+                                        Width: lineLayoutWidth,
+                                        Height: lineLayoutHeight,
+                                        Right: lineLayoutX + lineLayoutWidth,
+                                        Bottom: lineLayoutY + lineLayoutHeight
+                                    }
+                                };
+                                lines.push(line);
+                            }
+
+                            line.StartOffset = Math.min(line.StartOffset, overlapStart - targetStart);
+                            line.EndOffset = Math.max(line.EndOffset, overlapEnd - targetStart);
+                            union(line.Rect, rect);
+                        }
+                    }
+
+                    lines.sort((a, b) => a.Rect.Y === b.Rect.Y ? a.Rect.X - b.Rect.X : a.Rect.Y - b.Rect.Y);
+                    for (let i = 0; i < lines.length; i++) {
+                        lines[i].Index = i;
+                        lines[i].Text = text.slice(lines[i].StartOffset, lines[i].EndOffset);
+                    }
+                } else if (textNode && textStart >= 0) {
+                    for (let offset = 0; offset < text.length; offset++) {
+                        const range = document.createRange();
+                        range.setStart(textNode, textStart + offset);
+                        range.setEnd(textNode, textStart + offset + 1);
+                        const rect = Array.from(range.getClientRects()).find(item => item.width > 0 && item.height > 0);
+                        if (!rect) continue;
+                        let line = lines.find(item => Math.abs(item.Rect.Y - rect.top) < 2);
+                        if (!line) {
+                            line = {
+                                Index: lines.length,
+                                LineId: '',
+                                AvailableIntervalCount: 0,
+                                StartOffset: offset,
+                                EndOffset: offset + 1,
+                                Text: '',
+                                Rect: { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 },
+                                LayoutRect: { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 }
+                            };
+                            lines.push(line);
+                        }
+
+                        line.StartOffset = Math.min(line.StartOffset, offset);
+                        line.EndOffset = Math.max(line.EndOffset, offset + 1);
+                        union(line.Rect, rect);
+                    }
+
+                    lines.sort((a, b) => a.Rect.Y === b.Rect.Y ? a.Rect.X - b.Rect.X : a.Rect.Y - b.Rect.Y);
+                    for (let i = 0; i < lines.length; i++) {
+                        lines[i].Index = i;
+                        lines[i].Text = text.slice(lines[i].StartOffset, lines[i].EndOffset);
+                    }
+                }
+
+                const selection = window.getSelection();
+                let selectionOffset = -1;
+                let selectionInsideTargetText = false;
+                if (selection && selection.rangeCount > 0 && textNode) {
+                    if (selection.anchorNode === textNode) {
+                        selectionOffset = selection.anchorOffset - textStart;
+                        selectionInsideTargetText = selectionOffset >= 0 && selectionOffset <= text.length;
+                    }
+                }
+
+                if (!selectionInsideTargetText && selection && selection.rangeCount > 0) {
+                    if (textBlock && selection.anchorNode && textBlock.contains(selection.anchorNode)) {
+                        const blockRange = document.createRange();
+                        blockRange.selectNodeContents(textBlock);
+                        try {
+                            blockRange.setEnd(selection.anchorNode, selection.anchorOffset || 0);
+                            const textBefore = blockRange.toString();
+                            selectionOffset = blockTextStart >= 0 ? textBefore.length - blockTextStart : -1;
+                            selectionInsideTargetText = selectionOffset >= 0 && selectionOffset <= text.length;
+                        } catch {
+                            selectionOffset = -1;
+                        }
+                    }
+                }
+
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg;
+                const runtimeDebug = runtime?.getDebugSnapshot?.(instanceId) || {};
+                const runtimeSelection = runtime?.getSelectionSnapshot?.(instanceId)
+                    || runtimeDebug?.CurrentSelection
+                    || runtimeDebug?.LastSelection
+                    || null;
+                const readString = (source, ...names) => {
+                    for (const name of names) {
+                        const value = source?.[name];
+                        if (value !== undefined && value !== null) return String(value);
+                    }
+                    return '';
+                };
+                const readNumber = (source, ...names) => {
+                    for (const name of names) {
+                        const value = Number(source?.[name]);
+                        if (Number.isFinite(value)) return value;
+                    }
+                    return Number.NaN;
+                };
+                const targetBlockId = textBlock?.getAttribute('data-block-id') || '';
+                const runtimeBlockId = readString(runtimeSelection, 'anchorBlockId', 'AnchorBlockId');
+                const runtimeOffset = readNumber(runtimeSelection, 'anchorOffset', 'AnchorOffset');
+                const runtimeVisualLineIndex = readNumber(runtimeSelection, 'visualLineIndex', 'VisualLineIndex');
+                if (runtimeSelection && targetBlockId && runtimeBlockId === targetBlockId && Number.isFinite(runtimeOffset)) {
+                    const targetRelativeOffset = runtimeOffset - Math.max(0, blockTextStart);
+                    if (targetRelativeOffset >= 0 && targetRelativeOffset <= text.length) {
+                        selectionOffset = targetRelativeOffset;
+                        selectionInsideTargetText = true;
+                    }
+                }
+
+                let selectionLine = null;
+                if (selectionInsideTargetText && Number.isFinite(runtimeVisualLineIndex) && runtimeVisualLineIndex >= 0) {
+                    selectionLine = lines.find(line => line.Index === runtimeVisualLineIndex) || null;
+                }
+                if (!selectionLine && selectionInsideTargetText) {
+                    selectionLine = lines.find(line => selectionOffset >= line.StartOffset && selectionOffset <= line.EndOffset) || null;
+                }
+                const sidecars = Array.from(host?.querySelectorAll(`[data-wrap-sidecar-for="${CSS.escape(imageId)}"], .tm-wysiwyg-image-sidecar-text`) || [])
+                    .filter(isVisible);
+                const intersectsWrap = rect =>
+                    rect.left < wrapRect.Right
+                    && rect.right > wrapRect.X
+                    && rect.top < wrapRect.Bottom
+                    && rect.bottom > wrapRect.Y;
+                const layoutLineElementById = new Map(layoutLineElements.map(line => [line.getAttribute('data-layout-line-id') || '', line]));
+                const lineIntersections = lines.filter(line => {
+                    const lineElement = layoutLineElementById.get(line.LineId || '');
+                    const segmentRects = Array.from(lineElement?.querySelectorAll?.('.tm-wysiwyg-layout-segment') || [])
+                        .map(segment => segment.getBoundingClientRect())
+                        .filter(rect => rect.width > 0 && rect.height > 0);
+                    if (segmentRects.length > 0) {
+                        return segmentRects.some(intersectsWrap);
+                    }
+
+                    return intersectsWrap({
+                        left: line.Rect.X,
+                        right: line.Rect.Right,
+                        top: line.Rect.Y,
+                        bottom: line.Rect.Bottom
+                    });
+                });
+                const activeImageBlockId = runtimeDebug?.CurrentSelection?.ActiveImageBlockId
+                    || runtimeDebug?.LastSelection?.ActiveImageBlockId
+                    || '';
+                const imageToolbar = figure?.querySelector('[data-testid="document-wysiwyg-object-layout-bubble"], .tm-wysiwyg-layout-bubble');
+                const imageToolbarStyle = imageToolbar ? getComputedStyle(imageToolbar) : null;
+
+                return {
+                    ImageId: imageId,
+                    Text: textBlock && blockTextStart >= 0
+                        ? (textBlock.textContent || '').slice(blockTextStart, blockTextStart + text.length)
+                        : (textNode ? textNode.textContent.slice(textStart, textStart + text.length) : ''),
+                    FullBodyText: host?.querySelector('.tm-wysiwyg-page__body')?.textContent || '',
+                    TextBlockId: textBlock?.getAttribute('data-block-id') || '',
+                    TextBlockClassName: textBlock?.className || '',
+                    Lines: lines,
+                    SelectionInsideTargetText: selectionInsideTargetText,
+                    SelectionOffset: selectionOffset,
+                    SelectionLineIndex: selectionLine ? selectionLine.Index : -1,
+                    ActiveImageBlockId: activeImageBlockId,
+                    SelectedImageId: figure?.classList.contains('tm-wysiwyg-image--selected') ? imageId : '',
+                    ImageToolbarVisible: !!(imageToolbar && isVisible(imageToolbar) && imageToolbarStyle.opacity !== '0' && imageToolbarStyle.pointerEvents !== 'none'),
+                    SidecarCount: sidecars.length,
+                    SidecarText: sidecars.map(item => item.textContent || '').join(' '),
+                    ImageVisualRect: imageVisualRect,
+                    ImageFigureRect: imageFigureRect,
+                    ImageWrapRect: wrapRect,
+                    ImageLayoutRect: imageLayoutRect,
+                    TextIntersectionCount: lineIntersections.length,
+                    LayoutIssues: [
+                        ...(figure ? [] : [`image ${imageId} was not found`]),
+                        ...((textBlock && blockTextStart >= 0) || textNode ? [] : ['target wrapped text was not found']),
+                        ...lineIntersections.map((line, index) => `line ${index + 1} intersects image wrap rect`)
+                    ]
+                };
+            }
+            """,
+            new { imageId, text });
+
+    private static Task<MousePointProbe> CapturePhase0WrappedTextOffsetPointAsync(IPage page, string imageId, string text, int offset, bool afterCharacter)
+        => page.EvaluateAsync<MousePointProbe>(
+            """
+            ({ imageId, text, offset, afterCharacter }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text));
+                const blockTextStart = textBlock ? (textBlock.textContent || '').indexOf(text) : -1;
+                const targetOffset = Math.max(0, Number(offset) || 0) + Math.max(0, blockTextStart);
+                const segments = Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-segment[data-layout-segment-id]') || []);
+                let selected = null;
+                for (const segment of segments) {
+                    const start = Number.parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                    const length = (segment.textContent || '').length;
+                    const end = start + length;
+                    if (afterCharacter ? targetOffset > start && targetOffset <= end : targetOffset >= start && targetOffset < end) {
+                        selected = { segment, start, length, end };
+                        break;
+                    }
+                }
+
+                selected = selected || segments.map(segment => {
+                    const start = Number.parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                    const length = (segment.textContent || '').length;
+                    return { segment, start, length, end: start + length };
+                }).find(item => targetOffset >= item.start && targetOffset <= item.end);
+
+                if (!selected) {
+                    const rect = textBlock?.getBoundingClientRect?.();
+                    return {
+                        X: (rect?.left || 0) + 2,
+                        Y: (rect?.top || 0) + Math.max(2, (rect?.height || 4) / 2)
+                    };
+                }
+
+                selected.segment.scrollIntoView({ block: 'center', inline: 'nearest' });
+                const scrollables = [];
+                for (let parent = selected.segment.parentElement; parent && parent !== document.body; parent = parent.parentElement) {
+                    const style = getComputedStyle(parent);
+                    if (parent.scrollHeight > parent.clientHeight + 2
+                        && /(auto|scroll|overlay)/.test(`${style.overflowY} ${style.overflow}`)) {
+                        scrollables.push(parent);
+                    }
+                }
+
+                scrollables.push(document.scrollingElement || document.documentElement);
+                for (const scroller of scrollables) {
+                    const rect = selected.segment.getBoundingClientRect();
+                    const viewport = scroller === document.scrollingElement || scroller === document.documentElement
+                        ? { top: 0, height: window.innerHeight }
+                        : scroller.getBoundingClientRect();
+                    const desiredCenter = viewport.top + viewport.height * 0.55;
+                    scroller.scrollTop += rect.top + rect.height / 2 - desiredCenter;
+                }
+
+                const textNode = selected.segment.firstChild && selected.segment.firstChild.nodeType === Node.TEXT_NODE
+                    ? selected.segment.firstChild
+                    : null;
+                const localOffset = Math.max(0, Math.min(selected.length, targetOffset - selected.start));
+                if (textNode && textNode.textContent) {
+                    const range = document.createRange();
+                    if (afterCharacter && localOffset > 0) {
+                        range.setStart(textNode, localOffset - 1);
+                        range.setEnd(textNode, localOffset);
+                    } else {
+                        const start = Math.min(localOffset, Math.max(0, textNode.textContent.length - 1));
+                        range.setStart(textNode, start);
+                        range.setEnd(textNode, Math.min(textNode.textContent.length, start + 1));
+                    }
+
+                    const rect = Array.from(range.getClientRects()).find(item => item.width > 0 && item.height > 0);
+                    if (rect) {
+                        return {
+                            X: afterCharacter ? rect.right + 1 : rect.left + 1,
+                            Y: rect.top + rect.height / 2
+                        };
+                    }
+                }
+
+                const rect = selected.segment.getBoundingClientRect();
+                const ratio = selected.length > 0 ? localOffset / selected.length : 0;
+                return {
+                    X: rect.left + Math.max(1, Math.min(rect.width - 1, rect.width * ratio)),
+                    Y: rect.top + rect.height / 2
+                };
+            }
+            """,
+            new { imageId, text, offset, afterCharacter });
+
+    private static Task WaitForPhase0WrappedTextSelectionAsync(IPage page, string imageId, int visualLineIndex)
+        => page.WaitForFunctionAsync(
+            """
+            ({ imageId, visualLineIndex }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const instanceId = host?.getAttribute('data-instance-id') || '';
+                const runtime = window.tmDocumentEditorWysiwyg || window.tmDocumentWysiwyg;
+                const selection = runtime?.getSelectionSnapshot?.(instanceId)
+                    || runtime?.getDebugSnapshot?.(instanceId)?.CurrentSelection
+                    || null;
+                const blockId = selection?.anchorBlockId || selection?.AnchorBlockId || '';
+                const lineIndex = Number(selection?.visualLineIndex ?? selection?.VisualLineIndex ?? -1);
+                return blockId === `${imageId}-text` && lineIndex === visualLineIndex;
+            }
+            """,
+            new { imageId, visualLineIndex },
+            new() { Timeout = 2000 });
+
+    private static async Task ClickPhase0WrappedLineAsync(IPage page, Phase0WrappedTextLineProbe line, double x)
+    {
+        line.LineId.Should().NotBeNullOrWhiteSpace("strict wrapped-text line clicks must target the rendered layout line element");
+        var escapedLineId = line.LineId.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("'", "\\'", StringComparison.Ordinal);
+        var lineLocator = page.Locator($".tm-wysiwyg-layout-line[data-layout-line-id='{escapedLineId}']").First;
+        await lineLocator.ScrollIntoViewIfNeededAsync();
+        await lineLocator.ClickAsync(new()
+        {
+            Position = new()
+            {
+                X = (float)Math.Max(1, Math.Min(Math.Max(1, line.Rect.Width - 1), x)),
+                Y = (float)Math.Max(1, line.Rect.Height / 2)
+            }
+        });
+    }
+
+    private static List<string> CollectCommonPhase0ImageLayoutIssues(
+        Phase0ImageWrapProbe before,
+        Phase0ImageWrapProbe after,
+        string imageId)
+    {
+        var issues = new List<string>();
+        if (before.SidecarCount > 0 || after.SidecarCount > 0)
+        {
+            issues.Add($"target layout must not create sidecar text blocks for {imageId}; before={before.SidecarCount}, after={after.SidecarCount}");
+        }
+
+        if (!string.Equals(after.Text, before.Text, StringComparison.Ordinal))
+        {
+            issues.Add("image layout operation mutated the adjacent text content");
+        }
+
+        if (after.LayoutIssues.Length > 0)
+        {
+            issues.AddRange(after.LayoutIssues);
+        }
+
+        return issues;
+    }
+
+    private static Phase0WrappedTextLineProbe? FirstPhase0LineOverlappingImage(Phase0ImageWrapProbe probe) =>
+        probe.Lines
+            .OrderBy(line => line.Rect.Y)
+            .FirstOrDefault(line =>
+                line.Rect.Y < probe.ImageWrapRect.Bottom
+                && line.Rect.Bottom > probe.ImageWrapRect.Y);
+
+    private static Task<RectProbe> CaptureWysiwygBodyRectAsync(IPage page)
+        => page.EvaluateAsync<RectProbe>(
+            """
+            () => {
+                const body = document.querySelector('[data-testid="document-wysiwyg-host"] .tm-wysiwyg-page__body');
+                const rect = body?.getBoundingClientRect?.();
+                return {
+                    X: rect?.left || 0,
+                    Y: rect?.top || 0,
+                    Width: rect?.width || 0,
+                    Height: rect?.height || 0,
+                    Right: rect?.right || 0,
+                    Bottom: rect?.bottom || 0
+                };
+            }
+            """);
+
+    private static Task<double> CaptureMaxRightTextSegmentWidthInImageBandAsync(IPage page, string imageId, string text)
+        => page.EvaluateAsync<double>(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                const visual = figure?.querySelector('img') || figure;
+                if (!figure || !visual) return 0;
+                const visualRect = visual.getBoundingClientRect();
+                const marginTop = Number.parseFloat(figure.style.marginTop || '0') || 0;
+                const marginBottom = Number.parseFloat(figure.style.marginBottom || '0') || 0;
+                const marginRight = Number.parseFloat(figure.style.marginRight || '0') || 0;
+                const wrapRect = {
+                    right: visualRect.right + marginRight,
+                    top: visualRect.top - marginTop,
+                    bottom: visualRect.bottom + marginBottom
+                };
+                const textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text));
+                return Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-segment') || [])
+                    .map(segment => segment.getBoundingClientRect())
+                    .filter(rect =>
+                        rect.width > 0
+                        && rect.height > 0
+                        && rect.left >= wrapRect.right - 1
+                        && rect.top < wrapRect.bottom
+                        && rect.bottom > wrapRect.top)
+                    .reduce((max, rect) => Math.max(max, rect.width), 0);
+            }
+            """,
+            new { imageId, text });
+
+    private static Task<bool> LineHasTextOnBothSidesOfImageAsync(IPage page, string imageId, string text)
+        => page.EvaluateAsync<bool>(
+            """
+            ({ imageId, text }) => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const figure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(isVisible);
+                const visual = figure?.querySelector('img') || figure;
+                if (!figure || !visual) return false;
+                const visualRect = visual.getBoundingClientRect();
+                const marginLeft = Number.parseFloat(figure.style.marginLeft || '0') || 0;
+                const marginRight = Number.parseFloat(figure.style.marginRight || '0') || 0;
+                const marginTop = Number.parseFloat(figure.style.marginTop || '0') || 0;
+                const marginBottom = Number.parseFloat(figure.style.marginBottom || '0') || 0;
+                const wrapRect = {
+                    left: visualRect.left - marginLeft,
+                    top: visualRect.top - marginTop,
+                    right: visualRect.right + marginRight,
+                    bottom: visualRect.bottom + marginBottom
+                };
+                const textBlock = Array.from(host?.querySelectorAll('.tm-wysiwyg-block[data-block-id]') || [])
+                    .find(block => (block.textContent || '').includes(text))
+                    || Array.from(host?.querySelectorAll('[data-block-id]') || [])
+                        .find(block => (block.textContent || '').includes(text));
+                const lines = Array.from(textBlock?.querySelectorAll?.('.tm-wysiwyg-layout-line[data-layout-line-id]') || []);
+                return lines.some(line => {
+                    const lineRect = line.getBoundingClientRect();
+                    const intervalCount = Number.parseInt(line.getAttribute('data-layout-available-interval-count') || '0', 10) || 0;
+                    if (intervalCount < 2 || lineRect.top >= wrapRect.bottom || lineRect.bottom <= wrapRect.top) return false;
+                    const segmentRects = Array.from(line.querySelectorAll('.tm-wysiwyg-layout-segment'))
+                        .map(segment => segment.getBoundingClientRect())
+                        .filter(rect => rect.width > 0 && rect.height > 0);
+                    const hasLeftText = segmentRects.some(rect => rect.right <= wrapRect.left + 1);
+                    const hasRightText = segmentRects.some(rect => rect.left >= wrapRect.right - 1);
+                    return hasLeftText && hasRightText;
+                });
+            }
+            """,
+            new { imageId, text });
+
+    private static bool LineGeometryChanged(Phase0WrappedTextLineProbe[] before, Phase0WrappedTextLineProbe[] after)
+    {
+        var count = Math.Min(before.Length, after.Length);
+        if (before.Length != after.Length)
+        {
+            return true;
+        }
+
+        for (var index = 0; index < count; index++)
+        {
+            if (!RectApproximatelyEquals(before[index].Rect, after[index].Rect, 1.5))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool LineLayoutGeometryChanged(Phase0WrappedTextLineProbe[] before, Phase0WrappedTextLineProbe[] after)
+    {
+        var count = Math.Min(before.Length, after.Length);
+        if (before.Length != after.Length)
+        {
+            return true;
+        }
+
+        for (var index = 0; index < count; index++)
+        {
+            if (before[index].StartOffset != after[index].StartOffset
+                || before[index].EndOffset != after[index].EndOffset
+                || before[index].AvailableIntervalCount != after[index].AvailableIntervalCount
+                || !RectApproximatelyEquals(before[index].LayoutRect, after[index].LayoutRect, 1.5))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    private static bool RectMoved(RectProbe before, RectProbe after, double threshold) =>
+        Math.Abs(before.X - after.X) >= threshold
+        || Math.Abs(before.Y - after.Y) >= threshold;
+
+    private static bool RectApproximatelyEquals(RectProbe before, RectProbe after, double tolerance) =>
+        Math.Abs(before.X - after.X) <= tolerance
+        && Math.Abs(before.Y - after.Y) <= tolerance
+        && Math.Abs(before.Width - after.Width) <= tolerance
+        && Math.Abs(before.Height - after.Height) <= tolerance;
+
+    private static string RemoveCharAt(string value, int index) =>
+        index >= 0 && index < value.Length
+            ? value.Remove(index, 1)
+            : value;
 
     private static async Task DropImageFileAsync(IPage page, string fileName)
     {
@@ -8920,6 +12008,65 @@ public class DocumentEditorE2ETests : WasmTestBase
             }
             """,
             new { dataUrl, fileName });
+    }
+
+    private static async Task<ClipboardPayloadProbe> DispatchClipboardCopyAsync(IPage page)
+    {
+        return await page.EvaluateAsync<ClipboardPayloadProbe>(
+            """
+            () => {
+                const data = new DataTransfer();
+                const event = new ClipboardEvent("copy", { bubbles: true, cancelable: true });
+                Object.defineProperty(event, "clipboardData", { value: data });
+                const host = document.querySelector("[data-testid='document-wysiwyg-host']");
+                const selection = window.getSelection();
+                const selectedNode = selection && selection.rangeCount > 0 ? selection.anchorNode : null;
+                const selectedElement = selectedNode && selectedNode.nodeType === Node.ELEMENT_NODE
+                    ? selectedNode
+                    : selectedNode?.parentElement;
+                const selectedFigure = host?.querySelector("figure.tm-wysiwyg-image.tm-wysiwyg-image--selected");
+                const target = selectedElement?.closest?.("[contenteditable='true']")
+                    || selectedFigure
+                    || document.activeElement?.closest?.("figure.tm-wysiwyg-image, [contenteditable='true']")
+                    || host?.querySelector(".tm-wysiwyg-page__body")
+                    || host;
+                target.dispatchEvent(event);
+                return {
+                    Plain: data.getData("text/plain") || "",
+                    Html: data.getData("text/html") || "",
+                    InternalJson: data.getData("application/x-tempo-document-editor") || ""
+                };
+            }
+            """);
+    }
+
+    private static async Task DispatchInternalClipboardPasteAsync(IPage page, ClipboardPayloadProbe payload)
+    {
+        await page.EvaluateAsync(
+            """
+            payload => {
+                const data = new DataTransfer();
+                if (payload.Html) data.setData("text/html", payload.Html);
+                if (payload.Plain) data.setData("text/plain", payload.Plain);
+                if (payload.InternalJson) data.setData("application/x-tempo-document-editor", payload.InternalJson);
+                const event = new ClipboardEvent("paste", { bubbles: true, cancelable: true });
+                Object.defineProperty(event, "clipboardData", { value: data });
+                const host = document.querySelector("[data-testid='document-wysiwyg-host']");
+                const selectedFigure = host?.querySelector("figure.tm-wysiwyg-image.tm-wysiwyg-image--selected");
+                const selection = window.getSelection();
+                const selectedNode = selection && selection.rangeCount > 0 ? selection.anchorNode : null;
+                const selectedElement = selectedNode && selectedNode.nodeType === Node.ELEMENT_NODE
+                    ? selectedNode
+                    : selectedNode?.parentElement;
+                const target = selectedElement?.closest?.("[contenteditable='true']")
+                    || selectedFigure
+                    || document.activeElement?.closest?.("figure.tm-wysiwyg-image, [contenteditable='true']")
+                    || host?.querySelector(".tm-wysiwyg-page__body")
+                    || host;
+                target.dispatchEvent(event);
+            }
+            """,
+            payload);
     }
 
     private static async Task AssertUndoRedoToolbarStateAsync(
@@ -9868,35 +13015,115 @@ public class DocumentEditorE2ETests : WasmTestBase
 
     private static async Task AssertImageFloatAsync(ILocator figure, string expectedFloat)
     {
-        var actualFloat = await figure.EvaluateAsync<string>("figure => getComputedStyle(figure).float || 'none'");
-        actualFloat.Should().Be(expectedFloat);
+        var state = await figure.EvaluateAsync<WrappedImageComputedStyle>(
+            """
+            figure => {
+                const style = getComputedStyle(figure);
+                return {
+                    FloatValue: style.float || 'none',
+                    MarginInlineStart: Number.parseFloat(style.marginInlineStart || '0') || 0,
+                    MarginBlockEnd: Number.parseFloat(style.marginBlockEnd || '0') || 0
+                };
+            }
+            """);
+        state.FloatValue.Should().Be("none", "WYSIWYG image wrapping must be driven by layout line boxes, not CSS floats");
+        await Assertions.Expect(figure).ToHaveClassAsync(new Regex($"tm-wysiwyg-image--position-{Regex.Escape(expectedFloat)}"));
     }
 
     private static async Task TypeTextBesideWrappedImageAsync(IPage page, ILocator figure, string text, bool rightOfLeftImage)
     {
-        var point = await figure.EvaluateAsync<MousePointProbe>(
-            """
-            (figure, rightOfLeftImage) => {
-                const rect = (figure.querySelector('img') || figure).getBoundingClientRect();
-                const x = rightOfLeftImage
-                    ? Math.min(window.innerWidth - 16, rect.right + 40)
-                    : Math.max(16, rect.left - 40);
-                const y = Math.min(window.innerHeight - 16, rect.top + Math.min(32, Math.max(12, rect.height / 3)));
-                return { X: x, Y: y };
-            }
-            """,
-            rightOfLeftImage);
+        var line = await CaptureWrappedImageLineBesideImageAsync(figure, rightOfLeftImage);
+        line.LineId.Should().NotBeNullOrWhiteSpace("typing beside a wrapped image must target a real layout line, not a generated sidecar paragraph");
 
-        await page.Mouse.MoveAsync((float)point.X, (float)point.Y);
-        await page.Mouse.DownAsync();
+        var escapedLineId = line.LineId.Replace("\\", "\\\\", StringComparison.Ordinal).Replace("'", "\\'", StringComparison.Ordinal);
+        var lineLocator = page.Locator($".tm-wysiwyg-layout-line[data-layout-line-id='{escapedLineId}']").First;
+        await lineLocator.ScrollIntoViewIfNeededAsync();
+        await lineLocator.ClickAsync(new()
+        {
+            Position = new()
+            {
+                X = (float)Math.Max(1, Math.Min(Math.Max(1, line.Rect.Width - 1), line.Rect.Width / 4)),
+                Y = (float)Math.Max(1, line.Rect.Height / 2)
+            }
+        });
+
         await Assertions.Expect(figure).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
-        await AssertSelectionInsideWrappedImageSideTextAsync(figure);
-        await AssertWrappedImageCaretBesideImageAsync(figure, rightOfLeftImage ? "right" : "left");
-        await page.Mouse.UpAsync();
         await AssertSelectionInsideWrappedImageSideTextAsync(figure);
         await AssertWrappedImageCaretBesideImageAsync(figure, rightOfLeftImage ? "right" : "left");
         await page.Keyboard.InsertTextAsync(text);
     }
+
+    private static Task<Phase0WrappedTextLineProbe> CaptureWrappedImageLineBesideImageAsync(ILocator figure, bool rightOfLeftImage)
+        => figure.EvaluateAsync<Phase0WrappedTextLineProbe>(
+            """
+            (figure, rightOfLeftImage) => {
+                const host = figure.closest('[data-testid="document-wysiwyg-host"]') || document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const imageElement = figure.querySelector('img');
+                let imageRect = (imageElement || figure).getBoundingClientRect();
+                if (imageRect.width <= 0 || imageRect.height <= 0) imageRect = figure.getBoundingClientRect();
+                const isVisible = element => {
+                    if (!element || element.closest('figure.tm-wysiwyg-image, [aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const toRect = rect => ({
+                    X: rect.left,
+                    Y: rect.top,
+                    Width: rect.width,
+                    Height: rect.height,
+                    Right: rect.right,
+                    Bottom: rect.bottom
+                });
+                const overlapsY = rect => rect.top < imageRect.bottom - 1 && rect.bottom > imageRect.top + 1;
+                const onRequestedSide = rect => rightOfLeftImage
+                    ? rect.left >= imageRect.right - 2
+                    : rect.right <= imageRect.left + 2;
+                const lineElements = Array.from(host?.querySelectorAll('.tm-wysiwyg-layout-line[data-layout-line-id]') || [])
+                    .filter(isVisible)
+                    .map((element, index) => {
+                        const rect = element.getBoundingClientRect();
+                        const segment = element.querySelector('.tm-wysiwyg-layout-segment[data-layout-start-offset]');
+                        const startOffset = Number.parseInt(segment?.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                        const text = element.textContent || '';
+                        return {
+                            element,
+                            index,
+                            rect,
+                            probe: {
+                                Index: index,
+                                LineId: element.getAttribute('data-layout-line-id') || '',
+                                AvailableIntervalCount: 1,
+                                StartOffset: startOffset,
+                                EndOffset: startOffset + text.length,
+                                Text: text,
+                                Rect: toRect(rect),
+                                LayoutRect: toRect(rect)
+                            }
+                        };
+                    });
+
+                const preferred = lineElements
+                    .filter(item => overlapsY(item.rect) && onRequestedSide(item.rect))
+                    .sort((a, b) => Math.abs(a.rect.top - imageRect.top) - Math.abs(b.rect.top - imageRect.top))[0];
+                if (preferred) return preferred.probe;
+
+                return {
+                    Index: -1,
+                    LineId: '',
+                    AvailableIntervalCount: 0,
+                    StartOffset: 0,
+                    EndOffset: 0,
+                    Text: '',
+                    Rect: { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 },
+                    LayoutRect: { X: 0, Y: 0, Width: 0, Height: 0, Right: 0, Bottom: 0 }
+                };
+            }
+            """,
+            rightOfLeftImage);
 
     private static async Task AssertWrappedImageCaretBesideImageAsync(ILocator figure, string expectedSide)
     {
@@ -9904,30 +13131,29 @@ public class DocumentEditorE2ETests : WasmTestBase
             """
             (figure, expectedSide) => {
                 const issues = [];
-                const imageId = figure.getAttribute('data-block-id') || '';
-                const sideText = document.querySelector(`[data-wrap-sidecar-for="${imageId}"]`);
                 const selection = window.getSelection();
-                if (!sideText) return ['missing side text block'];
                 if (!selection || selection.rangeCount === 0) return ['missing browser selection'];
 
                 const range = selection.getRangeAt(0);
                 const anchor = selection.anchorNode?.nodeType === Node.ELEMENT_NODE
                     ? selection.anchorNode
                     : selection.anchorNode?.parentElement;
-                if (!anchor || !sideText.contains(anchor)) {
-                    issues.push('caret anchor is not inside side text block');
+                const line = anchor?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                if (!line || figure.contains(line)) {
+                    issues.push('caret anchor is not inside a normal layout text line');
                 }
 
-                const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
+                const imageElement = figure.querySelector('img');
+                let imageRect = (imageElement || figure).getBoundingClientRect();
+                if (imageRect.width <= 0 || imageRect.height <= 0) imageRect = figure.getBoundingClientRect();
                 const rects = Array.from(range.getClientRects ? range.getClientRects() : []);
-                const rangeRect = rects.find(rect => rect.height > 0) || (range.getBoundingClientRect ? range.getBoundingClientRect() : null);
-                const sideRect = sideText.getBoundingClientRect();
-                const caretLeft = rangeRect && rangeRect.height > 0
-                    ? rangeRect.left
-                    : sideRect.left;
-                const caretRight = rangeRect && rangeRect.height > 0
-                    ? rangeRect.right
-                    : sideRect.right;
+                const rangeRect = rects.find(rect => rect.height > 0) || (line ? line.getBoundingClientRect() : null);
+                if (!rangeRect || rangeRect.height <= 0) {
+                    issues.push('caret has no visible rectangle');
+                    return issues;
+                }
+                const caretLeft = rangeRect.left;
+                const caretRight = rangeRect.right;
 
                 if (expectedSide === 'right' && caretLeft <= imageRect.right + 2) {
                     issues.push(`caret is not to the right of the left-wrapped image: caretLeft=${Math.round(caretLeft)}, imageRight=${Math.round(imageRect.right)}`);
@@ -9950,11 +13176,11 @@ public class DocumentEditorE2ETests : WasmTestBase
         var issues = await figure.EvaluateAsync<string[]>(
             """
             figure => {
-                const imageId = figure.getAttribute('data-block-id') || '';
-                const sideText = document.querySelector(`[data-wrap-sidecar-for="${imageId}"]`);
+                const host = figure.closest('[data-testid="document-wysiwyg-host"]') || document.querySelector('[data-testid="document-wysiwyg-host"]');
                 const selection = window.getSelection();
                 const issues = [];
-                if (!sideText) return ['missing side text block'];
+                const legacySidecars = host?.querySelectorAll('[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text') || [];
+                if (legacySidecars.length > 0) issues.push(`legacy sidecar blocks exist: ${legacySidecars.length}`);
                 if (!selection || selection.rangeCount === 0) return ['missing browser selection'];
                 const anchor = selection.anchorNode?.nodeType === Node.ELEMENT_NODE
                     ? selection.anchorNode
@@ -9962,8 +13188,10 @@ public class DocumentEditorE2ETests : WasmTestBase
                 const focus = selection.focusNode?.nodeType === Node.ELEMENT_NODE
                     ? selection.focusNode
                     : selection.focusNode?.parentElement;
-                if (!anchor || !sideText.contains(anchor)) issues.push('selection anchor is not inside side text block');
-                if (!focus || !sideText.contains(focus)) issues.push('selection focus is not inside side text block');
+                const anchorLine = anchor?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                const focusLine = focus?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                if (!anchorLine || figure.contains(anchorLine)) issues.push('selection anchor is not inside a normal layout text line');
+                if (!focusLine || figure.contains(focusLine)) issues.push('selection focus is not inside a normal layout text line');
                 return issues;
             }
             """);
@@ -9978,48 +13206,100 @@ public class DocumentEditorE2ETests : WasmTestBase
             (figure, args) => {
                 const issues = [];
                 const imageId = figure.getAttribute('data-block-id') || '';
-                const sideText = document.querySelector(`[data-wrap-sidecar-for="${imageId}"]`);
-                if (!sideText) return ['missing side text block for wrapped image'];
-                if (!(sideText.textContent || '').includes(args.text)) {
-                    issues.push('side text block does not contain the typed text');
+                const host = figure.closest('[data-testid="document-wysiwyg-host"]') || document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const visibleFigure = Array.from(host?.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`) || [])
+                    .find(candidate => {
+                        const rect = candidate.getBoundingClientRect();
+                        const style = getComputedStyle(candidate);
+                        return rect.width > 0 && rect.height > 0 && style.display !== 'none' && style.visibility !== 'hidden';
+                    });
+                if (visibleFigure) figure = visibleFigure;
+                const legacySidecars = Array.from(host?.querySelectorAll('[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text') || []);
+                if (legacySidecars.length > 0) {
+                    issues.push(`legacy sidecar blocks exist after typing beside ${imageId}: ${legacySidecars.length}`);
                 }
 
-                const walker = document.createTreeWalker(sideText, NodeFilter.SHOW_TEXT);
-                let textNode = null;
-                while (walker.nextNode()) {
-                    if ((walker.currentNode.textContent || '').includes(args.text)) {
-                        textNode = walker.currentNode;
-                        break;
+                const body = host?.querySelector('.tm-wysiwyg-page__body') || host;
+                if (!(body?.textContent || '').includes(args.text)) {
+                    issues.push('normal document text does not contain the typed beside-image text');
+                }
+
+                const textNodes = [];
+                const walker = document.createTreeWalker(body, NodeFilter.SHOW_TEXT, {
+                    acceptNode: node => {
+                        const parent = node.parentElement;
+                        if (!parent || parent.closest('figure.tm-wysiwyg-image')) return NodeFilter.FILTER_REJECT;
+                        if (parent.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return NodeFilter.FILTER_REJECT;
+                        const line = parent.closest('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                        if (!line || figure.contains(line)) return NodeFilter.FILTER_REJECT;
+                        const rect = line.getBoundingClientRect();
+                        const style = getComputedStyle(line);
+                        if (rect.width <= 0 || rect.height <= 0 || style.display === 'none' || style.visibility === 'hidden') {
+                            return NodeFilter.FILTER_REJECT;
+                        }
+                        return node.textContent ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_SKIP;
                     }
+                });
+                while (walker.nextNode()) {
+                    textNodes.push(walker.currentNode);
                 }
 
-                if (!textNode) {
-                    issues.push('typed text node was not found');
+                let normalizedText = '';
+                const entries = textNodes.map(node => {
+                    const start = normalizedText.length;
+                    const value = node.textContent || '';
+                    normalizedText += value;
+                    return {
+                        node,
+                        start,
+                        end: normalizedText.length
+                    };
+                });
+
+                const startIndex = normalizedText.indexOf(args.text);
+                if (startIndex < 0) {
+                    issues.push('typed text was not found in normal document flow');
                     return issues;
                 }
 
-                const start = textNode.textContent.indexOf(args.text);
-                const range = document.createRange();
-                range.setStart(textNode, start);
-                range.setEnd(textNode, start + args.text.length);
+                const endIndex = startIndex + args.text.length;
+                const startEntry = entries.find(entry => startIndex >= entry.start && startIndex < entry.end);
+                let endEntry = entries.find(entry => endIndex > entry.start && endIndex <= entry.end);
+                if (!endEntry && endIndex === normalizedText.length) {
+                    endEntry = entries[entries.length - 1] || null;
+                }
 
-                const imageRect = (figure.querySelector('img') || figure).getBoundingClientRect();
-                const textRect = range.getBoundingClientRect();
-                if (textRect.width <= 0 || textRect.height <= 0) {
+                if (!startEntry || !endEntry) {
+                    issues.push('typed text range could not be mapped to normal document nodes');
+                    return issues;
+                }
+
+                const range = document.createRange();
+                range.setStart(startEntry.node, startIndex - startEntry.start);
+                range.setEnd(endEntry.node, endIndex - endEntry.start);
+
+                const imageElement = figure.querySelector('img');
+                let imageRect = (imageElement || figure).getBoundingClientRect();
+                if (imageRect.width <= 0 || imageRect.height <= 0) imageRect = figure.getBoundingClientRect();
+                const textRects = Array.from(range.getClientRects()).filter(rect => rect.width > 0 && rect.height > 0);
+                if (textRects.length === 0) {
                     issues.push('typed text has no visible rectangle');
                 }
 
-                const verticallyBesideImage = textRect.top < imageRect.bottom && textRect.bottom > imageRect.top;
-                if (!verticallyBesideImage) {
-                    issues.push('typed text is not vertically beside the wrapped image');
+                const line = startEntry.node.parentElement?.closest?.('.tm-wysiwyg-layout-line[data-layout-line-id]');
+                if (!line || figure.contains(line)) {
+                    issues.push('typed text is not inside a normal layout line');
                 }
 
-                if (args.expectedSide === 'right' && textRect.left <= imageRect.right + 2) {
-                    issues.push('typed text is not to the right of the left-wrapped image');
-                }
-
-                if (args.expectedSide === 'left' && textRect.right >= imageRect.left - 2) {
-                    issues.push('typed text is not to the left of the right-wrapped image');
+                const isOnExpectedSide = rect => args.expectedSide === 'right'
+                    ? rect.left > imageRect.right + 2
+                    : rect.right < imageRect.left - 2;
+                const isVerticallyBesideImage = rect => rect.top < imageRect.bottom && rect.bottom > imageRect.top;
+                const lineRect = line?.getBoundingClientRect?.();
+                const besideTextRect = textRects.find(rect => isVerticallyBesideImage(rect) && isOnExpectedSide(rect));
+                const besideLineRect = lineRect && isVerticallyBesideImage(lineRect) && isOnExpectedSide(lineRect);
+                if (!besideTextRect && !besideLineRect) {
+                    issues.push(`typed text is not vertically beside the wrapped image: image=(${Math.round(imageRect.left)},${Math.round(imageRect.top)},${Math.round(imageRect.right)},${Math.round(imageRect.bottom)}), line=${lineRect ? `(${Math.round(lineRect.left)},${Math.round(lineRect.top)},${Math.round(lineRect.right)},${Math.round(lineRect.bottom)})` : 'none'}, rects=${textRects.map(rect => `(${Math.round(rect.left)},${Math.round(rect.top)},${Math.round(rect.right)},${Math.round(rect.bottom)})`).join(';')}`);
                 }
 
                 return issues;
@@ -10487,7 +13767,6 @@ public class DocumentEditorE2ETests : WasmTestBase
                     ['text-context-menu', '[data-testid="document-text-context-menu"], [data-testid="document-wysiwyg-context-menu"], .tm-wysiwyg-context-menu'],
                     ['image-context-menu', '[data-testid="document-wysiwyg-image-context-menu"], .tm-wysiwyg-image-context-menu'],
                     ['image-replace-menu', '[data-testid="document-wysiwyg-image-replace-menu"], .tm-wysiwyg-image-replace-menu'],
-                    ['image-toolbar', '[data-testid="document-wysiwyg-image-selection-toolbar"], .tm-wysiwyg-image-selection-toolbar'],
                     ['table-grid-picker', '[data-testid="document-table-grid-picker"]'],
                     ['color-picker', '.tm-color-picker-dropdown'],
                     ['image-insert-menu', '.tm-document-image-insert-menu'],
@@ -10545,6 +13824,114 @@ public class DocumentEditorE2ETests : WasmTestBase
                         visualIssues.push(`${item.Name} is visually occluded by ${center.className || center.tagName}`);
                     }
                 }
+
+                const visibleImages = Array.from(host?.querySelectorAll('figure.tm-wysiwyg-image') || []).filter(isVisible);
+                const sidecarBlocks = Array.from(host?.querySelectorAll('[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text') || [])
+                    .filter(isVisible);
+                const imageLayouts = visibleImages.map(figure => {
+                    const imageId = figure.getAttribute('data-block-id') || '';
+                    const img = figure.querySelector('img');
+                    const caption = figure.querySelector('figcaption');
+                    const visualRect = rectOf(img || figure);
+                    const figureRect = rectOf(figure);
+                    const marginLeft = Number.parseFloat(figure.style.marginLeft || '0') || 0;
+                    const marginRight = Number.parseFloat(figure.style.marginRight || '0') || 0;
+                    const marginTop = Number.parseFloat(figure.style.marginTop || '0') || 0;
+                    const marginBottom = Number.parseFloat(figure.style.marginBottom || '0') || 0;
+                    return {
+                        ImageId: imageId,
+                        ClassName: figure.className || '',
+                        AltText: img?.getAttribute('alt') || '',
+                        CaptionText: caption?.textContent?.trim() || '',
+                        DataFloatingInline: figure.getAttribute('data-floating-inline') || '',
+                        DataWrapMode: figure.getAttribute('data-wrap-mode') || '',
+                        DataHorizontalPosition: figure.getAttribute('data-horizontal-position') || '',
+                        DataImageX: figure.getAttribute('data-image-x') || '',
+                        DataImageY: figure.getAttribute('data-image-y') || '',
+                        DataAnchorBlockId: figure.getAttribute('data-anchor-block-id') || figure.getAttribute('data-block-id') || '',
+                        DataZIndex: figure.style.zIndex || getComputedStyle(figure).zIndex || '',
+                        FigureRect: figureRect,
+                        VisualRect: visualRect,
+                        SelectionRect: figureRect,
+                        WrapRect: {
+                            X: visualRect.X - marginLeft,
+                            Y: visualRect.Y - marginTop,
+                            Width: visualRect.Width + marginLeft + marginRight,
+                            Height: visualRect.Height + marginTop + marginBottom,
+                            Right: visualRect.Right + marginRight,
+                            Bottom: visualRect.Bottom + marginBottom
+                        },
+                        SidecarCount: sidecarBlocks.filter(block => block.getAttribute('data-wrap-sidecar-for') === imageId).length,
+                        Selected: figure.classList.contains('tm-wysiwyg-image--selected') || figure.getAttribute('aria-selected') === 'true'
+                    };
+                });
+                const imageTextIntersections = [];
+                const textLineBoxes = [];
+                for (const image of imageLayouts) {
+                    const wrap = image.WrapRect;
+                    const blocks = Array.from(host?.querySelectorAll('.tm-wysiwyg-page__body .tm-wysiwyg-block[data-block-id]') || []).filter(isVisible);
+                    for (const block of blocks) {
+                        if (block.getAttribute('data-block-id') === image.ImageId) continue;
+                        const walker = document.createTreeWalker(block, NodeFilter.SHOW_TEXT);
+                        let node;
+                        while ((node = walker.nextNode())) {
+                            const text = node.textContent || '';
+                            if (!text.trim()) continue;
+                            const range = document.createRange();
+                            range.selectNodeContents(node);
+                            for (const rect of Array.from(range.getClientRects())) {
+                                if (rect.width <= 0 || rect.height <= 0) continue;
+                                textLineBoxes.push({
+                                    BlockId: block.getAttribute('data-block-id') || '',
+                                    Text: text.trim().slice(0, 160),
+                                    Rect: {
+                                        X: rect.left,
+                                        Y: rect.top,
+                                        Width: rect.width,
+                                        Height: rect.height,
+                                        Right: rect.right,
+                                        Bottom: rect.bottom
+                                    }
+                                });
+                                const intersects = rect.left < wrap.Right
+                                    && rect.right > wrap.X
+                                    && rect.top < wrap.Bottom
+                                    && rect.bottom > wrap.Y;
+                                if (intersects) {
+                                    imageTextIntersections.push({
+                                        ImageId: image.ImageId,
+                                        BlockId: block.getAttribute('data-block-id') || '',
+                                        Text: text.trim().slice(0, 160),
+                                        TextRect: {
+                                            X: rect.left,
+                                            Y: rect.top,
+                                            Width: rect.width,
+                                            Height: rect.height,
+                                            Right: rect.right,
+                                            Bottom: rect.bottom
+                                        },
+                                        WrapRect: wrap
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+                const imageLayoutSnapshot = {
+                    ImageCount: imageLayouts.length,
+                    Images: imageLayouts,
+                    SidecarCount: sidecarBlocks.length,
+                    Sidecars: sidecarBlocks.map(block => ({
+                        ImageId: block.getAttribute('data-wrap-sidecar-for') || '',
+                        BlockId: block.getAttribute('data-block-id') || '',
+                        ClassName: block.className || '',
+                        Text: (block.textContent || '').trim().slice(0, 240),
+                        Rect: rectOf(block)
+                    })),
+                    TextLines: textLineBoxes,
+                    TextIntersectionCount: imageTextIntersections.length,
+                    TextIntersections: imageTextIntersections
+                };
 
                 return JSON.stringify({
                     ViewportWidth: window.innerWidth,
@@ -10612,6 +13999,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                         PageRect: rectOf(host?.querySelector('.tm-wysiwyg-page')),
                         SidePanelRect: rectOf(sidePanel)
                     },
+                    ImageLayout: imageLayoutSnapshot,
                     RuntimeDebugJson: JSON.stringify(runtimeDebug, null, 2),
                     TargetDomExcerpt: activeBlock ? activeBlock.outerHTML.slice(0, 4000) : '',
                     LayoutIssues: visualIssues
@@ -10992,7 +14380,11 @@ public class DocumentEditorE2ETests : WasmTestBase
                     FigureAriaSelected: figure?.getAttribute('aria-selected') || '',
                     RuntimeRegion: runtimeSelection.Region || runtimeSelection.region || '',
                     ActiveImageBlockId: runtimeSelection.ActiveImageBlockId || runtimeSelection.activeImageBlockId || '',
-                    ToolbarVisible: !!document.querySelector('[data-testid="document-wysiwyg-image-selection-toolbar"]')
+                    ToolbarVisible: (() => {
+                        const bubble = figure?.querySelector('[data-testid="document-wysiwyg-object-layout-bubble"], .tm-wysiwyg-layout-bubble');
+                        const style = bubble ? getComputedStyle(bubble) : null;
+                        return !!(bubble && style.opacity !== '0' && style.pointerEvents !== 'none');
+                    })()
                 };
             }
             """,
@@ -11849,6 +15241,7 @@ public class DocumentEditorE2ETests : WasmTestBase
             await WriteJsonArtifactAsync($"{name}_toolbar_{timestamp}.json", strictProbe.Toolbar);
             await WriteJsonArtifactAsync($"{name}_floating_ui_{timestamp}.json", strictProbe.FloatingUi);
             await WriteJsonArtifactAsync($"{name}_visual_{timestamp}.json", strictProbe.Visual);
+            await WriteJsonArtifactAsync($"{name}_image_layout_{timestamp}.json", strictProbe.ImageLayout);
 
             var domPath = Path.Combine(TestContext.TestResultsDirectory ?? ".", $"{name}_target_dom_{timestamp}.html");
             await File.WriteAllTextAsync(domPath, strictProbe.TargetDomExcerpt);
@@ -12754,6 +16147,15 @@ public class DocumentEditorE2ETests : WasmTestBase
         public string ActiveTextAlign { get; set; } = string.Empty;
     }
 
+    private sealed class ClipboardPayloadProbe
+    {
+        public string Plain { get; set; } = string.Empty;
+
+        public string Html { get; set; } = string.Empty;
+
+        public string InternalJson { get; set; } = string.Empty;
+    }
+
     private sealed class PasteUnsafeDomProbe
     {
         public int Scripts { get; set; }
@@ -12804,6 +16206,8 @@ public class DocumentEditorE2ETests : WasmTestBase
         public StrictSidePanelProbe SidePanel { get; set; } = new();
 
         public StrictVisualProbe Visual { get; set; } = new();
+
+        public StrictImageLayoutSnapshotProbe ImageLayout { get; set; } = new();
 
         public string RuntimeDebugJson { get; set; } = string.Empty;
 
@@ -12927,6 +16331,99 @@ public class DocumentEditorE2ETests : WasmTestBase
         public RectProbe SidePanelRect { get; set; } = new();
     }
 
+    private sealed class StrictImageLayoutSnapshotProbe
+    {
+        public int ImageCount { get; set; }
+
+        public StrictImageObjectProbe[] Images { get; set; } = [];
+
+        public int SidecarCount { get; set; }
+
+        public StrictImageSidecarProbe[] Sidecars { get; set; } = [];
+
+        public StrictImageTextLineProbe[] TextLines { get; set; } = [];
+
+        public int TextIntersectionCount { get; set; }
+
+        public StrictImageTextIntersectionProbe[] TextIntersections { get; set; } = [];
+    }
+
+    private sealed class StrictImageObjectProbe
+    {
+        public string ImageId { get; set; } = string.Empty;
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public string AltText { get; set; } = string.Empty;
+
+        public string CaptionText { get; set; } = string.Empty;
+
+        public string DataFloatingInline { get; set; } = string.Empty;
+
+        public string DataWrapMode { get; set; } = string.Empty;
+
+        public string DataHorizontalPosition { get; set; } = string.Empty;
+
+        public string DataImageX { get; set; } = string.Empty;
+
+        public string DataImageY { get; set; } = string.Empty;
+
+        public string DataAnchorBlockId { get; set; } = string.Empty;
+
+        public string DataZIndex { get; set; } = string.Empty;
+
+        public RectProbe FigureRect { get; set; } = new();
+
+        public RectProbe VisualRect { get; set; } = new();
+
+        public RectProbe SelectionRect { get; set; } = new();
+
+        public RectProbe WrapRect { get; set; } = new();
+
+        public int SidecarCount { get; set; }
+
+        public bool Selected { get; set; }
+    }
+
+    private sealed class StrictImageSidecarProbe
+    {
+        public string ImageId { get; set; } = string.Empty;
+
+        public string BlockId { get; set; } = string.Empty;
+
+        public string ClassName { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public RectProbe Rect { get; set; } = new();
+
+        public RectProbe LayoutRect { get; set; } = new();
+    }
+
+    private sealed class StrictImageTextLineProbe
+    {
+        public string BlockId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public RectProbe Rect { get; set; } = new();
+
+        public RectProbe LayoutRect { get; set; } = new();
+    }
+
+    private sealed class StrictImageTextIntersectionProbe
+    {
+        public string ImageId { get; set; } = string.Empty;
+
+        public string BlockId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public RectProbe TextRect { get; set; } = new();
+
+        public RectProbe WrapRect { get; set; } = new();
+    }
+
     private sealed class MiniToolbarGeometryProbe
     {
         public RectProbe Toolbar { get; set; } = new();
@@ -13011,11 +16508,80 @@ public class DocumentEditorE2ETests : WasmTestBase
         public double Y { get; set; }
     }
 
+    private sealed class WrapContourPointProbe
+    {
+        public double X { get; set; }
+
+        public double Y { get; set; }
+    }
+
     private sealed class RenderedImageSize
     {
         public double Width { get; set; }
 
         public double Height { get; set; }
+    }
+
+    private sealed class Phase0ImageWrapProbe
+    {
+        public string ImageId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public string FullBodyText { get; set; } = string.Empty;
+
+        public string TextBlockId { get; set; } = string.Empty;
+
+        public string TextBlockClassName { get; set; } = string.Empty;
+
+        public Phase0WrappedTextLineProbe[] Lines { get; set; } = [];
+
+        public bool SelectionInsideTargetText { get; set; }
+
+        public int SelectionOffset { get; set; }
+
+        public int SelectionLineIndex { get; set; }
+
+        public string ActiveImageBlockId { get; set; } = string.Empty;
+
+        public string SelectedImageId { get; set; } = string.Empty;
+
+        public bool ImageToolbarVisible { get; set; }
+
+        public int SidecarCount { get; set; }
+
+        public string SidecarText { get; set; } = string.Empty;
+
+        public RectProbe ImageVisualRect { get; set; } = new();
+
+        public RectProbe ImageFigureRect { get; set; } = new();
+
+        public RectProbe ImageWrapRect { get; set; } = new();
+
+        public RectProbe ImageLayoutRect { get; set; } = new();
+
+        public int TextIntersectionCount { get; set; }
+
+        public string[] LayoutIssues { get; set; } = [];
+    }
+
+    private sealed class Phase0WrappedTextLineProbe
+    {
+        public int Index { get; set; }
+
+        public string LineId { get; set; } = string.Empty;
+
+        public int AvailableIntervalCount { get; set; }
+
+        public int StartOffset { get; set; }
+
+        public int EndOffset { get; set; }
+
+        public string Text { get; set; } = string.Empty;
+
+        public RectProbe Rect { get; set; } = new();
+
+        public RectProbe LayoutRect { get; set; } = new();
     }
 
     private sealed class WrappedImageComputedStyle
@@ -13386,11 +16952,11 @@ public class DocumentEditorE2ETests : WasmTestBase
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(host);
         var imageId = $"e2e-wrap-left-from-top-bottom-{Guid.NewGuid():N}";
-        var sideText = $"Left position side text {Guid.NewGuid():N}";
+        var sideText = $"side-{Guid.NewGuid().ToString("N")[..6]}";
 
         try
         {
-            await InsertLocalImageBlockAsync(page, imageId, "Position left from top-bottom image", width: 140);
+            await PreparePhase0WrappedImageScenarioAsync(page, imageId, Phase0WrappedImageText());
             await SetImageWrapModeAsync(page, imageId, "TopBottom");
             await SetImageHorizontalPositionAsync(page, imageId, "Left");
 
@@ -13415,13 +16981,13 @@ public class DocumentEditorE2ETests : WasmTestBase
             """
             figure => {
                 const issues = [];
-                const imageId = figure.getAttribute('data-block-id') || '';
-                const sideText = document.querySelector(`[data-wrap-sidecar-for="${imageId}"]`);
+                const host = figure.closest('[data-testid="document-wysiwyg-host"]') || document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const legacySidecars = Array.from(host?.querySelectorAll('[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text') || []);
                 const selection = window.getSelection();
                 const active = document.activeElement;
 
-                if (!figure.classList.contains('tm-wysiwyg-image--selected')) {
-                    issues.push('image is not selected after image layout command');
+                if (legacySidecars.length > 0) {
+                    issues.push(`legacy sidecar blocks exist after image layout command: ${legacySidecars.length}`);
                 }
 
                 if (selection && selection.rangeCount > 0 && !selection.isCollapsed) {
@@ -13432,13 +16998,13 @@ public class DocumentEditorE2ETests : WasmTestBase
                     const anchor = selection.anchorNode.nodeType === Node.ELEMENT_NODE
                         ? selection.anchorNode
                         : selection.anchorNode.parentElement;
-                    if (sideText && anchor && sideText.contains(anchor)) {
-                        issues.push('text caret moved into wrapped image side text after image layout command');
+                    if (legacySidecars.some(item => anchor && item.contains(anchor))) {
+                        issues.push('text caret moved into a legacy sidecar block after image layout command');
                     }
                 }
 
-                if (sideText && (sideText === active || sideText.contains(active))) {
-                    issues.push('wrapped image side text is focused after image layout command');
+                if (legacySidecars.some(item => item === active || item.contains(active))) {
+                    issues.push('legacy sidecar block is focused after image layout command');
                 }
 
                 return issues;
@@ -13510,7 +17076,6 @@ public class DocumentEditorE2ETests : WasmTestBase
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(host);
         var imageId = $"e2e-wrap-before-heading-{Guid.NewGuid():N}";
-        var sideText = $"Side text before heading {Guid.NewGuid():N}";
 
         try
         {
@@ -13518,14 +17083,14 @@ public class DocumentEditorE2ETests : WasmTestBase
             await SetImageWrapModeAsync(page, imageId, "Square");
 
             var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
-            await Assertions.Expect(host.Locator($"h1[data-wrap-sidecar-for='{imageId}']")).ToHaveCountAsync(0);
-            await Assertions.Expect(host.Locator($"p.tm-wysiwyg-image-sidecar-text[data-wrap-sidecar-for='{imageId}']")).ToHaveCountAsync(1);
+            await Assertions.Expect(host.Locator("[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text")).ToHaveCountAsync(0);
 
-            await TypeTextBesideWrappedImageAsync(page, figure, sideText, rightOfLeftImage: true);
+            var sideLine = await CaptureWrappedImageLineBesideImageAsync(figure, rightOfLeftImage: true);
+            sideLine.LineId.Should().BeEmpty("an image placed before the heading must not fake side text by using the heading as a wrapped layout line");
 
             var headingText = await host.Locator("h1.tm-wysiwyg-block").First.InnerTextAsync();
-            headingText.Should().Be("Service agreement", "typing beside an image placed before the heading must not mutate the document title");
-            await AssertWrappedImageSideTextAsync(figure, sideText, expectedSide: "right");
+            headingText.Should().Be("Service agreement", "an image placed before the heading must not mutate the document title");
+            await Assertions.Expect(host.Locator("[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text")).ToHaveCountAsync(0);
         }
         catch
         {
@@ -13541,7 +17106,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         await ReloadDocumentEditorPageAsync(page);
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(host);
-        var sideText = $"Demo side text {Guid.NewGuid():N}";
+        var sideText = $"side-{Guid.NewGuid().ToString("N")[..6]}";
 
         try
         {
@@ -13577,7 +17142,7 @@ public class DocumentEditorE2ETests : WasmTestBase
         await ReloadDocumentEditorPageAsync(page);
         var host = page.Locator("[data-testid='document-wysiwyg-host']");
         await WaitForWysiwygBodyAsync(host);
-        var sideText = $"Demo position left side text {Guid.NewGuid():N}";
+        var sideText = $"side-{Guid.NewGuid().ToString("N")[..6]}";
 
         try
         {
@@ -13596,7 +17161,7 @@ public class DocumentEditorE2ETests : WasmTestBase
 
             await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--wrap-square"), new() { Timeout = 5000 });
             await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--position-left"), new() { Timeout = 5000 });
-            await Assertions.Expect(host.Locator($"p.tm-wysiwyg-image-sidecar-text[data-wrap-sidecar-for='{imageId}']")).ToHaveCountAsync(1, new() { Timeout = 5000 });
+            await Assertions.Expect(host.Locator("[data-wrap-sidecar-for], .tm-wysiwyg-image-sidecar-text")).ToHaveCountAsync(0);
 
             await TypeTextBesideWrappedImageAsync(page, figure, sideText, rightOfLeftImage: true);
             await AssertWrappedImageSideTextAsync(figure, sideText, expectedSide: "right");
@@ -14356,12 +17921,13 @@ public class DocumentEditorE2ETests : WasmTestBase
             var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
             await figure.ClickAsync();
 
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-toolbar-alt']")).ToBeVisibleAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-toolbar-caption']")).ToBeVisibleAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-toolbar-replace']")).ToBeVisibleAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-toolbar-delete']")).ToBeVisibleAsync();
-            await AssertFloatingUiReadableAndInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-selection-toolbar']", "image selection toolbar");
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-inline']")).ToBeVisibleAsync();
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-wrap']")).ToBeVisibleAsync();
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-tight']")).ToBeVisibleAsync();
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-layout-bubble-more']")).ToBeVisibleAsync();
+            await AssertFloatingUiReadableAndInsideViewportAsync(page, $"figure.tm-wysiwyg-image[data-block-id='{imageId}'] [data-testid='document-wysiwyg-object-layout-bubble']", "image layout bubble");
             await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 3000 });
             await Assertions.Expect(figure).ToHaveAttributeAsync("aria-selected", "true");
             var probe = await CaptureImageSelectionProbeAsync(page, imageId);
@@ -14392,7 +17958,8 @@ public class DocumentEditorE2ETests : WasmTestBase
 
             await Assertions.Expect(figure.Locator("figcaption")).ToHaveCountAsync(0);
 
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-caption']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-caption-toggle']").ClickAsync();
             await Assertions.Expect(figure.Locator("figcaption")).ToHaveCountAsync(1);
             await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-image-caption-text']")).ToContainTextAsync("Caption", new() { Timeout = 5000 });
             await SetImageCaptionAsync(page, imageId, "Phase 19 caption added");
@@ -14425,11 +17992,13 @@ public class DocumentEditorE2ETests : WasmTestBase
             var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
             await figure.ClickAsync();
 
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-caption']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-caption-toggle']").ClickAsync();
             await Assertions.Expect(figure.Locator("figcaption")).ToHaveCountAsync(1);
 
             await figure.ClickAsync();
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-caption']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector-caption-toggle']")).ToBeCheckedAsync(new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-image-inspector-caption-toggle']").ClickAsync();
             await Assertions.Expect(figure.Locator("figcaption")).ToHaveCountAsync(0);
             await SaveDocumentAsync(page);
             var saved = await LoadDemoDocumentFromPageAsync(page);
@@ -14532,10 +18101,20 @@ public class DocumentEditorE2ETests : WasmTestBase
             await InsertLocalImageBlockAsync(page, imageId, "Toolbar hide image", width: 140);
             var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']").First;
             await figure.ClickAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 3000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
 
             await page.Mouse.ClickAsync(720, 650);
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0, new() { Timeout = 3000 });
+            await page.WaitForFunctionAsync(
+                """
+                () => Array.from(document.querySelectorAll('[data-testid="document-wysiwyg-object-layout-bubble"]'))
+                    .every(bubble => {
+                        const style = getComputedStyle(bubble);
+                        return style.opacity === '0' || style.pointerEvents === 'none';
+                    })
+                """,
+                null,
+                new() { Timeout = 3000 });
         }
         catch
         {
@@ -14574,6 +18153,225 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_Phase10_ImageAnchorMoveFixedLockGlyphAndPersist()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"phase10-image-anchor-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var imageId = $"phase10-anchor-image-{Guid.NewGuid():N}";
+        var anchorId = $"{imageId}-anchor";
+        var introId = $"{imageId}-intro";
+        var otherId = $"{imageId}-other";
+
+        try
+        {
+            await PreparePhase10AnchorScenarioAsync(page, imageId, introId, anchorId, otherId);
+            var figure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(figure).ToBeVisibleAsync(new() { Timeout = 5000 });
+
+            var beforeMove = await CaptureVisibleImageRectAsync(page, imageId);
+            await InsertTextAtEndOfBlockAsync(page, introId, " phase-ten-anchor-move ".PadRight(260, 'm'));
+            await page.WaitForFunctionAsync(
+                """
+                ({ imageId, beforeY }) => {
+                    const figure = Array.from(document.querySelectorAll(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(imageId)}"]`))
+                        .find(el => {
+                            const rect = el.getBoundingClientRect();
+                            return rect.width > 0 && rect.height > 0 && !el.closest('.tm-wysiwyg-page--virtual');
+                        });
+                    const rect = figure?.getBoundingClientRect();
+                    return rect && rect.y > beforeY + 8;
+                }
+                """,
+                new { imageId, beforeY = beforeMove.Y },
+                new() { Timeout = 5000 });
+
+            await figure.ClickAsync();
+            var glyph = host.Locator($"[data-testid='document-wysiwyg-paragraph-anchor-glyph'][data-anchor-object-block-id='{imageId}']").First;
+            await Assertions.Expect(glyph).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(glyph).ToHaveAttributeAsync("data-anchor-block-id", anchorId);
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector-anchor-paragraph']")).ToContainTextAsync(anchorId);
+
+            await ExecuteWysiwygCommandAsync(page, "setImageAnchorMode", new { blockId = imageId, fixedOnPage = true, moveWithText = false });
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-fixed-on-page", "true", new() { Timeout = 5000 });
+            var fixedBefore = await CaptureVisibleImageRectAsync(page, imageId);
+            await InsertTextAtEndOfBlockAsync(page, introId, " phase-ten-fixed-check ".PadRight(260, 'f'));
+            await Task.Delay(350);
+            var fixedAfter = await CaptureVisibleImageRectAsync(page, imageId);
+            Math.Abs(fixedAfter.Y - fixedBefore.Y).Should().BeLessThan(4, "FixedOnPage must keep the same page coordinate when text above the anchor grows");
+
+            await figure.ClickAsync();
+            var lockAnchor = page.Locator("[data-testid='document-image-inspector-lock-anchor']");
+            await Assertions.Expect(lockAnchor).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await lockAnchor.CheckAsync();
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-lock-anchor", "true", new() { Timeout = 5000 });
+            var anchorBeforeDrag = await figure.GetAttributeAsync("data-anchor-block-id");
+            anchorBeforeDrag.Should().NotBeNull();
+            await DragFloatingImageAsync(page, figure, deltaX: 140, deltaY: 170);
+            await Assertions.Expect(figure).ToHaveAttributeAsync("data-anchor-block-id", anchorBeforeDrag!);
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            var image = GetImageContent(saved, imageId);
+            image.Layout.Anchor.BlockId.Should().Be(anchorId);
+            image.Layout.Anchor.LockAnchor.Should().BeTrue();
+            image.Layout.Anchor.FixedOnPage.Should().BeTrue();
+            image.Layout.Anchor.MoveWithText.Should().BeFalse();
+            saved.Anchors.Should().Contain(anchor =>
+                anchor.Type == DocumentAnchorType.FloatingObject
+                && anchor.BlockId == anchorId
+                && anchor.ObjectBlockId == imageId
+                && anchor.Layout != null
+                && anchor.Layout.Anchor.LockAnchor);
+
+            await ReloadDocumentEditorPageAsync(page);
+            var reloadedFigure = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{imageId}']:visible").First;
+            await Assertions.Expect(reloadedFigure).ToHaveAttributeAsync("data-anchor-block-id", anchorId, new() { Timeout = 5000 });
+            await Assertions.Expect(reloadedFigure).ToHaveAttributeAsync("data-fixed-on-page", "true");
+            await Assertions.Expect(reloadedFigure).ToHaveAttributeAsync("data-lock-anchor", "true");
+            await reloadedFigure.ClickAsync();
+            await Assertions.Expect(host.Locator($"[data-testid='document-wysiwyg-paragraph-anchor-glyph'][data-anchor-object-block-id='{imageId}']"))
+                .ToBeVisibleAsync(new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Phase10_ImageAnchorMoveFixedLockGlyphAndPersist),
+                "Create an anchored image, grow text above it, switch to fixed page position, lock the anchor, drag, save and reload.",
+                "MoveWithText must follow the anchor, FixedOnPage must not move, LockAnchor must preserve the anchor, and the paragraph glyph plus inspector must reflect the relationship.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Phase11_ImageLayeringSelectionPaneZOrderAndPersist()
+    {
+        var page = await OpenIsolatedDocumentEditorPageAsync($"phase11-layering-{Guid.NewGuid():N}", width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        var textId = $"phase11-text-{Guid.NewGuid():N}";
+        var behindId = $"{textId}-behind";
+        var frontLowId = $"{textId}-front-low";
+        var frontHighId = $"{textId}-front-high";
+
+        try
+        {
+            await PreparePhase11LayeringScenarioAsync(page, textId, behindId, frontLowId, frontHighId);
+            var behind = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{behindId}']:visible").First;
+            var frontLow = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{frontLowId}']:visible").First;
+            var frontHigh = host.Locator($"figure.tm-wysiwyg-image[data-block-id='{frontHighId}']:visible").First;
+            await Assertions.Expect(behind).ToHaveAttributeAsync("data-wrap-mode", "5", new() { Timeout = 5000 });
+            await Assertions.Expect(frontHigh).ToHaveAttributeAsync("data-wrap-mode", "6", new() { Timeout = 5000 });
+
+            var behindTextPoint = await CapturePhase11BehindTextCaretPointAsync(page, behindId, textId);
+            var behindHitJson = await page.EvaluateAsync<string>(
+                """
+                ({ x, y }) => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const service = new window.tmDocumentEditorWysiwyg.DocumentHitTestService(host);
+                    return JSON.stringify(service.hitTest(x, y));
+                }
+                """,
+                new { x = behindTextPoint.X, y = behindTextPoint.Y });
+            behindHitJson.Should().Contain("\"Kind\":\"TextCaret\"", "the visible click point should resolve to a body text caret, not the behind-text object. Hit: {0}", behindHitJson);
+            behindHitJson.Should().Contain(textId, "the behind-text click must target the text block over the object. Hit: {0}", behindHitJson);
+            var behindPointTargetJson = await page.EvaluateAsync<string>(
+                """
+                ({ x, y }) => {
+                    const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                    const target = document.elementFromPoint(x, y);
+                    const element = target?.nodeType === Node.ELEMENT_NODE ? target : target?.parentElement;
+                    const path = [];
+                    let current = element;
+                    while (current && path.length < 8) {
+                        path.unshift(`${current.tagName.toLowerCase()}${current.getAttribute('data-testid') ? `[data-testid="${current.getAttribute('data-testid')}"]` : ''}${current.getAttribute('data-block-id') ? `[data-block-id="${current.getAttribute('data-block-id')}"]` : ''}${current.className ? `.${String(current.className).split(/\s+/).slice(0, 2).join('.')}` : ''}`);
+                        if (current === host || current === document.body) break;
+                        current = current.parentElement;
+                    }
+                    return JSON.stringify({
+                        X: x,
+                        Y: y,
+                        HostContains: !!(host && element && host.contains(element)),
+                        Target: element?.tagName?.toLowerCase() || '',
+                        Path: path.join(' > ')
+                    });
+                }
+                """,
+                new { x = behindTextPoint.X, y = behindTextPoint.Y });
+            behindPointTargetJson.Should().Contain("\"HostContains\":true", "the human click must land inside the WYSIWYG host. Target: {0}", behindPointTargetJson);
+            await page.Mouse.ClickAsync((float)behindTextPoint.X, (float)behindTextPoint.Y);
+            await Assertions.Expect(behind).Not.ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+            var activeTextBlock = await page.EvaluateAsync<string>(
+                """
+                () => {
+                    const selection = window.getSelection();
+                    const element = selection?.anchorNode?.nodeType === Node.ELEMENT_NODE
+                        ? selection.anchorNode
+                        : selection?.anchorNode?.parentElement;
+                    return element?.closest?.('[data-block-id]')?.getAttribute('data-block-id') || '';
+                }
+                """);
+            activeTextBlock.Should().Be(textId, "a behind-text object must not steal the caret from text above it");
+
+            var behindHandle = host.Locator($"[data-testid='document-wysiwyg-behind-object-handle'][data-block-id='{behindId}']").First;
+            await Assertions.Expect(behindHandle).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await behindHandle.ClickAsync();
+            await Assertions.Expect(behind).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-image-inspector-alt']")).ToHaveValueAsync("Behind text object");
+
+            await frontHigh.ClickAsync(new() { Button = MouseButton.Right });
+            await page.Locator("[data-testid='document-wysiwyg-image-selection-pane']").ClickAsync();
+            var pane = page.Locator("[data-testid='document-wysiwyg-object-selection-pane']");
+            await Assertions.Expect(pane).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await pane.Locator($"[data-testid='document-wysiwyg-object-selection-pane-item'][data-block-id='{behindId}']").ClickAsync();
+            await Assertions.Expect(behind).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+            await page.Locator("[data-testid='document-wysiwyg-object-selection-pane-close']").ClickAsync();
+            await Assertions.Expect(pane).ToHaveCountAsync(0, new() { Timeout = 5000 });
+
+            var frontPoint = await CapturePhase11ImageCenterAsync(page, frontHighId);
+            await page.Mouse.ClickAsync((float)frontPoint.X, (float)frontPoint.Y);
+            await Assertions.Expect(frontHigh).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+
+            await ExecuteWysiwygCommandAsync(page, "bringImageToFront", new { blockId = frontLowId });
+            await page.WaitForFunctionAsync(
+                """
+                ({ lowId, highId }) => {
+                    const z = id => {
+                        const figure = document.querySelector(`figure.tm-wysiwyg-image[data-block-id="${CSS.escape(id)}"]`);
+                        return Number.parseInt(figure?.style.zIndex || figure?.getAttribute('data-object-z-index') || '0', 10) || 0;
+                    };
+                    return z(lowId) > z(highId);
+                }
+                """,
+                new { lowId = frontLowId, highId = frontHighId },
+                new() { Timeout = 5000 });
+            frontPoint = await CapturePhase11ImageCenterAsync(page, frontLowId);
+            await page.Mouse.ClickAsync((float)frontPoint.X, (float)frontPoint.Y);
+            await Assertions.Expect(frontLow).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+
+            await SaveDocumentAsync(page);
+            var saved = await LoadDemoDocumentFromPageAsync(page);
+            GetImageContent(saved, frontLowId).Layout.Stacking.ZIndex
+                .Should().BeGreaterThan(GetImageContent(saved, frontHighId).Layout.Stacking.ZIndex);
+
+            await ReloadDocumentEditorPageAsync(page);
+            frontPoint = await CapturePhase11ImageCenterAsync(page, frontLowId);
+            await page.Mouse.ClickAsync((float)frontPoint.X, (float)frontPoint.Y);
+            await Assertions.Expect(host.Locator($"figure.tm-wysiwyg-image[data-block-id='{frontLowId}']:visible").First)
+                .ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"), new() { Timeout = 5000 });
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Phase11_ImageLayeringSelectionPaneZOrderAndPersist),
+                "Create behind-text and in-front images, verify caret pass-through, select behind object through handle and selection pane, change z-order, save and reload.",
+                "Behind text must not block text caret; in-front objects must win visual clicks; z-order changes must decide hit testing and persist.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_ImageInspectorStaysInsideEditorViewportAwayFromSidePanel()
     {
         var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
@@ -14596,7 +18394,7 @@ public class DocumentEditorE2ETests : WasmTestBase
                     const editor = document.querySelector('[data-testid="document-editor-demo"]');
                     const panel = document.querySelector('[data-testid="document-side-panel"]');
                     const inspector = document.querySelector('[data-testid="document-image-inspector"]');
-                    const toolbar = document.querySelector('[data-testid="document-wysiwyg-image-selection-toolbar"]');
+                    const toolbar = document.querySelector('[data-testid="document-wysiwyg-object-layout-bubble"]');
                     if (!editor || !inspector) return ['missing editor or image inspector'];
 
                     const editorRect = editor.getBoundingClientRect();
@@ -14656,10 +18454,12 @@ public class DocumentEditorE2ETests : WasmTestBase
             var figure = host.Locator("figure.tm-wysiwyg-image").First;
             await Assertions.Expect(figure).ToBeVisibleAsync();
             await figure.ClickAsync();
-            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']"))
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']"))
                 .ToBeVisibleAsync(new() { Timeout = 5000 });
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
 
-            await page.Locator("[data-testid='document-wysiwyg-image-toolbar-replace']").ClickAsync();
+            await figure.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await page.Locator("[data-testid='document-wysiwyg-image-replace']").ClickAsync();
 
             await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-replace-menu']"))
                 .ToBeVisibleAsync(new() { Timeout = 5000 });

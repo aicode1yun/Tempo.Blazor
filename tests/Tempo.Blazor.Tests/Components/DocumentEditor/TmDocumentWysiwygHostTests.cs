@@ -2843,8 +2843,8 @@ public class TmDocumentWysiwygHostTests : LocalizationTestBase
         repoRoot.Should().NotBeNull("Could not find repository root (.git directory).");
         var cssPath = Path.Combine(repoRoot!.FullName, "src", "Tempo.Blazor", "wwwroot", "css", "components", "_document-editor.css");
         var css = File.ReadAllText(cssPath);
-        css.Should().Contain(".tm-wysiwyg-image--wrap-square");
-        css.Should().Contain("shape-outside");
+        css.Should().NotContain(".tm-wysiwyg-image-sidecar-text");
+        css.Should().NotContain("data-wrap-sidecar-for");
         css.Should().Contain(".tm-wysiwyg-image--wrap-top-bottom");
         css.Should().Contain(".tm-wysiwyg-image--wrap-behind-text");
         css.Should().Contain(".tm-wysiwyg-image--wrap-in-front-of-text");

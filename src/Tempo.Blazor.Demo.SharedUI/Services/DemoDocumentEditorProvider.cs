@@ -32,10 +32,10 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Url = ContractUrlImageUrl,
                 AltText = "URL evidence preview",
                 Caption = "Image loaded from /favicon.png",
-                Size = new DocumentImageSize { Width = 220, Height = 124 },
-                NaturalSize = new DocumentImageSize { Width = 220, Height = 124 },
+                Size = new DocumentImageSize { Width = 160, Height = 90 },
+                NaturalSize = new DocumentImageSize { Width = 160, Height = 90 },
                 Alignment = DocumentImageAlignment.Start,
-                Layout = CreateLeftWrappedImageLayout(220, 124)
+                Layout = CreateLeftWrappedImageLayout(160, 90)
             }
         });
 
@@ -47,9 +47,9 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Order = 32,
             ParagraphProperties = new DocumentParagraphProperties
             {
-                Alignment = DocumentTextAlignment.Justify,
+                Alignment = DocumentTextAlignment.Left,
                 LineSpacing = 1.25,
-                SpacingAfter = 12
+                SpacingAfter = 24
             },
             Content = new ParagraphBlockContent
             {
@@ -58,7 +58,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                     new TextRun
                     {
                         Id = "contract-image-wrap-demo-run",
-                        Text = "This longer clause demonstrates live text wrapping around the evidence preview. Click any visual line beside the image, continue typing, resize or move the object, and the paragraph should reflow as one normal editable paragraph."
+                        Text = "This longer clause demonstrates live text wrapping around the evidence preview. Click any visual line beside the image, continue typing, resize or move the object, and the paragraph should reflow as one normal editable paragraph. The sample intentionally keeps only one wrapped object in this paragraph so the demo opens in a readable state."
                     }
                 ]
             }
@@ -69,7 +69,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Id = "contract-missing-alt-image",
             SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
-            Order = 34,
+            Order = 38,
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
@@ -78,8 +78,8 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Caption = "Accessibility warning sample: missing alt text",
                 Size = new DocumentImageSize { Width = 180, Height = 102 },
                 NaturalSize = new DocumentImageSize { Width = 180, Height = 102 },
-                Alignment = DocumentImageAlignment.End,
-                Layout = CreateRightWrappedImageLayout(180, 102)
+                Alignment = DocumentImageAlignment.Center,
+                Layout = DocumentObjectLayout.Inline()
             }
         });
 
@@ -88,7 +88,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
             Id = "contract-provider-asset-image",
             SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
-            Order = 40,
+            Order = 50,
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Asset,
@@ -98,7 +98,7 @@ public class DemoDocumentEditorProvider : InMemoryDocumentEditorProvider
                 Size = new DocumentImageSize { Width = 240, Height = 135 },
                 NaturalSize = new DocumentImageSize { Width = 240, Height = 135 },
                 Alignment = DocumentImageAlignment.Center,
-                Layout = CreateTopBottomImageLayout(240, 135)
+                Layout = DocumentObjectLayout.Inline()
             }
         });
 

@@ -47,15 +47,29 @@ public class WysiwygPatchApplierTests
                 Url = "https://example.test/image.png",
                 AltText = "Example image",
                 Size = new DocumentImageSize { Width = 160, Height = 90 },
-                FloatingLayout = new DocumentFloatingLayout
+                Layout = new DocumentObjectLayout
                 {
-                    Inline = false,
-                    WrapMode = wrapMode,
-                    HorizontalRelativeTo = DocumentRelativePosition.Page,
-                    VerticalRelativeTo = DocumentRelativePosition.Paragraph,
-                    X = 24,
-                    Y = 32,
-                    ZIndex = 3
+                    Kind = DocumentObjectLayoutKind.Anchored,
+                    Position = new DocumentObjectPosition
+                    {
+                        HorizontalRelativeTo = DocumentRelativePosition.Page,
+                        VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                        X = 24,
+                        Y = 32
+                    },
+                    Wrap = new DocumentObjectWrap
+                    {
+                        Mode = wrapMode
+                    },
+                    Transform = new DocumentObjectTransform
+                    {
+                        Width = 160,
+                        Height = 90
+                    },
+                    Stacking = new DocumentObjectStacking
+                    {
+                        ZIndex = 3
+                    }
                 }
             }
         };
@@ -495,6 +509,54 @@ public class WysiwygPatchApplierTests
         GetInlineText(document, "b1").Should().Be("ello");
     }
 
+    [Fact]
+    public void DeleteContentForward_AtEndParagraph_MergesWithNextParagraph()
+    {
+        var document = CreateDocument(
+            Paragraph("b1", "Hello "),
+            Paragraph("b2", "world"));
+        var patch = new WysiwygPatch
+        {
+            Type = "DeleteContentForward",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 6
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().ContainSingle();
+        GetInlineText(document, "b1").Should().Be("Hello world");
+    }
+
+    [Fact]
+    public void DeleteContentForward_AtEndBeforeAnchoredImage_DoesNotDeleteImage()
+    {
+        var document = CreateDocument(
+            Paragraph("b1", "Hello"),
+            FloatingImageBlock("img-1", DocumentWrapMode.Square));
+        var patch = new WysiwygPatch
+        {
+            Type = "DeleteContentForward",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 5
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().HaveCount(2);
+        document.Blocks[1].Id.Should().Be("img-1");
+        document.Blocks[1].Content.Should().BeOfType<ImageBlockContent>();
+        GetInlineText(document, "b1").Should().Be("Hello");
+    }
+
     // ── ToggleMark (Bold) ────────────────────────────────────────────────────
 
     [Fact]
@@ -842,8 +904,71 @@ public class WysiwygPatchApplierTests
         anchor.Type.Should().Be(DocumentAnchorType.FloatingObject);
         anchor.BlockId.Should().Be("p1");
         anchor.ObjectBlockId.Should().Be("img-1");
-        anchor.FloatingLayout.Should().NotBeNull();
-        anchor.FloatingLayout!.WrapMode.Should().Be(DocumentWrapMode.Square);
+        anchor.Layout.Should().NotBeNull();
+        anchor.Layout!.Anchor.BlockId.Should().Be("p1");
+        anchor.Layout!.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
+    }
+
+    [Fact]
+    public void InsertBlock_FloatingImage_StoresExplicitObjectAnchorMetadata()
+    {
+        var document = CreateDocument(Paragraph("p1", "Anchor paragraph"));
+        var patch = new WysiwygPatch
+        {
+            Type = "InsertBlock",
+            BlockType = "Image",
+            Block = FloatingImageBlock("img-1", DocumentWrapMode.Square),
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Body",
+                AnchorBlockId = "p1",
+                AnchorInlineId = "i-p1",
+                AnchorOffset = 6
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        var anchor = document.Anchors.Should().ContainSingle().Subject;
+        anchor.BlockId.Should().Be("p1");
+        anchor.InlineIndex.Should().Be(0);
+        anchor.Offset.Should().Be(6);
+        anchor.Scope.Should().Be(DocumentRenditionAnchorScope.Body);
+        anchor.Layout!.Anchor.BlockId.Should().Be("p1");
+        anchor.Layout.Anchor.InlineIndex.Should().Be(0);
+        anchor.Layout.Anchor.Offset.Should().Be(6);
+        anchor.Layout.Anchor.Region.Should().Be(DocumentRenditionAnchorScope.Body);
+        var image = document.Blocks.Select(block => block.Content).OfType<ImageBlockContent>().Single();
+        image.Layout.Anchor.BlockId.Should().Be("p1");
+        image.Layout.Anchor.Offset.Should().Be(6);
+    }
+
+    [Fact]
+    public void InsertBlock_FloatingImageInHeader_StoresHeaderAnchorRegion()
+    {
+        var document = CreateDocument(Paragraph("body", "Body"));
+        var header = AddHeaderFooter(document, DocumentHeaderFooterType.Header, DocumentHeaderFooterScope.Primary, "header-primary", "header-block", "Header");
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "InsertBlock",
+            BlockType = "Image",
+            Block = FloatingImageBlock("img-1", DocumentWrapMode.Square),
+            Selection = new WysiwygSelectionSnapshot
+            {
+                Region = "Header",
+                HeaderFooterId = header.Id,
+                AnchorBlockId = "header-block",
+                AnchorInlineId = "i-header-block",
+                AnchorOffset = 3
+            }
+        });
+
+        var anchor = document.Anchors.Should().ContainSingle().Subject;
+        anchor.BlockId.Should().Be("header-block");
+        anchor.Scope.Should().Be(DocumentRenditionAnchorScope.Header);
+        anchor.Layout!.Anchor.Region.Should().Be(DocumentRenditionAnchorScope.Header);
+        header.Blocks.Should().Contain(block => block.Id == "img-1");
     }
 
     [Fact]
@@ -866,8 +991,8 @@ public class WysiwygPatchApplierTests
         var anchor = reloaded.Anchors.Should().ContainSingle().Subject;
         anchor.BlockId.Should().Be("p1");
         anchor.ObjectBlockId.Should().Be("img-1");
-        anchor.FloatingLayout!.Inline.Should().BeFalse();
-        anchor.FloatingLayout.WrapMode.Should().Be(DocumentWrapMode.Square);
+        anchor.Layout!.IsInline.Should().BeFalse();
+        anchor.Layout.Wrap.Mode.Should().Be(DocumentWrapMode.Square);
     }
 
     [Theory]
@@ -881,10 +1006,10 @@ public class WysiwygPatchApplierTests
         var document = CreateDocument(Paragraph("p1", "Anchor paragraph"));
         var block = FloatingImageBlock("img-1", DocumentWrapMode.Square);
         var image = (ImageBlockContent)block.Content;
-        image.FloatingLayout!.HorizontalRelativeTo = horizontalRelativeTo;
-        image.FloatingLayout.VerticalRelativeTo = verticalRelativeTo;
-        image.FloatingLayout.X = 36;
-        image.FloatingLayout.Y = 48;
+        image.Layout.Position.HorizontalRelativeTo = horizontalRelativeTo;
+        image.Layout.Position.VerticalRelativeTo = verticalRelativeTo;
+        image.Layout.Position.X = 36;
+        image.Layout.Position.Y = 48;
 
         _applier.ApplyPatch(document, new WysiwygPatch
         {
@@ -894,11 +1019,11 @@ public class WysiwygPatchApplierTests
             Selection = new WysiwygSelectionSnapshot { AnchorBlockId = "p1" }
         });
 
-        var layout = document.Anchors.Single().FloatingLayout!;
-        layout.HorizontalRelativeTo.Should().Be(horizontalRelativeTo);
-        layout.VerticalRelativeTo.Should().Be(verticalRelativeTo);
-        layout.X.Should().Be(36);
-        layout.Y.Should().Be(48);
+        var layout = document.Anchors.Single().Layout!;
+        layout.Position.HorizontalRelativeTo.Should().Be(horizontalRelativeTo);
+        layout.Position.VerticalRelativeTo.Should().Be(verticalRelativeTo);
+        layout.Position.X.Should().Be(36);
+        layout.Position.Y.Should().Be(48);
     }
 
     [Theory]
@@ -920,8 +1045,8 @@ public class WysiwygPatchApplierTests
         });
 
         var image = (ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content;
-        image.FloatingLayout!.WrapMode.Should().Be(wrapMode);
-        document.Anchors.Single().FloatingLayout!.WrapMode.Should().Be(wrapMode);
+        image.Layout.Wrap.Mode.Should().Be(wrapMode);
+        document.Anchors.Single().Layout!.Wrap.Mode.Should().Be(wrapMode);
     }
 
     [Fact]
@@ -934,10 +1059,10 @@ public class WysiwygPatchApplierTests
             Type = DocumentAnchorType.FloatingObject,
             BlockId = "p1",
             ObjectBlockId = "img-1",
-            FloatingLayout = ((ImageBlockContent)imageBlock.Content).FloatingLayout
+            Layout = ((ImageBlockContent)imageBlock.Content).Layout
         });
         var updated = FloatingImageBlock("img-1", DocumentWrapMode.Square);
-        ((ImageBlockContent)updated.Content).FloatingLayout!.LockAnchor = true;
+        ((ImageBlockContent)updated.Content).Layout.Anchor.LockAnchor = true;
 
         _applier.ApplyPatch(document, new WysiwygPatch
         {
@@ -948,7 +1073,8 @@ public class WysiwygPatchApplierTests
 
         document.Anchors.Single().BlockId.Should().Be("p1");
         document.Anchors.Single().ObjectBlockId.Should().Be("img-1");
-        document.Anchors.Single().FloatingLayout!.LockAnchor.Should().BeTrue();
+        document.Anchors.Single().Layout!.Anchor.LockAnchor.Should().BeTrue();
+        ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content).Layout.Anchor.BlockId.Should().Be("p1");
     }
 
     // ── UpdateBlock ──────────────────────────────────────────────────────────
@@ -1040,6 +1166,63 @@ public class WysiwygPatchApplierTests
 
         document.Blocks.Should().ContainSingle();
         document.Blocks[0].Id.Should().Be("b2");
+    }
+
+    [Fact]
+    public void RemoveBlock_ParagraphAnchor_ReattachesFloatingImageToNearestParagraph()
+    {
+        var imageBlock = FloatingImageBlock("img-1", DocumentWrapMode.Square);
+        var image = (ImageBlockContent)imageBlock.Content;
+        image.Layout.Anchor.BlockId = "p1";
+        var document = CreateDocument(
+            Paragraph("p1", "Anchor"),
+            Paragraph("p2", "Fallback"),
+            imageBlock);
+        document.Anchors.Add(new DocumentAnchor
+        {
+            Type = DocumentAnchorType.FloatingObject,
+            BlockId = "p1",
+            ObjectBlockId = "img-1",
+            Layout = image.Layout
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "RemoveBlock",
+            Selection = new WysiwygSelectionSnapshot { AnchorBlockId = "p1" }
+        });
+
+        document.Blocks.Select(block => block.Id).Should().ContainInOrder("p2", "img-1");
+        var anchor = document.Anchors.Should().ContainSingle().Subject;
+        anchor.BlockId.Should().Be("p2");
+        anchor.Layout!.Anchor.BlockId.Should().Be("p2");
+        ((ImageBlockContent)document.Blocks.Single(block => block.Id == "img-1").Content)
+            .Layout.Anchor.BlockId.Should().Be("p2");
+    }
+
+    [Fact]
+    public void RemoveBlock_ParagraphAnchor_RemovesFloatingImageWhenNoAnchorTargetRemains()
+    {
+        var imageBlock = FloatingImageBlock("img-1", DocumentWrapMode.Square);
+        var image = (ImageBlockContent)imageBlock.Content;
+        image.Layout.Anchor.BlockId = "p1";
+        var document = CreateDocument(Paragraph("p1", "Anchor"), imageBlock);
+        document.Anchors.Add(new DocumentAnchor
+        {
+            Type = DocumentAnchorType.FloatingObject,
+            BlockId = "p1",
+            ObjectBlockId = "img-1",
+            Layout = image.Layout
+        });
+
+        _applier.ApplyPatch(document, new WysiwygPatch
+        {
+            Type = "RemoveBlock",
+            Selection = new WysiwygSelectionSnapshot { AnchorBlockId = "p1" }
+        });
+
+        document.Blocks.Should().BeEmpty();
+        document.Anchors.Should().BeEmpty();
     }
 
     // ── InsertParagraph ──────────────────────────────────────────────────────
@@ -1150,6 +1333,31 @@ public class WysiwygPatchApplierTests
 
         document.Blocks.Should().ContainSingle();
         GetInlineText(document, "b1").Should().Be("Hello world");
+    }
+
+    [Fact]
+    public void DeleteContentBackward_AtBeginningAfterAnchoredImage_DoesNotDeleteImage()
+    {
+        var document = CreateDocument(
+            FloatingImageBlock("img-1", DocumentWrapMode.Square),
+            Paragraph("b1", "Hello"));
+        var patch = new WysiwygPatch
+        {
+            Type = "DeleteContentBackward",
+            Selection = new WysiwygSelectionSnapshot
+            {
+                AnchorBlockId = "b1",
+                AnchorInlineId = "i-b1",
+                AnchorOffset = 0
+            }
+        };
+
+        _applier.ApplyPatch(document, patch);
+
+        document.Blocks.Should().HaveCount(2);
+        document.Blocks[0].Id.Should().Be("img-1");
+        document.Blocks[0].Content.Should().BeOfType<ImageBlockContent>();
+        GetInlineText(document, "b1").Should().Be("Hello");
     }
 
     [Fact]

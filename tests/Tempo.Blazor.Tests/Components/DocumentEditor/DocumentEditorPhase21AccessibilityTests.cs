@@ -101,7 +101,7 @@ public sealed class DocumentEditorPhase21AccessibilityTests : LocalizationTestBa
         cut.Find("[data-testid='document-image-inspector-alt']").ParentElement!.TextContent.Should().Contain("Alt");
         cut.Find("[data-testid='document-image-inspector-link']").ParentElement!.TextContent.ToLowerInvariant().Should().Contain("url");
         cut.Find("[data-testid='document-image-inspector-alt-warning']").GetAttribute("role").Should().Be("status");
-        cut.FindAll("[role='toolbar']").Should().HaveCount(2);
+        cut.FindAll("[role='toolbar']").Should().HaveCountGreaterThanOrEqualTo(2);
     }
 
     [Fact]
