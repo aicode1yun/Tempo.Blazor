@@ -4774,8 +4774,8 @@ public class DocumentEditorE2ETests : WasmTestBase
                 .ToHaveCountAsync(0, new() { Timeout = 5000 });
             await Assertions.Expect(host.Locator("[data-revision-id='contract-revision-scope']").Filter(new() { HasText = approvedText }))
                 .ToHaveCountAsync(0, new() { Timeout = 5000 });
-            await Assertions.Expect(host.Locator("[data-revision-id='contract-revision-scope']").Filter(new() { HasText = seedRevisionText }))
-                .ToHaveCountAsync(1, new() { Timeout = 5000 });
+            var seedProbe = await GetRequiredRevisionVisualProbeAsync(page, "insert", seedRevisionText);
+            seedProbe.RevisionId.Should().Be("contract-revision-scope");
 
             await SaveDocumentAsync(page);
             var saved = await LoadDemoDocumentFromPageAsync(page);
@@ -4790,6 +4790,34 @@ public class DocumentEditorE2ETests : WasmTestBase
                 nameof(DocumentEditor_Strict_Phase7_TypingAfterSeedRevisionDoesNotPaintApprovedTextAsRevision),
                 "Disable track changes, place the caret at the end of the seeded demo insertion revision and type normal text.",
                 "Typing must not render the approved paragraph prefix with the revision style, must not create a duplicate runtime revision marker, and must persist the new text without a revision mark.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_Strict_Phase7_SeedRevisionKeepsLogicalVisualOrderBeforeAccept()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+
+        try
+        {
+            var probe = await CaptureSeedRevisionLayoutProbeAsync(page);
+
+            probe.RuntimeMarkerCount.Should().Be(0, "the seeded revision is already embedded in the document and must not be wrapped by a second runtime marker");
+            probe.RevisionSegmentCount.Should().BeGreaterThan(0, "the engine-rendered layout segments must carry the revision mark themselves");
+            probe.Text.Should().Contain("Priority support is included during the first thirty days.");
+            probe.PriorityBeforeSupportVisually.Should().BeTrue(
+                "'Priority' must render before 'support' before the revision is accepted, either on the previous visual line or to the left on the same line");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_Strict_Phase7_SeedRevisionKeepsLogicalVisualOrderBeforeAccept),
+                "Open the default contract demo and inspect the seeded pending insertion before accepting it.",
+                "The embedded revision must be rendered by engine layout segments, not a duplicate runtime marker, and 'Priority support' must keep logical visual order.");
             throw;
         }
     }
@@ -10001,20 +10029,98 @@ public class DocumentEditorE2ETests : WasmTestBase
                         && style.visibility !== 'hidden'
                         && style.display !== 'none';
                 };
-                const revision = Array.from(host?.querySelectorAll('[data-revision-id], .tm-wysiwyg-revision') || [])
-                    .find(node => isVisible(node) && (node.textContent || '').includes(text));
-                if (!revision) throw new Error(`Revision text '${text}' was not found.`);
+                const allVisibleRevisions = Array.from(host?.querySelectorAll('[data-revision-id], .tm-wysiwyg-revision') || [])
+                    .filter(isVisible);
+                const visibleRevisions = allVisibleRevisions
+                    .filter(node => !allVisibleRevisions.some(other => other !== node && node.contains(other)))
+                    .sort((left, right) => {
+                        const leftBlock = parseInt(left.getAttribute('data-layout-block-start-offset') || left.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                        const rightBlock = parseInt(right.getAttribute('data-layout-block-start-offset') || right.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                        if (leftBlock !== rightBlock) return leftBlock - rightBlock;
+                        return left.compareDocumentPosition(right) & Node.DOCUMENT_POSITION_PRECEDING ? 1 : -1;
+                    });
+                let revisionNodes = [];
+                let startIndex = -1;
+                const groups = new Map();
+                for (const candidate of visibleRevisions) {
+                    const revisionId = candidate.getAttribute('data-revision-id')
+                        || candidate.closest('[data-revision-id]')?.getAttribute('data-revision-id')
+                        || '';
+                    if (!revisionId) continue;
+                    if (!groups.has(revisionId)) groups.set(revisionId, []);
+                    groups.get(revisionId).push(candidate);
+                }
 
-                revision.scrollIntoView({ block: 'center', inline: 'nearest' });
-                const walker = document.createTreeWalker(revision, NodeFilter.SHOW_TEXT);
-                let node;
-                while ((node = walker.nextNode())) {
-                    const index = (node.textContent || '').indexOf(text);
-                    if (index < 0) continue;
+                for (const group of groups.values()) {
+                    const textValue = group.map(item => item.textContent || '').join('');
+                    const index = textValue.indexOf(text);
+                    if (index >= 0) {
+                        revisionNodes = group;
+                        startIndex = index;
+                        break;
+                    }
+                }
+                if (revisionNodes.length === 0 || startIndex < 0) throw new Error(`Revision text '${text}' was not found.`);
+
+                revisionNodes[0].scrollIntoView({ block: 'center', inline: 'nearest' });
+                const targetOffset = startIndex + Math.max(0, Math.min(offsetInsideText, text.length));
+                let consumed = 0;
+                let fallback = null;
+                for (const revision of revisionNodes) {
+                    const walker = document.createTreeWalker(revision, NodeFilter.SHOW_TEXT);
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const value = node.textContent || '';
+                        fallback = { node, offset: value.length };
+                        if (targetOffset <= consumed + value.length) {
+                            const segment = revision.closest('.tm-wysiwyg-layout-segment[data-layout-segment-id]') || revision;
+                            const segmentStart = parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+                            const segmentBlockStart = parseInt(segment.getAttribute('data-layout-block-start-offset') || String(segmentStart), 10) || segmentStart;
+                            const localOffset = Math.max(0, targetOffset - consumed);
+                            const inlineOffset = segmentStart + localOffset;
+                            const blockOffset = segmentBlockStart + localOffset;
+                            const range = document.createRange();
+                            range.setStart(node, localOffset);
+                            range.collapse(true);
+                            const editable = revision.closest('[contenteditable="true"]');
+                            editable?.focus();
+                            const selection = window.getSelection();
+                            selection.removeAllRanges();
+                            selection.addRange(range);
+                            const instanceId = host?.getAttribute('data-instance-id') || '';
+                            const block = revision.closest('[data-block-id]');
+                            const inlineId = segment.getAttribute('data-inline-id') || revision.getAttribute('data-inline-id') || '';
+                            const blockId = block?.getAttribute('data-block-id') || '';
+                            if (instanceId && blockId && inlineId && window.tmDocumentEditorWysiwyg?.restoreSelection) {
+                                window.tmDocumentEditorWysiwyg.restoreSelection(instanceId, {
+                                    region: 'Body',
+                                    anchorBlockId: blockId,
+                                    focusBlockId: blockId,
+                                    anchorInlineId: inlineId,
+                                    focusInlineId: inlineId,
+                                    anchorOffset: inlineOffset,
+                                    focusOffset: inlineOffset,
+                                    anchorBlockOffset: blockOffset,
+                                    focusBlockOffset: blockOffset,
+                                    isCollapsed: true,
+                                    layoutLineId: segment.getAttribute('data-layout-line-id') || null,
+                                    layoutSegmentId: segment.getAttribute('data-layout-segment-id') || null,
+                                    visualLineIndex: parseInt(segment.closest('[data-visual-line-index]')?.getAttribute('data-visual-line-index') || '0', 10) || 0,
+                                    hitTargetKind: 'TextCaret'
+                                });
+                            }
+                            document.dispatchEvent(new Event('selectionchange'));
+                            return;
+                        }
+                        consumed += value.length;
+                    }
+                }
+
+                if (fallback) {
                     const range = document.createRange();
-                    range.setStart(node, index + Math.max(0, Math.min(offsetInsideText, text.length)));
+                    range.setStart(fallback.node, fallback.offset);
                     range.collapse(true);
-                    revision.closest('[contenteditable="true"]')?.focus();
+                    revisionNodes[0].closest('[contenteditable="true"]')?.focus();
                     const selection = window.getSelection();
                     selection.removeAllRanges();
                     selection.addRange(range);
@@ -10028,6 +10134,68 @@ public class DocumentEditorE2ETests : WasmTestBase
             new { text, offsetInsideText });
         await page.WaitForTimeoutAsync(120);
     }
+
+    private static async Task<SeedRevisionLayoutProbe> CaptureSeedRevisionLayoutProbeAsync(IPage page)
+        => await page.EvaluateAsync<SeedRevisionLayoutProbe>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const revisionId = 'contract-revision-scope';
+                const isVisible = el => {
+                    if (!el || el.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = el.getBoundingClientRect();
+                    const style = getComputedStyle(el);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.visibility !== 'hidden'
+                        && style.display !== 'none';
+                };
+                const nodes = Array.from(host?.querySelectorAll(`[data-revision-id="${revisionId}"]`) || [])
+                    .filter(isVisible);
+                const text = nodes.map(node => node.textContent || '').join('');
+                const rectForWord = word => {
+                    for (const node of nodes) {
+                        const walker = document.createTreeWalker(node, NodeFilter.SHOW_TEXT);
+                        let textNode;
+                        while ((textNode = walker.nextNode())) {
+                            const value = textNode.textContent || '';
+                            const index = value.indexOf(word);
+                            if (index < 0) continue;
+                            const range = document.createRange();
+                            range.setStart(textNode, index);
+                            range.setEnd(textNode, index + word.length);
+                            const rect = range.getBoundingClientRect();
+                            return {
+                                X: rect.left,
+                                Y: rect.top,
+                                Width: rect.width,
+                                Height: rect.height
+                            };
+                        }
+                    }
+
+                    return {
+                        X: 0,
+                        Y: 0,
+                        Width: 0,
+                        Height: 0
+                    };
+                };
+                const priority = rectForWord('Priority');
+                const support = rectForWord('support');
+                const sameLine = Math.abs(priority.Y - support.Y) <= 2;
+                return {
+                    RuntimeMarkerCount: host?.querySelectorAll(`[data-marker-id="revision:${revisionId}"]`).length || 0,
+                    RevisionSegmentCount: nodes.length,
+                    Text: text,
+                    PriorityRect: priority,
+                    SupportRect: support,
+                    PriorityBeforeSupportVisually: priority.Width > 0
+                        && support.Width > 0
+                        && (priority.Y < support.Y - 2 || (sameLine && priority.X <= support.X + 1))
+                };
+            }
+            """) ?? new SeedRevisionLayoutProbe();
 
     private static async Task<WysiwygRuntimeFormattingProbe> CaptureRuntimeFormattingProbeAsync(IPage page)
     {
@@ -16606,6 +16774,21 @@ public class DocumentEditorE2ETests : WasmTestBase
         public string TextDecoration { get; set; } = string.Empty;
 
         public string BoxShadow { get; set; } = string.Empty;
+    }
+
+    private sealed class SeedRevisionLayoutProbe
+    {
+        public int RuntimeMarkerCount { get; set; }
+
+        public int RevisionSegmentCount { get; set; }
+
+        public string Text { get; set; } = string.Empty;
+
+        public RectProbe PriorityRect { get; set; } = new();
+
+        public RectProbe SupportRect { get; set; } = new();
+
+        public bool PriorityBeforeSupportVisually { get; set; }
     }
 
     private sealed class WysiwygRuntimeFormattingProbe

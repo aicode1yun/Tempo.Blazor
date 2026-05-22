@@ -2461,6 +2461,7 @@ window.tmDocumentWysiwyg = (function () {
 	                    Rect: segmentRect,
 	                    TextLength: text.length,
 	                    StartOffset: parseInt(segment.getAttribute('data-layout-start-offset') || '0', 10) || 0,
+	                    BlockStartOffset: parseInt(segment.getAttribute('data-layout-block-start-offset') || segment.getAttribute('data-layout-start-offset') || '0', 10) || 0,
 	                    Element: segment,
 	                    TextNode: textNode
 	                });
@@ -2640,13 +2641,14 @@ window.tmDocumentWysiwyg = (function () {
 
     function _createSegmentCaretHit(segment, localOffset) {
         var startOffset = Number(segment.StartOffset ?? segment.startOffset ?? 0) || 0;
+        var blockStartOffset = Number(segment.BlockStartOffset ?? segment.blockStartOffset ?? startOffset) || 0;
         var textLength = _hitTestSegmentTextLength(segment);
         var clampedLocal = Math.max(0, Math.min(textLength, localOffset || 0));
         return Object.assign({}, segment, {
             Offset: startOffset + clampedLocal,
             LocalOffset: clampedLocal,
             TextNodeOffset: clampedLocal,
-            BlockOffset: startOffset + clampedLocal
+            BlockOffset: blockStartOffset + clampedLocal
         });
     }
 
@@ -10941,9 +10943,10 @@ window.tmDocumentWysiwyg = (function () {
             : null;
         if (layoutSegment && layoutSegment.contains(textNode)) {
             var layoutStart = parseInt(layoutSegment.getAttribute('data-layout-start-offset') || '0', 10) || 0;
+            var layoutBlockStart = parseInt(layoutSegment.getAttribute('data-layout-block-start-offset') || String(layoutStart), 10) || 0;
             var layoutLocalOffset = _absoluteTextOffset(layoutSegment, textNode, textOffset);
             inlineOffset = layoutStart + layoutLocalOffset;
-            blockOffset = layoutStart + layoutLocalOffset;
+            blockOffset = layoutBlockStart + layoutLocalOffset;
         }
 
         return {
@@ -11893,6 +11896,7 @@ window.tmDocumentWysiwyg = (function () {
         span.setAttribute('data-layout-line-id', segment.LineId || segment.lineId || '');
         span.setAttribute('data-inline-id', segment.InlineId || segment.inlineId || '');
         span.setAttribute('data-layout-start-offset', String(segment.StartOffset ?? segment.startOffset ?? 0));
+        span.setAttribute('data-layout-block-start-offset', String(segment.BlockStartOffset ?? segment.blockStartOffset ?? segment.StartOffset ?? segment.startOffset ?? 0));
         span.setAttribute('data-layout-length', String(segment.Length ?? segment.length ?? 0));
         span.style.left = _roundLayoutNumber(segmentRect.X - lineRect.X) + 'px';
         span.style.top = _roundLayoutNumber(segmentRect.Y - lineRect.Y) + 'px';

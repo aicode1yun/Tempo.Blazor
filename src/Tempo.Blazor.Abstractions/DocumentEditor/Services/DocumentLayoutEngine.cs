@@ -1078,6 +1078,7 @@ public class DocumentLayoutEngine
     private static List<TextRunLayoutSource> BuildTextRuns(IReadOnlyList<InlineContent> inlines, TextStyle baseStyle)
     {
         var runs = new List<TextRunLayoutSource>();
+        var blockOffset = 0;
         for (var index = 0; index < inlines.Count; index++)
         {
             var inline = inlines[index];
@@ -1087,7 +1088,8 @@ public class DocumentLayoutEngine
                 continue;
             }
 
-            runs.Add(new TextRunLayoutSource(index, inline.Id, text, baseStyle.Apply(inline.Marks)));
+            runs.Add(new TextRunLayoutSource(index, inline.Id, text, baseStyle.Apply(inline.Marks), CloneMarks(inline.Marks), blockOffset));
+            blockOffset += text.Length;
         }
 
         return runs;
@@ -1382,8 +1384,10 @@ public class DocumentLayoutEngine
                     InlineId = segment.InlineId,
                     InlineIndex = segment.InlineIndex,
                     StartOffset = segment.StartOffset,
+                    BlockStartOffset = segment.BlockStartOffset,
                     Length = segment.Length,
                     Text = segment.Text,
+                    Marks = CloneMarks(segment.Marks),
                     Rect = segment.Rect.Clone()
                 }).ToList()
             });
@@ -1803,6 +1807,8 @@ public class DocumentLayoutEngine
                     InlineId = run.InlineId,
                     InlineIndex = run.InlineIndex,
                     StartOffset = sourceOffset,
+                    BlockStartOffset = run.BlockStartOffset + sourceOffset,
+                    Marks = CloneMarks(run.Marks),
                     Rect = new DocumentLayoutRect
                     {
                         X = _x,
@@ -1821,7 +1827,37 @@ public class DocumentLayoutEngine
         }
     }
 
-    private sealed record TextRunLayoutSource(int InlineIndex, string? InlineId, string Text, TextStyle Style);
+    private static List<InlineMark> CloneMarks(IEnumerable<InlineMark>? marks)
+        => marks is null
+            ? []
+            : marks.Select(mark => new InlineMark
+            {
+                Type = mark.Type,
+                Link = mark.Link is null
+                    ? null
+                    : new LinkMarkData
+                    {
+                        Href = mark.Link.Href,
+                        Title = mark.Link.Title
+                    },
+                CommentAnchor = mark.CommentAnchor is null
+                    ? null
+                    : new CommentAnchorMarkData
+                    {
+                        CommentId = mark.CommentAnchor.CommentId,
+                        AnchorId = mark.CommentAnchor.AnchorId
+                    },
+                RevisionId = mark.RevisionId,
+                Value = mark.Value
+            }).ToList();
+
+    private sealed record TextRunLayoutSource(
+        int InlineIndex,
+        string? InlineId,
+        string Text,
+        TextStyle Style,
+        IReadOnlyList<InlineMark> Marks,
+        int BlockStartOffset);
 
     private sealed record TextStyle(
         string FontFamily,

@@ -3992,6 +3992,10 @@
     padding-inline: 0.05rem;
 }
 
+.tm-wysiwyg-layout-segment.tm-wysiwyg-revision {
+    padding-inline: 0;
+}
+
 .tm-document-inline--revision-insert,
 .tm-wysiwyg-revision--insert {
     color: var(--tm-color-success-text);

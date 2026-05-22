@@ -342,11 +342,17 @@ public class DocumentTextSegmentBox
     /// <summary>Character start offset inside the source inline text.</summary>
     public int StartOffset { get; set; }
 
+    /// <summary>Character start offset inside the source block text.</summary>
+    public int BlockStartOffset { get; set; }
+
     /// <summary>Character length inside the source inline text.</summary>
     public int Length { get; set; }
 
     /// <summary>Debug text content for this segment.</summary>
     public string Text { get; set; } = string.Empty;
+
+    /// <summary>Inline marks that apply to this rendered segment.</summary>
+    public List<InlineMark> Marks { get; set; } = [];
 
     /// <summary>Segment visual rectangle.</summary>
     public DocumentLayoutRect Rect { get; set; } = new();

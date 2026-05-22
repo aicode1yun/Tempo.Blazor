@@ -226,6 +226,63 @@ public class DocumentLayoutEngineTests
     }
 
     [Fact]
+    public void Layout_RevisionInlineSegmentsCarryRevisionMarks()
+    {
+        var document = Document("revision-segment-marks");
+        const string approvedText = "The provider will deliver implementation, training, and documentation services.";
+        const string revisionText = " Priority support is included during the first thirty days.";
+        document.Blocks.Add(new DocumentBlock
+        {
+            Id = "contract-scope",
+            Type = DocumentBlockType.Paragraph,
+            Content = new ParagraphBlockContent
+            {
+                Inlines =
+                [
+                    new TextRun
+                    {
+                        Id = "approved-run",
+                        Text = approvedText
+                    },
+                    new TextRun
+                    {
+                        Id = "revision-run",
+                        Text = revisionText,
+                        Marks =
+                        [
+                            new InlineMark
+                            {
+                                Type = InlineMarkType.Revision,
+                                RevisionId = "contract-revision-scope",
+                                Value = "Insertion"
+                            }
+                        ]
+                    }
+                ]
+            }
+        });
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var segments = Lines(page, "contract-scope").SelectMany(line => line.Segments).ToList();
+
+        segments.Where(segment => segment.InlineId == "approved-run")
+            .Should()
+            .OnlyContain(segment => segment.Marks.All(mark => mark.Type != InlineMarkType.Revision));
+        segments.Where(segment => segment.InlineId == "revision-run")
+            .Should()
+            .OnlyContain(segment => segment.Marks.Any(mark =>
+                mark.Type == InlineMarkType.Revision
+                && mark.RevisionId == "contract-revision-scope"
+                && mark.Value == "Insertion"));
+        segments.Where(segment => segment.InlineId == "revision-run")
+            .Should()
+            .OnlyContain(segment => segment.BlockStartOffset >= approvedText.Length);
+        string.Concat(segments.Select(segment => segment.Text))
+            .Should()
+            .Be(approvedText + revisionText);
+    }
+
+    [Fact]
     public void Layout_LineSpacingAndParagraphSpacing_AffectLineAndNextParagraphY()
     {
         var document = Document("spacing");
