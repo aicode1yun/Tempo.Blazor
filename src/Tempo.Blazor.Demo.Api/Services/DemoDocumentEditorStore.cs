@@ -7,7 +7,7 @@ namespace Tempo.Blazor.Demo.Api.Services;
 public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
 {
     private const string DemoImageUrl = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAUAAAAC0CAYAAADl5PURAAACsUlEQVR42u3ZzQ2CQBCAUYuwFLuxDjuwBDqgAK9UZfwB9ECC04JGdJd5hzeZ80C+y252+9MMkNHGEQABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEBAAB0CEEAAAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAgAIDOD6nGSAjAQQEEEAAAQQQQAABBBBAAAEEEKDiAA4xADISQEAAAQQQQAABBBBAAAEEEEAAAQQQQAB/pWk74MsEUABBAAVQAEEABVAAQQAFUABBAAUQYBUBfMQCkJAAAgIIIIAAAggggAACCCCAAAIIUHEA+xgAGQkgIIAAAliJ8zgDhRNAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEABBAEUQAEEARRAAQQBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBARQAAEBFEBAAAUQEEABBHIE8D5Oc438XFC+0jsigIAACiAggAIICKAAAgIogIAACiAggAIICKAAAgIogIAACiAggAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKIACCAIogAIIAiiAAggCKICAAAogIIACCAjgGwG8xViT7fGwiLXdCag4gEIHpAig2AECKHSAAIodkDiAPh6Q9hEEQAABPg7gEAtAQgIICCCAAAIIIIAAAggggAACCCCAAAIIIIAAAgjgMpq2g2KIiQAKIAKIAAogAogACiACiAAKIAJIgQG8xgDISAABAQQQQAABBBBAAAEEEEAAAQQQQAABBBBAAAEEEEAAAQQQQIC/BrCPBSAhAQQEEEAAAQQQQAABBBBAAAEEEKDiAF5iAGQkgIAAAgggQBIvAt6vRwtbqO0AAAAASUVORK5CYII=";
-    private const string ContractUrlImageUrl = "/favicon.png";
+    private const string ContractUrlImageUrl = "/document-editor-evidence.svg";
     private const string ContractAssetId = "contract-evidence-asset";
     private const string ExhibitAssetId = "exhibit-provider-asset";
     private readonly Dictionary<string, StoredDocumentImage> _images = [];
@@ -40,17 +40,17 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Id = "contract-evidence-url-image",
             SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
-            Order = 30,
+            Order = 31,
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
                 Url = ContractUrlImageUrl,
                 AltText = "URL evidence preview",
-                Caption = "Image loaded from /favicon.png",
+                Caption = "Evidence preview loaded from a URL",
                 Size = new DocumentImageSize { Width = 160, Height = 90 },
                 NaturalSize = new DocumentImageSize { Width = 160, Height = 90 },
                 Alignment = DocumentImageAlignment.Start,
-                Layout = CreateLeftWrappedImageLayout(160, 90)
+                Layout = CreateLeftWrappedImageLayout(160, 90, "contract-image-wrap-demo-text")
             }
         });
 
@@ -84,13 +84,13 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
             Id = "contract-missing-alt-image",
             SectionId = "contract-section-main",
             Type = DocumentBlockType.Image,
-            Order = 38,
+            Order = 70,
             Content = new ImageBlockContent
             {
                 Source = DocumentImageSource.Url,
                 Url = ContractUrlImageUrl,
                 AltText = null,
-                Caption = "Accessibility warning sample: missing alt text",
+                Caption = "Accessibility sample: missing alt text",
                 Size = new DocumentImageSize { Width = 180, Height = 102 },
                 NaturalSize = new DocumentImageSize { Width = 180, Height = 102 },
                 Alignment = DocumentImageAlignment.Center,
@@ -177,10 +177,16 @@ public class DemoDocumentEditorStore : InMemoryDocumentEditorProvider
         }).GetAwaiter().GetResult();
     }
 
-    private static DocumentObjectLayout CreateLeftWrappedImageLayout(double width, double height) =>
+    private static DocumentObjectLayout CreateLeftWrappedImageLayout(double width, double height, string? anchorBlockId = null) =>
         new()
         {
             Kind = DocumentObjectLayoutKind.Anchored,
+            Anchor = new DocumentObjectAnchor
+            {
+                BlockId = anchorBlockId,
+                MoveWithText = true,
+                FixedOnPage = false
+            },
             Position = new DocumentObjectPosition
             {
                 HorizontalRelativeTo = DocumentRelativePosition.Page,

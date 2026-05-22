@@ -2308,14 +2308,11 @@
     }
 
     .tm-document-side-panel {
-        position: fixed;
-        top: auto;
-        right: var(--tm-space-2);
-        bottom: var(--tm-space-2);
-        left: var(--tm-space-2);
-        z-index: calc(var(--tm-z-popover, 1000) + 5);
-        width: auto;
-        height: min(20rem, 42vh);
+        position: relative;
+        inset: auto;
+        z-index: 1;
+        width: 100%;
+        height: auto;
         max-height: min(20rem, 42vh);
     }
 
@@ -2714,6 +2711,8 @@
     display: block;
     box-sizing: border-box;
     white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .tm-wysiwyg-layout-segment {
@@ -2722,6 +2721,14 @@
     box-sizing: border-box;
     min-width: 1px;
     white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
+}
+
+.tm-wysiwyg-page .tm-wysiwyg-layout-segment[data-inline-id] {
+    white-space: pre;
+    overflow-wrap: normal;
+    word-break: normal;
 }
 
 .tm-document-wysiwyg-host ::selection {
@@ -3078,37 +3085,6 @@
 .tm-wysiwyg-image--dragging {
     outline-color: var(--tm-color-primary);
     box-shadow: 0 0 0 2px var(--tm-color-primary-subtle);
-}
-
-.tm-wysiwyg-image-selection-toolbar {
-    display: inline-flex;
-    align-items: center;
-    gap: var(--tm-space-1);
-    padding: var(--tm-space-1);
-    color: var(--tm-color-text);
-    background: var(--tm-color-surface-elevated);
-    border: 1px solid var(--tm-color-border);
-    border-radius: var(--tm-radius-md);
-    box-shadow: var(--tm-shadow-lg);
-}
-
-.tm-wysiwyg-image-selection-toolbar button {
-    min-height: 1.875rem;
-    padding: var(--tm-space-1) var(--tm-space-2);
-    color: inherit;
-    font: inherit;
-    font-size: var(--tm-font-size-sm);
-    background: transparent;
-    border: 1px solid transparent;
-    border-radius: var(--tm-radius-sm);
-    cursor: pointer;
-}
-
-.tm-wysiwyg-image-selection-toolbar button:hover,
-.tm-wysiwyg-image-selection-toolbar button:focus-visible {
-    background: var(--tm-color-primary-subtle);
-    border-color: var(--tm-color-primary);
-    outline: none;
 }
 
 .tm-wysiwyg-image[data-image-load-state="loading"] img {

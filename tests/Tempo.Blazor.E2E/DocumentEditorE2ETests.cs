@@ -132,6 +132,135 @@ public class DocumentEditorE2ETests : WasmTestBase
     }
 
     [TestMethod]
+    public async Task DocumentEditor_DefaultDemo_ImageWrapDoesNotOverlapTextOrImagesOnInitialLoad()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        await Assertions.Expect(page.Locator("[data-testid='document-version-panel']")).ToBeVisibleAsync();
+        await host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)").First.ScrollIntoViewIfNeededAsync();
+
+        try
+        {
+            var probe = await CaptureDocumentOverlapProbeAsync(page);
+            probe.TextRects.Should().NotBeEmpty("the default document must render measurable text segments");
+            probe.ImageRects.Should().NotBeEmpty("the default document must render measurable image media");
+            probe.Collisions.Should().BeEmpty(
+                "default contract demo must not visually overlap text, image media or captions after a reset and reload");
+            probe.InlineImagePlacementIssues.Should().BeEmpty(
+                "inline image blocks must not start inside an active wrapping exclusion without a real free interval");
+            probe.LayoutDomMismatches.Should().BeEmpty(
+                "engine layout coordinates and browser DOM rectangles must stay in sync");
+            var wordSplitIssues = await CaptureDocumentWordSplitIssuesAsync(page);
+            wordSplitIssues.Should().BeEmpty(
+                "default contract demo must wrap normal text at word boundaries instead of splitting readable words beside images");
+
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_DefaultDemo_ImageWrapDoesNotOverlapTextOrImagesOnInitialLoad),
+                "Open the reset default contract demo at 1440x900 with the side panel visible and measure DOM rectangles and word boundaries.",
+                "No visible text segment, image media or caption rectangle may overlap another forbidden rectangle, and wrapped text may not split normal words.");
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_DefaultDemo_ImageWrapDoesNotOverlapTextOrImagesOnInitialLoad),
+                "Open the reset default contract demo at 1440x900 with the side panel visible and measure DOM rectangles and word boundaries.",
+                "No visible text segment, image media or caption rectangle may overlap another forbidden rectangle, and wrapped text may not split normal words.");
+            throw;
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_DefaultDemo_ImageWrapLayoutMatrixAcrossViewports()
+    {
+        (int Width, int Height, string Name)[] viewports =
+        [
+            (1920, 1080, "desktop-1920x1080"),
+            (1280, 720, "notebook-1280x720"),
+            (820, 900, "tablet-820x900"),
+            (390, 840, "mobile-390x840")
+        ];
+
+        foreach (var viewport in viewports)
+        {
+            var page = await OpenDocumentEditorPageAsync(width: viewport.Width, height: viewport.Height);
+            var host = page.Locator("[data-testid='document-wysiwyg-host']");
+            await WaitForWysiwygBodyAsync(host);
+            await host.Locator(".tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)").First.ScrollIntoViewIfNeededAsync();
+
+            try
+            {
+                var probe = await CaptureDocumentOverlapProbeAsync(page);
+                probe.Collisions.Should().BeEmpty($"default demo must not visually overlap text/images/captions in {viewport.Name}");
+                probe.InlineImagePlacementIssues.Should().BeEmpty($"inline image blocks must respect active wrap exclusions in {viewport.Name}");
+                probe.LayoutDomMismatches.Should().BeEmpty($"DOM rects must match engine layout rects in {viewport.Name}");
+
+                var wordSplitIssues = await CaptureDocumentWordSplitIssuesAsync(page);
+                wordSplitIssues.Should().BeEmpty($"default demo must keep normal word boundaries in {viewport.Name}");
+
+                var responsiveIssues = await CaptureStrictResponsiveIssuesAsync(page, allowPageCanvasHorizontalScroll: viewport.Width < 700);
+                responsiveIssues.Should().BeEmpty($"default demo shell must stay readable in {viewport.Name}");
+
+                await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            }
+            catch
+            {
+                await SaveDocumentEditorDebugArtifactsAsync(
+                    page,
+                    $"{nameof(DocumentEditor_DefaultDemo_ImageWrapLayoutMatrixAcrossViewports)}_{viewport.Name}",
+                    $"Open the reset default contract demo at {viewport.Width}x{viewport.Height} and measure image wrap geometry.",
+                    "No text/image/caption collisions, no inline image inside a blocked wrap zone, no layout-vs-DOM drift, and no legacy image toolbar.");
+                throw;
+            }
+        }
+    }
+
+    [TestMethod]
+    public async Task DocumentEditor_DefaultDemo_SelectedImageShowsSingleLayoutBubbleWithoutLegacyToolbar()
+    {
+        var page = await OpenDocumentEditorPageAsync(width: 1440, height: 900);
+        var host = page.Locator("[data-testid='document-wysiwyg-host']");
+        await WaitForWysiwygBodyAsync(host);
+        await Assertions.Expect(page.Locator("[data-testid='document-version-panel']")).ToBeVisibleAsync();
+
+        try
+        {
+            var figure = host.Locator("figure.tm-wysiwyg-image").First;
+            await figure.ScrollIntoViewIfNeededAsync();
+            await figure.ClickAsync();
+
+            await Assertions.Expect(figure).ToHaveClassAsync(new Regex("tm-wysiwyg-image--selected"));
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-selection-toolbar']")).ToHaveCountAsync(0);
+            await Assertions.Expect(figure.Locator("[data-testid='document-wysiwyg-object-layout-bubble']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await AssertFloatingUiReadableAndInsideViewportAsync(page, "figure.tm-wysiwyg-image.tm-wysiwyg-image--selected [data-testid='document-wysiwyg-object-layout-bubble']", "default demo image layout bubble");
+            await AssertElementsDoNotOverlapAsync(page, "figure.tm-wysiwyg-image.tm-wysiwyg-image--selected [data-testid='document-wysiwyg-object-layout-bubble']", "[data-testid='document-side-panel']", "image layout bubble", "side panel");
+
+            var visibleBubbleCount = await CountVisibleElementsAsync(page, "[data-testid='document-wysiwyg-object-layout-bubble']");
+            visibleBubbleCount.Should().Be(1, "selecting one image should reveal exactly one primary layout bubble");
+
+            await figure.Locator("[data-testid='document-wysiwyg-layout-bubble-more']").ClickAsync();
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToBeVisibleAsync(new() { Timeout = 5000 });
+            await AssertFloatingUiReadableAndInsideViewportAsync(page, "[data-testid='document-wysiwyg-image-context-menu']", "default demo image context menu");
+
+            await page.Keyboard.PressAsync("Escape");
+            await Assertions.Expect(page.Locator("[data-testid='document-wysiwyg-image-context-menu']")).ToHaveCountAsync(0, new() { Timeout = 3000 });
+            await page.Keyboard.PressAsync("Escape");
+            await AssertNoFloatingUiLeaksAsync(page);
+        }
+        catch
+        {
+            await SaveDocumentEditorDebugArtifactsAsync(
+                page,
+                nameof(DocumentEditor_DefaultDemo_SelectedImageShowsSingleLayoutBubbleWithoutLegacyToolbar),
+                "Select the default wrapped image, inspect the layout bubble, open More, close floating UI.",
+                "Only the layout bubble is used for image selection; the legacy image toolbar never appears and floating UI stays inside the viewport.");
+            throw;
+        }
+    }
+
+    [TestMethod]
     public async Task DocumentEditor_Strict_ImageWrap_ClickSecondLineBesideLeftImagePlacesCaretThere()
     {
         var page = await OpenIsolatedDocumentEditorPageAsync($"strict-image-wrap-click-lines-{Guid.NewGuid():N}", width: 1440, height: 900);
@@ -13310,6 +13439,372 @@ public class DocumentEditorE2ETests : WasmTestBase
         issues.Should().BeEmpty();
     }
 
+    private static async Task<DocumentOverlapProbe> CaptureDocumentOverlapProbeAsync(IPage page)
+    {
+        var json = await page.EvaluateAsync<string>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const pageBody = host?.querySelector('.tm-wysiwyg-page__body:not([aria-hidden="true"])');
+                const pageBodyRect = pageBody?.getBoundingClientRect?.() || { left: 0, top: 0 };
+                const layoutScaleX = pageBody && pageBody.offsetWidth > 0
+                    ? pageBodyRect.width / pageBody.offsetWidth
+                    : 1;
+                const layoutScaleY = pageBody && pageBody.offsetHeight > 0
+                    ? pageBodyRect.height / pageBody.offsetHeight
+                    : layoutScaleX;
+                const layoutScale = Number.isFinite(layoutScaleX) && layoutScaleX > 0
+                    ? layoutScaleX
+                    : 1;
+                const layoutScaleVertical = Number.isFinite(layoutScaleY) && layoutScaleY > 0
+                    ? layoutScaleY
+                    : layoutScale;
+                const shrink = rect => ({
+                    X: rect.left + 2,
+                    Y: rect.top + 2,
+                    Width: Math.max(0, rect.width - 4),
+                    Height: Math.max(0, rect.height - 4),
+                    Right: rect.right - 2,
+                    Bottom: rect.bottom - 2
+                });
+                const rectFromLayoutCoordinates = (x, y, width, height) => ({
+                    X: pageBodyRect.left + (x * layoutScale),
+                    Y: pageBodyRect.top + (y * layoutScaleVertical),
+                    Width: Math.max(0, width * layoutScale),
+                    Height: Math.max(0, height * layoutScaleVertical),
+                    Right: pageBodyRect.left + ((x + Math.max(0, width)) * layoutScale),
+                    Bottom: pageBodyRect.top + ((y + Math.max(0, height)) * layoutScaleVertical)
+                });
+                const readCssNumber = (element, name) => {
+                    const value = getComputedStyle(element).getPropertyValue(name);
+                    const number = parseFloat(value);
+                    return Number.isFinite(number) ? number : NaN;
+                };
+                const readAttributeNumber = (element, name) => {
+                    const value = element.getAttribute(name);
+                    const number = parseFloat(value || '');
+                    return Number.isFinite(number) ? number : NaN;
+                };
+                const readLayoutRect = (figure, prefix) => {
+                    const x = readCssNumber(figure, `--tm-layout-${prefix}-x`);
+                    const y = readCssNumber(figure, `--tm-layout-${prefix}-y`);
+                    const width = readCssNumber(figure, `--tm-layout-${prefix}-width`);
+                    const height = readCssNumber(figure, `--tm-layout-${prefix}-height`);
+                    return [x, y, width, height].every(Number.isFinite) && width > 0 && height > 0
+                        ? rectFromLayoutCoordinates(x, y, width, height)
+                        : null;
+                };
+                const readDataLayoutRect = (figure, prefix) => {
+                    const x = readAttributeNumber(figure, `data-layout-${prefix}-x`);
+                    const y = readAttributeNumber(figure, `data-layout-${prefix}-y`);
+                    const width = readAttributeNumber(figure, `data-layout-${prefix}-width`);
+                    const height = readAttributeNumber(figure, `data-layout-${prefix}-height`);
+                    return [x, y, width, height].every(Number.isFinite) && width > 0 && height > 0
+                        ? rectFromLayoutCoordinates(x, y, width, height)
+                        : null;
+                };
+                const domRect = rect => ({
+                    X: rect.left,
+                    Y: rect.top,
+                    Width: Math.max(0, rect.width),
+                    Height: Math.max(0, rect.height),
+                    Right: rect.right,
+                    Bottom: rect.bottom
+                });
+                const rectMaxDelta = (expected, actual) => Math.max(
+                    Math.abs((expected?.X || 0) - (actual?.X || 0)),
+                    Math.abs((expected?.Y || 0) - (actual?.Y || 0)),
+                    Math.abs((expected?.Width || 0) - (actual?.Width || 0)),
+                    Math.abs((expected?.Height || 0) - (actual?.Height || 0)));
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden'
+                        && Number(style.opacity || '1') > 0;
+                };
+                const intersects = (a, b) => a.Right > b.X
+                    && a.X < b.Right
+                    && a.Bottom > b.Y
+                    && a.Y < b.Bottom;
+                const cssPath = element => {
+                    if (!element) return '';
+                    const parts = [];
+                    let current = element;
+                    while (current && current !== document.body && parts.length < 6) {
+                        const testId = current.getAttribute?.('data-testid');
+                        const blockId = current.getAttribute?.('data-block-id');
+                        const tag = current.tagName ? current.tagName.toLowerCase() : 'node';
+                        const cls = typeof current.className === 'string' && current.className.trim()
+                            ? '.' + current.className.trim().split(/\s+/).slice(0, 3).join('.')
+                            : '';
+                        parts.unshift(testId ? `${tag}[data-testid="${testId}"]` : blockId ? `${tag}[data-block-id="${blockId}"]${cls}` : `${tag}${cls}`);
+                        current = current.parentElement;
+                    }
+                    return parts.join(' > ');
+                };
+                const rects = [];
+                const textRects = [];
+                const imageRects = [];
+                const captionRects = [];
+                const figureRects = [];
+                const layoutObjects = [];
+                const exclusionRects = [];
+                const layoutDomMismatches = [];
+                const inlineImagePlacementIssues = [];
+                const visibleFigures = Array.from(host?.querySelectorAll('figure.tm-wysiwyg-image, figure.tm-wysiwyg-image-block, figure[data-image-source]') || [])
+                    .filter(isVisible);
+
+                const collectTextNodeRects = () => {
+                    if (!pageBody) return;
+                    const walker = document.createTreeWalker(pageBody, NodeFilter.SHOW_TEXT, {
+                        acceptNode: node => {
+                            if (!node.nodeValue || node.nodeValue.trim().length === 0) return NodeFilter.FILTER_REJECT;
+                            const owner = node.parentElement;
+                            if (!owner) return NodeFilter.FILTER_REJECT;
+                            if (owner.closest('figure.tm-wysiwyg-image, figure.tm-wysiwyg-image-block, figure[data-image-source]')) return NodeFilter.FILTER_REJECT;
+                            if (owner.closest('[aria-hidden="true"], [hidden], script, style, .tm-wysiwyg-paragraph-anchor-glyph')) return NodeFilter.FILTER_REJECT;
+                            return isVisible(owner) ? NodeFilter.FILTER_ACCEPT : NodeFilter.FILTER_REJECT;
+                        }
+                    });
+
+                    let node;
+                    while ((node = walker.nextNode())) {
+                        const owner = node.parentElement;
+                        const segment = owner.closest('.tm-wysiwyg-layout-segment');
+                        const line = owner.closest('.tm-wysiwyg-layout-line');
+                        const block = owner.closest('[data-block-id]');
+                        const blockId = block?.getAttribute('data-block-id') || segment?.getAttribute('data-block-id') || '';
+                        const lineId = segment?.getAttribute('data-layout-line-id') || line?.getAttribute('data-layout-line-id') || '';
+                        const range = document.createRange();
+                        range.selectNodeContents(node);
+                        const rangeRects = Array.from(range.getClientRects()).filter(item => item.width > 0 && item.height > 0);
+                        range.detach?.();
+                        for (const rect of rangeRects) {
+                        const item = {
+                            Kind: 'text',
+                            BlockId: blockId,
+                                LineId: lineId,
+                                Text: (node.nodeValue || '').trim().slice(0, 80),
+                                CssPath: cssPath(owner),
+                            WrapMode: '',
+                            Rect: shrink(rect)
+                        };
+                        rects.push(item);
+                        textRects.push(item);
+                    }
+                    }
+                };
+                collectTextNodeRects();
+
+                for (const figure of visibleFigures) {
+                    const blockId = figure.getAttribute('data-block-id') || figure.closest('[data-block-id]')?.getAttribute('data-block-id') || '';
+                    const wrapMode = figure.getAttribute('data-wrap-mode') || '0';
+                    const figureItem = {
+                        Kind: 'figure',
+                        BlockId: blockId,
+                        Text: (figure.querySelector('figcaption')?.textContent || figure.querySelector('img')?.alt || '').trim().slice(0, 80),
+                        CssPath: cssPath(figure),
+                        WrapMode: wrapMode,
+                        Rect: shrink(figure.getBoundingClientRect())
+                    };
+                    figureRects.push(figureItem);
+
+                    const objectRect = readLayoutRect(figure, 'object');
+                    const footprintRect = readDataLayoutRect(figure, 'footprint');
+                    if (objectRect) {
+                        layoutObjects.push({
+                            Kind: 'layout-object',
+                            BlockId: blockId,
+                            Text: figureItem.Text,
+                            CssPath: cssPath(figure),
+                            WrapMode: wrapMode,
+                            Rect: objectRect
+                        });
+                    }
+                    if (footprintRect) {
+                        const figureDomRect = domRect(figure.getBoundingClientRect());
+                        const figureDelta = rectMaxDelta(footprintRect, figureDomRect);
+                        if (figureDelta > 3) {
+                            layoutDomMismatches.push({
+                                Type: 'figure-footprint-vs-layout',
+                                BlockId: blockId,
+                                Text: figureItem.Text,
+                                CssPath: cssPath(figure),
+                                Delta: figureDelta,
+                                Expected: footprintRect,
+                                Actual: figureDomRect
+                            });
+                        }
+                    }
+
+                    const wrapRect = readLayoutRect(figure, 'wrap');
+                    if (wrapRect && wrapMode !== '0' && wrapMode !== '5' && wrapMode !== '6') {
+                        exclusionRects.push({
+                            Kind: 'exclusion',
+                            BlockId: blockId,
+                            Text: figureItem.Text,
+                            CssPath: cssPath(figure),
+                            WrapMode: wrapMode,
+                            Rect: wrapRect
+                        });
+                    }
+
+                    const img = figure.querySelector('img');
+                    const imgRect = img?.getBoundingClientRect();
+                    if (img && imgRect && imgRect.width > 0 && imgRect.height > 0) {
+                        const item = {
+                            Kind: 'image',
+                            BlockId: blockId,
+                            Text: (img.alt || '').trim().slice(0, 80),
+                            CssPath: cssPath(img),
+                            WrapMode: wrapMode,
+                            Rect: shrink(imgRect)
+                        };
+                        rects.push(item);
+                        imageRects.push(item);
+                        if (objectRect) {
+                            const mediaDelta = rectMaxDelta(objectRect, domRect(imgRect));
+                            if (mediaDelta > 3) {
+                                layoutDomMismatches.push({
+                                    Type: 'image-media-vs-layout',
+                                    BlockId: blockId,
+                                    Text: item.Text,
+                                    CssPath: cssPath(img),
+                                    Delta: mediaDelta,
+                                    Expected: objectRect,
+                                    Actual: domRect(imgRect)
+                                });
+                            }
+                        }
+                    }
+
+                    const caption = figure.querySelector('figcaption');
+                    if (caption && isVisible(caption)) {
+                        const captionRect = caption.getBoundingClientRect();
+                        const item = {
+                            Kind: 'caption',
+                            BlockId: blockId,
+                            Text: (caption.textContent || '').trim().slice(0, 80),
+                            CssPath: cssPath(caption),
+                            WrapMode: wrapMode,
+                            Rect: shrink(captionRect)
+                        };
+                        rects.push(item);
+                        captionRects.push(item);
+                    }
+                }
+
+                for (const figure of figureRects) {
+                    if (figure.WrapMode !== '0') continue;
+                    for (const exclusion of exclusionRects) {
+                        if (figure.BlockId && figure.BlockId === exclusion.BlockId) continue;
+                        if (!intersects(figure.Rect, exclusion.Rect)) continue;
+                        inlineImagePlacementIssues.push(`${figure.BlockId || '(unknown inline image)'} intersects active exclusion from ${exclusion.BlockId || '(unknown object)'}`);
+                    }
+                }
+
+                const collisions = [];
+                const textOverlapAllowed = item => item.WrapMode === '5' || item.WrapMode === '6';
+                for (let i = 0; i < rects.length; i++) {
+                    for (let j = i + 1; j < rects.length; j++) {
+                        const a = rects[i];
+                        const b = rects[j];
+                        if (a.BlockId && a.BlockId === b.BlockId && (a.Kind === 'image' || b.Kind === 'image')) continue;
+                        if (!intersects(a.Rect, b.Rect)) continue;
+                        if ((a.Kind === 'text' || b.Kind === 'text') && (textOverlapAllowed(a) || textOverlapAllowed(b))) continue;
+                        if (a.Kind === 'text'
+                            && b.Kind === 'text'
+                            && a.BlockId === b.BlockId
+                            && Math.abs(a.Rect.Y - b.Rect.Y) < 2) continue;
+                        collisions.push({
+                            Type: `${a.Kind}-${b.Kind}`,
+                            BlockIdA: a.BlockId,
+                            BlockIdB: b.BlockId,
+                            TextA: a.Text,
+                            TextB: b.Text,
+                            CssPathA: a.CssPath,
+                            CssPathB: b.CssPath,
+                            RectA: a.Rect,
+                            RectB: b.Rect
+                        });
+                    }
+                }
+
+                return JSON.stringify({
+                    TextRects: textRects,
+                    ImageRects: imageRects,
+                    CaptionRects: captionRects,
+                    FigureRects: figureRects,
+                    LayoutObjects: layoutObjects,
+                    ExclusionRects: exclusionRects,
+                    LayoutDomMismatches: layoutDomMismatches,
+                    InlineImagePlacementIssues: inlineImagePlacementIssues,
+                    Collisions: collisions
+                });
+            }
+            """);
+
+        return JsonSerializer.Deserialize<DocumentOverlapProbe>(json) ?? new DocumentOverlapProbe();
+    }
+
+    private static Task<string[]> CaptureDocumentWordSplitIssuesAsync(IPage page)
+        => page.EvaluateAsync<string[]>(
+            """
+            () => {
+                const host = document.querySelector('[data-testid="document-wysiwyg-host"]');
+                const pageBody = host?.querySelector('.tm-wysiwyg-page__body:not([aria-hidden="true"])');
+                const isVisible = element => {
+                    if (!element || element.closest('[aria-hidden="true"], .tm-wysiwyg-page--virtual')) return false;
+                    const rect = element.getBoundingClientRect();
+                    const style = getComputedStyle(element);
+                    return rect.width > 0
+                        && rect.height > 0
+                        && style.display !== 'none'
+                        && style.visibility !== 'hidden';
+                };
+                const isWordChar = value => /^[A-Za-z0-9]$/.test(value || '');
+                const byBlock = new Map();
+                for (const line of Array.from(pageBody?.querySelectorAll('.tm-wysiwyg-layout-line[data-layout-line-id]') || [])) {
+                    if (!isVisible(line)) continue;
+                    const text = line.textContent || '';
+                    if (!text) continue;
+                    const blockId = line.getAttribute('data-block-id')
+                        || line.closest('[data-block-id]')?.getAttribute('data-block-id')
+                        || '';
+                    if (!blockId) continue;
+                    const rect = line.getBoundingClientRect();
+                    const entry = {
+                        lineId: line.getAttribute('data-layout-line-id') || '',
+                        text,
+                        top: rect.top,
+                        left: rect.left
+                    };
+                    if (!byBlock.has(blockId)) byBlock.set(blockId, []);
+                    byBlock.get(blockId).push(entry);
+                }
+
+                const issues = [];
+                for (const [blockId, lines] of byBlock.entries()) {
+                    lines.sort((a, b) => Math.abs(a.top - b.top) > 0.5 ? a.top - b.top : a.left - b.left);
+                    for (let index = 0; index < lines.length - 1; index++) {
+                        const previous = lines[index];
+                        const next = lines[index + 1];
+                        const previousLast = previous.text.slice(-1);
+                        const nextFirst = next.text.slice(0, 1);
+                        if (isWordChar(previousLast) && isWordChar(nextFirst)) {
+                            issues.push(`block ${blockId} splits a word between ${previous.lineId} '${previous.text}' and ${next.lineId} '${next.text}'`);
+                        }
+                    }
+                }
+
+                return issues;
+            }
+            """);
+
     private static Task<string[]> CaptureStrictLayoutIssuesAsync(IPage page, bool allowDocumentCanvasHorizontalScroll = false)
         => page.EvaluateAsync<string[]>(
             """
@@ -14365,6 +14860,22 @@ public class DocumentEditorE2ETests : WasmTestBase
         unexpected.Should().BeEmpty("only the expected floating UI should remain visible");
     }
 
+    private static Task<int> CountVisibleElementsAsync(IPage page, string selector)
+        => page.EvaluateAsync<int>(
+            """
+            selector => Array.from(document.querySelectorAll(selector)).filter(element => {
+                const rect = element.getBoundingClientRect();
+                const style = getComputedStyle(element);
+                return rect.width > 0
+                    && rect.height > 0
+                    && style.display !== 'none'
+                    && style.visibility !== 'hidden'
+                    && Number(style.opacity || '1') > 0
+                    && style.pointerEvents !== 'none';
+            }).length
+            """,
+            selector);
+
     private static async Task<ImagePasteSelectionProbe> CaptureImageSelectionProbeAsync(IPage page, string imageId)
     {
         return await page.EvaluateAsync<ImagePasteSelectionProbe>(
@@ -15226,12 +15737,45 @@ public class DocumentEditorE2ETests : WasmTestBase
         await File.WriteAllBytesAsync(viewportPath, viewportScreenshot);
         TestContext.AddResultFile(viewportPath);
 
+        try
+        {
+            var pageCanvas = page.Locator("[data-testid='document-wysiwyg-host'] .tm-wysiwyg-page:not(.tm-wysiwyg-page--virtual)").First;
+            if (await pageCanvas.CountAsync() > 0)
+            {
+                var pageCanvasScreenshot = await pageCanvas.ScreenshotAsync(new LocatorScreenshotOptions
+                {
+                    Type = ScreenshotType.Png
+                });
+                var pageCanvasPath = Path.Combine(TestContext.TestResultsDirectory ?? ".", $"{name}_page_canvas_{timestamp}.png");
+                await File.WriteAllBytesAsync(pageCanvasPath, pageCanvasScreenshot);
+                TestContext.AddResultFile(pageCanvasPath);
+            }
+        }
+        catch (Exception ex)
+        {
+            var pageCanvasErrorPath = Path.Combine(TestContext.TestResultsDirectory ?? ".", $"{name}_page_canvas_error_{timestamp}.txt");
+            await File.WriteAllTextAsync(pageCanvasErrorPath, ex.ToString());
+            TestContext.AddResultFile(pageCanvasErrorPath);
+        }
+
         await WriteJsonArtifactAsync($"{name}_strict_action_{timestamp}.json", new
         {
             TestName = name,
             LastUserAction = lastUserAction ?? "Not specified by this legacy test.",
             ExpectedInvariant = expectedInvariant ?? "Not specified by this legacy test."
         });
+
+        try
+        {
+            var overlapProbe = await CaptureDocumentOverlapProbeAsync(page);
+            await WriteJsonArtifactAsync($"{name}_overlap_probe_{timestamp}.json", overlapProbe);
+        }
+        catch (Exception ex)
+        {
+            var overlapErrorPath = Path.Combine(TestContext.TestResultsDirectory ?? ".", $"{name}_overlap_probe_error_{timestamp}.txt");
+            await File.WriteAllTextAsync(overlapErrorPath, ex.ToString());
+            TestContext.AddResultFile(overlapErrorPath);
+        }
 
         try
         {
@@ -16329,6 +16873,82 @@ public class DocumentEditorE2ETests : WasmTestBase
         public RectProbe PageRect { get; set; } = new();
 
         public RectProbe SidePanelRect { get; set; } = new();
+    }
+
+    private sealed class DocumentOverlapProbe
+    {
+        public DocumentOverlapRectProbe[] TextRects { get; set; } = [];
+
+        public DocumentOverlapRectProbe[] ImageRects { get; set; } = [];
+
+        public DocumentOverlapRectProbe[] CaptionRects { get; set; } = [];
+
+        public DocumentOverlapRectProbe[] FigureRects { get; set; } = [];
+
+        public DocumentOverlapRectProbe[] LayoutObjects { get; set; } = [];
+
+        public DocumentOverlapRectProbe[] ExclusionRects { get; set; } = [];
+
+        public DocumentLayoutDomMismatchProbe[] LayoutDomMismatches { get; set; } = [];
+
+        public string[] InlineImagePlacementIssues { get; set; } = [];
+
+        public DocumentOverlapCollisionProbe[] Collisions { get; set; } = [];
+    }
+
+    private sealed class DocumentOverlapRectProbe
+    {
+        public string Kind { get; set; } = string.Empty;
+
+        public string BlockId { get; set; } = string.Empty;
+
+        public string LineId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public string CssPath { get; set; } = string.Empty;
+
+        public string WrapMode { get; set; } = string.Empty;
+
+        public RectProbe Rect { get; set; } = new();
+    }
+
+    private sealed class DocumentOverlapCollisionProbe
+    {
+        public string Type { get; set; } = string.Empty;
+
+        public string BlockIdA { get; set; } = string.Empty;
+
+        public string BlockIdB { get; set; } = string.Empty;
+
+        public string TextA { get; set; } = string.Empty;
+
+        public string TextB { get; set; } = string.Empty;
+
+        public string CssPathA { get; set; } = string.Empty;
+
+        public string CssPathB { get; set; } = string.Empty;
+
+        public RectProbe RectA { get; set; } = new();
+
+        public RectProbe RectB { get; set; } = new();
+    }
+
+    private sealed class DocumentLayoutDomMismatchProbe
+    {
+        public string Type { get; set; } = string.Empty;
+
+        public string BlockId { get; set; } = string.Empty;
+
+        public string Text { get; set; } = string.Empty;
+
+        public string CssPath { get; set; } = string.Empty;
+
+        public double Delta { get; set; }
+
+        public RectProbe Expected { get; set; } = new();
+
+        public RectProbe Actual { get; set; } = new();
     }
 
     private sealed class StrictImageLayoutSnapshotProbe

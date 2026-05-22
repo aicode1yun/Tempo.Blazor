@@ -97,8 +97,110 @@ public class DocumentPageLayoutSnapshot
     /// <summary>Debug messages emitted by the layout pass.</summary>
     public List<string> Diagnostics { get; set; } = [];
 
+    /// <summary>Debug metadata for each processed source block.</summary>
+    public List<DocumentBlockLayoutDebugInfo> DebugBlockLayouts { get; set; } = [];
+
+    /// <summary>Debug metadata for each positioned object layout.</summary>
+    public List<DocumentObjectLayoutDebugInfo> DebugObjectLayouts { get; set; } = [];
+
+    /// <summary>Debug metadata for each visual text line.</summary>
+    public List<DocumentLineLayoutDebugInfo> DebugLineLayouts { get; set; } = [];
+
     /// <summary>Performance and invalidation telemetry for the layout pass.</summary>
     public DocumentLayoutPerformanceMetrics Performance { get; set; } = new();
+}
+
+/// <summary>Debug metadata describing how one document block moved the layout cursor.</summary>
+public class DocumentBlockLayoutDebugInfo
+{
+    /// <summary>Source document block id.</summary>
+    public string BlockId { get; set; } = string.Empty;
+
+    /// <summary>Source document block type.</summary>
+    public DocumentBlockType BlockType { get; set; }
+
+    /// <summary>Source document block order.</summary>
+    public double Order { get; set; }
+
+    /// <summary>Page index where the block started layout.</summary>
+    public int PageIndex { get; set; }
+
+    /// <summary>Layout cursor Y before the block was processed.</summary>
+    public double CurrentYBefore { get; set; }
+
+    /// <summary>Layout cursor Y after the block was processed.</summary>
+    public double CurrentYAfter { get; set; }
+
+    /// <summary>Visual start Y used for the block.</summary>
+    public double StartY { get; set; }
+
+    /// <summary>Visual end Y reached by the block.</summary>
+    public double EndY { get; set; }
+}
+
+/// <summary>Debug metadata describing one positioned object and its wrapping footprint.</summary>
+public class DocumentObjectLayoutDebugInfo
+{
+    /// <summary>Layout object id.</summary>
+    public string ObjectId { get; set; } = string.Empty;
+
+    /// <summary>Source image block id.</summary>
+    public string BlockId { get; set; } = string.Empty;
+
+    /// <summary>Source anchor block id.</summary>
+    public string? AnchorBlockId { get; set; }
+
+    /// <summary>Page index containing the object.</summary>
+    public int PageIndex { get; set; }
+
+    /// <summary>Image media rectangle.</summary>
+    public DocumentLayoutRect MediaRect { get; set; } = new();
+
+    /// <summary>Caption rectangle, if visible.</summary>
+    public DocumentLayoutRect CaptionRect { get; set; } = new();
+
+    /// <summary>Media plus caption footprint.</summary>
+    public DocumentLayoutRect FootprintRect { get; set; } = new();
+
+    /// <summary>Text wrap rectangle including wrap distances.</summary>
+    public DocumentLayoutRect WrapRect { get; set; } = new();
+
+    /// <summary>Wrap mode used by the object.</summary>
+    public DocumentWrapMode WrapMode { get; set; }
+
+    /// <summary>Whether the object can overlap same-layer objects.</summary>
+    public bool AllowOverlap { get; set; }
+
+    /// <summary>Object z-index in its layout layer.</summary>
+    public int ZIndex { get; set; }
+}
+
+/// <summary>Debug metadata describing one visual text line and the exclusions used for it.</summary>
+public class DocumentLineLayoutDebugInfo
+{
+    /// <summary>Visual line id.</summary>
+    public string LineId { get; set; } = string.Empty;
+
+    /// <summary>Source document block id.</summary>
+    public string BlockId { get; set; } = string.Empty;
+
+    /// <summary>Page index containing the line.</summary>
+    public int PageIndex { get; set; }
+
+    /// <summary>Zero-based visual line index within the paragraph.</summary>
+    public int LineIndex { get; set; }
+
+    /// <summary>Line rectangle.</summary>
+    public DocumentLayoutRect LineRect { get; set; } = new();
+
+    /// <summary>Intervals available after subtracting active exclusions.</summary>
+    public List<DocumentLayoutInterval> AvailableIntervals { get; set; } = [];
+
+    /// <summary>Exclusion rectangles that overlapped the line's vertical range.</summary>
+    public List<DocumentLayoutRect> ExclusionRects { get; set; } = [];
+
+    /// <summary>Text segments placed on this line.</summary>
+    public List<DocumentTextSegmentBox> Segments { get; set; } = [];
 }
 
 /// <summary>Performance and invalidation telemetry for document layout.</summary>
@@ -267,6 +369,15 @@ public class DocumentObjectLayoutBox
 
     /// <summary>Object visual rectangle without wrap distances.</summary>
     public DocumentLayoutRect ObjectRect { get; set; } = new();
+
+    /// <summary>Media rectangle without caption or wrap distances.</summary>
+    public DocumentLayoutRect MediaRect { get; set; } = new();
+
+    /// <summary>Caption rectangle when the object renders a visible caption.</summary>
+    public DocumentLayoutRect CaptionRect { get; set; } = new();
+
+    /// <summary>Visual footprint rectangle including media and caption, without wrap distances.</summary>
+    public DocumentLayoutRect FootprintRect { get; set; } = new();
 
     /// <summary>Object rectangle expanded by wrap distances.</summary>
     public DocumentLayoutRect WrapRect { get; set; } = new();
@@ -442,6 +553,15 @@ public class DocumentPageLayoutDebugSnapshot
     /// <summary>Performance and invalidation telemetry copied from the layout snapshot.</summary>
     public DocumentLayoutPerformanceMetrics Performance { get; set; } = new();
 
+    /// <summary>Debug metadata for source blocks.</summary>
+    public List<DocumentBlockLayoutDebugInfo> DebugBlockLayouts { get; set; } = [];
+
+    /// <summary>Debug metadata for positioned objects.</summary>
+    public List<DocumentObjectLayoutDebugInfo> DebugObjectLayouts { get; set; } = [];
+
+    /// <summary>Debug metadata for visual text lines.</summary>
+    public List<DocumentLineLayoutDebugInfo> DebugLineLayouts { get; set; } = [];
+
     /// <summary>Creates a debug snapshot from a layout snapshot.</summary>
     public static DocumentPageLayoutDebugSnapshot FromSnapshot(DocumentPageLayoutSnapshot snapshot)
         => new()
@@ -455,6 +575,9 @@ public class DocumentPageLayoutDebugSnapshot
             ExclusionCount = snapshot.Pages.Sum(page => page.Exclusions.Count),
             Pages = snapshot.Pages,
             Diagnostics = snapshot.Diagnostics,
-            Performance = snapshot.Performance
+            Performance = snapshot.Performance,
+            DebugBlockLayouts = snapshot.DebugBlockLayouts,
+            DebugObjectLayouts = snapshot.DebugObjectLayouts,
+            DebugLineLayouts = snapshot.DebugLineLayouts
         };
 }

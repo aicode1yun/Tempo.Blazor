@@ -82,6 +82,16 @@ public static class DocumentLayoutGeometryHelper
         return result;
     }
 
+    /// <summary>Returns the object's visible layout footprint, falling back to the media rectangle when no caption footprint exists.</summary>
+    public static DocumentLayoutRect GetObjectFootprintRect(DocumentObjectLayoutBox objectBox)
+    {
+        ArgumentNullException.ThrowIfNull(objectBox);
+
+        return objectBox.FootprintRect.IsEmpty
+            ? objectBox.ObjectRect
+            : objectBox.FootprintRect;
+    }
+
     /// <summary>Clamps a rectangle origin into the page body while preserving the rectangle size when possible.</summary>
     public static DocumentLayoutRect ClampToBody(DocumentLayoutRect rect, DocumentLayoutRect bodyRect)
     {
@@ -177,6 +187,9 @@ public static class DocumentLayoutGeometryHelper
             BlockId = blockId,
             AnchorBlockId = layout.Anchor.BlockId,
             ObjectRect = objectRect,
+            MediaRect = objectRect.Clone(),
+            CaptionRect = new DocumentLayoutRect(),
+            FootprintRect = objectRect.Clone(),
             WrapRect = ComputeWrapRect(objectRect, layout.Wrap),
             Layout = layout,
             ZIndex = layout.Stacking.ZIndex,

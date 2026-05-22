@@ -136,6 +136,80 @@ public sealed class DocumentEditorLayoutPhase4RenderTests
             assert.strictEqual(twoObjects.length, 2, 'two adjacent image blocks render as two layout objects');
             assert.ok(twoObjects[1].Rect.Y >= twoObjects[0].WrapRect.Y + twoObjects[0].WrapRect.Height - 0.1, 'second default wrapped image is cascaded below the first instead of overlapping it');
 
+            const contractLikeDocument = JSON.parse(JSON.stringify(documentModel));
+            contractLikeDocument.DocumentId = 'phase-4-contract-like-overlap-regression';
+            contractLikeDocument.Blocks = [
+                {
+                    Id: 'contract-title',
+                    Type: 0,
+                    Order: 1,
+                    Content: {
+                        $type: 'paragraph',
+                        Inlines: [{ $type: 'text', Id: 'title-inline', Text: 'Service agreement' }]
+                    }
+                },
+                {
+                    Id: 'contract-wrapped-image',
+                    Type: 5,
+                    Order: 2,
+                    Content: {
+                        $type: 'image',
+                        Url: 'data:image/png;base64,iVBORw0KGgo=',
+                        Caption: 'Image loaded from favicon resolver',
+                        Size: { Width: 160, Height: 90 },
+                        Layout: {
+                            Kind: 1,
+                            Position: { HorizontalAlignment: 0, X: 0, Y: 0 },
+                            Wrap: { Mode: 1, DistanceRight: 12, DistanceBottom: 8 },
+                            Transform: { Width: 160, Height: 90 },
+                            Stacking: { ZIndex: 3 }
+                        }
+                    }
+                },
+                {
+                    Id: 'contract-wrapped-text',
+                    Type: 0,
+                    Order: 3,
+                    Content: {
+                        $type: 'paragraph',
+                        Inlines: [{
+                            $type: 'text',
+                            Id: 'wrapped-text-inline',
+                            Text: 'This longer clause demonstrates live text wrapping around the evidence image. Users can continue typing beside the image, resize it, and the paragraph must reflow as one editable paragraph.'
+                        }]
+                    }
+                },
+                {
+                    Id: 'contract-inline-image',
+                    Type: 5,
+                    Order: 4,
+                    Content: {
+                        $type: 'image',
+                        Url: 'data:image/png;base64,iVBORw0KGgo=',
+                        Caption: 'Inline provider image caption',
+                        Size: { Width: 180, Height: 100 },
+                        Layout: {
+                            Kind: 0,
+                            Wrap: { Mode: 0 },
+                            Transform: { Width: 180, Height: 100 }
+                        }
+                    }
+                }
+            ];
+            const contractSnapshot = hooks.createLayoutSnapshotForRender(contractLikeDocument);
+            const contractPage = contractSnapshot.Pages[0];
+            const wrappedObject = contractPage.Objects.find(obj => obj.BlockId === 'contract-wrapped-image');
+            const inlineObject = contractPage.Objects.find(obj => obj.BlockId === 'contract-inline-image');
+            assert.ok(wrappedObject.FootprintRect.Height > wrappedObject.Rect.Height, 'wrapped image footprint includes caption height');
+            assert.ok(wrappedObject.WrapRect.Height > wrappedObject.Rect.Height, 'wrapped image wrap rect includes caption footprint');
+            assert.strictEqual(intersects(inlineObject.FootprintRect, wrappedObject.WrapRect), false, 'following inline image footprint must not intersect active wrapped image wrap rect');
+            assert.strictEqual(
+                contractPage.Lines
+                    .filter(line => line.BlockId === 'contract-wrapped-text')
+                    .some(line => intersects(line.Rect, wrappedObject.WrapRect)),
+                false,
+                'wrapped text line boxes must not intersect the wrapped image footprint');
+
             console.log('OK');
             """;
 

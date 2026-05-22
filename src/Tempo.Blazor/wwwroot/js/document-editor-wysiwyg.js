@@ -681,7 +681,7 @@ window.tmDocumentWysiwyg = (function () {
         }
 
         if (_isMiniToolbarInteractionTarget(target)
-            || target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-image-selection-toolbar, .tm-wysiwyg-object-selection-pane')) {
+            || target.closest('.tm-wysiwyg-image-context-menu, .tm-wysiwyg-image-replace-menu, .tm-wysiwyg-object-selection-pane')) {
             if (_isMiniToolbarInteractionTarget(target)) {
                 inst.miniToolbarSuppressHideUntil = Date.now() + 2000;
             }
@@ -1850,73 +1850,13 @@ window.tmDocumentWysiwyg = (function () {
         inst.imageReplaceMenu = null;
     }
 
-    // Phase 9.1: floating mini-toolbar shown when image is selected.
-    function _showImageSelectionToolbar(inst, figure) {
-        _hideImageSelectionToolbar(inst);
-        if (!inst || !figure) return;
-
-        var toolbar = document.createElement('div');
-        toolbar.className = 'tm-wysiwyg-image-selection-toolbar';
-        toolbar.setAttribute('role', 'toolbar');
-        toolbar.setAttribute('contenteditable', 'false');
-        toolbar.setAttribute('data-testid', 'document-wysiwyg-image-selection-toolbar');
-        toolbar.setAttribute('aria-label', 'Image tools');
-        var toolbarBlockId = figure.getAttribute('data-block-id')
-            || (figure.closest && figure.closest('.tm-wysiwyg-block[data-block-id]')?.getAttribute('data-block-id'))
-            || '';
-
-        var buttons = [
-            { label: 'Alt text', testId: 'document-wysiwyg-image-toolbar-alt', action: function () { _beginEditImageAltText(inst, figure); } },
-            { label: 'Caption', testId: 'document-wysiwyg-image-toolbar-caption', action: function () { _toggleImageCaption(inst, toolbarBlockId); } },
-            { label: 'Replace', testId: 'document-wysiwyg-image-toolbar-replace', action: function () { _showImageReplaceMenu(inst, figure); } },
-            { label: 'Delete', testId: 'document-wysiwyg-image-toolbar-delete', action: function () { _deleteSelectedImage(inst); } }
-        ];
-
-        buttons.forEach(function (btn) {
-            var b = document.createElement('button');
-            b.type = 'button';
-            b.textContent = btn.label;
-            b.setAttribute('data-testid', btn.testId);
-            b.setAttribute('role', 'button');
-            b.addEventListener('mousedown', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-            });
-            b.addEventListener('click', function (event) {
-                event.preventDefault();
-                event.stopPropagation();
-                btn.action();
-            });
-            toolbar.appendChild(b);
-        });
-
-        inst.root.appendChild(toolbar);
-        var figRect = figure.getBoundingClientRect();
-        var rootRect = inst.root.getBoundingClientRect();
-        var toolbarHeight = toolbar.offsetHeight || 40;
-        var rootViewportTop = Math.max(0, rootRect.top || 0);
-        var rootViewportBottom = Math.min(window.innerHeight || document.documentElement.clientHeight || rootRect.bottom || 0, rootRect.bottom || 0);
-        var aboveViewportTop = figRect.top - toolbarHeight - 8;
-        var belowViewportTop = figRect.bottom + 8;
-        var topViewport = aboveViewportTop;
-        if (aboveViewportTop < rootViewportTop + 4 && belowViewportTop + toolbarHeight <= rootViewportBottom - 4) {
-            topViewport = belowViewportTop;
-        } else if (aboveViewportTop < rootViewportTop + 4) {
-            topViewport = Math.max(rootViewportTop + 4, Math.min(belowViewportTop, rootViewportBottom - toolbarHeight - 4));
-        }
-
-        var top = topViewport - rootRect.top + inst.root.scrollTop;
-        var left = figRect.left - rootRect.left + inst.root.scrollLeft;
-        _positionFloatingElementInRoot(inst, toolbar, left, top, 360, toolbarHeight);
-        toolbar.style.zIndex = '1001';
-        inst.imageSelectionToolbar = toolbar;
-    }
-
     function _hideImageSelectionToolbar(inst) {
-        if (!inst || !inst.imageSelectionToolbar) return;
-        if (inst.imageSelectionToolbar.parentNode) {
+        if (!inst) return;
+        if (inst.imageSelectionToolbar && inst.imageSelectionToolbar.parentNode) {
             inst.imageSelectionToolbar.parentNode.removeChild(inst.imageSelectionToolbar);
         }
+        inst.root?.querySelectorAll?.('[data-testid="document-wysiwyg-image-selection-toolbar"], .tm-wysiwyg-image-selection-toolbar')
+            .forEach(function (node) { node.remove(); });
         inst.imageSelectionToolbar = null;
     }
 
@@ -11961,11 +11901,34 @@ window.tmDocumentWysiwyg = (function () {
         _setRuntimeNodeAttributes(span, segment.InlineId || segment.inlineId || '', 'inline');
         _renderTextRunContent(span, segment.Text || segment.text || '');
         _applyMarks(span, segment.Marks || segment.marks, inst);
+        _applyLayoutSegmentRenderStyle(span, segment, segmentRect);
         return span;
     }
 
+    function _applyLayoutSegmentRenderStyle(span, segment, segmentRect) {
+        var fontFamily = segment.FontFamily || segment.fontFamily;
+        var fontSize = segment.FontSize ?? segment.fontSize;
+        var fontWeight = segment.FontWeight || segment.fontWeight;
+        var fontStyle = segment.FontStyle || segment.fontStyle;
+        var letterSpacing = segment.LetterSpacing ?? segment.letterSpacing;
+        if (fontFamily) span.style.fontFamily = fontFamily;
+        if (Number.isFinite(Number(fontSize)) && Number(fontSize) > 0) {
+            span.style.fontSize = _roundLayoutNumber(Number(fontSize)) + 'px';
+        }
+        if (fontWeight) span.style.fontWeight = fontWeight;
+        if (fontStyle) span.style.fontStyle = fontStyle;
+        if (Number.isFinite(Number(letterSpacing)) && Number(letterSpacing) > 0) {
+            span.style.letterSpacing = _roundLayoutNumber(Number(letterSpacing)) + 'px';
+        }
+        if (segmentRect && Number.isFinite(Number(segmentRect.Height)) && Number(segmentRect.Height) > 0) {
+            span.style.lineHeight = _roundLayoutNumber(Number(segmentRect.Height)) + 'px';
+        }
+    }
+
     function _applyLayoutObjectBoxToElement(el, objectBox, inst) {
-        var rect = objectBox.Rect || objectBox.rect || {};
+        var rect = objectBox.MediaRect || objectBox.mediaRect || objectBox.Rect || objectBox.rect || {};
+        var footprintRect = objectBox.FootprintRect || objectBox.footprintRect || objectBox.Rect || objectBox.rect || rect;
+        var captionRect = objectBox.CaptionRect || objectBox.captionRect || {};
         var wrapRect = objectBox.WrapRect || objectBox.wrapRect || rect;
         var objectId = objectBox.Id || objectBox.id || '';
         var anchorBlockId = objectBox.AnchorBlockId || objectBox.anchorBlockId || objectBox.BlockId || objectBox.blockId || '';
@@ -12004,13 +11967,23 @@ window.tmDocumentWysiwyg = (function () {
         el.style.left = _roundLayoutNumber(rect.X) + 'px';
         el.style.top = _roundLayoutNumber(rect.Y) + 'px';
         el.style.width = _roundLayoutNumber(rect.Width) + 'px';
-        el.style.minHeight = _roundLayoutNumber(rect.Height) + 'px';
+        el.style.minHeight = _roundLayoutNumber(footprintRect.Height || rect.Height) + 'px';
         el.style.margin = '0';
         el.style.zIndex = String(zIndex);
+        el.setAttribute('data-layout-footprint-x', String(_roundLayoutNumber(footprintRect.X)));
+        el.setAttribute('data-layout-footprint-y', String(_roundLayoutNumber(footprintRect.Y)));
+        el.setAttribute('data-layout-footprint-width', String(_roundLayoutNumber(footprintRect.Width)));
+        el.setAttribute('data-layout-footprint-height', String(_roundLayoutNumber(footprintRect.Height)));
+        if (captionRect && captionRect.Height > 0) {
+            el.setAttribute('data-layout-caption-height', String(_roundLayoutNumber(captionRect.Height)));
+        } else {
+            el.removeAttribute('data-layout-caption-height');
+        }
         el.style.setProperty('--tm-layout-object-x', _roundLayoutNumber(rect.X) + 'px');
         el.style.setProperty('--tm-layout-object-y', _roundLayoutNumber(rect.Y) + 'px');
         el.style.setProperty('--tm-layout-object-width', _roundLayoutNumber(rect.Width) + 'px');
         el.style.setProperty('--tm-layout-object-height', _roundLayoutNumber(rect.Height) + 'px');
+        el.style.setProperty('--tm-layout-footprint-height', _roundLayoutNumber(footprintRect.Height || rect.Height) + 'px');
         el.style.setProperty('--tm-layout-wrap-x', _roundLayoutNumber(wrapRect.X) + 'px');
         el.style.setProperty('--tm-layout-wrap-y', _roundLayoutNumber(wrapRect.Y) + 'px');
         el.style.setProperty('--tm-layout-wrap-width', _roundLayoutNumber(wrapRect.Width) + 'px');
@@ -12190,6 +12163,9 @@ window.tmDocumentWysiwyg = (function () {
                 Exclusions: [],
                 Diagnostics: []
             };
+            var blocks = (pageData.blocks || []).slice();
+            _sortSnapshotBlocks(blocks);
+            var preAnchoredImages = _createPreAnchoredImageMap(blocks, objectAnchors);
             var state = {
                 currentY: 0,
                 blockIndex: 0,
@@ -12197,9 +12173,11 @@ window.tmDocumentWysiwyg = (function () {
                 objectIndex: 0,
                 paragraphRects: new Map(),
                 objectAnchors: objectAnchors,
+                preAnchoredImages: preAnchoredImages,
+                preAnchoredImageIds: _createPreAnchoredImageIdSet(preAnchoredImages),
+                preLaidImageIds: new Set(),
                 lastTextBlockId: ''
             };
-            var blocks = pageData.blocks || [];
             var theme = _readLayoutTheme(doc);
 
             for (var i = 0; i < blocks.length; i++) {
@@ -12250,6 +12228,58 @@ window.tmDocumentWysiwyg = (function () {
         return map;
     }
 
+    function _createPreAnchoredImageMap(blocks, objectAnchors) {
+        var map = new Map();
+        var previousTextBlockId = '';
+        for (var i = 0; i < blocks.length; i++) {
+            var block = blocks[i] || {};
+            var blockId = block.id || block.Id || '';
+            var typeName = _blockTypeName(block);
+            if (typeName === 'pagebreak' || typeName === 'pageBreak') {
+                previousTextBlockId = '';
+                continue;
+            }
+
+            if (typeName === 'image') {
+                var content = block.content || block.Content || {};
+                var layout = _getImageObjectLayout(content);
+                var layoutState = _readImageObjectLayout(layout || { Kind: 0, Wrap: { Mode: 0 } });
+                if (layoutState.inline !== false
+                    || layoutState.fixedOnPage
+                    || !_wrapModeCreatesTextExclusion(layoutState.wrapMode.value)) {
+                    continue;
+                }
+
+                var storedAnchor = objectAnchors && blockId ? objectAnchors[blockId] : null;
+                var anchorBlockId = layoutState.anchorBlockId
+                    || (storedAnchor && storedAnchor.BlockId)
+                    || previousTextBlockId;
+                if (!anchorBlockId || anchorBlockId === blockId) continue;
+                if (!map.has(anchorBlockId)) map.set(anchorBlockId, []);
+                map.get(anchorBlockId).push(block);
+                continue;
+            }
+
+            if (_isLayoutTextBlock(typeName)) {
+                previousTextBlockId = blockId;
+            }
+        }
+
+        return map;
+    }
+
+    function _createPreAnchoredImageIdSet(preAnchoredImages) {
+        var ids = new Set();
+        if (!preAnchoredImages || !preAnchoredImages.forEach) return ids;
+        preAnchoredImages.forEach(function (images) {
+            for (var i = 0; i < (images || []).length; i++) {
+                var imageId = images[i] && (images[i].id || images[i].Id);
+                if (imageId) ids.add(imageId);
+            }
+        });
+        return ids;
+    }
+
     function _createLayoutPageMetrics(pageSettings) {
         var width = _cssLengthToPx(pageSettings && pageSettings.width) || 793.7;
         var height = _cssLengthToPx(pageSettings && pageSettings.height) || 1122.5;
@@ -12275,13 +12305,15 @@ window.tmDocumentWysiwyg = (function () {
 
     function _readLayoutTheme(doc) {
         var theme = (doc && (doc.theme || doc.Theme)) || {};
-        var fontSize = _sanitizeNumber(theme.bodyFontSize ?? theme.BodyFontSize, 11, 6, 96);
+        var fontSizePt = _sanitizeNumber(theme.bodyFontSize ?? theme.BodyFontSize, 11, 6, 96);
+        var fontSizePx = fontSizePt * 96 / 72;
         var lineHeight = _sanitizeNumber(theme.bodyLineHeight ?? theme.BodyLineHeight, 1.15, 0.8, 3);
         return {
             FontFamily: theme.bodyFontFamily || theme.BodyFontFamily || 'Aptos, Arial, sans-serif',
-            FontSize: fontSize,
+            FontSize: fontSizePx,
+            FontSizePt: fontSizePt,
             LineHeight: lineHeight,
-            LineHeightPx: _roundLayoutNumber(fontSize * 96 / 72 * lineHeight),
+            LineHeightPx: _roundLayoutNumber(fontSizePx * lineHeight),
             ParagraphSpacingAfter: _sanitizeNumber(theme.paragraphSpacingAfter ?? theme.ParagraphSpacingAfter, 8, 0, 144) * 96 / 72
         };
     }
@@ -12292,7 +12324,14 @@ window.tmDocumentWysiwyg = (function () {
         var content = (block && (block.content || block.Content)) || {};
 
         if (typeName === 'image') {
-            var objectBox = _createImageLayoutObject(block, content, layoutPage, state);
+            if (state.preLaidImageIds && state.preLaidImageIds.has(blockId)) {
+                return;
+            }
+            if (state.preAnchoredImageIds && state.preAnchoredImageIds.has(blockId)) {
+                return;
+            }
+
+            var objectBox = _createImageLayoutObject(block, content, layoutPage, state, theme);
             if (objectBox) {
                 layoutPage.Objects.push(objectBox);
                 if (objectBox.Exclusion) {
@@ -12319,6 +12358,7 @@ window.tmDocumentWysiwyg = (function () {
             return;
         }
 
+        _layoutPreAnchoredImagesForBlock(doc, layoutPage, blockId, state, theme);
         var paragraph = _createTextParagraphLayout(block, content, blockId, layoutPage, state, theme);
         layoutPage.Paragraphs.push(paragraph);
         state.paragraphRects.set(blockId, _cloneLayoutRect(paragraph.Rect));
@@ -12326,7 +12366,36 @@ window.tmDocumentWysiwyg = (function () {
         for (var i = 0; i < paragraph.Lines.length; i++) {
             layoutPage.Lines.push(paragraph.Lines[i]);
         }
-        state.currentY = paragraph.Rect.Y + paragraph.Rect.Height + theme.ParagraphSpacingAfter;
+        state.currentY = paragraph.Rect.Y + paragraph.Rect.Height + _getLayoutParagraphSpacingAfter(block, theme);
+    }
+
+    function _layoutPreAnchoredImagesForBlock(doc, layoutPage, blockId, state, theme) {
+        var images = state.preAnchoredImages && state.preAnchoredImages.get(blockId);
+        if (!images || images.length === 0) return;
+
+        for (var i = 0; i < images.length; i++) {
+            var imageBlock = images[i] || {};
+            var imageBlockId = imageBlock.id || imageBlock.Id || '';
+            if (!imageBlockId || (state.preLaidImageIds && state.preLaidImageIds.has(imageBlockId))) continue;
+            var content = imageBlock.content || imageBlock.Content || {};
+            var objectBox = _createImageLayoutObject(imageBlock, content, layoutPage, state, theme, blockId);
+            if (!objectBox) continue;
+
+            layoutPage.Objects.push(objectBox);
+            if (objectBox.Exclusion) {
+                layoutPage.Exclusions.push(objectBox.Exclusion);
+            }
+
+            if (state.preLaidImageIds) {
+                state.preLaidImageIds.add(imageBlockId);
+            }
+
+            if (_wrapModeCreatesTextExclusion(objectBox.WrapMode)) {
+                state.lastFloatingObjectBottom = Math.max(
+                    state.lastFloatingObjectBottom || state.currentY,
+                    objectBox.WrapRect.Y + objectBox.WrapRect.Height);
+            }
+        }
     }
 
     function _isLayoutTextBlock(typeName) {
@@ -12337,20 +12406,22 @@ window.tmDocumentWysiwyg = (function () {
 
     function _createTextParagraphLayout(block, content, blockId, layoutPage, state, theme) {
         var bodyRect = layoutPage.BodyRect;
+        var spacingBefore = _getLayoutParagraphSpacingBefore(block);
+        var paragraphY = _roundLayoutNumber(state.currentY + spacingBefore);
         var paragraph = {
             Id: 'layout-paragraph-' + blockId,
             BlockId: blockId,
             Rect: {
                 X: bodyRect.X,
-                Y: _roundLayoutNumber(state.currentY),
+                Y: paragraphY,
                 Width: bodyRect.Width,
                 Height: theme.LineHeightPx
             },
             Lines: []
         };
-        var runs = _createLayoutTextRuns(content);
-        var y = state.currentY;
-        var lineHeight = theme.LineHeightPx;
+        var runs = _createLayoutTextRuns(content, theme);
+        var y = paragraphY;
+        var lineHeight = _getLayoutParagraphLineHeight(block, runs, theme);
         var currentLine = null;
         var currentInterval = null;
         var currentIntervals = [];
@@ -12398,7 +12469,7 @@ window.tmDocumentWysiwyg = (function () {
             currentLine.Rect.Width = _roundLayoutNumber(right - left);
         }
 
-        function moveToNextAvailableInterval(width) {
+        function moveToNextAvailableInterval(width, requireFit) {
             if (!currentLine || !currentIntervals || currentIntervalIndex >= currentIntervals.length - 1) {
                 return false;
             }
@@ -12406,6 +12477,7 @@ window.tmDocumentWysiwyg = (function () {
             for (var intervalIndex = currentIntervalIndex + 1; intervalIndex < currentIntervals.length; intervalIndex++) {
                 var interval = currentIntervals[intervalIndex];
                 if (!interval || interval.Width <= 0) continue;
+                if (requireFit && interval.Width + 0.01 < width) continue;
                 currentInterval = interval;
                 currentIntervalIndex = intervalIndex;
                 x = interval.X;
@@ -12415,6 +12487,44 @@ window.tmDocumentWysiwyg = (function () {
             }
 
             return false;
+        }
+
+        function appendCharacterToLine(run, char, charIndex, width) {
+            var segment = currentLine.Segments.length > 0
+                ? currentLine.Segments[currentLine.Segments.length - 1]
+                : null;
+            if (!segment || forceNewSegment || segment.InlineId !== run.InlineId || segment.SourceRunIndex !== run.InlineIndex) {
+                segment = {
+                    Id: 'layout-segment-' + blockId + '-' + currentLine.Segments.length + '-' + state.lineIndex + '-' + charIndex,
+                    BlockId: blockId,
+                    LineId: currentLine.Id,
+                    InlineId: run.InlineId,
+                    InlineIndex: run.InlineIndex,
+                    SourceRunIndex: run.InlineIndex,
+                    StartOffset: charIndex,
+                    Length: 0,
+                    Text: '',
+                    Marks: run.Marks || [],
+                    FontFamily: run.FontFamily,
+                    FontSize: run.FontSize,
+                    FontWeight: run.FontWeight,
+                    FontStyle: run.FontStyle,
+                    LetterSpacing: run.LetterSpacing,
+                    Rect: {
+                        X: _roundLayoutNumber(x),
+                        Y: _roundLayoutNumber(y),
+                        Width: 0,
+                        Height: _roundLayoutNumber(lineHeight)
+                    }
+                };
+                currentLine.Segments.push(segment);
+                forceNewSegment = false;
+            }
+
+            segment.Text += char;
+            segment.Length += 1;
+            segment.Rect.Width = _roundLayoutNumber(segment.Rect.Width + width);
+            x = Math.min(currentInterval.X + currentInterval.Width, x + width);
         }
 
         function addCharacter(run, char, charIndex) {
@@ -12441,36 +12551,55 @@ window.tmDocumentWysiwyg = (function () {
                 maxRight = currentInterval.X + currentInterval.Width;
             }
 
-            var segment = currentLine.Segments.length > 0
-                ? currentLine.Segments[currentLine.Segments.length - 1]
-                : null;
-            if (!segment || forceNewSegment || segment.InlineId !== run.InlineId || segment.SourceRunIndex !== run.InlineIndex) {
-                segment = {
-                    Id: 'layout-segment-' + blockId + '-' + currentLine.Segments.length + '-' + state.lineIndex + '-' + charIndex,
-                    BlockId: blockId,
-                    LineId: currentLine.Id,
-                    InlineId: run.InlineId,
-                    InlineIndex: run.InlineIndex,
-                    SourceRunIndex: run.InlineIndex,
-                    StartOffset: charIndex,
-                    Length: 0,
-                    Text: '',
-                    Marks: run.Marks || [],
-                    Rect: {
-                        X: _roundLayoutNumber(x),
-                        Y: _roundLayoutNumber(y),
-                        Width: 0,
-                        Height: _roundLayoutNumber(lineHeight)
-                    }
-                };
-                currentLine.Segments.push(segment);
-                forceNewSegment = false;
+            appendCharacterToLine(run, char, charIndex, width);
+        }
+
+        function addTextWithoutWrapping(run, text, startIndex) {
+            if (!currentLine) startLine();
+            for (var index = 0; index < text.length; index++) {
+                var char = text[index];
+                appendCharacterToLine(run, char, startIndex + index, _measureLayoutTextWidth(char, run, theme));
+            }
+        }
+
+        function placeTextUnit(run, text, startIndex) {
+            if (!text) return;
+            if (!currentLine) startLine();
+            var width = _measureLayoutTextWidth(text, run, theme);
+            var maxRight = currentInterval.X + currentInterval.Width;
+            if (x + width <= maxRight + 0.01) {
+                addTextWithoutWrapping(run, text, startIndex);
+                return;
             }
 
-            segment.Text += char;
-            segment.Length += 1;
-            segment.Rect.Width = _roundLayoutNumber(segment.Rect.Width + width);
-            x = Math.min(maxRight, x + width);
+            if (moveToNextAvailableInterval(width, true)) {
+                addTextWithoutWrapping(run, text, startIndex);
+                return;
+            }
+
+            if (currentLine.Segments.length > 0) {
+                y += lineHeight;
+                currentLine = null;
+                currentInterval = null;
+                currentIntervals = [];
+                currentIntervalIndex = 0;
+                startLine();
+                maxRight = currentInterval.X + currentInterval.Width;
+
+                if (x + width <= maxRight + 0.01) {
+                    addTextWithoutWrapping(run, text, startIndex);
+                    return;
+                }
+
+                if (moveToNextAvailableInterval(width, true)) {
+                    addTextWithoutWrapping(run, text, startIndex);
+                    return;
+                }
+            }
+
+            for (var index = 0; index < text.length; index++) {
+                addCharacter(run, text[index], startIndex + index);
+            }
         }
 
         for (var runIndex = 0; runIndex < runs.length; runIndex++) {
@@ -12481,8 +12610,39 @@ window.tmDocumentWysiwyg = (function () {
                 continue;
             }
 
-            for (var charIndex = 0; charIndex < text.length; charIndex++) {
-                addCharacter(run, text[charIndex], charIndex);
+            for (var charIndex = 0; charIndex < text.length;) {
+                var char = text[charIndex];
+                if (char === '\r') {
+                    charIndex++;
+                    continue;
+                }
+
+                if (char === '\n') {
+                    addCharacter(run, char, charIndex);
+                    charIndex++;
+                    continue;
+                }
+
+                var tokenStart = charIndex;
+                if (/\s/.test(char)) {
+                    while (charIndex < text.length
+                        && text[charIndex] !== '\r'
+                        && text[charIndex] !== '\n'
+                        && /\s/.test(text[charIndex])) {
+                        addCharacter(run, text[charIndex], charIndex);
+                        charIndex++;
+                    }
+                    continue;
+                }
+
+                while (charIndex < text.length
+                    && text[charIndex] !== '\r'
+                    && text[charIndex] !== '\n'
+                    && !/\s/.test(text[charIndex])) {
+                    charIndex++;
+                }
+
+                placeTextUnit(run, text.slice(tokenStart, charIndex), tokenStart);
             }
         }
 
@@ -12495,10 +12655,43 @@ window.tmDocumentWysiwyg = (function () {
         return paragraph;
     }
 
-    function _createLayoutTextRuns(content) {
+    function _getLayoutParagraphProperties(block) {
+        return (block && (block.paragraphProperties || block.ParagraphProperties)) || {};
+    }
+
+    function _getLayoutParagraphSpacingBefore(block) {
+        var props = _getLayoutParagraphProperties(block);
+        return _sanitizeNumber(props.spacingBefore ?? props.SpacingBefore, 0, 0, 288) * 96 / 72;
+    }
+
+    function _getLayoutParagraphSpacingAfter(block, theme) {
+        var props = _getLayoutParagraphProperties(block);
+        var fallback = theme && Number.isFinite(Number(theme.ParagraphSpacingAfter))
+            ? Number(theme.ParagraphSpacingAfter) * 72 / 96
+            : 8;
+        return _sanitizeNumber(props.spacingAfter ?? props.SpacingAfter, fallback, 0, 288) * 96 / 72;
+    }
+
+    function _getLayoutParagraphLineSpacing(block) {
+        var props = _getLayoutParagraphProperties(block);
+        return _sanitizeNumber(props.lineSpacing ?? props.LineSpacing, 1, 0.25, 8);
+    }
+
+    function _createLayoutTextRuns(content, theme) {
         var inlines = (content && (content.inlines || content.Inlines)) || [];
         if (inlines.length === 0) {
-            return [{ InlineId: 'layout-inline-empty', InlineIndex: 0, Text: '', Marks: [] }];
+            var emptyStyle = _createLayoutRunStyle([], theme);
+            return [{
+                InlineId: 'layout-inline-empty',
+                InlineIndex: 0,
+                Text: '',
+                Marks: [],
+                FontFamily: emptyStyle.FontFamily,
+                FontSize: emptyStyle.FontSize,
+                FontWeight: emptyStyle.FontWeight,
+                FontStyle: emptyStyle.FontStyle,
+                LetterSpacing: emptyStyle.LetterSpacing
+            }];
         }
 
         return inlines.map(function (inline, index) {
@@ -12515,34 +12708,104 @@ window.tmDocumentWysiwyg = (function () {
                 text = inline.displayMarker || inline.DisplayMarker || inline.noteId || inline.NoteId || '';
             }
 
+            var marks = (inline && (inline.marks || inline.Marks)) || [];
+            var style = _createLayoutRunStyle(marks, theme);
             return {
                 InlineId: inlineId,
                 InlineIndex: index,
                 Text: String(text || ''),
-                Marks: (inline && (inline.marks || inline.Marks)) || []
+                Marks: marks,
+                FontFamily: style.FontFamily,
+                FontSize: style.FontSize,
+                FontWeight: style.FontWeight,
+                FontStyle: style.FontStyle,
+                LetterSpacing: style.LetterSpacing
             };
         });
     }
 
-    function _measureLayoutTextWidth(text, run, theme) {
-        var fontWeight = '400';
-        var fontStyle = 'normal';
-        var marks = (run && run.Marks) || [];
+    function _createLayoutRunStyle(marks, theme) {
+        var style = {
+            FontFamily: (theme && theme.FontFamily) || 'Aptos, Arial, sans-serif',
+            FontSize: (theme && theme.FontSize) || 14.6667,
+            FontWeight: '400',
+            FontStyle: 'normal',
+            LetterSpacing: 0
+        };
+        marks = marks || [];
         for (var i = 0; i < marks.length; i++) {
-            var markType = marks[i].type ?? marks[i].Type;
-            if (markType === 'Bold' || markType === 0) fontWeight = '700';
-            if (markType === 'Italic' || markType === 1) fontStyle = 'italic';
+            var mark = marks[i] || {};
+            var markType = _normalizeMarkType(mark.type ?? mark.Type);
+            var markValue = mark.value ?? mark.Value;
+            switch (markType) {
+                case 'Bold':
+                    style.FontWeight = '700';
+                    break;
+                case 'Italic':
+                    style.FontStyle = 'italic';
+                    break;
+                case 'FontFamily':
+                    style.FontFamily = _sanitizeLayoutFontFamilyValue(markValue, style.FontFamily);
+                    break;
+                case 'FontSize':
+                    style.FontSize = _sanitizeLayoutFontSizePx(markValue, style.FontSize);
+                    break;
+                case 'Superscript':
+                case 'Subscript':
+                    style.FontSize = Math.max(6, style.FontSize * 0.8333);
+                    break;
+            }
         }
+        return style;
+    }
+
+    function _sanitizeLayoutFontFamilyValue(value, fallback) {
+        var raw = String(value || '').trim();
+        return raw || fallback || 'Aptos, Arial, sans-serif';
+    }
+
+    function _sanitizeLayoutFontSizePx(value, fallback) {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+            return Math.max(1, value * 96 / 72);
+        }
+
+        var raw = String(value || '').trim().toLowerCase().replace(',', '.');
+        if (!raw) return fallback;
+        var number = parseFloat(raw);
+        if (!Number.isFinite(number) || number <= 0) return fallback;
+        if (raw.endsWith('px')) return Math.max(1, number);
+        if (raw.endsWith('rem')) return Math.max(1, number * 16);
+        if (raw.endsWith('em')) return Math.max(1, number * (fallback || 16));
+        return Math.max(1, number * 96 / 72);
+    }
+
+    function _getLayoutParagraphLineHeight(block, runs, theme) {
+        var maxFontSize = Math.max((theme && theme.FontSize) || 14.6667, 1);
+        for (var i = 0; i < (runs || []).length; i++) {
+            maxFontSize = Math.max(maxFontSize, runs[i] && runs[i].FontSize ? runs[i].FontSize : 0);
+        }
+
+        var lineHeight = _roundLayoutNumber(maxFontSize * ((theme && theme.LineHeight) || 1.15));
+        var typeName = _blockTypeName(block);
+        if (typeName === 'heading') {
+            lineHeight = Math.max(lineHeight, _roundLayoutNumber(maxFontSize * 1.08));
+        }
+
+        return Math.max(1, _roundLayoutNumber(lineHeight * _getLayoutParagraphLineSpacing(block)));
+    }
+
+    function _measureLayoutTextWidth(text, run, theme) {
+        var fontSize = (run && run.FontSize) || (theme && theme.FontSize) || 14.6667;
         var measurement = _measureTextRun({
             Text: text,
-            FontFamily: theme.FontFamily,
-            FontSize: theme.FontSize,
-            FontWeight: fontWeight,
-            FontStyle: fontStyle,
-            LetterSpacing: 0,
+            FontFamily: (run && run.FontFamily) || (theme && theme.FontFamily) || 'Aptos, Arial, sans-serif',
+            FontSize: fontSize,
+            FontWeight: (run && run.FontWeight) || '400',
+            FontStyle: (run && run.FontStyle) || 'normal',
+            LetterSpacing: (run && run.LetterSpacing) || 0,
             Zoom: 1
         });
-        return Math.max(1, measurement.Width || theme.FontSize * 0.5);
+        return Math.max(1, measurement.Width || fontSize * 0.5);
     }
 
     function _getLayoutAvailableIntervals(y, height, bodyRect, exclusions) {
@@ -12683,14 +12946,16 @@ window.tmDocumentWysiwyg = (function () {
         return y < otherY + otherHeight && y + height > otherY;
     }
 
-    function _createImageLayoutObject(block, content, layoutPage, state) {
+    function _createImageLayoutObject(block, content, layoutPage, state, theme, anchorBlockIdOverride) {
         var layout = _getImageObjectLayout(content);
         var layoutState = _readImageObjectLayout(layout || { Kind: 0, Wrap: { Mode: 0 } });
 
         var blockId = (block && (block.id || block.Id)) || ('image-' + state.objectIndex);
         var size = _readLayoutImageSize(content, layoutState);
+        var captionLayout = _measureImageCaptionLayout(content, size.Width, theme);
         var storedAnchor = state.objectAnchors && state.objectAnchors[blockId] ? state.objectAnchors[blockId] : null;
-        var anchorBlockId = layoutState.anchorBlockId
+        var anchorBlockId = anchorBlockIdOverride
+            || layoutState.anchorBlockId
             || (storedAnchor && storedAnchor.BlockId)
             || state.lastTextBlockId
             || blockId;
@@ -12709,14 +12974,22 @@ window.tmDocumentWysiwyg = (function () {
             && state.lastFloatingObjectBottom > anchorY) {
             anchorY = state.lastFloatingObjectBottom;
         }
-        var objectRect = _resolveImageObjectRect(layoutPage.BodyRect, anchorY, size, layoutState);
-        var wrapRect = _createImageWrapRect(objectRect, layoutState, layoutPage.BodyRect);
+        var objectRect = layoutState.inline !== false
+            ? _resolveInlineImageObjectRect(layoutPage, state, size, captionLayout, layoutState, theme)
+            : _resolveImageObjectRect(layoutPage.BodyRect, anchorY, size, layoutState);
+        var captionRect = _createImageCaptionRect(objectRect, captionLayout);
+        var footprintRect = _createImageFootprintRect(objectRect, captionRect);
+        var wrapRect = _createImageWrapRect(footprintRect, layoutState, layoutPage.BodyRect);
         var objectId = 'layout-object-' + blockId;
         var objectBox = {
             Id: objectId,
             BlockId: blockId,
             ObjectType: 'image',
             Rect: objectRect,
+            MediaRect: _cloneLayoutRect(objectRect),
+            CaptionRect: captionRect,
+            FootprintRect: footprintRect,
+            CaptionLayout: captionLayout,
             VisualRect: _cloneLayoutRect(objectRect),
             WrapRect: wrapRect,
             WrapContourPoints: layoutState.contourPoints,
@@ -12764,6 +13037,133 @@ window.tmDocumentWysiwyg = (function () {
         return objectBox;
     }
 
+    function _measureImageCaptionLayout(content, width, theme) {
+        var caption = content && (content.caption || content.Caption);
+        if (typeof caption !== 'string' || caption.trim().length === 0) {
+            return { Height: 0, Gap: 0, Lines: 0 };
+        }
+
+        var captionFontSize = Math.max(8, (theme && theme.FontSize ? theme.FontSize : 11) * 0.9);
+        var lineHeight = Math.max(theme && theme.LineHeightPx ? theme.LineHeightPx : 16, captionFontSize * ((theme && theme.LineHeight) || 1.2));
+        var availableWidth = Math.max(1, width || 1);
+        var lines = caption.split('\n').reduce(function (count, line) {
+            if (!line || line.trim().length === 0) return count + 1;
+            var measured = _measureTextRun({
+                Text: line,
+                FontFamily: (theme && theme.FontFamily) || 'Aptos, Arial, sans-serif',
+                FontSize: captionFontSize,
+                FontWeight: '400',
+                FontStyle: 'normal',
+                LetterSpacing: 0,
+                Zoom: 1
+            });
+            return count + Math.max(1, Math.ceil((measured.Width || availableWidth) / availableWidth));
+        }, 0);
+
+        return {
+            Height: _roundLayoutNumber(lines * lineHeight),
+            Gap: 8,
+            Lines: lines
+        };
+    }
+
+    function _createImageCaptionRect(objectRect, captionLayout) {
+        var height = captionLayout && captionLayout.Height ? captionLayout.Height : 0;
+        if (height <= 0) {
+            return { X: 0, Y: 0, Width: 0, Height: 0 };
+        }
+
+        return {
+            X: _roundLayoutNumber(objectRect.X),
+            Y: _roundLayoutNumber(objectRect.Y + objectRect.Height + ((captionLayout && captionLayout.Gap) || 0)),
+            Width: _roundLayoutNumber(objectRect.Width),
+            Height: _roundLayoutNumber(height)
+        };
+    }
+
+    function _createImageFootprintRect(objectRect, captionRect) {
+        if (!captionRect || captionRect.Width <= 0 || captionRect.Height <= 0) {
+            return _cloneLayoutRect(objectRect);
+        }
+
+        var left = Math.min(objectRect.X, captionRect.X);
+        var top = Math.min(objectRect.Y, captionRect.Y);
+        var right = Math.max(objectRect.X + objectRect.Width, captionRect.X + captionRect.Width);
+        var bottom = Math.max(objectRect.Y + objectRect.Height, captionRect.Y + captionRect.Height);
+        return {
+            X: _roundLayoutNumber(left),
+            Y: _roundLayoutNumber(top),
+            Width: _roundLayoutNumber(right - left),
+            Height: _roundLayoutNumber(bottom - top)
+        };
+    }
+
+    function _resolveInlineImageObjectRect(layoutPage, state, size, captionLayout, layoutState, theme) {
+        var bodyRect = layoutPage.BodyRect;
+        var footprintHeight = size.Height
+            + ((captionLayout && captionLayout.Height > 0) ? ((captionLayout.Gap || 0) + captionLayout.Height) : 0);
+        var interval = _ensureLayoutObjectAvailableInterval(
+            layoutPage,
+            state,
+            Math.min(size.Width, bodyRect.Width),
+            Math.max(footprintHeight, (theme && theme.LineHeightPx) || 16),
+            theme);
+        var hPos = layoutState.hPos ? layoutState.hPos.css : 'left';
+        var x = interval.X;
+        if (hPos === 'center') {
+            x = interval.X + (interval.Width - size.Width) / 2 + layoutState.x;
+        } else if (hPos === 'right') {
+            x = interval.X + interval.Width - size.Width + layoutState.x;
+        } else {
+            x = interval.X + layoutState.x;
+        }
+
+        x = Math.max(interval.X, Math.min(interval.X + interval.Width - Math.min(size.Width, interval.Width), x));
+        return {
+            X: _roundLayoutNumber(x),
+            Y: _roundLayoutNumber(bodyRect.Y + state.currentY + layoutState.y),
+            Width: _roundLayoutNumber(size.Width),
+            Height: _roundLayoutNumber(size.Height)
+        };
+    }
+
+    function _ensureLayoutObjectAvailableInterval(layoutPage, state, requiredWidth, requiredHeight, theme) {
+        var bodyRect = layoutPage.BodyRect;
+        var guard = 0;
+        while (guard++ < 256) {
+            var intervals = _getLayoutAvailableIntervals(state.currentY, requiredHeight, bodyRect, layoutPage.Exclusions);
+            var fit = intervals.find(function (interval) {
+                return interval.Width >= requiredWidth - 0.1;
+            });
+            if (fit) return fit;
+
+            var nextY = _findNextBlockingExclusionBottom(state.currentY, requiredHeight, bodyRect, layoutPage.Exclusions);
+            if (Number.isFinite(nextY) && nextY > state.currentY + 0.01) {
+                state.currentY = nextY;
+            } else {
+                state.currentY += Math.max(1, (theme && theme.LineHeightPx) || requiredHeight || 16);
+            }
+        }
+
+        return { X: bodyRect.X, Y: state.currentY, Width: bodyRect.Width, Height: requiredHeight };
+    }
+
+    function _findNextBlockingExclusionBottom(y, height, bodyRect, exclusions) {
+        var probe = { X: bodyRect.X, Y: y, Width: bodyRect.Width, Height: height };
+        var bottoms = (exclusions || [])
+            .filter(function (exclusion) {
+                return exclusion && exclusion.BlocksText && _layoutRectsIntersect(probe, exclusion.Rect);
+            })
+            .map(function (exclusion) {
+                return (exclusion.Rect.Y || 0) + (exclusion.Rect.Height || 0);
+            })
+            .filter(function (bottom) {
+                return Number.isFinite(bottom) && bottom > y + 0.01;
+            })
+            .sort(function (a, b) { return a - b; });
+        return bottoms.length > 0 ? bottoms[0] : NaN;
+    }
+
     function _createImageLayoutExclusion(blockId, objectId, objectBox, layoutState, bodyRect) {
         var wrapMode = layoutState.wrapMode.value;
         if (wrapMode === 2 || wrapMode === 3) {
@@ -12792,30 +13192,36 @@ window.tmDocumentWysiwyg = (function () {
         var guard = 0;
         while (guard++ < 64) {
             var overlap = null;
+            var objectCollisionRect = objectBox.FootprintRect || objectBox.Rect || objectBox.rect;
             for (var i = 0; i < peers.length; i++) {
                 var peer = peers[i];
                 if (!peer || _readLayoutBoolean(peer.AllowOverlap ?? peer.allowOverlap, false)) continue;
                 if ((peer.Layer || peer.layer || 'object') !== (objectBox.Layer || objectBox.layer || 'object')) continue;
-                if (!_layoutRectsIntersect(peer.Rect || peer.rect, objectBox.Rect || objectBox.rect)) continue;
-                if (!overlap || ((peer.Rect || peer.rect).Y + (peer.Rect || peer.rect).Height) > ((overlap.Rect || overlap.rect).Y + (overlap.Rect || overlap.rect).Height)) {
+                if (!_layoutRectsIntersect(peer.FootprintRect || peer.Rect || peer.rect, objectCollisionRect)) continue;
+                if (!overlap || (((peer.FootprintRect || peer.Rect || peer.rect).Y || 0) + ((peer.FootprintRect || peer.Rect || peer.rect).Height || 0)) > (((overlap.FootprintRect || overlap.Rect || overlap.rect).Y || 0) + ((overlap.FootprintRect || overlap.Rect || overlap.rect).Height || 0))) {
                     overlap = peer;
                 }
             }
 
             if (!overlap) break;
-            var overlapRect = overlap.Rect || overlap.rect;
+            var overlapRect = overlap.FootprintRect || overlap.Rect || overlap.rect;
             var rect = objectBox.Rect || objectBox.rect;
             var nextY = (overlapRect.Y || 0) + (overlapRect.Height || 0) + 8;
             var bottomLimit = (bodyRect.Y || 0) + (bodyRect.Height || 0);
-            if (bottomLimit > 0 && nextY + (rect.Height || 0) > bottomLimit) {
-                nextY = Math.max(bodyRect.Y || 0, bottomLimit - (rect.Height || 0));
+            var footprintHeight = (objectBox.FootprintRect || rect).Height || rect.Height || 0;
+            if (bottomLimit > 0 && nextY + footprintHeight > bottomLimit) {
+                nextY = Math.max(bodyRect.Y || 0, bottomLimit - footprintHeight);
                 if (nextY <= (rect.Y || 0) + 0.01) break;
             }
 
+            var delta = _roundLayoutNumber(nextY - (rect.Y || 0));
             rect.Y = _roundLayoutNumber(nextY);
             objectBox.Rect = rect;
+            if (objectBox.MediaRect) objectBox.MediaRect.Y = _roundLayoutNumber((objectBox.MediaRect.Y || 0) + delta);
+            if (objectBox.CaptionRect && objectBox.CaptionRect.Height > 0) objectBox.CaptionRect.Y = _roundLayoutNumber((objectBox.CaptionRect.Y || 0) + delta);
+            if (objectBox.FootprintRect) objectBox.FootprintRect.Y = _roundLayoutNumber((objectBox.FootprintRect.Y || 0) + delta);
             objectBox.VisualRect = _cloneLayoutRect(rect);
-            objectBox.WrapRect = _createImageWrapRect(rect, layoutState, bodyRect);
+            objectBox.WrapRect = _createImageWrapRect(objectBox.FootprintRect || rect, layoutState, bodyRect);
         }
     }
 

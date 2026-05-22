@@ -89,6 +89,53 @@ public class DocumentLayoutEngineTests
     }
 
     [Fact]
+    public void Layout_LeftSquareImage_ReturnsToFullWidthAfterImageFootprintEnds()
+    {
+        var document = Document("full-width-after-image");
+        document.Blocks.Add(Image("img-left", LeftSquareLayout(width: 110, height: 42), width: 110, height: 42, order: 0));
+        document.Blocks.Add(Paragraph("p1", LongWrapText() + " " + LongWrapText() + " " + LongWrapText(), order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var image = page.Objects.Single(box => box.BlockId == "img-left");
+        var firstLineAfterImage = Lines(page, "p1").First(line => line.Rect.Y >= image.WrapRect.Bottom - 0.01);
+
+        firstLineAfterImage.AvailableIntervals.Should().ContainSingle();
+        firstLineAfterImage.AvailableIntervals[0].X.Should().Be(page.BodyRect.X);
+        firstLineAfterImage.AvailableIntervals[0].Width.Should().Be(page.BodyRect.Width);
+    }
+
+    [Fact]
+    public void Layout_LeftSquareImage_WrapsNormalTextAtWordBoundaries()
+    {
+        var document = Document("word-boundary-wrap");
+        document.Blocks.Add(Image("img-left", LeftSquareLayout(width: 200, height: 120), width: 200, height: 120, order: 0));
+        document.Blocks.Add(Paragraph(
+            "p1",
+            "alpha bravo charlie delta echo foxtrot golf hotel india juliet kilo lima",
+            order: 1));
+
+        var snapshot = new DocumentLayoutEngine().Layout(document, TestPageSettings());
+        var page = snapshot.Pages[0];
+        var restrictedTexts = Lines(page, "p1")
+            .Where(line => line.AvailableIntervals.Count == 1 && line.AvailableIntervals[0].X > page.BodyRect.X)
+            .Select(line => string.Concat(line.Segments.Select(segment => segment.Text)))
+            .Where(text => !string.IsNullOrEmpty(text))
+            .ToList();
+
+        restrictedTexts.Should().HaveCountGreaterThan(1);
+        for (var index = 0; index < restrictedTexts.Count - 1; index++)
+        {
+            var previous = restrictedTexts[index];
+            var next = restrictedTexts[index + 1];
+            (char.IsLetterOrDigit(previous[^1]) && char.IsLetterOrDigit(next[0])).Should().BeFalse(
+                "normal wrapped text should not split a word at line {0}: '{1}' / '{2}'",
+                index,
+                previous,
+                next);
+        }
+    }
+
+    [Fact]
     public void Layout_ImageMovedLower_ChangesFirstLineFromWrappedToFullWidth()
     {
         var atTop = Document("image-top");
@@ -241,6 +288,23 @@ public class DocumentLayoutEngineTests
     }
 
     [Fact]
+    public void Layout_FullWidthTopBottomImage_MovesFollowingTextBelowExclusion()
+    {
+        var document = Document("top-bottom-full-width");
+        document.Blocks.Add(Image("img", TopBottomLayout(width: 220, height: 70), width: 220, height: 70, order: 0));
+        document.Blocks.Add(Paragraph("p", LongWrapText(), order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var image = page.Objects.Single(box => box.BlockId == "img");
+        var firstLine = FirstLine(page, "p");
+
+        page.Exclusions.Single(zone => zone.BlockId == "img").Rect.Width.Should().Be(page.BodyRect.Width);
+        firstLine.Rect.Y.Should().BeGreaterThanOrEqualTo(image.WrapRect.Bottom);
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().Be(page.BodyRect.X);
+    }
+
+    [Fact]
     public void Layout_AllowOverlapFalseMovesLaterObjectWithinSameLayer()
     {
         var document = Document("object-overlap");
@@ -274,6 +338,397 @@ public class DocumentLayoutEngineTests
         first.AllowOverlap.Should().BeTrue();
         second.ObjectRect.Y.Should().BeApproximately(first.ObjectRect.Y, 0.01);
         DocumentLayoutGeometryHelper.Intersects(first.ObjectRect, second.ObjectRect).Should().BeTrue();
+    }
+
+    [Fact]
+    public void Layout_ImageWithoutCaptionKeepsFootprintEqualToMediaAndWrapUsesDistances()
+    {
+        var layout = LeftSquareLayout(width: 100, height: 60);
+        layout.Wrap.DistanceLeft = 4;
+        layout.Wrap.DistanceRight = 10;
+        layout.Wrap.DistanceTop = 6;
+        layout.Wrap.DistanceBottom = 12;
+        var document = Document("image-footprint-without-caption");
+        document.Blocks.Add(Image("img", layout, width: 100, height: 60, order: 0));
+
+        var image = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+
+        image.CaptionRect.IsEmpty.Should().BeTrue();
+        image.FootprintRect.X.Should().Be(image.MediaRect.X);
+        image.FootprintRect.Y.Should().Be(image.MediaRect.Y);
+        image.FootprintRect.Width.Should().Be(image.MediaRect.Width);
+        image.FootprintRect.Height.Should().Be(image.MediaRect.Height);
+        image.WrapRect.X.Should().Be(image.MediaRect.X - 4);
+        image.WrapRect.Y.Should().Be(image.MediaRect.Y - 6);
+        image.WrapRect.Right.Should().Be(image.MediaRect.Right + 10);
+        image.WrapRect.Bottom.Should().Be(image.MediaRect.Bottom + 12);
+    }
+
+    [Fact]
+    public void Layout_TopBottomImageWithCaption_ExclusionUsesCaptionFootprint()
+    {
+        var document = Document("top-bottom-caption-footprint");
+        document.Blocks.Add(Image(
+            "img",
+            TopBottomLayout(width: 120, height: 50),
+            width: 120,
+            height: 50,
+            order: 0,
+            caption: "Long enough caption to make the footprint taller than the media rectangle"));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var image = page.Objects.Single(box => box.BlockId == "img");
+        var zone = page.Exclusions.Single(zone => zone.BlockId == "img");
+
+        image.CaptionRect.Height.Should().BeGreaterThan(0);
+        image.FootprintRect.Bottom.Should().BeGreaterThan(image.MediaRect.Bottom);
+        zone.Rect.Bottom.Should().Be(image.WrapRect.Bottom);
+    }
+
+    [Fact]
+    public void Layout_TableFallbackAfterLeftSquare_MovesBelowWhenFullWidthWouldCollide()
+    {
+        var document = Document("table-after-left-square");
+        document.Blocks.Add(Image("img", LeftSquareLayout(width: 220, height: 80), width: 220, height: 80, order: 0));
+        document.Blocks.Add(Table("table", order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var image = page.Objects.Single(box => box.BlockId == "img");
+        var table = page.Paragraphs.Single(paragraph => paragraph.BlockId == "table");
+
+        table.Rect.Y.Should().BeGreaterThanOrEqualTo(image.WrapRect.Bottom);
+        table.Rect.X.Should().Be(page.BodyRect.X);
+        table.Rect.Width.Should().Be(page.BodyRect.Width);
+    }
+
+    [Fact]
+    public void Layout_RotatedImageUsesConservativeBoundingFootprint()
+    {
+        var layout = LeftSquareLayout(width: 120, height: 60);
+        layout.Transform.Rotation = 45;
+        var document = Document("rotated-image-footprint");
+        document.Blocks.Add(Image("img", layout, width: 120, height: 60, order: 0));
+
+        var image = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+
+        image.MediaRect.Width.Should().Be(120);
+        image.MediaRect.Height.Should().Be(60);
+        image.FootprintRect.Width.Should().BeGreaterThan(image.MediaRect.Width);
+        image.FootprintRect.Height.Should().BeGreaterThan(image.MediaRect.Height);
+        image.WrapRect.Width.Should().BeGreaterThan(image.MediaRect.Width);
+    }
+
+    [Fact]
+    public void Layout_CropDoesNotChangeLayoutFootprint()
+    {
+        var croppedLayout = LeftSquareLayout(width: 120, height: 60);
+        croppedLayout.Transform.Crop = new DocumentObjectCrop { Left = 12, Top = 6, Right = 10, Bottom = 4 };
+        var uncroppedDocument = Document("uncropped-image-footprint");
+        uncroppedDocument.Blocks.Add(Image("img", LeftSquareLayout(width: 120, height: 60), width: 120, height: 60, order: 0));
+        var croppedDocument = Document("cropped-image-footprint");
+        croppedDocument.Blocks.Add(Image("img", croppedLayout, width: 120, height: 60, order: 0));
+
+        var engine = new DocumentLayoutEngine();
+        var uncropped = engine.Layout(uncroppedDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+        var cropped = engine.Layout(croppedDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+
+        cropped.FootprintRect.X.Should().Be(uncropped.FootprintRect.X);
+        cropped.FootprintRect.Y.Should().Be(uncropped.FootprintRect.Y);
+        cropped.FootprintRect.Width.Should().Be(uncropped.FootprintRect.Width);
+        cropped.FootprintRect.Height.Should().Be(uncropped.FootprintRect.Height);
+    }
+
+    [Fact]
+    public void Layout_LockedAspectRatioResizePreservesFootprintAndExclusion()
+    {
+        var layout = LeftSquareLayout(width: 180, height: 90);
+        layout.Transform.NaturalWidth = 120;
+        layout.Transform.NaturalHeight = 60;
+        layout.Transform.LockAspectRatio = true;
+        layout.Wrap.DistanceRight = 14;
+        layout.Wrap.DistanceBottom = 8;
+        var document = Document("locked-aspect-resize-footprint");
+        document.Blocks.Add(Image("img", layout, width: 180, height: 90, order: 0));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var image = page.Objects.Single(box => box.BlockId == "img");
+        var exclusion = page.Exclusions.Single(zone => zone.BlockId == "img");
+
+        image.Layout.Transform.LockAspectRatio.Should().BeTrue();
+        image.MediaRect.Width.Should().Be(180);
+        image.MediaRect.Height.Should().Be(90);
+        image.FootprintRect.Width.Should().Be(180);
+        image.FootprintRect.Height.Should().Be(90);
+        exclusion.Rect.Right.Should().Be(image.MediaRect.Right + 14);
+        exclusion.Rect.Bottom.Should().Be(image.MediaRect.Bottom + 8);
+    }
+
+    [Fact]
+    public void Layout_FixedOnPageObjectDoesNotAffectMoveWithTextObjectSemantics()
+    {
+        var shortDocument = AnchoredImagePairAfterIntro("fixed-move-short", LongWrapText());
+        var longDocument = AnchoredImagePairAfterIntro("fixed-move-long", LongWrapText() + " " + LongWrapText() + " " + LongWrapText());
+        var engine = new DocumentLayoutEngine();
+
+        var shortPage = engine.Layout(shortDocument, TestPageSettings()).Pages[0];
+        var longPage = engine.Layout(longDocument, TestPageSettings()).Pages[0];
+        var shortFixed = shortPage.Objects.Single(box => box.BlockId == "fixed-img");
+        var longFixed = longPage.Objects.Single(box => box.BlockId == "fixed-img");
+        var shortMove = shortPage.Objects.Single(box => box.BlockId == "move-img");
+        var longMove = longPage.Objects.Single(box => box.BlockId == "move-img");
+
+        shortFixed.Layout.Anchor.FixedOnPage.Should().BeTrue();
+        shortMove.Layout.Anchor.MoveWithText.Should().BeTrue();
+        longFixed.ObjectRect.Y.Should().BeApproximately(shortFixed.ObjectRect.Y, 0.01);
+        longMove.ObjectRect.Y.Should().BeGreaterThan(shortMove.ObjectRect.Y + 10);
+    }
+
+    [Fact]
+    public void Layout_DefaultContractLikeWrappedImage_DoesNotOverlapFollowingInlineImages()
+    {
+        var document = Document("contract-like-wrap");
+        document.Blocks.Add(Paragraph("title", "Service agreement", order: 0));
+        document.Blocks.Add(Paragraph(
+            "pending-revision",
+            "Priority support is included during the first thirty days.",
+            order: 0.5));
+        document.Blocks.Add(Image(
+            "wrapped-image",
+            LeftSquareLayout(width: 160, height: 90),
+            width: 160,
+            height: 90,
+            order: 1,
+            caption: "Image loaded from favicon resolver"));
+        document.Blocks.Add(Paragraph(
+            "wrapped-text",
+            "This longer clause demonstrates live text wrapping around the evidence image. "
+            + "It should continue beside the image without intersecting the media or its caption.",
+            order: 2));
+        document.Blocks.Add(Image(
+            "inline-image",
+            DocumentObjectLayout.Inline(),
+            width: 160,
+            height: 90,
+            order: 3,
+            caption: "Inline provider image caption"));
+        document.Blocks.Add(Image(
+            "provider-image",
+            DocumentObjectLayout.Inline(),
+            width: 150,
+            height: 84,
+            order: 4,
+            caption: "Image resolved through provider"));
+
+        var snapshot = new DocumentLayoutEngine().Layout(document, TestPageSettings());
+        var page = snapshot.Pages[0];
+
+        var wrappedImage = page.Objects.Single(box => box.BlockId == "wrapped-image");
+        wrappedImage.FootprintRect.Height.Should().BeGreaterThan(wrappedImage.ObjectRect.Height);
+        DocumentLayoutGeometryHelper.GetObjectFootprintRect(wrappedImage).Should().BeSameAs(wrappedImage.FootprintRect);
+        page.Exclusions.Single(zone => zone.BlockId == "wrapped-image").Rect.Bottom.Should().BeGreaterThan(wrappedImage.ObjectRect.Bottom);
+
+        Lines(page, "wrapped-text")
+            .Should()
+            .OnlyContain(line => !DocumentLayoutGeometryHelper.Intersects(line.Rect, wrappedImage.WrapRect));
+
+        foreach (var imageBox in page.Objects.Where(box => box.BlockId is "inline-image" or "provider-image"))
+        {
+            DocumentLayoutGeometryHelper.Intersects(imageBox.FootprintRect, wrappedImage.WrapRect)
+                .Should()
+                .BeFalse($"{imageBox.BlockId} must be placed into a free interval or below the active wrapped image footprint");
+        }
+
+        snapshot.Diagnostics.Should().NotContain(message => message.Contains("intersects active exclusion", StringComparison.OrdinalIgnoreCase));
+        snapshot.DebugBlockLayouts.Select(debug => debug.BlockId).Should().Contain(["title", "pending-revision", "wrapped-image", "wrapped-text", "inline-image", "provider-image"]);
+        snapshot.DebugObjectLayouts.Should().Contain(debug => debug.BlockId == "wrapped-image"
+            && debug.WrapMode == DocumentWrapMode.Square
+            && !debug.FootprintRect.IsEmpty
+            && !debug.WrapRect.IsEmpty
+            && debug.CaptionRect.Height > 0);
+        snapshot.DebugLineLayouts.Should().Contain(debug => debug.BlockId == "wrapped-text"
+            && debug.AvailableIntervals.Count > 0
+            && debug.ExclusionRects.Count > 0
+            && debug.Segments.Count > 0);
+        var monotonicParagraphs = page.Paragraphs
+            .Where(paragraph => paragraph.Lines.Count > 0)
+            .OrderBy(paragraph => paragraph.Rect.Y)
+            .ToList();
+        monotonicParagraphs.Select(paragraph => paragraph.Rect.Y).Should().BeInAscendingOrder();
+    }
+
+    [Fact]
+    public void Layout_FloatingImageAfterAnchorParagraph_PreAnchorsBeforeTextLayout()
+    {
+        var document = Document("pre-anchor-wrap");
+        document.Blocks.Add(Paragraph(
+            "anchor",
+            "The provider will deliver implementation, training, and documentation services. "
+            + "Priority support is included during the first thirty days.",
+            order: 0));
+        document.Blocks.Add(Image(
+            "wrapped-image",
+            LeftSquareLayout(width: 160, height: 90),
+            width: 160,
+            height: 90,
+            order: 1,
+            caption: "Evidence preview loaded from a URL"));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+
+        var image = page.Objects.Single(box => box.BlockId == "wrapped-image");
+        image.AnchorBlockId.Should().Be("anchor");
+        page.Exclusions.Single(zone => zone.BlockId == "wrapped-image").Rect.Bottom.Should().BeGreaterThan(image.ObjectRect.Bottom);
+        Lines(page, "anchor")
+            .SelectMany(line => line.Segments)
+            .Should()
+            .OnlyContain(segment => !DocumentLayoutGeometryHelper.Intersects(segment.Rect, image.WrapRect),
+                "an image block that follows its anchor paragraph still has to participate in that paragraph's wrapping layout");
+    }
+
+    [Fact]
+    public void Layout_FloatingImageBeforeExplicitAnchor_IsLaidOutOnceAtAnchor()
+    {
+        var document = Document("pre-anchor-before-explicit-anchor");
+        document.Blocks.Add(Image(
+            "wrapped-image",
+            AnchoredToParagraphLayout("anchor", width: 160, height: 90),
+            width: 160,
+            height: 90,
+            order: 0));
+        document.Blocks.Add(Paragraph(
+            "anchor",
+            LongWrapText() + " " + LongWrapText(),
+            order: 1));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+
+        var image = page.Objects.Should().ContainSingle(box => box.BlockId == "wrapped-image").Subject;
+        image.AnchorBlockId.Should().Be("anchor");
+        page.Exclusions.Should().ContainSingle(zone => zone.BlockId == "wrapped-image");
+        Lines(page, "anchor")
+            .Where(line => line.Rect.Y < image.WrapRect.Bottom && line.Rect.Bottom > image.WrapRect.Y)
+            .Should()
+            .OnlyContain(line => line.Segments.All(segment => !DocumentLayoutGeometryHelper.Intersects(segment.Rect, image.WrapRect)),
+                "an explicitly pre-anchored image must not leave a duplicate object at its original block position");
+    }
+
+    [Fact]
+    public void Layout_LeftAndRightSquareImages_LeaveMiddleIntervalWhenThereIsRoom()
+    {
+        var document = Document("left-right-middle-interval");
+        document.Blocks.Add(Image("left", LeftSquareLayout(width: 80, height: 70), width: 80, height: 70, order: 0));
+        document.Blocks.Add(Image("right", RightSquareLayout(width: 80, height: 70), width: 80, height: 70, order: 1));
+        document.Blocks.Add(Paragraph("p", LongWrapText(), order: 2));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var left = page.Objects.Single(box => box.BlockId == "left");
+        var right = page.Objects.Single(box => box.BlockId == "right");
+        var firstLine = FirstLine(page, "p");
+
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().BeGreaterThan(left.WrapRect.Right - 0.01);
+        firstLine.AvailableIntervals[0].End.Should().BeLessThan(right.WrapRect.X + 0.01);
+        firstLine.Segments.Should().OnlyContain(segment => !DocumentLayoutGeometryHelper.Intersects(segment.Rect, left.WrapRect)
+            && !DocumentLayoutGeometryHelper.Intersects(segment.Rect, right.WrapRect));
+    }
+
+    [Fact]
+    public void Layout_LeftAndRightSquareImages_MoveLineBelowWhenMiddleIntervalIsTooSmall()
+    {
+        var document = Document("left-right-no-middle-interval");
+        document.Blocks.Add(Image("left", LeftSquareLayout(width: 140, height: 70), width: 140, height: 70, order: 0));
+        document.Blocks.Add(Image("right", RightSquareLayout(width: 140, height: 70), width: 140, height: 70, order: 1));
+        document.Blocks.Add(Paragraph("p", LongWrapText(), order: 2));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var bottom = page.Objects.Where(box => box.BlockId is "left" or "right").Max(box => box.WrapRect.Bottom);
+        var firstLine = FirstLine(page, "p");
+
+        firstLine.Rect.Y.Should().BeGreaterThanOrEqualTo(bottom);
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().Be(page.BodyRect.X);
+        firstLine.AvailableIntervals[0].Width.Should().Be(page.BodyRect.Width);
+    }
+
+    [Fact]
+    public void Layout_TwoLeftSquareImages_StackWithoutObjectOrTextOverlap()
+    {
+        var document = Document("two-left-square-images");
+        document.Blocks.Add(Image("img-1", LeftSquareLayout(width: 110, height: 70), width: 110, height: 70, order: 0));
+        document.Blocks.Add(Image("img-2", LeftSquareLayout(width: 110, height: 70), width: 110, height: 70, order: 1));
+        document.Blocks.Add(Paragraph("p", LongWrapText() + " " + LongWrapText(), order: 2));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var first = page.Objects.Single(box => box.BlockId == "img-1");
+        var second = page.Objects.Single(box => box.BlockId == "img-2");
+
+        DocumentLayoutGeometryHelper.Intersects(first.FootprintRect, second.FootprintRect).Should().BeFalse();
+        second.FootprintRect.Y.Should().BeGreaterThanOrEqualTo(first.FootprintRect.Bottom + 8);
+        Lines(page, "p").SelectMany(line => line.Segments)
+            .Should()
+            .OnlyContain(segment => !DocumentLayoutGeometryHelper.Intersects(segment.Rect, first.WrapRect)
+                && !DocumentLayoutGeometryHelper.Intersects(segment.Rect, second.WrapRect));
+    }
+
+    [Fact]
+    public void Layout_InlineImageAfterLeftSquare_MovesBelowWhenItDoesNotFitBesideImage()
+    {
+        var document = Document("inline-image-too-wide-for-side-interval");
+        document.Blocks.Add(Image("wrapped", LeftSquareLayout(width: 220, height: 90), width: 220, height: 90, order: 0));
+        document.Blocks.Add(Image("inline", DocumentObjectLayout.Inline(), width: 150, height: 70, order: 1, caption: "Inline caption"));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var wrapped = page.Objects.Single(box => box.BlockId == "wrapped");
+        var inline = page.Objects.Single(box => box.BlockId == "inline");
+
+        inline.FootprintRect.Y.Should().BeGreaterThanOrEqualTo(wrapped.WrapRect.Bottom);
+        inline.FootprintRect.X.Should().BeGreaterThanOrEqualTo(page.BodyRect.X);
+        DocumentLayoutGeometryHelper.Intersects(inline.FootprintRect, wrapped.WrapRect).Should().BeFalse();
+    }
+
+    [Fact]
+    public void Layout_LongCaptionIncreasesFootprintByMultipleCaptionLines()
+    {
+        var shortDocument = Document("short-caption");
+        shortDocument.Blocks.Add(Image("img", LeftSquareLayout(width: 90, height: 50), width: 90, height: 50, order: 0, caption: "Short caption"));
+
+        var longDocument = Document("long-caption");
+        longDocument.Blocks.Add(Image(
+            "img",
+            LeftSquareLayout(width: 90, height: 50),
+            width: 90,
+            height: 50,
+            order: 0,
+            caption: "This caption is intentionally long enough to wrap over multiple caption lines in the layout footprint"));
+
+        var engine = new DocumentLayoutEngine();
+        var shortImage = engine.Layout(shortDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+        var longImage = engine.Layout(longDocument, TestPageSettings()).Pages[0].Objects.Single(box => box.BlockId == "img");
+
+        longImage.CaptionRect.Height.Should().BeGreaterThan(shortImage.CaptionRect.Height);
+        longImage.FootprintRect.Height.Should().BeGreaterThan(shortImage.FootprintRect.Height);
+        longImage.WrapRect.Height.Should().BeGreaterThan(shortImage.WrapRect.Height);
+    }
+
+    [Fact]
+    public void Layout_BehindAndInFrontImages_DoNotCreateTextExclusions()
+    {
+        var behind = LeftSquareLayout(width: 120, height: 70);
+        behind.Wrap.Mode = DocumentWrapMode.BehindText;
+        var inFront = RightSquareLayout(width: 120, height: 70);
+        inFront.Wrap.Mode = DocumentWrapMode.InFrontOfText;
+        var document = Document("non-blocking-overlap-modes");
+        document.Blocks.Add(Image("behind", behind, width: 120, height: 70, order: 0));
+        document.Blocks.Add(Image("front", inFront, width: 120, height: 70, order: 1));
+        document.Blocks.Add(Paragraph("p", LongWrapText(), order: 2));
+
+        var page = new DocumentLayoutEngine().Layout(document, TestPageSettings()).Pages[0];
+        var firstLine = FirstLine(page, "p");
+
+        page.Exclusions.Should().BeEmpty();
+        firstLine.AvailableIntervals.Should().ContainSingle();
+        firstLine.AvailableIntervals[0].X.Should().Be(page.BodyRect.X);
+        firstLine.AvailableIntervals[0].Width.Should().Be(page.BodyRect.Width);
     }
 
     [Fact]
@@ -454,7 +909,7 @@ public class DocumentLayoutEngineTests
             }
         };
 
-    private static DocumentBlock Image(string id, DocumentObjectLayout layout, double width, double height, double order = 0)
+    private static DocumentBlock Image(string id, DocumentObjectLayout layout, double width, double height, double order = 0, string? caption = null)
         => new()
         {
             Id = id,
@@ -465,7 +920,35 @@ public class DocumentLayoutEngineTests
                 AltText = id,
                 Size = new DocumentImageSize { Width = width, Height = height },
                 NaturalSize = new DocumentImageSize { Width = width, Height = height },
-                Layout = layout
+                Layout = layout,
+                Caption = caption
+            }
+        };
+
+    private static DocumentBlock Table(string id, double order = 0)
+        => new()
+        {
+            Id = id,
+            Type = DocumentBlockType.Table,
+            Order = order,
+            Content = new TableBlockContent
+            {
+                Rows =
+                [
+                    new TableRowContent
+                    {
+                        Cells =
+                        [
+                            new TableCellContent
+                            {
+                                Blocks =
+                                [
+                                    Paragraph(id + "-cell", "Cell content")
+                                ]
+                            }
+                        ]
+                    }
+                ]
             }
         };
 
@@ -494,6 +977,31 @@ public class DocumentLayoutEngineTests
             }
         };
 
+    private static DocumentObjectLayout RightSquareLayout(double width, double height, double y = 0)
+        => new()
+        {
+            Kind = DocumentObjectLayoutKind.Anchored,
+            Position = new DocumentObjectPosition
+            {
+                HorizontalRelativeTo = DocumentRelativePosition.Margin,
+                VerticalRelativeTo = DocumentRelativePosition.Paragraph,
+                HorizontalAlignment = DocumentImageHorizontalPosition.Right,
+                Y = y
+            },
+            Wrap = new DocumentObjectWrap
+            {
+                Mode = DocumentWrapMode.Square,
+                DistanceLeft = 10
+            },
+            Transform = new DocumentObjectTransform
+            {
+                Width = width,
+                Height = height,
+                NaturalWidth = width,
+                NaturalHeight = height
+            }
+        };
+
     private static DocumentEditorDocument AnchoredImageAfterIntro(string id, string introText, bool fixedOnPage = false)
     {
         var document = Document(id);
@@ -505,6 +1013,16 @@ public class DocumentLayoutEngineTests
             width: 90,
             height: 60,
             order: 2));
+        return document;
+    }
+
+    private static DocumentEditorDocument AnchoredImagePairAfterIntro(string id, string introText)
+    {
+        var document = Document(id);
+        document.Blocks.Add(Paragraph("intro", introText, order: 0));
+        document.Blocks.Add(Paragraph("anchor", "Anchor paragraph", order: 1));
+        document.Blocks.Add(Image("fixed-img", FixedLayout("anchor", width: 90, height: 60), width: 90, height: 60, order: 2));
+        document.Blocks.Add(Image("move-img", AnchoredToParagraphLayout("anchor", width: 90, height: 60), width: 90, height: 60, order: 3));
         return document;
     }
 
